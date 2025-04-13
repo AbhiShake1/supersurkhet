@@ -12,7 +12,7 @@ class_name = "GunRelay"
 [[migrations]]
 tag = "v1"
 name = "initial-migration"
-new_classes = ["GunRelay"]
+new_sqlite_classes = ["GunRelay"]
 
 [triggers]
 crons = []
