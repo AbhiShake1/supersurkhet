@@ -101,7 +101,7 @@ function RouteComponent() {
             <Button type='submit'>Post</Button>
         </form>
         <section className="flex flex-col gap-1">
-            {messages.map(m => <h3>{`${m.sender} says ==> ${m.text}`}</h3>)}
+            {messages.map(m => <h3>{`${m.sender} says ==> ${m.text} at ${m.timestamp}`}</h3>)}
         </section>
     </div>
 }
