@@ -8,6 +8,6 @@ export const Route = createFileRoute('/_restaurants/rbd')({
 
 function RouteComponent() {
     return <div className='h-screen w-screen flex justify-center'>
-        <Scanner scanDelay={4000} onScan={(result) => toast.info(JSON.stringify(result))} />
+        <Scanner scanDelay={4000} onScan={(result) => toast.info(result?.[0]?.rawValue)} />
     </div>
 }
