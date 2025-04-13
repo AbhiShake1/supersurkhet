@@ -77,15 +77,27 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				name: "twitter:description",
 				content: "SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
 			},
+			{
+				property: "og:image",
+				content: "/og-image.png",
+			},
+			{
+				property: "og:image:width",
+				content: "1200",
+			},
+			{
+				property: "og:image:height",
+				content: "630",
+			},
+			{
+				name: "twitter:image",
+				content: "/og-image.png",
+			},
 		],
 		links: [
 			{
 				rel: "stylesheet",
 				href: appCss,
-			},
-			{
-				rel: "canonical",
-				href: "https://supersurkhet.com",
 			},
 			{
 				rel: "icon",
