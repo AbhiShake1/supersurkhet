@@ -1,6 +1,6 @@
 export default function StatsSection() {
     return (
-        <section className="py-16 md:py-32">
+        <section className="py-16 md:py-32" id="solution">
             <div className="mx-auto max-w-5xl space-y-8 px-6 md:space-y-12">
                 <div className="relative z-10 max-w-xl space-y-6">
                     <h2 className="text-4xl font-medium lg:text-5xl">Building Surkhet's Digital Future Together</h2>

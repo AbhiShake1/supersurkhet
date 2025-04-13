@@ -18,6 +18,11 @@ code {
 		monospace;
 }
 
+html {
+--scroll-behavior: smooth!important;
+scroll-behavior: smooth!important;
+}
+
 :root {
 	--background: oklch(1 0 0);
 	--foreground: oklch(0.141 0.005 285.823);

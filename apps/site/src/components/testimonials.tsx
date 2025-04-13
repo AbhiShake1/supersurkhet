@@ -59,7 +59,7 @@ const testimonialChunks = chunkArray(testimonials, Math.ceil(testimonials.length
 
 export default function WallOfLoveSection() {
     return (
-        <section>
+        <section id="customers">
             <div className="py-16 md:py-32">
                 <div className="mx-auto max-w-6xl px-6">
                     <div className="text-center">

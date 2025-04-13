@@ -23,7 +23,7 @@ const members = [
 
 export default function TeamSection() {
     return (
-        <section className="py-12 md:py-32">
+        <section className="py-12 md:py-32" id="about">
             <div className="mx-auto max-w-3xl px-8 lg:px-0">
                 <h2 className="mb-8 text-4xl font-bold md:mb-16 lg:text-5xl">Our team</h2>
 

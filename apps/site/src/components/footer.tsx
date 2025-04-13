@@ -4,27 +4,27 @@ import { Link } from '@tanstack/react-router'
 const links = [
     {
         title: 'Features',
-        href: '#',
+        href: '#features',
     },
     {
         title: 'Solution',
-        href: '#',
+        href: '#solution',
     },
     {
         title: 'Customers',
-        href: '#',
+        href: '#customers',
     },
     {
         title: 'Pricing',
-        href: '#',
+        href: '#pricing',
     },
     {
         title: 'Help',
-        href: '#',
+        href: '#help',
     },
     {
         title: 'About',
-        href: '#',
+        href: '#about',
     },
 ]
 
