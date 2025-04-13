@@ -12,6 +12,7 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as IndexImport } from './routes/index'
+import { Route as RestaurantsRbdImport } from './routes/_restaurants/rbd'
 import { Route as AuthAuthImport } from './routes/_auth/auth'
 
 // Create/Update Routes
@@ -19,6 +20,12 @@ import { Route as AuthAuthImport } from './routes/_auth/auth'
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const RestaurantsRbdRoute = RestaurantsRbdImport.update({
+  id: '/_restaurants/rbd',
+  path: '/rbd',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -46,6 +53,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAuthImport
       parentRoute: typeof rootRoute
     }
+    '/_restaurants/rbd': {
+      id: '/_restaurants/rbd'
+      path: '/rbd'
+      fullPath: '/rbd'
+      preLoaderRoute: typeof RestaurantsRbdImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -54,36 +68,41 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthAuthRoute
+  '/rbd': typeof RestaurantsRbdRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthAuthRoute
+  '/rbd': typeof RestaurantsRbdRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/_auth/auth': typeof AuthAuthRoute
+  '/_restaurants/rbd': typeof RestaurantsRbdRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth'
+  fullPaths: '/' | '/auth' | '/rbd'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth'
-  id: '__root__' | '/' | '/_auth/auth'
+  to: '/' | '/auth' | '/rbd'
+  id: '__root__' | '/' | '/_auth/auth' | '/_restaurants/rbd'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthAuthRoute: typeof AuthAuthRoute
+  RestaurantsRbdRoute: typeof RestaurantsRbdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthAuthRoute: AuthAuthRoute,
+  RestaurantsRbdRoute: RestaurantsRbdRoute,
 }
 
 export const routeTree = rootRoute
@@ -97,7 +116,8 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/_auth/auth"
+        "/_auth/auth",
+        "/_restaurants/rbd"
       ]
     },
     "/": {
@@ -105,6 +125,9 @@ export const routeTree = rootRoute
     },
     "/_auth/auth": {
       "filePath": "_auth/auth.tsx"
+    },
+    "/_restaurants/rbd": {
+      "filePath": "_restaurants/rbd.tsx"
     }
   }
 }

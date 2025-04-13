@@ -12,6 +12,7 @@ import appCss from "../styles.css?url";
 
 import type { QueryClient } from "@tanstack/react-query";
 import { NotFound } from "@/components/ui/not-found";
+import { Toaster } from "@/components/ui/sonner";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -115,6 +116,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	notFoundComponent: () => <NotFound />,
 	component: () => (
 		<RootDocument>
+			<Toaster richColors />
 			<Outlet />
 			<TanStackRouterDevtools />
 
