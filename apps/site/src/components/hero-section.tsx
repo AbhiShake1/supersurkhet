@@ -66,9 +66,9 @@ export default function HeroSection() {
                             }}
                             className="absolute inset-0 -z-20">
                             <img
-                                src="https://res.cloudinary.com/dg4jhba5c/image/upload/v1741605538/night-background_ni3vqb.jpg"
+                                src="https://www.hdwallpapers.in/download/night_starry_sky_trees_nature_dark_wallpaper_background_4k_hd_dark_background-3840x2160.jpg"
                                 alt="background"
-                                className="absolute inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
+                                className="absolute bg-blue-500/20 inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
                                 width="3276"
                                 height="4095"
                             />
@@ -80,7 +80,7 @@ export default function HeroSection() {
                                     <Link
                                         to='/'
                                         className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950">
-                                        <span className="text-foreground text-sm">Introducing Support for AI Models</span>
+                                        <span className="text-foreground text-sm">Free for Small Businesses</span>
                                         <span className="dark:border-background block h-4 w-0.5 border-l bg-white dark:bg-zinc-700"></span>
 
                                         <div className="bg-background group-hover:bg-muted size-6 overflow-hidden rounded-full duration-500">
@@ -101,7 +101,7 @@ export default function HeroSection() {
                                     speedSegment={0.3}
                                     as="h1"
                                     className="mt-8 text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem]">
-                                    Modern Solutions for Customer Engagement
+                                    Surkhet's Digital Hub
                                 </TextEffect>
                                 <TextEffect
                                     per="line"
@@ -110,7 +110,7 @@ export default function HeroSection() {
                                     delay={0.5}
                                     as="p"
                                     className="mx-auto mt-8 max-w-2xl text-balance text-lg">
-                                    Highly customizable components for building modern websites and applications that look and feel the way you mean it.
+                                    Free enterprise-grade digital solutions with local data sovereignty. Building Nepal's next tech hub, one business at a time.
                                 </TextEffect>
 
                                 <AnimatedGroup
@@ -134,7 +134,7 @@ export default function HeroSection() {
                                             size="lg"
                                             className="rounded-xl px-5 text-base">
                                             <Link to="/">
-                                                <span className="text-nowrap">Start Building</span>
+                                                <span className="text-nowrap">Get Started Free</span>
                                             </Link>
                                         </Button>
                                     </div>
@@ -145,7 +145,7 @@ export default function HeroSection() {
                                         variant="ghost"
                                         className="h-10.5 rounded-xl px-5">
                                         <Link to="/">
-                                            <span className="text-nowrap">Request a demo</span>
+                                            <span className="text-nowrap">Learn More</span>
                                         </Link>
                                     </Button>
                                 </AnimatedGroup>
@@ -172,14 +172,7 @@ export default function HeroSection() {
                                 <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
                                     <img
                                         className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
-                                        src="/mail2.png"
-                                        alt="app screen"
-                                        width="2700"
-                                        height="1440"
-                                    />
-                                    <img
-                                        className="z-2 border-border/25 aspect-15/8 relative rounded-2xl border dark:hidden"
-                                        src="/mail2-light.png"
+                                        src="https://ui.shadcn.com/_next/image?url=%2Fr%2Fstyles%2Fnew-york%2Fdashboard-01-dark.png&w=3840&q=75"
                                         alt="app screen"
                                         width="2700"
                                         height="1440"
