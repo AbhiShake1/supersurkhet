@@ -32,7 +32,7 @@ type Schema = z.infer<typeof schema>
 
 const secretKey = "#secret-super-secure"
 
-export const gun = GUN(["gun-relay.abhi-shake-np.workers.dev"])
+export const gun = GUN(["wss://gun-relay.abhi-shake-np.workers.dev/gun"])
 
 // type UseGunGetOptions<T extends keyof Schema> = {
 //     key: T;
