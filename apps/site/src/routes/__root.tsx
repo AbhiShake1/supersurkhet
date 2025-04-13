@@ -11,6 +11,7 @@ import TanstackQueryLayout from "../integrations/tanstack-query/layout";
 import appCss from "../styles.css?url";
 
 import type { QueryClient } from "@tanstack/react-query";
+import { NotFound } from "@/components/ui/not-found";
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -111,7 +112,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 		],
 	}),
-
+	notFoundComponent: () => <NotFound />,
 	component: () => (
 		<RootDocument>
 			<Outlet />
