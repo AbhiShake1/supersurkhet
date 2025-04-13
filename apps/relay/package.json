@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy"
+    "deploy": "wrangler deploy",
+     "build": "pnpx esbuild ./src/index.ts --bundle --platform=node --external:node:* --outfile=build/worker.js"
   },
   "dependencies": {
     "gun": "^0.2020.1239"
