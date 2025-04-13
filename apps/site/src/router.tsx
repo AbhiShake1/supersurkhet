@@ -24,9 +24,6 @@ export function createRouter() {
 		}),
 		TanstackQuery.getContext().queryClient,
 	);
-	// const router = createTanstackRouter({
-	// 	routeTree,
-	// })
 
 	return router
 }

@@ -41,9 +41,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	component: () => (
 		<RootDocument>
 			<Outlet />
-			{/* <TanStackRouterDevtools />
+			<TanStackRouterDevtools />
 
-			<TanstackQueryLayout /> */}
+			<TanstackQueryLayout />
 		</RootDocument>
 	),
 });
