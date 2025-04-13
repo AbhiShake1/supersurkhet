@@ -1,3 +1,4 @@
+/// <reference types="vinxi/types/server" />
 import { getRouterManifest } from "@tanstack/react-start/router-manifest";
 import {
 	createStartHandler,
