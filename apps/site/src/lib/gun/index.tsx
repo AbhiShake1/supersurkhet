@@ -1,4 +1,4 @@
-import GUN from "gun"
+import GUN from "gun/gun"
 import "gun/sea"
 // import { useEffect, useState } from "react"
 import { z } from "zod"
