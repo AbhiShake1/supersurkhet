@@ -3,7 +3,7 @@ import { Scanner as BaseScanner, type IScannerProps } from '@yudiel/react-qr-sca
 
 export type ScannerProps = Pick<IScannerProps, "allowMultiple" | "formats" | "onScan" | "onError" | "children" | "scanDelay"> & React.ComponentProps<"div">
 export function Scanner({ className, ...props }: ScannerProps) {
-    return <div className={cn("scale-50", className)} {...props}>
+    return <div className={cn("", className)} {...props}>
         <BaseScanner allowMultiple {...props} />
     </div>
 }
