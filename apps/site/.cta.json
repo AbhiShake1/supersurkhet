@@ -1,0 +1,21 @@
+{
+  "framework": "react",
+  "typescript": true,
+  "projectName": "supersurkhet",
+  "mode": "file-router",
+  "tailwind": true,
+  "packageManager": "pnpm",
+  "toolchain": "biome",
+  "variableValues": {},
+  "git": true,
+  "version": 1,
+  "existingAddOns": [
+    "form",
+    "sentry",
+    "shadcn",
+    "start",
+    "t3env",
+    "table",
+    "tanstack-query"
+  ]
+}
