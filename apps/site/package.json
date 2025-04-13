@@ -1,0 +1,35 @@
+{
+  "name": "@repo/site",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vinxi dev",
+    "build": "vinxi build",
+    "start": "vinxi start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@repo/api": "workspace:*",
+    "@tanstack/react-router": "^1.95.3",
+    "@tanstack/start": "^1.95.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "unenv": "^1.10.0",
+    "vinxi": "^0.5.1"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "@types/react": "^19.0.4",
+    "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "typescript": "^5.7.3",
+    "vite-tsconfig-paths": "^5.1.4"
+  }
+}
