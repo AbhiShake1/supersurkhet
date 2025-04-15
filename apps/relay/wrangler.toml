@@ -18,5 +18,5 @@ new_sqlite_classes = ["GunRelay"]
 crons = []
 
 # Define routes to your worker.  Websocket requests must go to the DO.
-[[routes]]
-pattern = "/gun"  #  Route ALL requests with /gun to your worker
+# [[routes]]
+# pattern = "/gun"  #  Route ALL requests with /gun to your worker

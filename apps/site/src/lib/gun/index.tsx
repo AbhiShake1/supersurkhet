@@ -1,103 +1,31 @@
-import GUN from "gun/gun"
-import "gun/sea"
-// import { useEffect, useState } from "react"
 import { z } from "zod"
 
-const schema = z.object({
-    school: z.object({
-        name: z.string(),
-        address: z.string(),
-        city: z.string(),
-        teachers: z.array(
-            z.object({
-                name: z.string(),
-                phoneNumber: z.string(),
-            })
-        ),
-    }),
-    restaurant: z.object({
-        name: z.string(),
-        address: z.string(),
-        city: z.string(),
-        menu: z.array(
-            z.object({
-                name: z.string(),
-                price: z.number(),
-            })
-        ),
-    }),
-})
+type Primitives = string | number | bigint | boolean | null | undefined
+type JoinWithDot<K extends string, T extends Primitives> = T extends never | "" ? K : `${K}.${T}`
+type ExtractFromShape<T extends z.ZodObject<any>> = {
+    [K in keyof T["shape"]]: T["shape"][K] extends z.ZodObject<any>
+    ? JoinWithDot<
+        // @ts-expect-error if K is number, it will work unless it has nested object shape. if nested, entire object will be removed from type
+        K,
+        ExtractFromShape<T["shape"][K]>>
+    : ""
+}[keyof z.infer<T>]
 
-type Schema = z.infer<typeof schema>
+type FindNestedShape<
+    T extends z.ZodObject<any>,
+    K extends string
+> = K extends `${infer Head}.${infer Tail}`
+    ? Head extends keyof T["shape"]
+    ? T["shape"][Head] extends z.ZodObject<any>
+    ? FindNestedShape<z.ZodObject<T["shape"][Head]["shape"]>, Tail>
+    : never // Head exists but is not a ZodObject, so no further nesting
+    : never // Head doesn't exist in the shape
+    : K extends keyof T["shape"]
+    ? T["shape"][K]
+    : never;
 
-const secretKey = "#secret-super-secure"
+export type SchemaKeys = ExtractFromShape<GTAAppSchema>
+export type NestedSchema<K extends SchemaKeys> = FindNestedShape<GTAAppSchema, K>;
+export type NestedSchemaType<K extends SchemaKeys> = z.infer<NestedSchema<K>>;
 
-export const gun = GUN({
-    peers: ["wss://gun-relay.abhi-shake-np.workers.dev/gun", "wss://gun-manhattan.herokuapp.com/gun"],
-})
-
-// type UseGunGetOptions<T extends keyof Schema> = {
-//     key: T;
-//     initialValue?: Schema[T];
-// };
-
-// export function useGunGet<T extends keyof Schema>({ key, initialValue }: UseGunGetOptions<T>) {
-//     const [data, setData] = useState<Schema[T] | undefined>(initialValue);
-//     const [error, setError] = useState<Error | null>(null);
-//     const [isLoading, setIsLoading] = useState(true);
-
-//     useEffect(() => {
-//         setIsLoading(true);
-//         setError(null);
-
-//         const keyRef = gun.get(key);
-
-//         keyRef.on((receivedData, _key) => {
-//             try {
-//                 const validatedData = schema.shape[_key].parse(receivedData) as Schema[T];
-//                 setData(validatedData);
-//                 setError(null);
-//             } catch (err) {
-//                 setError(err instanceof Error ? err : new Error(String(err)));
-//             } finally {
-//                 setIsLoading(false);
-//             }
-//         });
-
-//         return () => {
-//             keyRef.off();
-//         };
-//     }, [key, schema]);
-
-//     return { data, error, isLoading };
-// }
-
-// type UseGunSetOptions<T extends keyof Schema> = {
-//     key: T;
-//     data?: Schema[T];
-// };
-
-// export function useGunSet<T extends keyof Schema>({ key, data }: UseGunSetOptions<T>) {
-//     const [isLoading, setIsLoading] = useState(false);
-//     const [error, setError] = useState<Error | null>(null);
-
-//     const set = async (value: typeof data) => {
-//         try {
-//             setIsLoading(true);
-//             setError(null);
-
-//             return new Promise<void>((resolve) => {
-//                 gun.get(key).put(value, () => {
-//                     setIsLoading(false);
-//                     resolve();
-//                 });
-//             });
-//         } catch (err) {
-//             setError(err instanceof Error ? err : new Error(String(err)));
-//             setIsLoading(false);
-//             throw err;
-//         }
-//     };
-
-//     return { set, isLoading, error };
-// }
+export * from "./hooks"

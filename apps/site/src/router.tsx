@@ -1,7 +1,7 @@
 import { createRouter as createTanstackRouter } from '@tanstack/react-router'
 // import * as SentryServer from "@sentry/node";
 // import * as Sentry from "@sentry/react";
-import { createIsomorphicFn } from "@tanstack/react-start";
+// import { createIsomorphicFn } from "@tanstack/react-start";
 
 import { routerWithQueryClient } from "@tanstack/react-router-with-query";
 import * as TanstackQuery from "./integrations/tanstack-query/root-provider";
@@ -10,6 +10,11 @@ import * as TanstackQuery from "./integrations/tanstack-query/root-provider";
 import { routeTree } from './routeTree.gen'
 
 import "./styles.css";
+import { setGTADefaultOptions } from './lib/gun/options';
+import { appSchema } from './lib/gun/schema';
+import { gun } from './lib/gun';
+
+setGTADefaultOptions({ schema: appSchema, gun })
 
 // Create a new router instance
 export function createRouter() {

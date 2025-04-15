@@ -10,62 +10,31 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Scanner } from '@/components/ui/scanner';
-import { gun } from "@/lib/gun";
+import { useGet, useSet } from "@/lib/gun/index";
+// import { useGet, useSet } from "@/lib/gun";
 import { DialogClose } from '@radix-ui/react-dialog';
+import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { createFileRoute } from '@tanstack/react-router';
-import { useEffect, useState } from "react";
 import { toast } from 'sonner';
 
 export const Route = createFileRoute('/_restaurants/rbd')({
     component: RouteComponent,
 })
 
-type Message = {
-    text: string;
-    sender: string;
-    timestamp: string;
-    // Gun adds a unique identifier (`_`) to each data item.  We'll make it optional
-    _: {
-        soul: string;
-    };
-}
-
 function RouteComponent() {
-    const [messages, setMessages] = useState<Message[]>([]);
-
-    useEffect(() => {
-        const chatRoom = gun.get("rbd").map();
-
-        chatRoom.on((data, key: string) => {
-            if (data) {
-                setMessages((prevMessages) => {
-                    // Avoid duplicates if Gun sends the same data multiple times
-                    if (!prevMessages.find((msg) => msg._?.soul === key)) {
-                        //  Handle the case where data might not have the soul.
-                        const messageWithSoul: Message = {
-                            ...data,
-                            _: { soul: key } // Ensure every message has the soul
-                        }
-                        return [...prevMessages, messageWithSoul];
-                    }
-                    return prevMessages;
-                });
-            }
-        });
-        
-        return () => {
-            chatRoom.off();
-        };
-    }, [])
+    const messages = useGet("business.restaurant", "rbdtest2")
+    const syncMessage = useSet("business.restaurant", "rbdtest2")
 
     const sendMessage = (newMessage: string) => {
         if (newMessage.trim()) {
-            const messageObject: Omit<Message, '_'> = { // Omit the _ property since Gun will add it.
-                text: newMessage,
-                sender: 'Anonymous', // In a real app, you'd handle user identity
-                timestamp: new Date().toLocaleTimeString(),
-            };
-            gun.get("rbd").set(messageObject);
+            syncMessage({
+                address: "surkhet",
+                city: "birendranagar",
+                created_by: "Anon",
+                name: newMessage,
+                // menu: [],
+                timestamp: Date.now(),
+            })
         }
     };
 
@@ -100,8 +69,8 @@ function RouteComponent() {
             <Input name="message" placeholder='say something' />
             <Button type='submit'>Post</Button>
         </form>
-        <section className="flex flex-col gap-1">
-            {messages.map(m => <h3>{`${m.sender} says ==> ${m.text} at ${m.timestamp}`}</h3>)}
-        </section>
+        <ScrollArea className="flex flex-col gap-1 h-96">
+            {messages.map((m, i) => <h3 key={m._?.soul ?? i}>{`${m.created_by} says ==> ${m.name} at ${m.timestamp}`}</h3>)}
+        </ScrollArea>
     </div>
 }
