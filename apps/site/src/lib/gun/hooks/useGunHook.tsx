@@ -35,15 +35,3 @@ export function createGunHook<F extends Function>(fn: MessengerFunction<F>) {
         }
     })
 }
-
-// export function createGunHook<F extends Function, FuncImpl extends MessengerFunction<F> = MessengerFunction<F>>(fn: FuncImpl): F {
-//     const defaultOptions = mergeOptionsWithDefaults({});
-//     if (!defaultOptions.schema) throw new Error(`Default schema not set. ${useDefaultOptionsMsg}`)
-//     if (!defaultOptions.gun) throw new Error(`Gun instance not found. ${useDefaultOptionsMsg}`)
-    
-//     return Object.assign(fn({ _options: defaultOptions as Required<typeof defaultOptions> }), {
-//         withOptions: function (options: Partial<UseGunOptions>) {
-//             return fn({ _options: mergeOptionsWithDefaults(options) as Required<typeof options> });
-//         }
-//     });
-// }
