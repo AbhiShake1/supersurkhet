@@ -15,13 +15,14 @@ export const useGet = createGunHook((messenger) => {
             const chatRoom = options.gun.get(keys).map();
 
             chatRoom.on((data, key: string) => {
-                if (!data) return;
+                if (!data) return setData(p => p.filter((msg) => msg._?.soul !== key));
 
-                setData((prevMessages) => {
-                    if (!prevMessages.find((msg) => msg._?.soul === key)) {
-                        return [...prevMessages, parseNestedZodShape(keys, { ...data, _: { soul: key } }, options.schema)];
+                setData((p) => {
+                    console.log(p)
+                    if (!p.find((msg) => msg._?.soul === key)) {
+                        return [...p, /* parseNestedZodShape(keys, */ { ...data, _: { soul: key } }/* , options.schema) */];
                     }
-                    return prevMessages;
+                    return p.map(p => p._?.soul === key ? /* parseNestedZodShape(keys, */ {...data, _: { soul: key } }/*, options.schema) */ : p);
                 });
             });
 

@@ -23,8 +23,8 @@ export function parseNestedZodShape<P extends ParseOptions>(key: P["key"], obj: 
     return _parse(key, obj, baseSchema, (shape, o) => shape.parse(o))
 }
 
-export function parseNestedZodType<P extends ParseOptions>(key: P["key"], obj: P["obj"], baseSchema: P["shape"]) {
+export function parseNestedZodType<P extends ParseOptions>(key: P["key"], obj: P["obj"], baseSchema: P["shape"], {isPartial = false} = {}) {
     // schema.shape.business.shape.restaurant.shape.menu._def.innerType.parse([])
     // return _parse(key, obj, (shape, o) => shape._def.innerType.parse(o))
-    return _parse(key, obj, baseSchema, (shape, o) => shape.parse(o))
+    return _parse(key, obj, baseSchema, (shape, o) => (isPartial ? shape.partial() : shape).parse(o))
 }

@@ -26,10 +26,10 @@ interface RestaurantFormData {
 }
 
 function RouteComponent() {
-    const messages = useGet("business.restaurant", "rbdtest2")
-    const syncMessage = useCreate("business.restaurant", "rbdtest2")
-    const deleteMessage = useDelete("business.restaurant", "rbdtest2")
-    const updateMessage = useUpdate("business.restaurant", "rbdtest2")
+    const messages = useGet("business.restaurant", "rbdtest4")
+    const syncMessage = useCreate("business.restaurant", "rbdtest4")
+    const deleteMessage = useDelete("business.restaurant", "rbdtest4")
+    const updateMessage = useUpdate("business.restaurant", "rbdtest4")
 
     const [editingRestaurant, setEditingRestaurant] = useState<typeof messages[number] | null>(null)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState<boolean>(false)
@@ -47,7 +47,7 @@ function RouteComponent() {
         setIsEditDialogOpen(true)
     }
 
-    const handleUpdate = (message: typeof messages[number]): void => {
+    const handleUpdate = (message: Partial<typeof messages[number]>): void => {
         if (!editingRestaurant?._?.soul) return;
         updateMessage(editingRestaurant._?.soul, {
             ...message,
@@ -71,10 +71,63 @@ function RouteComponent() {
     return <div className='container mx-auto p-4'>
         <div className='flex justify-between items-center mb-6'>
             <h1 className='text-2xl font-bold'>Restaurants</h1>
-            <Button onClick={() => {
-                setEditingRestaurant(null)
-                setIsEditDialogOpen(true)
-            }}>Add Restaurant</Button>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogTrigger asChild>
+                    <Button onClick={() => {
+                        setEditingRestaurant(null)
+                    }}>Add Restaurant</Button>
+                </DialogTrigger>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingRestaurant ? 'Edit Restaurant' : 'Add Restaurant'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={(e) => {
+                        e.preventDefault()
+                        const formData = new FormData(e.currentTarget)
+                        const data = {
+                            name: formData.get('name') as string,
+                            address: formData.get('address') as string,
+                            city: formData.get('city') as string,
+                        }
+                        if (editingRestaurant) {
+                            handleUpdate({ ...data })
+                        } else {
+                            handleCreate(data)
+                        }
+                    }} className='space-y-4'>
+                        <div className='space-y-2'>
+                            <Label htmlFor='name'>Name</Label>
+                            <Input
+                                id='name'
+                                name='name'
+                                defaultValue={editingRestaurant?.name}
+                                required
+                            />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor='address'>Address</Label>
+                            <Input
+                                id='address'
+                                name='address'
+                                defaultValue={editingRestaurant?.address}
+                                required
+                            />
+                        </div>
+                        <div className='space-y-2'>
+                            <Label htmlFor='city'>City</Label>
+                            <Input
+                                id='city'
+                                name='city'
+                                defaultValue={editingRestaurant?.city}
+                                required
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button type='submit'>{editingRestaurant ? 'Update' : 'Create'}</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
 
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
@@ -91,58 +144,6 @@ function RouteComponent() {
                         </div>
                     </div>
                     <p className='text-sm text-muted-foreground'>Added by {restaurant.created_by}</p>
-                    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>{editingRestaurant ? 'Edit Restaurant' : 'Add Restaurant'}</DialogTitle>
-                            </DialogHeader>
-                            <form onSubmit={(e) => {
-                                e.preventDefault()
-                                const formData = new FormData(e.currentTarget)
-                                const data = {
-                                    name: formData.get('name') as string,
-                                    address: formData.get('address') as string,
-                                    city: formData.get('city') as string,
-                                }
-                                if (editingRestaurant) {
-                                    handleUpdate({...restaurant, ...data})
-                                } else {
-                                    handleCreate(data)
-                                }
-                            }} className='space-y-4'>
-                                <div className='space-y-2'>
-                                    <Label htmlFor='name'>Name</Label>
-                                    <Input
-                                        id='name'
-                                        name='name'
-                                        defaultValue={editingRestaurant?.name}
-                                        required
-                                    />
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label htmlFor='address'>Address</Label>
-                                    <Input
-                                        id='address'
-                                        name='address'
-                                        defaultValue={editingRestaurant?.address}
-                                        required
-                                    />
-                                </div>
-                                <div className='space-y-2'>
-                                    <Label htmlFor='city'>City</Label>
-                                    <Input
-                                        id='city'
-                                        name='city'
-                                        defaultValue={editingRestaurant?.city}
-                                        required
-                                    />
-                                </div>
-                                <DialogFooter>
-                                    <Button type='submit'>{editingRestaurant ? 'Update' : 'Create'}</Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
                 </div>
             ))}
         </div>
