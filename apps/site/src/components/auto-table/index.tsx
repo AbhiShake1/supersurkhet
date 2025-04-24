@@ -153,7 +153,12 @@ export function AutoTable<T extends SchemaKeys>({
 				onOpenChange={() => setRowAction(null)}
 				data={rowAction?.row.original ? [rowAction?.row.original] : []}
 				showTrigger={false}
-				onConfirm={() => rowAction?.row.toggleSelected(false)}
+				onConfirm={() => {
+					console.log('confirne')
+					setRowAction(null)
+					onDelete(rowAction?.row.id ?? "")
+					rowAction?.row.toggleSelected(false)
+				}}
 			/>
 			<EditRowDialog
 				open={rowAction?.variant === "update"}

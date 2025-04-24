@@ -2,7 +2,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { defineConfig } from '@tanstack/react-start/config'
 import { cloudflare } from 'unenv'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
-import react from "@vitejs/plugin-react"
+// import react from "@vitejs/plugin-react"
 
 export default defineConfig({
   tsr: {
@@ -10,16 +10,16 @@ export default defineConfig({
   },
   vite: {
     plugins: [
-      react({
-        babel: {
-          plugins: [
-            ["babel-plugin-react-compiler", {}]
-          ]
-        }
-      }),
       viteTsConfigPaths({
         projects: ['./tsconfig.json'],
       }),
+      // react({
+      //   babel: {
+      //     plugins: [
+      //       ["babel-plugin-react-compiler", {}]
+      //     ]
+      //   }
+      // }),
       tailwindcss(),
     ],
   },
