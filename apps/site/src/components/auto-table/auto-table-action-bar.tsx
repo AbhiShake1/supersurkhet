@@ -21,9 +21,10 @@ type Action = (typeof actions)[number];
 
 interface AutoTableActionBarProps<T> {
 	table: Table<T>;
+	onDelete?: (id: string) => void;
 }
 
-export function AutoTableActionBar<T>({ table }: AutoTableActionBarProps<T>) {
+export function AutoTableActionBar<T>({ table, onDelete }: AutoTableActionBarProps<T>) {
 	const rows = table.getFilteredSelectedRowModel().rows;
 	const [isPending, startTransition] = React.useTransition();
 	const [currentAction, setCurrentAction] = React.useState<Action | null>(null);
@@ -38,6 +39,15 @@ export function AutoTableActionBar<T>({ table }: AutoTableActionBarProps<T>) {
 				excludeColumns: ["select", "actions"],
 				onlySelected: true,
 			});
+		});
+	};
+	
+	const deleteSelected = () => {
+		setCurrentAction("delete");
+		startTransition(() => {
+			for (const row of rows) {
+				onDelete?.(row.id);
+			}
 		});
 	};
 
@@ -59,9 +69,9 @@ export function AutoTableActionBar<T>({ table }: AutoTableActionBarProps<T>) {
 				</DataTableActionBarAction>
 				<DataTableActionBarAction
 					size="icon"
-					tooltip="Delete tasks"
+					tooltip="Delete selected"
 					isPending={getIsActionPending("delete")}
-					// onClick={onTaskDelete}
+					onClick={deleteSelected}
 				>
 					<Trash2 />
 				</DataTableActionBarAction>

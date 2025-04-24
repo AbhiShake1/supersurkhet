@@ -16,6 +16,10 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { formatDate } from "@/lib/format";
+import { useCreate, useDelete, useGet, useUpdate, type NestedSchemaType, type SchemaKeys } from "@/lib/gun/index";
+import { getNestedZodShape } from "@/lib/gun/utils/parser";
+import { appSchema } from "@/lib/schema";
+import { useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
 	ArrowUpDown,
@@ -31,9 +35,6 @@ import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { AutoTableActionBar } from "./auto-table-action-bar";
-import { useGet, type NestedSchemaType, type SchemaKeys } from "@/lib/gun/index";
-import { getNestedZodShape } from "@/lib/gun/utils/parser";
-import { appSchema } from "@/lib/schema";
 
 interface AutoTableProps<T> {
 	schema: T,
@@ -45,6 +46,9 @@ export function AutoTable<T extends SchemaKeys>({
 	slug,
 }: AutoTableProps<T>) {
 	const data = useGet(schemaName, slug)
+	const create = useCreate(schemaName, slug)
+	const update = useUpdate(schemaName, slug)
+	const onDelete = useDelete(schemaName, slug)
 	const schema = getNestedZodShape(schemaName, appSchema);
 	const [rowAction, setRowAction] =
 		React.useState<DataTableRowAction<NestedSchemaType<T>> | null>(null);
@@ -54,10 +58,15 @@ export function AutoTable<T extends SchemaKeys>({
 		setRowAction,
 	});
 
+	const search = useSearch({from: "__root__"})
+	
+	// @ts-expect-error
+	const perPage = search.perPage ?? 10
+
 	const { table, shallow, debounceMs, throttleMs } = useDataTable({
 		data,
 		columns,
-		pageCount: 2,
+		pageCount: Math.ceil(data.length / perPage) || 1,
 		enableAdvancedFilter: true,
 		initialState: {
 			// sorting: [{ id: "createdAt", desc: true }],
@@ -71,7 +80,7 @@ export function AutoTable<T extends SchemaKeys>({
 
 	return (
 		<>
-			<DataTable table={table} actionBar={<AutoTableActionBar table={table} />}>
+			<DataTable table={table} actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}>
 				<DataTableAdvancedToolbar table={table}>
 					<DataTableSortList table={table} align="start" />
 					{/* {filterFlag === "advancedFilters" ? ( */}
