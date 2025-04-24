@@ -1,5 +1,5 @@
 import type { Table } from "@tanstack/react-table";
-import { Download, Trash2 } from "lucide-react";
+import { Download } from "lucide-react";
 import * as React from "react";
 
 import {
@@ -9,10 +9,9 @@ import {
 } from "@/components/data-table/data-table-action-bar";
 import { Separator } from "@/components/ui/separator";
 import { exportTableToCSV } from "@/lib/export";
+import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 
 const actions = [
-	"update-status",
-	"update-priority",
 	"export",
 	"delete",
 ] as const;
@@ -41,13 +40,14 @@ export function AutoTableActionBar<T>({ table, onDelete }: AutoTableActionBarPro
 			});
 		});
 	};
-	
+
 	const deleteSelected = () => {
 		setCurrentAction("delete");
 		startTransition(() => {
 			for (const row of rows) {
 				onDelete?.(row.id);
 			}
+			table.toggleAllRowsSelected(false)
 		});
 	};
 
@@ -67,14 +67,15 @@ export function AutoTableActionBar<T>({ table, onDelete }: AutoTableActionBarPro
 				>
 					<Download />
 				</DataTableActionBarAction>
-				<DataTableActionBarAction
+				<DeleteRowDialog data={rows} onConfirm={deleteSelected} />
+				{/* <DataTableActionBarAction
 					size="icon"
 					tooltip="Delete selected"
 					isPending={getIsActionPending("delete")}
 					onClick={deleteSelected}
 				>
 					<Trash2 />
-				</DataTableActionBarAction>
+				</DataTableActionBarAction> */}
 			</div>
 		</DataTableActionBar>
 	);

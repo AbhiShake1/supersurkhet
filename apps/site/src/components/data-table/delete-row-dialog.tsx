@@ -1,5 +1,5 @@
 import type { Row } from "@tanstack/react-table";
-import { Trash } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import type * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
 	DrawerTrigger,
 } from "@/components/ui/drawer";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { DataTableActionBarAction } from "./data-table-action-bar";
 
 interface DeleteRowDialogProps<T>
 	extends React.ComponentPropsWithoutRef<typeof Dialog> {
@@ -45,12 +46,13 @@ export function DeleteRowDialog<T>({
 			<Dialog {...props}>
 				{showTrigger ? (
 					<DialogTrigger asChild>
-						<Button variant="outline" size="sm">
-							<Trash
-								className="mr-2 size-4 text-destructive"
-								aria-hidden="true"
-							/>
-							Delete ({data.length})
+						<Button variant="ghost" size="sm">
+							<DataTableActionBarAction
+								size="icon"
+								tooltip="Delete selected"
+							>
+								<Trash2 />
+							</DataTableActionBarAction>
 						</Button>
 					</DialogTrigger>
 				) : null}
@@ -71,7 +73,7 @@ export function DeleteRowDialog<T>({
 							aria-label="Delete selected rows"
 							variant="destructive"
 							onClick={onConfirm}
-							// disabled={isDeletePending}
+						// disabled={isDeletePending}
 						>
 							{/* {isDeletePending && (
                 <Loader
@@ -92,11 +94,11 @@ export function DeleteRowDialog<T>({
 			{showTrigger ? (
 				<DrawerTrigger asChild>
 					<Button variant="outline" size="sm">
-						<Trash
-							className="mr-2 size-4 text-destructive"
+						<Trash2
+							className="mr-2 size-4"
 							aria-hidden="true"
 						/>
-						Delete ({data.length})
+						Delete
 					</Button>
 				</DrawerTrigger>
 			) : null}
@@ -117,7 +119,7 @@ export function DeleteRowDialog<T>({
 						aria-label="Delete selected rows"
 						variant="destructive"
 						onClick={onConfirm}
-						// disabled={isDeletePending}
+					// disabled={isDeletePending}
 					>
 						{/* {isDeletePending && (
               <Loader className="mr-2 size-4 animate-spin" aria-hidden="true" />
