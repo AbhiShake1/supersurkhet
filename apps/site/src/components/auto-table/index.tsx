@@ -26,8 +26,11 @@ import {
 	CalendarIcon,
 	CircleDashed,
 	Ellipsis,
+	Plus,
+	Save,
 	Text,
 } from "lucide-react";
+import { useState } from "react";
 import { z, type ZodObject } from "zod";
 import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
 import { DataTableColumnHeader } from "../data-table/data-table-column-header";
@@ -35,6 +38,18 @@ import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { AutoTableActionBar } from "./auto-table-action-bar";
+import { AutoForm } from "@/components/ui/autoform";
+import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AutoTableProps<T> {
 	schema: T,
@@ -45,6 +60,7 @@ export function AutoTable<T extends SchemaKeys>({
 	schema: schemaName,
 	slug,
 }: AutoTableProps<T>) {
+	const [dialogOpen, setDialogOpen] = useState(false);
 	const data = useGet(schemaName, slug)
 	const create = useCreate(schemaName, slug)
 	const update = useUpdate(schemaName, slug)
@@ -58,8 +74,8 @@ export function AutoTable<T extends SchemaKeys>({
 		setRowAction,
 	});
 
-	const search = useSearch({from: "__root__"})
-	
+	const search = useSearch({ from: "__root__" })
+
 	// @ts-expect-error
 	const perPage = search.perPage ?? 10
 
@@ -79,7 +95,35 @@ export function AutoTable<T extends SchemaKeys>({
 	});
 
 	return (
-		<>
+		<div className="container mx-auto py-6 space-y-4 flex flex-col items-end">
+			<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+				<DialogTrigger asChild>
+					<Button className="w-min">
+						<Plus className="w-5 h-5" />
+						Add New
+					</Button>
+				</DialogTrigger>
+				<DialogContent className="sm:max-w-[425px]">
+					<DialogHeader>
+						<DialogTitle>Add Business</DialogTitle>
+						<DialogDescription>Add a new business</DialogDescription>
+					</DialogHeader>
+					<ScrollArea className="relative max-h-[70vh]">
+						<AutoForm
+							schema={schema}
+							// @ts-expect-error
+							onSubmit={(b) => (setDialogOpen(false), create(b))}
+						>
+							<DialogFooter className="absolute bottom-0 right-2">
+								<SubmitButton>
+									<Save />
+									Save
+								</SubmitButton>
+							</DialogFooter>
+						</AutoForm>
+					</ScrollArea>
+				</DialogContent>
+			</Dialog>
 			<DataTable table={table} actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}>
 				<DataTableAdvancedToolbar table={table}>
 					<DataTableSortList table={table} align="start" />
@@ -115,7 +159,7 @@ export function AutoTable<T extends SchemaKeys>({
 				showTrigger={false}
 				onConfirm={() => rowAction?.row.toggleSelected(false)}
 			/>
-		</>
+		</div>
 	);
 }
 
