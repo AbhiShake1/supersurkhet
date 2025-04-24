@@ -5,14 +5,21 @@ import {
 	createRootRouteWithContext,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
 
 import TanstackQueryLayout from "../integrations/tanstack-query/layout";
 
 import appCss from "../styles.css?url";
 
-import type { QueryClient } from "@tanstack/react-query";
 import { NotFound } from "@/components/ui/not-found";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import type { QueryClient } from "@tanstack/react-query";
+import { setGTADefaultOptions } from "@/lib/gun/options";
+import { appSchema } from "@/lib/schema";
+import { gun } from "@/lib/gun";
+
+setGTADefaultOptions({ schema: appSchema, gun });
 
 interface MyRouterContext {
 	queryClient: QueryClient;
@@ -29,15 +36,18 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				content: "width=device-width, initial-scale=1",
 			},
 			{
-				title: "SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive",
+				title:
+					"SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive",
 			},
 			{
 				name: "description",
-				content: "SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
+				content:
+					"SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
 			},
 			{
 				name: "keywords",
-				content: "Surkhet, digital platform, local businesses, community services, Nepal, marketplace, directory, events",
+				content:
+					"Surkhet, digital platform, local businesses, community services, Nepal, marketplace, directory, events",
 			},
 			{
 				name: "author",
@@ -49,11 +59,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 			{
 				property: "og:title",
-				content: "SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive",
+				content:
+					"SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive",
 			},
 			{
 				property: "og:description",
-				content: "SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
+				content:
+					"SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
 			},
 			{
 				property: "og:type",
@@ -73,11 +85,13 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 			{
 				name: "twitter:title",
-				content: "SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive",
+				content:
+					"SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive",
 			},
 			{
 				name: "twitter:description",
-				content: "SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
+				content:
+					"SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
 			},
 			{
 				property: "og:image",
@@ -117,9 +131,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	component: () => (
 		<RootDocument>
 			<Toaster richColors />
-			<Outlet />
+			<TooltipProvider>
+				<NuqsAdapter>
+					<Outlet />
+				</NuqsAdapter>
+			</TooltipProvider>
 			<TanStackRouterDevtools />
-
 			<TanstackQueryLayout />
 		</RootDocument>
 	),
