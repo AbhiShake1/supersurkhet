@@ -12286,7 +12286,7 @@ snapshots:
 
   untyped@1.5.2:
     dependencies:
-      '@babel/core': 7.26.0
+      '@babel/core': 7.26.10
       '@babel/standalone': 7.26.5
       '@babel/types': 7.26.5
       citty: 0.1.6
