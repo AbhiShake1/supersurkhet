@@ -37,6 +37,7 @@ import { DataTableColumnHeader } from "../data-table/data-table-column-header";
 import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
+import { EditRowDialog } from "../data-table/edit-row-dialog";
 import { AutoTableActionBar } from "./auto-table-action-bar";
 import { AutoForm } from "@/components/ui/autoform";
 import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
@@ -147,17 +148,20 @@ export function AutoTable<T extends SchemaKeys>({
              <DataTableSortList table={table} align="end" />
            </DataTableToolbar> */}
 			</DataTable>
-			{/* <UpdateTaskSheet
-				open={rowAction?.variant === "update"}
-				onOpenChange={() => setRowAction(null)}
-				task={rowAction?.row.original ?? null}
-			/> */}
 			<DeleteRowDialog
 				open={rowAction?.variant === "delete"}
 				onOpenChange={() => setRowAction(null)}
 				data={rowAction?.row.original ? [rowAction?.row.original] : []}
 				showTrigger={false}
 				onConfirm={() => rowAction?.row.toggleSelected(false)}
+			/>
+			<EditRowDialog
+				open={rowAction?.variant === "update"}
+				onOpenChange={() => setRowAction(null)}
+				data={rowAction?.row.original}
+				schema={schema}
+				onSubmit={(data) => (setRowAction(null), data && update(rowAction?.row.id ?? "", data))}
+				showTrigger={false}
 			/>
 		</div>
 	);
