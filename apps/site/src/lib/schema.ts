@@ -154,13 +154,11 @@ export const appSchema = z.object({
 		})
 		.extend(table),
 	menuItem: z.object({
-		name: z.string().describe("Name of the menu item as it appears on the menu"),
-		description: z.string().optional().describe("Detailed description of the menu item, including ingredients or preparation method"),
-		price: z.number().positive().describe("Current selling price of the menu item (must be greater than 0)"),
-		imageUrl: z.string().url().optional().describe("URL to the menu item's image, must be a valid URL format"),
-		category: z.string().optional().describe("Menu category for grouping items (e.g., 'Appetizers', 'Main Course', 'Desserts')"),
-		isVegetarian: z.boolean().optional().describe("Indicates if the menu item is suitable for vegetarians"),
-		isSpicy: z.boolean().optional().describe("Indicates if the menu item has a spicy flavor profile"),
+		name: z.string().describe("Name"),
+		description: z.string().optional().describe("Details"),
+		price: z.number().positive().describe("Price"),
+		imageUrl: z.string().url().optional().describe("Image URL"),
+		category: z.string().optional().describe("Category"),
 	}),
 	chat: z.object({
 		message: chatMessageSchema,
