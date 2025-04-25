@@ -153,6 +153,15 @@ export const appSchema = z.object({
 			// Add more application-specific fields as required
 		})
 		.extend(table),
+	menuItem: z.object({
+		name: z.string().describe("Name of the menu item as it appears on the menu"),
+		description: z.string().optional().describe("Detailed description of the menu item, including ingredients or preparation method"),
+		price: z.number().positive().describe("Current selling price of the menu item (must be greater than 0)"),
+		imageUrl: z.string().url().optional().describe("URL to the menu item's image, must be a valid URL format"),
+		category: z.string().optional().describe("Menu category for grouping items (e.g., 'Appetizers', 'Main Course', 'Desserts')"),
+		isVegetarian: z.boolean().optional().describe("Indicates if the menu item is suitable for vegetarians"),
+		isSpicy: z.boolean().optional().describe("Indicates if the menu item has a spicy flavor profile"),
+	}),
 	chat: z.object({
 		message: chatMessageSchema,
 		room: z
@@ -225,5 +234,5 @@ export type AppSchemaShape = typeof appSchema;
 export type AppSchema = z.infer<AppSchemaShape>;
 
 declare global {
-	interface GTAAppSchema extends AppSchemaShape {}
+	interface GTAAppSchema extends AppSchemaShape { }
 }

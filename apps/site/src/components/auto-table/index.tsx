@@ -51,7 +51,7 @@ import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
 import { AutoTableActionBar } from "./auto-table-action-bar";
 
-interface AutoTableProps<T> {
+export interface AutoTableProps<T extends SchemaKeys> {
 	schema: T,
 	slug: string;
 }
@@ -227,6 +227,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 			accessorKey: key,
 			header: ({ column }) => (
 				<DataTableColumnHeader
+					className="capitalize"
 					column={column}
 					// @ts-expect-error
 					title={field?._def?.description || key}

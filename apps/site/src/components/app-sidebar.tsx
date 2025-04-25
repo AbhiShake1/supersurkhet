@@ -1,18 +1,12 @@
 import type * as React from "react";
 
 import { NavMain, type NavMainProps } from "@/components/nav-main";
-import { NavProjects, type NavProjectsProps } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
-import {
-	TeamSwitcher,
-	type TeamSwitcherProps,
-} from "@/components/team-switcher";
 import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
-	SidebarHeader,
-	SidebarRail,
+	SidebarRail
 } from "@/components/ui/sidebar";
 
 export type SidebarItems = {
@@ -21,9 +15,10 @@ export type SidebarItems = {
 		email: string;
 		avatar: string;
 	};
-	teams: TeamSwitcherProps["teams"];
-	navMain: NavMainProps["items"];
-	projects: NavProjectsProps["projects"];
+	items: NavMainProps["items"];
+	// teams: TeamSwitcherProps["teams"];
+	// navMain: NavMainProps["items"];
+	// projects: NavProjectsProps["projects"];
 };
 
 export function AppSidebar({
@@ -31,13 +26,13 @@ export function AppSidebar({
 	...props
 }: React.ComponentProps<typeof Sidebar> & { data: SidebarItems }) {
 	return (
-		<Sidebar collapsible="icon" {...props}>
-			<SidebarHeader>
+		<Sidebar {...props}>
+			{/* <SidebarHeader>
 				<TeamSwitcher teams={data.teams} />
-			</SidebarHeader>
+			</SidebarHeader> */}
 			<SidebarContent>
-				<NavMain items={data.navMain} />
-				<NavProjects projects={data.projects} />
+				<NavMain items={data.items} />
+				{/* <NavProjects projects={data.projects} /> */}
 			</SidebarContent>
 			<SidebarFooter>
 				<NavUser user={data.user} />
