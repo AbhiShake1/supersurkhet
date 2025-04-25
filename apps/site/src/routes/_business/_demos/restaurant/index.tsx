@@ -15,7 +15,7 @@ function RouteComponent() {
   const menuItems = useGet("menuItem", "restaurant")
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
       <main className="p-4 pb-20">
         {/* Search Bar */}
         <div className="relative mb-6">
