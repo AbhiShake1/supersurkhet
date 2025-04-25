@@ -33,8 +33,8 @@ export const businessSchema = z
 		basePath: z.string().describe("URL path for the business").optional(),
 		isActive: z
 			.boolean()
-			.default(true)
 			.describe("Whether the business is currently active")
+			.default(true)
 			.optional(),
 	})
 	.extend(table);

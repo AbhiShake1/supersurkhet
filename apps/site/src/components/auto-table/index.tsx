@@ -4,9 +4,19 @@ import * as React from "react";
 import { DataTable } from "@/components/data-table";
 import { useDataTable } from "@/hooks/use-data-table";
 
-import { Badge } from "@/components/ui/badge";
+import { AutoForm, AutoFormWithoutLabel } from "@/components/ui/autoform";
+import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "@/components/ui/dialog";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -15,7 +25,8 @@ import {
 	DropdownMenuShortcut,
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { formatDate } from "@/lib/format";
+import * as Editable from "@/components/ui/editable";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCreate, useDelete, useGet, useUpdate, type NestedSchemaType, type SchemaKeys } from "@/lib/gun/index";
 import { getNestedZodShape } from "@/lib/gun/utils/parser";
 import { appSchema } from "@/lib/schema";
@@ -39,18 +50,6 @@ import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
 import { AutoTableActionBar } from "./auto-table-action-bar";
-import { AutoForm } from "@/components/ui/autoform";
-import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
-import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface AutoTableProps<T> {
 	schema: T,
@@ -88,6 +87,12 @@ export function AutoTable<T extends SchemaKeys>({
 		initialState: {
 			// sorting: [{ id: "createdAt", desc: true }],
 			columnPinning: { right: ["actions"] },
+		},
+		meta: {
+			updateData(rowId: string, data: Record<string, any>) {
+				// @ts-expect-error
+				update(rowId, data)
+			},
 		},
 		// @ts-expect-error
 		getRowId: (originalRow) => originalRow._?.soul,
@@ -172,7 +177,7 @@ export function AutoTable<T extends SchemaKeys>({
 	);
 }
 
-interface GetTasksTableColumnsProps<T extends SchemaKeys, S> {
+interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
 	// estimatedHoursRange: { min: number; max: number };
 	setRowAction: React.Dispatch<
 		React.SetStateAction<DataTableRowAction<NestedSchemaType<T>> | null>
@@ -180,10 +185,10 @@ interface GetTasksTableColumnsProps<T extends SchemaKeys, S> {
 	schema: S;
 }
 
-export function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
+function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 	setRowAction,
 	schema,
-}: GetTasksTableColumnsProps<T, S>): ColumnDef<NestedSchemaType<T>>[] {
+}: GetAutoTableColumnsProps<T, S>): ColumnDef<NestedSchemaType<T>>[] {
 	const columns: ColumnDef<NestedSchemaType<T>>[] = [
 		{
 			id: "select",
@@ -227,36 +232,37 @@ export function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<an
 					title={field?._def?.description || key}
 				/>
 			),
-			cell: ({ cell }) => {
+			cell: ({ cell, table, row }) => {
 				const value = cell.getValue();
+				const childSchema = z.object({ [key]: field });
 
-				if (!value) return <div className="text-center">-</div>
-
-				// Handle different field types
-				if (field instanceof z.ZodDate) {
-					return <div className="text-center">
-						{formatDate(value as Date)}
-					</div>
+				function update(value: Record<string, any>) {
+					// @ts-expect-error
+					table.options.meta?.updateData(row.id, value)
 				}
 
-				if (field instanceof z.ZodNumber) {
-					return <div className="text-center">{value as number}</div>;
-				}
-
-				if (field instanceof z.ZodBoolean) {
-					return <Badge variant="outline" className="text-center">{value ? "Yes" : "No"}</Badge>;
-				}
-
-				if (field instanceof z.ZodEnum) {
-					return (
-						<Badge variant="outline" className="capitalize text-center">
-							{value as string}
-						</Badge>
-					);
-				}
-
-				// Default string/text display
-				return <div className="truncate text-center">{String(value)}</div>;
+				return <Editable.Root
+					defaultValue={value as string}
+					placeholder="-"
+					className="text-center"
+				>
+					<Editable.Area>
+						<Editable.Preview />
+						<Editable.Input asChild>
+							<AutoFormWithoutLabel
+								formProps={{
+									onBlur: (e) => {
+										const newValue = new FormData(e.currentTarget).get(key)
+										update({ [key]: newValue })
+									},
+								}}
+								defaultValues={{ [key]: value as string }}
+								schema={childSchema}
+								onSubmit={update}
+							/>
+						</Editable.Input>
+					</Editable.Area>
+				</Editable.Root>
 			},
 			meta: {
 				// @ts-expect-error

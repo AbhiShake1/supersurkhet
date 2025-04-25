@@ -4,6 +4,25 @@ import type { FieldWrapperProps } from "@autoform/react";
 
 const DISABLED_LABELS = ["boolean", "object", "array"];
 
+export const FieldWrapperWithoutLabel: React.FC<FieldWrapperProps> = ({
+	children,
+	field,
+	error,
+}) => {
+	return (
+		<div className="space-y-2">
+			{children}
+			{field.fieldConfig?.description && (
+				<p className="text-sm text-muted-foreground">
+					{field.fieldConfig.description}
+				</p>
+			)}
+			{error && <p className="text-sm text-destructive">{error}</p>}
+		</div>
+	);
+};
+
+
 export const FieldWrapper: React.FC<FieldWrapperProps> = ({
 	label,
 	children,

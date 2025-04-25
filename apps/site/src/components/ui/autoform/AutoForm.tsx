@@ -2,26 +2,24 @@ import {
 	AutoForm as BaseAutoForm,
 	type AutoFormUIComponents,
 } from "@autoform/react";
-import type { AutoFormProps } from "./types";
-import { Form } from "./components/Form";
-import { FieldWrapper } from "./components/FieldWrapper";
-import { ErrorMessage } from "./components/ErrorMessage";
-import { SubmitButton } from "./components/SubmitButton";
-import { StringField } from "./components/StringField";
-import { NumberField } from "./components/NumberField";
+import { ZodProvider, type ZodObjectOrWrapped } from "@autoform/zod";
+import { ZodObject } from "zod";
+import { ArrayElementWrapper } from "./components/ArrayElementWrapper";
+import { ArrayWrapper } from "./components/ArrayWrapper";
 import { BooleanField } from "./components/BooleanField";
 import { DateField } from "./components/DateField";
-import { SelectField } from "./components/SelectField";
+import { ErrorMessage } from "./components/ErrorMessage";
+import { FieldWrapper, FieldWrapperWithoutLabel } from "./components/FieldWrapper";
+import { Form } from "./components/Form";
+import { NumberField } from "./components/NumberField";
 import { ObjectWrapper } from "./components/ObjectWrapper";
-import { ArrayWrapper } from "./components/ArrayWrapper";
-import { ArrayElementWrapper } from "./components/ArrayElementWrapper";
-import { ZodProvider, type ZodObjectOrWrapped } from "@autoform/zod";
-import type { Z } from "node_modules/framer-motion/dist/types.d-B50aGbjN";
-import type { ZodObject } from "zod";
+import { SelectField } from "./components/SelectField";
+import { StringField } from "./components/StringField";
+import { SubmitButton } from "./components/SubmitButton";
+import type { AutoFormProps } from "./types";
 
-const ShadcnUIComponents: AutoFormUIComponents = {
+const ShadcnUIComponents: Omit<AutoFormUIComponents, "FieldWrapper"> = {
 	Form,
-	FieldWrapper,
 	ErrorMessage,
 	SubmitButton,
 	ObjectWrapper,
@@ -38,7 +36,7 @@ export const ShadcnAutoFormFieldComponents = {
 } as const;
 export type FieldTypes = keyof typeof ShadcnAutoFormFieldComponents;
 
-export function AutoForm<F extends ZodObject<any>>({
+export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
 	uiComponents,
 	formComponents,
 	schema,
@@ -47,13 +45,38 @@ export function AutoForm<F extends ZodObject<any>>({
 	return (
 		<BaseAutoForm
 			{...props}
-			// omit default fields of schema
 			schema={
 				new ZodProvider(
-					schema.omit({ _: true, created_by: true, timestamp: true }),
+					schema instanceof ZodObject ?
+						// omit default fields of schema
+						schema.omit({ _: true, created_by: true, timestamp: true })
+						: schema,
 				)
 			}
-			uiComponents={{ ...ShadcnUIComponents, ...uiComponents }}
+			uiComponents={{ ...ShadcnUIComponents, FieldWrapper: FieldWrapperWithoutLabel, ...uiComponents }}
+			formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
+		/>
+	);
+}
+
+export function AutoForm<F extends ZodObjectOrWrapped>({
+	uiComponents,
+	formComponents,
+	schema,
+	...props
+}: AutoFormProps<F>) {
+	return (
+		<BaseAutoForm
+			{...props}
+			schema={
+				new ZodProvider(
+					schema instanceof ZodObject ?
+						// omit default fields of schema
+						schema.omit({ _: true, created_by: true, timestamp: true })
+						: schema,
+				)
+			}
+			uiComponents={{ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }}
 			formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
 		/>
 	);
