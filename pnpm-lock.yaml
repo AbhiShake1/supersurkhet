@@ -4065,7 +4065,7 @@ packages:
 
   nuqs@https://pkg.pr.new/nuqs@953:
     resolution: {tarball: https://pkg.pr.new/nuqs@953}
-    version: 0.0.0-preview.5e1d347b46245c3e1d87d335a38f6788b723327d
+    version: 0.0.0-preview.38a69594267cc95191a932e55994fb646e2e8b92
     peerDependencies:
       '@remix-run/react': '>=2'
       '@tanstack/react-router': ^1
