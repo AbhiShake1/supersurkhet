@@ -164,8 +164,8 @@ export const appSchema = z.object({
 		isSpicy: z.boolean().default(false).describe("Whether the item is spicy"),
 		isAvailable: z.boolean().default(true).describe("Whether the item is currently available"),
 		isSpecial: z.boolean().default(false).describe("Whether the item is chef's special"),
-		preparationTime: z.number().int().positive().describe("Estimated preparation time in minutes"),
-		portionSize: z.string().describe("Portion size (e.g., Small, Regular, Large)"),
+		preparationTime: z.number({coerce: true}).int().positive().optional().describe("Estimated preparation time in minutes"),
+		portionSize: z.string().optional().describe("Portion size (e.g., Small, Regular, Large)"),
 		nutritionalInfo: z.record(z.string(), z.string()).optional().describe("Nutritional information"),
 		customizations: z.record(
 			z.string().uuid(),

@@ -5,6 +5,7 @@ import { useGet } from '@/lib/gun/hooks'
 import { cn } from '@/lib/utils'
 import { createFileRoute } from '@tanstack/react-router'
 import { Filter, Search, Share2, Star } from 'lucide-react'
+import { Carousel } from '@/components/ui/carousel'
 
 export const Route = createFileRoute('/_business/_demos/restaurant/')({
   component: RouteComponent,
@@ -28,33 +29,70 @@ function RouteComponent() {
 
         {/* Promotional Banner */}
         <div className="mb-8 relative">
-          <div className="overflow-x-auto hide-scrollbar">
-            <div className="flex gap-4">
-              <div className="min-w-[300px] h-[150px] rounded-xl overflow-hidden relative">
-                <img src="/promo-1.jpg" alt="Special Offer" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center p-6">
-                  <div className="text-white">
-                    <h3 className="text-2xl font-bold mb-2">Family Special</h3>
-                    <p className="text-sm">20% off on family platters</p>
-                  </div>
-                </div>
-              </div>
-              <div className="min-w-[300px] h-[150px] rounded-xl overflow-hidden relative">
-                <img src="/promo-2.jpg" alt="Happy Hours" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent flex items-center p-6">
-                  <div className="text-white">
-                    <h3 className="text-2xl font-bold mb-2">Happy Hours</h3>
-                    <p className="text-sm">15% off between 2-5 PM</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-            <div className="w-2 h-2 rounded-full bg-red-600" />
-            <div className="w-2 h-2 rounded-full bg-gray-300" />
-            <div className="w-2 h-2 rounded-full bg-gray-300" />
-          </div>
+          <Carousel
+            slides={[
+              {
+                title: "Family Special",
+                button: "View Offer",
+                src: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop"
+              },
+              {
+                title: "Happy Hours",
+                button: "Learn More",
+                src: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1974&auto=format&fit=crop"
+              },
+              {
+                title: "Weekend Brunch",
+                button: "Book Now",
+                src: "https://images.unsplash.com/photo-1504754524776-8f4f37790ca0?q=80&w=1970&auto=format&fit=crop"
+              },
+              {
+                title: "Chef's Table Experience",
+                button: "Reserve Now",
+                src: "https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?q=80&w=2070&auto=format&fit=crop"
+              },
+              {
+                title: "Seasonal Menu",
+                button: "Explore Menu",
+                src: "https://images.unsplash.com/photo-1547496502-affa22d38842?q=80&w=2077&auto=format&fit=crop"
+              },
+              {
+                title: "Wine Tasting Events",
+                button: "Join Event",
+                src: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=2070&auto=format&fit=crop"
+              },
+              {
+                title: "Private Dining",
+                button: "Inquire Now",
+                src: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop"
+              },
+              {
+                title: "Cooking Classes",
+                button: "Register",
+                src: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=2070&auto=format&fit=crop"
+              },
+              {
+                title: "Local Ingredients",
+                button: "Learn More",
+                src: "https://images.unsplash.com/photo-1506484381205-f7945653044d?q=80&w=2070&auto=format&fit=crop"
+              },
+              {
+                title: "Festive Celebrations",
+                button: "Book Event",
+                src: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop"
+              },
+              {
+                title: "Corporate Events",
+                button: "Contact Us",
+                src: "https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?q=80&w=2070&auto=format&fit=crop"
+              },
+              {
+                title: "Gift Cards",
+                button: "Purchase Now",
+                src: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop"
+              }
+            ]}
+          />
         </div>
 
         {/* Menu Categories */}
@@ -111,10 +149,10 @@ function RouteComponent() {
                 </div>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-gray-900">{item.name}</h3>
+                    <h3 className="font-medium">{item.name}</h3>
                     <div className="flex items-center gap-1 text-sm">
                       <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-gray-600">4.5</span>
+                      <span className="text-secondary">4.5</span>
                     </div>
                   </div>
                   <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
