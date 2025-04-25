@@ -1,3 +1,4 @@
+import { useGet } from '@/lib/gun/hooks'
 import { createFileRoute } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/_business/_demos/restaurant/')({
@@ -5,5 +6,9 @@ export const Route = createFileRoute('/_business/_demos/restaurant/')({
 })
 
 function RouteComponent() {
-  return <div>Hello "/_demos/restaurant/"!</div>
+  const menuItems = useGet("menuItem", "restaurant")
+  return <>
+    TODO (AbhiShake1): Implement menu list
+    {JSON.stringify(menuItems)}
+  </>
 }
