@@ -154,12 +154,78 @@ export const appSchema = z.object({
 		})
 		.extend(table),
 	menuItem: z.object({
-		name: z.string().describe("Name"),
-		description: z.string().optional().describe("Details"),
-		price: z.number().positive().describe("Price"),
-		imageUrl: z.string().url().optional().describe("Image URL"),
-		category: z.string().optional().describe("Category"),
-	}),
+		name: z.string().describe("Name of the menu item"),
+		description: z.string().optional().describe("Detailed description of the item"),
+		price: z.number().positive().describe("Regular price of the item"),
+		discountedPrice: z.number().positive().optional().describe("Special or discounted price"),
+		imageUrl: z.string().url().optional().describe("Image URL of the item"),
+		category: z.string().describe("Category of the item (e.g., Starters, Main Course)"),
+		isVegetarian: z.boolean().default(false).describe("Whether the item is vegetarian"),
+		isSpicy: z.boolean().default(false).describe("Whether the item is spicy"),
+		isAvailable: z.boolean().default(true).describe("Whether the item is currently available"),
+		isSpecial: z.boolean().default(false).describe("Whether the item is chef's special"),
+		preparationTime: z.number().int().positive().describe("Estimated preparation time in minutes"),
+		portionSize: z.string().describe("Portion size (e.g., Small, Regular, Large)"),
+		nutritionalInfo: z.record(z.string(), z.string()).optional().describe("Nutritional information"),
+		customizations: z.record(
+			z.string().uuid(),
+			z.object({
+				name: z.string(),
+				price: z.number().nonnegative(),
+				isAvailable: z.boolean().default(true)
+			})
+		).optional().describe("Available customization options")
+	}).extend(table),
+	order: z.object({
+		customerId: z.string().optional().describe("ID of the customer who placed the order"),
+		items: z.record(
+			z.string(),
+			z.object({
+				menuItemId: z.string(),
+				quantity: z.number({coerce: true}).int().positive(),
+				unitPrice: z.number({coerce: true}).positive(),
+				customizations: z.record(z.string(), z.boolean()).optional(),
+				specialInstructions: z.string().optional()
+			})
+		).describe("Ordered items with their details"),
+		subTotal: z.number().positive(),
+		taxes: z.number({coerce: true}).nonnegative(),
+		deliveryFee: z.number({coerce: true}).nonnegative(),
+		totalAmount: z.number({coerce: true}).positive(),
+		orderStatus: z.enum([
+			"pending",
+			"confirmed",
+			"preparing",
+			"ready",
+			"served",
+			"cancelled"
+		]),
+		paymentStatus: z.enum(["pending", "paid", "failed"]),
+		paymentMethod: z.enum(["cash", "card", "online"]),
+		estimatedDeliveryTime: z.number({coerce: true}).optional()
+	}).extend(table),
+	// customer: z.object({
+	// 	name: z.string(),
+	// 	email: z.string().email(),
+	// 	phone: z.string(),
+	// 	addresses: z.record(
+	// 		z.string().uuid(),
+	// 		z.object({
+	// 			type: z.enum(["home", "work", "other"]),
+	// 			street: z.string(),
+	// 			city: z.string(),
+	// 			state: z.string(),
+	// 			postalCode: z.string(),
+	// 			landmark: z.string().optional(),
+	// 			isDefault: z.boolean().default(false)
+	// 		})
+	// 	),
+	// 	preferences: z.object({
+	// 		isVegetarian: z.boolean().default(false),
+	// 		allergies: z.array(z.string()).optional(),
+	// 		favoriteItems: z.record(z.string().uuid(), z.boolean()).optional()
+	// 	}).optional()
+	// }).extend(table),
 	chat: z.object({
 		message: chatMessageSchema,
 		room: z
