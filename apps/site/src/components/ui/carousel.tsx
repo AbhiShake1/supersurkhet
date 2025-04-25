@@ -64,7 +64,7 @@ const Slide = ({ slide, index, current, handleSlideClick }: SlideProps) => {
   const { src, button, title } = slide;
 
   return (
-    <div className="[perspective:1200px] [transform-style:preserve-3d]">
+    <div className="[perspective:1200px] [transform-style:preserve-3d] w-sm">
       <li
         ref={slideRef}
         className="flex flex-1 flex-col items-center justify-center relative text-center text-white opacity-100 transition-all duration-300 ease-in-out w-full h-[40vh] max-h-[400px] mx-[1rem] z-10 "
@@ -180,7 +180,7 @@ export function Carousel({ slides: originalSlides }: CarouselProps) {
       <ul
         className="absolute flex mx-[-4vmin] transition-transform duration-1000 ease-in-out"
         style={{
-          transform: `translateX(calc(-${current * (100 / slides.length)}% + 40vw))`,
+          transform: `translateX(calc(-${current * (100 / slides.length)}% + 5vw))`,
         }}
       >
         {slides.map((slide, index) => (
