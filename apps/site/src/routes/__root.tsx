@@ -149,8 +149,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 				<HeadContent />
 			</head>
 			<body>
-				{children}
-				<Scripts />
+				<div data-vaul-drawer-wrapper="">
+					{children}
+					<Scripts />
+				</div>
 			</body>
 		</html>
 	);
