@@ -451,79 +451,81 @@ export function CartButton() {
                       <Separator className="mb-4" />
                     </CredenzaDescription>
                   </CredenzaHeader>
-                  <CredenzaBody>
-                    {items.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center flex-grow py-8 text-center">
-                        <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-                        <h3 className="text-xl font-medium mb-2">Your cart is empty</h3>
-                        <p className="text-muted-foreground">Add some delicious items to get started!</p>
-                        <Button
-                          className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500"
-                        // onClick={() => onOpenChange(false)}
-                        >
-                          Browse Menu
-                        </Button>
-                      </div>
-                    ) : (
-                      <>
-                        <ScrollArea className="flex-grow pr-4 -mr-4">
-                          <AnimatePresence initial={false}>
-                            {items.map((item) => (
-                              <motion.div
-                                key={item.id}
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="flex items-center gap-3 py-3">
-                                  <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
-                                    <img src={item.image} alt={item.name} className="object-cover" />
-                                  </div>
-                                  <div className="flex-grow">
-                                    <h4 className="font-medium">{item.name}</h4>
-                                    <div className="flex items-center justify-between mt-1">
-                                      <div className="flex items-center gap-2">
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 rounded-full p-0"
-                                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                        >
-                                          <MinusCircle className="h-4 w-4" />
-                                        </Button>
-                                        <span className="w-6 text-center">{item.quantity}</span>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 rounded-full p-0"
-                                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                        >
-                                          <PlusCircle className="h-4 w-4" />
-                                        </Button>
-                                      </div>
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="h-6 w-6 rounded-full p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-                                          onClick={() => removeItem(item.id)}
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
+                  <CredenzaBody asChild className='max-h-[30vh] overflow-y-auto'>
+                    <ScrollArea>
+                      {items.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center flex-grow py-8 text-center">
+                          <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
+                          <h3 className="text-xl font-medium mb-2">Your cart is empty</h3>
+                          <p className="text-muted-foreground">Add some delicious items to get started!</p>
+                          <Button
+                            className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500"
+                          // onClick={() => onOpenChange(false)}
+                          >
+                            Browse Menu
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <ScrollArea className="flex-grow pr-4 -mr-4">
+                            <AnimatePresence initial={false}>
+                              {items.map((item) => (
+                                <motion.div
+                                  key={item.id}
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="flex items-center gap-3 py-3">
+                                    <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
+                                      <img src={item.image} alt={item.name} className="object-cover" />
+                                    </div>
+                                    <div className="flex-grow">
+                                      <h4 className="font-medium">{item.name}</h4>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <div className="flex items-center gap-2">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full p-0"
+                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                          >
+                                            <MinusCircle className="h-4 w-4" />
+                                          </Button>
+                                          <span className="w-6 text-center">{item.quantity}</span>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full p-0"
+                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                          >
+                                            <PlusCircle className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                                            onClick={() => removeItem(item.id)}
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </div>
                                       </div>
                                     </div>
                                   </div>
-                                </div>
-                                <Separator />
-                              </motion.div>
-                            ))}
-                          </AnimatePresence>
-                        </ScrollArea>
-                      </>
-                    )}
+                                  <Separator />
+                                </motion.div>
+                              ))}
+                            </AnimatePresence>
+                          </ScrollArea>
+                        </>
+                      )}
+                    </ScrollArea>
                   </CredenzaBody>
                   <CredenzaFooter asChild>
                     <div className="pt-4 space-y-4 w-full">
