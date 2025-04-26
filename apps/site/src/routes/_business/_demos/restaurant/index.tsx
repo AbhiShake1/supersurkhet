@@ -1,11 +1,10 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Carousel } from '@/components/ui/carousel'
-import { Credenza, CredenzaContent } from '@/components/ui/credenza'
+import { Credenza, CredenzaBody, CredenzaClose, CredenzaContent, CredenzaDescription, CredenzaFooter, CredenzaHeader, CredenzaTitle, CredenzaTrigger } from '@/components/ui/credenza'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { useGet } from '@/lib/gun/hooks'
 import { createFileRoute } from '@tanstack/react-router'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Coffee, Dessert, MinusCircle, MinusIcon, PlusCircle, PlusIcon, Search, ShoppingCart, ShoppingCartIcon, Soup, Star, Trash2, UtensilsCrossed } from 'lucide-react'
@@ -405,137 +404,8 @@ export const menuData: MenuDataType = {
   ],
 }
 
-interface CartDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-}
-
-export function CartDialog({ open, onOpenChange }: CartDialogProps) {
-  const { items, removeItem, updateQuantity, clearCart, subtotal } = useCart()
-
-  const cartContent = (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold">Your Order</h2>
-        {items.length > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearCart}
-            className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-          >
-            <Trash2 className="h-4 w-4 mr-1" />
-            Clear All
-          </Button>
-        )}
-      </div>
-
-      <Separator className="mb-4" />
-
-      {items.length === 0 ? (
-        <div className="flex flex-col items-center justify-center flex-grow py-8 text-center">
-          <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-          <h3 className="text-xl font-medium mb-2">Your cart is empty</h3>
-          <p className="text-muted-foreground">Add some delicious items to get started!</p>
-          <Button
-            className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500"
-            onClick={() => onOpenChange(false)}
-          >
-            Browse Menu
-          </Button>
-        </div>
-      ) : (
-        <>
-          <ScrollArea className="flex-grow pr-4 -mr-4">
-            <AnimatePresence initial={false}>
-              {items.map((item) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden"
-                >
-                  <div className="flex items-center gap-3 py-3">
-                    <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="object-cover" />
-                    </div>
-                    <div className="flex-grow">
-                      <h4 className="font-medium">{item.name}</h4>
-                      <div className="flex items-center justify-between mt-1">
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full p-0"
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          >
-                            <MinusCircle className="h-4 w-4" />
-                          </Button>
-                          <span className="w-6 text-center">{item.quantity}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full p-0"
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <PlusCircle className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 rounded-full p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-                            onClick={() => removeItem(item.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <Separator />
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </ScrollArea>
-
-          <div className="pt-4 space-y-4">
-            <div className="flex items-center justify-between font-medium">
-              <span>Subtotal</span>
-              <span>${subtotal.toFixed(2)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>Tax</span>
-              <span>${(subtotal * 0.08).toFixed(2)}</span>
-            </div>
-            <Separator />
-            <div className="flex items-center justify-between font-bold text-lg">
-              <span>Total</span>
-              <span>${(subtotal * 1.08).toFixed(2)}</span>
-            </div>
-            <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700">
-              Proceed to Checkout
-            </Button>
-          </div>
-        </>
-      )}
-    </div>
-  )
-
-  return (
-    <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent className="sm:max-w-[425px] max-h-[85vh]">{cartContent}</CredenzaContent>
-    </Credenza>
-  )
-}
-
 export function CartButton() {
-  const { itemCount } = useCart()
-  const [isOpen, setIsOpen] = useState(false)
+  const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } = useCart()
 
   return (
     <>
@@ -548,26 +418,147 @@ export function CartButton() {
               exit={{ scale: 0 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             >
-              <Button
-                onClick={() => setIsOpen(true)}
-                className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700"
-              >
-                <ShoppingCart className="h-6 w-6" />
-                <span className="absolute -top-2 -right-2 bg-white dark:bg-black text-amber-600 dark:text-amber-400 rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold">
-                  {itemCount}
-                </span>
-              </Button>
+              <Credenza>
+                <CredenzaTrigger asChild>
+                  <Button
+                    className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700"
+                  >
+                    <ShoppingCart className="h-6 w-6" />
+                    <span className="absolute -top-2 -right-2 bg-white dark:bg-black text-amber-600 dark:text-amber-400 rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold">
+                      {itemCount}
+                    </span>
+                  </Button>
+                </CredenzaTrigger>
+                <CredenzaContent>
+                  <CredenzaHeader>
+                    <CredenzaTitle asChild>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-2xl font-bold">Your Order</h2>
+                        {items.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearCart}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Clear All
+                          </Button>
+                        )}
+                      </div>
+                    </CredenzaTitle>
+                    <CredenzaDescription>
+                      <Separator className="mb-4" />
+                    </CredenzaDescription>
+                  </CredenzaHeader>
+                  <CredenzaBody>
+                    {items.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center flex-grow py-8 text-center">
+                        <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
+                        <h3 className="text-xl font-medium mb-2">Your cart is empty</h3>
+                        <p className="text-muted-foreground">Add some delicious items to get started!</p>
+                        <Button
+                          className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500"
+                        // onClick={() => onOpenChange(false)}
+                        >
+                          Browse Menu
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <ScrollArea className="flex-grow pr-4 -mr-4">
+                          <AnimatePresence initial={false}>
+                            {items.map((item) => (
+                              <motion.div
+                                key={item.id}
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: "auto" }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="flex items-center gap-3 py-3">
+                                  <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
+                                    <img src={item.image} alt={item.name} className="object-cover" />
+                                  </div>
+                                  <div className="flex-grow">
+                                    <h4 className="font-medium">{item.name}</h4>
+                                    <div className="flex items-center justify-between mt-1">
+                                      <div className="flex items-center gap-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 rounded-full p-0"
+                                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                        >
+                                          <MinusCircle className="h-4 w-4" />
+                                        </Button>
+                                        <span className="w-6 text-center">{item.quantity}</span>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 rounded-full p-0"
+                                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                        >
+                                          <PlusCircle className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-6 w-6 rounded-full p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
+                                          onClick={() => removeItem(item.id)}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <Separator />
+                              </motion.div>
+                            ))}
+                          </AnimatePresence>
+                        </ScrollArea>
+                      </>
+                    )}
+                  </CredenzaBody>
+                  <CredenzaFooter asChild>
+                    <div className="pt-4 space-y-4 w-full">
+                      <div className="flex items-center justify-between font-medium">
+                        <span>Subtotal</span>
+                        <span>${subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm text-muted-foreground">
+                        <span>Tax</span>
+                        <span>${(subtotal * 0.08).toFixed(2)}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between font-bold text-lg">
+                        <span>Total</span>
+                        <span>${(subtotal * 1.08).toFixed(2)}</span>
+                      </div>
+                      <CredenzaClose asChild>
+                        <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700">
+                          Proceed to Checkout
+                        </Button>
+                      </CredenzaClose>
+                    </div>
+                  </CredenzaFooter>
+                </CredenzaContent>
+              </Credenza>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
-      <CartDialog open={isOpen} onOpenChange={setIsOpen} />
     </>
   )
 }
 
 function RouteComponent() {
-  const menuItems = useGet("menuItem", "restaurant")
+  // const menuItems = useGet("menuItem", "restaurant")
 
   return (
     <div className="min-h-screen overflow-x-hidden">
