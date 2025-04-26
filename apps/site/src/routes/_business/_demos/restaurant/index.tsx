@@ -564,13 +564,15 @@ function RouteComponent() {
     <div className="min-h-screen overflow-x-hidden">
       <main className="p-4 pb-20">
         {/* Search Bar */}
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <Input
-            type="search"
-            placeholder="Search our delicious menu..."
-            className="w-full pl-10 pr-4 py-3 rounded-full border border-gray-200 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500"
-          />
+        <div className="flex justify-end mb-6">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
+            <Input
+              type="search"
+              placeholder="Search our delicious menu..."
+              className="w-full pl-10 pr-4 py-3 rounded-full border-amber-500/30 dark:border-amber-400/30 bg-card/50 dark:bg-card/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all duration-200 hover:border-amber-500/50 dark:hover:border-amber-400/50"
+            />
+          </div>
         </div>
 
         {/* Promotional Banner */}
