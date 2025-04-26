@@ -1,3 +1,4 @@
+import { fieldConfig } from "@/components/ui/autoform";
 import { z } from "zod";
 
 const table = {
@@ -110,11 +111,10 @@ export const appSchema = z.object({
 				.date()
 				.default(() => new Date())
 				.describe("Date and time when the item was last updated"),
-
-			// Application-specific fields (can be extended or ignored as needed)
 			imageUrl: z
 				.string()
 				.url()
+				.superRefine(fieldConfig({ fieldType: "image" }))
 				.optional()
 				.describe("Optional URL to an image of the item"),
 			attributes: z
@@ -156,15 +156,17 @@ export const appSchema = z.object({
 	menuItem: z.object({
 		name: z.string().describe("Name of the menu item"),
 		description: z.string().optional().describe("Detailed description of the item"),
-		price: z.number().positive().describe("Regular price of the item"),
+		price: z.number({ coerce: true }).positive().describe("Regular price of the item"),
 		discountedPrice: z.number().positive().optional().describe("Special or discounted price"),
-		imageUrl: z.string().url().optional().describe("Image URL of the item"),
+		imageUrl: z.string().url()
+			.superRefine(fieldConfig({ fieldType: "image" }))
+			.optional().describe("Image URL of the item"),
 		category: z.string().describe("Category of the item (e.g., Starters, Main Course)"),
 		isVegetarian: z.boolean().default(false).describe("Whether the item is vegetarian"),
 		isSpicy: z.boolean().default(false).describe("Whether the item is spicy"),
 		isAvailable: z.boolean().default(true).describe("Whether the item is currently available"),
 		isSpecial: z.boolean().default(false).describe("Whether the item is chef's special"),
-		preparationTime: z.number({coerce: true}).int().positive().optional().describe("Estimated preparation time in minutes"),
+		preparationTime: z.number({ coerce: true }).int().positive().optional().describe("Estimated preparation time in minutes"),
 		portionSize: z.string().optional().describe("Portion size (e.g., Small, Regular, Large)"),
 		nutritionalInfo: z.record(z.string(), z.string()).optional().describe("Nutritional information"),
 		customizations: z.record(
@@ -182,16 +184,16 @@ export const appSchema = z.object({
 			z.string(),
 			z.object({
 				menuItemId: z.string(),
-				quantity: z.number({coerce: true}).int().positive(),
-				unitPrice: z.number({coerce: true}).positive(),
+				quantity: z.number({ coerce: true }).int().positive(),
+				unitPrice: z.number({ coerce: true }).positive(),
 				customizations: z.record(z.string(), z.boolean()).optional(),
 				specialInstructions: z.string().optional()
 			})
 		).describe("Ordered items with their details"),
 		subTotal: z.number().positive(),
-		taxes: z.number({coerce: true}).nonnegative(),
-		deliveryFee: z.number({coerce: true}).nonnegative(),
-		totalAmount: z.number({coerce: true}).positive(),
+		taxes: z.number({ coerce: true }).nonnegative(),
+		deliveryFee: z.number({ coerce: true }).nonnegative(),
+		totalAmount: z.number({ coerce: true }).positive(),
 		orderStatus: z.enum([
 			"pending",
 			"confirmed",
@@ -202,7 +204,7 @@ export const appSchema = z.object({
 		]),
 		paymentStatus: z.enum(["pending", "paid", "failed"]),
 		paymentMethod: z.enum(["cash", "card", "online"]),
-		estimatedDeliveryTime: z.number({coerce: true}).optional()
+		estimatedDeliveryTime: z.number({ coerce: true }).optional()
 	}).extend(table),
 	// customer: z.object({
 	// 	name: z.string(),

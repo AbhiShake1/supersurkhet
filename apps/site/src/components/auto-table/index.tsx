@@ -248,7 +248,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 					className="text-center"
 				>
 					<Editable.Area>
-						<Editable.Preview />
+						<Editable.Preview className="max-w-56"/>
 						<Editable.Input asChild>
 							<AutoFormWithoutLabel
 								formProps={{
