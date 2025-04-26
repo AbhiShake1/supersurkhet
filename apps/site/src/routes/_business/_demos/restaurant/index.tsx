@@ -480,7 +480,7 @@ export function CartButton() {
                                 >
                                   <div className="flex items-center gap-3 py-3">
                                     <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
-                                      <img src={item.image} alt={item.name} className="object-cover" />
+                                      <img src={item.image} alt={item.name} className="object-cover w-full h-full" />
                                     </div>
                                     <div className="flex-grow">
                                       <h4 className="font-medium">{item.name}</h4>
