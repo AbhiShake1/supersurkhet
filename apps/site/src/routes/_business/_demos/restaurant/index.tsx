@@ -5,9 +5,12 @@ import { Credenza, CredenzaBody, CredenzaClose, CredenzaContent, CredenzaDescrip
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
+import { useGet } from '@/lib/gun/hooks'
+import type { NestedSchemaType } from '@/lib/gun/index'
 import { createFileRoute } from '@tanstack/react-router'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Coffee, Dessert, MinusCircle, MinusIcon, PlusCircle, PlusIcon, Search, ShoppingCart, ShoppingCartIcon, Soup, Star, Trash2, UtensilsCrossed } from 'lucide-react'
+import { groupBy } from 'lodash'
+import { MinusCircle, MinusIcon, PlusCircle, PlusIcon, Search, ShoppingCart, ShoppingCartIcon, Trash2 } from 'lucide-react'
 import { createContext, useContext, useEffect, useState } from 'react'
 
 export const Route = createFileRoute('/_business/_demos/restaurant/')({
@@ -48,10 +51,10 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = (item: MenuItemType, quantity: number) => {
     setItems((prevItems) => {
-      const existingItem = prevItems.find((i) => i.id === item.id)
+      const existingItem = prevItems.find((i) => i._?.soul === item._?.soul)
 
       if (existingItem) {
-        return prevItems.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + quantity } : i))
+        return prevItems.map((i) => (i._?.soul === item._?.soul ? { ...i, quantity: i.quantity + quantity } : i))
       } else {
         return [...prevItems, { ...item, quantity }]
       }
@@ -59,7 +62,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }
 
   const removeItem = (itemId: string) => {
-    setItems((prevItems) => prevItems.filter((item) => item.id !== itemId))
+    setItems((prevItems) => prevItems.filter((item) => item._?.soul !== itemId))
   }
 
   const updateQuantity = (itemId: string, quantity: number) => {
@@ -68,7 +71,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    setItems((prevItems) => prevItems.map((item) => (item.id === itemId ? { ...item, quantity } : item)))
+    setItems((prevItems) => prevItems.map((item) => (item._?.soul === itemId ? { ...item, quantity } : item)))
   }
 
   const clearCart = () => {
@@ -139,7 +142,7 @@ export function MenuItem({ item }: MenuItemProps) {
       <Card className="overflow-clip h-full flex flex-col border-muted bg-card/50 backdrop-blur-sm dark:bg-card/30 dark:border-muted/30 hover:shadow-lg hover:shadow-amber-500/5 dark:hover:shadow-amber-400/5 transition-all duration-300">
         <div className="relative h-56 w-full overflow-hidden group  rounded-t-md">
           <img
-            src={item.image}
+            src={item.imageUrl}
             alt={item.name}
             className="object-cover transition-transform duration-500 group-hover:scale-110 w-full h-full"
           />
@@ -151,17 +154,17 @@ export function MenuItem({ item }: MenuItemProps) {
             </div>
           )}
 
-          {item.rating && (
+          {/* {item.rating && (
             <div className="absolute bottom-3 left-3 flex items-center bg-black/60 text-white px-2 py-1 rounded-full text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
-                  className={`h-3 w-3 ${i < (item.rating ?? 0) ? "fill-amber-400 text-amber-400" : "fill-muted text-muted"}`}
+                  className={`h-3 w-3 ${i < (item.rating!) ? "fill-amber-400 text-amber-400" : "fill-muted text-muted"}`}
                 />
               ))}
               <span className="ml-1">{item.rating}</span>
             </div>
-          )}
+          )} */}
         </div>
 
         <CardContent className="pt-5 flex-grow">
@@ -170,7 +173,7 @@ export function MenuItem({ item }: MenuItemProps) {
             <span className="font-bold text-lg text-amber-600 dark:text-amber-400">${item.price.toFixed(2)}</span>
           </div>
           <p className="text-muted-foreground text-sm mb-4">{item.description}</p>
-          {item.dietaryInfo && (
+          {/* {item.dietaryInfo && (
             <div className="flex flex-wrap gap-1 mb-2">
               {item.dietaryInfo.map((info) => (
                 <span
@@ -181,7 +184,7 @@ export function MenuItem({ item }: MenuItemProps) {
                 </span>
               ))}
             </div>
-          )}
+          )} */}
         </CardContent>
 
         <CardFooter className="border-t border-muted/50 dark:border-muted/30 pt-4">
@@ -233,176 +236,148 @@ interface MenuSectionProps {
 }
 
 export function MenuSection({ title, items }: MenuSectionProps) {
-  const getCategoryIcon = () => {
-    switch (title) {
-      case "Appetizers":
-        return <Soup className="h-6 w-6 mr-2 text-amber-500 dark:text-amber-400" />
-      case "Main Courses":
-        return <UtensilsCrossed className="h-6 w-6 mr-2 text-amber-500 dark:text-amber-400" />
-      case "Desserts":
-        return <Dessert className="h-6 w-6 mr-2 text-amber-500 dark:text-amber-400" />
-      case "Beverages":
-        return <Coffee className="h-6 w-6 mr-2 text-amber-500 dark:text-amber-400" />
-      default:
-        return <UtensilsCrossed className="h-6 w-6 mr-2 text-amber-500 dark:text-amber-400" />
-    }
-  }
-
   return (
     <section className="mb-16">
       <div className="flex items-center mb-6">
-        {getCategoryIcon()}
-        <h2 className="text-2xl font-semibold pb-2 border-b border-amber-500/30 dark:border-amber-400/30">{title}</h2>
+        <h2 className="text-2xl font-semibold pb-2 border-b border-amber-500/30 dark:border-amber-400/30 capitalize">{title}</h2>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {items.map((item) => (
-          <MenuItem key={item.id} item={item} />
+          <MenuItem key={item._?.soul} item={item} />
         ))}
       </div>
     </section>
   )
 }
 
-export interface MenuItemType {
-  id: string
-  name: string
-  description: string
-  price: number
-  image: string
-  isSpecial?: boolean
-  dietaryInfo?: string[]
-  rating?: number
+export interface MenuItemType extends NestedSchemaType<"menuItem"> {
 }
 
-type MenuDataType = {
-  [key: string]: MenuItemType[]
-}
-
-export const menuData: MenuDataType = {
-  Appetizers: [
-    {
-      id: "app1",
-      name: "Crispy Calamari",
-      description: "Lightly fried calamari served with a zesty marinara sauce and lemon wedges.",
-      price: 12.99,
-      image: "https://images.unsplash.com/photo-1604152135912-04a022e23696?w=600&h=400&q=80",
-      dietaryInfo: ["Seafood"],
-      rating: 4,
-    },
-    {
-      id: "app2",
-      name: "Bruschetta",
-      description: "Toasted baguette topped with fresh tomatoes, basil, garlic, and extra virgin olive oil.",
-      price: 9.99,
-      image: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=600&h=400&q=80",
-      dietaryInfo: ["Vegetarian"],
-      rating: 5,
-    },
-    {
-      id: "app3",
-      name: "Spinach Artichoke Dip",
-      description: "Creamy blend of spinach, artichokes, and cheeses, served with tortilla chips.",
-      price: 10.99,
-      image: "https://images.unsplash.com/photo-1576506295286-5cda18df43e7?w=600&h=400&q=80",
-      dietaryInfo: ["Vegetarian", "Gluten-Free"],
-      rating: 4,
-    },
-  ],
-  "Main Courses": [
-    {
-      id: "main1",
-      name: "Grilled Salmon",
-      description:
-        "Fresh Atlantic salmon fillet, grilled to perfection, served with seasonal vegetables and lemon herb sauce.",
-      price: 24.99,
-      image: "https://images.unsplash.com/photo-1485921325833-c519f76c4927?w=600&h=400&q=80",
-      isSpecial: true,
-      dietaryInfo: ["Seafood", "Gluten-Free"],
-      rating: 5,
-    },
-    {
-      id: "main2",
-      name: "Filet Mignon",
-      description: "8oz center-cut beef tenderloin, served with garlic mashed potatoes and roasted asparagus.",
-      price: 32.99,
-      image: "https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=600&h=400&q=80",
-      rating: 5,
-    },
-    {
-      id: "main3",
-      name: "Mushroom Risotto",
-      description: "Creamy Arborio rice with wild mushrooms, white wine, and Parmesan cheese.",
-      price: 18.99,
-      image: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600&h=400&q=80",
-      dietaryInfo: ["Vegetarian", "Gluten-Free"],
-      rating: 4,
-    },
-    {
-      id: "main4",
-      name: "Chicken Parmesan",
-      description: "Breaded chicken breast topped with marinara sauce and melted mozzarella, served with spaghetti.",
-      price: 19.99,
-      image: "https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=600&h=400&q=80",
-      rating: 4,
-    },
-  ],
-  Desserts: [
-    {
-      id: "des1",
-      name: "Tiramisu",
-      description: "Classic Italian dessert with layers of coffee-soaked ladyfingers and mascarpone cream.",
-      price: 8.99,
-      image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&h=400&q=80",
-      isSpecial: true,
-      rating: 5,
-    },
-    {
-      id: "des2",
-      name: "Chocolate Lava Cake",
-      description: "Warm chocolate cake with a molten center, served with vanilla ice cream.",
-      price: 9.99,
-      image: "https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=600&h=400&q=80",
-      rating: 4,
-    },
-    {
-      id: "des3",
-      name: "New York Cheesecake",
-      description: "Rich and creamy cheesecake with a graham cracker crust, topped with fresh berries.",
-      price: 8.99,
-      image: "https://images.unsplash.com/photo-1567327825194-4b5f285561c9?w=600&h=400&q=80",
-      rating: 4,
-    },
-  ],
-  Beverages: [
-    {
-      id: "bev1",
-      name: "Fresh Fruit Smoothie",
-      description: "Blend of seasonal fruits with yogurt and honey.",
-      price: 6.99,
-      image: "https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=600&h=400&q=80",
-      dietaryInfo: ["Vegetarian", "Gluten-Free"],
-      rating: 4,
-    },
-    {
-      id: "bev2",
-      name: "Craft Lemonade",
-      description: "Freshly squeezed lemons with a hint of mint and honey.",
-      price: 4.99,
-      image: "https://images.unsplash.com/photo-1499638673689-79a0b5115d87?w=600&h=400&q=80",
-      dietaryInfo: ["Vegan", "Gluten-Free"],
-      rating: 4,
-    },
-    {
-      id: "bev3",
-      name: "Espresso",
-      description: "Rich, full-bodied espresso made from premium coffee beans.",
-      price: 3.99,
-      image: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=600&h=400&q=80",
-      dietaryInfo: ["Vegan", "Gluten-Free"],
-      rating: 5,
-    },
-  ],
-}
+// export const menuData: MenuDataType = {
+//   Appetizers: [
+//     {
+//       id: "app1",
+//       name: "Crispy Calamari",
+//       description: "Lightly fried calamari served with a zesty marinara sauce and lemon wedges.",
+//       price: 12.99,
+//       image: "https://images.unsplash.com/photo-1604152135912-04a022e23696?w=600&h=400&q=80",
+//       dietaryInfo: ["Seafood"],
+//       rating: 4,
+//     },
+//     {
+//       id: "app2",
+//       name: "Bruschetta",
+//       description: "Toasted baguette topped with fresh tomatoes, basil, garlic, and extra virgin olive oil.",
+//       price: 9.99,
+//       image: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=600&h=400&q=80",
+//       dietaryInfo: ["Vegetarian"],
+//       rating: 5,
+//     },
+//     {
+//       id: "app3",
+//       name: "Spinach Artichoke Dip",
+//       description: "Creamy blend of spinach, artichokes, and cheeses, served with tortilla chips.",
+//       price: 10.99,
+//       image: "https://images.unsplash.com/photo-1576506295286-5cda18df43e7?w=600&h=400&q=80",
+//       dietaryInfo: ["Vegetarian", "Gluten-Free"],
+//       rating: 4,
+//     },
+//   ],
+//   "Main Courses": [
+//     {
+//       id: "main1",
+//       name: "Grilled Salmon",
+//       description:
+//         "Fresh Atlantic salmon fillet, grilled to perfection, served with seasonal vegetables and lemon herb sauce.",
+//       price: 24.99,
+//       image: "https://images.unsplash.com/photo-1485921325833-c519f76c4927?w=600&h=400&q=80",
+//       isSpecial: true,
+//       dietaryInfo: ["Seafood", "Gluten-Free"],
+//       rating: 5,
+//     },
+//     {
+//       id: "main2",
+//       name: "Filet Mignon",
+//       description: "8oz center-cut beef tenderloin, served with garlic mashed potatoes and roasted asparagus.",
+//       price: 32.99,
+//       image: "https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=600&h=400&q=80",
+//       rating: 5,
+//     },
+//     {
+//       id: "main3",
+//       name: "Mushroom Risotto",
+//       description: "Creamy Arborio rice with wild mushrooms, white wine, and Parmesan cheese.",
+//       price: 18.99,
+//       image: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600&h=400&q=80",
+//       dietaryInfo: ["Vegetarian", "Gluten-Free"],
+//       rating: 4,
+//     },
+//     {
+//       id: "main4",
+//       name: "Chicken Parmesan",
+//       description: "Breaded chicken breast topped with marinara sauce and melted mozzarella, served with spaghetti.",
+//       price: 19.99,
+//       image: "https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=600&h=400&q=80",
+//       rating: 4,
+//     },
+//   ],
+//   Desserts: [
+//     {
+//       id: "des1",
+//       name: "Tiramisu",
+//       description: "Classic Italian dessert with layers of coffee-soaked ladyfingers and mascarpone cream.",
+//       price: 8.99,
+//       image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&h=400&q=80",
+//       isSpecial: true,
+//       rating: 5,
+//     },
+//     {
+//       id: "des2",
+//       name: "Chocolate Lava Cake",
+//       description: "Warm chocolate cake with a molten center, served with vanilla ice cream.",
+//       price: 9.99,
+//       image: "https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=600&h=400&q=80",
+//       rating: 4,
+//     },
+//     {
+//       id: "des3",
+//       name: "New York Cheesecake",
+//       description: "Rich and creamy cheesecake with a graham cracker crust, topped with fresh berries.",
+//       price: 8.99,
+//       image: "https://images.unsplash.com/photo-1567327825194-4b5f285561c9?w=600&h=400&q=80",
+//       rating: 4,
+//     },
+//   ],
+//   Beverages: [
+//     {
+//       id: "bev1",
+//       name: "Fresh Fruit Smoothie",
+//       description: "Blend of seasonal fruits with yogurt and honey.",
+//       price: 6.99,
+//       image: "https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=600&h=400&q=80",
+//       dietaryInfo: ["Vegetarian", "Gluten-Free"],
+//       rating: 4,
+//     },
+//     {
+//       id: "bev2",
+//       name: "Craft Lemonade",
+//       description: "Freshly squeezed lemons with a hint of mint and honey.",
+//       price: 4.99,
+//       image: "https://images.unsplash.com/photo-1499638673689-79a0b5115d87?w=600&h=400&q=80",
+//       dietaryInfo: ["Vegan", "Gluten-Free"],
+//       rating: 4,
+//     },
+//     {
+//       id: "bev3",
+//       name: "Espresso",
+//       description: "Rich, full-bodied espresso made from premium coffee beans.",
+//       price: 3.99,
+//       image: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=600&h=400&q=80",
+//       dietaryInfo: ["Vegan", "Gluten-Free"],
+//       rating: 5,
+//     },
+//   ],
+// }
 
 export function CartButton() {
   const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } = useCart()
@@ -471,7 +446,7 @@ export function CartButton() {
                             <AnimatePresence initial={false}>
                               {items.map((item) => (
                                 <motion.div
-                                  key={item.id}
+                                  key={item._?.soul}
                                   initial={{ opacity: 0, height: 0 }}
                                   animate={{ opacity: 1, height: "auto" }}
                                   exit={{ opacity: 0, height: 0 }}
@@ -480,7 +455,7 @@ export function CartButton() {
                                 >
                                   <div className="flex items-center gap-3 py-3">
                                     <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
-                                      <img src={item.image} alt={item.name} className="object-cover w-full h-full" />
+                                      <img src={item.imageUrl} alt={item.name} className="object-cover w-full h-full" />
                                     </div>
                                     <div className="flex-grow">
                                       <h4 className="font-medium">{item.name}</h4>
@@ -490,7 +465,7 @@ export function CartButton() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-6 w-6 rounded-full p-0"
-                                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                            onClick={() => item._?.soul && updateQuantity(item._?.soul, item.quantity - 1)}
                                           >
                                             <MinusCircle className="h-4 w-4" />
                                           </Button>
@@ -499,7 +474,7 @@ export function CartButton() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-6 w-6 rounded-full p-0"
-                                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                            onClick={() => item._?.soul && updateQuantity(item._?.soul, item.quantity + 1)}
                                           >
                                             <PlusCircle className="h-4 w-4" />
                                           </Button>
@@ -510,7 +485,7 @@ export function CartButton() {
                                             variant="ghost"
                                             size="icon"
                                             className="h-6 w-6 rounded-full p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20"
-                                            onClick={() => removeItem(item.id)}
+                                            onClick={() => item._?.soul && removeItem(item._?.soul)}
                                           >
                                             <Trash2 className="h-4 w-4" />
                                           </Button>
@@ -560,7 +535,9 @@ export function CartButton() {
 }
 
 function RouteComponent() {
-  // const menuItems = useGet("menuItem", "restaurant")
+  const menuItems = useGet("menuItem", "restaurant")
+
+  const menuData = groupBy(menuItems, "category")
 
   return (
     <div className="min-h-screen overflow-x-hidden">
@@ -644,6 +621,7 @@ function RouteComponent() {
             ]}
           />
         </div>
+        <div className='h-8' />
 
         {Object.entries(menuData).map(([category, items]) => (
           <MenuSection key={category} title={category} items={items} />

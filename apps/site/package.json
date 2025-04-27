@@ -63,6 +63,7 @@
     "framer-motion": "^12.6.5",
     "gun": "^0.2020.1240",
     "leaflet": "^1.9.4",
+    "lodash": "^4.17.21",
     "lucide-react": "^0.487.0",
     "motion": "^12.6.5",
     "nanoid": "^5.1.5",
@@ -87,6 +88,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@repo/typescript-config": "workspace:*",
+    "@types/lodash": "^4.17.16",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
