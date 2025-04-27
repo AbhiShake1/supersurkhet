@@ -509,13 +509,13 @@ export function CartButton() {
                         <span>${subtotal.toFixed(2)}</span>
                       </div>
                       <div className="flex items-center justify-between text-sm text-muted-foreground">
-                        <span>Tax</span>
-                        <span>${(subtotal * 0.08).toFixed(2)}</span>
+                        <span>VAT</span>
+                        <span>${(subtotal * 0.13).toFixed(2)}</span>
                       </div>
                       <Separator />
                       <div className="flex items-center justify-between font-bold text-lg">
                         <span>Total</span>
-                        <span>${(subtotal * 1.08).toFixed(2)}</span>
+                        <span>${(subtotal * 1.13).toFixed(2)}</span>
                       </div>
                       <CredenzaClose asChild>
                         <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700">
