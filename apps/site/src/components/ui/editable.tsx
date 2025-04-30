@@ -392,7 +392,7 @@ const EditablePreview = React.forwardRef<HTMLDivElement, EditablePreviewProps>(
           className,
         )}
       >
-        {context.value || context.placeholder}
+        {props.children || context.value || context.placeholder}
       </PreviewPrimitive>
     );
   },

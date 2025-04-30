@@ -30,6 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCreate, useDelete, useGet, useUpdate, type NestedSchemaType, type SchemaKeys } from "@/lib/gun/index";
 import { getNestedZodShape } from "@/lib/gun/utils/parser";
 import { appSchema } from "@/lib/schema";
+import { parseSchema } from "@autoform/zod";
 import { useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -43,6 +44,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { z, type ZodObject } from "zod";
+import { AutoPreview } from "../auto-preview";
 import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
 import { DataTableColumnHeader } from "../data-table/data-table-column-header";
 import { DataTableFilterList } from "../data-table/data-table-filter-list";
@@ -217,9 +219,11 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 		},
 	];
 
-	const shape = schema.shape;
+	const parsedSchema = parseSchema(schema)
 
-	for (const [key, field] of Object.entries(shape)) {
+	for (const field of parsedSchema.fields) {
+		const { key, description } = field;
+		const childSchema = z.object({ [key]: schema.shape[key] })
 		if (["_"].includes(key)) continue;
 
 		const column: ColumnDef<NestedSchemaType<T>> = {
@@ -227,15 +231,14 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 			accessorKey: key,
 			header: ({ column }) => (
 				<DataTableColumnHeader
-					className="capitalize"
+					className="capitalize text-center w-full items-center justify-center"
 					column={column}
 					// @ts-expect-error
-					title={field?._def?.description || key}
+					title={description || key}
 				/>
 			),
 			cell: ({ cell, table, row }) => {
 				const value = cell.getValue();
-				const childSchema = z.object({ [key]: field });
 
 				function update(value: Record<string, any>) {
 					// @ts-expect-error
@@ -246,9 +249,12 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 					defaultValue={value as string}
 					placeholder="-"
 					className="text-center"
+					triggerMode="dblclick"
 				>
 					<Editable.Area>
-						<Editable.Preview className="max-w-56"/>
+						<Editable.Preview className="max-w-56">
+							<AutoPreview field={field} key={field.key} value={value} />
+						</Editable.Preview>
 						<Editable.Input asChild>
 							<AutoFormWithoutLabel
 								formProps={{
