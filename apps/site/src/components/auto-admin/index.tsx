@@ -11,6 +11,7 @@ import { useLocation } from "@tanstack/react-router";
 import {
     type LucideIcon
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface AutoAdminProps<T> {
     tabs: T
@@ -49,7 +50,10 @@ export function AutoAdmin<const T extends AutoTableKeys[]>({ tabs }: AutoAdminPr
                         <SidebarTrigger className="-ml-1" />
                     </div>
                 </header>
-                <section className="max-w-4xl mx-6 items-start justify-center">
+                <section className={cn(
+                    "mx-6 items-start justify-center",
+                    "max-w-[85%]"
+                )}>
                     <AutoTable schema={currentItem.schema} slug={basePath} />
                 </section>
             </SidebarInset>

@@ -170,7 +170,10 @@ export function MenuItem({ item }: MenuItemProps) {
         <CardContent className="pt-5 flex-grow">
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-xl font-semibold">{item.name}</h3>
-            <span className="font-bold text-lg text-amber-600 dark:text-amber-400">${item.price.toFixed(2)}</span>
+            {
+              item.price &&
+              <span className="font-bold text-lg text-amber-600 dark:text-amber-400">${item.price.toFixed(2)}</span>
+            }
           </div>
           <p className="text-muted-foreground text-sm mb-4">{item.description}</p>
           {/* {item.dietaryInfo && (
