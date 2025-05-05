@@ -548,7 +548,7 @@ export function CartButton() {
                                           </Button>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <span className="font-medium">${(item.price * item.quantity).toFixed(2)}</span>
+                                          <span className="font-medium">Rs. {(item.price * item.quantity).toFixed(2)}</span>
                                           <Button
                                             variant="ghost"
                                             size="icon"
