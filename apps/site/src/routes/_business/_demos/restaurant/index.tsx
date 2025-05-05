@@ -1,17 +1,20 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter } from '@/components/ui/card'
 import { Carousel } from '@/components/ui/carousel'
-import { Credenza, CredenzaBody, CredenzaClose, CredenzaContent, CredenzaDescription, CredenzaFooter, CredenzaHeader, CredenzaTitle, CredenzaTrigger } from '@/components/ui/credenza'
+import { Credenza, CredenzaBody, CredenzaContent, CredenzaDescription, CredenzaFooter, CredenzaHeader, CredenzaTitle, CredenzaTrigger } from '@/components/ui/credenza'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
 import { useGet } from '@/lib/gun/hooks'
 import type { NestedSchemaType } from '@/lib/gun/index'
+import { useMutation } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
+import { createServerFn } from '@tanstack/react-start'
 import { AnimatePresence, motion } from 'framer-motion'
 import { groupBy } from 'lodash'
 import { MinusCircle, MinusIcon, PlusCircle, PlusIcon, Search, ShoppingCart, ShoppingCartIcon, Trash2 } from 'lucide-react'
 import { createContext, useContext, useEffect, useState } from 'react'
+import { z } from 'zod'
 
 export const Route = createFileRoute('/_business/_demos/restaurant/')({
   component: () => <CartProvider>
@@ -382,8 +385,70 @@ export interface MenuItemType extends NestedSchemaType<"menuItem"> {
 //   ],
 // }
 
+
+const _checkout = createServerFn({ method: "POST" })
+  .validator(z.object({ amount: z.number() }))
+  .handler(async ({ data: { amount } }) => {
+    const crypto = await import('crypto');
+    function generatePaymentUrl(PID: string, PRN: string, AMT: string, R1: string, R2: string, secretKey: string) {
+      const today = new Date();
+      const month = String(today.getMonth() + 1).padStart(2, '0'); // Get month
+      const day = String(today.getDate()).padStart(2, '0'); // Get day
+      const year = today.getFullYear(); // Get year
+      const date = `${month}/${day}/${year}`; // Format as MM/DD/YYYY
+
+      const MD = 'P'; // Payment Mode
+      const CRN = 'NPR'; // Default currency
+      const DT = date;
+      const RU = `http://fonepay/payment/verify`; // Callback URL
+
+      // Concatenate fields as per Fonepay documentation
+      const concatenatedString = `${PID},${MD},${PRN},${AMT},${CRN},${DT},${R1},${R2},${RU}`;
+
+      // Generate DV (Data Validation Hash)
+      const DV = crypto
+        .createHmac('sha512', secretKey)
+        .update(concatenatedString, 'utf-8')
+        .digest('hex');
+      // const DV = "43d2f0939e58e038c3122cc1e65f86af01998dce3e9f70a41a664dc0dbd45dfd74b4c4cbb77afef8a5ae9854ab48fcbd7edfc93156f663a8c60f28830eaca7d7"
+
+      // Construct payment URL
+      const paymentUrl = `https://dev-clientapi.fonepay.com/api/merchantRequest?PID=${PID}&MD=${MD}&PRN=${PRN}&AMT=${AMT}&CRN=${CRN}&DT=${encodeURIComponent(
+        DT
+      )}&R1=${encodeURIComponent(R1)}&R2=${encodeURIComponent(
+        R2
+      )}&DV=${DV}&RU=${encodeURIComponent(RU)}`;
+      return paymentUrl;
+    }
+    // const body = {
+    //   amount: amount.toFixed(2),
+    //   remarks1: "test1",
+    //   remarks2: "test2",
+    //   prn: "5d76d323-d1f6-4a38-8231-0063f9581c98",
+    //   merchantCode: "NBQM",
+    //   dataValidation: "43d2f0939e58e038c3122cc1e65f86af01998dce3e9f70a41a664dc0dbd45dfd74b4c4cbb77afef8a5ae9854ab48fcbd7edfc93156f663a8c60f28830eaca7d7",
+    //   username: "9861101076",
+    //   password: "admin123456"
+    // }
+    // const res = await fetch(`https://dev-merchantapi.fonepay.com/convergent-merchant-web/api/merchant/merchantDetailsForThirdParty/thirdPartyDynamicQrDownload`, {
+    //   method: 'POST',
+    //   body: JSON.stringify(body),
+    // })
+    const url = generatePaymentUrl("NBQM", "5d76d323-d1f6-4a38-8231-0063f9581c98", amount.toFixed(2), "test1", "test2", "1234567890")
+    const res = await fetch(url)
+
+    // return url
+    return res.text()
+  })
+
 export function CartButton() {
   const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } = useCart()
+  const checkout = useMutation({
+    mutationFn: async ({ amount }: { amount: number }) => {
+      const res = await _checkout({ data: { amount } })
+      console.log(res)
+    },
+  })
 
   return (
     <>
@@ -520,11 +585,11 @@ export function CartButton() {
                         <span>Total</span>
                         <span>${(subtotal * 1.13).toFixed(2)}</span>
                       </div>
-                      <CredenzaClose asChild>
-                        <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700">
-                          Proceed to Checkout
-                        </Button>
-                      </CredenzaClose>
+                      {/* <CredenzaClose asChild> */}
+                      <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700" onClick={() => checkout.mutate({ amount: Math.round(subtotal * 1.13) })} loading={checkout.isPending}>
+                        Proceed to Checkout
+                      </Button>
+                      {/* </CredenzaClose> */}
                     </div>
                   </CredenzaFooter>
                 </CredenzaContent>

@@ -1,6 +1,7 @@
 import { AutoAdmin } from '@/components/auto-admin'
+import { RestaurantLayoutEditor } from '@/components/seat-builder/restaurant-layout-editor'
 import { createFileRoute } from '@tanstack/react-router'
-import { MenuSquare, School } from 'lucide-react'
+import { Layout, MenuSquare } from 'lucide-react'
 
 export const Route = createFileRoute('/_business/_demos/restaurant/admin')({
   component: RouteComponent,
@@ -14,9 +15,9 @@ function RouteComponent() {
         icon: MenuSquare,
     },
     {
-        schema: "order",
-        title: "School",
-        icon: School,
-    }
+        title: "Layout",
+        icon: Layout,
+        children: <RestaurantLayoutEditor />,
+    },
   ]}/>
 }

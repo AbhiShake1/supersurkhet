@@ -46,8 +46,8 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
                         }}
                     >
                         <DialogFooter className="absolute bottom-0 right-2">
-                            <SubmitButton>
-                                <Save />
+                            <SubmitButton className="gap-2">
+                                <Save className="size-4" />
                                 Save
                             </SubmitButton>
                         </DialogFooter>

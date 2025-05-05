@@ -1,6 +1,7 @@
 import type React from "react";
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 
-export const SubmitButton: React.FC<{ children: React.ReactNode }> = ({
+export const SubmitButton: React.FC<{ children: React.ReactNode } & ButtonProps> = ({
 	children,
-}) => <Button type="submit">{children}</Button>;
+	...props
+}) => <Button {...props} type="submit">{children}</Button>;

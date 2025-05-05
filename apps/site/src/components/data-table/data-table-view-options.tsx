@@ -46,11 +46,11 @@ export function DataTableViewOptions<TData>({
 					role="combobox"
 					variant="outline"
 					size="sm"
-					className="ml-auto hidden h-8 lg:flex"
+					className="ml-auto hidden h-8 gap-2 lg:flex"
 				>
-					<Settings2 />
+					<Settings2 className="size-4"/>
 					View
-					<ChevronsUpDown className="ml-auto opacity-50" />
+					<ChevronsUpDown className="ml-auto opacity-50 size-4" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent align="end" className="w-44 p-0">

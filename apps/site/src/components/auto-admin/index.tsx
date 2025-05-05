@@ -12,15 +12,21 @@ import {
     type LucideIcon
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 
 export interface AutoAdminProps<T> {
     tabs: T
 }
 
-export interface AutoTableKeys extends Omit<AutoTableProps<SchemaKeys>, "slug"> {
+export type AutoTableKeys = {
     title: string;
     icon?: LucideIcon;
-}
+} & (
+        Omit<AutoTableProps<SchemaKeys>, "slug">
+        | {
+            children: ReactNode,
+        }
+    )
 
 export function AutoAdmin<const T extends AutoTableKeys[]>({ tabs }: AutoAdminProps<T>) {
     const data: SidebarItems = {
@@ -54,7 +60,10 @@ export function AutoAdmin<const T extends AutoTableKeys[]>({ tabs }: AutoAdminPr
                     "mx-6 items-start justify-center",
                     "max-w-[85%]"
                 )}>
-                    <AutoTable schema={currentItem.schema} slug={basePath} />
+                    {
+                        "children" in currentItem ? currentItem.children :
+                            <AutoTable schema={currentItem.schema} slug={basePath} />
+                    }
                 </section>
             </SidebarInset>
         </SidebarProvider>

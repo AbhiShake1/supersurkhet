@@ -106,15 +106,15 @@ export function AutoTable<T extends SchemaKeys>({
 		<div className="container mx-auto py-6 space-y-4 flex flex-col items-end">
 			<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
 				<DialogTrigger asChild>
-					<Button className="w-min">
-						<Plus className="w-5 h-5" />
+					<Button className="gap-2">
+						<Plus className="size-4" />
 						Add New
 					</Button>
 				</DialogTrigger>
 				<DialogContent className="sm:max-w-[425px]">
 					<DialogHeader>
-						<DialogTitle>Add Business</DialogTitle>
-						<DialogDescription>Add a new business</DialogDescription>
+						<DialogTitle>Add</DialogTitle>
+						<DialogDescription>Add new</DialogDescription>
 					</DialogHeader>
 					<ScrollArea className="relative max-h-[70vh]">
 						<AutoForm
@@ -123,8 +123,8 @@ export function AutoTable<T extends SchemaKeys>({
 							onSubmit={(b) => (setDialogOpen(false), create(b))}
 						>
 							<DialogFooter className="absolute bottom-0 right-2">
-								<SubmitButton>
-									<Save />
+								<SubmitButton className="gap-2">
+									<Save className="size-4" />
 									Save
 								</SubmitButton>
 							</DialogFooter>
