@@ -153,6 +153,8 @@ interface CarouselProps {
 export function Carousel({ slides: originalSlides }: CarouselProps) {
   const slides = useMemo(() => Array.from({ length: 50 }).map(() => originalSlides).flatMap(o => o), [originalSlides])
   const [current, setCurrent] = useState(slides.length / 2);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   const handlePreviousClick = () => {
     const previous = current - 1;
@@ -170,15 +172,43 @@ export function Carousel({ slides: originalSlides }: CarouselProps) {
     }
   };
 
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe) {
+      handleNextClick();
+    } else if (isRightSwipe) {
+      handlePreviousClick();
+    }
+  };
+
   const id = useId();
 
   return (
     <div
-      className="relative w-full h-[40vh] max-h-[400px] mx-auto"
+      className="relative w-full h-[40vh] max-h-[400px] mx-auto touch-pan-y"
       aria-labelledby={`carousel-heading-${id}`}
     >
       <ul
         className="absolute flex mx-[-4vmin] transition-transform duration-1000 ease-in-out"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
         style={{
           transform: `translateX(calc(-${current * (100 / slides.length)}% + 5vw))`,
         }}
@@ -194,7 +224,7 @@ export function Carousel({ slides: originalSlides }: CarouselProps) {
         ))}
       </ul>
 
-      <div className="absolute flex justify-center w-full top-[calc(100%+1rem)]">
+      <div className="absolute flex justify-center w-full top-[calc(100%+1rem)] hidden md:flex">
         <CarouselControl
           type="previous"
           title="Go to previous slide"
