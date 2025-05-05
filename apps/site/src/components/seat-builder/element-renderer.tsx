@@ -211,7 +211,7 @@ export function ElementRenderer({
           {element.label}
         </div>
       )}
-      {element.capacity && element.capacity > 0 && (
+      {!!element.capacity && (
         <div className="absolute top-0 right-0 bg-primary text-background text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
           {element.capacity}
         </div>

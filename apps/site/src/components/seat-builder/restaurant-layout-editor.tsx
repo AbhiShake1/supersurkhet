@@ -189,14 +189,17 @@ function _RestaurantLayoutEditor() {
                 setLayout(parsedLayout)
                 setActiveFloor(parsedLayout.floors[0].id)
 
-                toast.success("Layout loaded")
+                // toast.success("Layout loaded")
             } catch (error) {
                 toast.error("Error loading layout")
             }
         } else {
-            toast.error("No saved layout")
+            // toast.error("No saved layout")
         }
     }
+    useEffect(() => {
+        loadLayout()
+    }, [])
 
     const exportLayout = () => {
         const dataStr = JSON.stringify(layout, null, 2)
@@ -265,10 +268,6 @@ function _RestaurantLayoutEditor() {
                         <div className="flex items-center gap-2 flex-wrap">
                             <HistoryControls />
 
-                            <Button variant="outline" size="sm" onClick={loadLayout}>
-                                <FolderOpen className="mr-2 h-4 w-4" />
-                                Load
-                            </Button>
                             <Button variant="outline" size="sm" onClick={exportLayout}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Export
