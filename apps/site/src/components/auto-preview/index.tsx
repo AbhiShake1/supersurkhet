@@ -37,7 +37,7 @@ const ImagePreview: AutoPreviewComponent<string> = ({ value }) => {
 }
 const NumberPreview: AutoPreviewComponent<number> = ({ value }) => <>{value}</>
 const SelectPreview: AutoPreviewComponent<string> = ({ value }) => value
-const StringPreview: AutoPreviewComponent<string> = ({ value }) => <>{value}a</>
+const StringPreview: AutoPreviewComponent<string> = ({ value }) => <>{value}</>
 
 const autoPreviewComponents: Record<FieldType | "fallback", AutoPreviewComponent<any>> = {
     boolean: ({ value }) => value ? "yes" : "no",

@@ -157,7 +157,7 @@ export const appSchema = z.object({
 		name: z.string().describe("Name of the menu item"),
 		description: z.string().optional().describe("Detailed description of the item"),
 		price: z.number({ coerce: true }).positive().describe("Regular price of the item"),
-		discountedPrice: z.number().positive().optional().describe("Special or discounted price"),
+		discountedPrice: z.number({ coerce: true }).positive().optional().describe("Special or discounted price"),
 		imageUrl: z.string().url()
 			.superRefine(fieldConfig({ fieldType: "image" }))
 			.optional().describe("Image"),
