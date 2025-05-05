@@ -111,15 +111,7 @@ function _RestaurantLayoutEditor() {
     const [darkMode, setDarkMode] = useState<boolean>(true)
     const [previewMode, setPreviewMode] = useState<boolean>(false)
     const [activeFloor, setActiveFloor] = useState<string>("floor-1")
-
-    // Apply dark mode class to body
-    useEffect(() => {
-        if (darkMode) {
-            document.documentElement.classList.add("dark")
-        } else {
-            document.documentElement.classList.remove("dark")
-        }
-    }, [darkMode])
+    const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
 
     function getOrdinalSuffix(num: number): string {
         const j = num % 10
@@ -321,6 +313,14 @@ function _RestaurantLayoutEditor() {
                                     const newElements = [...currentFloor.elements, element]
                                     updateElements(currentFloor.id, newElements)
                                 }}
+                                onUpdateElement={(elementId, updates) => {
+                                    const newElements = currentFloor.elements.map(el =>
+                                        el.id === elementId ? { ...el, ...updates } : el
+                                    )
+                                    updateElements(currentFloor.id, newElements)
+                                }}
+                                selectedElement={currentFloor.elements.find(el => el.id === selectedElementId)}
+                                setSelectedElement={(element) => setSelectedElementId(element?.id || null)}
                                 onUpdateFloor={(properties) => {
                                     updateFloorProperties(currentFloor.id, properties)
                                 }}
@@ -370,6 +370,8 @@ function _RestaurantLayoutEditor() {
                                                         floor={floor}
                                                         onUpdateElements={(newElements) => updateElements(floor.id, newElements)}
                                                         darkMode={darkMode}
+                                                        selectedElementId={selectedElementId}
+                                                        onSelectElement={setSelectedElementId}
                                                     />
                                                 )}
                                             </TabsContent>

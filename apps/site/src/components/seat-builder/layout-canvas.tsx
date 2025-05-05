@@ -14,11 +14,21 @@ interface LayoutCanvasProps {
   floor: Floor
   onUpdateElements: (elements: LayoutElement[]) => void
   darkMode?: boolean
+  selectedElementId?: string | null
+  onSelectElement?: (elementId: string | null) => void
 }
 
-export function LayoutCanvas({ floor, onUpdateElements, darkMode = false }: LayoutCanvasProps) {
+export function LayoutCanvas({ floor, onUpdateElements, darkMode = false, selectedElementId: externalSelectedElementId, onSelectElement }: LayoutCanvasProps) {
   const { push } = useHistory()
-  const [selectedElementId, setSelectedElementId] = useState<string | null>(null)
+  const [internalSelectedElementId, setInternalSelectedElementId] = useState<string | null>(null)
+  const selectedElementId = externalSelectedElementId !== undefined ? externalSelectedElementId : internalSelectedElementId
+  const setSelectedElementId = (id: string | null) => {
+    if (onSelectElement) {
+      onSelectElement(id)
+    } else {
+      setInternalSelectedElementId(id)
+    }
+  }
   const [draggedElementId, setDraggedElementId] = useState<string | null>(null)
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 })
   const [scale, setScale] = useState(1)
