@@ -11,8 +11,12 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as CheckoutImport } from './routes/checkout'
+import { Route as CartImport } from './routes/cart'
 import { Route as AdminImport } from './routes/admin'
 import { Route as IndexImport } from './routes/index'
+import { Route as CheckoutSuccessImport } from './routes/checkout/success'
+import { Route as CheckoutFailureImport } from './routes/checkout/failure'
 import { Route as BusinessChatImport } from './routes/_business/chat'
 import { Route as AuthAuthImport } from './routes/_auth/auth'
 import { Route as BusinessRideIndexImport } from './routes/_business/ride/index'
@@ -27,6 +31,18 @@ import { Route as BusinessDemosRestaurantAdminImport } from './routes/_business/
 
 // Create/Update Routes
 
+const CheckoutRoute = CheckoutImport.update({
+  id: '/checkout',
+  path: '/checkout',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const CartRoute = CartImport.update({
+  id: '/cart',
+  path: '/cart',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const AdminRoute = AdminImport.update({
   id: '/admin',
   path: '/admin',
@@ -37,6 +53,18 @@ const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRoute,
+} as any)
+
+const CheckoutSuccessRoute = CheckoutSuccessImport.update({
+  id: '/success',
+  path: '/success',
+  getParentRoute: () => CheckoutRoute,
+} as any)
+
+const CheckoutFailureRoute = CheckoutFailureImport.update({
+  id: '/failure',
+  path: '/failure',
+  getParentRoute: () => CheckoutRoute,
 } as any)
 
 const BusinessChatRoute = BusinessChatImport.update({
@@ -126,6 +154,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminImport
       parentRoute: typeof rootRoute
     }
+    '/cart': {
+      id: '/cart'
+      path: '/cart'
+      fullPath: '/cart'
+      preLoaderRoute: typeof CartImport
+      parentRoute: typeof rootRoute
+    }
+    '/checkout': {
+      id: '/checkout'
+      path: '/checkout'
+      fullPath: '/checkout'
+      preLoaderRoute: typeof CheckoutImport
+      parentRoute: typeof rootRoute
+    }
     '/_auth/auth': {
       id: '/_auth/auth'
       path: '/auth'
@@ -139,6 +181,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/chat'
       preLoaderRoute: typeof BusinessChatImport
       parentRoute: typeof rootRoute
+    }
+    '/checkout/failure': {
+      id: '/checkout/failure'
+      path: '/failure'
+      fullPath: '/checkout/failure'
+      preLoaderRoute: typeof CheckoutFailureImport
+      parentRoute: typeof CheckoutImport
+    }
+    '/checkout/success': {
+      id: '/checkout/success'
+      path: '/success'
+      fullPath: '/checkout/success'
+      preLoaderRoute: typeof CheckoutSuccessImport
+      parentRoute: typeof CheckoutImport
     }
     '/_business/ride/admin': {
       id: '/_business/ride/admin'
@@ -208,6 +264,20 @@ declare module '@tanstack/react-router' {
 
 // Create and export the route tree
 
+interface CheckoutRouteChildren {
+  CheckoutFailureRoute: typeof CheckoutFailureRoute
+  CheckoutSuccessRoute: typeof CheckoutSuccessRoute
+}
+
+const CheckoutRouteChildren: CheckoutRouteChildren = {
+  CheckoutFailureRoute: CheckoutFailureRoute,
+  CheckoutSuccessRoute: CheckoutSuccessRoute,
+}
+
+const CheckoutRouteWithChildren = CheckoutRoute._addFileChildren(
+  CheckoutRouteChildren,
+)
+
 interface BusinessRideAdminRouteRouteChildren {
   BusinessRideAdminVehicleTypesRoute: typeof BusinessRideAdminVehicleTypesRoute
   BusinessRideAdminIndexRoute: typeof BusinessRideAdminIndexRoute
@@ -227,8 +297,12 @@ const BusinessRideAdminRouteRouteWithChildren =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/auth': typeof AuthAuthRoute
   '/chat': typeof BusinessChatRoute
+  '/checkout/failure': typeof CheckoutFailureRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/ride/admin': typeof BusinessRideAdminRouteRouteWithChildren
   '/rbd': typeof BusinessRestaurantTestRbdRoute
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
@@ -243,8 +317,12 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/auth': typeof AuthAuthRoute
   '/chat': typeof BusinessChatRoute
+  '/checkout/failure': typeof CheckoutFailureRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/rbd': typeof BusinessRestaurantTestRbdRoute
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/sasa': typeof BusinessSchoolSasaRoute
@@ -259,8 +337,12 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/cart': typeof CartRoute
+  '/checkout': typeof CheckoutRouteWithChildren
   '/_auth/auth': typeof AuthAuthRoute
   '/_business/chat': typeof BusinessChatRoute
+  '/checkout/failure': typeof CheckoutFailureRoute
+  '/checkout/success': typeof CheckoutSuccessRoute
   '/_business/ride/admin': typeof BusinessRideAdminRouteRouteWithChildren
   '/_business/_restaurant-test/rbd': typeof BusinessRestaurantTestRbdRoute
   '/_business/_retail/anjalstore': typeof BusinessRetailAnjalstoreRoute
@@ -277,8 +359,12 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/cart'
+    | '/checkout'
     | '/auth'
     | '/chat'
+    | '/checkout/failure'
+    | '/checkout/success'
     | '/ride/admin'
     | '/rbd'
     | '/anjalstore'
@@ -292,8 +378,12 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/cart'
+    | '/checkout'
     | '/auth'
     | '/chat'
+    | '/checkout/failure'
+    | '/checkout/success'
     | '/rbd'
     | '/anjalstore'
     | '/sasa'
@@ -306,8 +396,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/cart'
+    | '/checkout'
     | '/_auth/auth'
     | '/_business/chat'
+    | '/checkout/failure'
+    | '/checkout/success'
     | '/_business/ride/admin'
     | '/_business/_restaurant-test/rbd'
     | '/_business/_retail/anjalstore'
@@ -323,6 +417,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  CartRoute: typeof CartRoute
+  CheckoutRoute: typeof CheckoutRouteWithChildren
   AuthAuthRoute: typeof AuthAuthRoute
   BusinessChatRoute: typeof BusinessChatRoute
   BusinessRideAdminRouteRoute: typeof BusinessRideAdminRouteRouteWithChildren
@@ -337,6 +433,8 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  CartRoute: CartRoute,
+  CheckoutRoute: CheckoutRouteWithChildren,
   AuthAuthRoute: AuthAuthRoute,
   BusinessChatRoute: BusinessChatRoute,
   BusinessRideAdminRouteRoute: BusinessRideAdminRouteRouteWithChildren,
@@ -360,6 +458,8 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/admin",
+        "/cart",
+        "/checkout",
         "/_auth/auth",
         "/_business/chat",
         "/_business/ride/admin",
@@ -377,11 +477,29 @@ export const routeTree = rootRoute
     "/admin": {
       "filePath": "admin.tsx"
     },
+    "/cart": {
+      "filePath": "cart.tsx"
+    },
+    "/checkout": {
+      "filePath": "checkout.tsx",
+      "children": [
+        "/checkout/failure",
+        "/checkout/success"
+      ]
+    },
     "/_auth/auth": {
       "filePath": "_auth/auth.tsx"
     },
     "/_business/chat": {
       "filePath": "_business/chat.tsx"
+    },
+    "/checkout/failure": {
+      "filePath": "checkout/failure.tsx",
+      "parent": "/checkout"
+    },
+    "/checkout/success": {
+      "filePath": "checkout/success.tsx",
+      "parent": "/checkout"
     },
     "/_business/ride/admin": {
       "filePath": "_business/ride/admin/route.tsx",
