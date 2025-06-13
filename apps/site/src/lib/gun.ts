@@ -1,8 +1,9 @@
 import "gun/axe";
 import GUN from "gun/gun";
-// import "gun/lib/radisk";
+import "gun/lib/radix";
+import "gun/lib/radisk";
+import "gun/lib/store";
 import "gun/lib/rindexed";
-// import "gun/lib/store";
 import "gun/lib/webrtc";
 import "gun/sea";
 

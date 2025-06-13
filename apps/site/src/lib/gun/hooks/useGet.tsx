@@ -15,9 +15,8 @@ export const useGet = createGunHook((messenger) => {
 			const chatRoom = options.gun.get(keys).map();
 
 			chatRoom.on(async (_data, key: string) => {
-				// @ts-ignore
 				if (!_data)
-					// @ts-expect-error
+					// @ts-ignore
 					return setData((p) => p.filter((msg) => msg._?.soul !== key));
 
 				const newData = await decrypt<(typeof data)[number]>(

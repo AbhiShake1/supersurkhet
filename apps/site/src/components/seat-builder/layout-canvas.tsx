@@ -1,14 +1,14 @@
 import type React from "react"
 
-import { useState, useRef, useEffect } from "react"
-import type { Floor, LayoutElement } from "./restaurant-layout-editor"
 import { Button } from "@/components/ui/button"
-import { Trash2, RotateCw, ZoomIn, ZoomOut, Copy, Lock, Unlock, Maximize2, Minimize2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ElementRenderer } from "./element-renderer"
-import { ResizeHandles } from "./resize-handles"
-import { useHistory } from "./history-provider"
+import { Copy, Lock, Maximize2, Minimize2, RotateCw, Trash2, Unlock, ZoomIn, ZoomOut } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
+import { ElementRenderer } from "./element-renderer"
+import { useHistory } from "./history-provider"
+import { ResizeHandles } from "./resize-handles"
+import type { Floor, LayoutElement } from "./restaurant-layout-editor"
 
 interface LayoutCanvasProps {
   floor: Floor

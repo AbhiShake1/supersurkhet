@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 // ** Custom Hooks **
-import { useChat } from "@/lib/gun/hooks/useChat";
+import { useChat } from "@/hooks/use-chat";
 
 // ** UI Components **
 import {

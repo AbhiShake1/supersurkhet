@@ -1,5 +1,5 @@
-import { useCreate, useGet, useUpdate } from "../index";
-import type { ChatMessage } from "../../schema";
+import { useCreate, useGet, useUpdate } from "@gta/react-hooks";
+import type { ChatMessage } from "../lib/schema";
 
 export function useChat(roomId: string) {
 	const messages = useGet("chat.message", roomId);
@@ -25,12 +25,12 @@ export function useChat(roomId: string) {
 
 	// Mark message as read
 	const markAsRead = async (messageId: string) => {
-		await updateMessage(messageId, { read: true });
+		await updateMessage({ id: messageId, read: true });
 	};
 
 	// Mark message as delivered
 	const markAsDelivered = async (messageId: string) => {
-		await updateMessage(messageId, { delivered: true });
+		await updateMessage({ id: messageId, delivered: true });
 	};
 
 	return {
@@ -61,7 +61,8 @@ export function useChatRooms() {
 
 	// Update room's last message
 	const updateLastMessage = async (roomId: string, message: ChatMessage) => {
-		await updateRoom(roomId, {
+		await updateRoom({
+			id: roomId,
 			last_message: message,
 			updated_at: Date.now(),
 		});

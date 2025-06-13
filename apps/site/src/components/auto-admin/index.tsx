@@ -1,4 +1,4 @@
-import type { SchemaKeys } from "@/lib/gun/index";
+import type { SchemaKeys } from "@gta/react-hooks";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 
 import { AppSidebar, type SidebarItems } from "@/components/app-sidebar";

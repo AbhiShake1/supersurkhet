@@ -27,8 +27,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import * as Editable from "@/components/ui/editable";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useCreate, useDelete, useGet, useUpdate, type NestedSchemaType, type SchemaKeys } from "@/lib/gun/index";
-import { getNestedZodShape } from "@/lib/gun/utils/parser";
+import { useCreate, useDelete, useGet, useUpdate, getNestedZodShape, type NestedSchemaType, type SchemaKeys } from "@gta/react-hooks";
 import { appSchema } from "@/lib/schema";
 import { parseSchema } from "@autoform/zod";
 import { useSearch } from "@tanstack/react-router";
@@ -52,6 +51,7 @@ import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
 import { AutoTableActionBar } from "./auto-table-action-bar";
+import { useMutation } from "@tanstack/react-query";
 
 export interface AutoTableProps<T extends SchemaKeys> {
 	schema: T,
@@ -64,8 +64,10 @@ export function AutoTable<T extends SchemaKeys>({
 }: AutoTableProps<T>) {
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const data = useGet(schemaName, slug)
-	const create = useCreate(schemaName, slug)
-	const update = useUpdate(schemaName, slug)
+	const createFn = useCreate(schemaName, slug)
+	const createMutation = useMutation({ mutationFn: createFn, onSuccess: () => setDialogOpen(false) })
+	const updateFn = useUpdate(schemaName, slug)
+	const updateMutation = useMutation({ mutationFn: updateFn, onSuccess: () => setDialogOpen(false) })
 	const onDelete = useDelete(schemaName, slug)
 	const schema = getNestedZodShape(schemaName, appSchema);
 	const [rowAction, setRowAction] =
@@ -120,10 +122,10 @@ export function AutoTable<T extends SchemaKeys>({
 						<AutoForm
 							schema={schema}
 							// @ts-expect-error
-							onSubmit={(b) => (setDialogOpen(false), create(b))}
+							onSubmit={(b) => createMutation.mutate(b)}
 						>
 							<DialogFooter className="absolute bottom-0 right-2">
-								<SubmitButton className="gap-2">
+								<SubmitButton className="gap-2" loading={updateMutation.isPending}>
 									<Save className="size-4" />
 									Save
 								</SubmitButton>
@@ -172,7 +174,7 @@ export function AutoTable<T extends SchemaKeys>({
 				onOpenChange={() => setRowAction(null)}
 				data={rowAction?.row.original}
 				schema={schema}
-				onSubmit={(data) => (setRowAction(null), data && update(rowAction?.row.id ?? "", data))}
+				onSubmit={(data) => (setRowAction(null), data && updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data }))}
 				showTrigger={false}
 			/>
 		</div>

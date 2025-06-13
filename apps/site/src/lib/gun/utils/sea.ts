@@ -1,8 +1,8 @@
 import SEA from "gun/sea";
 
-const secret = "#supersekret";
+// const secret = "#supersekret";
 
-const isServer = typeof window === "undefined";
+// const isServer = typeof window === "undefined";
 
 export async function encrypt<T extends Record<string, any>>(_obj: T) {
 	return _obj;
