@@ -5,7 +5,7 @@ import { Credenza, CredenzaBody, CredenzaContent, CredenzaDescription, CredenzaF
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { useGet, type NestedSchemaType } from '@gta/react-hooks'
+import { useCreate, useGet, type NestedSchemaType } from '@gta/react-hooks'
 import { useMutation } from '@tanstack/react-query'
 import { createFileRoute } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
@@ -258,133 +258,6 @@ export function MenuSection({ title, items }: MenuSectionProps) {
 export interface MenuItemType extends NestedSchemaType<"menuItem"> {
 }
 
-// export const menuData: MenuDataType = {
-//   Appetizers: [
-//     {
-//       id: "app1",
-//       name: "Crispy Calamari",
-//       description: "Lightly fried calamari served with a zesty marinara sauce and lemon wedges.",
-//       price: 12.99,
-//       image: "https://images.unsplash.com/photo-1604152135912-04a022e23696?w=600&h=400&q=80",
-//       dietaryInfo: ["Seafood"],
-//       rating: 4,
-//     },
-//     {
-//       id: "app2",
-//       name: "Bruschetta",
-//       description: "Toasted baguette topped with fresh tomatoes, basil, garlic, and extra virgin olive oil.",
-//       price: 9.99,
-//       image: "https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=600&h=400&q=80",
-//       dietaryInfo: ["Vegetarian"],
-//       rating: 5,
-//     },
-//     {
-//       id: "app3",
-//       name: "Spinach Artichoke Dip",
-//       description: "Creamy blend of spinach, artichokes, and cheeses, served with tortilla chips.",
-//       price: 10.99,
-//       image: "https://images.unsplash.com/photo-1576506295286-5cda18df43e7?w=600&h=400&q=80",
-//       dietaryInfo: ["Vegetarian", "Gluten-Free"],
-//       rating: 4,
-//     },
-//   ],
-//   "Main Courses": [
-//     {
-//       id: "main1",
-//       name: "Grilled Salmon",
-//       description:
-//         "Fresh Atlantic salmon fillet, grilled to perfection, served with seasonal vegetables and lemon herb sauce.",
-//       price: 24.99,
-//       image: "https://images.unsplash.com/photo-1485921325833-c519f76c4927?w=600&h=400&q=80",
-//       isSpecial: true,
-//       dietaryInfo: ["Seafood", "Gluten-Free"],
-//       rating: 5,
-//     },
-//     {
-//       id: "main2",
-//       name: "Filet Mignon",
-//       description: "8oz center-cut beef tenderloin, served with garlic mashed potatoes and roasted asparagus.",
-//       price: 32.99,
-//       image: "https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=600&h=400&q=80",
-//       rating: 5,
-//     },
-//     {
-//       id: "main3",
-//       name: "Mushroom Risotto",
-//       description: "Creamy Arborio rice with wild mushrooms, white wine, and Parmesan cheese.",
-//       price: 18.99,
-//       image: "https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=600&h=400&q=80",
-//       dietaryInfo: ["Vegetarian", "Gluten-Free"],
-//       rating: 4,
-//     },
-//     {
-//       id: "main4",
-//       name: "Chicken Parmesan",
-//       description: "Breaded chicken breast topped with marinara sauce and melted mozzarella, served with spaghetti.",
-//       price: 19.99,
-//       image: "https://images.unsplash.com/photo-1632778149955-e80f8ceca2e8?w=600&h=400&q=80",
-//       rating: 4,
-//     },
-//   ],
-//   Desserts: [
-//     {
-//       id: "des1",
-//       name: "Tiramisu",
-//       description: "Classic Italian dessert with layers of coffee-soaked ladyfingers and mascarpone cream.",
-//       price: 8.99,
-//       image: "https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=600&h=400&q=80",
-//       isSpecial: true,
-//       rating: 5,
-//     },
-//     {
-//       id: "des2",
-//       name: "Chocolate Lava Cake",
-//       description: "Warm chocolate cake with a molten center, served with vanilla ice cream.",
-//       price: 9.99,
-//       image: "https://images.unsplash.com/photo-1624353365286-3f8d62daad51?w=600&h=400&q=80",
-//       rating: 4,
-//     },
-//     {
-//       id: "des3",
-//       name: "New York Cheesecake",
-//       description: "Rich and creamy cheesecake with a graham cracker crust, topped with fresh berries.",
-//       price: 8.99,
-//       image: "https://images.unsplash.com/photo-1567327825194-4b5f285561c9?w=600&h=400&q=80",
-//       rating: 4,
-//     },
-//   ],
-//   Beverages: [
-//     {
-//       id: "bev1",
-//       name: "Fresh Fruit Smoothie",
-//       description: "Blend of seasonal fruits with yogurt and honey.",
-//       price: 6.99,
-//       image: "https://images.unsplash.com/photo-1505252585461-04db1eb84625?w=600&h=400&q=80",
-//       dietaryInfo: ["Vegetarian", "Gluten-Free"],
-//       rating: 4,
-//     },
-//     {
-//       id: "bev2",
-//       name: "Craft Lemonade",
-//       description: "Freshly squeezed lemons with a hint of mint and honey.",
-//       price: 4.99,
-//       image: "https://images.unsplash.com/photo-1499638673689-79a0b5115d87?w=600&h=400&q=80",
-//       dietaryInfo: ["Vegan", "Gluten-Free"],
-//       rating: 4,
-//     },
-//     {
-//       id: "bev3",
-//       name: "Espresso",
-//       description: "Rich, full-bodied espresso made from premium coffee beans.",
-//       price: 3.99,
-//       image: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=600&h=400&q=80",
-//       dietaryInfo: ["Vegan", "Gluten-Free"],
-//       rating: 5,
-//     },
-//   ],
-// }
-
-
 const _checkout = createServerFn({ method: "POST" })
   .validator(z.object({ amount: z.number() }))
   .handler(async ({ data: { amount } }) => {
@@ -441,14 +314,34 @@ const _checkout = createServerFn({ method: "POST" })
   })
 
 export function CartButton() {
-  const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } = useCart()
-  const checkout = useMutation({
-    mutationFn: async ({ amount }: { amount: number }) => {
-      const res = await _checkout({ data: { amount } })
-      console.log(res)
-    },
+  const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } = useCart();
+  const createOrderFn = useCreate("order", "restaurant");
+  const createOrderMutation = useMutation({
+    mutationFn: createOrderFn,
+    onSuccess() {
+      clearCart();
+    }
   })
-
+  const handleCheckout = async () => {
+    const orderItems = items.reduce((acc, item) => {
+      acc[item._?.soul!] = {
+        menuItemId: item._?.soul!,
+        quantity: item.quantity,
+        unitPrice: item.price,
+      };
+      return acc;
+    }, {} as any);
+    createOrderMutation.mutate({
+      items: orderItems,
+      subTotal: subtotal,
+      taxes: subtotal * 0.13,
+      deliveryFee: 0,
+      totalAmount: subtotal * 1.13,
+      orderStatus: "pending",
+      paymentMethod: "cash",
+      paymentStatus: "paid",
+    });
+  };
   return (
     <>
       <div className="fixed bottom-6 right-6 z-50">
@@ -585,7 +478,7 @@ export function CartButton() {
                         <span>${(subtotal * 1.13).toFixed(2)}</span>
                       </div>
                       {/* <CredenzaClose asChild> */}
-                      <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700" onClick={() => checkout.mutate({ amount: Math.round(subtotal * 1.13) })} loading={checkout.isPending}>
+                      <Button className="w-full bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700" onClick={handleCheckout} loading={createOrderMutation.isPending}>
                         Proceed to Checkout
                       </Button>
                       {/* </CredenzaClose> */}

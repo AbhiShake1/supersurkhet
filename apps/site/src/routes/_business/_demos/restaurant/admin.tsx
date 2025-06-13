@@ -1,7 +1,7 @@
 import { AutoAdmin } from '@/components/auto-admin'
 import { RestaurantLayoutEditor } from '@/components/seat-builder/restaurant-layout-editor'
 import { createFileRoute } from '@tanstack/react-router'
-import { Layout, MenuSquare } from 'lucide-react'
+import { Layout, Menu, MenuSquare } from 'lucide-react'
 
 export const Route = createFileRoute('/_business/_demos/restaurant/admin')({
   component: RouteComponent,
@@ -10,14 +10,19 @@ export const Route = createFileRoute('/_business/_demos/restaurant/admin')({
 function RouteComponent() {
   return <AutoAdmin tabs={[
     {
-        schema: "menuItem",
-        title: "Menus",
-        icon: MenuSquare,
+      schema: "menuItem",
+      title: "Menus",
+      icon: MenuSquare,
     },
     {
-        title: "Layout",
-        icon: Layout,
-        children: <RestaurantLayoutEditor />,
+      title: "Orders",
+      icon: Menu,
+      schema: "order",
     },
-  ]}/>
+    {
+      title: "Layout",
+      icon: Layout,
+      children: <RestaurantLayoutEditor />,
+    },
+  ]} />
 }
