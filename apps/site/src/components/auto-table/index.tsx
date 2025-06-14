@@ -27,9 +27,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import * as Editable from "@/components/ui/editable";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useCreate, useDelete, useGet, useUpdate, getNestedZodShape, type NestedSchemaType, type SchemaKeys } from "@gta/react-hooks";
 import { appSchema } from "@/lib/schema";
 import { parseSchema } from "@autoform/zod";
+import { getNestedZodShape, useCreate, useDelete, useGet, useUpdate, type NestedSchemaType, type SchemaKeys } from "@gta/react-hooks";
+import { useMutation } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -51,17 +52,20 @@ import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
 import { AutoTableActionBar } from "./auto-table-action-bar";
-import { useMutation } from "@tanstack/react-query";
 
-export interface AutoTableProps<T extends SchemaKeys> {
-	schema: T,
+export type AutoTableProps<T extends SchemaKeys> = {
 	slug: string;
-}
+} & ({
+	schema: T,
+} | {
+	parsedSchema: z.ZodObject<any>
+})
 
 export function AutoTable<T extends SchemaKeys>({
-	schema: schemaName,
 	slug,
+	...props
 }: AutoTableProps<T>) {
+	const schemaName = "schema" in props ? props.schema : "" as SchemaKeys
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const data = useGet(schemaName, slug)
 	const createFn = useCreate(schemaName, slug)
@@ -69,7 +73,7 @@ export function AutoTable<T extends SchemaKeys>({
 	const updateFn = useUpdate(schemaName, slug)
 	const updateMutation = useMutation({ mutationFn: updateFn, onSuccess: () => setDialogOpen(false) })
 	const onDelete = useDelete(schemaName, slug)
-	const schema = getNestedZodShape(schemaName, appSchema);
+	const schema = "parsedSchema" in props ? props.parsedSchema : getNestedZodShape(schemaName, appSchema);
 	const [rowAction, setRowAction] =
 		React.useState<DataTableRowAction<NestedSchemaType<T>> | null>(null);
 
@@ -85,6 +89,7 @@ export function AutoTable<T extends SchemaKeys>({
 
 	const { table, shallow, debounceMs, throttleMs } = useDataTable({
 		data,
+		// @ts-expect-error
 		columns,
 		pageCount: Math.ceil(data.length / perPage) || 1,
 		enableAdvancedFilter: true,
@@ -121,11 +126,10 @@ export function AutoTable<T extends SchemaKeys>({
 					<ScrollArea className="relative max-h-[70vh]">
 						<AutoForm
 							schema={schema}
-							// @ts-expect-error
 							onSubmit={(b) => createMutation.mutate(b)}
 						>
 							<DialogFooter className="absolute bottom-0 right-2">
-								<SubmitButton className="gap-2" loading={updateMutation.isPending}>
+								<SubmitButton className="gap-2" loading={updateMutation.isPending || createMutation.isPending}>
 									<Save className="size-4" />
 									Save
 								</SubmitButton>
@@ -255,7 +259,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 				>
 					<Editable.Area>
 						<Editable.Preview className="max-w-56">
-							<AutoPreview field={field} key={field.key} value={value} />
+							<AutoPreview field={field} key={field.key} value={value} baseSchema={schema.shape[field.key]} />
 						</Editable.Preview>
 						<Editable.Input asChild>
 							<AutoFormWithoutLabel

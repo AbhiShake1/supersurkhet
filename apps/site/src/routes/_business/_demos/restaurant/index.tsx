@@ -325,7 +325,6 @@ export function CartButton() {
   const handleCheckout = async () => {
     const orderItems = items.reduce((acc, item) => {
       acc[item._?.soul!] = {
-        menuItemId: item._?.soul!,
         quantity: item.quantity,
         unitPrice: item.price,
       };

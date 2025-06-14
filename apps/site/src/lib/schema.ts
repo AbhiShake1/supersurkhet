@@ -183,13 +183,12 @@ export const appSchema = z.object({
 		items: z.record(
 			z.string(),
 			z.object({
-				menuItemId: z.string(),
 				quantity: z.number({ coerce: true }).int().positive(),
 				unitPrice: z.number({ coerce: true }).positive(),
 				customizations: z.record(z.string(), z.boolean()).optional(),
 				specialInstructions: z.string().optional()
 			})
-		).describe("Ordered items with their details"),
+		).describe("Ordered items with their details").superRefine(fieldConfig({ fieldType: "record" })),
 		subTotal: z.number().positive(),
 		taxes: z.number({ coerce: true }).nonnegative(),
 		deliveryFee: z.number({ coerce: true }).nonnegative(),

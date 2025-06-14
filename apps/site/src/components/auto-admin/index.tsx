@@ -7,7 +7,7 @@ import {
     SidebarProvider,
     SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { useLocation } from "@tanstack/react-router";
+import { notFound, useLocation } from "@tanstack/react-router";
 import {
     type LucideIcon
 } from "lucide-react";
@@ -41,7 +41,11 @@ export function AutoAdmin<const T extends AutoTableKeys[]>({ tabs }: AutoAdminPr
     // @ts-expect-error
     const tab = search.tab as string ?? tabs[0].title;
 
-    const currentItem = tabs.find(t => t.title === tab)!;
+    const currentItem = tabs.find(t => t.title === tab);
+    
+    if (!currentItem) {
+        throw notFound()
+    }
 
     const [basePath] = currentPathname
         .split("/")

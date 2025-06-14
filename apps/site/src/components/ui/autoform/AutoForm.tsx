@@ -11,13 +11,14 @@ import { DateField } from "./components/DateField";
 import { ErrorMessage } from "./components/ErrorMessage";
 import { FieldWrapper, FieldWrapperWithoutLabel } from "./components/FieldWrapper";
 import { Form } from "./components/Form";
+import { ImageUploadField } from "./components/ImageUploadField";
 import { NumberField } from "./components/NumberField";
 import { ObjectWrapper } from "./components/ObjectWrapper";
+import { RecordField } from "./components/RecordField";
 import { SelectField } from "./components/SelectField";
 import { StringField } from "./components/StringField";
 import { SubmitButton } from "./components/SubmitButton";
 import type { AutoFormProps } from "./types";
-import { ImageUploadField } from "./components/ImageUploadField";
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, "FieldWrapper"> = {
 	Form,
@@ -35,6 +36,7 @@ export const ShadcnAutoFormFieldComponents = {
 	date: DateField,
 	select: SelectField,
 	image: ImageUploadField,
+	record: RecordField,
 } as const;
 export type FieldTypes = keyof typeof ShadcnAutoFormFieldComponents;
 
