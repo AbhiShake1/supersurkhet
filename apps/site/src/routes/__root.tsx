@@ -13,11 +13,11 @@ import appCss from "../styles.css?url";
 
 import { NotFound } from "@/components/ui/not-found";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@radix-ui/react-tooltip";
-import type { QueryClient } from "@tanstack/react-query";
+import { gun } from "@/lib/gun";
 import { setGTADefaultOptions } from "@/lib/gun/options";
 import { appSchema } from "@/lib/schema";
-import { gun } from "@/lib/gun";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import type { QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
 setGTADefaultOptions({ schema: appSchema, gun });
@@ -25,6 +25,59 @@ setGTADefaultOptions({ schema: appSchema, gun });
 interface MyRouterContext {
 	queryClient: QueryClient;
 }
+
+export interface UserProfile {
+	avatar: string
+	email: string
+	isActive: boolean
+	phone?: string
+	role?: string
+}
+
+async function getUserProfile() {
+	const user = getCurrentUser()
+	if (!user) return null
+	return await new Promise<UserProfile>((resolve) => {
+		gun.get("user").get(user.pub).once(resolve)
+	})
+}
+
+function getCurrentUser() {
+	const user = gun.user().recall({ sessionStorage: true });
+	if (!user || !user.is) return null;
+	// const dbUser = await new Promise((resolve, reject) => {
+	// 	gun.get("user").put(user)
+	// })
+	// Fetch user profile from Gun
+	// This is a sync placeholder; in real use, fetch async and cache
+	return {
+		pub: user.is.pub,
+		email: user.is.alias,
+		role: user._?.role || "user",
+		businessId: user._?.businessId,
+		permissions: user._?.permissions,
+		isActive: user._?.isActive ?? true,
+		avatar: user._?.avatar,
+		phone: user._?.phone,
+	};
+}
+
+function logout() {
+	gun.user().leave();
+	window.location.reload();
+}
+
+function isAuthenticated() {
+	gun.user().recall({ sessionStorage: true });
+	return !!gun.user().is;
+}
+
+const auth = {
+	getCurrentUser,
+	logout,
+	isAuthenticated,
+	getUserProfile,
+};
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	head: () => ({
@@ -128,6 +181,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 			},
 		],
 	}),
+	context: () => ({ auth, gun }),
 	notFoundComponent: () => <NotFound />,
 	component: () => (
 		<RootDocument>

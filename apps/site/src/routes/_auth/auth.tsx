@@ -3,6 +3,8 @@ import { AutoForm } from "@/components/ui/autoform";
 import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { gun } from "@/lib/gun";
+import { pixelArt } from '@dicebear/collection';
+import { createAvatar } from '@dicebear/core';
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -49,16 +51,16 @@ function RouteComponent() {
 			return new Promise((resolve, reject) => {
 				gun.user().create(alias, password, (ack) => {
 					if ("err" in ack) return reject(new Error(ack.err));
+
 					const userProfile = {
 						email: alias,
 						role: "user",
 						isActive: true,
-						avatar: "",
+						avatar: createAvatar(pixelArt).toDataUri(),
 						phone: "",
-						businessId: undefined,
 						permissions: {},
 					};
-					gun.get("user").get(ack.pub).put(userProfile);
+					gun.get("user." + ack.pub).put(userProfile);
 					resolve("created");
 				});
 			});
@@ -82,7 +84,7 @@ function RouteComponent() {
 			});
 		},
 		onSuccess: () => {
-			navigate({ to: search.redirect })
+			navigate({ to: search.redirect ?? "/" })
 		},
 		onError: (err) => {
 			setError(err.message);

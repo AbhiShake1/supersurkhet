@@ -163,9 +163,8 @@ export const appSchema = z.object({
 		description: z.string().optional().describe("Detailed description of the item"),
 		price: z.number({ coerce: true }).positive().describe("Regular price of the item"),
 		discountedPrice: z.number({ coerce: true }).positive().optional().describe("Special or discounted price"),
-		imageUrl: z.string().url()
-			.superRefine(fieldConfig({ fieldType: "image" }))
-			.optional().describe("Image"),
+		imageUrl: z.string().url().optional().describe("Image")
+			.superRefine(fieldConfig({ fieldType: "image" })),
 		category: z.string().describe("Category of the item (e.g., Starters, Main Course)"),
 		isVegetarian: z.boolean().default(false).describe("Whether the item is vegetarian"),
 		isSpicy: z.boolean().default(false).describe("Whether the item is spicy"),

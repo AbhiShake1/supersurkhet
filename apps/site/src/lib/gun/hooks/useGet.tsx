@@ -5,16 +5,18 @@ import { decrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
 
 export const useGet = createGunHook((messenger) => {
-	return <T extends SchemaKeys,>(key: T, ...restKeys: string[]) => {
+	return <T extends SchemaKeys,>(key: T | { key: T, separator?: string, mapper?: (d: NestedSchemaType<T>) => boolean }, ...restKeys: string[]) => {
 		const [data, setData] = useState<NestedSchemaType<T>[]>([]);
 
 		const options = messenger._options;
+		const k = typeof key === "string" ? key : key.key;
 
 		useEffect(() => {
-			const keys = mergeKeys(key, ...restKeys) as T;
-			const chatRoom = options.gun.get(keys).map();
+			const _keys = mergeKeys(k, ...restKeys) as T;
+			const keys = typeof key !== "string" && key.separator?.length ? _keys.replaceAll('.', key.separator) : _keys
 
-			chatRoom.on(async (_data, key: string) => {
+			const node = options.gun.get(keys)
+			node.on(async (_data, key: string) => {
 				if (!_data)
 					// @ts-ignore
 					return setData((p) => p.filter((msg) => msg._?.soul !== key));

@@ -15,6 +15,7 @@ import { Route as AdminImport } from './routes/admin'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
 import { Route as BusinessChatImport } from './routes/_business/chat'
+import { Route as AuthSettingsImport } from './routes/_auth/settings'
 import { Route as AuthAuthImport } from './routes/_auth/auth'
 import { Route as BusinessRideIndexImport } from './routes/_business/ride/index'
 import { Route as BusinessSchoolSasaImport } from './routes/_business/_school/sasa'
@@ -48,6 +49,12 @@ const BusinessChatRoute = BusinessChatImport.update({
   id: '/_business/chat',
   path: '/chat',
   getParentRoute: () => rootRoute,
+} as any)
+
+const AuthSettingsRoute = AuthSettingsImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthRoute,
 } as any)
 
 const AuthAuthRoute = AuthAuthImport.update({
@@ -137,6 +144,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAuthImport
       parentRoute: typeof AuthImport
     }
+    '/_auth/settings': {
+      id: '/_auth/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthSettingsImport
+      parentRoute: typeof AuthImport
+    }
     '/_business/chat': {
       id: '/_business/chat'
       path: '/chat'
@@ -207,12 +221,14 @@ declare module '@tanstack/react-router' {
 
 interface AuthRouteChildren {
   AuthAuthRoute: typeof AuthAuthRoute
+  AuthSettingsRoute: typeof AuthSettingsRoute
   AuthDemosRestaurantAdminRoute: typeof AuthDemosRestaurantAdminRoute
   AuthDemosRestaurantIndexRoute: typeof AuthDemosRestaurantIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthAuthRoute: AuthAuthRoute,
+  AuthSettingsRoute: AuthSettingsRoute,
   AuthDemosRestaurantAdminRoute: AuthDemosRestaurantAdminRoute,
   AuthDemosRestaurantIndexRoute: AuthDemosRestaurantIndexRoute,
 }
@@ -240,6 +256,7 @@ export interface FileRoutesByFullPath {
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/auth': typeof AuthAuthRoute
+  '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
   '/ride/admin': typeof BusinessRideAdminRouteRouteWithChildren
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
@@ -256,6 +273,7 @@ export interface FileRoutesByTo {
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/auth': typeof AuthAuthRoute
+  '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/sasa': typeof BusinessSchoolSasaRoute
@@ -272,6 +290,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/_auth/auth': typeof AuthAuthRoute
+  '/_auth/settings': typeof AuthSettingsRoute
   '/_business/chat': typeof BusinessChatRoute
   '/_business/ride/admin': typeof BusinessRideAdminRouteRouteWithChildren
   '/_business/_retail/anjalstore': typeof BusinessRetailAnjalstoreRoute
@@ -290,6 +309,7 @@ export interface FileRouteTypes {
     | ''
     | '/admin'
     | '/auth'
+    | '/settings'
     | '/chat'
     | '/ride/admin'
     | '/anjalstore'
@@ -305,6 +325,7 @@ export interface FileRouteTypes {
     | ''
     | '/admin'
     | '/auth'
+    | '/settings'
     | '/chat'
     | '/anjalstore'
     | '/sasa'
@@ -319,6 +340,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/admin'
     | '/_auth/auth'
+    | '/_auth/settings'
     | '/_business/chat'
     | '/_business/ride/admin'
     | '/_business/_retail/anjalstore'
@@ -380,6 +402,7 @@ export const routeTree = rootRoute
       "filePath": "_auth.tsx",
       "children": [
         "/_auth/auth",
+        "/_auth/settings",
         "/_auth/_demos/restaurant/admin",
         "/_auth/_demos/restaurant/"
       ]
@@ -389,6 +412,10 @@ export const routeTree = rootRoute
     },
     "/_auth/auth": {
       "filePath": "_auth/auth.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/settings": {
+      "filePath": "_auth/settings.tsx",
       "parent": "/_auth"
     },
     "/_business/chat": {
