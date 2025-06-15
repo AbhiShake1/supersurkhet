@@ -92,6 +92,7 @@
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
     "@repo/typescript-config": "workspace:*",
+    "@tanstack/react-start-config": "^1.120.20",
     "@types/lodash": "^4.17.16",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
