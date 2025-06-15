@@ -3,7 +3,7 @@ import { RestaurantLayoutEditor } from '@/components/seat-builder/restaurant-lay
 import { createFileRoute } from '@tanstack/react-router'
 import { Layout, Menu, MenuSquare } from 'lucide-react'
 
-export const Route = createFileRoute('/_business/_demos/restaurant/admin')({
+export const Route = createFileRoute('/_auth/_demos/restaurant/admin')({
   component: RouteComponent,
 })
 

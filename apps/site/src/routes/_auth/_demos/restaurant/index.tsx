@@ -15,7 +15,7 @@ import { MinusCircle, MinusIcon, PlusCircle, PlusIcon, Search, ShoppingCart, Sho
 import { createContext, useContext, useEffect, useState } from 'react'
 import { z } from 'zod'
 
-export const Route = createFileRoute('/_business/_demos/restaurant/')({
+export const Route = createFileRoute('/_auth/_demos/restaurant/')({
   component: () => <CartProvider>
     <RouteComponent />
   </CartProvider>,

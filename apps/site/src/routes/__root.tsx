@@ -18,6 +18,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { setGTADefaultOptions } from "@/lib/gun/options";
 import { appSchema } from "@/lib/schema";
 import { gun } from "@/lib/gun";
+import { useEffect } from "react";
 
 setGTADefaultOptions({ schema: appSchema, gun });
 
@@ -143,6 +144,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+	useEffect(() => {
+		gun.user().recall({ sessionStorage: true })
+	}, [])
 	return (
 		<html lang="en" className="dark">
 			<head>

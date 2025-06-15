@@ -43,9 +43,14 @@ export const businessSchema = z
 export const appSchema = z.object({
 	user: z
 		.object({
-			name: z.string(),
-			email: z.string(),
+			email: z.string().email(),
 			password: z.string(),
+			role: z.enum(["global_admin","business_admin","staff","employee","user"]).default("user"),
+			businessId: z.string().optional().describe("Business ID if user is business-specific; absent for global users"),
+			permissions: z.record(z.boolean()).optional().describe("Granular permissions for the user, e.g. {impersonate: true, manage_staff: true, view_orders: false}"),
+			isActive: z.boolean().default(true),
+			avatar: z.string().url().optional(),
+			phone: z.string().optional(),
 		})
 		.extend(table),
 	business: businessSchema,
