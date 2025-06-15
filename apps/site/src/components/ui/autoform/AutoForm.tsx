@@ -69,6 +69,7 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
 	schema,
 	...props
 }: AutoFormProps<F>) {
+	if(!schema) return null
 	return (
 		<BaseAutoForm
 			{...props}

@@ -206,7 +206,7 @@ export const appSchema = z.object({
 			"cancelled"
 		]),
 		paymentStatus: z.enum(["pending", "paid", "failed"]),
-		paymentMethod: z.enum(["cash", "card", "online"]),
+		paymentMethod: z.enum(["cash", "card", "online"]).optional(),
 		estimatedDeliveryTime: z.number({ coerce: true }).optional()
 	}).extend(table),
 	// customer: z.object({

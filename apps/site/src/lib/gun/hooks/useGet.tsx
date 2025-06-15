@@ -15,7 +15,7 @@ export const useGet = createGunHook((messenger) => {
 			const _keys = mergeKeys(k, ...restKeys) as T;
 			const keys = typeof key !== "string" && key.separator?.length ? _keys.replaceAll('.', key.separator) : _keys
 
-			const node = options.gun.get(keys)
+			const node = options.gun.get(keys).map()
 			node.on(async (_data, key: string) => {
 				if (!_data)
 					// @ts-ignore

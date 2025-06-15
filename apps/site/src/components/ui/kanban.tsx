@@ -1,5 +1,3 @@
-"use client";
-
 import {
   type Announcements,
   type CollisionDetection,
@@ -260,7 +258,7 @@ function Kanban<T>(props: KanbanProps<T>) {
         }
       }
 
-      return null;
+      return id;
     },
     [value, getItemValue],
   );
@@ -358,7 +356,7 @@ function Kanban<T>(props: KanbanProps<T>) {
         }
       } else {
         const activeItems = value[activeColumn];
-        const overItems = value[overColumn];
+        const overItems = value[overColumn] ?? [];
 
         if (!activeItems || !overItems) return;
 
