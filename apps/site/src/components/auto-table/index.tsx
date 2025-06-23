@@ -99,8 +99,7 @@ export function AutoTable<T extends SchemaKeys>({
 		},
 		meta: {
 			updateData(rowId: string, data: Record<string, any>) {
-				// @ts-expect-error
-				update(rowId, data)
+				updateMutation.mutate({ id: rowId, ...data })
 			},
 		},
 		// @ts-expect-error
@@ -268,6 +267,12 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 										const newValue = new FormData(e.currentTarget).get(key)
 										update({ [key]: newValue })
 									},
+									onKeyDown: (e) => {
+										if (e.code === "Enter") {
+											const newValue = new FormData(e.currentTarget).get(key)
+											update({ [key]: newValue })
+										}
+									}
 								}}
 								defaultValues={{ [key]: value as string }}
 								schema={childSchema}
