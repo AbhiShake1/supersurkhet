@@ -19,6 +19,7 @@ import { SelectField } from "./components/SelectField";
 import { StringField } from "./components/StringField";
 import { SubmitButton } from "./components/SubmitButton";
 import type { AutoFormProps } from "./types";
+import { useEffect } from "react";
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, "FieldWrapper"> = {
 	Form,
@@ -44,11 +45,13 @@ export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
 	uiComponents,
 	formComponents,
 	schema,
+	onSubmit,
 	...props
 }: AutoFormProps<F>) {
 	return (
 		<BaseAutoForm
 			{...props}
+			onSubmit={onSubmit}
 			schema={
 				new ZodProvider(
 					schema instanceof ZodObject ?
@@ -59,7 +62,9 @@ export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
 			}
 			uiComponents={{ ...ShadcnUIComponents, FieldWrapper: FieldWrapperWithoutLabel, ...uiComponents }}
 			formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
-		/>
+		>
+			{props.children}
+		</BaseAutoForm>
 	);
 }
 
@@ -69,7 +74,7 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
 	schema,
 	...props
 }: AutoFormProps<F>) {
-	if(!schema) return null
+	if (!schema) return null
 	return (
 		<BaseAutoForm
 			{...props}

@@ -8,8 +8,9 @@ export const BooleanField: React.FC<AutoFormFieldProps> = ({
 	label,
 	id,
 	inputProps,
-}) => (
-	<div className="flex items-center space-x-2">
+	value,
+}) => {
+	return <div className="flex items-center space-x-2">
 		<Checkbox
 			id={id}
 			onCheckedChange={(checked) => {
@@ -22,6 +23,7 @@ export const BooleanField: React.FC<AutoFormFieldProps> = ({
 				};
 				inputProps.onChange(event);
 			}}
+			defaultChecked={value}
 			checked={inputProps.value}
 		/>
 		<Label htmlFor={id}>
@@ -29,4 +31,4 @@ export const BooleanField: React.FC<AutoFormFieldProps> = ({
 			{field.required && <span className="text-destructive"> *</span>}
 		</Label>
 	</div>
-);
+};

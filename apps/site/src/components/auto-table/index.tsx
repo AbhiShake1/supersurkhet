@@ -264,13 +264,11 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 							<AutoFormWithoutLabel
 								formProps={{
 									onBlur: (e) => {
-										const newValue = new FormData(e.currentTarget).get(key)
-										update({ [key]: newValue })
+										e.currentTarget.requestSubmit()
 									},
 									onKeyDown: (e) => {
 										if (e.code === "Enter") {
-											const newValue = new FormData(e.currentTarget).get(key)
-											update({ [key]: newValue })
+											e.currentTarget.requestSubmit()
 										}
 									}
 								}}
