@@ -9,15 +9,6 @@ import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-	DialogTrigger,
-} from "@/components/ui/dialog";
-import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
@@ -51,6 +42,7 @@ import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
+import { Credenza, CredenzaContent, CredenzaDescription, CredenzaFooter, CredenzaHeader, CredenzaTitle, CredenzaTrigger } from "../ui/credenza";
 import { AutoTableActionBar } from "./auto-table-action-bar";
 
 export type AutoTableProps<T extends SchemaKeys> = {
@@ -110,33 +102,34 @@ export function AutoTable<T extends SchemaKeys>({
 
 	return (
 		<div className="container mx-auto py-6 space-y-4 flex flex-col items-end">
-			<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-				<DialogTrigger asChild>
+			<Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
+				<CredenzaTrigger asChild>
 					<Button className="gap-2">
 						<Plus className="size-4" />
 						Add New
 					</Button>
-				</DialogTrigger>
-				<DialogContent className="sm:max-w-[425px]">
-					<DialogHeader>
-						<DialogTitle>Add</DialogTitle>
-						<DialogDescription>Add new</DialogDescription>
-					</DialogHeader>
-					<ScrollArea className="relative max-h-[70vh]">
+				</CredenzaTrigger>
+				<CredenzaContent className="px-4">
+					<CredenzaHeader>
+						<CredenzaTitle>Add</CredenzaTitle>
+						<CredenzaDescription>Add new</CredenzaDescription>
+					</CredenzaHeader>
+					<ScrollArea className="h-[70vh]">
 						<AutoForm
 							schema={schema}
 							onSubmit={(b) => createMutation.mutate(b)}
 						>
-							<DialogFooter className="absolute bottom-0 right-2">
+							<CredenzaFooter className="absolute bottom-0 right-2">
 								<SubmitButton className="gap-2" loading={updateMutation.isPending || createMutation.isPending}>
 									<Save className="size-4" />
 									Save
 								</SubmitButton>
-							</DialogFooter>
+							</CredenzaFooter>
 						</AutoForm>
+						<div className="h-16" />
 					</ScrollArea>
-				</DialogContent>
-			</Dialog>
+				</CredenzaContent>
+			</Credenza>
 			<DataTable table={table} actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}>
 				<DataTableAdvancedToolbar table={table}>
 					<DataTableSortList table={table} align="start" />
@@ -263,9 +256,9 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 						<Editable.Input asChild>
 							<AutoFormWithoutLabel
 								formProps={{
-									onBlur: (e) => {
-										e.currentTarget.requestSubmit()
-									},
+									// onBlur: (e) => {
+									// 	e.currentTarget.requestSubmit()
+									// },
 									onKeyDown: (e) => {
 										if (e.code === "Enter") {
 											e.currentTarget.requestSubmit()
