@@ -85,7 +85,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 )}>
                     {"children" in currentItem ? currentItem.children : (
                         ("groupKey" in currentItem && "cardBuilder" in currentItem && !!currentItem.cardBuilder && !!currentItem.groupKey) ? (
-                            <Tabs defaultValue={localStorage.getItem(`tab-#${basePath}`) ?? "table"} className="flex flex-1 flex-col" onValueChange={(value) => {
+                            <Tabs defaultValue={localStorage.getItem(`tab-#${basePath}`) ?? "board"} className="flex flex-1 flex-col" onValueChange={(value) => {
                                 localStorage.setItem(`tab-#${basePath}`, value)
                             }}>
                                 <TabsList className="">
