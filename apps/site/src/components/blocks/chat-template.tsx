@@ -454,7 +454,8 @@ function ChatBody({ chat }: { chat: (typeof contactList)[number] }) {
 						>
 							<p className="text-sm">{message.content}</p>
 							<span className="text-xs opacity-70">
-								{!!message.timestamp && new Date(message.timestamp).toLocaleTimeString()}
+								{!!message.timestamp &&
+									new Date(message.timestamp).toLocaleTimeString()}
 							</span>
 						</div>
 					</div>

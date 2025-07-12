@@ -11,10 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { exportTableToCSV } from "@/lib/export";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 
-const actions = [
-	"export",
-	"delete",
-] as const;
+const actions = ["export", "delete"] as const;
 
 type Action = (typeof actions)[number];
 
@@ -23,7 +20,10 @@ interface AutoTableActionBarProps<T> {
 	onDelete?: (id: string) => void;
 }
 
-export function AutoTableActionBar<T>({ table, onDelete }: AutoTableActionBarProps<T>) {
+export function AutoTableActionBar<T>({
+	table,
+	onDelete,
+}: AutoTableActionBarProps<T>) {
 	const rows = table.getFilteredSelectedRowModel().rows;
 	const [isPending, startTransition] = React.useTransition();
 	const [currentAction, setCurrentAction] = React.useState<Action | null>(null);
@@ -47,7 +47,7 @@ export function AutoTableActionBar<T>({ table, onDelete }: AutoTableActionBarPro
 			for (const row of rows) {
 				onDelete?.(row.id);
 			}
-			table.toggleAllRowsSelected(false)
+			table.toggleAllRowsSelected(false);
 		});
 	};
 

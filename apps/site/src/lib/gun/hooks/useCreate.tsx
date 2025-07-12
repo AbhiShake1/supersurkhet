@@ -5,7 +5,7 @@ import { createGunHook } from "./useGunHook";
 import { encrypt } from "../utils/sea";
 
 export const useCreate = createGunHook((messenger) => {
-	return <T extends SchemaKeys,>(key: T, ...restKeys: string[]) => {
+	return <T extends SchemaKeys>(key: T, ...restKeys: string[]) => {
 		const options = messenger._options;
 		const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
 		return async (value: Omit<NestedSchemaType<T>, "_">) => {
@@ -13,14 +13,17 @@ export const useCreate = createGunHook((messenger) => {
 				options.gun
 					.get(keys)
 					.get(Date.now().toString())
-					.put(await encrypt(parseNestedZodType(keys, value, options.schema)), (ack) => {
-						if ("err" in ack && !!ack.err) {
-							reject(ack.err);
-						} else {
-							resolve(ack);
-						}
-					});
-			})
+					.put(
+						await encrypt(parseNestedZodType(keys, value, options.schema)),
+						(ack) => {
+							if ("err" in ack && !!ack.err) {
+								reject(ack.err);
+							} else {
+								resolve(ack);
+							}
+						},
+					);
+			});
 		};
 	};
 });

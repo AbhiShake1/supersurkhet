@@ -6,7 +6,7 @@ import {
 	SidebarGroup,
 	SidebarMenu,
 	SidebarMenuButton,
-	SidebarMenuItem
+	SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
 import { Link, useLocation } from "@tanstack/react-router";
@@ -19,15 +19,19 @@ export interface NavMainProps {
 }
 
 export function NavMain({ items }: NavMainProps) {
-	const { search } = useLocation()
+	const { search } = useLocation();
 	// @ts-expect-error
-	const tab = search.tab as string ?? items[0].title;
+	const tab = (search.tab as string) ?? items[0].title;
 	return (
 		<SidebarGroup>
 			<SidebarMenu>
 				{items.map((item) => (
 					<SidebarMenuItem>
-						<SidebarMenuButton tooltip={item.title} className={cn(tab === item.title && "bg-accent")} asChild>
+						<SidebarMenuButton
+							tooltip={item.title}
+							className={cn(tab === item.title && "bg-accent")}
+							asChild
+						>
 							{/* @ts-expect-error */}
 							<Link to="." search={{ tab: item.title }}>
 								{item.icon && <item.icon className={cn("w-4")} />}

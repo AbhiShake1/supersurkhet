@@ -37,7 +37,8 @@ export function createGunHook<F extends Function>(fn: MessengerFunction<F>) {
 		throw new Error(`Gun instance not found. ${useDefaultOptionsMsg}`);
 
 	return Object.assign(fn({ _options: defaultOptions as UseGunOptions }), {
-		withOptions: (options: Partial<UseGunOptions>) => fn({
+		withOptions: (options: Partial<UseGunOptions>) =>
+			fn({
 				_options: mergeOptionsWithDefaults(options) as Required<typeof options>,
 			}),
 	});

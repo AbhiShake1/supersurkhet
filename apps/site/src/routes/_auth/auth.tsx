@@ -3,8 +3,8 @@ import { AutoForm } from "@/components/ui/autoform";
 import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { gun } from "@/lib/gun";
-import { pixelArt } from '@dicebear/collection';
-import { createAvatar } from '@dicebear/core';
+import { pixelArt } from "@dicebear/collection";
+import { createAvatar } from "@dicebear/core";
 import { useMutation } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -23,21 +23,23 @@ const loginSchema = z.object({
 	password: z.string().min(6),
 });
 
-const signupSchema = z.object({
-	email: z.string().email(),
-	password: z.string().min(6),
-	confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-	message: "Passwords don't match",
-	path: ["confirmPassword"],
-})
+const signupSchema = z
+	.object({
+		email: z.string().email(),
+		password: z.string().min(6),
+		confirmPassword: z.string(),
+	})
+	.refine((data) => data.password === data.confirmPassword, {
+		message: "Passwords don't match",
+		path: ["confirmPassword"],
+	});
 
 function RouteComponent() {
 	const { m: mode } = Route.useSearch();
 	const isSignup = mode === "signup";
 	const [error, setError] = useState("");
-	const navigate = Route.useNavigate()
-	const search = Route.useSearch()
+	const navigate = Route.useNavigate();
+	const search = Route.useSearch();
 
 	const signupMutation = useMutation({
 		mutationFn: async ({ email, password }: z.infer<typeof signupSchema>) => {
@@ -66,12 +68,12 @@ function RouteComponent() {
 			});
 		},
 		onSuccess: () => {
-			navigate({ search: (p) => ({ ...p, m: "login" }) })
+			navigate({ search: (p) => ({ ...p, m: "login" }) });
 		},
 		onError: (err) => {
 			setError(err.message);
 		},
-	})
+	});
 
 	const loginMutation = useMutation({
 		mutationFn: async ({ email, password }: z.infer<typeof loginSchema>) => {
@@ -84,7 +86,7 @@ function RouteComponent() {
 			});
 		},
 		onSuccess: () => {
-			navigate({ to: search.redirect ?? "/" })
+			navigate({ to: search.redirect ?? "/" });
 		},
 		onError: (err) => {
 			setError(err.message);
@@ -111,43 +113,41 @@ function RouteComponent() {
 					<hr className="my-4 border-dashed" />
 					{error && <div className="text-red-500 text-sm mb-2">{error}</div>}
 				</div>
-				{
-					isSignup ? (
-						<AutoForm
-							schema={signupSchema}
-							onSubmit={v => signupMutation.mutate(v)}
-						>
-							<SubmitButton className="w-full" loading={signupMutation.isPending}>
-								Create Account
-							</SubmitButton>
-							<p className="text-accent-foreground text-center text-sm pb-2">
-								Already have an account?
-								<Button asChild variant="link" className="px-2">
-									<Link to="/auth" search={(p) => ({ ...p, m: "login" })}>
-										Sign in
-									</Link>
-								</Button>
-							</p>
-						</AutoForm>
-					) : (
-						<AutoForm
-							schema={loginSchema}
-							onSubmit={v => loginMutation.mutate(v)}
-						>
-							<SubmitButton className="w-full" loading={loginMutation.isPending}>
-								Sign In
-							</SubmitButton>
-							<p className="text-accent-foreground text-center text-sm pb-2">
-								Don't have an account yet?
-								<Button asChild variant="link" className="px-2">
-									<Link to="/auth" search={(p) => ({ ...p, m: "signup" })}>
-										Create account
-									</Link>
-								</Button>
-							</p>
-						</AutoForm>
-					)
-				}
+				{isSignup ? (
+					<AutoForm
+						schema={signupSchema}
+						onSubmit={(v) => signupMutation.mutate(v)}
+					>
+						<SubmitButton className="w-full" loading={signupMutation.isPending}>
+							Create Account
+						</SubmitButton>
+						<p className="text-accent-foreground text-center text-sm pb-2">
+							Already have an account?
+							<Button asChild variant="link" className="px-2">
+								<Link to="/auth" search={(p) => ({ ...p, m: "login" })}>
+									Sign in
+								</Link>
+							</Button>
+						</p>
+					</AutoForm>
+				) : (
+					<AutoForm
+						schema={loginSchema}
+						onSubmit={(v) => loginMutation.mutate(v)}
+					>
+						<SubmitButton className="w-full" loading={loginMutation.isPending}>
+							Sign In
+						</SubmitButton>
+						<p className="text-accent-foreground text-center text-sm pb-2">
+							Don't have an account yet?
+							<Button asChild variant="link" className="px-2">
+								<Link to="/auth" search={(p) => ({ ...p, m: "signup" })}>
+									Create account
+								</Link>
+							</Button>
+						</p>
+					</AutoForm>
+				)}
 			</div>
 		</section>
 	);

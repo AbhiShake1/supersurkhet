@@ -222,8 +222,13 @@ export function DataTableFilterList<TData>({
 		>
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
-					<Button variant="outline" size="sm" onKeyDown={onTriggerKeyDown} className="gap-2">
-						<ListFilter className="size-4"/>
+					<Button
+						variant="outline"
+						size="sm"
+						onKeyDown={onTriggerKeyDown}
+						className="gap-2"
+					>
+						<ListFilter className="size-4" />
 						Filter
 						{filters.length > 0 && (
 							<Badge

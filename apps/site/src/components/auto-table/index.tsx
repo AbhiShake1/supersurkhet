@@ -20,7 +20,15 @@ import * as Editable from "@/components/ui/editable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { appSchema } from "@/lib/schema";
 import { parseSchema } from "@autoform/zod";
-import { getNestedZodShape, useCreate, useDelete, useGet, useUpdate, type NestedSchemaType, type SchemaKeys } from "@gta/react-hooks";
+import {
+	type NestedSchemaType,
+	type SchemaKeys,
+	getNestedZodShape,
+	useCreate,
+	useDelete,
+	useGet,
+	useUpdate,
+} from "@gta/react-hooks";
 import { useMutation } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -34,7 +42,7 @@ import {
 	Text,
 } from "lucide-react";
 import { useState } from "react";
-import { z, type ZodObject } from "zod";
+import { type ZodObject, z } from "zod";
 import { AutoPreview } from "../auto-preview";
 import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
 import { DataTableColumnHeader } from "../data-table/data-table-column-header";
@@ -42,42 +50,63 @@ import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
-import { Credenza, CredenzaContent, CredenzaDescription, CredenzaFooter, CredenzaHeader, CredenzaTitle, CredenzaTrigger } from "../ui/credenza";
+import {
+	Credenza,
+	CredenzaContent,
+	CredenzaDescription,
+	CredenzaFooter,
+	CredenzaHeader,
+	CredenzaTitle,
+	CredenzaTrigger,
+} from "../ui/credenza";
 import { AutoTableActionBar } from "./auto-table-action-bar";
 
 export type AutoTableProps<T extends SchemaKeys> = {
 	slug: string;
-} & ({
-	schema: T,
-} | {
-	parsedSchema: z.ZodObject<any>
-})
+} & (
+	| {
+			schema: T;
+	  }
+	| {
+			parsedSchema: z.ZodObject<z.any>;
+	  }
+);
 
 export function AutoTable<T extends SchemaKeys>({
 	slug,
 	...props
 }: AutoTableProps<T>) {
-	const schemaName = "schema" in props ? props.schema : "" as SchemaKeys
+	const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const data = useGet(schemaName, slug)
-	const createFn = useCreate(schemaName, slug)
-	const createMutation = useMutation({ mutationFn: createFn, onSuccess: () => setDialogOpen(false) })
-	const updateFn = useUpdate(schemaName, slug)
-	const updateMutation = useMutation({ mutationFn: updateFn, onSuccess: () => setDialogOpen(false) })
-	const onDelete = useDelete(schemaName, slug)
-	const schema = "parsedSchema" in props ? props.parsedSchema : getNestedZodShape(schemaName, appSchema);
-	const [rowAction, setRowAction] =
-		React.useState<DataTableRowAction<NestedSchemaType<T>> | null>(null);
+	const data = useGet(schemaName, slug);
+	const createFn = useCreate(schemaName, slug);
+	const createMutation = useMutation({
+		mutationFn: createFn,
+		onSuccess: () => setDialogOpen(false),
+	});
+	const updateFn = useUpdate(schemaName, slug);
+	const updateMutation = useMutation({
+		mutationFn: updateFn,
+		onSuccess: () => setDialogOpen(false),
+	});
+	const onDelete = useDelete(schemaName, slug);
+	const schema =
+		"parsedSchema" in props
+			? props.parsedSchema
+			: getNestedZodShape(schemaName, appSchema);
+	const [rowAction, setRowAction] = React.useState<DataTableRowAction<
+		NestedSchemaType<T>
+	> | null>(null);
 
 	const columns = getAutoTableColumns({
 		schema,
 		setRowAction,
 	});
 
-	const search = useSearch({ from: "__root__" })
+	const search = useSearch({ from: "__root__" });
 
 	// @ts-expect-error
-	const perPage = search.perPage ?? 10
+	const perPage = search.perPage ?? 10;
 
 	const { table, shallow, debounceMs, throttleMs } = useDataTable({
 		data,
@@ -90,8 +119,8 @@ export function AutoTable<T extends SchemaKeys>({
 			columnPinning: { right: ["actions"] },
 		},
 		meta: {
-			updateData(rowId: string, data: Record<string, any>) {
-				updateMutation.mutate({ id: rowId, ...data })
+			updateData(rowId: string, data: Record<string, unknown>) {
+				updateMutation.mutate({ id: rowId, ...data });
 			},
 		},
 		// @ts-expect-error
@@ -120,7 +149,10 @@ export function AutoTable<T extends SchemaKeys>({
 							onSubmit={(b) => createMutation.mutate(b)}
 						>
 							<CredenzaFooter className="absolute bottom-0 right-2">
-								<SubmitButton className="gap-2" loading={updateMutation.isPending || createMutation.isPending}>
+								<SubmitButton
+									className="gap-2"
+									loading={updateMutation.isPending || createMutation.isPending}
+								>
 									<Save className="size-4" />
 									Save
 								</SubmitButton>
@@ -130,7 +162,10 @@ export function AutoTable<T extends SchemaKeys>({
 					</ScrollArea>
 				</CredenzaContent>
 			</Credenza>
-			<DataTable table={table} actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}>
+			<DataTable
+				table={table}
+				actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
+			>
 				<DataTableAdvancedToolbar table={table}>
 					<DataTableSortList table={table} align="start" />
 					{/* {filterFlag === "advancedFilters" ? ( */}
@@ -159,10 +194,10 @@ export function AutoTable<T extends SchemaKeys>({
 				data={rowAction?.row.original ? [rowAction?.row.original] : []}
 				showTrigger={false}
 				onConfirm={() => {
-					console.log('confirne')
-					setRowAction(null)
-					onDelete(rowAction?.row.id ?? "")
-					rowAction?.row.toggleSelected(false)
+					console.log("confirne");
+					setRowAction(null);
+					onDelete(rowAction?.row.id ?? "");
+					rowAction?.row.toggleSelected(false);
 				}}
 			/>
 			<EditRowDialog
@@ -170,7 +205,12 @@ export function AutoTable<T extends SchemaKeys>({
 				onOpenChange={() => setRowAction(null)}
 				data={rowAction?.row.original}
 				schema={schema}
-				onSubmit={(data) => (setRowAction(null), data && updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data }))}
+				onSubmit={(data) => {
+					setRowAction(null);
+					if (data) {
+						updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data });
+					}
+				}}
 				showTrigger={false}
 			/>
 		</div>
@@ -185,7 +225,7 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
 	schema: S;
 }
 
-function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
+function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<z.any>>({
 	setRowAction,
 	schema,
 }: GetAutoTableColumnsProps<T, S>): ColumnDef<NestedSchemaType<T>>[] {
@@ -217,11 +257,11 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 		},
 	];
 
-	const parsedSchema = parseSchema(schema)
+	const parsedSchema = parseSchema(schema);
 
 	for (const field of parsedSchema.fields) {
 		const { key, description } = field;
-		const childSchema = z.object({ [key]: schema.shape[key] })
+		const childSchema = z.object({ [key]: schema.shape[key] });
 		if (["_"].includes(key)) continue;
 
 		const column: ColumnDef<NestedSchemaType<T>> = {
@@ -238,40 +278,47 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 			cell: ({ cell, table, row }) => {
 				const value = cell.getValue();
 
-				function update(value: Record<string, any>) {
+				function update(value: Record<string, unknown>) {
 					// @ts-expect-error
-					table.options.meta?.updateData(row.id, value)
+					table.options.meta?.updateData(row.id, value);
 				}
 
-				return <Editable.Root
-					defaultValue={value as string}
-					placeholder="-"
-					className="text-center"
-					triggerMode="dblclick"
-				>
-					<Editable.Area>
-						<Editable.Preview className="max-w-56">
-							<AutoPreview field={field} key={field.key} value={value} baseSchema={schema.shape[field.key]} />
-						</Editable.Preview>
-						<Editable.Input asChild>
-							<AutoFormWithoutLabel
-								formProps={{
-									// onBlur: (e) => {
-									// 	e.currentTarget.requestSubmit()
-									// },
-									onKeyDown: (e) => {
-										if (e.code === "Enter") {
-											e.currentTarget.requestSubmit()
-										}
-									}
-								}}
-								defaultValues={{ [key]: value as string }}
-								schema={childSchema}
-								onSubmit={update}
-							/>
-						</Editable.Input>
-					</Editable.Area>
-				</Editable.Root>
+				return (
+					<Editable.Root
+						defaultValue={value as string}
+						placeholder="-"
+						className="text-center"
+						triggerMode="dblclick"
+					>
+						<Editable.Area>
+							<Editable.Preview className="max-w-56">
+								<AutoPreview
+									field={field}
+									key={field.key}
+									value={value}
+									baseSchema={schema.shape[field.key]}
+								/>
+							</Editable.Preview>
+							<Editable.Input asChild>
+								<AutoFormWithoutLabel
+									formProps={{
+										// onBlur: (e) => {
+										// 	e.currentTarget.requestSubmit()
+										// },
+										onKeyDown: (e) => {
+											if (e.code === "Enter") {
+												e.currentTarget.requestSubmit();
+											}
+										},
+									}}
+									defaultValues={{ [key]: value as string }}
+									schema={childSchema}
+									onSubmit={update}
+								/>
+							</Editable.Input>
+						</Editable.Area>
+					</Editable.Root>
+				);
 			},
 			meta: {
 				// @ts-expect-error

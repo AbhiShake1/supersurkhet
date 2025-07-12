@@ -1,6 +1,10 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { Link, useRouteContext } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
@@ -27,7 +31,7 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 	const { auth } = useRouteContext({ from: "__root__" });
-	const user = useProfile()
+	const user = useProfile();
 	return (
 		<header>
 			<nav
@@ -38,7 +42,7 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 					className={cn(
 						"mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12",
 						isScrolled &&
-						"bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5",
+							"bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5",
 					)}
 				>
 					<div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
@@ -85,20 +89,34 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 											<button className="flex items-center gap-2 rounded-full border px-2 py-1 hover:bg-muted/50 transition justify-center">
 												<Avatar>
 													<AvatarImage src={user?.avatar} alt={user.email} />
-													<AvatarFallback className="capitalize">{user.email?.[0]}</AvatarFallback>
+													<AvatarFallback className="capitalize">
+														{user.email?.[0]}
+													</AvatarFallback>
 												</Avatar>
 											</button>
 										</PopoverTrigger>
-										<PopoverContent align="end" className="w-56 p-0 overflow-hidden">
+										<PopoverContent
+											align="end"
+											className="w-56 p-0 overflow-hidden"
+										>
 											<div className="flex flex-col items-center gap-2 p-4 border-b">
 												<Avatar>
 													<AvatarImage src={user?.avatar} alt={user.email} />
-													<AvatarFallback className="capitalize">{user.email?.[0]}</AvatarFallback>
+													<AvatarFallback className="capitalize">
+														{user.email?.[0]}
+													</AvatarFallback>
 												</Avatar>
-												<div className="text-base font-semibold">{user.email || user.email || "User"}</div>
+												<div className="text-base font-semibold">
+													{user.email || user.email || "User"}
+												</div>
 											</div>
 											<div className="flex flex-col">
-												<Link to="/settings" className="px-4 py-2 hover:bg-muted text-left text-sm">Settings</Link>
+												<Link
+													to="/settings"
+													className="px-4 py-2 hover:bg-muted text-left text-sm"
+												>
+													Settings
+												</Link>
 												<button
 													className="px-4 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
 													onClick={() => auth.logout?.()}
@@ -110,12 +128,21 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 									</Popover>
 								) : (
 									<>
-										<Button asChild variant="outline" size="sm" className={cn(isScrolled && "lg:hidden")}>
+										<Button
+											asChild
+											variant="outline"
+											size="sm"
+											className={cn(isScrolled && "lg:hidden")}
+										>
 											<Link to="/auth" search={{ m: "login" }}>
 												<span>Login</span>
 											</Link>
 										</Button>
-										<Button asChild size="sm" className={cn(isScrolled && "lg:hidden")}>
+										<Button
+											asChild
+											size="sm"
+											className={cn(isScrolled && "lg:hidden")}
+										>
 											<Link to="/auth" search={{ m: "signup" }}>
 												<span>Sign Up</span>
 											</Link>
@@ -129,23 +156,25 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 			</nav>
 		</header>
 	);
-}
+};
 
 export const HeroHeader = () => {
-	return <Header>
-		<div className="absolute inset-0 m-auto hidden size-fit lg:block">
-			<ul className="flex gap-8 text-sm">
-				{menuItems.map((item, index) => (
-					<li key={index}>
-						<Link
-							to={item.href}
-							className="text-muted-foreground hover:text-accent-foreground block duration-150"
-						>
-							<span>{item.name}</span>
-						</Link>
-					</li>
-				))}
-			</ul>
-		</div>
-	</Header>
+	return (
+		<Header>
+			<div className="absolute inset-0 m-auto hidden size-fit lg:block">
+				<ul className="flex gap-8 text-sm">
+					{menuItems.map((item, index) => (
+						<li key={index}>
+							<Link
+								to={item.href}
+								className="text-muted-foreground hover:text-accent-foreground block duration-150"
+							>
+								<span>{item.name}</span>
+							</Link>
+						</li>
+					))}
+				</ul>
+			</div>
+		</Header>
+	);
 };

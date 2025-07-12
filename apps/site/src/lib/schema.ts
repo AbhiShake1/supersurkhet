@@ -1,6 +1,68 @@
 import { fieldConfig } from "@/components/ui/autoform";
 import { z } from "zod";
 
+// A helper for adding our own metadata to zod schemas
+//
+// We can use this to hint the `AutoForm` and `AutoTable` components
+// how to render a given field.
+//
+// @see https://zod.dev/?id=zodany
+//
+// This is a bit of a hack, but it's a way to add metadata to a zod schema
+// without having to create a new class that extends z.ZodType.
+//
+// This is also used in `AutoForm` and `AutoTable` to render the fields
+// and should be used to type all schemas in the app.
+//
+// This is not a public API and should not be used outside of this file.
+//
+// We should also consider creating a custom zod schema that extends z.ZodType
+// and adds a `meta` method to it.
+//
+// This would allow us to do something like:
+//
+// ```ts
+// z.string().meta({ required: true, label: "Name" })
+// ```
+//
+// This would be a lot cleaner and more explicit than what we have now.
+//
+// For now, we'll stick with this hack.
+const withMeta = <T extends z.ZodTypeAny>(
+	schema: T,
+	meta: Record<string, unknown>,
+) => {
+	// @ts-expect-error
+	schema._def.meta = {
+		// @ts-expect-error
+		...schema._def.meta,
+		...meta,
+	};
+	return schema;
+};
+
+// A helper for creating a zod schema with a `label` and `description`
+//
+// This is a convenience helper that uses `withMeta` to add a `label` and
+// `description` to a zod schema.
+//
+// This is useful for creating forms and tables that are more user-friendly.
+//
+// For example, instead of displaying the field name `firstName` in a form,
+// we can display `First Name` instead.
+//
+// We can also use this to add a description to a field, which can be
+// displayed as a tooltip or a help text.
+//
+// This is not a public API and should not be used outside of this file.
+const withLabel = <T extends z.ZodTypeAny>(
+	schema: T,
+	label: string,
+	description?: string,
+) => {
+	return withMeta(schema, { label, description });
+};
+
 const table = {
 	created_by: z.string().optional(),
 	timestamp: z.number().optional(),
@@ -24,6 +86,48 @@ const chatMessageSchema = z
 
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
 
+export const permissions = {
+	"business:create": "Create a new business",
+	"business:read": "Read business information",
+	"business:update": "Update business information",
+	"business:delete": "Delete a business",
+	"user:create": "Create a new user",
+	"user:read": "Read user information",
+	"user:update": "Update user information",
+	"user:delete": "Delete a user",
+	"user:impersonate": "Impersonate a user",
+	"role:create": "Create a new role",
+	"role:read": "Read role information",
+	"role:update": "Update role information",
+	"role:delete": "Delete a role",
+	"permission:create": "Create a new permission",
+	"permission:read": "Read permission information",
+	"permission:update": "Update permission information",
+	"permission:delete": "Delete a permission",
+	"membership:create": "Create a new membership",
+	"membership:read": "Read membership information",
+	"membership:update": "Update membership information",
+	"membership:delete": "Delete a membership",
+	"order:create": "Create a new order",
+	"order:read": "Read order information",
+	"order:update": "Update order information",
+	"order:delete": "Delete a order",
+} as const;
+
+export type Permission = keyof typeof permissions;
+
+export const permissionSchema = z.object({
+	id: withLabel(z.string(), "ID"),
+	name: withLabel(z.string(), "Name"),
+	description: withLabel(z.string(), "Description"),
+});
+
+export const roleSchema = z.object({
+	id: withLabel(z.string(), "ID"),
+	name: withLabel(z.string(), "Name"),
+	permissions: withLabel(z.array(z.string()), "Permissions"),
+});
+
 export const businessSchema = z
 	.object({
 		name: z.string().describe("Business name"),
@@ -40,20 +144,42 @@ export const businessSchema = z
 	})
 	.extend(table);
 
+export const membershipSchema = z.object({
+	id: withLabel(z.string(), "ID"),
+	user: withLabel(z.string(), "User"),
+	business: withLabel(z.string(), "Business"),
+	role: withLabel(z.string(), "Role"),
+});
+
 export const appSchema = z.object({
 	user: z
 		.object({
 			email: z.string().email(),
 			password: z.string(),
-			role: z.enum(["global_admin","business_admin","staff","employee","user"]).default("user"),
-			businessId: z.string().optional().describe("Business ID if user is business-specific; absent for global users"),
-			permissions: z.record(z.boolean()).optional().describe("Granular permissions for the user, e.g. {impersonate: true, manage_staff: true, view_orders: false}"),
+			role: z
+				.enum(["global_admin", "business_admin", "staff", "employee", "user"])
+				.default("user"),
+			businessId: z
+				.string()
+				.optional()
+				.describe(
+					"Business ID if user is business-specific; absent for global users",
+				),
+			permissions: z
+				.record(z.boolean())
+				.optional()
+				.describe(
+					"Granular permissions for the user, e.g. {impersonate: true, manage_staff: true, view_orders: false}",
+				),
 			isActive: z.boolean().default(true),
 			avatar: z.string().url().optional(),
 			phone: z.string().optional(),
 		})
 		.extend(table),
 	business: businessSchema,
+	role: roleSchema,
+	permission: permissionSchema,
+	membership: membershipSchema,
 	inventory: z
 		.object({
 			id: z
@@ -158,57 +284,106 @@ export const appSchema = z.object({
 			// Add more application-specific fields as required
 		})
 		.extend(table),
-	menuItem: z.object({
-		name: z.string().describe("Name of the menu item"),
-		description: z.string().optional().describe("Detailed description of the item"),
-		price: z.number({ coerce: true }).positive().describe("Regular price of the item"),
-		discountedPrice: z.number({ coerce: true }).positive().optional().describe("Special or discounted price"),
-		imageUrl: z.string().url().optional().describe("Image")
-			.superRefine(fieldConfig({ fieldType: "image" })),
-		category: z.string().describe("Category of the item (e.g., Starters, Main Course)"),
-		isVegetarian: z.boolean().default(false).describe("Whether the item is vegetarian"),
-		isSpicy: z.boolean().default(false).describe("Whether the item is spicy"),
-		isAvailable: z.boolean().default(true).describe("Whether the item is currently available"),
-		isSpecial: z.boolean().default(false).describe("Whether the item is chef's special"),
-		preparationTime: z.number({ coerce: true }).int().positive().optional().describe("Estimated preparation time in minutes"),
-		portionSize: z.string().optional().describe("Portion size (e.g., Small, Regular, Large)"),
-		nutritionalInfo: z.record(z.string(), z.string()).optional().describe("Nutritional information"),
-		customizations: z.record(
-			z.string().uuid(),
-			z.object({
-				name: z.string(),
-				price: z.number().nonnegative(),
-				isAvailable: z.boolean().default(true)
-			})
-		).optional().describe("Available customization options")
-	}).extend(table),
-	order: z.object({
-		customerId: z.string().optional().describe("ID of the customer who placed the order"),
-		items: z.record(
-			z.string(),
-			z.object({
-				quantity: z.number({ coerce: true }).int().positive(),
-				unitPrice: z.number({ coerce: true }).positive(),
-				customizations: z.record(z.string(), z.boolean()).optional(),
-				specialInstructions: z.string().optional()
-			})
-		).describe("Ordered items with their details").superRefine(fieldConfig({ fieldType: "record" })),
-		subTotal: z.number().positive(),
-		taxes: z.number({ coerce: true }).nonnegative(),
-		deliveryFee: z.number({ coerce: true }).nonnegative(),
-		totalAmount: z.number({ coerce: true }).positive(),
-		orderStatus: z.enum([
-			"pending",
-			"confirmed",
-			"preparing",
-			"ready",
-			"served",
-			"cancelled"
-		]),
-		paymentStatus: z.enum(["pending", "paid", "failed"]),
-		paymentMethod: z.enum(["cash", "card", "online"]).optional(),
-		estimatedDeliveryTime: z.number({ coerce: true }).optional()
-	}).extend(table),
+	menuItem: z
+		.object({
+			name: z.string().describe("Name of the menu item"),
+			description: z
+				.string()
+				.optional()
+				.describe("Detailed description of the item"),
+			price: z
+				.number({ coerce: true })
+				.positive()
+				.describe("Regular price of the item"),
+			discountedPrice: z
+				.number({ coerce: true })
+				.positive()
+				.optional()
+				.describe("Special or discounted price"),
+			imageUrl: z
+				.string()
+				.url()
+				.optional()
+				.describe("Image")
+				.superRefine(fieldConfig({ fieldType: "image" })),
+			category: z
+				.string()
+				.describe("Category of the item (e.g., Starters, Main Course)"),
+			isVegetarian: z
+				.boolean()
+				.default(false)
+				.describe("Whether the item is vegetarian"),
+			isSpicy: z.boolean().default(false).describe("Whether the item is spicy"),
+			isAvailable: z
+				.boolean()
+				.default(true)
+				.describe("Whether the item is currently available"),
+			isSpecial: z
+				.boolean()
+				.default(false)
+				.describe("Whether the item is chef's special"),
+			preparationTime: z
+				.number({ coerce: true })
+				.int()
+				.positive()
+				.optional()
+				.describe("Estimated preparation time in minutes"),
+			portionSize: z
+				.string()
+				.optional()
+				.describe("Portion size (e.g., Small, Regular, Large)"),
+			nutritionalInfo: z
+				.record(z.string(), z.string())
+				.optional()
+				.describe("Nutritional information"),
+			customizations: z
+				.record(
+					z.string().uuid(),
+					z.object({
+						name: z.string(),
+						price: z.number().nonnegative(),
+						isAvailable: z.boolean().default(true),
+					}),
+				)
+				.optional()
+				.describe("Available customization options"),
+		})
+		.extend(table),
+	order: z
+		.object({
+			customerId: z
+				.string()
+				.optional()
+				.describe("ID of the customer who placed the order"),
+			items: z
+				.record(
+					z.string(),
+					z.object({
+						quantity: z.number({ coerce: true }).int().positive(),
+						unitPrice: z.number({ coerce: true }).positive(),
+						customizations: z.record(z.string(), z.boolean()).optional(),
+						specialInstructions: z.string().optional(),
+					}),
+				)
+				.describe("Ordered items with their details")
+				.superRefine(fieldConfig({ fieldType: "record" })),
+			subTotal: z.number().positive(),
+			taxes: z.number({ coerce: true }).nonnegative(),
+			deliveryFee: z.number({ coerce: true }).nonnegative(),
+			totalAmount: z.number({ coerce: true }).positive(),
+			orderStatus: z.enum([
+				"pending",
+				"confirmed",
+				"preparing",
+				"ready",
+				"served",
+				"cancelled",
+			]),
+			paymentStatus: z.enum(["pending", "paid", "failed"]),
+			paymentMethod: z.enum(["cash", "card", "online"]).optional(),
+			estimatedDeliveryTime: z.number({ coerce: true }).optional(),
+		})
+		.extend(table),
 	// customer: z.object({
 	// 	name: z.string(),
 	// 	email: z.string().email(),
@@ -303,5 +478,5 @@ export type AppSchemaShape = typeof appSchema;
 export type AppSchema = z.infer<AppSchemaShape>;
 
 declare global {
-	interface GTAAppSchema extends AppSchemaShape { }
+	interface GTAAppSchema extends AppSchemaShape {}
 }

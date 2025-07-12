@@ -27,19 +27,19 @@ interface MyRouterContext {
 }
 
 export interface UserProfile {
-	avatar: string
-	email: string
-	isActive: boolean
-	phone?: string
-	role?: string
+	avatar: string;
+	email: string;
+	isActive: boolean;
+	phone?: string;
+	role?: string;
 }
 
 async function getUserProfile() {
-	const user = getCurrentUser()
-	if (!user) return null
+	const user = getCurrentUser();
+	if (!user) return null;
 	return await new Promise<UserProfile>((resolve) => {
-		gun.get("user").get(user.pub).once(resolve)
-	})
+		gun.get("user").get(user.pub).once(resolve);
+	});
 }
 
 function getCurrentUser() {
@@ -199,8 +199,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
-		gun.user().recall({ sessionStorage: true })
-	}, [])
+		gun.user().recall({ sessionStorage: true });
+	}, []);
 	return (
 		<html lang="en" className="dark">
 			<head>

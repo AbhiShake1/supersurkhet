@@ -6,7 +6,7 @@ import {
 	Sidebar,
 	SidebarContent,
 	SidebarFooter,
-	SidebarRail
+	SidebarRail,
 } from "@/components/ui/sidebar";
 
 export type SidebarItems = {

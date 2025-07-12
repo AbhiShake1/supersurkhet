@@ -47,10 +47,7 @@ export function DeleteRowDialog<T>({
 				{showTrigger ? (
 					<DialogTrigger asChild>
 						<Button variant="ghost" size="sm">
-							<DataTableActionBarAction
-								size="icon"
-								tooltip="Delete selected"
-							>
+							<DataTableActionBarAction size="icon" tooltip="Delete selected">
 								<Trash2 />
 							</DataTableActionBarAction>
 						</Button>
@@ -73,7 +70,7 @@ export function DeleteRowDialog<T>({
 							aria-label="Delete selected rows"
 							variant="destructive"
 							onClick={onConfirm}
-						// disabled={isDeletePending}
+							// disabled={isDeletePending}
 						>
 							{/* {isDeletePending && (
                 <Loader
@@ -94,10 +91,7 @@ export function DeleteRowDialog<T>({
 			{showTrigger ? (
 				<DrawerTrigger asChild>
 					<Button variant="outline" size="sm">
-						<Trash2
-							className="mr-2 size-4"
-							aria-hidden="true"
-						/>
+						<Trash2 className="mr-2 size-4" aria-hidden="true" />
 						Delete
 					</Button>
 				</DrawerTrigger>
@@ -119,7 +113,7 @@ export function DeleteRowDialog<T>({
 						aria-label="Delete selected rows"
 						variant="destructive"
 						onClick={onConfirm}
-					// disabled={isDeletePending}
+						// disabled={isDeletePending}
 					>
 						{/* {isDeletePending && (
               <Loader className="mr-2 size-4 animate-spin" aria-hidden="true" />

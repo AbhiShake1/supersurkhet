@@ -160,7 +160,12 @@ export function DataTableSortList<TData>({
 		>
 			<Popover open={open} onOpenChange={setOpen}>
 				<PopoverTrigger asChild>
-					<Button variant="outline" size="sm" onKeyDown={onTriggerKeyDown} className="gap-2">
+					<Button
+						variant="outline"
+						size="sm"
+						onKeyDown={onTriggerKeyDown}
+						className="gap-2"
+					>
 						<ArrowDownUp className="size-4" />
 						Sort
 						{sorting.length > 0 && (

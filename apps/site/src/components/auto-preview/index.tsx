@@ -1,17 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { type ParsedField } from "@autoform/core";
+import type { ParsedField } from "@autoform/core";
 import type { ZodObjectOrWrapped } from "@autoform/zod";
 import { CheckCircle2, XCircle } from "lucide-react";
-import { type FC, type ReactNode } from "react";
+import type { FC, ReactNode } from "react";
 import { z } from "zod";
 import { AutoTable } from "../auto-table";
-import { fieldConfig } from "../ui/autoform";
+import type { fieldConfig } from "../ui/autoform";
 import { Credenza, CredenzaContent, CredenzaTrigger } from "../ui/credenza";
 
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]["fieldType"]>;
 
-export type AutoPreviewComponent<T, S extends ParsedField = any> = FC<{
+export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
 	value: T;
 	schema: S;
 }>;
@@ -26,9 +26,10 @@ export function AutoPreview<T>({
 	baseSchema: ZodObjectOrWrapped;
 }): ReactNode {
 	// @ts-expect-error
-	const Comp = autoPreviewComponents[field.type] ?? autoPreviewComponents.fallback;
+	const Comp =
+		autoPreviewComponents[field.type] ?? autoPreviewComponents.fallback;
 
-	return <Comp value={value} schema={schema} />
+	return <Comp value={value} schema={schema} />;
 }
 
 const DatePreview: AutoPreviewComponent<Date> = ({ value }) =>
@@ -69,7 +70,7 @@ const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
 	return (
 		<Credenza>
 			<CredenzaTrigger asChild>
-				<button>Click to expand</button>
+				<button type="button">Click to expand</button>
 			</CredenzaTrigger>
 			<CredenzaContent className="overflow-scroll">
 				<AutoTable slug={fullKey} parsedSchema={parsedSchema} />
@@ -88,7 +89,7 @@ const BooleanPreview: AutoPreviewComponent<boolean> = ({ value }) => {
 
 const autoPreviewComponents: Record<
 	FieldType | "fallback",
-	AutoPreviewComponent<any>
+	AutoPreviewComponent<unknown>
 > = {
 	boolean: BooleanPreview,
 	date: DatePreview,

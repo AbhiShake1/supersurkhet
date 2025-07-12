@@ -7,21 +7,25 @@ export const Route = createFileRoute("/admin")({
 });
 
 function RouteComponent() {
-	return <AutoAdmin tabs={[
-		{
-			schema: "business",
-			title: "Businesses",
-			icon: LucideBriefcaseBusiness,
-		},
-		{
-			schema: "user",
-			title: "Users",
-			icon: Users2,
-		},
-		{
-			schema: "school",
-			title: "Schools",
-			icon: School,
-		},
-	]} />
+	return (
+		<AutoAdmin
+			tabs={[
+				{
+					schema: "business",
+					title: "Businesses",
+					icon: LucideBriefcaseBusiness,
+				},
+				{
+					schema: "user",
+					title: "Users",
+					icon: Users2,
+				},
+				{
+					schema: "school",
+					title: "Schools",
+					icon: School,
+				},
+			]}
+		/>
+	);
 }

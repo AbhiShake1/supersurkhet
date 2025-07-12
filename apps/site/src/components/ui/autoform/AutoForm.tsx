@@ -9,7 +9,10 @@ import { ArrayWrapper } from "./components/ArrayWrapper";
 import { BooleanField } from "./components/BooleanField";
 import { DateField } from "./components/DateField";
 import { ErrorMessage } from "./components/ErrorMessage";
-import { FieldWrapper, FieldWrapperWithoutLabel } from "./components/FieldWrapper";
+import {
+	FieldWrapper,
+	FieldWrapperWithoutLabel,
+} from "./components/FieldWrapper";
 import { Form } from "./components/Form";
 import { ImageUploadField } from "./components/ImageUploadField";
 import { NumberField } from "./components/NumberField";
@@ -54,13 +57,17 @@ export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
 			onSubmit={onSubmit}
 			schema={
 				new ZodProvider(
-					schema instanceof ZodObject ?
-						// omit default fields of schema
-						schema.omit({ _: true, created_by: true, timestamp: true })
+					schema instanceof ZodObject
+						? // omit default fields of schema
+							schema.omit({ _: true, created_by: true, timestamp: true })
 						: schema,
 				)
 			}
-			uiComponents={{ ...ShadcnUIComponents, FieldWrapper: FieldWrapperWithoutLabel, ...uiComponents }}
+			uiComponents={{
+				...ShadcnUIComponents,
+				FieldWrapper: FieldWrapperWithoutLabel,
+				...uiComponents,
+			}}
 			formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
 		>
 			{props.children}
@@ -74,15 +81,15 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
 	schema,
 	...props
 }: AutoFormProps<F>) {
-	if (!schema) return null
+	if (!schema) return null;
 	return (
 		<BaseAutoForm
 			{...props}
 			schema={
 				new ZodProvider(
-					schema instanceof ZodObject ?
-						// omit default fields of schema
-						schema.omit({ _: true, created_by: true, timestamp: true })
+					schema instanceof ZodObject
+						? // omit default fields of schema
+							schema.omit({ _: true, created_by: true, timestamp: true })
 						: schema,
 				)
 			}
