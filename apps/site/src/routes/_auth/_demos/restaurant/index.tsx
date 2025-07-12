@@ -494,7 +494,12 @@ export function CartButton() {
 }
 
 function RouteComponent() {
-  const menuItems = useGet("menuItem", "restaurant")
+  const [search, setSearch] = useState("")
+  const _menuItems = useGet("menuItem", "restaurant")
+  const menuItems = (() => {
+    if (!search?.length) return _menuItems
+    return _menuItems.filter((item) => item.name.toLowerCase().includes(search.toLowerCase()))
+  })()
 
   const menuData = groupBy(menuItems, "category")
 
@@ -506,6 +511,8 @@ function RouteComponent() {
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
             <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               type="search"
               placeholder="Search our delicious menu..."
               className="w-full pl-10 pr-4 py-3 rounded-full border-amber-500/30 dark:border-amber-400/30 bg-card/50 dark:bg-card/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all duration-200 hover:border-amber-500/50 dark:hover:border-amber-400/50"
