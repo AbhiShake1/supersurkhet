@@ -4,15 +4,29 @@ import { mergeKeys } from "../utils";
 import { decrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
 
+function attachSouls(obj: any, currentPath: string): any {
+	if (typeof obj !== "object" || obj === null) return obj;
+
+	const withSoul = { ...obj, "#": currentPath };
+
+	for (const [k, v] of Object.entries(obj)) {
+		if (typeof v === "object" && v !== null) {
+			withSoul[k] = attachSouls(v, `${currentPath}/${k}`);
+		}
+	}
+
+	return withSoul;
+}
+
 export const useGet = createGunHook((messenger) => {
 	return <T extends SchemaKeys>(
 		key:
 			| T
 			| {
-					key: T;
-					separator?: string;
-					mapper?: (d: NestedSchemaType<T>) => boolean;
-			  },
+				key: T;
+				separator?: string;
+				mapper?: (d: NestedSchemaType<T>) => boolean;
+			},
 		...restKeys: string[]
 	) => {
 		const [data, setData] = useState<NestedSchemaType<T>[]>([]);
@@ -27,34 +41,31 @@ export const useGet = createGunHook((messenger) => {
 					? _keys.replaceAll(".", key.separator)
 					: _keys;
 
-			const node = options.gun.get(keys).map();
-			node.on(async (_data, key: string) => {
-				if (!_data)
-					// @ts-ignore
-					return setData((p) => p.filter((msg) => msg._?.soul !== key));
+			const node = options.gun.get(keys);
 
-				const newData = await decrypt<(typeof data)[number]>(
-					/* parseNestedZodShape(keys, */ {
-						..._data,
-						_: { soul: key },
-					} /* , options.schema) */,
-				);
+			node.open(async (fullData) => {
+				if (!fullData || typeof fullData !== "object") return;
 
-				if (!newData) return;
+				const entries = Object.entries(fullData) as [string, any][];
+				const newList: NestedSchemaType<T>[] = [];
 
-				setData((p) => {
-					// @ts-ignore
-					if (!p.find((msg) => msg._?.soul === key)) {
-						return [...p, newData];
+				for (const [soul, val] of entries) {
+					if (soul === "_" || val === null) continue;
+
+					const decrypted = await decrypt<NestedSchemaType<T>>({
+						...val,
+						_: { soul },
+					});
+
+					if (decrypted) {
+						const item = attachSouls(decrypted, `${keys}/${soul}`)
+						// if (newList.every(i => i._?.soul !== decrypted._?.soul))
+						newList.push(item);
 					}
-					// @ts-ignore
-					return p.map((p) => (p._?.soul === key ? newData : p));
-				});
-			});
+				}
 
-			// return () => {
-			//     chatRoom.off();
-			// };
+				setData(newList);
+			});
 		}, [key, ...restKeys]);
 
 		return data;

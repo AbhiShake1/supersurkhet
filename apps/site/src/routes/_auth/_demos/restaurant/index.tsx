@@ -19,7 +19,7 @@ import { useMutation } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
-import { groupBy } from "lodash";
+import _ from "lodash";
 import {
 	MinusCircle,
 	MinusIcon,
@@ -184,7 +184,7 @@ export function MenuItem({ item }: MenuItemProps) {
 					<div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
 					{item.isSpecial && (
-						<div className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
+						<div className="absolute top-3 right-3 bg-primary px-3 py-1 rounded-full text-xs font-bold shadow-md">
 							Chef's Special
 						</div>
 					)}
@@ -206,7 +206,7 @@ export function MenuItem({ item }: MenuItemProps) {
 					<div className="flex justify-between items-start mb-2">
 						<h3 className="text-xl font-semibold">{item.name}</h3>
 						{item.price && (
-							<span className="font-bold text-lg text-amber-600 dark:text-amber-400">
+							<span className="font-bold text-lg text-primary">
 								${item.price.toFixed(2)}
 							</span>
 						)}
@@ -234,7 +234,7 @@ export function MenuItem({ item }: MenuItemProps) {
 							<Button
 								variant="outline"
 								size="icon"
-								className="h-8 w-8 rounded-full border-amber-500/50 dark:border-amber-400/50 hover:bg-amber-500/10 dark:hover:bg-amber-400/10"
+								className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10"
 								onClick={decrementQuantity}
 								disabled={quantity === 0}
 							>
@@ -244,7 +244,7 @@ export function MenuItem({ item }: MenuItemProps) {
 							<Button
 								variant="outline"
 								size="icon"
-								className="h-8 w-8 rounded-full border-amber-500/50 dark:border-amber-400/50 hover:bg-amber-500/10 dark:hover:bg-amber-400/10"
+								className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10"
 								onClick={incrementQuantity}
 							>
 								<PlusIcon className="h-4 w-4" />
@@ -253,7 +253,7 @@ export function MenuItem({ item }: MenuItemProps) {
 						<Button
 							onClick={addToCart}
 							disabled={quantity === 0 || isAdding}
-							className={`flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700 dark:hover:from-amber-500 dark:hover:to-orange-600 text-white ${isAdding ? "animate-pulse" : ""}`}
+							className={`flex items-center gap-2 ${isAdding ? "animate-pulse" : ""}`}
 						>
 							{isAdding ? (
 								"Adding..."
@@ -293,7 +293,7 @@ export function MenuSection({ title, items }: MenuSectionProps) {
 	);
 }
 
-export interface MenuItemType extends NestedSchemaType<"menuItem"> {}
+export interface MenuItemType extends NestedSchemaType<"menuItem"> { }
 
 const _checkout = createServerFn({ method: "POST" })
 	.validator(z.object({ amount: z.number() }))
@@ -406,9 +406,9 @@ export function CartButton() {
 						>
 							<Credenza>
 								<CredenzaTrigger asChild>
-									<Button className="h-14 w-14 rounded-full shadow-lg bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700">
+									<Button className="h-14 w-14 rounded-full">
 										<ShoppingCart className="h-6 w-6" />
-										<span className="absolute -top-2 -right-2 bg-white dark:bg-black text-amber-600 dark:text-amber-400 rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold">
+										<span className="absolute -top-2 -right-2 bg-white dark:bg-black text-primary rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold">
 											{itemCount}
 										</span>
 									</Button>
@@ -451,7 +451,7 @@ export function CartButton() {
 													</p>
 													<Button
 														className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500"
-														// onClick={() => onOpenChange(false)}
+													// onClick={() => onOpenChange(false)}
 													>
 														Browse Menu
 													</Button>
@@ -563,7 +563,7 @@ export function CartButton() {
 											</div>
 											{/* <CredenzaClose asChild> */}
 											<Button
-												className="w-full bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-600 hover:to-orange-700"
+												className="w-full"
 												onClick={handleCheckout}
 												loading={createOrderMutation.isPending}
 											>
@@ -592,7 +592,7 @@ function RouteComponent() {
 		);
 	})();
 
-	const menuData = groupBy(menuItems, "category");
+	const menuData = _.groupBy(menuItems, "category");
 
 	return (
 		<div className="min-h-screen overflow-x-hidden">

@@ -1,15 +1,17 @@
-import { Save } from "lucide-react";
 import { AutoForm } from "@/components/ui/autoform";
 import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
+import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
-} from "@/components/ui/dialog";
+	Credenza,
+	CredenzaBody,
+	CredenzaContent,
+	CredenzaDescription,
+	CredenzaFooter,
+	CredenzaHeader,
+	CredenzaTitle,
+} from "@/components/ui/credenza";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Save } from "lucide-react";
 import type { ZodObject } from "zod";
 
 interface EditRowDialogProps<T, S> {
@@ -30,30 +32,40 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
 	showTrigger: _showTrigger = false,
 }: EditRowDialogProps<T, S>) {
 	return (
-		<Dialog open={open} onOpenChange={onOpenChange}>
-			<DialogContent className="sm:max-w-[425px]">
-				<DialogHeader>
-					<DialogTitle>Edit</DialogTitle>
-					<DialogDescription>Edit details</DialogDescription>
-				</DialogHeader>
-				<ScrollArea className="relative max-h-[70vh]">
-					<AutoForm
-						schema={schema}
-						defaultValues={data || {}}
-						onSubmit={(values) => {
-							onSubmit(values as T);
-							onOpenChange(false);
-						}}
+		<Credenza open={open} onOpenChange={onOpenChange}>
+			<CredenzaContent>
+				<CredenzaHeader>
+					<CredenzaTitle>Edit</CredenzaTitle>
+					<CredenzaDescription>Edit details</CredenzaDescription>
+				</CredenzaHeader>
+				<CredenzaBody asChild>
+					<ScrollArea className="h-[50vh]">
+						<AutoForm
+							formProps={{ id: "edit-row-form" }}
+							schema={schema}
+							defaultValues={data || {}}
+							onSubmit={(values) => {
+								onSubmit(values as T);
+								onOpenChange(false);
+							}}
+						/>
+					</ScrollArea>
+				</CredenzaBody>
+				<CredenzaFooter className="flex gap-4 pt-4">
+					<Button
+						type="button"
+						variant="outline"
+						className="w-full"
+						onClick={() => onOpenChange(false)}
 					>
-						<DialogFooter className="absolute bottom-0 right-2">
-							<SubmitButton className="gap-2">
-								<Save className="size-4" />
-								Save
-							</SubmitButton>
-						</DialogFooter>
-					</AutoForm>
-				</ScrollArea>
-			</DialogContent>
-		</Dialog>
+						Cancel
+					</Button>
+					<SubmitButton form="edit-row-form" className="gap-2 w-full">
+						<Save className="size-4" />
+						Save
+					</SubmitButton>
+				</CredenzaFooter>
+			</CredenzaContent>
+		</Credenza>
 	);
 }

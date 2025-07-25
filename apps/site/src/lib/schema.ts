@@ -32,9 +32,7 @@ const withMeta = <T extends z.ZodTypeAny>(
 	schema: T,
 	meta: Record<string, unknown>,
 ) => {
-	// @ts-expect-error
 	schema._def.meta = {
-		// @ts-expect-error
 		...schema._def.meta,
 		...meta,
 	};
@@ -478,5 +476,5 @@ export type AppSchemaShape = typeof appSchema;
 export type AppSchema = z.infer<AppSchemaShape>;
 
 declare global {
-	interface GTAAppSchema extends AppSchemaShape {}
+	interface GTAAppSchema extends AppSchemaShape { }
 }

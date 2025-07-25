@@ -16,11 +16,8 @@ const sortingItemSchema = z.object({
 export const getSortingStateParser = <TData>(
 	columnIds?: string[] | Set<string>,
 ) => {
-	const validKeys = columnIds
-		? columnIds instanceof Set
-			? columnIds
-			: new Set(columnIds)
-		: null;
+	const validKeys =
+		columnIds instanceof Set ? columnIds : columnIds ? new Set(columnIds) : null;
 
 	return createParser({
 		parse: (value) => {
@@ -30,7 +27,11 @@ export const getSortingStateParser = <TData>(
 
 				if (!result.success) return null;
 
-				if (validKeys && result.data.some((item) => !validKeys.has(item.id))) {
+				if (
+					validKeys &&
+					validKeys.size > 0 &&
+					result.data.some((item) => !validKeys.has(item.id))
+				) {
 					return null;
 				}
 
@@ -49,7 +50,7 @@ export const getSortingStateParser = <TData>(
 	});
 };
 
-const filterItemSchema = z.object({
+export const filterItemSchema = z.object({
 	id: z.string(),
 	value: z.union([z.string(), z.array(z.string())]),
 	variant: z.enum(dataTableConfig.filterVariants),
@@ -62,11 +63,8 @@ export type FilterItemSchema = z.infer<typeof filterItemSchema>;
 export const getFiltersStateParser = <TData>(
 	columnIds?: string[] | Set<string>,
 ) => {
-	const validKeys = columnIds
-		? columnIds instanceof Set
-			? columnIds
-			: new Set(columnIds)
-		: null;
+	const validKeys =
+		columnIds instanceof Set ? columnIds : columnIds ? new Set(columnIds) : null;
 
 	return createParser({
 		parse: (value) => {
@@ -76,16 +74,23 @@ export const getFiltersStateParser = <TData>(
 
 				if (!result.success) return null;
 
-				if (validKeys && result.data.some((item) => !validKeys.has(item.id))) {
+				if (
+					validKeys &&
+					validKeys.size > 0 &&
+					result.data.some((item) => !validKeys.has(item.id))
+				) {
 					return null;
 				}
 
 				return result.data as ExtendedColumnFilter<TData>[];
-			} catch {
+			} catch (e) {
+				console.error(e)
 				return null;
 			}
 		},
-		serialize: (value) => JSON.stringify(value),
+		serialize: (value) => {
+			return JSON.stringify(value)
+		},
 		eq: (a, b) =>
 			a.length === b.length &&
 			a.every(
@@ -97,3 +102,4 @@ export const getFiltersStateParser = <TData>(
 			),
 	});
 };
+

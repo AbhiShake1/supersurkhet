@@ -9,7 +9,7 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { useGet } from "@/lib/gun/hooks";
-import type { NestedSchemaType } from "@/lib/gun/index";
+import { recordToList } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { Layout, Menu, MenuSquare } from "lucide-react";
 import { useState } from "react";
@@ -37,10 +37,7 @@ function RouteComponent() {
 					cardBuilder: (order) => {
 						const menuItems = useGet("menuItem", "restaurant");
 						const [open, setOpen] = useState(false);
-						// @ts-expect-error
-						const orderItems = useGet(
-							order.items["#"].toString(),
-						) as NestedSchemaType<"order">["items"][string][];
+						const orderItems = recordToList(order.items);
 
 						// const updateOrder = useUpdate("order", "restaurant")
 						// const handleCancelOrder = () => {
@@ -69,20 +66,18 @@ function RouteComponent() {
 												<span className="text-right font-semibold">Items:</span>
 												<span className="col-span-3">
 													{orderItems.map((item) => {
-														// @ts-expect-error
 														const menuItem = menuItems.find(
 															(m) => m?._?.soul === item._?.soul,
 														);
 														return (
-															// @ts-expect-error
 															<div
 																key={item._?.soul}
 																className="flex justify-between"
 															>
 																<span>
-																	{item.quantity}x {menuItem?.name}
+																	<span className="font-bold">{item.quantity}x</span> {menuItem?.name}
 																</span>
-																<span>
+																<span className="font-bold">
 																	${(item.quantity * item.unitPrice).toFixed(2)}
 																</span>
 															</div>
@@ -182,12 +177,12 @@ function RouteComponent() {
 								>
 									<div className="flex items-center justify-between gap-2">
 										<span className="line-clamp-1 font-medium text-sm">
-											{/* @ts-expect-error */}
 											{orderItems
 												.map((i) =>
 													menuItems.find((m) => m?._?.soul === i._?.soul),
 												)
 												.map((m) => m?.name)
+												.filter(m => !!m)
 												.join(", ")}
 										</span>
 										<Badge

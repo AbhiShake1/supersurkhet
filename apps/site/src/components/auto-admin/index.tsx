@@ -13,7 +13,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProfile } from "@/hooks/use-profile";
 import { appSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
-import { MouseSensor, useSensor } from "@dnd-kit/core";
 import { notFound, useLocation } from "@tanstack/react-router";
 import _ from "lodash";
 import { GripVertical, type LucideIcon } from "lucide-react";
@@ -33,20 +32,20 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
 	title: string;
 	icon?: LucideIcon;
 } & (
-	| {
+		| {
 			children: ReactNode;
-	  }
-	| (AutoTableProps<K extends SchemaKeys ? K : never> &
+		}
+		| (AutoTableProps<K extends SchemaKeys ? K : never> &
 			NoInfer<
 				| {
-						groupKey: K extends SchemaKeys ? keyof NestedSchemaType<K> : never;
-						cardBuilder: K extends SchemaKeys
-							? (data: NestedSchemaType<K>) => ReactNode
-							: never;
-				  }
+					groupKey: K extends SchemaKeys ? keyof NestedSchemaType<K> : never;
+					cardBuilder: K extends SchemaKeys
+					? (data: NestedSchemaType<K>) => ReactNode
+					: never;
+				}
 				| { groupKey?: never; cardBuilder?: never }
 			>)
-);
+	);
 
 export function AutoAdmin({ tabs }: AutoAdminProps) {
 	const user = useProfile();
@@ -119,6 +118,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 										slug={basePath}
 										cardBuilder={currentItem.cardBuilder}
 										groupKey={currentItem.groupKey}
+										// @ts-expect-error
 										schema={currentItem.schema}
 									/>
 								}
@@ -157,16 +157,6 @@ function AutoKanban<K extends SchemaKeys>({
 	const columns = _.groupBy(orders, (o) => o[groupKey]);
 	const orderSchema = appSchema.shape.order;
 
-	const sensors = useSensor(MouseSensor, {
-		activationConstraint: {
-			distance: 8,
-			// This ensures that the drag does not activate when clicking on a button
-			// This is a common issue with dnd-kit and interactive elements inside draggable items
-			// https://github.com/clauderic/dnd-kit/issues/355
-			shouldPreventDefault: true,
-		},
-	});
-
 	return (
 		// @ts-expect-error
 		<Kanban.Root
@@ -182,14 +172,14 @@ function AutoKanban<K extends SchemaKeys>({
 				}
 			}}
 			// @ts-expect-error
-			getItemValue={(item) => item._?.soul ?? ""}
+			getItemValue={(item) => (console.log(item), item._?.soul ?? "")}
 		>
 			<Kanban.Board className="grid auto-rows-fr grid-cols-3">
 				{Object.keys(orderSchema.shape.orderStatus.Values).map((status) => (
-					// @ts-expect-error
 					<KanbanColumn
 						key={status}
 						value={status}
+						// @ts-expect-error
 						orders={columns?.[status] ?? []}
 						cardBuilder={cardBuilder}
 					/>
@@ -239,7 +229,7 @@ function KanbanCard<K extends SchemaKeys>({
 			asChild
 			{...props}
 		>
-			{cardBuilder(order)}
+			{cardBuilder?.(order)}
 		</Kanban.Item>
 	);
 }

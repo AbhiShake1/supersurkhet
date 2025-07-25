@@ -1,5 +1,6 @@
 import "gun/axe";
 import GUN from "gun/gun";
+import "gun/lib/open"
 import "gun/lib/radix";
 import "gun/lib/radisk";
 import "gun/lib/store";
@@ -14,3 +15,8 @@ export const gun = GUN({
 		"wss://gun-manhattan.herokuapp.com/gun",
 	],
 });
+
+if (import.meta.env.DEV && typeof window !== "undefined") {
+	// @ts-expect-error
+	window.gun = gun;
+}

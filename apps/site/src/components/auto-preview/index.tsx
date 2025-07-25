@@ -7,7 +7,7 @@ import type { FC, ReactNode } from "react";
 import { z } from "zod";
 import { AutoTable } from "../auto-table";
 import type { fieldConfig } from "../ui/autoform";
-import { Credenza, CredenzaContent, CredenzaTrigger } from "../ui/credenza";
+import { Drawer, DrawerContent, DrawerTrigger } from "../ui/drawer";
 
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]["fieldType"]>;
 
@@ -25,8 +25,8 @@ export function AutoPreview<T>({
 	value: T;
 	baseSchema: ZodObjectOrWrapped;
 }): ReactNode {
-	// @ts-expect-error
 	const Comp =
+		// @ts-expect-error
 		autoPreviewComponents[field.type] ?? autoPreviewComponents.fallback;
 
 	return <Comp value={value} schema={schema} />;
@@ -61,21 +61,22 @@ const NumberPreview: AutoPreviewComponent<number> = ({ value }) => <>{value}</>;
 const SelectPreview: AutoPreviewComponent<string> = ({ value }) => value;
 const StringPreview: AutoPreviewComponent<string> = ({ value }) => <>{value}</>;
 const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
+	if (!value) return null
 	if (!("#" in value)) return null;
-	if ("#" in value && typeof value["#"] !== "string") return null;
+	if (typeof value["#"] !== "string") return null;
 	const isEffect = schema instanceof z.ZodEffects;
 	if (!isEffect) return null;
-	const fullKey = value["#"] as string;
+	const fullKey = value["#"]
 	const parsedSchema = schema.innerType()._def.valueType;
 	return (
-		<Credenza>
-			<CredenzaTrigger asChild>
+		<Drawer>
+			<DrawerTrigger asChild>
 				<button type="button">Click to expand</button>
-			</CredenzaTrigger>
-			<CredenzaContent className="overflow-scroll">
+			</DrawerTrigger>
+			<DrawerContent className="overflow-scroll">
 				<AutoTable slug={fullKey} parsedSchema={parsedSchema} />
-			</CredenzaContent>
-		</Credenza>
+			</DrawerContent>
+		</Drawer>
 	);
 };
 
@@ -89,7 +90,7 @@ const BooleanPreview: AutoPreviewComponent<boolean> = ({ value }) => {
 
 const autoPreviewComponents: Record<
 	FieldType | "fallback",
-	AutoPreviewComponent<unknown>
+	AutoPreviewComponent<any>
 > = {
 	boolean: BooleanPreview,
 	date: DatePreview,

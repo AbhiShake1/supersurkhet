@@ -1,3 +1,5 @@
+import { applyFilters } from "@/lib/filter";
+import { useMemo } from "react";
 import type { DataTableRowAction, FilterVariant } from "@/types/data-table";
 import * as React from "react";
 
@@ -52,6 +54,7 @@ import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
 import {
 	Credenza,
+	CredenzaBody,
 	CredenzaContent,
 	CredenzaDescription,
 	CredenzaFooter,
@@ -61,16 +64,16 @@ import {
 } from "../ui/credenza";
 import { AutoTableActionBar } from "./auto-table-action-bar";
 
-export type AutoTableProps<T extends SchemaKeys> = {
+export type AutoTableProps<T extends SchemaKeys> = ({
 	slug: string;
-} & (
-	| {
+}) & (
+		| {
 			schema: T;
-	  }
-	| {
-			parsedSchema: z.ZodObject<z.any>;
-	  }
-);
+		}
+		| {
+			parsedSchema: z.ZodObject<any>;
+		}
+	);
 
 export function AutoTable<T extends SchemaKeys>({
 	slug,
@@ -78,7 +81,17 @@ export function AutoTable<T extends SchemaKeys>({
 }: AutoTableProps<T>) {
 	const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const data = useGet(schemaName, slug);
+	const _data = useGet(schemaName, slug);
+	const search = useSearch({ from: "__root__" });
+	const data = useMemo(() => {
+		// @ts-expect-error
+		const filters = search.filters;
+		if (filters) {
+			return applyFilters(_data, filters);
+		}
+		return _data;
+	}, [_data, search]);
+
 	const createFn = useCreate(schemaName, slug);
 	const createMutation = useMutation({
 		mutationFn: createFn,
@@ -102,8 +115,6 @@ export function AutoTable<T extends SchemaKeys>({
 		schema,
 		setRowAction,
 	});
-
-	const search = useSearch({ from: "__root__" });
 
 	// @ts-expect-error
 	const perPage = search.perPage ?? 10;
@@ -138,28 +149,38 @@ export function AutoTable<T extends SchemaKeys>({
 						Add New
 					</Button>
 				</CredenzaTrigger>
-				<CredenzaContent className="px-4">
+				<CredenzaContent>
 					<CredenzaHeader>
 						<CredenzaTitle>Add</CredenzaTitle>
 						<CredenzaDescription>Add new</CredenzaDescription>
 					</CredenzaHeader>
-					<ScrollArea className="h-[70vh]">
-						<AutoForm
-							schema={schema}
-							onSubmit={(b) => createMutation.mutate(b)}
+					<CredenzaBody asChild>
+						<ScrollArea className="h-[50vh]">
+							<AutoForm
+								schema={schema}
+								onSubmit={(b) => createMutation.mutate(b)}
+								formProps={{ id: "auto-table-add-form" }}
+							/>
+						</ScrollArea>
+					</CredenzaBody>
+					<CredenzaFooter className="flex gap-4 pt-4">
+						<Button
+							type="button"
+							variant="outline"
+							className="w-full"
+							onClick={() => setDialogOpen(false)}
 						>
-							<CredenzaFooter className="absolute bottom-0 right-2">
-								<SubmitButton
-									className="gap-2"
-									loading={updateMutation.isPending || createMutation.isPending}
-								>
-									<Save className="size-4" />
-									Save
-								</SubmitButton>
-							</CredenzaFooter>
-						</AutoForm>
-						<div className="h-16" />
-					</ScrollArea>
+							Cancel
+						</Button>
+						<SubmitButton
+							form="auto-table-add-form"
+							className="gap-2 w-full"
+							loading={updateMutation.isPending || createMutation.isPending}
+						>
+							<Save className="size-4" />
+							Save
+						</SubmitButton>
+					</CredenzaFooter>
 				</CredenzaContent>
 			</Credenza>
 			<DataTable
@@ -225,7 +246,7 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
 	schema: S;
 }
 
-function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<z.any>>({
+function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 	setRowAction,
 	schema,
 }: GetAutoTableColumnsProps<T, S>): ColumnDef<NestedSchemaType<T>>[] {

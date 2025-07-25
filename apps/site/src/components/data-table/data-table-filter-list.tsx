@@ -53,7 +53,7 @@ import {
 	SortableOverlay,
 } from "@/components/ui/sortable";
 import { dataTableConfig } from "@/config/data-table";
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+
 import { getDefaultFilterOperator, getFilterOperators } from "@/lib/data-table";
 import { formatDate } from "@/lib/format";
 import { generateId } from "@/lib/id";
@@ -81,6 +81,21 @@ interface DataTableFilterListProps<TData>
 	shallow?: boolean;
 }
 
+function parseFiltersFromUrl() {
+	const parsedUrl = new URL(window.location.href);
+	const rawFilters = parsedUrl.searchParams.get("filters");
+
+	if (!rawFilters) return [];
+
+	try {
+		const filters = JSON.parse(decodeURIComponent(rawFilters));
+		return filters;
+	} catch (e) {
+		console.error("Failed to parse filters:", e);
+		return [];
+	}
+}
+
 export function DataTableFilterList<TData>({
 	table,
 	debounceMs = DEBOUNCE_MS,
@@ -100,19 +115,19 @@ export function DataTableFilterList<TData>({
 			.filter((column) => column.columnDef.enableColumnFilter);
 	}, [table]);
 
+	const defaultFilters = React.useMemo(() => parseFiltersFromUrl(), [])
+
 	const [filters, setFilters] = useQueryState(
 		FILTERS_KEY,
 		getFiltersStateParser<TData>(columns.map((field) => field.id))
-			.withDefault([])
+			// temporary workaround until the nuqs adapter for tanstack router is fixed
+			.withDefault(defaultFilters)
 			.withOptions({
 				clearOnDefault: true,
 				shallow,
 				throttleMs,
 			}),
 	);
-	const debouncedSetFilters = useDebouncedCallback(setFilters, debounceMs);
-
-	console.log({ filters });
 
 	const [joinOperator, setJoinOperator] = useQueryState(
 		JOIN_OPERATOR_KEY,
@@ -127,7 +142,7 @@ export function DataTableFilterList<TData>({
 
 		if (!column) return;
 
-		debouncedSetFilters([
+		setFilters([
 			...filters,
 			{
 				id: column.id as Extract<keyof TData, string>,
@@ -145,7 +160,7 @@ export function DataTableFilterList<TData>({
 		filterId: string,
 		updates: Partial<Omit<ExtendedColumnFilter<TData>, "filterId">>,
 	) => {
-		debouncedSetFilters((prevFilters) => {
+		setFilters((prevFilters) => {
 			const updatedFilters = prevFilters.map((filter) => {
 				if (filter.filterId === filterId) {
 					return { ...filter, ...updates } as ExtendedColumnFilter<TData>;
@@ -432,7 +447,7 @@ function DataTableFilterItem<TData>({
 								{columns.find((column) => column.id === filter.id)?.columnDef
 									.meta?.label ?? "Select field"}
 							</span>
-							<ChevronsUpDown className="opacity-50" />
+							<ChevronsUpDown className="opacity-50 w-4 h-4" />
 						</Button>
 					</PopoverTrigger>
 					<PopoverContent
@@ -467,6 +482,7 @@ function DataTableFilterItem<TData>({
 											</span>
 											<Check
 												className={cn(
+													"w-4 h-4",
 													"ml-auto",
 													column.id === filter.id ? "opacity-100" : "opacity-0",
 												)}
@@ -533,11 +549,11 @@ function DataTableFilterItem<TData>({
 					className="size-8 rounded"
 					onClick={() => onFilterRemove(filter.filterId)}
 				>
-					<Trash2 />
+					<Trash2 className="w-4 h-4" />
 				</Button>
 				<SortableItemHandle asChild>
 					<Button variant="outline" size="icon" className="size-8 rounded">
-						<GripVertical />
+						<GripVertical className="w-4 h-4" />
 					</Button>
 				</SortableItemHandle>
 			</div>
@@ -570,9 +586,8 @@ function onFilterInputRender<TData>({
 			<div
 				id={inputId}
 				role="status"
-				aria-label={`${columnMeta?.label} filter is ${
-					filter.operator === "isEmpty" ? "empty" : "not empty"
-				}`}
+				aria-label={`${columnMeta?.label} filter is ${filter.operator === "isEmpty" ? "empty" : "not empty"
+					}`}
 				aria-live="polite"
 				className="h-8 w-full rounded border bg-transparent dark:bg-input/30"
 			/>
@@ -609,9 +624,7 @@ function onFilterInputRender<TData>({
 					inputMode={isNumber ? "numeric" : undefined}
 					placeholder={columnMeta?.placeholder ?? "Enter a value..."}
 					className="h-8 w-full rounded"
-					defaultValue={
-						typeof filter.value === "string" ? filter.value : undefined
-					}
+					value={typeof filter.value === "string" ? filter.value : ""}
 					onChange={(event) =>
 						onFilterUpdate(filter.filterId, {
 							value: event.target.value,
@@ -736,8 +749,8 @@ function onFilterInputRender<TData>({
 			const displayValue =
 				filter.operator === "isBetween" && dateValue.length === 2
 					? `${formatDate(new Date(Number(dateValue[0])))} - ${formatDate(
-							new Date(Number(dateValue[1])),
-						)}`
+						new Date(Number(dateValue[1])),
+					)}`
 					: dateValue[0]
 						? formatDate(new Date(Number(dateValue[0])))
 						: "Pick a date";
@@ -756,7 +769,7 @@ function onFilterInputRender<TData>({
 								!filter.value && "text-muted-foreground",
 							)}
 						>
-							<CalendarIcon />
+							<CalendarIcon className="w-4 h-4" />
 							<span className="truncate">{displayValue}</span>
 						</Button>
 					</PopoverTrigger>
@@ -773,21 +786,21 @@ function onFilterInputRender<TData>({
 								selected={
 									dateValue.length === 2
 										? {
-												from: new Date(Number(dateValue[0])),
-												to: new Date(Number(dateValue[1])),
-											}
+											from: new Date(Number(dateValue[0])),
+											to: new Date(Number(dateValue[1])),
+										}
 										: {
-												from: new Date(),
-												to: new Date(),
-											}
+											from: new Date(),
+											to: new Date(),
+										}
 								}
 								onSelect={(date) => {
 									onFilterUpdate(filter.filterId, {
 										value: date
 											? [
-													(date.from?.getTime() ?? "").toString(),
-													(date.to?.getTime() ?? "").toString(),
-												]
+												(date.from?.getTime() ?? "").toString(),
+												(date.to?.getTime() ?? "").toString(),
+											]
 											: [],
 									});
 								}}
