@@ -11,37 +11,37 @@ import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuSeparator,
-	DropdownMenuShortcut,
-	DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import * as Editable from "@/components/ui/editable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { appSchema } from "@/lib/schema";
 import { parseSchema } from "@autoform/zod";
 import {
-	type NestedSchemaType,
-	type SchemaKeys,
-	getNestedZodShape,
-	useCreate,
-	useDelete,
-	useGet,
-	useUpdate,
+  type NestedSchemaType,
+  type SchemaKeys,
+  getNestedZodShape,
+  useCreate,
+  useDelete,
+  useGet,
+  useUpdate,
 } from "@gta/react-hooks";
 import { useMutation } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-	ArrowUpDown,
-	CalendarIcon,
-	CircleDashed,
-	Ellipsis,
-	Plus,
-	Save,
-	Text,
+  ArrowUpDown,
+  CalendarIcon,
+  CircleDashed,
+  Ellipsis,
+  Plus,
+  Save,
+  Text,
 } from "lucide-react";
 import { useState } from "react";
 import { type ZodObject, z } from "zod";
@@ -53,359 +53,371 @@ import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
 import {
-	Credenza,
-	CredenzaBody,
-	CredenzaContent,
-	CredenzaDescription,
-	CredenzaFooter,
-	CredenzaHeader,
-	CredenzaTitle,
-	CredenzaTrigger,
+  Credenza,
+  CredenzaBody,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaFooter,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaTrigger,
 } from "../ui/credenza";
 import { AutoTableActionBar } from "./auto-table-action-bar";
+import { applySorting } from "@/lib/sort";
 
 export type AutoTableProps<T extends SchemaKeys> = ({
-	slug: string;
+  slug: string;
 }) & (
-		| {
-			schema: T;
-		}
-		| {
-			parsedSchema: z.ZodObject<any>;
-		}
-	);
+    | {
+      schema: T;
+    }
+    | {
+      parsedSchema: z.ZodObject<any>;
+    }
+  );
 
 export function AutoTable<T extends SchemaKeys>({
-	slug,
-	...props
+  slug,
+  ...props
 }: AutoTableProps<T>) {
-	const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
-	const [dialogOpen, setDialogOpen] = useState(false);
-	const _data = useGet(schemaName, slug);
-	const search = useSearch({ from: "__root__" });
-	const data = useMemo(() => {
-		// @ts-expect-error
-		const filters = search.filters;
-		if (filters) {
-			return applyFilters(_data, filters);
-		}
-		return _data;
-	}, [_data, search]);
+  const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const _data = useGet(schemaName, slug);
+  const search = useSearch({ from: "__root__" });
+  const data = useMemo(() => {
+    // @ts-expect-error
+    const filters = search.filters;
+    // @ts-expect-error
+    const sorting = search.sort;
+    function getFiltered() {
+      if (filters) {
+        return applyFilters(_data, filters);
+      }
+      return _data;
+    }
+    function getSorted(data: typeof _data) {
+      if (sorting) {
+        return applySorting(data, sorting);
+      }
+      return data;
+    }
+    return getSorted(getFiltered())
+  }, [_data, search]);
 
-	const createFn = useCreate(schemaName, slug);
-	const createMutation = useMutation({
-		mutationFn: createFn,
-		onSuccess: () => setDialogOpen(false),
-	});
-	const updateFn = useUpdate(schemaName, slug);
-	const updateMutation = useMutation({
-		mutationFn: updateFn,
-		onSuccess: () => setDialogOpen(false),
-	});
-	const onDelete = useDelete(schemaName, slug);
-	const schema =
-		"parsedSchema" in props
-			? props.parsedSchema
-			: getNestedZodShape(schemaName, appSchema);
-	const [rowAction, setRowAction] = React.useState<DataTableRowAction<
-		NestedSchemaType<T>
-	> | null>(null);
+  const createFn = useCreate(schemaName, slug);
+  const createMutation = useMutation({
+    mutationFn: createFn,
+    onSuccess: () => setDialogOpen(false),
+  });
+  const updateFn = useUpdate(schemaName, slug);
+  const updateMutation = useMutation({
+    mutationFn: updateFn,
+    onSuccess: () => setDialogOpen(false),
+  });
+  const onDelete = useDelete(schemaName, slug);
+  const schema =
+    "parsedSchema" in props
+      ? props.parsedSchema
+      : getNestedZodShape(schemaName, appSchema);
+  const [rowAction, setRowAction] = React.useState<DataTableRowAction<
+    NestedSchemaType<T>
+  > | null>(null);
 
-	const columns = getAutoTableColumns({
-		schema,
-		setRowAction,
-	});
+  const columns = getAutoTableColumns({
+    schema,
+    setRowAction,
+  });
 
-	// @ts-expect-error
-	const perPage = search.perPage ?? 10;
+  // @ts-expect-error
+  const perPage = search.perPage ?? 10;
 
-	const { table, shallow, debounceMs, throttleMs } = useDataTable({
-		data,
-		// @ts-expect-error
-		columns,
-		pageCount: Math.ceil(data.length / perPage) || 1,
-		enableAdvancedFilter: true,
-		initialState: {
-			// sorting: [{ id: "createdAt", desc: true }],
-			columnPinning: { right: ["actions"] },
-		},
-		meta: {
-			updateData(rowId: string, data: Record<string, unknown>) {
-				updateMutation.mutate({ id: rowId, ...data });
-			},
-		},
-		// @ts-expect-error
-		getRowId: (originalRow) => originalRow._?.soul,
-		shallow: false,
-		clearOnDefault: true,
-	});
+  const { table, shallow, debounceMs, throttleMs } = useDataTable({
+    data,
+    // @ts-expect-error
+    columns,
+    pageCount: Math.ceil(data.length / perPage) || 1,
+    enableAdvancedFilter: true,
+    initialState: {
+      // sorting: [{ id: "createdAt", desc: true }],
+      columnPinning: { right: ["actions"] },
+    },
+    meta: {
+      updateData(rowId: string, data: Record<string, unknown>) {
+        updateMutation.mutate({ id: rowId, ...data });
+      },
+    },
+    // @ts-expect-error
+    getRowId: (originalRow) => originalRow._?.soul,
+    shallow: false,
+    clearOnDefault: true,
+  });
 
-	return (
-		<div className="container mx-auto py-6 space-y-4 flex flex-col items-end">
-			<Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
-				<CredenzaTrigger asChild>
-					<Button className="gap-2">
-						<Plus className="size-4" />
-						Add New
-					</Button>
-				</CredenzaTrigger>
-				<CredenzaContent>
-					<CredenzaHeader>
-						<CredenzaTitle>Add</CredenzaTitle>
-						<CredenzaDescription>Add new</CredenzaDescription>
-					</CredenzaHeader>
-					<CredenzaBody asChild>
-						<ScrollArea className="h-[50vh]">
-							<AutoForm
-								schema={schema}
-								onSubmit={(b) => createMutation.mutate(b)}
-								formProps={{ id: "auto-table-add-form" }}
-							/>
-						</ScrollArea>
-					</CredenzaBody>
-					<CredenzaFooter className="flex gap-4 pt-4">
-						<Button
-							type="button"
-							variant="outline"
-							className="w-full"
-							onClick={() => setDialogOpen(false)}
-						>
-							Cancel
-						</Button>
-						<SubmitButton
-							form="auto-table-add-form"
-							className="gap-2 w-full"
-							loading={updateMutation.isPending || createMutation.isPending}
-						>
-							<Save className="size-4" />
-							Save
-						</SubmitButton>
-					</CredenzaFooter>
-				</CredenzaContent>
-			</Credenza>
-			<DataTable
-				table={table}
-				actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
-			>
-				<DataTableAdvancedToolbar table={table}>
-					<DataTableSortList table={table} align="start" />
-					{/* {filterFlag === "advancedFilters" ? ( */}
-					<DataTableFilterList
-						table={table}
-						shallow={shallow}
-						debounceMs={debounceMs}
-						throttleMs={throttleMs}
-						align="start"
-					/>
-					{/* ) : ( */}
-					{/* <DataTableFilterMenu
+  return (
+    <div className="container mx-auto py-6 space-y-4 flex flex-col items-end">
+      <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
+        <CredenzaTrigger asChild>
+          <Button className="gap-2">
+            <Plus className="size-4" />
+            Add New
+          </Button>
+        </CredenzaTrigger>
+        <CredenzaContent>
+          <CredenzaHeader>
+            <CredenzaTitle>Add</CredenzaTitle>
+            <CredenzaDescription>Add new</CredenzaDescription>
+          </CredenzaHeader>
+          <CredenzaBody asChild>
+            <ScrollArea className="h-[50vh]">
+              <AutoForm
+                schema={schema}
+                onSubmit={(b) => createMutation.mutate(b)}
+                formProps={{ id: "auto-table-add-form" }}
+              />
+            </ScrollArea>
+          </CredenzaBody>
+          <CredenzaFooter className="flex gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <SubmitButton
+              form="auto-table-add-form"
+              className="gap-2 w-full"
+              loading={updateMutation.isPending || createMutation.isPending}
+            >
+              <Save className="size-4" />
+              Save
+            </SubmitButton>
+          </CredenzaFooter>
+        </CredenzaContent>
+      </Credenza>
+      <DataTable
+        table={table}
+        actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
+      >
+        <DataTableAdvancedToolbar table={table}>
+          <DataTableSortList table={table} align="start" />
+          {/* {filterFlag === "advancedFilters" ? ( */}
+          <DataTableFilterList
+            table={table}
+            shallow={shallow}
+            debounceMs={debounceMs}
+            throttleMs={throttleMs}
+            align="start"
+          />
+          {/* ) : ( */}
+          {/* <DataTableFilterMenu
                             table={table}
                             shallow={shallow}
                             debounceMs={debounceMs}
                             throttleMs={throttleMs}
                         /> */}
-				</DataTableAdvancedToolbar>
-				{/* <DataTableToolbar table={table}>
+        </DataTableAdvancedToolbar>
+        {/* <DataTableToolbar table={table}>
              <DataTableSortList table={table} align="end" />
            </DataTableToolbar> */}
-			</DataTable>
-			<DeleteRowDialog
-				open={rowAction?.variant === "delete"}
-				onOpenChange={() => setRowAction(null)}
-				data={rowAction?.row.original ? [rowAction?.row.original] : []}
-				showTrigger={false}
-				onConfirm={() => {
-					console.log("confirne");
-					setRowAction(null);
-					onDelete(rowAction?.row.id ?? "");
-					rowAction?.row.toggleSelected(false);
-				}}
-			/>
-			<EditRowDialog
-				open={rowAction?.variant === "update"}
-				onOpenChange={() => setRowAction(null)}
-				data={rowAction?.row.original}
-				schema={schema}
-				onSubmit={(data) => {
-					setRowAction(null);
-					if (data) {
-						updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data });
-					}
-				}}
-				showTrigger={false}
-			/>
-		</div>
-	);
+      </DataTable>
+      <DeleteRowDialog
+        open={rowAction?.variant === "delete"}
+        onOpenChange={() => setRowAction(null)}
+        data={rowAction?.row.original ? [rowAction?.row.original] : []}
+        showTrigger={false}
+        onConfirm={() => {
+          console.log("confirne");
+          setRowAction(null);
+          onDelete(rowAction?.row.id ?? "");
+          rowAction?.row.toggleSelected(false);
+        }}
+      />
+      <EditRowDialog
+        open={rowAction?.variant === "update"}
+        onOpenChange={() => setRowAction(null)}
+        data={rowAction?.row.original}
+        schema={schema}
+        onSubmit={(data) => {
+          setRowAction(null);
+          if (data) {
+            updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data });
+          }
+        }}
+        showTrigger={false}
+      />
+    </div>
+  );
 }
 
 interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
-	// estimatedHoursRange: { min: number; max: number };
-	setRowAction: React.Dispatch<
-		React.SetStateAction<DataTableRowAction<NestedSchemaType<T>> | null>
-	>;
-	schema: S;
+  // estimatedHoursRange: { min: number; max: number };
+  setRowAction: React.Dispatch<
+    React.SetStateAction<DataTableRowAction<NestedSchemaType<T>> | null>
+  >;
+  schema: S;
 }
 
 function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
-	setRowAction,
-	schema,
+  setRowAction,
+  schema,
 }: GetAutoTableColumnsProps<T, S>): ColumnDef<NestedSchemaType<T>>[] {
-	const columns: ColumnDef<NestedSchemaType<T>>[] = [
-		{
-			id: "select",
-			header: ({ table }) => (
-				<Checkbox
-					checked={
-						table.getIsAllPageRowsSelected() ||
-						(table.getIsSomePageRowsSelected() && "indeterminate")
-					}
-					onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-					aria-label="Select all"
-					className="translate-y-0.5"
-				/>
-			),
-			cell: ({ row }) => (
-				<Checkbox
-					checked={row.getIsSelected()}
-					onCheckedChange={(value) => row.toggleSelected(!!value)}
-					aria-label="Select row"
-					className="translate-y-0.5"
-				/>
-			),
-			enableSorting: false,
-			enableHiding: false,
-			size: 40,
-		},
-	];
+  const columns: ColumnDef<NestedSchemaType<T>>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="translate-y-0.5"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="translate-y-0.5"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+      size: 40,
+    },
+  ];
 
-	const parsedSchema = parseSchema(schema);
+  const parsedSchema = parseSchema(schema);
 
-	for (const field of parsedSchema.fields) {
-		const { key, description } = field;
-		const childSchema = z.object({ [key]: schema.shape[key] });
-		if (["_"].includes(key)) continue;
+  for (const field of parsedSchema.fields) {
+    const { key, description } = field;
+    const childSchema = z.object({ [key]: schema.shape[key] });
+    if (["_"].includes(key)) continue;
 
-		const column: ColumnDef<NestedSchemaType<T>> = {
-			id: key,
-			accessorKey: key,
-			header: ({ column }) => (
-				<DataTableColumnHeader
-					className="capitalize text-center w-full items-center justify-center"
-					column={column}
-					// @ts-expect-error
-					title={description || key}
-				/>
-			),
-			cell: ({ cell, table, row }) => {
-				const value = cell.getValue();
+    const column: ColumnDef<NestedSchemaType<T>> = {
+      id: key,
+      accessorKey: key,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          className="capitalize text-center w-full items-center justify-center"
+          column={column}
+          // @ts-expect-error
+          title={description || key}
+        />
+      ),
+      cell: ({ cell, table, row }) => {
+        const value = cell.getValue();
 
-				function update(value: Record<string, unknown>) {
-					// @ts-expect-error
-					table.options.meta?.updateData(row.id, value);
-				}
+        function update(value: Record<string, unknown>) {
+          // @ts-expect-error
+          table.options.meta?.updateData(row.id, value);
+        }
 
-				return (
-					<Editable.Root
-						defaultValue={value as string}
-						placeholder="-"
-						className="text-center"
-						triggerMode="dblclick"
-					>
-						<Editable.Area>
-							<Editable.Preview className="max-w-56">
-								<AutoPreview
-									field={field}
-									key={field.key}
-									value={value}
-									baseSchema={schema.shape[field.key]}
-								/>
-							</Editable.Preview>
-							<Editable.Input asChild>
-								<AutoFormWithoutLabel
-									formProps={{
-										// onBlur: (e) => {
-										// 	e.currentTarget.requestSubmit()
-										// },
-										onKeyDown: (e) => {
-											if (e.code === "Enter") {
-												e.currentTarget.requestSubmit();
-											}
-										},
-									}}
-									defaultValues={{ [key]: value as string }}
-									schema={childSchema}
-									onSubmit={update}
-								/>
-							</Editable.Input>
-						</Editable.Area>
-					</Editable.Root>
-				);
-			},
-			meta: {
-				// @ts-expect-error
-				label: field?._def?.description || key,
-				// @ts-expect-error
-				variant: getFilterVariant(field),
-				// @ts-expect-error
-				icon: getFieldIcon(field),
-			},
-			enableColumnFilter: true,
-		};
+        return (
+          <Editable.Root
+            defaultValue={value as string}
+            placeholder="-"
+            className="text-center"
+            triggerMode="dblclick"
+          >
+            <Editable.Area>
+              <Editable.Preview className="max-w-56">
+                <AutoPreview
+                  field={field}
+                  key={field.key}
+                  value={value}
+                  baseSchema={schema.shape[field.key]}
+                />
+              </Editable.Preview>
+              <Editable.Input asChild>
+                <AutoFormWithoutLabel
+                  formProps={{
+                    // onBlur: (e) => {
+                    // 	e.currentTarget.requestSubmit()
+                    // },
+                    onKeyDown: (e) => {
+                      if (e.code === "Enter") {
+                        e.currentTarget.requestSubmit();
+                      }
+                    },
+                  }}
+                  defaultValues={{ [key]: value as string }}
+                  schema={childSchema}
+                  onSubmit={update}
+                />
+              </Editable.Input>
+            </Editable.Area>
+          </Editable.Root>
+        );
+      },
+      meta: {
+        // @ts-expect-error
+        label: field?._def?.description || key,
+        // @ts-expect-error
+        variant: getFilterVariant(field),
+        // @ts-expect-error
+        icon: getFieldIcon(field),
+      },
+      enableColumnFilter: true,
+    };
 
-		columns.push(column);
-	}
+    columns.push(column);
+  }
 
-	columns.push({
-		id: "actions",
-		cell: function Cell({ row }) {
-			return (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button
-							aria-label="Open menu"
-							variant="ghost"
-							className="flex size-8 p-0 data-[state=open]:bg-muted"
-						>
-							<Ellipsis className="size-4" aria-hidden="true" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end" className="w-40">
-						<DropdownMenuItem
-							onSelect={() => setRowAction({ row, variant: "update" })}
-						>
-							Edit
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem
-							onSelect={() => setRowAction({ row, variant: "delete" })}
-						>
-							Delete
-							<DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
-						</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
-		},
-		size: 40,
-	});
+  columns.push({
+    id: "actions",
+    cell: function Cell({ row }) {
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              aria-label="Open menu"
+              variant="secondary"
+              className="flex size-8 p-0 data-[state=open]:bg-muted"
+            >
+              <Ellipsis className="size-4" aria-hidden="true" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem
+              onSelect={() => setRowAction({ row, variant: "update" })}
+            >
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => setRowAction({ row, variant: "delete" })}
+            >
+              Delete
+              <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+    size: 40,
+  });
 
-	return columns;
+  return columns;
 }
 
 // Helper function to determine filter variant based on field type
 function getFilterVariant(field: z.ZodTypeAny): FilterVariant {
-	if (field instanceof z.ZodString) return "text";
-	if (field instanceof z.ZodNumber) return "range";
-	if (field instanceof z.ZodEnum) return "multiSelect";
-	if (field instanceof z.ZodBoolean) return "multiSelect";
-	if (field instanceof z.ZodDate) return "dateRange";
-	return "text";
+  if (field instanceof z.ZodString) return "text";
+  if (field instanceof z.ZodNumber) return "range";
+  if (field instanceof z.ZodEnum) return "multiSelect";
+  if (field instanceof z.ZodBoolean) return "multiSelect";
+  if (field instanceof z.ZodDate) return "dateRange";
+  return "text";
 }
 
 // Helper function to get appropriate icon for field type
 function getFieldIcon(field: z.ZodTypeAny) {
-	if (field instanceof z.ZodDate) return CalendarIcon;
-	if (field instanceof z.ZodNumber) return ArrowUpDown;
-	if (field instanceof z.ZodBoolean) return CircleDashed;
-	return Text;
+  if (field instanceof z.ZodDate) return CalendarIcon;
+  if (field instanceof z.ZodNumber) return ArrowUpDown;
+  if (field instanceof z.ZodBoolean) return CircleDashed;
+  return Text;
 }
