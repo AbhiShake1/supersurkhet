@@ -4,7 +4,7 @@ import type { Business } from "@/lib/schema";
 import { Loader2 } from "lucide-react";
 import { RestaurantClientPage } from "@/components/pages/restaurant/restaurant-client-page";
 
-export const Route = createFileRoute("/$businessName")({
+export const Route = createFileRoute("/$businessName/")({
   component: () => {
     const { businessName } = Route.useParams();
     const allBusinesses = useGet("business");

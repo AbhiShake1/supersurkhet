@@ -13,12 +13,12 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as AdminImport } from './routes/admin'
 import { Route as AuthImport } from './routes/_auth'
-import { Route as BusinessNameImport } from './routes/$businessName'
 import { Route as IndexImport } from './routes/index'
+import { Route as BusinessNameIndexImport } from './routes/$businessName/index'
 import { Route as BusinessChatImport } from './routes/_business/chat'
 import { Route as AuthSettingsImport } from './routes/_auth/settings'
 import { Route as AuthAuthImport } from './routes/_auth/auth'
-import { Route as BusinessNameAdminImport } from './routes/$businessName.admin'
+import { Route as BusinessNameAdminImport } from './routes/$businessName/admin'
 import { Route as BusinessRideIndexImport } from './routes/_business/ride/index'
 import { Route as BusinessSchoolSasaImport } from './routes/_business/_school/sasa'
 import { Route as BusinessRetailAnjalstoreImport } from './routes/_business/_retail/anjalstore'
@@ -41,15 +41,15 @@ const AuthRoute = AuthImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
-const BusinessNameRoute = BusinessNameImport.update({
-  id: '/$businessName',
-  path: '/$businessName',
-  getParentRoute: () => rootRoute,
-} as any)
-
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const BusinessNameIndexRoute = BusinessNameIndexImport.update({
+  id: '/$businessName/',
+  path: '/$businessName/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -72,9 +72,9 @@ const AuthAuthRoute = AuthAuthImport.update({
 } as any)
 
 const BusinessNameAdminRoute = BusinessNameAdminImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => BusinessNameRoute,
+  id: '/$businessName/admin',
+  path: '/$businessName/admin',
+  getParentRoute: () => rootRoute,
 } as any)
 
 const BusinessRideIndexRoute = BusinessRideIndexImport.update({
@@ -137,13 +137,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexImport
       parentRoute: typeof rootRoute
     }
-    '/$businessName': {
-      id: '/$businessName'
-      path: '/$businessName'
-      fullPath: '/$businessName'
-      preLoaderRoute: typeof BusinessNameImport
-      parentRoute: typeof rootRoute
-    }
     '/_auth': {
       id: '/_auth'
       path: ''
@@ -160,10 +153,10 @@ declare module '@tanstack/react-router' {
     }
     '/$businessName/admin': {
       id: '/$businessName/admin'
-      path: '/admin'
+      path: '/$businessName/admin'
       fullPath: '/$businessName/admin'
       preLoaderRoute: typeof BusinessNameAdminImport
-      parentRoute: typeof BusinessNameImport
+      parentRoute: typeof rootRoute
     }
     '/_auth/auth': {
       id: '/_auth/auth'
@@ -184,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof BusinessChatImport
+      parentRoute: typeof rootRoute
+    }
+    '/$businessName/': {
+      id: '/$businessName/'
+      path: '/$businessName'
+      fullPath: '/$businessName'
+      preLoaderRoute: typeof BusinessNameIndexImport
       parentRoute: typeof rootRoute
     }
     '/_business/ride/admin': {
@@ -247,18 +247,6 @@ declare module '@tanstack/react-router' {
 
 // Create and export the route tree
 
-interface BusinessNameRouteChildren {
-  BusinessNameAdminRoute: typeof BusinessNameAdminRoute
-}
-
-const BusinessNameRouteChildren: BusinessNameRouteChildren = {
-  BusinessNameAdminRoute: BusinessNameAdminRoute,
-}
-
-const BusinessNameRouteWithChildren = BusinessNameRoute._addFileChildren(
-  BusinessNameRouteChildren,
-)
-
 interface AuthRouteChildren {
   AuthAuthRoute: typeof AuthAuthRoute
   AuthSettingsRoute: typeof AuthSettingsRoute
@@ -293,13 +281,13 @@ const BusinessRideAdminRouteRouteWithChildren =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/$businessName': typeof BusinessNameRouteWithChildren
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
+  '/$businessName': typeof BusinessNameIndexRoute
   '/ride/admin': typeof BusinessRideAdminRouteRouteWithChildren
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/sasa': typeof BusinessSchoolSasaRoute
@@ -312,13 +300,13 @@ export interface FileRoutesByFullPath {
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/$businessName': typeof BusinessNameRouteWithChildren
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
+  '/$businessName': typeof BusinessNameIndexRoute
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/sasa': typeof BusinessSchoolSasaRoute
   '/ride': typeof BusinessRideIndexRoute
@@ -331,13 +319,13 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
-  '/$businessName': typeof BusinessNameRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/_auth/auth': typeof AuthAuthRoute
   '/_auth/settings': typeof AuthSettingsRoute
   '/_business/chat': typeof BusinessChatRoute
+  '/$businessName/': typeof BusinessNameIndexRoute
   '/_business/ride/admin': typeof BusinessRideAdminRouteRouteWithChildren
   '/_business/_retail/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/_business/_school/sasa': typeof BusinessSchoolSasaRoute
@@ -352,13 +340,13 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/$businessName'
     | ''
     | '/admin'
     | '/$businessName/admin'
     | '/auth'
     | '/settings'
     | '/chat'
+    | '/$businessName'
     | '/ride/admin'
     | '/anjalstore'
     | '/sasa'
@@ -370,13 +358,13 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/$businessName'
     | ''
     | '/admin'
     | '/$businessName/admin'
     | '/auth'
     | '/settings'
     | '/chat'
+    | '/$businessName'
     | '/anjalstore'
     | '/sasa'
     | '/ride'
@@ -387,13 +375,13 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/$businessName'
     | '/_auth'
     | '/admin'
     | '/$businessName/admin'
     | '/_auth/auth'
     | '/_auth/settings'
     | '/_business/chat'
+    | '/$businessName/'
     | '/_business/ride/admin'
     | '/_business/_retail/anjalstore'
     | '/_business/_school/sasa'
@@ -407,10 +395,11 @@ export interface FileRouteTypes {
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BusinessNameRoute: typeof BusinessNameRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   AdminRoute: typeof AdminRoute
+  BusinessNameAdminRoute: typeof BusinessNameAdminRoute
   BusinessChatRoute: typeof BusinessChatRoute
+  BusinessNameIndexRoute: typeof BusinessNameIndexRoute
   BusinessRideAdminRouteRoute: typeof BusinessRideAdminRouteRouteWithChildren
   BusinessRetailAnjalstoreRoute: typeof BusinessRetailAnjalstoreRoute
   BusinessSchoolSasaRoute: typeof BusinessSchoolSasaRoute
@@ -419,10 +408,11 @@ export interface RootRouteChildren {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BusinessNameRoute: BusinessNameRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   AdminRoute: AdminRoute,
+  BusinessNameAdminRoute: BusinessNameAdminRoute,
   BusinessChatRoute: BusinessChatRoute,
+  BusinessNameIndexRoute: BusinessNameIndexRoute,
   BusinessRideAdminRouteRoute: BusinessRideAdminRouteRouteWithChildren,
   BusinessRetailAnjalstoreRoute: BusinessRetailAnjalstoreRoute,
   BusinessSchoolSasaRoute: BusinessSchoolSasaRoute,
@@ -440,10 +430,11 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
-        "/$businessName",
         "/_auth",
         "/admin",
+        "/$businessName/admin",
         "/_business/chat",
+        "/$businessName/",
         "/_business/ride/admin",
         "/_business/_retail/anjalstore",
         "/_business/_school/sasa",
@@ -452,12 +443,6 @@ export const routeTree = rootRoute
     },
     "/": {
       "filePath": "index.tsx"
-    },
-    "/$businessName": {
-      "filePath": "$businessName.tsx",
-      "children": [
-        "/$businessName/admin"
-      ]
     },
     "/_auth": {
       "filePath": "_auth.tsx",
@@ -472,8 +457,7 @@ export const routeTree = rootRoute
       "filePath": "admin.tsx"
     },
     "/$businessName/admin": {
-      "filePath": "$businessName.admin.tsx",
-      "parent": "/$businessName"
+      "filePath": "$businessName/admin.tsx"
     },
     "/_auth/auth": {
       "filePath": "_auth/auth.tsx",
@@ -485,6 +469,9 @@ export const routeTree = rootRoute
     },
     "/_business/chat": {
       "filePath": "_business/chat.tsx"
+    },
+    "/$businessName/": {
+      "filePath": "$businessName/index.tsx"
     },
     "/_business/ride/admin": {
       "filePath": "_business/ride/admin/route.tsx",
