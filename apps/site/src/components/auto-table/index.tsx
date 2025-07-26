@@ -336,7 +336,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
                 <AutoFormWithoutLabel
                   formProps={{
                     // onBlur: (e) => {
-                    // 	e.currentTarget.requestSubmit()
+                    //   e.currentTarget.requestSubmit()
                     // },
                     onKeyDown: (e) => {
                       if (e.code === "Enter") {

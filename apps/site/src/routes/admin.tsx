@@ -1,31 +1,21 @@
 import { AutoAdmin } from "@/components/auto-admin";
+import { appSchema } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
-import { LucideBriefcaseBusiness, School, Users2 } from "lucide-react";
+import { LucideBriefcaseBusiness } from "lucide-react";
 
 export const Route = createFileRoute("/admin")({
-	component: RouteComponent,
+  component: RouteComponent,
 });
 
 function RouteComponent() {
-	return (
-		<AutoAdmin
-			tabs={[
-				{
-					schema: "business",
-					title: "Businesses",
-					icon: LucideBriefcaseBusiness,
-				},
-				{
-					schema: "user",
-					title: "Users",
-					icon: Users2,
-				},
-				{
-					schema: "school",
-					title: "Schools",
-					icon: School,
-				},
-			]}
-		/>
-	);
+  return (
+    <AutoAdmin
+      // @ts-expect-error
+      tabs={Object.keys(appSchema.shape).map((s) => ({
+        schema: s,
+        title: s[0].toUpperCase() + s.slice(1),
+        icon: LucideBriefcaseBusiness,
+      }))}
+    />
+  );
 }
