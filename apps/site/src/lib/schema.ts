@@ -163,7 +163,38 @@ export const coOpMemberProfileSchema = z
 
 export const orderSchema = z
   .object({
-    // ... (order schema remains largely the same, but items would reference a listing ID)
+    customerId: z
+      .string()
+      .optional()
+      .describe("ID of the customer who placed the order"),
+    items: z
+      .record(
+        z.string(),
+        z.object({
+          quantity: z.number({ coerce: true }).int().positive(),
+          unitPrice: z.number({ coerce: true }).positive(),
+          customizations: z.record(z.string(), z.boolean()).optional(),
+          specialInstructions: z.string().optional(),
+        }),
+      )
+      .describe("Ordered items with their details")
+      .superRefine(fieldConfig({ fieldType: "record" })),
+    subTotal: z.number().positive(),
+    taxes: z.number({ coerce: true }).nonnegative(),
+    deliveryFee: z.number({ coerce: true }).nonnegative(),
+    totalAmount: z.number({ coerce: true }).positive(),
+    orderStatus: z.enum([
+      "pending",
+      "confirmed",
+      "preparing",
+      "ready",
+      "served",
+      "cancelled",
+    ]),
+    paymentStatus: z.enum(["pending", "paid", "failed"]),
+    paymentMethod: z.enum(["cash", "card", "online"]).optional(),
+    estimatedDeliveryTime: z.number({ coerce: true }).optional(),
+    // listing: baseListingSchema.superRefine(fieldConfig({ fieldType: "record" })).optional(),
   })
   .extend(table);
 
