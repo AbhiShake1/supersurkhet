@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Link } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
 interface NotFoundProps {
@@ -22,6 +22,8 @@ export function NotFound({
   title = "Page not found",
   description = "Lost, this page is. In another system, it may be.",
 }: NotFoundProps) {
+  const router = useRouter()
+
   return (
     <div className="relative flex flex-col w-full justify-center min-h-svh bg-background p-6 md:p-10">
       <div className="relative max-w-5xl mx-auto w-full">
@@ -34,16 +36,14 @@ export function NotFound({
             {description}
           </p>
           <div className="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-center gap-y-3 gap-x-6">
-            <Button variant="secondary" asChild className="group">
-              <Link to="..">
-                <ArrowLeft
-                  className="me-2 ms-0 opacity-60 transition-transform group-hover:-translate-x-0.5"
-                  size={16}
-                  strokeWidth={2}
-                  aria-hidden="true"
-                />
-                Go back
-              </Link>
+            <Button variant="secondary" className="group" onClick={() => router.history.back()}>
+              <ArrowLeft
+                className="me-2 ms-0 opacity-60 transition-transform group-hover:-translate-x-0.5"
+                size={16}
+                strokeWidth={2}
+                aria-hidden="true"
+              />
+              Go back
             </Button>
             <Button className="-order-1 sm:order-none" asChild>
               <Link to="/">Take me home</Link>
