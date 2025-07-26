@@ -1,36 +1,47 @@
 import type { GlobalOptions as ConfettiGlobalOptions, Options as ConfettiOptions } from "canvas-confetti";
-import confetti from "canvas-confetti";
 import React, { createContext, useCallback, useContext, useEffect, useRef } from "react";
+import { Confetti, type ConfettiRef } from "./magicui/confetti";
+import confetti from "canvas-confetti";
 
 type ConfettiApi = {
-  fire: (options?: ConfettiOptions) => void;
+  fire: () => void;
 };
 
 const ConfettiContext = createContext<ConfettiApi | undefined>(undefined);
 
 export const ConfettiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const instanceRef = useRef<confetti.CreateTypes | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const globalOptions: ConfettiGlobalOptions = { resize: true, useWorker: true };
-
-  useEffect(() => {
-    if (canvasRef.current) {
-      instanceRef.current = confetti.create(canvasRef.current, globalOptions);
-    }
-    return () => {
-      if (instanceRef.current) {
-        instanceRef.current.reset();
-        instanceRef.current = null;
-      }
-    };
-  }, [globalOptions]);
+  // const confettiRef = React.useRef<ConfettiRef>(null)
 
   const fire = useCallback(
-    (opts?: ConfettiOptions) => {
-      if (instanceRef.current) {
-        instanceRef.current(opts);
-      }
+    () => {
+      const end = Date.now() + 3 * 1000; // 3 seconds
+      const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
+
+      const frame = () => {
+        if (Date.now() > end) return;
+
+        confetti({
+          particleCount: 2,
+          angle: 60,
+          spread: 55,
+          startVelocity: 60,
+          origin: { x: 0, y: 0.5 },
+          colors: colors,
+        });
+        confetti({
+          particleCount: 2,
+          angle: 120,
+          spread: 55,
+          startVelocity: 60,
+          origin: { x: 1, y: 0.5 },
+          colors: colors,
+        });
+
+        requestAnimationFrame(frame);
+      };
+
+      frame();
+      // confettiRef.current?.fire(opts);
     },
     [],
   );
@@ -39,18 +50,6 @@ export const ConfettiProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   return (
     <ConfettiContext.Provider value={api}>
-      <canvas
-        ref={canvasRef}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          zIndex: 9999,
-          pointerEvents: "none",
-        }}
-      />
       {children}
     </ConfettiContext.Provider>
   );
