@@ -5,6 +5,7 @@ import { ArrowRight, ChevronRight } from "lucide-react";
 import { AnimatedGroup } from "./ui/animated-group";
 import { TextEffect } from "./ui/text-effect";
 import { BrowseBusiness } from "./browse-business";
+import { CreateBusiness } from "./create-business";
 
 const transitionVariants = {
   item: {
@@ -142,15 +143,15 @@ export default function HeroSection() {
                     key={1}
                     className="bg-foreground/10 rounded-[calc(var(--radius-xl)+0.125rem)] border p-0.5"
                   >
-                    <Button
-                      asChild
-                      size="lg"
-                      className="rounded-xl px-5 text-base"
-                    >
-                      <Link to="/">
+                    <CreateBusiness>
+                      <Button
+                        asChild
+                        size="lg"
+                        className="rounded-xl px-5 text-base"
+                      >
                         <span className="text-nowrap">Get Started Free</span>
-                      </Link>
-                    </Button>
+                      </Button>
+                    </CreateBusiness>
                   </div>
                   <Button
                     key={2}

@@ -1,8 +1,4 @@
-import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { businessSchema, featureSchema } from "@/lib/schema";
+import { useConfetti } from "@/components/confetti-provider";
 import {
   Credenza,
   CredenzaBody,
@@ -13,14 +9,17 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
 } from "@/components/ui/credenza";
-import { Button } from "./ui/button";
+import { useCreate, useGet } from "@/lib/gun/hooks";
+import { businessSchema } from "@/lib/schema";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { BusinessCreationForm } from "./business-creation-form";
+import { Button } from "./ui/button";
 import { Form } from "./ui/form";
 import { ScrollArea } from "./ui/scroll-area";
-import { useCreate, useGet } from "@/lib/gun/hooks";
-import { useMutation } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { useConfetti } from "@/components/confetti-provider";
 
 const businessCreationSchema = businessSchema.pick({
   name: true,
@@ -45,10 +44,10 @@ const stepContent = {
   },
 };
 
-export function CreateBusiness() {
+export function CreateBusiness({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
-  const [createdBusiness, setCreatedBusiness] = useState<z.infer<typeof businessSchema> | null>(null);
+  const [createdBusiness, setCreatedBusiness] = useState<z.infer<typeof businessSchema>>();
 
   const createBusinessGun = useCreate("business");
   const existingBusinesses = useGet("business");
@@ -64,11 +63,9 @@ export function CreateBusiness() {
 
   const { mutateAsync: createBusiness, isPending, isError, error } = useMutation({
     mutationFn: async (data: BusinessCreationValues & { basePath: string }) => {
-      const ack = await createBusinessGun(data);
-      // GunDB's ack doesn't always return the full object, so we simulate it
-      return { ...data, id: ack.put, timestamp: Date.now() };
+      return createBusinessGun(data);
     },
-    onSuccess: (data) => {
+    onSuccess: (_, data) => {
       setCreatedBusiness(data);
       setStep(3);
     },
@@ -105,11 +102,9 @@ export function CreateBusiness() {
   const handleClose = () => {
     setOpen(false);
     // Reset form and step after a short delay to allow modal to close
-    setTimeout(() => {
-      form.reset();
-      setStep(1);
-      setCreatedBusiness(null);
-    }, 300);
+    form.reset();
+    setStep(1);
+    setCreatedBusiness(undefined);
   };
 
   const currentContent = stepContent[step as keyof typeof stepContent];
@@ -121,9 +116,12 @@ export function CreateBusiness() {
   }, [step, fireConfetti]);
 
   return (
-    <Credenza open={open} onOpenChange={setOpen}>
-      <CredenzaTrigger asChild>
-        <Button>Create Your Own Business</Button>
+    <Credenza open={open} onOpenChange={(open) => {
+      if (open) setOpen(true)
+      else handleClose()
+    }}>
+      <CredenzaTrigger>
+        {children}
       </CredenzaTrigger>
       <CredenzaContent>
         <CredenzaHeader>
@@ -152,11 +150,6 @@ export function CreateBusiness() {
                 {isPending ? "Creating..." : "Create Business"}
               </Button>
             </div>
-          )}
-          {step === 3 && createdBusiness && (
-            <Button onClick={handleClose} asChild>
-              <Link to={`/${createdBusiness.basePath}/admin`}>Go to Your Admin Dashboard</Link>
-            </Button>
           )}
         </CredenzaFooter>
       </CredenzaContent >

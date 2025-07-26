@@ -1,6 +1,4 @@
-import type { UseFormReturn } from "react-hook-form";
-import { z } from "zod";
-import { businessSchema, featureSchema } from "@/lib/schema";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   FormControl,
   FormField,
@@ -9,10 +7,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardHeader, CardTitle } from "./ui/card";
+import { businessSchema, featureSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
+import { Link } from "@tanstack/react-router";
 import { CheckCircle } from "lucide-react";
+import type { UseFormReturn } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "./ui/button";
+import { Card, CardHeader, CardTitle } from "./ui/card";
 
 const businessCreationSchema = businessSchema.pick({
   name: true,
@@ -54,10 +56,20 @@ export function BusinessCreationForm({ step, form, isSubmitting, createdBusiness
       <div className="text-center py-8">
         <h2 className="text-2xl font-bold">Business Created!</h2>
         {createdBusiness && (
-          <div className="mt-4 space-y-2">
-            <p className="text-lg font-semibold">{createdBusiness.name}</p>
-            <p className="text-muted-foreground">Your admin dashboard is at:</p>
-            <p className="text-primary font-mono text-sm">{`/${createdBusiness.basePath}/admin`}</p>
+          <div className="mt-4 space-y-4">
+            <p className="text-lg font-semibold">Your business <span className="text-primary">{createdBusiness.name}</span> is now online!</p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button asChild>
+                <Link to="/$businessName" params={{ businessName: createdBusiness.basePath ?? "" }}>
+                  Go to Public Site
+                </Link>
+              </Button>
+              <Button asChild variant="outline">
+                <Link to="/$businessName/admin" params={{ businessName: createdBusiness.basePath ?? "" }}>
+                  Go to Admin Dashboard
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
       </div>

@@ -52,7 +52,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   const data: SidebarItems = {
     user: {
       name: user?.role ?? "admin",
-      email: user?.email,
+      email: user?.email ?? "",
       avatar: user?.avatar ?? "",
     },
     items: tabs,
