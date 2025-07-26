@@ -10,12 +10,14 @@ export const useCreate = createGunHook((messenger) => {
 		const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
 		return async (value: Omit<NestedSchemaType<T>, "_">) => {
 			return new Promise(async (resolve, reject) => {
+				console.log("creating business")
 				options.gun
 					.get(keys)
 					.get(Date.now().toString())
 					.put(
 						await encrypt(parseNestedZodType(keys, value, options.schema)),
 						(ack) => {
+							console.log("ack", ack)
 							if ("err" in ack && !!ack.err) {
 								reject(ack.err);
 							} else {

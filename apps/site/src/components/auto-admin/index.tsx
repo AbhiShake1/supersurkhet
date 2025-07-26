@@ -105,17 +105,17 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 {"parsedSchema" in currentItem ? (
                   <AutoTable
                     parsedSchema={currentItem.parsedSchema}
-                    slug={basePath}
+                    slug={currentItem.slug ?? basePath}
                   />
                 ) : (
-                  <AutoTable schema={currentItem.schema} slug={basePath} />
+                  <AutoTable schema={currentItem.schema} slug={currentItem.slug ?? basePath} />
                 )}
               </TabsContent>
               <TabsContent value="board" className="flex-1">
                 {
                   // @ts-expect-error
                   <AutoKanban
-                    slug={basePath}
+                    slug={currentItem.slug ?? basePath}
                     cardBuilder={currentItem.cardBuilder}
                     groupKey={currentItem.groupKey}
                     // @ts-expect-error
@@ -127,10 +127,10 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
           ) : "parsedSchema" in currentItem ? (
             <AutoTable
               parsedSchema={currentItem.parsedSchema}
-              slug={basePath}
+              slug={currentItem.slug ?? basePath}
             />
           ) : (
-            <AutoTable schema={currentItem.schema} slug={basePath} />
+            <AutoTable schema={currentItem.schema} slug={currentItem.slug ?? basePath} />
           )}
         </section>
       </SidebarInset>

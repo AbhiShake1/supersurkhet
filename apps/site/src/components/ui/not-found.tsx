@@ -23,9 +23,9 @@ export function NotFound({
   description = "Lost, this page is. In another system, it may be.",
 }: NotFoundProps) {
   return (
-    <div className="relative flex flex-col w-full justify-center min-h-svh bg-foreground p-6 md:p-10">
+    <div className="relative flex flex-col w-full justify-center min-h-svh bg-background p-6 md:p-10">
       <div className="relative max-w-5xl mx-auto w-full">
-        <Illustration className="absolute inset-0 w-full h-[50vh] opacity-[0.04] dark:opacity-[0.03] text-muted-foreground" />
+        <Illustration className="absolute inset-0 w-full h-[50vh] opacity-[0.04] dark:opacity-[0.03] text-foreground" />
         <div className="relative text-center z-[1] pt-52">
           <h1 className="mt-4 text-balance text-5xl font-semibold tracking-tight text-primary sm:text-7xl">
             {title}

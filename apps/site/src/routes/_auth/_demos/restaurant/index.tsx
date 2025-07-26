@@ -588,7 +588,7 @@ function RouteComponent() {
 	const menuItems = (() => {
 		if (!search?.length) return _menuItems;
 		return _menuItems.filter((item) =>
-			item.name.toLowerCase().includes(search.toLowerCase()),
+			item.name?.toLowerCase().includes(search.toLowerCase()),
 		);
 	})();
 

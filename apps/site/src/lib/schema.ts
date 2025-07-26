@@ -21,9 +21,8 @@ const withLabel = <T extends z.ZodTypeAny>(
 
 // #region Base Schema
 export const table = {
-  id: z.string().uuid().describe("Unique identifier for the record"),
-  created_by: z.string().optional().describe("User ID of the creator"),
-  timestamp: z.number().describe("Unix timestamp of the last update"),
+  created_by: z.string().optional().describe("User ID of the creator").optional(),
+  timestamp: z.number().describe("Unix timestamp of the last update").optional(),
   _: z.object({ soul: z.string().optional() }).optional(),
 };
 // #endregion
@@ -68,7 +67,7 @@ export const businessSchema = z
       "retail", "food", "service", "education", "healthcare",
       "logistics", "real_estate", "cooperative", "other",
     ]).describe("The primary category of the business"),
-    features: z.record(z.string(), z.boolean()).optional().describe("A map of enabled features for this business"),
+    features: z.record(z.string(), z.boolean()).optional().describe("A map of enabled features for this business").superRefine(fieldConfig({ fieldType: "record" })),
     isActive: z.boolean().default(true).describe("Whether the business is currently active"),
   })
   .extend(table);
@@ -104,12 +103,18 @@ export const productSchema = baseListingSchema.extend({
   sku: z.string().optional().describe("Stock Keeping Unit"),
   quantityAvailable: z.number().int().nonnegative().describe("Current quantity in stock"),
   unitOfMeasure: z.string().optional().describe("e.g., 'piece', 'kg'"),
+  imageUrl: z.string().url().superRefine(fieldConfig({ fieldType: "image" })).optional(),
+  isFeatured: z.boolean().optional(),
+  isActive: z.boolean().default(true),
+  price: z.number().positive().describe("Price of the item/service"),
+  name: z.string().optional().describe("Name of the item/service"),
 });
 
 export const menuItemSchema = productSchema.extend({
   isVegetarian: z.boolean().default(false),
   isSpicy: z.boolean().default(false),
   preparationTime: z.number().int().positive().optional(),
+  isSpecial: z.boolean().optional(),
 });
 
 export const propertyListingSchema = baseListingSchema.extend({
@@ -193,13 +198,15 @@ export const chatMessageSchema = z.object({}).extend(table); // Placeholder
 // #endregion
 
 // #region App Schema
-export const appSchema = z.object({
-  // Core
+
+export const coreSchema = z.object({
   user: userSchema,
   business: businessSchema,
   role: roleSchema,
   membership: membershipSchema,
+});
 
+export const featureSchema = z.object({
   // Profiles (linked to User)
   driverProfile: driverProfileSchema,
   studentProfile: studentProfileSchema,
@@ -219,6 +226,16 @@ export const appSchema = z.object({
   expense: expenseSchema,
   chat: chatMessageSchema,
 });
+
+// A composite schema that brings together all the individual schemas.
+// This is useful for type inference and for providing a single entry point to all data models.
+export const appSchema = coreSchema.extend(featureSchema.shape);
+export type AppSchema = z.infer<typeof appSchema>;
+export type AppSchemaType = typeof appSchema;
+
+declare global {
+  interface GTAAppSchema extends AppSchemaType { }
+}
 // #endregion
 
 // #region Type Exports

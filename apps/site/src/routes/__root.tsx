@@ -197,6 +197,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	),
 });
 
+import { ConfettiProvider } from "@/components/confetti-provider";
+
+// ... (rest of the imports and code)
+
 function RootDocument({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		gun.user().recall({ sessionStorage: true });
@@ -208,7 +212,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body>
 				<div data-vaul-drawer-wrapper="">
-					{children}
+					<ConfettiProvider>
+						{children}
+					</ConfettiProvider>
 					<Scripts />
 				</div>
 			</body>
