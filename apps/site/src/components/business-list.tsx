@@ -16,11 +16,11 @@ export function BusinessList(props: BusinessListProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredBusinesses = allBusinesses.filter((business: Business) => {
-    const lowerCaseSearchTerm = searchTerm.toLowerCase();
+    const lowerCaseSearchTerm = searchTerm?.toLowerCase();
     return (
-      business.name.toLowerCase().includes(lowerCaseSearchTerm) ||
-      business.businessType.toLowerCase().includes(lowerCaseSearchTerm) ||
-      (business.location && business.location.toLowerCase().includes(lowerCaseSearchTerm))
+      business.name?.toLowerCase().includes(lowerCaseSearchTerm) ||
+      business.businessType?.toLowerCase().includes(lowerCaseSearchTerm) ||
+      (business.location && business.location?.toLowerCase().includes(lowerCaseSearchTerm))
     );
   });
 
@@ -66,7 +66,7 @@ export function BusinessList(props: BusinessListProps) {
                 </CardHeader>
                 <CardContent className="flex-grow flex flex-col justify-end pt-0">
                   <Button asChild className="w-full">
-                    <Link to={`/${business.basePath}`}>
+                    <Link to="/$businessName" params={{ businessName: business.basePath ?? "" }}>
                       Visit
                     </Link>
                   </Button>

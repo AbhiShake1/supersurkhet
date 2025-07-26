@@ -1,4 +1,3 @@
-import { useConfetti } from "@/components/confetti-provider";
 import {
   Credenza,
   CredenzaBody,
@@ -10,11 +9,11 @@ import {
   CredenzaTrigger,
 } from "@/components/ui/credenza";
 import { useCreate, useGet } from "@/lib/gun/hooks";
-import { businessSchema } from "@/lib/schema";
+import { businessSchema, type Business } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { BusinessCreationForm } from "./business-creation-form";
@@ -45,14 +44,15 @@ const stepContent = {
   },
 };
 
+type CreateBusiness = BusinessCreationValues & { basePath: string }
+
 export function CreateBusiness() {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
-  const [createdBusiness, setCreatedBusiness] = useState<z.infer<typeof businessSchema> | null>(null);
+  const [createdBusiness, setCreatedBusiness] = useState<CreateBusiness>();
 
   const createBusinessGun = useCreate("business");
   const existingBusinesses = useGet("business");
-  const { fire: fireConfetti } = useConfetti();
 
   const form = useForm<BusinessCreationValues>({
     resolver: zodResolver(businessCreationSchema),
@@ -63,8 +63,8 @@ export function CreateBusiness() {
   });
 
   const { mutateAsync: createBusiness, isPending, isError, error } = useMutation({
-    mutationFn: async (data: BusinessCreationValues & { basePath: string }) => {
-      return createBusinessGun(data);
+    mutationFn: async (data: CreateBusiness) => {
+      return createBusinessGun({ ...data, isActive: true });
     },
     onSuccess: (_, data) => {
       setCreatedBusiness(data);
@@ -81,7 +81,7 @@ export function CreateBusiness() {
     if (!isValid) return;
 
     const businessName = form.getValues("name");
-    const basePath = businessName.toLowerCase().replace(/\s+/g, "-");
+    const basePath = businessName?.toLowerCase().replace(/\s+/g, "-");
 
     const isNameTaken = existingBusinesses.some(
       (b) => b.basePath === basePath
@@ -96,7 +96,7 @@ export function CreateBusiness() {
   };
 
   const onSubmit = async (values: BusinessCreationValues) => {
-    const basePath = values.name.toLowerCase().replace(/\s+/g, "-");
+    const basePath = values.name?.toLowerCase().replace(/\s+/g, "-");
     await createBusiness({ ...values, basePath });
   };
 
@@ -106,32 +106,11 @@ export function CreateBusiness() {
     setTimeout(() => {
       form.reset();
       setStep(1);
-      setCreatedBusiness(null);
+      setCreatedBusiness(undefined);
     }, 300);
   };
 
   const currentContent = stepContent[step as keyof typeof stepContent];
-
-  useEffect(() => {
-    if (step === 3) {
-      // Fire confetti from the left
-      fireConfetti({
-        particleCount: 200, // More particles
-        spread: 100,        // Wider spread
-        startVelocity: 60,  // Faster initial velocity
-        scalar: 1.2,        // Larger particles
-        origin: { x: 0, y: 0.7 }, // From bottom-left
-      });
-      // Fire confetti from the right
-      fireConfetti({
-        particleCount: 200, // More particles
-        spread: 100,        // Wider spread
-        startVelocity: 60,  // Faster initial velocity
-        scalar: 1.2,        // Larger particles
-        origin: { x: 1, y: 0.7 }, // From bottom-right
-      });
-    }
-  }, [step, fireConfetti]);
 
   return (
     <Credenza open={open} onOpenChange={setOpen}>
@@ -148,7 +127,7 @@ export function CreateBusiness() {
             <Form {...form}>
               <form id="business-creation-form" onSubmit={form.handleSubmit(onSubmit)}>
                 <CredenzaBody className="">
-                  <BusinessCreationForm step={step} form={form} setStep={setStep} createdBusiness={createdBusiness} isSubmitting={isPending} />
+                  <BusinessCreationForm step={step} form={form} setStep={setStep} createdBusiness={createdBusiness as Business} isSubmitting={isPending} />
                 </CredenzaBody>
               </form>
             </Form>
@@ -168,7 +147,7 @@ export function CreateBusiness() {
           )}
           {step === 3 && createdBusiness && (
             <Button onClick={handleClose} asChild>
-              <Link to={`/${createdBusiness.basePath}/admin`}>Go to Your Admin Dashboard</Link>
+              <Link to={`/$businessName/admin`} params={{ businessName: createdBusiness.basePath ?? "" }}>Go to Your Admin Dashboard</Link>
             </Button>
           )}
         </CredenzaFooter>

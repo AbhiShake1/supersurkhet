@@ -43,7 +43,7 @@ function RouteComponent() {
 
 	const signupMutation = useMutation({
 		mutationFn: async ({ email, password }: z.infer<typeof signupSchema>) => {
-			const alias = email.toLowerCase();
+			const alias = email?.toLowerCase();
 			const userExists = await new Promise((resolve) => {
 				gun.get("~@" + alias).once((data) => resolve(!!data));
 			});
@@ -77,7 +77,7 @@ function RouteComponent() {
 
 	const loginMutation = useMutation({
 		mutationFn: async ({ email, password }: z.infer<typeof loginSchema>) => {
-			const alias = email.toLowerCase();
+			const alias = email?.toLowerCase();
 			return new Promise((resolve, reject) => {
 				gun.user().auth(alias, password, (ack) => {
 					if ("err" in ack && ack.err) return reject(new Error(ack.err));

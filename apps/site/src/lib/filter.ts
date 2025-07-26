@@ -17,11 +17,11 @@ export function applyFilters<TData>(
 			switch (filter.operator) {
 				case "iLike":
 					return String(rowValue)
-						.toLowerCase()
+						?.toLowerCase()
 						.includes(String(filterValue).toLowerCase());
 				case "notILike":
 					return !String(rowValue)
-						.toLowerCase()
+						?.toLowerCase()
 						.includes(String(filterValue).toLowerCase());
 				case "eq":
 					return String(rowValue) === String(filterValue);

@@ -54,7 +54,7 @@ export const userSchema = z
     name: z.string().optional().describe("Full name of the user"),
     avatar: z.string().url().optional().describe("URL to user's avatar image"),
     phone: z.string().optional().describe("User's contact phone number"),
-    isActive: z.boolean().default(true).describe("Whether the user account is active"),
+    isActive: z.boolean().default(true).describe("Whether the user account is active").optional(),
   })
   .extend(table);
 

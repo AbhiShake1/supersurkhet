@@ -1,4 +1,4 @@
-import { UseFormReturn } from "react-hook-form";
+import type { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { businessSchema, featureSchema } from "@/lib/schema";
 import {
@@ -43,7 +43,7 @@ interface BusinessCreationFormProps {
   step: number;
   form: UseFormReturn<BusinessCreationValues>;
   setStep: (step: number) => void;
-  createdBusiness: z.infer<typeof businessSchema> | null;
+  createdBusiness: z.infer<typeof businessSchema> | undefined;
   isSubmitting: boolean;
 }
 
