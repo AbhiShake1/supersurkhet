@@ -1,4 +1,5 @@
 import { useConfetti } from "@/components/confetti-provider";
+import { useLoginPrompt } from "@/components/login-prompt-provider";
 import {
   Credenza,
   CredenzaBody,
@@ -52,6 +53,7 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
   const createBusinessGun = useCreate("business");
   const existingBusinesses = useGet("business");
   const { fire: fireConfetti } = useConfetti();
+  const { promptLogin } = useLoginPrompt();
 
   const form = useForm<BusinessCreationValues>({
     resolver: zodResolver(businessCreationSchema),
@@ -112,12 +114,17 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (step === 3) {
       fireConfetti();
+      // Fire confetti from the right
+      fireConfetti();
     }
   }, [step, fireConfetti]);
 
   return (
-    <Credenza open={open} onOpenChange={(open) => {
-      if (open) setOpen(true)
+    <Credenza open={open} onOpenChange={async (open) => {
+      if (open) {
+        await promptLogin();
+        setOpen(true)
+      }
       else handleClose()
     }}>
       <CredenzaTrigger>
@@ -138,7 +145,7 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
               </form>
             </Form>
           </ScrollArea>
-        </CredenzaBody >
+        </CredenzaBody>
         <CredenzaFooter>
           {step === 1 && (
             <Button onClick={handleNextStep1} disabled={!form.watch("name") || !form.watch("businessType")}>Next</Button>
