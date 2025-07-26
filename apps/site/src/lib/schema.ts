@@ -22,7 +22,7 @@ const withLabel = <T extends z.ZodTypeAny>(
 // #region Base Schema
 export const table = {
   created_by: z.string().optional().describe("User ID of the creator").optional(),
-  timestamp: z.number().describe("Unix timestamp of the last update").optional(),
+  timestamp: z.number({ coerce: true }).describe("Unix timestamp of the last update").optional(),
   _: z.object({ soul: z.string().optional() }).optional(),
 };
 // #endregion
@@ -86,10 +86,10 @@ export const membershipSchema = z
 
 export const baseListingSchema = z
   .object({
-    businessId: z.string().describe("The business this listing belongs to"),
+    // businessId: z.string().describe("The business this listing belongs to"),
     title: z.string().min(1).describe("Title or name of the listing"),
     description: z.string().optional().describe("Detailed description"),
-    price: z.number().positive().describe("Price of the item/service"),
+    price: z.number({ coerce: true }).positive().describe("Price of the item/service"),
     currency: z.string().length(3).default("NPR"),
     category: z.string().optional(),
     tags: z.record(z.string(), z.boolean()).optional(),
@@ -101,20 +101,20 @@ export const baseListingSchema = z
 
 export const productSchema = baseListingSchema.extend({
   sku: z.string().optional().describe("Stock Keeping Unit"),
-  quantityAvailable: z.number().int().nonnegative().describe("Current quantity in stock"),
+  quantityAvailable: z.number({ coerce: true }).int().nonnegative().describe("Current quantity in stock"),
   unitOfMeasure: z.string().optional().describe("e.g., 'piece', 'kg'"),
   imageUrl: z.string().url().superRefine(fieldConfig({ fieldType: "image" })).optional(),
   isFeatured: z.boolean().optional(),
   isActive: z.boolean().default(true),
-  price: z.number().positive().describe("Price of the item/service"),
+  price: z.number({ coerce: true }).positive().describe("Price of the item/service"),
   name: z.string().optional().describe("Name of the item/service"),
 });
 
 export const menuItemSchema = productSchema.extend({
   isVegetarian: z.boolean().default(false),
   isSpicy: z.boolean().default(false),
-  preparationTime: z.number().int().positive().optional(),
   isSpecial: z.boolean().optional(),
+  preparationTime: z.number({ coerce: true }).int().positive().optional(),
 });
 
 export const propertyListingSchema = baseListingSchema.extend({
@@ -125,7 +125,7 @@ export const propertyListingSchema = baseListingSchema.extend({
 });
 
 export const serviceSchema = baseListingSchema.extend({
-  duration: z.number().int().positive().optional().describe("Duration of the service in minutes"),
+  duration: z.number({ coerce: true }).int().positive().optional().describe("Duration of the service in minutes"),
 });
 
 // #endregion
@@ -153,7 +153,7 @@ export const coOpMemberProfileSchema = z
   .object({
     userId: z.string().describe("Link to the user schema for this member"),
     membershipNumber: z.string().describe("Official membership number"),
-    joinDate: z.number(),
+    joinDate: z.date(),
   })
   .extend(table);
 
@@ -179,7 +179,7 @@ export const orderSchema = z
       )
       .describe("Ordered items with their details")
       .superRefine(fieldConfig({ fieldType: "record" })),
-    subTotal: z.number().positive(),
+    subTotal: z.number({ coerce: true }).positive(),
     taxes: z.number({ coerce: true }).nonnegative(),
     deliveryFee: z.number({ coerce: true }).nonnegative(),
     totalAmount: z.number({ coerce: true }).positive(),
@@ -203,8 +203,8 @@ export const appointmentSchema = z
     customerId: z.string(),
     employeeId: z.string().optional(),
     serviceId: z.string().describe("ID of the service (from serviceSchema)"),
-    startTime: z.number(),
-    endTime: z.number(),
+    startTime: z.string(),
+    endTime: z.string(),
     status: z.enum(["scheduled", "confirmed", "completed", "cancelled", "no_show"]),
   })
   .extend(table);
@@ -213,11 +213,11 @@ export const tripSchema = z
   .object({
     driverId: z.string(),
     customerId: z.string(),
-    startTime: z.number(),
-    endTime: z.number().optional(),
+    startTime: z.string(),
+    endTime: z.string().optional(),
     startLocation: z.string(),
     endLocation: z.string(),
-    fare: z.number().positive(),
+    fare: z.number({ coerce: true }).positive(),
     status: z.enum(["requested", "accepted", "in_progress", "completed", "cancelled"]),
   })
   .extend(table);
