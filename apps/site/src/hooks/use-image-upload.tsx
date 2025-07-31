@@ -2,43 +2,27 @@ import { useMutation } from "@tanstack/react-query";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
-const CLOUDINARY_API_KEY = "185188199764294";
-const CLOUDINARY_API_SECRET = "NQsOauie12C1QyX9En8CNKvSwwg";
-const cloudinaryApiKey = CLOUDINARY_API_KEY;
-const cloudinaryApiSecret = CLOUDINARY_API_SECRET;
-// const cloudinaryApiKey = import.meta.env.CLOUDINARY_API_KEY
-// const cloudinaryApiSecret = import.meta.env.CLOUDINARY_API_SECRET
-
-if (!cloudinaryApiKey || !cloudinaryApiSecret) {
-	throw new Error("CLOUDINARY_API_KEY and CLOUDINARY_API_SECRET must be set");
+function toBase64(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result as string);
+		reader.onerror = (error) => reject(error);
+		reader.readAsDataURL(file);
+	});
 }
 
-export async function uploadImageToCloudinary(file: File): Promise<string> {
-	const formData = new FormData();
-	formData.append("file", file);
-	formData.append("upload_preset", "default");
-
-	const response = await fetch(
-		`https://api.cloudinary.com/v1_1/dxejrk7wr/image/upload`,
-		{
-			method: "POST",
-			body: formData,
-		},
-	);
-	if (!response.ok) {
-		throw new Error("Failed to upload image");
-	}
-	const data = await response.json();
-	return data.secure_url;
+export async function uploadImageToNetwork(file: File): Promise<string> {
+	return toBase64(file);
 }
 
 export interface UseImageUploadProps {
 	onUpload?: (url: string) => void;
+	defaultValue?: string;
 }
 
-export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
+export function useImageUpload({ onUpload, defaultValue }: UseImageUploadProps = {}) {
 	const { mutateAsync: uploadImage, isPending: isUploading } = useMutation({
-		mutationFn: uploadImageToCloudinary,
+		mutationFn: uploadImageToNetwork,
 		// onSuccess(d) {
 		//   toast.success("Image uploaded successfully" + JSON.stringify(d, null, 2))
 		// },
@@ -48,7 +32,7 @@ export function useImageUpload({ onUpload }: UseImageUploadProps = {}) {
 	});
 	const previewRef = useRef<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(defaultValue ?? null);
 	const [fileName, setFileName] = useState<string | null>(null);
 
 	const handleThumbnailClick = useCallback(() => {

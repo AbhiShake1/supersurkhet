@@ -1,7 +1,7 @@
 import { applyFilters } from "@/lib/filter";
-import { useMemo } from "react";
 import type { DataTableRowAction, FilterVariant } from "@/types/data-table";
 import * as React from "react";
+import { useMemo } from "react";
 
 import { DataTable } from "@/components/data-table";
 import { useDataTable } from "@/hooks/use-data-table";
@@ -21,6 +21,7 @@ import {
 import * as Editable from "@/components/ui/editable";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { appSchema } from "@/lib/schema";
+import { applySorting } from "@/lib/sort";
 import { parseSchema } from "@autoform/zod";
 import {
   type NestedSchemaType,
@@ -63,7 +64,6 @@ import {
   CredenzaTrigger,
 } from "../ui/credenza";
 import { AutoTableActionBar } from "./auto-table-action-bar";
-import { applySorting } from "@/lib/sort";
 
 export type AutoTableProps<T extends SchemaKeys> = ({
   slug: string;
@@ -343,6 +343,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
                         e.currentTarget.requestSubmit();
                       }
                     },
+                    // autoSave: "onUpload",
                   }}
                   defaultValues={{ [key]: value as string }}
                   schema={childSchema}

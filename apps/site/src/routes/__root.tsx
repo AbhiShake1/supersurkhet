@@ -23,6 +23,7 @@ import { useEffect } from "react";
 import { ConfettiProvider } from "@/components/confetti-provider";
 import { LoginPromptProvider } from "@/components/login-prompt-provider";
 import { AuthProvider } from "@/components/auth-provider";
+import { GoogleLoginProvider, OneTapLoginProvider } from "@/integrations/tanstack-query/google-login-provider";
 
 
 setGTADefaultOptions({ schema: appSchema, gun });
@@ -213,13 +214,17 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <div data-vaul-drawer-wrapper="">
-          <AuthProvider>
-            <ConfettiProvider>
-              <LoginPromptProvider>
-                {children}
-              </LoginPromptProvider>
-            </ConfettiProvider>
-          </AuthProvider>
+          <GoogleLoginProvider>
+            <AuthProvider>
+              <OneTapLoginProvider>
+                <ConfettiProvider>
+                  <LoginPromptProvider>
+                    {children}
+                  </LoginPromptProvider>
+                </ConfettiProvider>
+              </OneTapLoginProvider>
+            </AuthProvider>
+          </GoogleLoginProvider>
           <Scripts />
         </div>
       </body>

@@ -1,4 +1,7 @@
 import { fieldConfig } from "@/components/ui/autoform";
+import type { ReactNode } from "@tanstack/react-router";
+import { UserIcon, type LucideIcon } from "lucide-react";
+import type React from "react";
 import { z } from "zod";
 
 // #region Core Helpers
@@ -33,6 +36,19 @@ export const permissions = {
 } as const;
 export type Permission = keyof typeof permissions;
 const permissionEnum = z.nativeEnum(permissions);
+
+export interface GlobalSchema {
+  config: {
+    [table: string]: {
+      schema: NonNullable<z.ZodObject<any>>,
+      components?: {
+        name: string,
+        icon: LucideIcon,
+        component?: React.FC<{}>,
+      }[]
+    }
+  }
+}
 
 export const roleSchema = z
   .object({

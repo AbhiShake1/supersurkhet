@@ -6,9 +6,11 @@ import {
 } from "@/hooks/use-image-upload";
 import { cn } from "@/lib/utils";
 import type { AutoFormFieldProps } from "@autoform/react";
+import { TooltipTrigger } from "@radix-ui/react-tooltip";
 import { ImagePlus, Trash2, Upload, X } from "lucide-react";
 import type React from "react";
-import { useCallback, useEffect, useState, type ComponentProps } from "react";
+import { useCallback, useState, type ComponentProps } from "react";
+import { Tooltip, TooltipContent } from "../../tooltip";
 
 export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
 	inputProps,
@@ -16,6 +18,8 @@ export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
 	id,
 	control,
 	path,
+	field,
+	value,
 }) => {
 	const { key, ...props } = inputProps;
 
@@ -25,15 +29,17 @@ export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
 			className={error && "border-destructive"}
 			control={control}
 			path={path}
+			defaultValue={props.defaultValue ?? value ?? field.default}
 			{...props}
 		/>
 	);
 };
 
 export interface ImageUploadItemProps
-	extends ComponentProps<"input">,
-		UseImageUploadProps,
-		Pick<AutoFormFieldProps, "control" | "path"> {}
+	extends
+	Omit<ComponentProps<"input">, "defaultValue">,
+	UseImageUploadProps,
+	Pick<AutoFormFieldProps, "control" | "path"> { }
 
 export function ImageUploadItem({
 	className,
@@ -50,6 +56,7 @@ export function ImageUploadItem({
 		handleRemove,
 		isUploading,
 	} = useImageUpload({
+		defaultValue: props.defaultValue,
 		onUpload() {
 			control.unregister();
 			control?.register(path.join("."), { shouldUnregister: true });
@@ -153,14 +160,23 @@ export function ImageUploadItem({
 						/>
 						<div className="absolute inset-0 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100" />
 						<div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-							<Button
-								size="sm"
-								variant="secondary"
-								onClick={handleThumbnailClick}
-								className="h-9 w-9 p-0"
-							>
-								<Upload className="h-4 w-4" />
-							</Button>
+							<Tooltip>
+								<TooltipTrigger>
+									<Button
+										size="sm"
+										variant="secondary"
+										onClick={(e) => {
+											e.currentTarget.closest("form")
+										}}
+										className="h-9 w-9 p-0"
+									>
+										<Upload className="h-4 w-4" />
+									</Button>
+								</TooltipTrigger>
+								<TooltipContent>
+									<p>Upload Image</p>
+								</TooltipContent>
+							</Tooltip>
 							<Button
 								size="sm"
 								variant="destructive"

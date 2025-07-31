@@ -31,7 +31,7 @@ export function BrowseBusiness({ children }: { children: React.ReactNode }) {
         </CredenzaBody>
         <CredenzaFooter>
           <CreateBusiness>
-            <Button>Create Your Own Business</Button>
+            <Button className="w-full">Create Your Own Business</Button>
           </CreateBusiness>
           <CredenzaClose asChild>
             <Button variant="outline">Close</Button>

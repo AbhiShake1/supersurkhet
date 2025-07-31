@@ -49,7 +49,7 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({ c
     <LoginPromptContext.Provider value={{ promptLogin }}>
       {children}
       <Credenza open={isOpen} onOpenChange={handleOpenChange}>
-        <CredenzaContent className="sm:max-w-sm">
+        <CredenzaContent>
           <CredenzaHeader>
             <CredenzaTitle>{mode === "login" ? "Sign In" : "Create Account"}</CredenzaTitle>
             <CredenzaDescription>
