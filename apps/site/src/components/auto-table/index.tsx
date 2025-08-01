@@ -60,6 +60,7 @@ import {
   CredenzaTrigger,
 } from "../ui/credenza";
 import { AutoTableActionBar } from "./auto-table-action-bar";
+import SkeletonTableOneWrapper from "../mvpblocks/skeleton-table-1";
 
 export type AutoTableProps<T extends SchemaKeys> = ({
   slug: string;
@@ -78,7 +79,7 @@ export function AutoTable<T extends SchemaKeys>({
 }: AutoTableProps<T>) {
   const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: _data = [] } = api[schemaName].useGet({ keys: [slug] });
+  const { data: _data = [], isLoading } = api[schemaName].useGet({ keys: [slug] });
   const search = useSearch({ from: "__root__" });
   const data = useMemo(() => {
     // @ts-expect-error
@@ -138,6 +139,8 @@ export function AutoTable<T extends SchemaKeys>({
     shallow: false,
     clearOnDefault: true,
   });
+
+  if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />
 
   return (
     <div className="container mx-auto py-6 space-y-4 flex flex-col items-end">

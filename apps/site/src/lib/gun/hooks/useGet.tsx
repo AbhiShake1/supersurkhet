@@ -43,7 +43,7 @@ export const useGet = createGunHook((messenger) => {
       queryKey,
       queryFn: async () => {
         // await new Promise(r => {
-        //   setTimeout(r, 10000)
+        //   setTimeout(r, 1000)
         // })
         const _keys = mergeKeys(k, ...restKeys) as T;
         const keys =
@@ -78,7 +78,11 @@ export const useGet = createGunHook((messenger) => {
         })
 
         return new Promise<NestedSchemaType<T>[]>((res) => {
+          const timeout = setTimeout(() => {
+            res([])
+          }, 1000)
           node.map().once(async () => {
+            clearTimeout(timeout)
             res([])
           })
         })

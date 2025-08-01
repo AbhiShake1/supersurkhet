@@ -10,7 +10,8 @@ export const Route = createFileRoute("/admin")({
 function RouteComponent() {
   return (
     <AutoAdmin
-      tabs={Object.keys(appSchema.shape).map((s) => ({
+      // @ts-expect-error
+      tabs={Object.keys(appSchema.rawShape).map((s) => ({
         schema: s,
         title: s[0].toUpperCase() + s.slice(1),
         icon: LucideBriefcaseBusiness,

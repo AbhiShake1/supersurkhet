@@ -67,7 +67,7 @@ export const userSchema = z
     email: z.string().email().describe("User's email address (login)"),
     password: z.string().describe("Hashed password for the user"),
     name: z.string().optional().describe("Full name of the user"),
-    avatar: z.string().url().optional().describe("URL to user's avatar image"),
+    avatar: z.string().url().optional().describe("URL to user's avatar image").superRefine(fieldConfig({ fieldType: "image" })),
     phone: z.string().optional().describe("User's contact phone number"),
     isActive: z.boolean().default(true).describe("Whether the user account is active").optional(),
     role: z.string().default("user").optional(),
