@@ -1,11 +1,13 @@
 import { HeroHeader } from "@/components/hero5-header";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, ChevronRight } from "lucide-react";
-import { AnimatedGroup } from "./ui/animated-group";
-import { TextEffect } from "./ui/text-effect";
+import { ArrowRight } from "lucide-react";
 import { BrowseBusiness } from "./browse-business";
 import { CreateBusiness } from "./create-business";
+import { AnimatedGroup } from "./ui/animated-group";
+import Earth from "./ui/globe";
+import { TextEffect } from "./ui/text-effect";
+import { Spotlight } from "./ui/spotlight";
 
 const transitionVariants = {
   item: {
@@ -41,7 +43,12 @@ export default function HeroSection() {
           <div className="h-320 -translate-y-87.5 absolute left-0 top-0 w-60 -rotate-45 bg-[radial-gradient(50%_50%_at_50%_50%,hsla(0,0%,85%,.04)_0,hsla(0,0%,45%,.02)_80%,transparent_100%)]" />
         </div>
         <section>
-          <div className="relative pt-24 md:pt-36">
+          <div className="relative h-[100vh] flex items-center justify-center">
+            <Spotlight
+              gradientFirst="radial-gradient(68.54% 68.72% at 55.02% 31.46%, hsla(336, 100%, 50%, 0.08) 0, hsla(341, 100%, 55%, 0.04) 50%, hsla(336, 100%, 45%, 0) 80%)"
+              gradientSecond="radial-gradient(50% 50% at 50% 50%, hsla(333, 100%, 85%, 0.08) 0, hsla(335, 100%, 55%, 0.04) 80%, transparent 100%)"
+              gradientThird="radial-gradient(50% 50% at 50% 50%, hsla(332, 100%, 85%, 0.06) 0, hsla(327, 100%, 85%, 0.06) 80%, transparent 100%)"
+            />
             <AnimatedGroup
               variants={{
                 container: {
@@ -67,14 +74,12 @@ export default function HeroSection() {
                   },
                 },
               }}
-              className="absolute inset-0 -z-20"
+              className="absolute inset-0 -z-20 pt-[17%]"
             >
-              <img
-                src="https://www.hdwallpapers.in/download/night_starry_sky_trees_nature_dark_wallpaper_background_4k_hd_dark_background-3840x2160.jpg"
-                alt="background"
-                className="absolute bg-blue-500/20 inset-x-0 top-56 -z-20 hidden lg:top-32 dark:block"
-                width="3276"
-                height="4095"
+              <Earth
+                baseColor={[1, 0, 0.3]}
+                markerColor={[1, 0, 0.33]}
+                glowColor={[1, 0, 0.3]}
               />
             </AnimatedGroup>
             <div className="absolute inset-0 -z-10 size-full [background:radial-gradient(125%_125%_at_50%_100%,transparent_0%,var(--color-background)_75%)]"></div>
@@ -165,126 +170,6 @@ export default function HeroSection() {
                     </Link>
                   </Button>
                 </AnimatedGroup>
-              </div>
-            </div>
-
-            <AnimatedGroup
-              variants={{
-                container: {
-                  visible: {
-                    transition: {
-                      staggerChildren: 0.05,
-                      delayChildren: 0.75,
-                    },
-                  },
-                },
-                ...transitionVariants,
-              }}
-            >
-              <div className="relative -mr-56 mt-8 overflow-hidden px-2 sm:mr-0 sm:mt-12 md:mt-20">
-                <div
-                  aria-hidden
-                  className="bg-linear-to-b to-background absolute inset-0 z-10 from-transparent from-35%"
-                />
-                <div className="inset-shadow-2xs ring-background dark:inset-shadow-white/20 bg-background relative mx-auto max-w-6xl overflow-hidden rounded-2xl border p-4 shadow-lg shadow-zinc-950/15 ring-1">
-                  <img
-                    className="bg-background aspect-15/8 relative hidden rounded-2xl dark:block"
-                    src="https://ui.shadcn.com/_next/image?url=%2Fr%2Fstyles%2Fnew-york%2Fdashboard-01-dark.png&w=3840&q=75"
-                    alt="app screen"
-                    width="2700"
-                    height="1440"
-                  />
-                </div>
-              </div>
-            </AnimatedGroup>
-          </div>
-        </section>
-        <section className="bg-background pb-16 pt-16 md:pb-32">
-          <div className="group relative m-auto max-w-5xl px-6">
-            <div className="absolute inset-0 z-10 flex scale-95 items-center justify-center opacity-0 duration-500 group-hover:scale-100 group-hover:opacity-100">
-              <Link
-                to="/"
-                className="block text-sm duration-150 hover:opacity-75"
-              >
-                <span> Meet Our Customers</span>
-
-                <ChevronRight className="ml-1 inline-block size-3" />
-              </Link>
-            </div>
-            <div className="group-hover:blur-xs mx-auto mt-12 grid max-w-2xl grid-cols-4 gap-x-12 gap-y-8 transition-all duration-500 group-hover:opacity-50 sm:gap-x-16 sm:gap-y-14">
-              <div className="flex">
-                <img
-                  className="mx-auto h-5 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/nvidia.svg"
-                  alt="Nvidia Logo"
-                  height="20"
-                  width="auto"
-                />
-              </div>
-
-              <div className="flex">
-                <img
-                  className="mx-auto h-4 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/column.svg"
-                  alt="Column Logo"
-                  height="16"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-4 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/github.svg"
-                  alt="GitHub Logo"
-                  height="16"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-5 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/nike.svg"
-                  alt="Nike Logo"
-                  height="20"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-5 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/lemonsqueezy.svg"
-                  alt="Lemon Squeezy Logo"
-                  height="20"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-4 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/laravel.svg"
-                  alt="Laravel Logo"
-                  height="16"
-                  width="auto"
-                />
-              </div>
-              <div className="flex">
-                <img
-                  className="mx-auto h-7 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/lilly.svg"
-                  alt="Lilly Logo"
-                  height="28"
-                  width="auto"
-                />
-              </div>
-
-              <div className="flex">
-                <img
-                  className="mx-auto h-6 w-fit dark:invert"
-                  src="https://html.tailus.io/blocks/customers/openai.svg"
-                  alt="OpenAI Logo"
-                  height="24"
-                  width="auto"
-                />
               </div>
             </div>
           </div>

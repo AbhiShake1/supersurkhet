@@ -346,34 +346,6 @@ export const featureSchema = createSchema({
   },
 })
 
-// export const coreSchema = z.object({
-//   user: userSchema,
-//   business: businessSchema,
-//   role: roleSchema,
-//   membership: membershipSchema,
-// });
-
-// export const featureSchema = z.object({
-//   // Profiles (linked to User)
-//   driverProfile: driverProfileSchema,
-//   studentProfile: studentProfileSchema,
-//   coOpMemberProfile: coOpMemberProfileSchema,
-
-//   // Listings (extending baseListingSchema)
-//   baseListing: baseListingSchema,
-//   product: productSchema,
-//   menuItem: menuItemSchema,
-//   propertyListing: propertyListingSchema,
-//   service: serviceSchema,
-
-//   // Transactional
-//   order: orderSchema,
-//   appointment: appointmentSchema,
-//   trip: tripSchema,
-//   expense: expenseSchema,
-//   chat: chatMessageSchema,
-// });
-
 // A composite schema that brings together all the individual schemas.
 // This is useful for type inference and for providing a single entry point to all data models.
 export const appSchema = coreSchema.merge(featureSchema);
