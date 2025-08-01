@@ -1,5 +1,5 @@
 import type { NestedSchemaType, SchemaKeys } from "@gta/react-hooks";
-import { useGet, useUpdate } from "@gta/react-hooks";
+import { getNestedZodShape } from "@gta/react-hooks";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 
 import { AppSidebar, type SidebarItems } from "@/components/app-sidebar";
@@ -11,14 +11,16 @@ import {
 } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProfile } from "@/hooks/use-profile";
+import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { notFound, useLocation } from "@tanstack/react-router";
 import _ from "lodash";
 import { GripVertical, type LucideIcon } from "lucide-react";
-import type { ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import { Skeleton } from "../ui/skeleton";
 
 export interface AutoAdminProps {
   tabs: PossibleTabConfig[];
@@ -152,19 +154,19 @@ function AutoKanban<K extends SchemaKeys>({
   groupKey,
   cardBuilder,
 }: AutoKanbanProps<K>) {
-  const orders = useGet(schemaName, slug);
-  const update = useUpdate(schemaName, slug);
+  const { data: orders = [], isLoading } = api[schemaName]?.useGet({ keys: [slug] })
+  const { mutate: update, isPending: isUpdating } = api[schemaName]?.useUpdate({ keys: [slug] })
   const columns = _.groupBy(orders, (o) => o[groupKey]);
-  const orderSchema = appSchema.shape.order;
+  const orderSchema = getNestedZodShape(schemaName, appSchema.schemaShape);
 
   return (
     // @ts-expect-error
     <Kanban.Root
+      loading={isLoading}
       value={columns}
       onValueChange={(columns) => {
         for (const [status, orders] of Object.entries(columns)) {
           for (const order of orders) {
-            // @ts-expect-error
             if (!order._?.soul) continue;
             // @ts-expect-error
             update({ id: order._?.soul, [groupKey]: status });
@@ -175,11 +177,10 @@ function AutoKanban<K extends SchemaKeys>({
       getItemValue={(item) => item._?.soul ?? ""}
     >
       <Kanban.Board className="grid auto-rows-fr grid-cols-3">
-        {Object.keys(orderSchema.shape.orderStatus.Values).map((status) => (
+        {Object.keys(orderSchema.shape[groupKey].Values).map((status) => (
           <KanbanColumn
             key={status}
             value={status}
-            // @ts-expect-error
             orders={columns?.[status] ?? []}
             cardBuilder={cardBuilder}
           />
@@ -196,12 +197,10 @@ function AutoKanban<K extends SchemaKeys>({
 
           const order = Object.values(columns)
             .flat()
-            // @ts-expect-error
             .find((o) => o._?.soul === value);
 
           if (!order) return null;
 
-          // @ts-expect-error
           return <KanbanCard order={order} cardBuilder={cardBuilder} />;
         }}
       </Kanban.Overlay>
@@ -209,11 +208,9 @@ function AutoKanban<K extends SchemaKeys>({
   );
 }
 
-type Order = NestedSchemaType<"order">;
-
 interface KanbanCardProps<K extends SchemaKeys>
   extends Omit<React.ComponentProps<typeof Kanban.Item>, "value"> {
-  order: Order;
+  order: NestedSchemaType<K>;
   cardBuilder: AutoKanbanProps<K>["cardBuilder"];
 }
 
@@ -236,7 +233,7 @@ function KanbanCard<K extends SchemaKeys>({
 
 interface KanbanColumnProps<K extends SchemaKeys>
   extends Omit<React.ComponentProps<typeof Kanban.Column>, "children"> {
-  orders: Order[];
+  orders: NestedSchemaType<K>[];
   cardBuilder: AutoKanbanProps<K>["cardBuilder"];
 }
 
@@ -246,14 +243,19 @@ function KanbanColumn<K extends SchemaKeys>({
   cardBuilder,
   ...props
 }: KanbanColumnProps<K>) {
+  const context = Kanban.useKanbanContext("KanbanColumn");
   return (
     <Kanban.Column value={value} {...props}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-sm capitalize">{value}</span>
-          <Badge variant="secondary" className="pointer-events-none rounded-sm">
-            {orders.length}
-          </Badge>
+          {
+            context.loading ?
+              <Skeleton className="w-6 h-5 rounded-sm" />
+              : <Badge variant="secondary" className={cn("pointer-events-none rounded-sm")}>
+                {orders.length}
+              </Badge>
+          }
         </div>
         <Kanban.ColumnHandle asChild>
           <Button variant="ghost" size="icon">
@@ -262,14 +264,17 @@ function KanbanColumn<K extends SchemaKeys>({
         </Kanban.ColumnHandle>
       </div>
       <div className="flex flex-col gap-2 p-0.5">
-        {orders.map((order) => (
-          <KanbanCard
-            key={order._?.soul}
-            order={order}
-            cardBuilder={cardBuilder}
-            asHandle
-          />
-        ))}
+        {context.loading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="w-full h-12" />
+          ))) : orders.map((order) => (
+            <KanbanCard
+              key={order._?.soul}
+              order={order}
+              cardBuilder={cardBuilder}
+              asHandle
+            />
+          ))}
       </div>
     </Kanban.Column>
   );

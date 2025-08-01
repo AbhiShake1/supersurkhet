@@ -2,7 +2,7 @@ import type { IGunInstance } from "gun/types";
 import { mergeOptionsWithDefaults } from "../options";
 
 export type UseGunOptions = Readonly<{
-	schema: GTAAppSchema;
+	schema: GTAAppConfig["schema"];
 	gun: IGunInstance<any>;
 }>;
 
@@ -31,10 +31,10 @@ const useDefaultOptionsMsg =
 
 export function createGunHook<F extends Function>(fn: MessengerFunction<F>) {
 	const defaultOptions = mergeOptionsWithDefaults({});
-	if (!defaultOptions.schema)
-		throw new Error(`Default schema not set. ${useDefaultOptionsMsg}`);
 	if (!defaultOptions.gun)
 		throw new Error(`Gun instance not found. ${useDefaultOptionsMsg}`);
+	if (!defaultOptions.schema)
+		throw new Error(`Default schema not set. ${useDefaultOptionsMsg}`);
 
 	return Object.assign(fn({ _options: defaultOptions as UseGunOptions }), {
 		withOptions: (options: Partial<UseGunOptions>) =>

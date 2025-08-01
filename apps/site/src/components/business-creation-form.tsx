@@ -24,11 +24,11 @@ const businessCreationSchema = businessSchema.pick({
 
 type BusinessCreationValues = z.infer<typeof businessCreationSchema>;
 
-const featureKeys = Object.keys(featureSchema.shape) as (keyof typeof featureSchema.shape)[];
+const featureKeys = Object.keys(featureSchema.rawShape) as (keyof typeof featureSchema.rawShape)[];
 
 const recommendedFeatures: Record<
   z.infer<typeof businessSchema.shape.businessType>,
-  (keyof typeof featureSchema.shape)[]
+  (keyof typeof featureSchema.rawShape)[]
 > = {
   retail: ["product", "order", "expense"],
   food: ["menuItem", "order", "appointment", "expense"],

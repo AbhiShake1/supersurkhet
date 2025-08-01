@@ -14,19 +14,19 @@ import appCss from "../styles.css?url";
 import { NotFound } from "@/components/ui/not-found";
 import { Toaster } from "@/components/ui/sonner";
 import { gun } from "@/lib/gun";
-import { setGTADefaultOptions } from "@/lib/gun/options";
-import { appSchema } from "@/lib/schema";
+
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import type { QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 
+import { AuthProvider } from "@/components/auth-provider";
 import { ConfettiProvider } from "@/components/confetti-provider";
 import { LoginPromptProvider } from "@/components/login-prompt-provider";
-import { AuthProvider } from "@/components/auth-provider";
 import { GoogleLoginProvider, OneTapLoginProvider } from "@/integrations/tanstack-query/google-login-provider";
+import { setGTADefaultOptions } from "@/lib/gun/options";
+import { appSchema, transformSchema } from "@/lib/schema";
 
-
-setGTADefaultOptions({ schema: appSchema, gun });
+setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
 interface MyRouterContext {
   queryClient: QueryClient;

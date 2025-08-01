@@ -22,6 +22,7 @@ import { SelectField } from "./components/SelectField";
 import { StringField } from "./components/StringField";
 import { SubmitButton } from "./components/SubmitButton";
 import type { AutoFormProps } from "./types";
+import { PasswordField } from "./components/PasswordField";
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, "FieldWrapper"> = {
 	Form,
@@ -40,6 +41,7 @@ export const ShadcnAutoFormFieldComponents = {
 	select: SelectField,
 	image: ImageUploadField,
 	record: RecordField,
+	password: PasswordField,
 } as const;
 export type FieldTypes = keyof typeof ShadcnAutoFormFieldComponents;
 

@@ -20,19 +20,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import * as Editable from "@/components/ui/editable";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { applySorting } from "@/lib/sort";
 import { parseSchema } from "@autoform/zod";
 import {
   type NestedSchemaType,
   type SchemaKeys,
-  getNestedZodShape,
-  useCreate,
-  useDelete,
-  useGet,
-  useUpdate,
+  getNestedZodShape
 } from "@gta/react-hooks";
-import { useMutation } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
@@ -82,7 +78,7 @@ export function AutoTable<T extends SchemaKeys>({
 }: AutoTableProps<T>) {
   const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const _data = useGet(schemaName, slug);
+  const { data: _data = [] } = api[schemaName].useGet({ keys: [slug] });
   const search = useSearch({ from: "__root__" });
   const data = useMemo(() => {
     // @ts-expect-error
@@ -104,21 +100,13 @@ export function AutoTable<T extends SchemaKeys>({
     return getSorted(getFiltered())
   }, [_data, search]);
 
-  const createFn = useCreate(schemaName, slug);
-  const createMutation = useMutation({
-    mutationFn: createFn,
-    onSuccess: () => setDialogOpen(false),
-  });
-  const updateFn = useUpdate(schemaName, slug);
-  const updateMutation = useMutation({
-    mutationFn: updateFn,
-    onSuccess: () => setDialogOpen(false),
-  });
-  const onDelete = useDelete(schemaName, slug);
+  const createMutation = api[schemaName].useCreate({ keys: [slug] });
+  const updateMutation = api[schemaName].useUpdate({ keys: [slug] });
+  const { mutate: onDelete } = api[schemaName].useDelete({ keys: [slug] });
   const schema =
     "parsedSchema" in props
       ? props.parsedSchema
-      : getNestedZodShape(schemaName, appSchema);
+      : getNestedZodShape(schemaName, appSchema.schemaShape);
   const [rowAction, setRowAction] = React.useState<DataTableRowAction<
     NestedSchemaType<T>
   > | null>(null);
@@ -146,8 +134,7 @@ export function AutoTable<T extends SchemaKeys>({
         updateMutation.mutate({ id: rowId, ...data });
       },
     },
-    // @ts-expect-error
-    getRowId: (originalRow) => originalRow._?.soul,
+    getRowId: (originalRow) => originalRow._?.soul ?? "",
     shallow: false,
     clearOnDefault: true,
   });
@@ -170,6 +157,7 @@ export function AutoTable<T extends SchemaKeys>({
             <ScrollArea className="h-[50vh]">
               <AutoForm
                 schema={schema}
+                // @ts-expect-error
                 onSubmit={(b) => createMutation.mutate(b)}
                 formProps={{ id: "auto-table-add-form" }}
               />
@@ -241,6 +229,7 @@ export function AutoTable<T extends SchemaKeys>({
         onSubmit={(data) => {
           setRowAction(null);
           if (data) {
+            // @ts-expect-error
             updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data });
           }
         }}

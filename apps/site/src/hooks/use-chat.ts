@@ -1,10 +1,9 @@
-import { useCreate, useGet, useUpdate } from "@gta/react-hooks";
-import type { ChatMessage } from "../lib/schema";
+import { api } from "@/lib/api";
 
 export function useChat(roomId: string) {
-	const messages = useGet("chat.message", roomId);
-	const createMessage = useCreate("chat.message", roomId);
-	const updateMessage = useUpdate("chat.message", roomId);
+	const { data: messages = [] } = api.chat.useGet({ keys: [roomId] });
+	const { mutate: createMessage } = api.chat.useCreate({ keys: [roomId] });
+	const { mutate: updateMessage } = api.chat.useUpdate({ keys: [roomId] });
 
 	// Send a new message
 	const sendMessage = async (
@@ -12,7 +11,7 @@ export function useChat(roomId: string) {
 		senderId: string,
 		senderName: string,
 	) => {
-		await createMessage({
+		createMessage({
 			created_by: senderId,
 			content,
 			sender_id: senderId,
@@ -38,39 +37,5 @@ export function useChat(roomId: string) {
 		sendMessage,
 		markAsRead,
 		markAsDelivered,
-	};
-}
-
-export function useChatRooms() {
-	const rooms = useGet("chat.room", "userId");
-	const createRoom = useCreate("chat.room", "userId");
-	const updateRoom = useUpdate("chat.room", "userId");
-
-	// Create a new chat room
-	const createChatRoom = async (name: string, participants: string[]) => {
-		await createRoom({
-			name,
-			participants,
-			created_at: Date.now(),
-			updated_at: Date.now(),
-			last_message: null,
-			created_by: "userId",
-			timestamp: Date.now(),
-		});
-	};
-
-	// Update room's last message
-	const updateLastMessage = async (roomId: string, message: ChatMessage) => {
-		await updateRoom({
-			id: roomId,
-			last_message: message,
-			updated_at: Date.now(),
-		});
-	};
-
-	return {
-		rooms,
-		createChatRoom,
-		updateLastMessage,
 	};
 }

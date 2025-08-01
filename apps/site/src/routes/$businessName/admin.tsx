@@ -1,7 +1,7 @@
 import { AutoAdmin } from "@/components/auto-admin";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import { Credenza, CredenzaBody, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle } from "@/components/ui/credenza";
-import { useGet } from "@/lib/gun/index";
+import { api } from "@/lib/api";
 import type { Business } from "@/lib/schema";
 import { recordToList } from "@/lib/utils";
 import { createFileRoute, notFound } from "@tanstack/react-router";
@@ -11,7 +11,7 @@ import { useState } from "react";
 export const Route = createFileRoute("/$businessName/admin")({
   component: () => {
     const { businessName } = Route.useParams();
-    const allBusinesses = useGet("business");
+    const { data: allBusinesses = [] } = api.business.useGet();
 
     if (!allBusinesses.length) {
       return (
@@ -63,7 +63,7 @@ function RestaurantAdminPage({ slug }: { slug: string }) {
           slug: slug,
           groupKey: "orderStatus",
           cardBuilder: (order) => {
-            const menuItems = useGet("menuItem", slug);
+            const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
             const [open, setOpen] = useState(false);
             const orderItems = recordToList(order.items);
 

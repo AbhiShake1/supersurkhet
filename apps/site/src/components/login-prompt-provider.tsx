@@ -3,6 +3,7 @@ import { Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, Credenz
 import { AuthForm } from "@/components/auth-form";
 import type { User } from "@/lib/schema";
 import { useAuth } from "./auth-provider";
+import { ScrollArea } from "./ui/scroll-area";
 
 interface LoginPromptContextType {
   promptLogin: () => Promise<User>;
@@ -56,12 +57,21 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({ c
               {mode === "login" ? "Please sign in to continue." : "Create an account to get started."}
             </CredenzaDescription>
           </CredenzaHeader>
-          <AuthForm
-            mode={mode}
-            onModeChange={setMode}
-            onAuthSuccess={handleAuthSuccess}
-            onAuthError={handleAuthError}
-          />
+          <ScrollArea className="h-[60svh]">
+            <AuthForm
+              mode={mode}
+              onModeChange={setMode}
+              onAuthSuccess={handleAuthSuccess}
+              onAuthError={handleAuthError}
+              className="bg-transparent border-none shadow-none"
+              headerProps={{
+                className: "hidden"
+              }}
+              headerWrapperProps={{
+                className: "p-0"
+              }}
+            />
+          </ScrollArea>
         </CredenzaContent>
       </Credenza>
     </LoginPromptContext.Provider>

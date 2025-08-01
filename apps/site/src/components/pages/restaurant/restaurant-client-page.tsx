@@ -12,10 +12,11 @@ import {
     CredenzaTrigger,
 } from "@/components/ui/credenza";
 import { Input } from "@/components/ui/input";
+import MinimalCard, { MinimalCardDescription, MinimalCardFooter, MinimalCardImage } from "@/components/ui/minimal-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { useCreate, useGet, type NestedSchemaType } from "@gta/react-hooks";
-import { useMutation } from "@tanstack/react-query";
+import { api } from "@/lib/api";
+import { type NestedSchemaType } from "@gta/react-hooks";
 import { createServerFn } from "@tanstack/react-start";
 import { AnimatePresence, motion } from "framer-motion";
 import _ from "lodash";
@@ -165,37 +166,21 @@ export function MenuItem({ item }: MenuItemProps) {
             transition={{ duration: 0.3 }}
             whileHover={{ y: -5 }}
         >
-            <Card className="overflow-clip h-full flex flex-col border-muted bg-card/50 backdrop-blur-sm dark:bg-card/30 dark:border-muted/30 hover:shadow-lg hover:shadow-amber-500/5 dark:hover:shadow-amber-400/5 transition-all duration-300">
-                <div className="relative h-56 w-full overflow-hidden group  rounded-t-md">
-                    <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="object-cover transition-transform duration-500 group-hover:scale-110 w-full h-full"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                    {item.isSpecial && (
-                        <div className="absolute top-3 right-3 bg-primary px-3 py-1 rounded-full text-xs font-bold shadow-md">
-                            Chef's Special
-                        </div>
-                    )}
-
-                    {/* {item.rating && (
-            <div className="absolute bottom-3 left-3 flex items-center bg-black/60 text-white px-2 py-1 rounded-full text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <Star
-                  key={i}
-                  className={`h-3 w-3 ${i < (item.rating!) ? "fill-amber-400 text-amber-400" : "fill-muted text-muted"}`}
+            <MinimalCard className="relative">
+                {item.isSpecial && (
+                    <div className="z-50 absolute top-6 right-6 bg-primary px-3 py-1 rounded-full text-xs font-bold shadow-md">
+                        Chef's Special
+                    </div>
+                )}
+                <MinimalCardImage
+                    className="h-[320px]"
+                    src={item.imageUrl ?? ""}
+                    alt={item.name ?? ""}
                 />
-              ))}
-              <span className="ml-1">{item.rating}</span>
-            </div>
-          )} */}
-                </div>
-
-                <CardContent className="pt-5 flex-grow">
+                {/* <MinimalCardTitle>{item.name}</MinimalCardTitle> */}
+                <MinimalCardDescription>
                     <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-xl font-semibold">{item.name}</h3>
+                        <h3 className="text-xl font-semibold text-foreground">{item.name}</h3>
                         {item.price && (
                             <span className="font-bold text-lg text-primary">
                                 ${item.price.toFixed(2)}
@@ -205,21 +190,8 @@ export function MenuItem({ item }: MenuItemProps) {
                     <p className="text-muted-foreground text-sm mb-4">
                         {item.description}
                     </p>
-                    {/* {item.dietaryInfo && (
-            <div className="flex flex-wrap gap-1 mb-2">
-              {item.dietaryInfo.map((info) => (
-                <span
-                  key={info}
-                  className="px-2 py-1 bg-muted/50 dark:bg-muted/20 text-xs rounded-full border border-muted/50 dark:border-muted/30"
-                >
-                  {info}
-                </span>
-              ))}
-            </div>
-          )} */}
-                </CardContent>
-
-                <CardFooter className="border-t border-muted/50 dark:border-muted/30 pt-4">
+                </MinimalCardDescription>
+                <MinimalCardFooter className="border-t border-muted/50 dark:border-muted/30 pt-4">
                     <div className="flex items-center justify-between w-full">
                         <div className="flex items-center space-x-2">
                             <Button
@@ -256,8 +228,8 @@ export function MenuItem({ item }: MenuItemProps) {
                             )}
                         </Button>
                     </div>
-                </CardFooter>
-            </Card>
+                </MinimalCardFooter>
+            </MinimalCard>
         </motion.div>
     );
 }
@@ -358,9 +330,8 @@ const _checkout = createServerFn({ method: "POST" })
 export function CartButton() {
     const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } =
         useCart();
-    const createOrderFn = useCreate("order", "restaurant");
-    const createOrderMutation = useMutation({
-        mutationFn: createOrderFn,
+    const createOrderMutation = api.order.useCreate({
+        keys: ["restaurant"],
         onSuccess() {
             clearCart();
         },
@@ -587,7 +558,7 @@ export function RestaurantClientPage(props: RestaurantClientPageProps) {
 
 function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
     const [search, setSearch] = useState("");
-    const _menuItems = useGet("menuItem", slug);
+    const { data: _menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
     const menuItems = (() => {
         if (!search?.length) return _menuItems;
         return _menuItems.filter((item) =>

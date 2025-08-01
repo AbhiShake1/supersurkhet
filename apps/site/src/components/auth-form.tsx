@@ -1,5 +1,5 @@
 import { Logo } from "@/components/logo";
-import { AutoForm } from "@/components/ui/autoform";
+import { AutoForm, fieldConfig } from "@/components/ui/autoform";
 import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { googleLogin } from "@/lib/auth";
@@ -18,14 +18,14 @@ import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(6).superRefine(fieldConfig({ fieldType: "password" })),
 });
 
 const signupSchema = z
   .object({
     email: z.string().email(),
-    password: z.string().min(6),
-    confirmPassword: z.string(),
+    password: z.string().min(6).superRefine(fieldConfig({ fieldType: "password" })),
+    confirmPassword: z.string().superRefine(fieldConfig({ fieldType: "password" })),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -37,6 +37,8 @@ interface AuthFormProps extends React.ComponentProps<"div"> {
   onModeChange: (mode: "login" | "signup") => void;
   onAuthSuccess?: (user: any) => void; // Callback for successful authentication
   onAuthError?: (error: Error) => void; // Callback for authentication errors
+  headerProps?: React.ComponentProps<"div">;
+  headerWrapperProps?: React.ComponentProps<"div">;
 }
 
 export function AuthForm({
@@ -45,6 +47,8 @@ export function AuthForm({
   onAuthSuccess,
   onAuthError,
   className,
+  headerProps,
+  headerWrapperProps,
   ...props
 }: AuthFormProps) {
   const isSignup = mode === "signup";
@@ -143,8 +147,8 @@ export function AuthForm({
       "bg-card m-auto h-fit w-full max-w-sm rounded-[calc(var(--radius)+.125rem)] border px-4 shadow-md dark:[--color-muted:var(--color-zinc-900)]",
       className,
     )} {...props}>
-      <div className="p-8 pb-6">
-        <div>
+      <div {...headerWrapperProps} className={cn("p-8 pb-6", headerWrapperProps?.className)}>
+        <div {...headerProps} className={cn(headerProps?.className)}>
           <a href="/" aria-label="go home">
             <Logo />
           </a>

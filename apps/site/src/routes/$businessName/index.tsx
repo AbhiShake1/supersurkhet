@@ -1,13 +1,14 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useGet } from "@/lib/gun/hooks";
-import type { Business } from "@/lib/schema";
-import { Loader2 } from "lucide-react";
 import { RestaurantClientPage } from "@/components/pages/restaurant/restaurant-client-page";
+import { api } from "@/lib/api";
+import type { Business } from "@/lib/schema";
+import { createFileRoute, notFound } from "@tanstack/react-router";
+import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/$businessName/")({
   component: () => {
     const { businessName } = Route.useParams();
-    const allBusinesses = useGet("business");
+
+    const { data: allBusinesses = [] } = api.business.useGet();
 
     if (!allBusinesses.length) {
       return (

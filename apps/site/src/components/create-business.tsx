@@ -10,10 +10,9 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
 } from "@/components/ui/credenza";
-import { useCreate, useGet } from "@/lib/gun/hooks";
+import { api } from "@/lib/api";
 import { businessSchema } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -50,8 +49,7 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
   const [step, setStep] = useState(1);
   const [createdBusiness, setCreatedBusiness] = useState<z.infer<typeof businessSchema>>();
 
-  const createBusinessGun = useCreate("business");
-  const existingBusinesses = useGet("business");
+  const { data: existingBusinesses = [], isLoading } = api.business.useGet();
   const { fire: fireConfetti } = useConfetti();
   const { promptLogin } = useLoginPrompt();
 
@@ -63,10 +61,7 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const { mutateAsync: createBusiness, isPending, isError, error } = useMutation({
-    mutationFn: async (data: BusinessCreationValues & { basePath: string }) => {
-      return createBusinessGun(data);
-    },
+  const { mutateAsync: createBusiness, isPending } = api.business.useCreate({
     onSuccess: (_, data) => {
       setCreatedBusiness(data);
       setStep(3);
@@ -78,6 +73,9 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
   });
 
   const handleNextStep1 = async () => {
+    if (isLoading) {
+      return form.setError("name", { type: "manual", message: "Something went wrong. Please try again." });
+    }
     const isValid = await form.trigger("name");
     if (!isValid) return;
 
@@ -89,8 +87,7 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
     );
 
     if (isNameTaken) {
-      form.setError("name", { type: "manual", message: "A business with this name already exists." });
-      return;
+      return form.setError("name", { type: "manual", message: "A business with this name already exists." });
     }
 
     setStep(2);
@@ -98,7 +95,7 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
 
   const onSubmit = async (values: BusinessCreationValues) => {
     const basePath = values.name.toLowerCase().replace(/\s+/g, "-");
-    await createBusiness({ ...values, basePath });
+    await createBusiness({ ...values, basePath, isActive: true });
   };
 
   const handleClose = () => {

@@ -1,7 +1,7 @@
 import { AutoAdmin } from "@/components/auto-admin";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import { Credenza, CredenzaBody, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle } from "@/components/ui/credenza";
-import { useGet } from "@/lib/gun/hooks";
+import { api } from "@/lib/api";
 import { recordToList } from "@/lib/utils";
 import { createFileRoute } from "@tanstack/react-router";
 import { Layout, Menu, MenuSquare } from "lucide-react";
@@ -28,7 +28,7 @@ function RouteComponent() {
           slug: "restaurant",
           groupKey: "orderStatus",
           cardBuilder: (order) => {
-            const menuItems = useGet("menuItem", "restaurant");
+            const { data: menuItems = [] } = api.menuItem.useGet({ keys: ["restaurant"] });
             const [open, setOpen] = useState(false);
             const orderItems = recordToList(order.items);
 

@@ -1,4 +1,6 @@
 import { fieldConfig } from "@/components/ui/autoform";
+import { type LucideIcon } from "lucide-react";
+import type React from "react";
 import { z } from "zod";
 
 // #region Core Helpers
@@ -34,6 +36,19 @@ export const permissions = {
 export type Permission = keyof typeof permissions;
 const permissionEnum = z.nativeEnum(permissions);
 
+export interface GTAAppConfig {
+  schema: {
+    [table: string]: {
+      schema: NonNullable<z.ZodObject<any>>,
+      components?: {
+        name: string,
+        icon: LucideIcon,
+        component?: React.FC<{}>,
+      }[]
+    }
+  }
+}
+
 export const roleSchema = z
   .object({
     name: withLabel(z.string(), "Role Name"),
@@ -55,6 +70,7 @@ export const userSchema = z
     avatar: z.string().url().optional().describe("URL to user's avatar image"),
     phone: z.string().optional().describe("User's contact phone number"),
     isActive: z.boolean().default(true).describe("Whether the user account is active").optional(),
+    role: z.string().default("user").optional(),
   })
   .extend(table);
 
@@ -224,53 +240,163 @@ export const tripSchema = z
 
 // ... other transactional schemas like expenseSchema, chatMessageSchema
 export const expenseSchema = z.object({}).extend(table); // Placeholder
-export const chatMessageSchema = z.object({}).extend(table); // Placeholder
+export const chatMessageSchema = z.object({
+  created_by: z.string().optional().describe("User ID of the creator").optional(),
+  content: z.string().describe("Message content"),
+  sender_id: z.string().describe("User ID of the sender"),
+  sender_name: z.string().describe("Name of the sender"),
+  timestamp: z.number({ coerce: true }).int().describe("Unix timestamp of the message"),
+  delivered: z.boolean().default(false),
+  read: z.boolean().default(false),
+}).extend(table); // Placeholder
 
 // #endregion
 
 // #region App Schema
+export type SchemaShape<T extends GTAAppConfig["schema"]> = {
+  [key in keyof T]: T[key]["schema"]
+}
 
-export const coreSchema = z.object({
-  user: userSchema,
-  business: businessSchema,
-  role: roleSchema,
-  membership: membershipSchema,
-});
+export type CreatedSchema<T extends GTAAppConfig["schema"]> = T & {
+  rawShape: T
+  schemaShape: z.ZodObject<SchemaShape<T>>
+  extend<const TOtherSchema extends GTAAppConfig["schema"]>(otherSchema: TOtherSchema): CreatedSchema<T & TOtherSchema>
+  merge<const TOtherSchema extends GTAAppConfig["schema"]>(otherSchema: CreatedSchema<TOtherSchema>): CreatedSchema<T & TOtherSchema>
+}
 
-export const featureSchema = z.object({
-  // Profiles (linked to User)
-  driverProfile: driverProfileSchema,
-  studentProfile: studentProfileSchema,
-  coOpMemberProfile: coOpMemberProfileSchema,
+export type ExtractZodSchema<T extends CreatedSchema<SchemaShape<any>>> = z.ZodObject<{
+  -readonly [K in keyof T["rawShape"]]: T["rawShape"][K]["schema"]
+}>
 
-  // Listings (extending baseListingSchema)
-  baseListing: baseListingSchema,
-  product: productSchema,
-  menuItem: menuItemSchema,
-  propertyListing: propertyListingSchema,
-  service: serviceSchema,
+function createSchema<const TSchema extends GTAAppConfig["schema"]>(schema: TSchema): CreatedSchema<TSchema> {
+  return {
+    ...schema,
+    rawShape: schema,
+    get schemaShape() {
+      const o = Object.fromEntries(
+        Object.entries(schema).map(([key, value]) => [key, value.schema]),
+      ) as SchemaShape<TSchema>
+      return z.object(o)
+    },
+    extend<const TOtherSchema extends GTAAppConfig["schema"]>(otherSchema: TOtherSchema) {
+      return createSchema({ ...schema, ...otherSchema })
+    },
+    merge<const TOtherSchema extends CreatedSchema<GTAAppConfig["schema"]>>(this, otherSchema: TOtherSchema) {
+      return createSchema({ ...this.rawShape, ...otherSchema.rawShape }) as CreatedSchema<TSchema & TOtherSchema["rawShape"]>
+    }
+  }
+}
 
-  // Transactional
-  order: orderSchema,
-  appointment: appointmentSchema,
-  trip: tripSchema,
-  expense: expenseSchema,
-  chat: chatMessageSchema,
-});
+export const coreSchema = createSchema({
+  user: {
+    schema: userSchema,
+  },
+  business: {
+    schema: businessSchema,
+  },
+  role: {
+    schema: roleSchema,
+  },
+  membership: {
+    schema: membershipSchema,
+  },
+})
+
+export const featureSchema = createSchema({
+  driverProfile: {
+    schema: driverProfileSchema,
+  },
+  studentProfile: {
+    schema: studentProfileSchema,
+  },
+  coOpMemberProfile: {
+    schema: coOpMemberProfileSchema,
+  },
+
+  baseListing: {
+    schema: baseListingSchema,
+  },
+  product: {
+    schema: productSchema,
+  },
+  menuItem: {
+    schema: menuItemSchema,
+  },
+  propertyListing: {
+    schema: propertyListingSchema,
+  },
+  service: {
+    schema: serviceSchema,
+  },
+
+  order: {
+    schema: orderSchema,
+  },
+  appointment: {
+    schema: appointmentSchema,
+  },
+  trip: {
+    schema: tripSchema,
+  },
+  expense: {
+    schema: expenseSchema,
+  },
+  chat: {
+    schema: chatMessageSchema,
+  },
+})
+
+// export const coreSchema = z.object({
+//   user: userSchema,
+//   business: businessSchema,
+//   role: roleSchema,
+//   membership: membershipSchema,
+// });
+
+// export const featureSchema = z.object({
+//   // Profiles (linked to User)
+//   driverProfile: driverProfileSchema,
+//   studentProfile: studentProfileSchema,
+//   coOpMemberProfile: coOpMemberProfileSchema,
+
+//   // Listings (extending baseListingSchema)
+//   baseListing: baseListingSchema,
+//   product: productSchema,
+//   menuItem: menuItemSchema,
+//   propertyListing: propertyListingSchema,
+//   service: serviceSchema,
+
+//   // Transactional
+//   order: orderSchema,
+//   appointment: appointmentSchema,
+//   trip: tripSchema,
+//   expense: expenseSchema,
+//   chat: chatMessageSchema,
+// });
 
 // A composite schema that brings together all the individual schemas.
 // This is useful for type inference and for providing a single entry point to all data models.
-export const appSchema = coreSchema.extend(featureSchema.shape);
-export type AppSchema = z.infer<typeof appSchema>;
-export type AppSchemaType = typeof appSchema;
+export const appSchema = coreSchema.merge(featureSchema);
+export type AppSchema = z.infer<AppSchemaType>;
+export type AppSchemaType = ExtractZodSchema<typeof appSchema>
 
 declare global {
-  interface GTAAppSchema extends AppSchemaType { }
+  interface GTAAppConfig {
+    schema: AppSchemaType
+  }
 }
 // #endregion
 
 // #region Type Exports
 export type User = z.infer<typeof userSchema>;
 export type Business = z.infer<typeof businessSchema>;
-// ... all other types
+export type ChatMessage = z.infer<typeof chatMessageSchema>;
 // #endregion
+
+export function transformSchema<const TSchema extends typeof appSchema>(schema: TSchema) {
+  return z.object(
+    Object.fromEntries(
+      Object.entries(schema.rawShape).map(([key, value]) => [key, value.schema])
+    )
+  ) as AppSchemaType
+}
