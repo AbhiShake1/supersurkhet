@@ -52,7 +52,7 @@ const plans = [
 	{
 		name: 'GROWTH',
 		price: '599',
-		yearlyPrice: '399',
+		yearlyPrice: '479',
 		period: 'per month',
 		features: [
 			'All Community Features',

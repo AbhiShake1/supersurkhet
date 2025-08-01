@@ -220,7 +220,7 @@ importers:
         specifier: ^0.487.0
         version: 0.487.0(react@19.1.0)
       motion:
-        specifier: ^12.6.5
+        specifier: ^12.9.2
         version: 12.9.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       nanoid:
         specifier: ^5.1.5

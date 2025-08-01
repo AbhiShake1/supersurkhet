@@ -1,13 +1,16 @@
 import { HeroHeader } from "@/components/hero5-header";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { BrowseBusiness } from "./browse-business";
 import { CreateBusiness } from "./create-business";
+import { RainbowButton } from "./magicui/rainbow-button";
 import { AnimatedGroup } from "./ui/animated-group";
 import Earth from "./ui/globe";
-import { TextEffect } from "./ui/text-effect";
 import { Spotlight } from "./ui/spotlight";
+import { TextEffect } from "./ui/text-effect";
+import { TextReveal } from "./ui/text-reveal";
 
 const transitionVariants = {
   item: {
@@ -74,9 +77,10 @@ export default function HeroSection() {
                   },
                 },
               }}
-              className="absolute inset-0 -z-20 pt-[17%]"
+              className="absolute inset-0 -z-20 pt-[20%]"
             >
               <Earth
+                scale={1.2}
                 baseColor={[1, 0, 0.3]}
                 markerColor={[1, 0, 0.33]}
                 glowColor={[1, 0, 0.3]}
@@ -84,11 +88,13 @@ export default function HeroSection() {
             </AnimatedGroup>
             <div className="absolute inset-0 -z-10 size-full [background:radial-gradient(125%_125%_at_50%_100%,transparent_0%,var(--color-background)_75%)]"></div>
             <div className="mx-auto max-w-7xl px-6">
-              <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0">
-                <BrowseBusiness>
-                  <AnimatedGroup variants={transitionVariants}>
-                    <button
-                      className="hover:bg-background dark:hover:border-t-border bg-muted group mx-auto flex w-fit items-center gap-4 rounded-full border p-1 pl-4 shadow-md shadow-zinc-950/5 transition-colors duration-300 dark:border-t-white/5 dark:shadow-zinc-950"
+              <div className="text-center sm:mx-auto lg:mr-auto lg:mt-0 pb-4">
+                <AnimatedGroup variants={transitionVariants}>
+                  <BrowseBusiness>
+
+                    <RainbowButton
+                      className="rounded-full mb-8"
+                      variant="outline"
                     >
                       <span className="text-foreground text-sm">
                         Browse Businesses
@@ -105,25 +111,26 @@ export default function HeroSection() {
                           </span>
                         </div>
                       </div>
-                    </button>
-                  </AnimatedGroup>
-                </BrowseBusiness>
+                    </RainbowButton>
+                  </BrowseBusiness>
+                </AnimatedGroup>
 
-                <TextEffect
-                  preset="fade-in-blur"
-                  speedSegment={0.3}
-                  as="h1"
-                  className="mt-8 text-balance text-6xl md:text-7xl lg:mt-16 xl:text-[5.25rem]"
+                <TextReveal
+                  className={cn(
+                    `bg-primary from-foreground to-primary via-rose-200 bg-clip-text text-6xl font-bold text-transparent dark:bg-gradient-to-b`,
+                  )}
+                  from="bottom"
+                  split="letter"
                 >
                   Surkhet's Digital Hub
-                </TextEffect>
+                </TextReveal>
                 <TextEffect
                   per="line"
                   preset="fade-in-blur"
                   speedSegment={0.3}
                   delay={0.5}
                   as="p"
-                  className="mx-auto mt-8 max-w-2xl text-balance text-lg"
+                  className="mx-auto mt-8 max-w-2xl text-balance text-muted-foreground text-lg"
                 >
                   Free enterprise-grade digital solutions with local data
                   sovereignty. Building Nepal's next tech hub, one business at a
