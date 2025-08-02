@@ -10,7 +10,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useProfile } from "@/hooks/use-profile";
 import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
@@ -50,13 +49,7 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
   );
 
 export function AutoAdmin({ tabs }: AutoAdminProps) {
-  const user = useProfile();
   const data: SidebarItems = {
-    user: {
-      name: user?.role ?? "admin",
-      email: user?.email ?? "",
-      avatar: user?.avatar ?? "",
-    },
     items: tabs,
   };
   const { search, pathname: currentPathname } = useLocation();

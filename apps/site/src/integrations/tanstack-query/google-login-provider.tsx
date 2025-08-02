@@ -11,6 +11,12 @@ export function GoogleLoginProvider({ children }: React.PropsWithChildren) {
 }
 
 export function OneTapLoginProvider({ children }: React.PropsWithChildren) {
+  const { user } = useAuth()
+  if (!!user) return children
+  return <_OneTapLoginProvider>{children}</_OneTapLoginProvider>
+}
+
+function _OneTapLoginProvider({ children }: React.PropsWithChildren) {
   const { refreshUser } = useAuth()
   const googleLoginMutation = useMutation({
     mutationFn: googleLogin,
@@ -24,20 +30,21 @@ export function OneTapLoginProvider({ children }: React.PropsWithChildren) {
 
   useGoogleOneTapLogin({
     onSuccess: async (credentialResponse) => {
-      console.log({ credentialResponse })
-      // const res = await fetch(
-      //   `https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${credentialResponse.credential}`
-      // );
-      // const data = await res.json();
-      // googleLoginMutation.mutateAsync({
-      //   email: data.email,
-      //   name: data.name,
-      //   avatar: data.picture,
-      // });
+      // console.log({ credentialResponse })
+      const res = await fetch(
+        `https://www.googleapis.com/oauth2/v3/tokeninfo?id_token=${credentialResponse.credential}`
+      );
+      const data = await res.json();
+      googleLoginMutation.mutateAsync({
+        email: data.email,
+        name: data.name,
+        avatar: data.picture,
+      });
     },
     onError: () => {
       toast.error("Login Failed");
     },
   });
+
   return children
 }

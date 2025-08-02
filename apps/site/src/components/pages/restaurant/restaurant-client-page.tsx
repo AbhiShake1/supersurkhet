@@ -183,7 +183,7 @@ export function MenuItem({ item }: MenuItemProps) {
                         <h3 className="text-xl font-semibold text-foreground">{item.name}</h3>
                         {item.price && (
                             <span className="font-bold text-lg text-primary">
-                                ${item.price.toFixed(2)}
+                                Rs. {item.price.toFixed(2)}
                             </span>
                         )}
                     </div>
@@ -316,7 +316,7 @@ const _checkout = createServerFn({ method: "POST" })
         const url = generatePaymentUrl(
             "NBQM",
             "5d76d323-d1f6-4a38-8231-0063f9581c98",
-            amount.toFixed(2),
+            amount?.toFixed(2),
             "test1",
             "test2",
             "1234567890",

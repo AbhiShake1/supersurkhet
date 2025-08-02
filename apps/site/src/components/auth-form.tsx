@@ -181,6 +181,7 @@ export function AuthForm({
             variant="outline"
             className="w-full"
             onClick={() => loginWithGoogle()}
+            loading={googleLoginMutation.isPending}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

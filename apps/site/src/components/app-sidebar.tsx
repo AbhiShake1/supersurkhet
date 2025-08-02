@@ -10,11 +10,6 @@ import {
 } from "@/components/ui/sidebar";
 
 export type SidebarItems = {
-	user: {
-		name: string;
-		email: string;
-		avatar: string;
-	};
 	items: NavMainProps["items"];
 	// teams: TeamSwitcherProps["teams"];
 	// navMain: NavMainProps["items"];
@@ -35,7 +30,7 @@ export function AppSidebar({
 				{/* <NavProjects projects={data.projects} /> */}
 			</SidebarContent>
 			<SidebarFooter>
-				<NavUser user={data.user} />
+				<NavUser />
 			</SidebarFooter>
 			<SidebarRail />
 		</Sidebar>

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouteContext } from "@tanstack/react-router";
 import type { User } from "@/lib/schema";
 import { gun } from "@/lib/gun";
+import { googleLogout } from "@react-oauth/google";
 
 interface AuthContextType {
   user: User | undefined;
@@ -25,7 +26,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const user = auth.getCurrentUser();
     if (!user) return
-    gun.get("user").get(user.pub).on(console.log)
     const ref = gun.get("user").get(user.pub).open((data) => {
       setUser(data)
     })
@@ -39,6 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   function logout() {
     auth.logout?.();
     setUser(undefined);
+    googleLogout()
   }
 
   return (

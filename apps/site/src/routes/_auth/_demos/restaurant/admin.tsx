@@ -72,7 +72,7 @@ function RouteComponent() {
                                     <span className="font-bold">{item.quantity}x</span> {menuItem?.name}
                                   </span>
                                   <span className="font-bold">
-                                    ${(item.quantity * item.unitPrice).toFixed(2)}
+                                    ${(item.quantity * item.unitPrice)?.toFixed(2)}
                                   </span>
                                 </div>
                               );
@@ -87,26 +87,38 @@ function RouteComponent() {
                             <span className="col-span-3">{order.customerId}</span>
                           </div>
                         )}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <span className="text-right font-semibold">
-                            Subtotal:
-                          </span>
-                          <span className="col-span-3">
-                            ${order.subTotal.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <span className="text-right font-semibold">Taxes:</span>
-                          <span className="col-span-3">
-                            ${order.taxes.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <span className="text-right font-semibold">Total:</span>
-                          <span className="col-span-3">
-                            ${order.totalAmount.toFixed(2)}
-                          </span>
-                        </div>
+                        {
+                          order.subTotal && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <span className="text-right font-semibold">
+                                Subtotal:
+                              </span>
+                              <span className="col-span-3">
+                                Rs. {order.subTotal.toFixed(2)}
+                              </span>
+                            </div>
+                          )
+                        }
+                        {
+                          order.taxes && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <span className="text-right font-semibold">Taxes:</span>
+                              <span className="col-span-3">
+                                Rs. {order.taxes.toFixed(2)}
+                              </span>
+                            </div>
+                          )
+                        }
+                        {
+                          order.totalAmount && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                              <span className="text-right font-semibold">Total:</span>
+                              <span className="col-span-3">
+                                Rs. {order.totalAmount.toFixed(2)}
+                              </span>
+                            </div>
+                          )
+                        }
                         {order.paymentMethod && (
                           <div className="grid grid-cols-4 items-center gap-4">
                             <span className="text-right font-semibold">

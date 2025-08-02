@@ -1,5 +1,6 @@
 import { pixelArt } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
+import type { IGunUserInstance } from "gun/types";
 import { z } from "zod";
 import { gun } from "./gun";
 
@@ -12,28 +13,21 @@ export const googleLoginSchema = z.object({
 export type GoogleLoginSchema = z.infer<typeof googleLoginSchema>;
 
 export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
-  if (process.env.GOOGLE_LOGIN_BACKDOOR) {
-    gun.user().auth(process.env.GOOGLE_LOGIN_BACKDOOR, (ack) => {
-      if ("err" in ack) {
-        console.error("backdoor auth failed", ack.err);
-      }
-    });
-  }
-  const alias = email.toLowerCase();
-  const userExists = await new Promise((resolve) => {
-    gun.get("~@" + alias).once((data) => resolve(!!data));
-  });
+  if (!import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR) return;
 
-  if (userExists) {
-    return new Promise((resolve, reject) => {
-      gun.user().auth(alias, email, (ack) => {
+  return new Promise<IGunUserInstance["is"]>(async (resolve, reject) => {
+    const alias = email.toLowerCase();
+    const userExists = await new Promise((resolve) => {
+      gun.get("~@" + alias).once((data) => resolve(!!data));
+    });
+
+    if (userExists) {
+      gun.user().auth(alias, import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR, (ack) => {
         if ("err" in ack && ack.err) return reject(new Error(ack.err));
         resolve(gun.user().is);
       });
-    });
-  } else {
-    return new Promise((resolve, reject) => {
-      gun.user().create(alias, email, (ack) => {
+    } else {
+      gun.user().create(alias, import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR, (ack) => {
         if ("err" in ack) return reject(new Error(ack.err));
 
         const userProfile = {
@@ -46,11 +40,11 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
           permissions: {},
         };
         gun.get("user").get(ack.pub).put(userProfile);
-        gun.user().auth(alias, email, (ack) => {
+        gun.user().auth(alias, import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR, (ack) => {
           if ("err" in ack && ack.err) return reject(new Error(ack.err));
           resolve(gun.user().is);
         });
       });
-    });
-  }
+    }
+  })
 }
