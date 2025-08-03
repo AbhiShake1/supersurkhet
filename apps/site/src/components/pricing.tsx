@@ -63,7 +63,7 @@ export function CongestedPricing({ plans, title, description }: PricingProps) {
 	};
 
 	return (
-		<div className="py-20 px-12">
+		<div className="py-20 px-12" id="pricing">
 			<div className="mb-12 space-y-4 text-center">
 				<h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
 					{title}
