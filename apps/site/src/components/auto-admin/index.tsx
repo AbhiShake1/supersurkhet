@@ -1,7 +1,3 @@
-import type { NestedSchemaType, SchemaKeys } from "@gta/react-hooks";
-import { getNestedZodShape } from "@gta/react-hooks";
-import { AutoTable, type AutoTableProps } from "../auto-table";
-
 import { AppSidebar, type SidebarItems } from "@/components/app-sidebar";
 import * as Kanban from "@/components/ui/kanban";
 import {
@@ -9,17 +5,21 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
+import type { NestedSchemaType, SchemaKeys } from "@gta/react-hooks";
+import { getNestedZodShape } from "@gta/react-hooks";
+import { useQuery } from "@tanstack/react-query";
 import { notFound, useLocation } from "@tanstack/react-router";
 import _ from "lodash";
 import { GripVertical, type LucideIcon } from "lucide-react";
 import { type ReactNode } from "react";
+import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 
 export interface AutoAdminProps {
   tabs: PossibleTabConfig[];
@@ -36,16 +36,7 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
     | {
       children: ReactNode;
     }
-    | (AutoTableProps<K extends SchemaKeys ? K : never> &
-      NoInfer<
-        | {
-          groupKey: K extends SchemaKeys ? keyof NestedSchemaType<K> : never;
-          cardBuilder: K extends SchemaKeys
-          ? (data: NestedSchemaType<K>) => ReactNode
-          : never;
-        }
-        | { groupKey?: never; cardBuilder?: never }
-      >)
+    | AutoTableProps<K extends SchemaKeys ? K : never>
   );
 
 export function AutoAdmin({ tabs }: AutoAdminProps) {
@@ -58,11 +49,35 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
   const currentItem = tabs.find((t) => t.title === tab);
 
+  const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
+
+  function _canGetComponents() {
+    return !!currentItem
+  }
+
+  const canGetComponents = _canGetComponents()
+
+  async function getComponents() {
+    if (!canGetComponents) return
+    if ("schema" in currentItem!) {
+      const currentSchema = appSchema[currentItem.schema]
+      if ("components" in currentSchema) {
+        const components = await currentSchema.components()
+        const mappedNodes = components.map(async (c) => ({ ...c, component: await c.component({ slug: currentItem.slug ?? basePath }) }))
+        return Promise.all(mappedNodes)
+      }
+    }
+  }
+
+  const { data: components } = useQuery({
+    enabled: canGetComponents,
+    queryFn: getComponents,
+    queryKey: ["schema", (!!currentItem && "slug" in currentItem && currentItem.slug) ?? basePath, !!currentItem && "schema" in currentItem && currentItem.schema],
+  })
+
   if (!currentItem) {
     throw notFound();
   }
-
-  const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
 
   return (
     <SidebarProvider>
@@ -81,51 +96,34 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
         >
           {"children" in currentItem ? (
             currentItem.children
-          ) : "groupKey" in currentItem &&
-            "cardBuilder" in currentItem &&
-            !!currentItem.cardBuilder &&
-            !!currentItem.groupKey ? (
-            <Tabs
-              defaultValue={localStorage.getItem(`tab-#${basePath}`) ?? "board"}
-              className="flex flex-1 flex-col"
-              onValueChange={(value) => {
-                localStorage.setItem(`tab-#${basePath}`, value);
-              }}
-            >
-              <TabsList className="">
-                <TabsTrigger value="table">Table</TabsTrigger>
-                <TabsTrigger value="board">Board</TabsTrigger>
-              </TabsList>
-              <TabsContent value="table" className="flex-1">
-                {"parsedSchema" in currentItem ? (
-                  <AutoTable
-                    parsedSchema={currentItem.parsedSchema}
-                    slug={currentItem.slug ?? basePath}
-                  />
-                ) : (
-                  <AutoTable schema={currentItem.schema} slug={currentItem.slug ?? basePath} />
-                )}
-              </TabsContent>
-              <TabsContent value="board" className="flex-1">
-                {
-                  // @ts-expect-error
-                  <AutoKanban
-                    slug={currentItem.slug ?? basePath}
-                    cardBuilder={currentItem.cardBuilder}
-                    groupKey={currentItem.groupKey}
-                    // @ts-expect-error
-                    schema={currentItem.schema}
-                  />
-                }
-              </TabsContent>
-            </Tabs>
           ) : "parsedSchema" in currentItem ? (
             <AutoTable
               parsedSchema={currentItem.parsedSchema}
               slug={currentItem.slug ?? basePath}
             />
           ) : (
-            <AutoTable schema={currentItem.schema} slug={currentItem.slug ?? basePath} />
+            !components?.length ?
+              <AutoTable schema={currentItem.schema} slug={currentItem.slug ?? basePath} />
+              : <Tabs
+                defaultValue={localStorage.getItem(`tab-#${basePath}`) ?? components[0]?.name ?? "table"}
+                className="flex flex-1 flex-col"
+                onValueChange={(value) => {
+                  localStorage.setItem(`tab-#${basePath}`, value);
+                }}
+              >
+                <TabsList className="">
+                  <TabsTrigger value="table">Table</TabsTrigger>
+                  {components.map(({ name }) => <TabsTrigger value={name} key={name}>{name}</TabsTrigger>)}
+                </TabsList>
+                <TabsContent value="table" className="flex-1">
+                  <AutoTable schema={currentItem.schema} slug={currentItem.slug ?? basePath} />
+                </TabsContent>
+                {
+                  components.map(({ component, name }) => <TabsContent value={name} key={name} className="flex-1">
+                    {component}
+                  </TabsContent>)
+                }
+              </Tabs>
           )}
         </section>
       </SidebarInset>
@@ -138,10 +136,9 @@ export type AutoKanbanProps<K extends SchemaKeys> = {
   groupKey: keyof NestedSchemaType<K>;
   cardBuilder: (data: NestedSchemaType<K>) => ReactNode;
   schema: K;
-  parsedSchema: NestedSchemaType<K>;
 };
 
-function AutoKanban<K extends SchemaKeys>({
+export function AutoKanban<K extends SchemaKeys>({
   slug,
   schema: schemaName,
   groupKey,
@@ -150,7 +147,7 @@ function AutoKanban<K extends SchemaKeys>({
   const { data: orders = [], isLoading } = api[schemaName]?.useGet({ keys: [slug] })
   const { mutate: update, isPending: isUpdating } = api[schemaName]?.useUpdate({ keys: [slug] })
   const columns = _.groupBy(orders, (o) => o[groupKey]);
-  const orderSchema = getNestedZodShape(schemaName, appSchema.schemaShape);
+  const schema = getNestedZodShape(schemaName, appSchema.schemaShape);
 
   return (
     // @ts-expect-error
@@ -170,7 +167,7 @@ function AutoKanban<K extends SchemaKeys>({
       getItemValue={(item) => item._?.soul ?? ""}
     >
       <Kanban.Board className="grid auto-rows-fr grid-cols-3">
-        {Object.keys(orderSchema.shape[groupKey].Values).map((status) => (
+        {Object.keys(schema.shape[groupKey].Values).map((status) => (
           <KanbanColumn
             key={status}
             value={status}
@@ -216,7 +213,7 @@ function KanbanCard<K extends SchemaKeys>({
     <Kanban.Item
       key={order._?.soul}
       value={order._?.soul ?? ""}
-      asChild
+      // asChild
       {...props}
     >
       {cardBuilder?.(order)}

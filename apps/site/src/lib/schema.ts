@@ -1,6 +1,6 @@
+import type { AdminComponent } from "@/components/ui/admin";
 import { fieldConfig } from "@/components/ui/autoform";
 import { type LucideIcon } from "lucide-react";
-import type React from "react";
 import { z } from "zod";
 
 // #region Core Helpers
@@ -40,11 +40,11 @@ export interface GTAAppConfig {
   schema: {
     [table: string]: {
       schema: NonNullable<z.ZodObject<any>>,
-      components?: {
+      components?: () => Promise<Array<{
         name: string,
-        icon: LucideIcon,
-        component?: React.FC<{}>,
-      }[]
+        icon?: LucideIcon,
+        component: AdminComponent,
+      }>>
     }
   }
 }
@@ -331,6 +331,15 @@ export const featureSchema = createSchema({
 
   order: {
     schema: orderSchema,
+    components: async () => {
+      const { OrderKanban } = await import("@/components/ui/admin/order-kanban")
+      return [
+        {
+          name: "Board",
+          component: OrderKanban,
+        }
+      ]
+    }
   },
   appointment: {
     schema: appointmentSchema,
@@ -363,6 +372,7 @@ declare global {
 export type User = z.infer<typeof userSchema>;
 export type Business = z.infer<typeof businessSchema>;
 export type ChatMessage = z.infer<typeof chatMessageSchema>;
+export type Order = z.infer<typeof orderSchema>;
 // #endregion
 
 export function transformSchema<const TSchema extends typeof appSchema>(schema: TSchema) {
