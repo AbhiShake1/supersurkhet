@@ -18,6 +18,7 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
 function OrderCard({ order, slug }: { order: Order, slug: string }) {
     const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
     const [open, setOpen] = useState(false);
+    if (!order?.items) return null
     const orderItems = recordToList(order.items);
 
     return (

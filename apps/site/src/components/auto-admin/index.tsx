@@ -58,7 +58,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   const canGetComponents = _canGetComponents()
 
   async function getComponents() {
-    if (!canGetComponents) return
+    if (!canGetComponents) return null
     if ("schema" in currentItem!) {
       const currentSchema = appSchema[currentItem.schema]
       if ("components" in currentSchema) {
@@ -67,6 +67,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
         return Promise.all(mappedNodes)
       }
     }
+    return null
   }
 
   const { data: components } = useQuery({
@@ -145,7 +146,7 @@ export function AutoKanban<K extends SchemaKeys>({
   cardBuilder,
 }: AutoKanbanProps<K>) {
   const { data: orders = [], isLoading } = api[schemaName]?.useGet({ keys: [slug] })
-  const { mutate: update, isPending: isUpdating } = api[schemaName]?.useUpdate({ keys: [slug] })
+  const { mutate: update } = api[schemaName]?.useUpdate({ keys: [slug] })
   const columns = _.groupBy(orders, (o) => o[groupKey]);
   const schema = getNestedZodShape(schemaName, appSchema.schemaShape);
 
