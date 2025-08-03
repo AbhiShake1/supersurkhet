@@ -561,8 +561,9 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
     const [search, setSearch] = useState("");
     const { data: _menuItems = [], isLoading } = api.menuItem.useGet({ keys: [slug] });
     const menuItems = (() => {
-        if (!search?.length) return _menuItems;
-        return _menuItems.filter((item) =>
+        const __menuItems = _menuItems.map(m => ({ ...m, category: m.category ?? "Others" }))
+        if (!search?.length) return __menuItems;
+        return __menuItems.filter((item) =>
             item.name?.toLowerCase().includes(search?.toLowerCase()),
         );
     })();
