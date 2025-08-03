@@ -3,7 +3,7 @@ import type { AdminComponent } from ".";
 import type { Order } from "@/lib/schema";
 import { api } from "@/lib/api";
 import { useState } from "react";
-import { recordToList } from "@/lib/utils";
+import { cn, recordToList } from "@/lib/utils";
 import { Credenza, CredenzaBody, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle } from "../credenza";
 
 export const OrderKanban: AdminComponent = ({ slug }) => {
@@ -20,6 +20,25 @@ function OrderCard({ order, slug }: { order: Order, slug: string }) {
     const [open, setOpen] = useState(false);
     if (!order?.items) return null
     const orderItems = recordToList(order.items);
+
+    function getBackgroundProps() {
+        switch (order.orderStatus) {
+            case "pending":
+                return { className: "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300" }
+            case "preparing":
+                return { className: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300" }
+            case "ready":
+                return { className: "bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300" }
+            case "served":
+                return { className: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300" }
+            case "cancelled":
+                return { className: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300" }
+            case "confirmed":
+                return { className: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300" }
+        }
+    }
+
+    const { className } = getBackgroundProps()
 
     return (
         <div>
@@ -160,10 +179,10 @@ function OrderCard({ order, slug }: { order: Order, slug: string }) {
                 </CredenzaContent>
             </Credenza>
             <div
-                className="rounded-md border bg-card p-3 shadow-xs flex flex-col gap-2"
+                className={cn(className, "rounded-md border bg-card p-3 shadow-xs flex flex-col gap-2")}
                 onClick={() => setOpen(true)}
             >
-                <div className="flex items-center justify-between gap-2">
+                <div className={cn("flex items-center justify-between gap-2")}>
                     <span className="line-clamp-1 font-medium text-sm">
                         {orderItems
                             .map((i) =>

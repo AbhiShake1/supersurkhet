@@ -6,20 +6,28 @@ import { useAuth } from "./auth-provider";
 import { ScrollArea } from "./ui/scroll-area";
 
 interface LoginPromptContextType {
-  promptLogin: () => Promise<User>;
+  promptLogin: (options?: { dismissible?: boolean }) => Promise<User | undefined>;
+  closeLoginPrompt: () => void;
 }
 
 const LoginPromptContext = createContext<LoginPromptContextType | undefined>(undefined);
 
 export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, _setIsOpen] = useState(false);
   const resolveRef = useRef<(user: User) => void>(null);
   const rejectRef = useRef<(error: Error) => void>(null);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const { user } = useAuth()
+  const [isDismissible, setIsDismissible] = useState(true);
+  function setIsOpen(open: boolean, { force = false } = {}) {
+    if (force) return _setIsOpen(open)
+    if (!open && !isDismissible) return _setIsOpen(true)
+    _setIsOpen(open)
+  }
 
-  const promptLogin = useCallback(() => {
+  const promptLogin = useCallback(({ dismissible = true }: { dismissible?: boolean } = {}) => {
     if (!!user) return Promise.resolve(user);
+    setIsDismissible(dismissible);
     setIsOpen(true);
     setMode("login"); // Always start with login mode
     return new Promise<User>((resolve, reject) => {
@@ -46,11 +54,15 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, []);
 
+  function closeLoginPrompt() {
+    setIsOpen(false, { force: true })
+  }
+
   return (
-    <LoginPromptContext.Provider value={{ promptLogin }}>
+    <LoginPromptContext.Provider value={{ promptLogin, closeLoginPrompt }}>
       {children}
       <Credenza open={isOpen} onOpenChange={handleOpenChange}>
-        <CredenzaContent>
+        <CredenzaContent hideClose={!isDismissible}>
           <CredenzaHeader>
             <CredenzaTitle>{mode === "login" ? "Sign In" : "Create Account"}</CredenzaTitle>
             <CredenzaDescription>
@@ -78,10 +90,16 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({ c
   );
 };
 
-export const useLoginPrompt = () => {
+export const useLoginPrompt = (): LoginPromptContextType => {
   const context = useContext(LoginPromptContext);
-  if (context === undefined) {
-    throw new Error("useLoginPrompt must be used within a LoginPromptProvider");
+  if (!context) {
+    console.error("useLoginPrompt must be used within a LoginPromptProvider");
+    return {
+      closeLoginPrompt: () => { },
+      promptLogin: async () => {
+        return undefined
+      },
+    }
   }
   return context;
 };

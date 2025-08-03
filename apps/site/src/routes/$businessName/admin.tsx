@@ -1,14 +1,23 @@
+import { useAuth } from "@/components/auth-provider";
 import { AutoAdmin } from "@/components/auto-admin";
+import { useLoginPrompt } from "@/components/login-prompt-provider";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import { api } from "@/lib/api";
 import type { Business } from "@/lib/schema";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Layout, Loader2, Menu, MenuSquare } from "lucide-react";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/$businessName/admin")({
   component: () => {
     const { businessName } = Route.useParams();
     const { data: allBusinesses = [] } = api.business.useGet();
+    const { promptLogin } = useLoginPrompt()
+    const { user } = useAuth()
+
+    useEffect(() => {
+      promptLogin()
+    }, [user])
 
     if (!allBusinesses.length) {
       return (

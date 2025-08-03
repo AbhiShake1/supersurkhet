@@ -321,6 +321,15 @@ export const featureSchema = createSchema({
   },
   menuItem: {
     schema: menuItemSchema,
+    components: async () => {
+      const { MenuManagement } = await import("@/components/ui/admin/menu-management");
+      return [
+        {
+          name: "Cards",
+          component: MenuManagement,
+        }
+      ]
+    },
   },
   propertyListing: {
     schema: propertyListingSchema,

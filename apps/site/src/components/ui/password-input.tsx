@@ -9,63 +9,6 @@ export interface PasswordInputProps
 	buttonClassName?: string;
 }
 
-// export function PasswordInput({
-// 	label,
-// 	description,
-// 	error,
-// 	className,
-// 	containerClassName,
-// 	labelClassName,
-// 	buttonClassName,
-// 	id: propId,
-// 	...props
-// }: PasswordInputProps) {
-// 	const fallbackId = useId();
-// 	const id = propId ?? fallbackId;
-// 	const [isVisible, setIsVisible] = useState<boolean>(false);
-
-// 	const toggleVisibility = () => setIsVisible((prevState) => !prevState);
-
-// 	return (
-// 		<div className={cn("space-y-2", containerClassName)}>
-// 			{label && (
-// 				<Label htmlFor={id} className={cn("block text-sm", labelClassName)}>
-// 					{label}
-// 				</Label>
-// 			)}
-// 			<div className="relative">
-// 				<Input
-// 					id={id}
-// 					className={cn("pe-9", className)}
-// 					type={isVisible ? "text" : "password"}
-// 					{...props}
-// 				/>
-// 				<button
-// 					className={cn(
-// 						"absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-lg text-muted-foreground/80 outline-offset-2 transition-colors hover:text-foreground focus:z-10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring/70 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-// 						buttonClassName,
-// 					)}
-// 					type="button"
-// 					onClick={toggleVisibility}
-// 					aria-label={isVisible ? "Hide password" : "Show password"}
-// 					aria-pressed={isVisible}
-// 					aria-controls={id}
-// 				>
-// 					{isVisible ? (
-// 						<EyeOff size={16} strokeWidth={2} aria-hidden="true" />
-// 					) : (
-// 						<Eye size={16} strokeWidth={2} aria-hidden="true" />
-// 					)}
-// 				</button>
-// 			</div>
-// 			{description && (
-// 				<p className="text-muted-foreground text-sm">{description}</p>
-// 			)}
-// 			{error && <p className="text-destructive text-sm">{error}</p>}
-// 		</div>
-// 	);
-// }
-
 import { useId, useMemo, useState } from "react"
 import { CheckIcon, EyeIcon, EyeOffIcon, XIcon } from "lucide-react"
 
@@ -76,7 +19,6 @@ import { cn } from "@/lib/utils";
 export function PasswordInput({
 	label,
 	description,
-	error,
 	className,
 	containerClassName,
 	labelClassName,
@@ -135,11 +77,14 @@ export function PasswordInput({
 					<Input
 						{...props}
 						id={id}
-						className="pe-9"
+						className={cn("pe-9", className)}
 						placeholder="Password"
 						type={isVisible ? "text" : "password"}
 						value={password}
-						onChange={(e) => setPassword(e.target.value)}
+						onChange={(e) => {
+							setPassword(e.target.value)
+							props.onChange?.(e)
+						}}
 						aria-describedby={`${id}-description`}
 					/>
 					<button
@@ -180,7 +125,6 @@ export function PasswordInput({
 			{description && (
 				<p className="text-muted-foreground text-sm">{description}</p>
 			)}
-			{error && <p className="text-destructive text-sm">{error}</p>}
 
 			{/* Password strength description */}
 			<p
