@@ -12,11 +12,12 @@ export const Route = createFileRoute("/$businessName/admin")({
   component: () => {
     const { businessName } = Route.useParams();
     const { data: allBusinesses = [] } = api.business.useGet();
-    const { promptLogin } = useLoginPrompt()
+    const { promptLogin, closeLoginPrompt } = useLoginPrompt()
     const { user } = useAuth()
 
     useEffect(() => {
-      promptLogin()
+      if (!user) promptLogin({ dismissible: false, showBackgroundContent: false })
+      else closeLoginPrompt()
     }, [user])
 
     if (!allBusinesses.length) {

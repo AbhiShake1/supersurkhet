@@ -15,7 +15,7 @@ function RouteComponent() {
   const { user } = useAuth()
 
   useEffect(() => {
-    if (!user) promptLogin({ dismissible: false })
+    if (!user) promptLogin({ dismissible: false, showBackgroundContent: false })
     else closeLoginPrompt()
   }, [user])
 

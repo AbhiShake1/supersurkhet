@@ -1,12 +1,13 @@
-import React, { createContext, useCallback, useContext, useRef, useState } from "react";
-import { Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle } from "@/components/ui/credenza";
 import { AuthForm } from "@/components/auth-form";
+import { Credenza, CredenzaContent, CredenzaDescription, CredenzaHeader, CredenzaTitle } from "@/components/ui/credenza";
 import type { User } from "@/lib/schema";
+import { DialogOverlay } from "@radix-ui/react-dialog";
+import React, { createContext, useCallback, useContext, useRef, useState } from "react";
 import { useAuth } from "./auth-provider";
 import { ScrollArea } from "./ui/scroll-area";
 
 interface LoginPromptContextType {
-  promptLogin: (options?: { dismissible?: boolean }) => Promise<User | undefined>;
+  promptLogin: (options?: { dismissible?: boolean, showBackgroundContent?: boolean }) => Promise<User | undefined>;
   closeLoginPrompt: () => void;
 }
 
@@ -18,16 +19,18 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const rejectRef = useRef<(error: Error) => void>(null);
   const [mode, setMode] = useState<"login" | "signup">("login");
   const { user } = useAuth()
-  const [isDismissible, setIsDismissible] = useState(true);
+  const isDismissibleRef = useRef(true);
+  const showBackgroundContentRef = useRef(true);
   function setIsOpen(open: boolean, { force = false } = {}) {
     if (force) return _setIsOpen(open)
-    if (!open && !isDismissible) return _setIsOpen(true)
+    if (!open && !isDismissibleRef.current) return _setIsOpen(true)
     _setIsOpen(open)
   }
 
-  const promptLogin = useCallback(({ dismissible = true }: { dismissible?: boolean } = {}) => {
+  const promptLogin = useCallback(({ dismissible = true, showBackgroundContent = true }: { dismissible?: boolean, showBackgroundContent?: boolean } = {}) => {
     if (!!user) return Promise.resolve(user);
-    setIsDismissible(dismissible);
+    isDismissibleRef.current = dismissible;
+    showBackgroundContentRef.current = showBackgroundContent;
     setIsOpen(true);
     setMode("login"); // Always start with login mode
     return new Promise<User>((resolve, reject) => {
@@ -62,7 +65,13 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({ c
     <LoginPromptContext.Provider value={{ promptLogin, closeLoginPrompt }}>
       {children}
       <Credenza open={isOpen} onOpenChange={handleOpenChange}>
-        <CredenzaContent hideClose={!isDismissible}>
+        {
+          !showBackgroundContentRef.current &&
+          <DialogOverlay
+            className="fixed inset-0 z-50 backdrop-blur-lg bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0"
+          />
+        }
+        <CredenzaContent hideClose={!isDismissibleRef.current}>
           <CredenzaHeader>
             <CredenzaTitle>{mode === "login" ? "Sign In" : "Create Account"}</CredenzaTitle>
             <CredenzaDescription>
