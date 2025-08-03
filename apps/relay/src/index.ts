@@ -1,4 +1,5 @@
 import Gun from 'gun';
+import 'gun/lib/radisk'
 
 export interface Env {
   RELAY: DurableObjectNamespace;
