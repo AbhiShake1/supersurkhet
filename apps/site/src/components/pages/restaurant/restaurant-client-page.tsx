@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import MinimalCard, { MinimalCardDescription, MinimalCardFooter, MinimalCardImage } from "@/components/ui/minimal-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import { type NestedSchemaType } from "@gta/react-hooks";
 import { createServerFn } from "@tanstack/react-start";
@@ -558,7 +559,7 @@ export function RestaurantClientPage(props: RestaurantClientPageProps) {
 
 function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
     const [search, setSearch] = useState("");
-    const { data: _menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
+    const { data: _menuItems = [], isLoading } = api.menuItem.useGet({ keys: [slug] });
     const menuItems = (() => {
         if (!search?.length) return _menuItems;
         return _menuItems.filter((item) =>
@@ -654,9 +655,47 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
                 </div>
                 <div className="h-8" />
 
-                {Object.entries(menuData).map(([category, items]) => (
-                    <MenuSection key={category} title={category} items={items} />
-                ))}
+                {
+                    isLoading ? <section className="mb-16">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {
+                                Array.from({ length: 10 }).map((_, i) => (
+                                    <Card className="relative h-96" key={i}>
+                                        <div className="z-50 absolute top-6 right-6">
+                                            <Skeleton className="h-6 w-24 rounded-full" />
+                                        </div>
+
+                                        <Skeleton className="h-[320px] w-full rounded-md" />
+
+                                        <CardContent className="pt-4">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <Skeleton className="h-6 w-1/2 rounded" />
+                                                <Skeleton className="h-6 w-16 rounded" />
+                                            </div>
+                                            <Skeleton className="h-4 w-full mb-1 rounded" />
+                                            <Skeleton className="h-4 w-5/6 mb-1 rounded" />
+                                            <Skeleton className="h-4 w-2/3 rounded" />
+                                        </CardContent>
+
+                                        <CardFooter className="border-t border-muted/50 dark:border-muted/30 pt-4">
+                                            <div className="flex items-center justify-between w-full">
+                                                <div className="flex items-center space-x-2">
+                                                    <Skeleton className="h-8 w-8 rounded-full" />
+                                                    <Skeleton className="h-6 w-6 rounded" />
+                                                    <Skeleton className="h-8 w-8 rounded-full" />
+                                                </div>
+                                                <Skeleton className="h-10 w-28 rounded-md" />
+                                            </div>
+                                        </CardFooter>
+                                    </Card>
+                                ))
+                            }
+                        </div>
+                    </section> :
+                        Object.entries(menuData).map(([category, items]) => (
+                            <MenuSection key={category} title={category} items={items} />
+                        ))
+                }
 
                 {/* Menu Categories */}
                 {/* <div className="mb-8">
