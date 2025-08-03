@@ -656,7 +656,8 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
                 <div className="h-8" />
 
                 {
-                    isLoading ? <section className="mb-16">
+                    isLoading ? <section className="mb-16 gap-6 flex flex-col">
+                        <Skeleton className="h-12 w-36" />
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {
                                 Array.from({ length: 10 }).map((_, i) => (

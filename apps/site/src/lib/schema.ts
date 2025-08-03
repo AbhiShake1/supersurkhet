@@ -107,7 +107,7 @@ export const baseListingSchema = z
     description: z.string().optional().describe("Detailed description"),
     price: z.number({ coerce: true }).positive().describe("Price of the item/service"),
     // currency: z.string().length(3).default("NPR"),
-    category: z.string().optional(),
+    category: z.string().default("Others").optional(),
     tags: z.record(z.string(), z.boolean()).optional(),
     imageUrl: z.string().url().superRefine(fieldConfig({ fieldType: "image" })).optional(),
     isFeatured: z.boolean().optional(),
