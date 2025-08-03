@@ -14,6 +14,7 @@ export class GunRelay implements DurableObject {
     this.state = state;
     this.server = new Server();
     this.gun = Gun({
+      radisk: true,
       peers: env.GUN_PEERS ? env.GUN_PEERS.split(',') : [],
       web: this.server
     });
