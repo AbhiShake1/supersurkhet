@@ -1,7 +1,7 @@
 import type { AdminComponent } from "@/components/ui/admin";
 import { fieldConfig } from "@/components/ui/autoform";
 import type { LucideIcon } from "lucide-react";
-import type { z } from "zod";
+import { z } from "zod";
 
 // #region Core Helpers
 const withMeta = <T extends z.ZodTypeAny>(

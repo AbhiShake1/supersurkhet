@@ -143,10 +143,18 @@ CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 src/
 ├── app/                 # Global application files
 ├── components/          # UI components (shadcn/ui and custom)
+│   ├── ui/              # Reusable UI components
+│   ├── pages/           # Business-specific page components
+│   ├── admin/           # Admin panel components
+│   └── autoform/        # Schema-driven form components
 ├── config/              # Configuration files
 ├── hooks/               # Custom React hooks
 ├── integrations/        # External service integrations
 ├── lib/                 # Core utilities and libraries
+│   ├── api/             # API layer
+│   ├── gun/             # GunDB integration
+│   ├── schema/          # Zod schema definitions
+│   └── utils/           # Utility functions
 ├── routes/              # Application routes
 ├── types/               # TypeScript type definitions
 ├── client.tsx           # Client entry point
@@ -154,6 +162,43 @@ src/
 ├── ssr.tsx              # Server-side rendering
 └── styles.css           # Global styles
 ```
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the following locations:
+
+### User Documentation
+- [User Guide](docs/user/guide.md) - Getting started with SuperSurkhet
+- [Business Types](docs/user/business-types.md) - Overview of all supported business types
+- [Tutorials](docs/user/tutorials/) - Step-by-step guides for common tasks
+
+### Developer Documentation
+- [Architecture](docs/developer/architecture.md) - System architecture overview
+- [API Reference](docs/developer/api-reference.md) - Complete API documentation
+- [Component Guidelines](docs/components/guidelines.md) - UI component development standards
+- [Responsive Design](docs/responsive-design/guidelines.md) - Mobile-first design principles
+- [User Experience](docs/user-experience/guidelines.md) - UX design guidelines
+- [Performance Optimization](docs/performance/optimization.md) - Performance best practices
+- [Security](docs/security/guidelines.md) - Security implementation guidelines
+
+### Testing Documentation
+- [Integration Testing](docs/testing/integration-testing.md) - Cross-module integration testing
+- [Unit Testing](docs/testing/unit-testing.md) - Component and function testing
+- [End-to-End Testing](docs/testing/e2e-testing.md) - Complete user flow testing
+
+### Business Module Documentation
+- [Retail & eCommerce](docs/business-modules/retail.md)
+- [Food & Hospitality](docs/business-modules/food.md)
+- [Logistics](docs/business-modules/logistics.md)
+- [ERP](docs/business-modules/erp.md)
+- [Co-operatives](docs/business-modules/cooperative.md)
+- [Healthcare](docs/business-modules/healthcare.md)
+- [Education](docs/business-modules/education.md)
+- [Real Estate](docs/business-modules/real-estate.md)
+- [Financial Services](docs/business-modules/financial.md)
+- [Fitness & Recreation](docs/business-modules/fitness.md)
+- [Energy & Utilities](docs/business-modules/energy.md)
+- [Professional Services](docs/business-modules/services.md)
 
 ## 🔧 Core Principles
 
