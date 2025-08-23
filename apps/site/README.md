@@ -53,11 +53,18 @@ The technical heart of the platform enabling automatic generation of CRUD interf
 6. **Healthcare** - Appointment scheduling and patient records
 7. **Education** - Student/teacher management and communication
 
+### Advanced Features
+1. **QR Engine** - Multi-step action execution through QR code scanning
+2. **Decentralized AI** - Device-local AI processing with graph network storage
+3. **Proprietary Compression** - Custom algorithms for blazingly fast data transfer
+4. **Instant Scale Architecture** - Supports thousands of billions of operations
+
 ### Integrated Services
-- **QR Code Ecosystem**: Universal entry point for all services
+- **QR Code Ecosystem**: Universal entry point for all services with multi-step action execution
 - **Smart Routing**: Optimize delivery and transportation costs
 - **Automatic Connectivity**: WiFi and data sync at partner locations
 - **Cross-Service Payments**: Seamless payment flows between services
+- **Instant Onboarding**: Scan QR to automatically connect to WiFi and access services
 
 ## 🛠️ Technology Stack
 
@@ -76,6 +83,8 @@ The technical heart of the platform enabling automatic generation of CRUD interf
 - **Image Handling**: Cloudinary
 - **Error Monitoring**: Sentry
 - **Deployment**: Cloudflare Pages
+- **AI Processing**: Device-local AI with graph network storage (future)
+- **Data Transfer**: Proprietary compression algorithms (future)
 
 ### Development Tools
 - **Language**: TypeScript

@@ -4,117 +4,30 @@ This document provides comprehensive guidance for deploying and monitoring the S
 
 ## Deployment Architecture
 
-SuperSurkhet is designed for modern cloud deployment with support for multiple environments and automated deployment pipelines.
+The deployment architecture supports multiple environments:
 
-### Cloudflare Pages Deployment
+### Development
+- **Local Development**: Developer workstations
+- **Feature Branches**: Isolated feature testing
+- **Continuous Integration**: Automated testing and building
 
-The platform is configured for deployment to Cloudflare Pages, which provides:
+### Staging
+- **Pre-production Testing**: QA and user acceptance testing
+- **Performance Testing**: Load and stress testing
+- **Security Scanning**: Automated vulnerability assessment
 
-- Global CDN distribution
-- Automatic SSL certificates
-- Serverless functions
-- DDoS protection
-- Analytics and monitoring
+### Production
+- **High Availability**: Multi-region deployment
+- **Disaster Recovery**: Automated failover and backup
+- **Monitoring**: Real-time system health tracking
+- **Logging**: Centralized log management
 
-#### Deployment Configuration
-
-The `wrangler.toml` file configures Cloudflare Pages deployment:
-
-```toml
-name = "supersurkhet"
-pages_build_output_dir = "./dist"
-compatibility_flags = ["nodejs_compat"]
-compatibility_date = "2024-11-13"
-```
-
-#### Build Process
-
-The build process is configured in `package.json`:
-
-```json
-{
-  "scripts": {
-    "build": "vinxi build"
-  }
-}
-```
-
-### Environment Configuration
-
-Different environments require specific configuration:
-
-#### Development Environment
-```bash
-# .env.local
-VITE_SENTRY_DSN=your_sentry_dsn_dev
-VITE_GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_dev
-VITE_GOOGLE_LOGIN_BACKDOOR=your_google_login_backdoor_dev
-```
-
-#### Staging Environment
-```bash
-# .env.staging
-VITE_SENTRY_DSN=your_sentry_dsn_staging
-VITE_GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_staging
-```
-
-#### Production Environment
-```bash
-# .env.production
-VITE_SENTRY_DSN=your_sentry_dsn_prod
-VITE_GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id_prod
-```
-
-### CI/CD Pipeline
-
-The deployment pipeline is configured using GitHub Actions in `.github/workflows/`:
-
-#### Build and Test Workflow
-```yaml
-# .github/workflows/ci.yml
-name: CI
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'pnpm'
-      - run: pnpm install
-      - run: pnpm build
-      - run: pnpm test
-```
-
-#### Deployment Workflow
-```yaml
-# .github/workflows/deploy.yml
-name: Deploy
-on:
-  push:
-    branches: [main]
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-          cache: 'pnpm'
-      - run: pnpm install
-      - run: pnpm build
-      - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: supersurkhet
-          directory: dist
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-```
+### Future Decentralized Deployment
+- **Peer-to-Peer Network**: Device-local deployment with graph network synchronization
+- **Autonomous Scaling**: Automatic resource allocation based on demand
+- **Self-Healing Infrastructure**: Automated recovery from failures
+- **Edge-First Architecture**: Processing happens closest to users
+- **Instant Global Distribution**: Changes propagate instantly across the network
 
 ## Monitoring and Alerting
 

@@ -28,6 +28,13 @@ The Retail & eCommerce module provides comprehensive tools for physical and onli
 - Customer management
 - Reporting and analytics
 
+#### Future AI Enhancements
+- **Predictive Inventory Management**: AI predicts demand and optimizes stock levels
+- **Personalized Recommendations**: Hyper-personalized product suggestions
+- **Automated Pricing**: Dynamic pricing based on market conditions
+- **Visual Search**: Find products by uploading images
+- **Voice Commerce**: Voice-activated shopping experience
+
 #### Schema Structure
 ```typescript
 // Product schema
@@ -94,6 +101,14 @@ The Food & Hospitality module is designed for restaurants, cafes, and hotels.
 - Delivery management
 - Staff scheduling
 - Recipe management
+
+#### Future AI Enhancements
+- **Intelligent Menu Optimization**: AI suggests menu items based on demand patterns
+- **Automated Staff Scheduling**: Optimizes shifts based on predicted demand
+- **Smart Inventory Management**: Predicts ingredient needs and reduces waste
+- **Personalized Dining Experience**: Customizes service based on customer preferences
+- **Voice-Activated Ordering**: Hands-free ordering and service requests
+- **Predictive Maintenance**: Anticipates equipment failures before they occur
 
 #### Schema Structure
 ```typescript
@@ -746,6 +761,64 @@ const timeEntrySchema = z.object({
 - **Appointment Scheduling**: Meeting and consultation booking
 - **Document Sharing**: Secure file exchange
 
+## QR Engine Integration
+
+All business modules integrate with SuperSurkhet's advanced QR engine, enabling seamless user experiences and automated workflows.
+
+### QR Engine Capabilities
+
+1. **Multi-step Action Execution**: Scan a QR code to trigger complex workflows
+2. **Business Onboarding**: Restaurant QR codes automatically connect to WiFi and open scan-to-order
+3. **Seamless Transitions**: Move between services without manual intervention
+4. **Context-Aware Actions**: QR actions adapt based on user context and business type
+
+### Business-Specific QR Flows
+
+#### Restaurants
+- Scan table QR to automatically connect to WiFi
+- Open digital menu with scan-to-order capability
+- Place orders directly from mobile device
+- Receive real-time order status updates
+- Pay directly through QR-triggered payment flow
+
+#### Petrol Stations
+- Scan QR to initiate fuel purchase
+- Automatically connect to payment system
+- Receive digital receipt and loyalty points
+- Access nearby services and promotions
+
+#### Hotels
+- Scan room QR for check-in process
+- Access room controls and services
+- Order room service directly
+- Request housekeeping or maintenance
+
+#### Gyms
+- Scan QR at entry for attendance tracking
+- Access personalized workout plans
+- Reserve equipment or classes
+- Track workout progress
+
+#### Cinemas
+- Scan QR for ticket validation
+- Access seat-specific concessions ordering
+- Rate movie and provide feedback
+- Purchase merchandise
+
+### QR Engine Technical Implementation
+
+#### Core Components
+1. **QR Scanner**: Device camera integration with advanced scanning algorithms
+2. **Action Interpreter**: Parse QR content and determine appropriate actions
+3. **Workflow Executor**: Coordinate multi-step actions and transitions
+4. **Context Manager**: Maintain user and business context throughout workflows
+
+#### Security Features
+1. **QR Validation**: Verify authenticity of QR codes before execution
+2. **Permission Checking**: Ensure users have appropriate permissions for actions
+3. **Data Encryption**: Secure transmission of sensitive information
+4. **Audit Logging**: Track all QR-triggered actions for compliance
+
 ## Module Development Guidelines
 
 ### Schema Design
@@ -782,5 +855,12 @@ const timeEntrySchema = z.object({
 2. **Third-Party APIs**: Connect with relevant external services
 3. **Data Sync**: Ensure consistent data across integrations
 4. **Security**: Secure all integration points
+
+### QR Integration Requirements
+
+1. **QR Action Definitions**: Define business-specific QR actions
+2. **Context Handlers**: Implement context-aware action processing
+3. **Workflow Integration**: Connect QR actions to business workflows
+4. **Analytics Tracking**: Monitor QR usage and effectiveness
 
 This documentation provides a comprehensive overview of all business modules in SuperSurkhet. Each module is designed to be extensible and customizable to meet specific business needs while maintaining the platform's consistent user experience and technical standards.
