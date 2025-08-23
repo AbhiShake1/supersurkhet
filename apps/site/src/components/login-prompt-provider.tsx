@@ -18,7 +18,7 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const resolveRef = useRef<(user: User) => void>(null);
   const rejectRef = useRef<(error: Error) => void>(null);
   const [mode, setMode] = useState<"login" | "signup">("login");
-  const { user } = useAuth()
+  const { user, isAuthenticated } = useAuth()
   const isDismissibleRef = useRef(true);
   const showBackgroundContentRef = useRef(true);
   function setIsOpen(open: boolean, { force = false } = {}) {
@@ -28,7 +28,7 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({ c
   }
 
   const promptLogin = useCallback(({ dismissible = true, showBackgroundContent = true }: { dismissible?: boolean, showBackgroundContent?: boolean } = {}) => {
-    if (!!user) return Promise.resolve(user);
+    if (isAuthenticated) return Promise.resolve(user);
     isDismissibleRef.current = dismissible;
     showBackgroundContentRef.current = showBackgroundContent;
     setIsOpen(true);

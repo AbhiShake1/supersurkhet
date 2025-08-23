@@ -18,15 +18,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { auth } = useRouteContext({ from: "__root__" });
   const [user, setUser] = useState<User>();
   const [refreshState, setRefreshState] = useState(0);
+  const [authUser, setAuthUser] = useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
+  // const authUser = auth?.getCurrentUser?.()
 
   function refreshUser() {
     setRefreshState(r => r + 1);
   }
 
   useEffect(() => {
-    const user = auth.getCurrentUser();
-    if (!user) return
-    const ref = gun.get("user").get(user.pub).open((data) => {
+    const _authUser = auth.getCurrentUser()
+    setAuthUser(_authUser)
+    if (!_authUser) return
+    const ref = gun.get("user").get(_authUser.pub).open((data) => {
       setUser(data)
     })
     return () => {
@@ -34,7 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [refreshState])
 
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!authUser;
 
   function logout() {
     auth.logout?.();

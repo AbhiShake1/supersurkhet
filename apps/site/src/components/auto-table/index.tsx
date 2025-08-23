@@ -20,14 +20,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import * as Editable from "@/components/ui/editable";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { applySorting } from "@/lib/sort";
 import { parseSchema } from "@autoform/zod";
 import {
   type NestedSchemaType,
   type SchemaKeys,
-  getNestedZodShape
+  getNestedZodShape,
+  useCreate,
+  useDelete,
+  useGet,
+  useUpdate
 } from "@gta/react-hooks";
 import { useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -49,6 +52,7 @@ import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
+import SkeletonTableOneWrapper from "../mvpblocks/skeleton-table-1";
 import {
   Credenza,
   CredenzaBody,
@@ -60,7 +64,6 @@ import {
   CredenzaTrigger,
 } from "../ui/credenza";
 import { AutoTableActionBar } from "./auto-table-action-bar";
-import SkeletonTableOneWrapper from "../mvpblocks/skeleton-table-1";
 
 export type AutoTableProps<T extends SchemaKeys> = ({
   slug: string;
@@ -79,7 +82,7 @@ export function AutoTable<T extends SchemaKeys>({
 }: AutoTableProps<T>) {
   const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { data: _data = [], isLoading } = api[schemaName].useGet({ keys: [slug] });
+  const { data: _data = [], isLoading } = useGet(schemaName, slug)
   const search = useSearch({ from: "__root__" });
   const data = useMemo(() => {
     // @ts-expect-error
@@ -101,9 +104,9 @@ export function AutoTable<T extends SchemaKeys>({
     return getSorted(getFiltered())
   }, [_data, search]);
 
-  const createMutation = api[schemaName].useCreate({ keys: [slug] });
-  const updateMutation = api[schemaName].useUpdate({ keys: [slug] });
-  const { mutate: onDelete } = api[schemaName].useDelete({ keys: [slug] });
+  const createMutation = useCreate({ keys: [schemaName, slug] })
+  const updateMutation = useUpdate({ keys: [schemaName, slug] })
+  const { mutate: onDelete } = useDelete({ keys: [schemaName, slug] })
   const schema =
     "parsedSchema" in props
       ? props.parsedSchema
@@ -160,7 +163,6 @@ export function AutoTable<T extends SchemaKeys>({
             <ScrollArea className="h-[50vh]">
               <AutoForm
                 schema={schema}
-                // @ts-expect-error
                 onSubmit={(b) => createMutation.mutate(b)}
                 formProps={{ id: "auto-table-add-form" }}
               />
@@ -232,7 +234,6 @@ export function AutoTable<T extends SchemaKeys>({
         onSubmit={(data) => {
           setRowAction(null);
           if (data) {
-            // @ts-expect-error
             updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data });
           }
         }}

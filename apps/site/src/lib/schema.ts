@@ -1,7 +1,7 @@
 import type { AdminComponent } from "@/components/ui/admin";
 import { fieldConfig } from "@/components/ui/autoform";
-import { type LucideIcon } from "lucide-react";
-import { z } from "zod";
+import type { LucideIcon } from "lucide-react";
+import type { z } from "zod";
 
 // #region Core Helpers
 const withMeta = <T extends z.ZodTypeAny>(
@@ -23,8 +23,15 @@ const withLabel = <T extends z.ZodTypeAny>(
 
 // #region Base Schema
 export const table = {
-  created_by: z.string().optional().describe("User ID of the creator").optional(),
-  timestamp: z.number({ coerce: true }).describe("Unix timestamp of the last update").optional(),
+  created_by: z
+    .string()
+    .optional()
+    .describe("User ID of the creator")
+    .optional(),
+  timestamp: z
+    .number({ coerce: true })
+    .describe("Unix timestamp of the last update")
+    .optional(),
   _: z.object({ soul: z.string().optional() }).optional(),
 };
 // #endregion
@@ -39,14 +46,16 @@ const permissionEnum = z.nativeEnum(permissions);
 export interface GTAAppConfig {
   schema: {
     [table: string]: {
-      schema: NonNullable<z.ZodObject<any>>,
-      components?: () => Promise<Array<{
-        name: string,
-        icon?: LucideIcon,
-        component: AdminComponent,
-      }>>
-    }
-  }
+      schema: NonNullable<z.ZodObject<any>>;
+      components?: () => Promise<
+        Array<{
+          name: string;
+          icon?: LucideIcon;
+          component: AdminComponent;
+        }>
+      >;
+    };
+  };
 }
 
 export const roleSchema = z
@@ -67,9 +76,18 @@ export const userSchema = z
     email: z.string().email().describe("User's email address (login)"),
     password: z.string().describe("Hashed password for the user"),
     name: z.string().optional().describe("Full name of the user"),
-    avatar: z.string().url().optional().describe("URL to user's avatar image").superRefine(fieldConfig({ fieldType: "image" })),
+    avatar: z
+      .string()
+      .url()
+      .optional()
+      .describe("URL to user's avatar image")
+      .superRefine(fieldConfig({ fieldType: "image" })),
     phone: z.string().optional().describe("User's contact phone number"),
-    isActive: z.boolean().default(true).describe("Whether the user account is active").optional(),
+    isActive: z
+      .boolean()
+      .default(true)
+      .describe("Whether the user account is active")
+      .optional(),
     role: z.string().default("user").optional(),
   })
   .extend(table);
@@ -77,14 +95,42 @@ export const userSchema = z
 export const businessSchema = z
   .object({
     name: z.string().describe("Official name of the business"),
-    location: z.string().describe("Physical address or area of the business").optional(),
-    basePath: z.string().describe("Unique URL path for the business (e.g., /my-shop)").optional(),
-    businessType: z.enum([
-      "retail", "food", "service", "education", "healthcare",
-      "logistics", "real_estate", "cooperative", "other",
-    ]).describe("The primary category of the business"),
-    features: z.record(z.string(), z.boolean()).optional().describe("A map of enabled features for this business").superRefine(fieldConfig({ fieldType: "record" })),
-    isActive: z.boolean().default(true).describe("Whether the business is currently active"),
+    location: z
+      .string()
+      .describe("Physical address or area of the business")
+      .optional(),
+    basePath: z
+      .string()
+      .describe("Unique URL path for the business (e.g., /my-shop)")
+      .optional(),
+    businessType: z
+      .enum([
+        "retail",
+        "food",
+        "service",
+        "education",
+        "healthcare",
+        "logistics",
+        "real_estate",
+        "cooperative",
+        "other",
+        "hotel",
+        "petrol_pump",
+        "gym",
+        "cinema",
+        "financial_firm",
+        "ride_sharing",
+      ])
+      .describe("The primary category of the business"),
+    features: z
+      .record(z.string(), z.boolean())
+      .optional()
+      .describe("A map of enabled features for this business")
+      .superRefine(fieldConfig({ fieldType: "record" })),
+    isActive: z
+      .boolean()
+      .default(true)
+      .describe("Whether the business is currently active"),
   })
   .extend(table);
 
@@ -105,11 +151,18 @@ export const baseListingSchema = z
     // businessId: z.string().describe("The business this listing belongs to"),
     title: z.string().min(1).describe("Title or name of the listing"),
     description: z.string().optional().describe("Detailed description"),
-    price: z.number({ coerce: true }).positive().describe("Price of the item/service"),
+    price: z
+      .number({ coerce: true })
+      .positive()
+      .describe("Price of the item/service"),
     // currency: z.string().length(3).default("NPR"),
     category: z.string().default("Others").optional(),
     tags: z.record(z.string(), z.boolean()).optional(),
-    imageUrl: z.string().url().superRefine(fieldConfig({ fieldType: "image" })).optional(),
+    imageUrl: z
+      .string()
+      .url()
+      .superRefine(fieldConfig({ fieldType: "image" }))
+      .optional(),
     isFeatured: z.boolean().optional(),
     isActive: z.boolean().default(true),
   })
@@ -119,10 +172,17 @@ export const productSchema = baseListingSchema.extend({
   sku: z.string().optional().describe("Stock Keeping Unit"),
   // quantityAvailable: z.number({ coerce: true }).int().nonnegative().describe("Current quantity in stock"),
   // unitOfMeasure: z.string().optional().describe("e.g., 'piece', 'kg'"),
-  imageUrl: z.string().url().superRefine(fieldConfig({ fieldType: "image" })).optional(),
+  imageUrl: z
+    .string()
+    .url()
+    .superRefine(fieldConfig({ fieldType: "image" }))
+    .optional(),
   isFeatured: z.boolean().optional(),
   isActive: z.boolean().default(true),
-  price: z.number({ coerce: true }).positive().describe("Price of the item/service"),
+  price: z
+    .number({ coerce: true })
+    .positive()
+    .describe("Price of the item/service"),
   name: z.string().optional().describe("Name of the item/service"),
 });
 
@@ -141,7 +201,12 @@ export const propertyListingSchema = baseListingSchema.extend({
 });
 
 export const serviceSchema = baseListingSchema.extend({
-  duration: z.number({ coerce: true }).int().positive().optional().describe("Duration of the service in minutes"),
+  duration: z
+    .number({ coerce: true })
+    .int()
+    .positive()
+    .optional()
+    .describe("Duration of the service in minutes"),
 });
 
 // #endregion
@@ -221,7 +286,13 @@ export const appointmentSchema = z
     serviceId: z.string().describe("ID of the service (from serviceSchema)"),
     startTime: z.string(),
     endTime: z.string(),
-    status: z.enum(["scheduled", "confirmed", "completed", "cancelled", "no_show"]),
+    status: z.enum([
+      "scheduled",
+      "confirmed",
+      "completed",
+      "cancelled",
+      "no_show",
+    ]),
   })
   .extend(table);
 
@@ -234,57 +305,88 @@ export const tripSchema = z
     startLocation: z.string(),
     endLocation: z.string(),
     fare: z.number({ coerce: true }).positive(),
-    status: z.enum(["requested", "accepted", "in_progress", "completed", "cancelled"]),
+    status: z.enum([
+      "requested",
+      "accepted",
+      "in_progress",
+      "completed",
+      "cancelled",
+    ]),
   })
   .extend(table);
 
 // ... other transactional schemas like expenseSchema, chatMessageSchema
 export const expenseSchema = z.object({}).extend(table); // Placeholder
-export const chatMessageSchema = z.object({
-  created_by: z.string().optional().describe("User ID of the creator").optional(),
-  content: z.string().describe("Message content"),
-  sender_id: z.string().describe("User ID of the sender"),
-  sender_name: z.string().describe("Name of the sender"),
-  timestamp: z.number({ coerce: true }).int().describe("Unix timestamp of the message"),
-  delivered: z.boolean().default(false),
-  read: z.boolean().default(false),
-}).extend(table); // Placeholder
+export const chatMessageSchema = z
+  .object({
+    created_by: z
+      .string()
+      .optional()
+      .describe("User ID of the creator")
+      .optional(),
+    content: z.string().describe("Message content"),
+    sender_id: z.string().describe("User ID of the sender"),
+    sender_name: z.string().describe("Name of the sender"),
+    timestamp: z
+      .number({ coerce: true })
+      .int()
+      .describe("Unix timestamp of the message"),
+    delivered: z.boolean().default(false),
+    read: z.boolean().default(false),
+  })
+  .extend(table); // Placeholder
 
 // #endregion
 
 // #region App Schema
 export type SchemaShape<T extends GTAAppConfig["schema"]> = {
-  [key in keyof T]: T[key]["schema"]
-}
+  [key in keyof T]: T[key]["schema"];
+};
 
 export type CreatedSchema<T extends GTAAppConfig["schema"]> = T & {
-  rawShape: T
-  schemaShape: z.ZodObject<SchemaShape<T>>
-  extend<const TOtherSchema extends GTAAppConfig["schema"]>(otherSchema: TOtherSchema): CreatedSchema<T & TOtherSchema>
-  merge<const TOtherSchema extends GTAAppConfig["schema"]>(otherSchema: CreatedSchema<TOtherSchema>): CreatedSchema<T & TOtherSchema>
-}
+  rawShape: T;
+  schemaShape: z.ZodObject<SchemaShape<T>>;
+  extend<const TOtherSchema extends GTAAppConfig["schema"]>(
+    otherSchema: TOtherSchema,
+  ): CreatedSchema<T & TOtherSchema>;
+  merge<const TOtherSchema extends GTAAppConfig["schema"]>(
+    otherSchema: CreatedSchema<TOtherSchema>,
+  ): CreatedSchema<T & TOtherSchema>;
+};
 
-export type ExtractZodSchema<T extends CreatedSchema<SchemaShape<any>>> = z.ZodObject<{
-  -readonly [K in keyof T["rawShape"]]: T["rawShape"][K]["schema"]
-}>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ExtractZodSchema<T extends CreatedSchema<SchemaShape<any>>> =
+  z.ZodObject<{
+    -readonly [K in keyof T["rawShape"]]: T["rawShape"][K]["schema"];
+  }>;
 
-function createSchema<const TSchema extends GTAAppConfig["schema"]>(schema: TSchema): CreatedSchema<TSchema> {
+function createSchema<const TSchema extends GTAAppConfig["schema"]>(
+  schema: TSchema,
+): CreatedSchema<TSchema> {
   return {
     ...schema,
     rawShape: schema,
     get schemaShape() {
       const o = Object.fromEntries(
         Object.entries(schema).map(([key, value]) => [key, value.schema]),
-      ) as SchemaShape<TSchema>
-      return z.object(o)
+      ) as SchemaShape<TSchema>;
+      return z.object(o);
     },
-    extend<const TOtherSchema extends GTAAppConfig["schema"]>(otherSchema: TOtherSchema) {
-      return createSchema({ ...schema, ...otherSchema })
+    extend<const TOtherSchema extends GTAAppConfig["schema"]>(
+      otherSchema: TOtherSchema,
+    ) {
+      return createSchema({ ...schema, ...otherSchema });
     },
-    merge<const TOtherSchema extends CreatedSchema<GTAAppConfig["schema"]>>(this, otherSchema: TOtherSchema) {
-      return createSchema({ ...this.rawShape, ...otherSchema.rawShape }) as CreatedSchema<TSchema & TOtherSchema["rawShape"]>
-    }
-  }
+    merge<const TOtherSchema extends CreatedSchema<GTAAppConfig["schema"]>>(
+      this,
+      otherSchema: TOtherSchema,
+    ) {
+      return createSchema({
+        ...this.rawShape,
+        ...otherSchema.rawShape,
+      }) as CreatedSchema<TSchema & TOtherSchema["rawShape"]>;
+    },
+  };
 }
 
 export const coreSchema = createSchema({
@@ -300,7 +402,7 @@ export const coreSchema = createSchema({
   membership: {
     schema: membershipSchema,
   },
-})
+});
 
 export const featureSchema = createSchema({
   driverProfile: {
@@ -322,13 +424,15 @@ export const featureSchema = createSchema({
   menuItem: {
     schema: menuItemSchema,
     components: async () => {
-      const { MenuManagement } = await import("@/components/ui/admin/menu-management");
+      const { MenuManagement } = await import(
+        "@/components/ui/admin/menu-management"
+      );
       return [
         {
           name: "Cards",
           component: MenuManagement,
-        }
-      ]
+        },
+      ];
     },
   },
   propertyListing: {
@@ -341,14 +445,16 @@ export const featureSchema = createSchema({
   order: {
     schema: orderSchema,
     components: async () => {
-      const { OrderKanban } = await import("@/components/ui/admin/order-kanban")
+      const { OrderKanban } = await import(
+        "@/components/ui/admin/order-kanban"
+      );
       return [
         {
           name: "Board",
           component: OrderKanban,
-        }
-      ]
-    }
+        },
+      ];
+    },
   },
   appointment: {
     schema: appointmentSchema,
@@ -362,17 +468,222 @@ export const featureSchema = createSchema({
   chat: {
     schema: chatMessageSchema,
   },
-})
+
+  // Hotel schema
+  hotel: {
+    schema: baseListingSchema
+      .extend({
+        roomTypes: z
+          .record(z.string(), z.boolean())
+          .optional()
+          .describe("Available room types")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        amenities: z
+          .record(z.string(), z.boolean())
+          .optional()
+          .describe("Hotel amenities")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        checkInTime: z.string().optional().describe("Standard check-in time"),
+        checkOutTime: z.string().optional().describe("Standard check-out time"),
+        cancellationPolicy: z
+          .string()
+          .optional()
+          .describe("Cancellation policy details"),
+        starRating: z
+          .number()
+          .int()
+          .min(1)
+          .max(5)
+          .optional()
+          .describe("Hotel star rating (1-5)"),
+      })
+      .extend(table),
+    components: async () => {
+      const { HotelManagement } = await import(
+        "@/components/ui/admin/hotel-management"
+      );
+      return [
+        {
+          name: "Rooms",
+          component: HotelManagement,
+        },
+      ];
+    },
+  },
+
+  // Petrol Pump schema
+  petrolPump: {
+    schema: baseListingSchema
+      .extend({
+        fuelTypes: z
+          .record(z.string(), z.number({ coerce: true }).positive())
+          .optional()
+          .describe("Available fuel types and prices")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        services: z
+          .record(z.string(), z.boolean())
+          .optional()
+          .describe("Additional services offered")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        openingHours: z.string().optional().describe("Opening hours"),
+        hasRestroom: z
+          .boolean()
+          .default(false)
+          .optional()
+          .describe("Restroom availability"),
+        hasFoodCourt: z
+          .boolean()
+          .default(false)
+          .optional()
+          .describe("Food court availability"),
+        atmAvailable: z
+          .boolean()
+          .default(false)
+          .optional()
+          .describe("ATM availability"),
+      })
+      .extend(table),
+  },
+
+  // Gym schema
+  gym: {
+    schema: baseListingSchema
+      .extend({
+        equipment: z
+          .record(z.string(), z.number({ coerce: true }).int().nonnegative())
+          .optional()
+          .describe("Gym equipment and quantities")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        membershipPlans: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Membership plan names and descriptions")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        classSchedule: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Class names and schedules")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        trainers: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Trainer names and specializations")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        amenities: z
+          .record(z.string(), z.boolean())
+          .optional()
+          .describe("Gym amenities")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+      })
+      .extend(table),
+  },
+
+  // Cinema schema
+  cinema: {
+    schema: baseListingSchema
+      .extend({
+        screens: z
+          .record(z.string(), z.number({ coerce: true }).int().positive())
+          .optional()
+          .describe("Screen names and capacities")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        movies: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Movie titles and showtimes")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        snacks: z
+          .record(z.string(), z.number({ coerce: true }).positive())
+          .optional()
+          .describe("Snack names and prices")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        showtimes: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Showtimes and movies")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        amenities: z
+          .record(z.string(), z.boolean())
+          .optional()
+          .describe("Cinema amenities")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+      })
+      .extend(table),
+  },
+
+  // Financial Firm schema
+  financialFirm: {
+    schema: baseListingSchema
+      .extend({
+        services: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Financial services and descriptions")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        products: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Financial products and details")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        advisors: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Advisors and specializations")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        officeHours: z.string().optional().describe("Office hours"),
+        appointmentRequired: z
+          .boolean()
+          .default(true)
+          .optional()
+          .describe("Whether appointments are required"),
+      })
+      .extend(table),
+  },
+
+  // Ride Sharing schema
+  rideSharing: {
+    schema: baseListingSchema
+      .extend({
+        vehicleTypes: z
+          .record(z.string(), z.number({ coerce: true }).int().nonnegative())
+          .optional()
+          .describe("Vehicle types and availability")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        pricing: z
+          .record(z.string(), z.number({ coerce: true }).positive())
+          .optional()
+          .describe("Distance ranges and prices")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        driverProfiles: z
+          .record(z.string(), z.string())
+          .optional()
+          .describe("Driver IDs and details")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        serviceAreas: z
+          .record(z.string(), z.boolean())
+          .optional()
+          .describe("Service areas coverage")
+          .superRefine(fieldConfig({ fieldType: "record" })),
+        estimatedWaitTime: z
+          .number({ coerce: true })
+          .int()
+          .positive()
+          .optional()
+          .describe("Estimated wait time in minutes"),
+      })
+      .extend(table),
+  },
+});
 
 // A composite schema that brings together all the individual schemas.
 // This is useful for type inference and for providing a single entry point to all data models.
 export const appSchema = coreSchema.merge(featureSchema);
 export type AppSchema = z.infer<AppSchemaType>;
-export type AppSchemaType = ExtractZodSchema<typeof appSchema>
+export type AppSchemaType = ExtractZodSchema<typeof appSchema>;
 
 declare global {
   interface GTAAppConfig {
-    schema: AppSchemaType
+    schema: AppSchemaType;
   }
 }
 // #endregion
@@ -384,10 +695,15 @@ export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type Order = z.infer<typeof orderSchema>;
 // #endregion
 
-export function transformSchema<const TSchema extends typeof appSchema>(schema: TSchema) {
+export function transformSchema<const TSchema extends typeof appSchema>(
+  schema: TSchema,
+) {
   return z.object(
     Object.fromEntries(
-      Object.entries(schema.rawShape).map(([key, value]) => [key, value.schema])
-    )
-  ) as AppSchemaType
+      Object.entries(schema.rawShape).map(([key, value]) => [
+        key,
+        value.schema,
+      ]),
+    ),
+  ) as AppSchemaType;
 }

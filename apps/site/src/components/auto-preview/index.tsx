@@ -8,6 +8,7 @@ import { z } from "zod";
 import { AutoTable } from "../auto-table";
 import type { fieldConfig } from "../ui/autoform";
 import { Drawer, DrawerContent, DrawerTrigger } from "../ui/drawer";
+import { CredenzaBody } from "../ui/credenza";
 
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]["fieldType"]>;
 
@@ -74,7 +75,9 @@ const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
 				<button type="button">Click to expand</button>
 			</DrawerTrigger>
 			<DrawerContent className="overflow-scroll">
-				<AutoTable slug={fullKey} parsedSchema={parsedSchema} />
+				<CredenzaBody>
+					<AutoTable slug={fullKey} parsedSchema={parsedSchema} />
+				</CredenzaBody>
 			</DrawerContent>
 		</Drawer>
 	);
@@ -99,5 +102,6 @@ const autoPreviewComponents: Record<
 	select: SelectPreview,
 	string: StringPreview,
 	record: RecordPreview,
+	password: () => "********",
 	fallback: () => "-",
 };

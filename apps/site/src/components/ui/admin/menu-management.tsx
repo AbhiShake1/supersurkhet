@@ -205,7 +205,10 @@ function _MenuManagement({ onAddItem, menuItems }: MenuManagementProps) {
                                                         {item.isFeatured && <Star className="w-4 h-4 text-yellow-500 fill-current" />}
                                                     </CardTitle>
                                                     <CardDescription className="text-sm line-clamp-2">{item.description}</CardDescription>
-                                                    <p className="text-lg font-bold text-green-600 mt-1">${item.price.toFixed(2)}</p>
+                                                    {
+                                                        item.price &&
+                                                        <p className="text-lg font-bold text-green-600 mt-1">${item.price.toFixed(2)}</p>
+                                                    }
                                                 </div>
                                             </div>
                                         </div>
