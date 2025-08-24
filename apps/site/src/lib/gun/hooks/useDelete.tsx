@@ -14,15 +14,21 @@ export const useDelete = createGunHook((messenger) => {
 	};
 
 	return <const T extends SchemaKeys>(opts: UseDeleteOptions<T>) => {
-		const [key, ...keys] = opts.keys
+		const [key, ...keys] = opts.keys;
 		return useMutation({
-			mutationFn: fn(key, ...keys)
-		})
-	}
+			mutationFn: fn(key, ...keys),
+		});
+	};
 });
 
-type Options = UseMutationOptions<GunMessagePut, Error, string, unknown>
+type Options = UseMutationOptions<GunMessagePut, Error, string, unknown>;
 
-export type UseDeleteOptions<T extends SchemaKeys> = Omit<Options, "mutationFn"> & { keys: [T, ...string[]] }
+export type UseDeleteOptions<T extends SchemaKeys> = Omit<
+	Options,
+	"mutationFn"
+> & { keys: [T, ...string[]] };
 
-export type UseDeleteOptionsShort = Omit<UseDeleteOptions<SchemaKeys>, "keys"> & { keys?: string[] }
+export type UseDeleteOptionsShort = Omit<
+	UseDeleteOptions<SchemaKeys>,
+	"keys"
+> & { keys?: string[] };

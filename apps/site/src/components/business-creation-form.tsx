@@ -1,16 +1,31 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { businessSchema, featureSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import { Link } from "@tanstack/react-router";
-import { CheckCircle, Store, Utensils, Car, Home, School, Heart, Building, Users, Dumbbell, Film, CreditCard, Fuel, Hotel } from "lucide-react";
+import {
+	CheckCircle,
+	Store,
+	Utensils,
+	Car,
+	Home,
+	School,
+	Heart,
+	Building,
+	Users,
+	Dumbbell,
+	Film,
+	CreditCard,
+	Fuel,
+	Hotel,
+} from "lucide-react";
 import type { UseFormReturn } from "react-hook-form";
 import type { z } from "zod";
 import { Button } from "./ui/button";
@@ -51,14 +66,14 @@ const businessTypeGroups = {
 	"Food & Hospitality": ["food", "hotel"],
 	"Transportation & Logistics": ["logistics", "ride_sharing"],
 	"Real Estate": ["real_estate"],
-	"Education": ["education"],
-	"Healthcare": ["healthcare"],
+	Education: ["education"],
+	Healthcare: ["healthcare"],
 	"Financial Services": ["financial_firm"],
 	"Fitness & Recreation": ["gym", "cinema"],
 	"Energy & Utilities": ["petrol_pump"],
 	"Community & Cooperatives": ["cooperative"],
 	"Professional Services": ["service"],
-	"Other": ["other"],
+	Other: ["other"],
 };
 
 const recommendedFeatures: Record<
@@ -156,19 +171,28 @@ export function BusinessCreationForm({
 								<FormLabel>Business Type</FormLabel>
 								<div className="space-y-6 pt-2">
 									{Object.entries(businessTypeGroups).map(([group, types]) => {
-										const groupTypes = types.filter(type => 
-											businessSchema.shape.businessType.options.includes(type as z.infer<typeof businessSchema.shape.businessType>)
+										const groupTypes = types.filter((type) =>
+											businessSchema.shape.businessType.options.includes(
+												type as z.infer<
+													typeof businessSchema.shape.businessType
+												>,
+											),
 										);
-										
+
 										if (groupTypes.length === 0) return null;
-										
+
 										return (
 											<div key={group} className="space-y-3">
-												<h3 className="text-sm font-medium text-muted-foreground">{group}</h3>
+												<h3 className="text-sm font-medium text-muted-foreground">
+													{group}
+												</h3>
 												<div className="grid grid-cols-2 md:grid-cols-3 gap-3">
 													{groupTypes.map((type) => {
 														const isSelected = field.value === type;
-														const Icon = businessTypeIcons[type as keyof typeof businessTypeIcons] || Building;
+														const Icon =
+															businessTypeIcons[
+																type as keyof typeof businessTypeIcons
+															] || Building;
 														return (
 															<Card
 																key={type}
@@ -180,15 +204,19 @@ export function BusinessCreationForm({
 																	"flex flex-col items-center justify-center p-4 text-center h-full",
 																)}
 																onClick={() => {
-								field.onChange(type);
-								const businessType = type as keyof typeof recommendedFeatures;
-								const recommended = recommendedFeatures[businessType] || [];
-								const newFeatures: Record<string, boolean> = {};
-								for (const key of featureKeys) {
-									newFeatures[key] = recommended.includes(key);
-								}
-								form.setValue("features", newFeatures);
-							}}
+																	field.onChange(type);
+																	const businessType =
+																		type as keyof typeof recommendedFeatures;
+																	const recommended =
+																		recommendedFeatures[businessType] || [];
+																	const newFeatures: Record<string, boolean> =
+																		{};
+																	for (const key of featureKeys) {
+																		newFeatures[key] =
+																			recommended.includes(key);
+																	}
+																	form.setValue("features", newFeatures);
+																}}
 															>
 																<CardHeader className="p-0 flex-grow flex flex-col items-center justify-center gap-2">
 																	<Icon className="h-6 w-6 text-muted-foreground" />
@@ -221,7 +249,8 @@ export function BusinessCreationForm({
 					<div className="mb-4">
 						<h3 className="text-lg font-medium">Select Features</h3>
 						<p className="text-sm text-muted-foreground">
-							Choose the features you want to enable for your business. Recommended features based on your business type are pre-selected.
+							Choose the features you want to enable for your business.
+							Recommended features based on your business type are pre-selected.
 						</p>
 					</div>
 					<FormField
@@ -232,7 +261,8 @@ export function BusinessCreationForm({
 								{featureKeys.map((item) => {
 									// Get description from schema if available
 									const schema = featureSchema.rawShape[item]?.schema;
-									const description = schema?._def?.description || 
+									const description =
+										schema?._def?.description ||
 										(item === "product" && "Manage products and inventory") ||
 										(item === "menuItem" && "Manage food menu items") ||
 										(item === "service" && "Manage services offered") ||
@@ -240,26 +270,37 @@ export function BusinessCreationForm({
 										(item === "appointment" && "Schedule appointments") ||
 										(item === "expense" && "Track business expenses") ||
 										(item === "driverProfile" && "Manage driver information") ||
-										(item === "studentProfile" && "Manage student information") ||
-										(item === "coOpMemberProfile" && "Manage cooperative member information") ||
-										(item === "propertyListing" && "Manage property listings") ||
+										(item === "studentProfile" &&
+											"Manage student information") ||
+										(item === "coOpMemberProfile" &&
+											"Manage cooperative member information") ||
+										(item === "propertyListing" &&
+											"Manage property listings") ||
 										(item === "trip" && "Manage trips and rides") ||
 										(item === "chat" && "Enable customer messaging") ||
 										(item === "hotel" && "Manage hotel rooms and bookings") ||
-										(item === "petrolPump" && "Manage fuel prices and services") ||
+										(item === "petrolPump" &&
+											"Manage fuel prices and services") ||
 										(item === "gym" && "Manage gym memberships and classes") ||
 										(item === "cinema" && "Manage movies and showtimes") ||
-										(item === "financialFirm" && "Manage financial products and services") ||
-										(item === "rideSharing" && "Manage ride sharing services") ||
+										(item === "financialFirm" &&
+											"Manage financial products and services") ||
+										(item === "rideSharing" &&
+											"Manage ride sharing services") ||
 										"";
-									
+
 									return (
 										<FormField
 											key={item}
 											control={form.control}
 											name={`features.${item}`}
 											render={({ field }) => {
-												const isRecommended = recommendedFeatures[form.watch("businessType") as keyof typeof recommendedFeatures]?.includes(item);
+												const isRecommended =
+													recommendedFeatures[
+														form.watch(
+															"businessType",
+														) as keyof typeof recommendedFeatures
+													]?.includes(item);
 												return (
 													<FormItem
 														className={cn(

@@ -115,7 +115,7 @@ export function DataTableFilterList<TData>({
 			.filter((column) => column.columnDef.enableColumnFilter);
 	}, [table]);
 
-	const defaultFilters = React.useMemo(() => parseFiltersFromUrl(), [])
+	const defaultFilters = React.useMemo(() => parseFiltersFromUrl(), []);
 
 	const [filters, setFilters] = useQueryState(
 		FILTERS_KEY,
@@ -586,8 +586,9 @@ function onFilterInputRender<TData>({
 			<div
 				id={inputId}
 				role="status"
-				aria-label={`${columnMeta?.label} filter is ${filter.operator === "isEmpty" ? "empty" : "not empty"
-					}`}
+				aria-label={`${columnMeta?.label} filter is ${
+					filter.operator === "isEmpty" ? "empty" : "not empty"
+				}`}
 				aria-live="polite"
 				className="h-8 w-full rounded border bg-transparent dark:bg-input/30"
 			/>
@@ -749,8 +750,8 @@ function onFilterInputRender<TData>({
 			const displayValue =
 				filter.operator === "isBetween" && dateValue.length === 2
 					? `${formatDate(new Date(Number(dateValue[0])))} - ${formatDate(
-						new Date(Number(dateValue[1])),
-					)}`
+							new Date(Number(dateValue[1])),
+						)}`
 					: dateValue[0]
 						? formatDate(new Date(Number(dateValue[0])))
 						: "Pick a date";
@@ -786,21 +787,21 @@ function onFilterInputRender<TData>({
 								selected={
 									dateValue.length === 2
 										? {
-											from: new Date(Number(dateValue[0])),
-											to: new Date(Number(dateValue[1])),
-										}
+												from: new Date(Number(dateValue[0])),
+												to: new Date(Number(dateValue[1])),
+											}
 										: {
-											from: new Date(),
-											to: new Date(),
-										}
+												from: new Date(),
+												to: new Date(),
+											}
 								}
 								onSelect={(date) => {
 									onFilterUpdate(filter.filterId, {
 										value: date
 											? [
-												(date.from?.getTime() ?? "").toString(),
-												(date.to?.getTime() ?? "").toString(),
-											]
+													(date.from?.getTime() ?? "").toString(),
+													(date.to?.getTime() ?? "").toString(),
+												]
 											: [],
 									});
 								}}

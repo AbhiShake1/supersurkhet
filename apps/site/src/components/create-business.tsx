@@ -1,14 +1,14 @@
 import { useConfetti } from "@/components/confetti-provider";
 import { useLoginPrompt } from "@/components/login-prompt-provider";
 import {
-  Credenza,
-  CredenzaBody,
-  CredenzaContent,
-  CredenzaDescription,
-  CredenzaFooter,
-  CredenzaHeader,
-  CredenzaTitle,
-  CredenzaTrigger,
+	Credenza,
+	CredenzaBody,
+	CredenzaContent,
+	CredenzaDescription,
+	CredenzaFooter,
+	CredenzaHeader,
+	CredenzaTitle,
+	CredenzaTrigger,
 } from "@/components/ui/credenza";
 import { api } from "@/lib/api";
 import { businessSchema } from "@/lib/schema";
@@ -20,6 +20,8 @@ import { BusinessCreationForm } from "./business-creation-form";
 import { Button } from "./ui/button";
 import { Form } from "./ui/form";
 import { ScrollArea } from "./ui/scroll-area";
+import { toast } from "sonner";
+import { useAuth } from "./auth-provider";
 
 const businessCreationSchema = businessSchema.pick({
 	name: true,
@@ -45,6 +47,7 @@ const stepContent = {
 };
 
 export function CreateBusiness({ children }: { children: React.ReactNode }) {
+	const { user } = useAuth();
 	const [open, setOpen] = useState(false);
 	const [step, setStep] = useState(1);
 	const [createdBusiness, setCreatedBusiness] =
@@ -70,6 +73,9 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
 		},
 		onError: (err) => {
 			console.error("Error creating business:", err);
+			toast.error(
+				err.message || "Failed to create business. Please try again.",
+			);
 			form.setError("name", {
 				type: "manual",
 				message: err.message || "Failed to create business. Please try again.",
@@ -108,7 +114,7 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
 			...values,
 			basePath,
 			isActive: true,
-			created_by: undefined,
+			created_by: user?._?.soul ?? "anon",
 			timestamp: Date.now(),
 		});
 	};

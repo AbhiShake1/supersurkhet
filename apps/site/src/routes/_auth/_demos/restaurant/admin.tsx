@@ -7,39 +7,40 @@ import { Layout, Menu, MenuSquare } from "lucide-react";
 import { useEffect } from "react";
 
 export const Route = createFileRoute("/_auth/_demos/restaurant/admin")({
-  component: RouteComponent,
+	component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { promptLogin, closeLoginPrompt } = useLoginPrompt()
-  const { user } = useAuth()
+	const { promptLogin, closeLoginPrompt } = useLoginPrompt();
+	const { user } = useAuth();
 
-  useEffect(() => {
-    if (!user) promptLogin({ dismissible: false, showBackgroundContent: false })
-    else closeLoginPrompt()
-  }, [user])
+	useEffect(() => {
+		if (!user)
+			promptLogin({ dismissible: false, showBackgroundContent: false });
+		else closeLoginPrompt();
+	}, [user]);
 
-  return (
-    <AutoAdmin
-      tabs={[
-        {
-          schema: "menuItem",
-          title: "Menus",
-          slug: "restaurant",
-          icon: MenuSquare,
-        },
-        {
-          title: "Orders",
-          icon: Menu,
-          schema: "order",
-          slug: "restaurant",
-        },
-        {
-          title: "Layout",
-          icon: Layout,
-          children: <RestaurantLayoutEditor />,
-        },
-      ]}
-    />
-  );
+	return (
+		<AutoAdmin
+			tabs={[
+				{
+					schema: "menuItem",
+					title: "Menus",
+					slug: "restaurant",
+					icon: MenuSquare,
+				},
+				{
+					title: "Orders",
+					icon: Menu,
+					schema: "order",
+					slug: "restaurant",
+				},
+				{
+					title: "Layout",
+					icon: Layout,
+					children: <RestaurantLayoutEditor />,
+				},
+			]}
+		/>
+	);
 }

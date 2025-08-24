@@ -62,12 +62,12 @@ const NumberPreview: AutoPreviewComponent<number> = ({ value }) => <>{value}</>;
 const SelectPreview: AutoPreviewComponent<string> = ({ value }) => value;
 const StringPreview: AutoPreviewComponent<string> = ({ value }) => <>{value}</>;
 const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
-	if (!value) return null
+	if (!value) return null;
 	if (!("#" in value)) return null;
 	if (typeof value["#"] !== "string") return null;
 	const isEffect = schema instanceof z.ZodEffects;
 	if (!isEffect) return null;
-	const fullKey = value["#"]
+	const fullKey = value["#"];
 	const parsedSchema = schema.innerType()._def.valueType;
 	return (
 		<Drawer>

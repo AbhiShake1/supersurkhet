@@ -498,20 +498,20 @@ function Kanban<T>(props: KanbanProps<T>) {
 				const position = isColumn
 					? Object.keys(value).indexOf(active.id as string) + 1
 					: (() => {
-						const column = getColumn(active.id);
-						if (!column || !value[column]) return 1;
-						return (
-							value[column].findIndex(
-								(item) => getItemValue(item) === active.id,
-							) + 1
-						);
-					})();
+							const column = getColumn(active.id);
+							if (!column || !value[column]) return 1;
+							return (
+								value[column].findIndex(
+									(item) => getItemValue(item) === active.id,
+								) + 1
+							);
+						})();
 				const total = isColumn
 					? Object.keys(value).length
 					: (() => {
-						const column = getColumn(active.id);
-						return column ? (value[column]?.length ?? 0) : 0;
-					})();
+							const column = getColumn(active.id);
+							return column ? (value[column]?.length ?? 0) : 0;
+						})();
 
 				return `Picked up ${itemType} at position ${position} of ${total}`;
 			},
@@ -523,20 +523,20 @@ function Kanban<T>(props: KanbanProps<T>) {
 				const position = isColumn
 					? Object.keys(value).indexOf(over.id as string) + 1
 					: (() => {
-						const column = getColumn(over.id);
-						if (!column || !value[column]) return 1;
-						return (
-							value[column].findIndex(
-								(item) => getItemValue(item) === over.id,
-							) + 1
-						);
-					})();
+							const column = getColumn(over.id);
+							if (!column || !value[column]) return 1;
+							return (
+								value[column].findIndex(
+									(item) => getItemValue(item) === over.id,
+								) + 1
+							);
+						})();
 				const total = isColumn
 					? Object.keys(value).length
 					: (() => {
-						const column = getColumn(over.id);
-						return column ? (value[column]?.length ?? 0) : 0;
-					})();
+							const column = getColumn(over.id);
+							return column ? (value[column]?.length ?? 0) : 0;
+						})();
 
 				const overColumn = getColumn(over.id);
 				const activeColumn = getColumn(active.id);
@@ -559,20 +559,20 @@ function Kanban<T>(props: KanbanProps<T>) {
 				const position = isColumn
 					? Object.keys(value).indexOf(over.id as string) + 1
 					: (() => {
-						const column = getColumn(over.id);
-						if (!column || !value[column]) return 1;
-						return (
-							value[column].findIndex(
-								(item) => getItemValue(item) === over.id,
-							) + 1
-						);
-					})();
+							const column = getColumn(over.id);
+							if (!column || !value[column]) return 1;
+							return (
+								value[column].findIndex(
+									(item) => getItemValue(item) === over.id,
+								) + 1
+							);
+						})();
 				const total = isColumn
 					? Object.keys(value).length
 					: (() => {
-						const column = getColumn(over.id);
-						return column ? (value[column]?.length ?? 0) : 0;
-					})();
+							const column = getColumn(over.id);
+							return column ? (value[column]?.length ?? 0) : 0;
+						})();
 
 				const overColumn = getColumn(over.id);
 				const activeColumn = getColumn(active.id);
@@ -1070,11 +1070,11 @@ interface KanbanOverlayProps
 	extends Omit<React.ComponentPropsWithoutRef<typeof DragOverlay>, "children"> {
 	container?: Element | DocumentFragment | null;
 	children?:
-	| ((params: {
-		value: UniqueIdentifier;
-		variant: "column" | "item";
-	}) => React.ReactNode)
-	| React.ReactNode;
+		| ((params: {
+				value: UniqueIdentifier;
+				variant: "column" | "item";
+		  }) => React.ReactNode)
+		| React.ReactNode;
 }
 
 function KanbanOverlay(props: KanbanOverlayProps) {
@@ -1104,9 +1104,9 @@ function KanbanOverlay(props: KanbanOverlayProps) {
 				{context.activeId && children
 					? typeof children === "function"
 						? children({
-							value: context.activeId,
-							variant,
-						})
+								value: context.activeId,
+								variant,
+							})
 						: children
 					: null}
 			</KanbanOverlayContext.Provider>

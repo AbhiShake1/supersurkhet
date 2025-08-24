@@ -1,61 +1,70 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { useRouteContext } from "@tanstack/react-router";
 import type { User } from "@/lib/schema";
 import { gun } from "@/lib/gun";
 import { googleLogout } from "@react-oauth/google";
 
 interface AuthContextType {
-  user: User | undefined;
-  setUser: (user: User | undefined) => void;
-  logout: () => void;
-  isAuthenticated: boolean;
-  refreshUser: () => void;
+	user: User | undefined;
+	setUser: (user: User | undefined) => void;
+	logout: () => void;
+	isAuthenticated: boolean;
+	refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { auth } = useRouteContext({ from: "__root__" });
-  const [user, setUser] = useState<User>();
-  const [refreshState, setRefreshState] = useState(0);
-  const [authUser, setAuthUser] = useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
-  // const authUser = auth?.getCurrentUser?.()
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+	children,
+}) => {
+	const { auth } = useRouteContext({ from: "__root__" });
+	const [user, setUser] = useState<User>();
+	const [refreshState, setRefreshState] = useState(0);
+	const [authUser, setAuthUser] =
+		useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
+	// const authUser = auth?.getCurrentUser?.()
 
-  function refreshUser() {
-    setRefreshState(r => r + 1);
-  }
+	function refreshUser() {
+		setRefreshState((r) => r + 1);
+	}
 
-  useEffect(() => {
-    const _authUser = auth.getCurrentUser()
-    setAuthUser(_authUser)
-    if (!_authUser) return
-    const ref = gun.get("user").get(_authUser.pub).open((data) => {
-      setUser(data)
-    })
-    return () => {
-      ref.off()
-    }
-  }, [refreshState])
+	useEffect(() => {
+		const _authUser = auth.getCurrentUser();
+		setAuthUser(_authUser);
+		if (!_authUser) return;
+		const ref = gun
+			.get("user")
+			.get(_authUser.pub)
+			.open((data) => {
+				setUser(data);
+			});
+		return () => {
+			ref.off();
+		};
+	}, [refreshState]);
 
-  const isAuthenticated = !!authUser;
+	const isAuthenticated = !!authUser;
 
-  function logout() {
-    auth.logout?.();
-    setUser(undefined);
-    googleLogout()
-  }
+	function logout() {
+		auth.logout?.();
+		setUser(undefined);
+		googleLogout();
+	}
 
-  return (
-    <AuthContext.Provider value={{ user, setUser, logout, isAuthenticated, refreshUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
+	return (
+		<AuthContext.Provider
+			value={{ user, setUser, logout, isAuthenticated, refreshUser }}
+		>
+			{children}
+		</AuthContext.Provider>
+	);
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+	const context = useContext(AuthContext);
+	if (!context) {
+		throw new Error("useAuth must be used within an AuthProvider");
+	}
+	return context;
 };

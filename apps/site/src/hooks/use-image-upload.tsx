@@ -20,7 +20,10 @@ export interface UseImageUploadProps {
 	defaultValue?: string;
 }
 
-export function useImageUpload({ onUpload, defaultValue }: UseImageUploadProps = {}) {
+export function useImageUpload({
+	onUpload,
+	defaultValue,
+}: UseImageUploadProps = {}) {
 	const { mutateAsync: uploadImage, isPending: isUploading } = useMutation({
 		mutationFn: uploadImageToNetwork,
 		// onSuccess(d) {
@@ -32,7 +35,9 @@ export function useImageUpload({ onUpload, defaultValue }: UseImageUploadProps =
 	});
 	const previewRef = useRef<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(defaultValue ?? null);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(
+		defaultValue ?? null,
+	);
 	const [fileName, setFileName] = useState<string | null>(null);
 
 	const handleThumbnailClick = useCallback(() => {

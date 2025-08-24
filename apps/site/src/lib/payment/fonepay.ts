@@ -127,7 +127,7 @@ interface QrResponse {
  */
 export async function requestQrCode(
 	params: QrRequestParams,
-	isLive: boolean = false,
+	isLive = false,
 ): Promise<QrResponse> {
 	const baseUrl = isLive ? FONEPAY_API_BASE_URL_LIVE : FONEPAY_API_BASE_URL_DEV;
 	const endpoint = `${baseUrl}/merchant/merchantDetailsForThirdParty/thirdPartyDynamicQrDownload`;
@@ -201,7 +201,7 @@ interface CheckQrResponse {
  */
 export async function checkQrStatus(
 	params: CheckQrRequestParams,
-	isLive: boolean = false,
+	isLive = false,
 ): Promise<CheckQrResponse> {
 	const baseUrl = isLive ? FONEPAY_API_BASE_URL_LIVE : FONEPAY_API_BASE_URL_DEV;
 	const endpoint = `${baseUrl}/merchant/merchantDetailsForThirdParty/thirdPartyDynamicQrGetStatus`;
@@ -256,7 +256,7 @@ interface PostTaxRefundResponse {
  */
 export async function postTaxRefund(
 	params: PostTaxRefundParams,
-	isLive: boolean = false,
+	isLive = false,
 ): Promise<PostTaxRefundResponse> {
 	const baseUrl = isLive ? FONEPAY_API_BASE_URL_LIVE : FONEPAY_API_BASE_URL_DEV;
 	const endpoint = `${baseUrl}/merchant/merchantDetailsForThirdParty/thirdPartyPostTaxRefund`;

@@ -1,5 +1,4 @@
-
-import { type FilterItemSchema } from "@/lib/parsers";
+import type { FilterItemSchema } from "@/lib/parsers";
 
 export function applyFilters<TData>(
 	data: TData[],

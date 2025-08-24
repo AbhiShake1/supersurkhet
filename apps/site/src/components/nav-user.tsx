@@ -5,7 +5,7 @@ import {
 	Bell,
 	ChevronsUpDown,
 	CreditCard,
-	LogOut
+	LogOut,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,9 +28,9 @@ import { useAuth } from "./auth-provider";
 
 export function NavUser() {
 	const { isMobile } = useSidebar();
-	const { user, logout } = useAuth()
+	const { user, logout } = useAuth();
 
-	if (!user) return null
+	if (!user) return null;
 
 	return (
 		<SidebarMenu>

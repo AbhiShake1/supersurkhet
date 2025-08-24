@@ -2,7 +2,7 @@
 
 import "gun/axe";
 import GUN from "gun/gun";
-import "gun/lib/open"
+import "gun/lib/open";
 // if (isServer) {
 import "gun/lib/radix";
 import "gun/lib/radisk";

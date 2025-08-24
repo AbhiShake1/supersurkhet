@@ -2,7 +2,5 @@ import { RestaurantClientPage } from "@/components/pages/restaurant/restaurant-c
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_auth/_demos/restaurant/")({
-	component: () => (
-		<RestaurantClientPage slug="restaurant" />
-	),
+	component: () => <RestaurantClientPage slug="restaurant" />,
 });

@@ -36,10 +36,9 @@ export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
 };
 
 export interface ImageUploadItemProps
-	extends
-	Omit<ComponentProps<"input">, "defaultValue">,
-	UseImageUploadProps,
-	Pick<AutoFormFieldProps, "control" | "path"> { }
+	extends Omit<ComponentProps<"input">, "defaultValue">,
+		UseImageUploadProps,
+		Pick<AutoFormFieldProps, "control" | "path"> {}
 
 export function ImageUploadItem({
 	className,
@@ -166,7 +165,7 @@ export function ImageUploadItem({
 										size="sm"
 										variant="secondary"
 										onClick={(e) => {
-											e.currentTarget.closest("form")
+											e.currentTarget.closest("form");
 										}}
 										className="h-9 w-9 p-0"
 									>

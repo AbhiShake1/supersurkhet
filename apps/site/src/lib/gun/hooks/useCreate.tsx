@@ -30,16 +30,27 @@ export const useCreate = createGunHook((messenger) => {
 	};
 
 	return <const T extends SchemaKeys>(opts: UseCreateOptions<T>) => {
-		const [key, ...keys] = opts.keys
+		const [key, ...keys] = opts.keys;
 		return useMutation({
 			...opts,
 			mutationFn: fn(key, ...keys),
-		})
-	}
-})
+		});
+	};
+});
 
-type Options<T extends SchemaKeys> = UseMutationOptions<GunMessagePut, Error, Omit<NestedSchemaType<T>, "_">, unknown>
+type Options<T extends SchemaKeys> = UseMutationOptions<
+	GunMessagePut,
+	Error,
+	Omit<NestedSchemaType<T>, "_">,
+	unknown
+>;
 
-export type UseCreateOptions<T extends SchemaKeys> = Omit<Options<T>, "mutationFn"> & { keys: [T, ...string[]] }
+export type UseCreateOptions<T extends SchemaKeys> = Omit<
+	Options<T>,
+	"mutationFn"
+> & { keys: [T, ...string[]] };
 
-export type UseCreateOptionsShort = Omit<UseCreateOptions<SchemaKeys>, "keys"> & { keys?: string[] }
+export type UseCreateOptionsShort = Omit<
+	UseCreateOptions<SchemaKeys>,
+	"keys"
+> & { keys?: string[] };

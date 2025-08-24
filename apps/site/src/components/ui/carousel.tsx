@@ -156,8 +156,7 @@ export function Carousel({ slides: originalSlides }: CarouselProps) {
 	const slides = useMemo(
 		() =>
 			Array.from({ length: 50 })
-				.map(() => originalSlides)
-				.flatMap((o) => o),
+				.flatMap(() => originalSlides),
 		[originalSlides],
 	);
 	const [current, setCurrent] = useState(slides.length / 2);

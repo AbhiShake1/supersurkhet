@@ -60,7 +60,7 @@ export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
 				new ZodProvider(
 					schema instanceof ZodObject
 						? // omit default fields of schema
-						schema.omit({ _: true, created_by: true, timestamp: true })
+							schema.omit({ _: true, created_by: true, timestamp: true })
 						: schema,
 				)
 			}
@@ -90,7 +90,7 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
 				new ZodProvider(
 					schema instanceof ZodObject
 						? // omit default fields of schema
-						schema.omit({ _: true, created_by: true, timestamp: true })
+							schema.omit({ _: true, created_by: true, timestamp: true })
 						: schema,
 				)
 			}
