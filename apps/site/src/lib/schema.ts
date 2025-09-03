@@ -22,6 +22,7 @@ import {
 	withLabel,
 	table,
 } from "./schemas/listings";
+import { dataMatrixActionSchema } from "./datamatrix";
 
 // #region Permissions & Roles
 export const permissions = {
@@ -336,9 +337,6 @@ export const featureSchema = createSchema({
 	},
 	product: {
 		schema: productSchema,
-	},
-	menuItem: {
-		schema: menuItemSchema,
 		components: async () => {
 			const { MenuManagement } = await import(
 				"@/components/ui/admin/menu-management"
@@ -347,6 +345,35 @@ export const featureSchema = createSchema({
 				{
 					name: "Cards",
 					component: MenuManagement,
+				},
+			];
+		},
+	},
+	menuItem: {
+		schema: menuItemSchema,
+		components: async () => {
+			const { MenuManagement } = await import(
+				"@/components/ui/admin/menu-management"
+			)
+
+			return [
+				{
+					name: "Menu Items",
+					component: MenuManagement,
+				}
+			]
+		},
+	},
+	dataMatrixAction: {
+		schema: dataMatrixActionSchema,
+		components: async () => {
+			const { DataMatrixFlowBuilder } = await import(
+				"@/components/ui/admin/datamatrix-flow-builder"
+			);
+			return [
+				{
+					name: "Flow Builder",
+					component: DataMatrixFlowBuilder,
 				},
 			];
 		},
