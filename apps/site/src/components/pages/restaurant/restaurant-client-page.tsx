@@ -35,44 +35,7 @@ import {
 	Search,
 	ShoppingCart,
 	ShoppingCartIcon,
-	Trash2,
-	Calendar,
-	Clock,
-	Mail,
-	MapPin,
-	Phone,
-	Star,
-	User,
-	ChefHat,
-	Utensils,
-	Wine,
-	Coffee,
-	IceCream,
-	Pizza,
-	Burger,
-	Salad,
-	Fish,
-	Cookie,
-	GlassWater,
-	CookingPot,
-	Leaf,
-	Heart,
-	Share2,
-	Facebook,
-	Twitter,
-	Instagram,
-	Youtube,
-	Linkedin,
-	ThumbsUp,
-	MessageCircle,
-	Bookmark,
-	Download,
-	Wifi,
-	Car,
-	Dumbbell,
-	Map as MapIcon,
-	X,
-	Filter,
+	Trash2
 } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { z } from "zod";
@@ -120,9 +83,9 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 						? { ...i, quantity: i.quantity + quantity }
 						: i,
 				);
-			} else {
-				return [...prevItems, { ...item, quantity }];
 			}
+
+			return [...prevItems, { ...item, quantity }];
 		});
 	};
 
@@ -296,14 +259,10 @@ export function MenuSection({ title, items }: MenuSectionProps) {
 			>
 				<h2 className="text-3xl md:text-4xl font-bold mb-4 relative inline-block">
 					{title}
-					<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+					<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"/>
 				</h2>
-				<Button variant="outline" className="rounded-full">
-					<Filter className="w-4 h-4 mr-2" />
-					Filter
-				</Button>
 			</motion.div>
-			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
 				{items.map((item, index) => (
 					<motion.div
 						key={item._?.soul}
@@ -326,7 +285,7 @@ export interface MenuItemType extends NestedSchemaType<"menuItem"> {}
 const _checkout = createServerFn({ method: "POST" })
 	.validator(z.object({ amount: z.number() }))
 	.handler(async ({ data: { amount } }) => {
-		const crypto = await import("crypto");
+		const crypto = await import("node:crypto");
 		function generatePaymentUrl(
 			PID: string,
 			PRN: string,
@@ -344,7 +303,7 @@ const _checkout = createServerFn({ method: "POST" })
 			const MD = "P"; // Payment Mode
 			const CRN = "NPR"; // Default currency
 			const DT = date;
-			const RU = `http://fonepay/payment/verify`; // Callback URL
+			const RU = "http://fonepay/payment/verify"; // Callback URL
 
 			// Concatenate fields as per Fonepay documentation
 			const concatenatedString = `${PID},${MD},${PRN},${AMT},${CRN},${DT},${R1},${R2},${RU}`;
@@ -549,10 +508,7 @@ export function CartButton() {
 																				</div>
 																				<div className="flex items-center gap-2">
 																					<span className="font-medium">
-																						Rs.{=" "}
-																						{(
-																							item.price * item.quantity
-																						).toFixed(2)}
+																						Rs.{(item.price * item.quantity).toFixed(2)}
 																					</span>
 																					<Button
 																						variant="ghost"
@@ -647,128 +603,18 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 	})();
 
 	const menuData = _.groupBy(menuItems, "category");
-	
-	// Mock restaurant info data
-	const restaurantInfo = {
-		name: "Delicious Bites Restaurant",
-		tagline: "Experience Culinary Excellence in Surkhet",
-		description:
-			"Savor the finest flavors of Nepal with our authentic dishes prepared by master chefs using locally-sourced ingredients",
-		rating: 4.8,
-		totalReviews: 247,
-		address: "Birendranagar, Surkhet",
-		phone: "+977-98XXXXXXXX",
-		email: "info@deliciousbites.com",
-		hours: "10:00 AM - 10:00 PM (Sun-Fri)",
-	};
-
-	// Menu categories
-	const menuCategories = [
-		{ name: "Starters", icon: Utensils },
-		{ name: "Main Course", icon: CookingPot },
-		{ name: "Breads", icon: Bread },
-		{ name: "Beverages", icon: GlassWater },
-		{ name: "Desserts", icon: IceCream },
-		{ name: "Specials", icon: Star },
-	];
 
 	// Refs for animations
-	const heroRef = useRef(null);
 	const menuRef = useRef(null);
 	const categoriesRef = useRef(null);
-	const contactRef = useRef(null);
 	
-	const isHeroInView = useInView(heroRef, { once: true, margin: "-100px" });
 	const isMenuInView = useInView(menuRef, { once: true, margin: "-100px" });
 	const isCategoriesInView = useInView(categoriesRef, { once: true, margin: "-100px" });
-	const isContactInView = useInView(contactRef, { once: true, margin: "-100px" });
-
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		// In a real implementation, this would connect to the contact system
-		alert(
-			`Thank you ${name}! Your message has been sent to ${restaurantInfo.name}.`,
-		);
-		setName("");
-		setEmail("");
-		setMessage("");
-	};
 
 	return (
 		<div className="min-h-screen bg-background">
-			{/* Hero Section */}
-			<div className="relative overflow-hidden" ref={heroRef}>
-				<div className="absolute inset-0 bg-gradient-to-r from-black/80 to-black/40 z-10" />
-				<img
-					src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1200"
-					alt="Restaurant"
-					className="w-full h-full object-cover opacity-20"
-				/>
-				<div className="relative z-20 flex flex-col items-center justify-center min-h-[70vh] px-6 py-20 text-center text-white">
-					<motion.h1 
-						className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 max-w-4xl"
-						initial={{ opacity: 0, y: 20 }}
-						animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-						transition={{ duration: 0.8, ease: "easeOut" }}
-					>
-						{restaurantInfo.name}
-					</motion.h1>
-					<motion.div 
-						className="flex items-center justify-center mb-6"
-						initial={{ opacity: 0, y: 20 }}
-						animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-						transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-					>
-						<div className="flex">
-							{[...Array(5)].map((_, i) => (
-								<Star
-									key={`restaurant-rating-star-${i}`}
-									className={`w-6 h-6 ${
-										i < Math.floor(restaurantInfo.rating)
-											? "fill-yellow-400 text-yellow-400"
-											: "text-gray-300"
-									}`}
-								/>
-							))}
-						</div>
-						<span className="ml-3 text-lg font-medium">{restaurantInfo.rating} ({restaurantInfo.totalReviews} reviews)</span>
-					</motion.div>
-					<motion.p 
-						className="text-xl md:text-2xl max-w-3xl mb-4 leading-relaxed"
-						initial={{ opacity: 0, y: 20 }}
-						animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-						transition={{ duration: 0.8, ease: "easeOut", delay: 0.4 }}
-					>
-						{restaurantInfo.tagline}
-					</motion.p>
-					<motion.p 
-						className="text-lg md:text-xl max-w-3xl mb-10 leading-relaxed text-white/90"
-						initial={{ opacity: 0, y: 20 }}
-						animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-						transition={{ duration: 0.8, ease: "easeOut", delay: 0.6 }}
-					>
-						{restaurantInfo.description}
-					</motion.p>
-					<motion.div
-						initial={{ opacity: 0, y: 20 }}
-						animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-						transition={{ duration: 0.8, ease: "easeOut", delay: 0.8 }}
-					>
-						<Button size="lg" className="text-lg px-8 py-6 rounded-full bg-white text-primary hover:bg-white/90 transition-all duration-300 transform hover:scale-105">
-							<BookOpen className="w-5 h-5 mr-2" />
-							View Menu
-						</Button>
-					</motion.div>
-				</div>
-
-				{/* Decorative Elements */}
-				<div className="absolute top-20 right-20 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
-				<div className="absolute bottom-32 left-20 w-32 h-32 rounded-full bg-primary/30 blur-2xl"></div>
-			</div>
-
 			<div className="container mx-auto px-4 py-16">
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-					{/* Main Content */}
+				{/* Main Content */}
 					<div className="lg:col-span-2 space-y-20">
 						{/* Search Bar */}
 						<motion.div
@@ -875,33 +721,8 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 								transition={{ duration: 0.6 }}
 							>
 								Our Menu
-								<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+								<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
 							</motion.h2>
-							<motion.div
-								initial={{ opacity: 0, y: 30 }}
-								animate={isCategoriesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-								transition={{ duration: 0.6 }}
-							>
-								<div className="overflow-x-auto hide-scrollbar mb-12">
-									<div className="flex gap-6 pb-4">
-										{menuCategories.map((category, index) => (
-											<motion.div
-												key={category.name}
-												className="flex flex-col items-center gap-2 min-w-max cursor-pointer"
-												initial={{ opacity: 0, y: 20 }}
-												animate={isCategoriesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-												transition={{ duration: 0.4, delay: index * 0.1 }}
-												whileHover={{ y: -5 }}
-											>
-												<div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-2xl">
-													<category.icon className="w-8 h-8 text-primary" />
-												</div>
-												<span className="text-sm font-medium">{category.name}</span>
-											</motion.div>
-										))}
-									</div>
-								</div>
-							</motion.div>
 						</section>
 
 						{/* Menu Items */}
@@ -953,313 +774,10 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 								</motion.div>
 							))
 						)}
-
-						{/* Contact Form */}
-						<section ref={contactRef}>
-							<motion.h2
-								className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
-								initial={{ opacity: 0, x: -20 }}
-								animate={isContactInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-								transition={{ duration: 0.6 }}
-							>
-								Get In Touch
-								<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
-							</motion.h2>
-							<motion.div
-								initial={{ opacity: 0, y: 30 }}
-								animate={isContactInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-								transition={{ duration: 0.6 }}
-							>
-								<Card className="border border-border rounded-2xl shadow-lg">
-									<CardContent className="pt-8">
-										<form onSubmit={handleSubmit} className="space-y-6">
-											<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-												<div className="space-y-2">
-													<Label htmlFor="name" className="text-lg">Name</Label>
-													<Input
-														id="name"
-														value={name}
-														onChange={(e) => setName(e.target.value)}
-														required
-														className="py-6 text-lg rounded-xl border-border focus:border-primary focus:ring-2 focus:ring-primary/30"
-													/>
-												</div>
-												<div className="space-y-2">
-													<Label htmlFor="email" className="text-lg">Email</Label>
-													<Input
-														id="email"
-														type="email"
-														value={email}
-														onChange={(e) => setEmail(e.target.value)}
-														required
-														className="py-6 text-lg rounded-xl border-border focus:border-primary focus:ring-2 focus:ring-primary/30"
-													/>
-												</div>
-											</div>
-											<div className="space-y-2">
-												<Label htmlFor="message" className="text-lg">Message</Label>
-												<Input
-													id="message"
-													value={message}
-													onChange={(e) => setMessage(e.target.value)}
-													required
-													className="py-6 text-lg rounded-xl border-border focus:border-primary focus:ring-2 focus:ring-primary/30"
-												/>
-											</div>
-											<Button type="submit" className="w-full text-lg py-7 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]">
-												Send Message
-											</Button>
-										</form>
-									</CardContent>
-								</Card>
-							</motion.div>
-						</section>
 					</div>
-
-					{/* Sidebar */}
-					<div className="space-y-10">
-						{/* Business Info */}
-						<motion.div
-							initial={{ opacity: 0, x: 20 }}
-							animate={isMenuInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
-							transition={{ duration: 0.6 }}
-						>
-							<Card className="border border-border rounded-2xl shadow-lg">
-								<CardHeader>
-									<CardTitle className="flex items-center gap-3 text-2xl">
-										<ChefHat className="w-7 h-7 text-primary" />
-										Business Information
-									</CardTitle>
-								</CardHeader>
-								<CardContent className="space-y-5">
-									<div className="flex items-start">
-										<MapPin className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
-										<span>{restaurantInfo.address}</span>
-									</div>
-									<div className="flex items-start">
-										<Phone className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
-										<span>{restaurantInfo.phone}</span>
-									</div>
-									<div className="flex items-start">
-										<Mail className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
-										<span>{restaurantInfo.email}</span>
-									</div>
-									<div className="flex items-start">
-										<Clock className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
-										<span>{restaurantInfo.hours}</span>
-									</div>
-								</CardContent>
-							</Card>
-						</motion.div>
-
-						{/* Social Media */}
-						<motion.div
-							initial={{ opacity: 0, x: 20 }}
-							animate={isMenuInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
-							transition={{ duration: 0.6, delay: 0.1 }}
-						>
-							<Card className="border border-border rounded-2xl shadow-lg">
-								<CardHeader>
-									<CardTitle className="flex items-center gap-3 text-2xl">
-										<Users className="w-7 h-7 text-primary" />
-										Connect With Us
-									</CardTitle>
-								</CardHeader>
-								<CardContent>
-									<div className="grid grid-cols-3 gap-4">
-										<Button variant="outline" size="icon" className="rounded-full h-12 w-12 border-border hover:bg-primary/10 transition-all duration-300">
-											<Facebook className="w-5 h-5 text-primary" />
-										</Button>
-										<Button variant="outline" size="icon" className="rounded-full h-12 w-12 border-border hover:bg-primary/10 transition-all duration-300">
-											<Twitter className="w-5 h-5 text-primary" />
-										</Button>
-										<Button variant="outline" size="icon" className="rounded-full h-12 w-12 border-border hover:bg-primary/10 transition-all duration-300">
-											<Instagram className="w-5 h-5 text-primary" />
-										</Button>
-										<Button variant="outline" size="icon" className="rounded-full h-12 w-12 border-border hover:bg-primary/10 transition-all duration-300">
-											<Youtube className="w-5 h-5 text-primary" />
-										</Button>
-										<Button variant="outline" size="icon" className="rounded-full h-12 w-12 border-border hover:bg-primary/10 transition-all duration-300">
-											<Linkedin className="w-5 h-5 text-primary" />
-										</Button>
-										<Button variant="outline" size="icon" className="rounded-full h-12 w-12 border-border hover:bg-primary/10 transition-all duration-300">
-											<Mail className="w-5 h-5 text-primary" />
-										</Button>
-									</div>
-								</CardContent>
-							</Card>
-						</motion.div>
-
-						{/* Special Offers */}
-						<motion.div
-							initial={{ opacity: 0, x: 20 }}
-							animate={isMenuInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
-							transition={{ duration: 0.6, delay: 0.2 }}
-						>
-							<Card className="border border-border rounded-2xl shadow-lg">
-								<CardHeader>
-									<CardTitle className="flex items-center gap-3 text-2xl">
-										<Tag className="w-7 h-7 text-primary" />
-										Special Offers
-									</CardTitle>
-								</CardHeader>
-								<CardContent className="space-y-5">
-									<div className="flex items-center gap-4 p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-all duration-300">
-										<div className="bg-muted rounded-xl w-16 h-16 flex items-center justify-center flex-shrink-0">
-											<Pizza className="w-8 h-8 text-primary" />
-										</div>
-										<div>
-											<p className="font-medium">20% Off Pizza</p>
-											<p className="text-sm text-muted-foreground">
-												Valid until Dec 31
-											</p>
-										</div>
-									</div>
-									<div className="flex items-center gap-4 p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-all duration-300">
-										<div className="bg-muted rounded-xl w-16 h-16 flex items-center justify-center flex-shrink-0">
-											<Burger className="w-8 h-8 text-primary" />
-										</div>
-										<div>
-											<p className="font-medium">Family Combo Deal</p>
-											<p className="text-sm text-muted-foreground">
-												Valid until Nov 30
-											</p>
-										</div>
-									</div>
-									<div className="flex items-center gap-4 p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-all duration-300">
-										<div className="bg-muted rounded-xl w-16 h-16 flex items-center justify-center flex-shrink-0">
-											<Salad className="w-8 h-8 text-primary" />
-										</div>
-										<div>
-											<p className="font-medium">Healthy Meal Discount</p>
-											<p className="text-sm text-muted-foreground">
-												Valid until Oct 15
-											</p>
-										</div>
-									</div>
-								</CardContent>
-								<CardFooter>
-									<Button variant="outline" className="w-full py-5 text-lg rounded-xl border-border hover:bg-primary/10 transition-all duration-300">
-										View All Offers
-									</Button>
-								</CardFooter>
-							</Card>
-						</motion.div>
-
-						{/* Customer Reviews */}
-						<motion.div
-							initial={{ opacity: 0, x: 20 }}
-							animate={isMenuInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 20 }}
-							transition={{ duration: 0.6, delay: 0.3 }}
-						>
-							<Card className="border border-border rounded-2xl shadow-lg">
-								<CardHeader>
-									<CardTitle className="flex items-center gap-3 text-2xl">
-										<ThumbsUp className="w-7 h-7 text-primary" />
-										Customer Reviews
-									</CardTitle>
-								</CardHeader>
-								<CardContent>
-									<div className="space-y-4">
-										<div className="flex items-start gap-3">
-											<img
-												src="https://randomuser.me/api/portraits/men/32.jpg"
-												alt="Customer"
-												className="w-10 h-10 rounded-full mr-3"
-											/>
-											<div>
-												<div className="flex items-center gap-1 mb-1">
-													{[...Array(5)].map((_, i) => (
-														<Star
-															key={`customer-review-star-1-${i}`}
-															className={`w-4 h-4 ${
-																i < 5
-																	? "fill-yellow-400 text-yellow-400"
-																	: "text-gray-300"
-															}`}
-														/>
-													))}
-												</div>
-												<p className="text-sm font-medium">Ramesh Thapa</p>
-												<p className="text-xs text-muted-foreground">
-													"Amazing food and service!"
-												</p>
-											</div>
-										</div>
-										<div className="flex items-start gap-3">
-											<img
-												src="https://randomuser.me/api/portraits/women/44.jpg"
-												alt="Customer"
-												className="w-10 h-10 rounded-full mr-3"
-											/>
-											<div>
-												<div className="flex items-center gap-1 mb-1">
-													{[...Array(5)].map((_, i) => (
-														<Star
-															key={`customer-review-star-2-${i}`}
-															className={`w-4 h-4 ${
-																i < 4
-																	? "fill-yellow-400 text-yellow-400"
-																	: "text-gray-300"
-															}`}
-														/>
-													))}
-												</div>
-												<p className="text-sm font-medium">Sita Gurung</p>
-												<p className="text-xs text-muted-foreground">
-													"Great atmosphere and delicious meals"
-												</p>
-											</div>
-										</div>
-										<div className="flex items-start gap-3">
-											<img
-												src="https://randomuser.me/api/portraits/men/67.jpg"
-												alt="Customer"
-												className="w-10 h-10 rounded-full mr-3"
-											/>
-											<div>
-												<div className="flex items-center gap-1 mb-1">
-													{[...Array(5)].map((_, i) => (
-														<Star
-															key={`customer-review-star-3-${i}`}
-															className={`w-4 h-4 ${
-																i < 5
-																	? "fill-yellow-400 text-yellow-400"
-																	: "text-gray-300"
-															}`}
-														/>
-													))}
-												</div>
-												<p className="text-sm font-medium">Krishna KC</p>
-												<p className="text-xs text-muted-foreground">
-													"Best restaurant in Surkhet"
-												</p>
-											</div>
-										</div>
-									</div>
-								</CardContent>
-								<CardFooter>
-									<Button variant="outline" className="w-full py-5 text-lg rounded-xl border-border hover:bg-primary/10 transition-all duration-300">
-										Read More Reviews
-									</Button>
-								</CardFooter>
-							</Card>
-						</motion.div>
-					</div>
-				</div>
 			</div>
 
 			<CartButton />
-
-			<style>{`
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
 		</div>
 	);
 }
