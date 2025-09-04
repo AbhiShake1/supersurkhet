@@ -175,6 +175,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				name: "twitter:image",
 				content: "/og-image.png",
 			},
+			{
+				name: "theme-color",
+				content: "#000000",
+			},
 		],
 		links: [
 			{
@@ -190,6 +194,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 				rel: "apple-touch-icon",
 				sizes: "180x180",
 				href: "/apple-touch-icon.png",
+			},
+			{
+				rel: "manifest",
+				href: "/manifest.json",
 			},
 		],
 	}),
@@ -215,9 +223,56 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	}, []);
 
 	const handleActionDetected = (action: DataMatrixAction) => {
-		// TODO: Implement action handling logic
 		console.log("Action detected:", action);
-		toast.success(`Action detected: ${action.action}`);
+
+		switch (action.action) {
+			case 'wifi_connect':
+				if (action.wifi) {
+					// In a web context, we can't directly connect to WiFi
+					// Instead, we'll show instructions to the user
+					toast.info(`WiFi Network: ${action.wifi.ssid}`, {
+						description: "Please connect to this WiFi network manually in your device settings.",
+						duration: 10000,
+					});
+
+					// If there's a post-connect notification, show it
+					if (action.post_connect) {
+						setTimeout(() => {
+							toast.success(
+								action.post_connect?.notification.title,
+								{ description: action.post_connect?.notification.message }
+							);
+						}, 3000);
+					}
+
+					// If there's navigation after connection, show it
+					if (action.navigation) {
+						setTimeout(() => {
+							toast.info("Next Step", {
+								description: `After connecting to WiFi, navigate to: ${action.navigation?.url}`,
+							});
+						}, 6000);
+					}
+				}
+				break;
+
+			case 'navigate':
+				if (action.navigation) {
+					// Navigate to the specified URL
+					window.location.href = action.navigation.url;
+				}
+				break;
+
+			case 'notification':
+				// Show a notification
+				toast.info("Notification", {
+					description: "You've received a notification from the QR code.",
+				});
+				break;
+
+			default:
+				toast.success(`Action detected: ${action.action}`);
+		}
 	};
 
 	return (

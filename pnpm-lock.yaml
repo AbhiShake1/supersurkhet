@@ -243,6 +243,9 @@ importers:
       qrcode:
         specifier: ^1.5.4
         version: 1.5.4
+      qrcode-terminal:
+        specifier: ^0.12.0
+        version: 0.12.0
       radix-ui:
         specifier: ^1.4.2
         version: 1.4.2(@types/react-dom@19.1.2(@types/react@19.1.2))(@types/react@19.1.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -418,12 +421,21 @@ importers:
       react-native-screens:
         specifier: ~4.11.1
         version: 4.11.1(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+      react-native-vision-camera:
+        specifier: ^4.7.2
+        version: 4.7.2(react-native-reanimated@3.17.5(@babel/core@7.26.10)(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       react-native-web:
         specifier: ~0.20.0
         version: 0.20.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
       react-native-webview:
         specifier: 13.13.5
         version: 13.13.5(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+      react-native-wifi-reborn:
+        specifier: ^4.13.6
+        version: 4.13.6(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))
+      vision-camera-code-scanner:
+        specifier: ^0.2.0
+        version: 0.2.0(react-native-vision-camera@4.7.2(react-native-reanimated@3.17.5(@babel/core@7.26.10)(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
     devDependencies:
       '@babel/core':
         specifier: ^7.25.2
@@ -7860,6 +7872,10 @@ packages:
     resolution: {integrity: sha512-Uu7ii+FQy4Qf82G4xu7ShHhjhGahEpCWc3x8UavY3CTcWV+ufmmCtwkr7ZKsX42jdL0kr1B5FKUeqJvAn51jzQ==}
     hasBin: true
 
+  qrcode-terminal@0.12.0:
+    resolution: {integrity: sha512-EXtzRZmC+YGmGlDFbXKxQiMZNwCLEO6BANKXG4iCtSIM0yqc/pappSx3RIKr4r0uh5JsBckOXeKrB3Iz7mdQpQ==}
+    hasBin: true
+
   qrcode@1.5.4:
     resolution: {integrity: sha512-1ca71Zgiu6ORjHqFBDpnSMTR2ReToX4l1Au1VFLyVeBTFavzQnv5JxMFr3ukHVKpSrSA2MCk0lNJSykjUfz7Zg==}
     engines: {node: '>=10.13.0'}
@@ -8008,6 +8024,22 @@ packages:
       react: '*'
       react-native: '*'
 
+  react-native-vision-camera@4.7.2:
+    resolution: {integrity: sha512-C+5PvlSunN6I4aYplSask+v3jfhgduZumIVw6H6lG+Afpf8boIcG3uFSsSfVgj+hxI7fx6qM6bsciEhzgxEUYg==}
+    peerDependencies:
+      '@shopify/react-native-skia': '*'
+      react: '*'
+      react-native: '*'
+      react-native-reanimated: '*'
+      react-native-worklets-core: '*'
+    peerDependenciesMeta:
+      '@shopify/react-native-skia':
+        optional: true
+      react-native-reanimated:
+        optional: true
+      react-native-worklets-core:
+        optional: true
+
   react-native-web@0.20.0:
     resolution: {integrity: sha512-OOSgrw+aON6R3hRosCau/xVxdLzbjEcsLysYedka0ZON4ZZe6n9xgeN9ZkoejhARM36oTlUgHIQqxGutEJ9Wxg==}
     peerDependencies:
@@ -8019,6 +8051,11 @@ packages:
     peerDependencies:
       react: '*'
       react-native: '*'
+
+  react-native-wifi-reborn@4.13.6:
+    resolution: {integrity: sha512-vlZYgRnFapVVeJ8z0G0k7k6wUi9mUPhW6ji008mp5BBKMbZNL0AxdyHUOW3uP1emKYK7eRIvfx6AuECpG2mAsg==}
+    peerDependencies:
+      react-native: '>=0.13'
 
   react-native@0.79.6:
     resolution: {integrity: sha512-kvIWSmf4QPfY41HC25TR285N7Fv0Pyn3DAEK8qRL9dA35usSaxsJkHfw+VqnonqJjXOaoKCEanwudRAJ60TBGA==}
@@ -9214,6 +9251,13 @@ packages:
   vinxi@0.5.4:
     resolution: {integrity: sha512-ZVJjUfnlItWdbUpXIIOr+B87Hrc+ObEtYEHasHiFedBr/HwPlKI9rMClH2TTky9JhK3Gy6du3EJhhWeVuo7S1Q==}
     hasBin: true
+
+  vision-camera-code-scanner@0.2.0:
+    resolution: {integrity: sha512-H5hVkXfbIcGdg9YlhuS8Y/xDX5e32Vo6eK5FyDQsE9AGVjlqEHMmSLHZg7BX8UUm4ADmiAZc8wzc4n8TUqGr0g==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+      react-native-vision-camera: '>=2.9.4'
 
   vite-node@3.1.2:
     resolution: {integrity: sha512-/8iMryv46J3aK13iUXsei5G/A3CUlW4665THCPS+K8xAaqrVWiGB4RfXMQXCLjpK9P2eK//BczrVkn5JLAk6DA==}
@@ -18461,6 +18505,8 @@ snapshots:
 
   qrcode-terminal@0.11.0: {}
 
+  qrcode-terminal@0.12.0: {}
+
   qrcode@1.5.4:
     dependencies:
       dijkstrajs: 1.0.3
@@ -18673,6 +18719,13 @@ snapshots:
       react-native-is-edge-to-edge: 1.2.1(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       warn-once: 0.1.1
 
+  react-native-vision-camera@4.7.2(react-native-reanimated@3.17.5(@babel/core@7.26.10)(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0):
+    dependencies:
+      react: 19.0.0
+      react-native: 0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0)
+    optionalDependencies:
+      react-native-reanimated: 3.17.5(@babel/core@7.26.10)(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+
   react-native-web@0.20.0(react-dom@19.0.0(react@19.0.0))(react@19.0.0):
     dependencies:
       '@babel/runtime': 7.28.3
@@ -18693,6 +18746,10 @@ snapshots:
       escape-string-regexp: 4.0.0
       invariant: 2.2.4
       react: 19.0.0
+      react-native: 0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0)
+
+  react-native-wifi-reborn@4.13.6(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0)):
+    dependencies:
       react-native: 0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0)
 
   react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0):
@@ -20142,6 +20199,12 @@ snapshots:
       - uploadthing
       - xml2js
       - yaml
+
+  vision-camera-code-scanner@0.2.0(react-native-vision-camera@4.7.2(react-native-reanimated@3.17.5(@babel/core@7.26.10)(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0):
+    dependencies:
+      react: 19.0.0
+      react-native: 0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0)
+      react-native-vision-camera: 4.7.2(react-native-reanimated@3.17.5(@babel/core@7.26.10)(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0))(react-native@0.79.6(@babel/core@7.26.10)(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
 
   vite-node@3.1.2(@types/node@20.17.47)(jiti@2.4.2)(lightningcss@1.29.2)(terser@5.39.0)(tsx@4.19.3):
     dependencies:

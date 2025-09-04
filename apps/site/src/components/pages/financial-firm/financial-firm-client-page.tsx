@@ -11,89 +11,25 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  Star,
-  Calendar,
-  User,
-  Briefcase,
-  TrendingUp,
-  PieChart,
-  DollarSign,
-  Award,
-  Building,
-  Handshake,
-  Calculator,
-  CreditCard,
-  PiggyBank,
-  Shield,
-  TrendingDown,
-  TrendingUp as TrendingUpIcon,
-  BarChart3,
-  LineChart,
-  Wallet,
-  Coins,
-  Scale,
-  Target,
-  Users,
-  CalendarDays,
-  FileText,
-  BookOpen,
-  CheckCircle,
-  ArrowRight,
-  Search,
-  Filter,
-  BookMarked,
-  Lightbulb,
-  Zap,
-  Globe,
-  Smartphone,
-  Tablet,
-  Tv,
-  Speaker,
-  Headphones,
-  Camera,
-  Video,
-  Image,
-  Film,
-  Radio,
-  Gamepad,
-  Coffee,
-  Apple,
-  Banana,
-  Cherry,
-  Grape,
-  Lemon,
-  Orange,
-  Pear,
-  Pineapple,
-  Strawberry,
-  Watermelon,
-  Heart,
-  Share2,
-  Facebook,
-  Twitter,
-  Instagram,
-  Youtube,
-  Linkedin,
-  X,
-  PlusCircle,
-  MinusCircle,
-  ThumbsUp,
-  MessageCircle,
-  Bookmark,
-  Download,
-  Wifi,
-  Car,
-  Dumbbell,
-  Utensils,
-  Map as MapIcon,
-} from "lucide-react";
-import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import {
+  ArrowRight,
+  Calculator,
+  CheckCircle,
+  Coins,
+  DollarSign,
+  PieChart,
+  PiggyBank,
+  PlusCircle,
+  Scale,
+  Search,
+  Shield,
+  Star,
+  Target,
+  TrendingUp as TrendingUpIcon,
+  Wallet
+} from "lucide-react";
+import { useRef, useState } from "react";
 
 interface Service {
   id: string;
@@ -499,13 +435,13 @@ export function FinancialFirmClientPage({
 
   // Filter products based on search term and active tab
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.category.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesTab = activeTab === "all" || product.category.toLowerCase() === activeTab.toLowerCase() || 
-                      (activeTab === "popular" && product.popular);
-    
+    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesTab = activeTab === "all" || product.category.toLowerCase() === activeTab.toLowerCase() ||
+      (activeTab === "popular" && product.popular);
+
     return matchesSearch && matchesTab;
   });
 
@@ -522,7 +458,7 @@ export function FinancialFirmClientPage({
   const toolsRef = useRef(null);
   const faqRef = useRef(null);
   const contactRef = useRef(null);
-  
+
   const isHeroInView = useInView(heroRef, { once: true, margin: "-100px" });
   const isServicesInView = useInView(servicesRef, { once: true, margin: "-100px" });
   const isProductsInView = useInView(productsRef, { once: true, margin: "-100px" });
@@ -544,7 +480,7 @@ export function FinancialFirmClientPage({
           className="w-full h-full object-cover opacity-20"
         />
         <div className="relative z-20 flex flex-col items-center justify-center min-h-[70vh] px-6 py-20 text-center text-white">
-          <motion.h1 
+          <motion.h1
             className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 max-w-4xl"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -552,7 +488,7 @@ export function FinancialFirmClientPage({
           >
             {firmInfo.name}
           </motion.h1>
-          <motion.div 
+          <motion.div
             className="flex items-center justify-center mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -561,18 +497,17 @@ export function FinancialFirmClientPage({
             {[...Array(5)].map((_, i) => (
               <Star
                 key={`financial-firm-rating-star-${i}`}
-                className={`w-6 h-6 ${
-                  i < Math.floor(firmInfo.rating)
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-gray-300"
-                }`}
+                className={`w-6 h-6 ${i < Math.floor(firmInfo.rating)
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-gray-300"
+                  }`}
               />
             ))}
             <span className="ml-3 text-lg font-medium">
               {firmInfo.rating} ({firmInfo.totalReviews} reviews)
             </span>
           </motion.div>
-          <motion.p 
+          <motion.p
             className="text-xl md:text-2xl max-w-3xl mb-4 leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -580,7 +515,7 @@ export function FinancialFirmClientPage({
           >
             {firmInfo.tagline}
           </motion.p>
-          <motion.p 
+          <motion.p
             className="text-lg md:text-xl max-w-3xl mb-10 leading-relaxed text-white/90"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -598,7 +533,7 @@ export function FinancialFirmClientPage({
             </Button>
           </motion.div>
         </div>
-        
+
         {/* Decorative Elements */}
         <div className="absolute top-20 right-20 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute bottom-32 left-20 w-32 h-32 rounded-full bg-primary/30 blur-2xl" />
@@ -610,14 +545,14 @@ export function FinancialFirmClientPage({
           <div className="lg:col-span-2 space-y-20">
             {/* Services */}
             <section ref={servicesRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isServicesInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Our Services
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {services.map((service, index) => (
@@ -665,16 +600,16 @@ export function FinancialFirmClientPage({
 
             {/* Financial Products */}
             <section ref={productsRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isProductsInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Financial Products
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
-              
+
               {/* Search and Filter */}
               <motion.div
                 className="flex flex-col md:flex-row gap-4 mb-8"
@@ -699,14 +634,14 @@ export function FinancialFirmClientPage({
                       onClick={() => setActiveTab(category)}
                       className="rounded-full whitespace-nowrap"
                     >
-                      {category === "all" ? "All Products" : 
-                       category === "popular" ? "Popular" : 
-                       category}
+                      {category === "all" ? "All Products" :
+                        category === "popular" ? "Popular" :
+                          category}
                     </Button>
                   ))}
                 </div>
               </motion.div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {filteredProducts.map((product, index) => (
                   <motion.div
@@ -727,13 +662,12 @@ export function FinancialFirmClientPage({
                         <div className="flex justify-between items-start">
                           <CardTitle className="text-2xl">{product.name}</CardTitle>
                           <span
-                            className={`px-3 py-1 text-sm rounded-full font-bold ${
-                              product.riskLevel === "Low"
-                                ? "bg-green-100 text-green-800"
-                                : product.riskLevel === "Medium"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                            }`}
+                            className={`px-3 py-1 text-sm rounded-full font-bold ${product.riskLevel === "Low"
+                              ? "bg-green-100 text-green-800"
+                              : product.riskLevel === "Medium"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                              }`}
                           >
                             {product.riskLevel} Risk
                           </span>
@@ -789,14 +723,14 @@ export function FinancialFirmClientPage({
 
             {/* Financial Advisors */}
             <section ref={advisorsRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isAdvisorsInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Meet Our Advisors
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {advisors.map((advisor, index) => (
@@ -827,11 +761,10 @@ export function FinancialFirmClientPage({
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={`advisor-rating-star-${advisor.id}-${i}`}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(advisor.rating)
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
+                              className={`w-4 h-4 ${i < Math.floor(advisor.rating)
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-gray-300"
+                                }`}
                             />
                           ))}
                           <span className="text-sm ml-1">{advisor.rating}</span>
@@ -863,14 +796,14 @@ export function FinancialFirmClientPage({
 
             {/* Financial Reports */}
             <section ref={reportsRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isReportsInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Financial Reports
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {financialReports.map((report, index) => (
@@ -928,14 +861,14 @@ export function FinancialFirmClientPage({
 
             {/* Market Insights */}
             <section ref={insightsRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isInsightsInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Market Insights
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {marketInsights.map((insight, index) => (
@@ -970,14 +903,14 @@ export function FinancialFirmClientPage({
 
             {/* Financial Tools */}
             <section ref={toolsRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isToolsInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Financial Tools
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {financialTools.map((tool, index) => (
@@ -1010,14 +943,14 @@ export function FinancialFirmClientPage({
 
             {/* FAQ */}
             <section ref={faqRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isFAQInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Frequently Asked Questions
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="max-w-3xl mx-auto space-y-4">
                 {faqs.map((faq, index) => (
@@ -1028,14 +961,14 @@ export function FinancialFirmClientPage({
                     transition={{ duration: 0.4, delay: index * 0.1 }}
                   >
                     <Card className="border border-border rounded-2xl shadow-lg">
-                      <CardHeader 
+                      <CardHeader
                         className="cursor-pointer pb-4"
                         onClick={() => setActiveFAQ(activeFAQ === faq.id ? null : faq.id)}
                       >
                         <div className="flex justify-between items-center">
                           <CardTitle className="text-lg">{faq.question}</CardTitle>
-                          <ArrowRight 
-                            className={`w-5 h-5 transition-transform duration-300 ${activeFAQ === faq.id ? 'rotate-90' : ''}`} 
+                          <ArrowRight
+                            className={`w-5 h-5 transition-transform duration-300 ${activeFAQ === faq.id ? 'rotate-90' : ''}`}
                           />
                         </div>
                       </CardHeader>
@@ -1058,14 +991,14 @@ export function FinancialFirmClientPage({
 
             {/* Contact Form */}
             <section ref={contactRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isContactInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Get In Touch
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -1098,7 +1031,14 @@ export function FinancialFirmClientPage({
                           />
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="message" className="text-lg">Message</Label>
-                        <Input
-                          id="
+                    </form>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

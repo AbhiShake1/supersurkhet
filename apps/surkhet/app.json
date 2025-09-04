@@ -9,13 +9,21 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocalNetworkUsageDescription": "The app requires access to the local network to connect to WiFi networks.",
+        "NSCameraUsageDescription": "The app requires access to the camera to scan QR codes."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_FINE_LOCATION"
+      ],
       "edgeToEdgeEnabled": true
     },
     "web": {
@@ -25,6 +33,7 @@
     },
     "plugins": [
       "expo-router",
+      "react-native-wifi-reborn",
       [
         "expo-splash-screen",
         {

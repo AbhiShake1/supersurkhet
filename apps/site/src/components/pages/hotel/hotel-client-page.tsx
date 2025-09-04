@@ -14,7 +14,6 @@ import {
   Bell,
   Calendar,
   CalendarDays,
-  Camera,
   Car,
   Clock,
   Coffee,
@@ -26,11 +25,17 @@ import {
   Sunrise,
   Sunset,
   ThumbsUp,
-  User,
   Waves,
   Wifi,
-  Check,
-  ArrowRight,
+  MessageCircle,
+  Bookmark,
+  Share2,
+  Users,
+  Facebook,
+  Twitter,
+  Instagram,
+  Youtube,
+  Linkedin,
 } from "lucide-react";
 import { useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
@@ -290,7 +295,7 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
   const reviewsRef = useRef(null);
   const offersRef = useRef(null);
   const contactRef = useRef(null);
-  
+
   const isHeroInView = useInView(heroRef, { once: true, margin: "-100px" });
   const isBookingInView = useInView(bookingRef, { once: true, margin: "-100px" });
   const isRoomsInView = useInView(roomsRef, { once: true, margin: "-100px" });
@@ -310,7 +315,7 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
           className="w-full h-full object-cover opacity-20"
         />
         <div className="relative z-20 flex flex-col items-center justify-center min-h-[70vh] px-6 py-20 text-center text-white">
-          <motion.h1 
+          <motion.h1
             className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 max-w-4xl"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -318,7 +323,7 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
           >
             {hotelInfo.name}
           </motion.h1>
-          <motion.div 
+          <motion.div
             className="flex items-center justify-center mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -328,17 +333,16 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={`hotel-rating-star-${i}`}
-                  className={`w-6 h-6 ${
-                    i < Math.floor(hotelInfo.rating)
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300"
-                  }`}
+                  className={`w-6 h-6 ${i < Math.floor(hotelInfo.rating)
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "text-gray-300"
+                    }`}
                 />
               ))}
             </div>
             <span className="ml-3 text-lg font-medium">{hotelInfo.rating} ({hotelInfo.totalReviews} reviews)</span>
           </motion.div>
-          <motion.p 
+          <motion.p
             className="text-xl md:text-2xl max-w-3xl mb-4 leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -346,7 +350,7 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
           >
             {hotelInfo.tagline}
           </motion.p>
-          <motion.p 
+          <motion.p
             className="text-lg md:text-xl max-w-3xl mb-10 leading-relaxed text-white/90"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -444,8 +448,8 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
                       />
                     </div>
                     <div className="flex items-end">
-                      <Button 
-                        onClick={handleBooking} 
+                      <Button
+                        onClick={handleBooking}
                         className="w-full text-lg py-6 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]"
                       >
                         Check Availability
@@ -458,14 +462,14 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
 
             {/* Room Types */}
             <section ref={roomsRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isRoomsInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Room Types
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {roomTypes.map((room, index) => (
@@ -513,7 +517,7 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button 
+                        <Button
                           className={`w-full text-lg py-6 rounded-xl ${room.popular ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70' : 'bg-secondary hover:bg-secondary/90'} text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]`}
                           variant={room.popular ? "default" : "secondary"}
                         >
@@ -528,14 +532,14 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
 
             {/* Gallery */}
             <section ref={galleryRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isGalleryInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Gallery
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
                 {gallery.map((item, index) => (
@@ -564,14 +568,14 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
 
             {/* Reviews */}
             <section ref={reviewsRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isReviewsInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Guest Reviews
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="space-y-6">
                 {reviews.map((review, index) => (
@@ -602,11 +606,10 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
                               {[...Array(5)].map((_, i) => (
                                 <Star
                                   key={`review-star-${review.id}-${i}`}
-                                  className={`w-4 h-4 ${
-                                    i < review.rating
-                                      ? "fill-yellow-400 text-yellow-400"
-                                      : "text-gray-300"
-                                  }`}
+                                  className={`w-4 h-4 ${i < review.rating
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "text-gray-300"
+                                    }`}
                                 />
                               ))}
                             </div>
@@ -640,14 +643,14 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
 
             {/* Special Offers */}
             <section ref={offersRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isOffersInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Special Offers
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {specialOffers.map((offer, index) => (
@@ -693,14 +696,14 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
 
             {/* Contact Form */}
             <section ref={contactRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isContactInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Get In Touch
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -928,315 +931,4 @@ export function HotelClientPage({ slug }: HotelClientPageProps) {
       </div>
     </div>
   );
-}
-				<img
-					src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1200"
-					alt="Hotel Exterior"
-					className="w-full h-full object-cover"
-				/>
-				<div className="absolute inset-0 z-20 flex flex-col justify-center items-start p-8 text-white">
-					<h1 className="text-4xl md:text-5xl font-bold mb-2">
-						{hotelInfo.name}
-					</h1>
-					<div className="flex items-center mb-4">
-						<div className="flex">
-							{[...Array(5)].map((_, i) => (
-								<Star
-									key={`hotel-rating-star-${i}`}
-									className={`w-5 h-5 ${i < Math.floor(hotelInfo.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-								/>
-							))}
-						</div>
-						<span className="ml-2">
-							{hotelInfo.rating} ({hotelInfo.totalReviews} reviews)
-						</span>
-					</div>
-					<p className="text-lg max-w-2xl mb-4">{hotelInfo.description}</p>
-					<Button variant="secondary" className="mt-2">
-						Explore More
-					</Button>
-				</div>
-			</div>
-
-			<div className="container mx-auto px-4 py-8">
-				<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-					{/* Main Content */}
-					<div className="lg:col-span-2 space-y-8">
-						{/* Booking Widget */}
-						<Card className="shadow-lg border-primary/20">
-							<CardHeader>
-								<CardTitle className="flex items-center">
-									<CalendarDays className="mr-2 h-5 w-5" />
-									Book Your Stay
-								</CardTitle>
-								<CardDescription>
-									Find the perfect room for your stay in Surkhet
-								</CardDescription>
-							</CardHeader>
-							<CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
-								<div className="md:col-span-2 space-y-2">
-									<Label htmlFor="check-in">Check In</Label>
-									<div className="relative">
-										<Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-										<Input
-											id="check-in"
-											type="date"
-											value={checkIn}
-											onChange={(e) => setCheckIn(e.target.value)}
-											className="pl-10"
-										/>
-									</div>
-								</div>
-								<div className="md:col-span-2 space-y-2">
-									<Label htmlFor="check-out">Check Out</Label>
-									<div className="relative">
-										<Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-										<Input
-											id="check-out"
-											type="date"
-											value={checkOut}
-											onChange={(e) => setCheckOut(e.target.value)}
-											className="pl-10"
-										/>
-									</div>
-								</div>
-								<div className="space-y-2">
-									<Label htmlFor="guests">Guests</Label>
-									<Input
-										id="guests"
-										type="number"
-										min="1"
-										max="10"
-										value={guests}
-										onChange={(e) =>
-											setGuests(Number.parseInt(e.target.value) || 1)
-										}
-									/>
-								</div>
-								<div className="flex items-end">
-									<Button onClick={handleBooking} className="w-full">
-										Check Availability
-									</Button>
-								</div>
-							</CardContent>
-						</Card>
-
-						{/* Room Types */}
-						<section>
-							<h2 className="text-2xl font-bold mb-6 flex items-center">
-								<Bed className="mr-2 h-6 w-6" />
-								Room Types
-							</h2>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-								{roomTypes.map((room) => (
-									<Card
-										key={room.id}
-										className="overflow-hidden transition-all hover:shadow-xl hover:scale-[1.02]"
-									>
-										<div className="relative">
-											<img
-												src={room.imageUrl}
-												alt={room.name}
-												className="w-full h-48 object-cover"
-											/>
-											<div className="absolute top-2 right-2 bg-primary text-primary-foreground px-2 py-1 rounded-full text-xs font-bold">
-												Rs. {room.price}/night
-											</div>
-										</div>
-										<CardHeader>
-											<CardTitle>{room.name}</CardTitle>
-											<CardDescription>{room.description}</CardDescription>
-										</CardHeader>
-										<CardContent>
-											<div className="flex flex-wrap gap-2 mb-4">
-												{room.amenities.map((amenity) => (
-													<span
-														key={amenity}
-														className="px-2 py-1 bg-secondary text-secondary-foreground text-xs rounded-full"
-													>
-														{amenity}
-													</span>
-												))}
-											</div>
-										</CardContent>
-										<CardFooter>
-											<Button className="w-full">Book Now</Button>
-										</CardFooter>
-									</Card>
-								))}
-							</div>
-						</section>
-
-						{/* Gallery */}
-						<section>
-							<h2 className="text-2xl font-bold mb-6 flex items-center">
-								<Camera className="mr-2 h-6 w-6" />
-								Gallery
-							</h2>
-							<div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-								{gallery.map((item) => (
-									<Card key={item.id} className="overflow-hidden">
-										<img
-											src={item.imageUrl}
-											alt={item.caption}
-											className="w-full h-32 object-cover"
-										/>
-										<CardContent className="p-2">
-											<p className="text-xs text-center">{item.caption}</p>
-										</CardContent>
-									</Card>
-								))}
-							</div>
-						</section>
-
-						{/* Reviews */}
-						<section>
-							<h2 className="text-2xl font-bold mb-6 flex items-center">
-								<ThumbsUp className="mr-2 h-6 w-6" />
-								Guest Reviews
-							</h2>
-							<div className="space-y-4">
-								{reviews.map((review) => (
-									<Card key={review.id}>
-										<CardContent className="p-4">
-											<div className="flex items-start">
-												<img
-													src={review.avatar}
-													alt={review.name}
-													className="w-10 h-10 rounded-full mr-3"
-												/>
-												<div className="flex-1">
-													<div className="flex justify-between">
-														<h4 className="font-bold">{review.name}</h4>
-														<span className="text-sm text-muted-foreground">
-															{review.date}
-														</span>
-													</div>
-													<div className="flex items-center mb-2">
-														{[...Array(5)].map((_, i) => (
-															<Star
-																key={`review-star-${review.id}-${i}`}
-																className={`w-4 h-4 ${i < review.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
-															/>
-														))}
-													</div>
-													<p className="text-sm">{review.content}</p>
-												</div>
-											</div>
-										</CardContent>
-									</Card>
-								))}
-							</div>
-						</section>
-
-						{/* Special Offers */}
-						<section>
-							<h2 className="text-2xl font-bold mb-6 flex items-center">
-								<Bell className="mr-2 h-6 w-6" />
-								Special Offers
-							</h2>
-							<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-								{specialOffers.map((offer) => (
-									<Card key={offer.id} className="border-primary/20">
-										<CardHeader>
-											<CardTitle>{offer.title}</CardTitle>
-											<CardDescription>{offer.description}</CardDescription>
-										</CardHeader>
-										<CardContent>
-											<div className="flex justify-between items-center">
-												<span className="text-2xl font-bold text-primary">
-													{offer.discount}
-												</span>
-												<span className="text-sm text-muted-foreground">
-													Valid until {offer.validUntil}
-												</span>
-											</div>
-										</CardContent>
-										<CardFooter>
-											<Button variant="outline" className="w-full">
-												Claim Offer
-											</Button>
-										</CardFooter>
-									</Card>
-								))}
-							</div>
-						</section>
-					</div>
-
-					{/* Sidebar */}
-					<div className="space-y-6">
-						{/* Contact Info */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center">
-									<Phone className="mr-2 h-5 w-5" />
-									Contact Information
-								</CardTitle>
-							</CardHeader>
-							<CardContent className="space-y-4">
-								<div className="flex items-center">
-									<MapPin className="w-5 h-5 mr-3 text-primary" />
-									<span>{hotelInfo.address}</span>
-								</div>
-								<div className="flex items-center">
-									<Phone className="w-5 h-5 mr-3 text-primary" />
-									<span>{hotelInfo.phone}</span>
-								</div>
-								<div className="flex items-center">
-									<Mail className="w-5 h-5 mr-3 text-primary" />
-									<span>{hotelInfo.email}</span>
-								</div>
-								<div className="flex items-center">
-									<Clock className="w-5 h-5 mr-3 text-primary" />
-									<div>
-										<p>Check-in: {hotelInfo.checkInTime}</p>
-										<p>Check-out: {hotelInfo.checkOutTime}</p>
-									</div>
-								</div>
-							</CardContent>
-						</Card>
-
-						{/* Amenities */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center">
-									<Wifi className="mr-2 h-5 w-5" />
-									Hotel Amenities
-								</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className="grid grid-cols-2 gap-4">
-									{amenities.map((amenity) => (
-										<div
-											key={`hotel-amenity-${amenity.name}`}
-											className="flex items-center"
-										>
-											<amenity.icon className="w-5 h-5 mr-2 text-primary" />
-											<span className="text-sm">{amenity.name}</span>
-										</div>
-									))}
-								</div>
-							</CardContent>
-						</Card>
-
-						{/* Location Map */}
-						<Card>
-							<CardHeader>
-								<CardTitle className="flex items-center">
-									<MapPin className="mr-2 h-5 w-5" />
-									Location
-								</CardTitle>
-							</CardHeader>
-							<CardContent>
-								<div className="bg-muted rounded-lg h-64 flex items-center justify-center">
-									<MapPin className="w-12 h-12 text-primary" />
-									<span className="ml-2">Interactive Map</span>
-								</div>
-							</CardContent>
-						</Card>
-					</div>
-				</div>
-			</div>
-		</div>
-	);
 }

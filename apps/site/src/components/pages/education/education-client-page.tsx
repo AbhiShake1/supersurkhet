@@ -11,75 +11,53 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { motion, useInView } from "framer-motion";
 import {
-  Phone,
+  ArrowRight,
+  Award,
+  Book,
+  BookOpen,
+  Brain,
+  Briefcase,
+  Building,
+  Calendar,
+  CalendarDays,
+  Camera,
+  Clock,
+  Coffee,
+  Dumbbell,
+  Facebook,
+  FlaskConical,
+  Gamepad,
+  Globe,
+  GraduationCap,
+  Handshake,
+  Instagram,
+  Laptop,
+  Library,
+  Linkedin,
   Mail,
   MapPin,
-  Clock,
-  Star,
-  Calendar,
-  User,
-  BookOpen,
-  GraduationCap,
-  Users,
-  CalendarDays,
-  TrendingUp,
-  Award,
-  Building,
-  Handshake,
-  FileText,
-  School,
-  Briefcase,
-  Brain,
-  Globe,
+  Medal,
+  Microscope,
+  Monitor,
   Music,
   Palette,
-  Microscope,
-  Laptop,
-  Dumbbell,
-  Utensils,
-  Theater,
-  CheckCircle,
-  ArrowRight,
+  Phone,
+  School,
   Search,
-  Filter,
-  Book,
-  Library,
-  Flask,
-  Monitor,
   Smartphone,
-  Tablet,
-  Tv,
-  Speaker,
-  Headphones,
-  Camera,
-  Video,
-  Image,
-  Film,
-  Radio,
-  Gamepad,
-  Coffee,
-  Apple,
-  Banana,
-  Cherry,
-  Grape,
-  Lemon,
-  Orange,
-  Pear,
-  Pineapple,
-  Strawberry,
-  Watermelon,
-  Heart,
-  Share2,
-  Facebook,
+  Star,
+  Theater,
+  Trophy,
   Twitter,
-  Instagram,
-  Youtube,
-  Linkedin,
-  X,
+  User,
+  Users,
+  Utensils,
+  Video,
+  Youtube
 } from "lucide-react";
-import { useState, useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { useRef, useState } from "react";
 
 interface Course {
   id: string;
@@ -316,7 +294,7 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
     { icon: Dumbbell, name: "Sports Facilities" },
     { icon: Utensils, name: "Cafeteria" },
     { icon: Library, name: "Digital Library" },
-    { icon: Flask, name: "Research Labs" },
+    { icon: FlaskConical, name: "Research Labs" },
     { icon: Monitor, name: "Multimedia Rooms" },
     { icon: Smartphone, name: "Tech Support" },
   ];
@@ -389,13 +367,13 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
 
   // Filter courses based on search term and active tab
   const filteredCourses = courses.filter(course => {
-    const matchesSearch = course.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                         course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         course.category.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesTab = activeTab === "all" || course.category.toLowerCase() === activeTab.toLowerCase() || 
-                      (activeTab === "popular" && course.popular);
-    
+    const matchesSearch = course.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      course.category.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesTab = activeTab === "all" || course.category.toLowerCase() === activeTab.toLowerCase() ||
+      (activeTab === "popular" && course.popular);
+
     return matchesSearch && matchesTab;
   });
 
@@ -410,7 +388,7 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
   const achievementsRef = useRef(null);
   const faqRef = useRef(null);
   const contactRef = useRef(null);
-  
+
   const isHeroInView = useInView(heroRef, { once: true, margin: "-100px" });
   const isCoursesInView = useInView(coursesRef, { once: true, margin: "-100px" });
   const isInstructorsInView = useInView(instructorsRef, { once: true, margin: "-100px" });
@@ -430,7 +408,7 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
           className="w-full h-full object-cover opacity-20"
         />
         <div className="relative z-20 flex flex-col items-center justify-center min-h-[70vh] px-6 py-20 text-center text-white">
-          <motion.h1 
+          <motion.h1
             className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 max-w-4xl"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -438,7 +416,7 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
           >
             {institutionInfo.name}
           </motion.h1>
-          <motion.div 
+          <motion.div
             className="flex items-center justify-center mb-6"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -447,16 +425,15 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
             {[...Array(5)].map((_, i) => (
               <Star
                 key={`institution-rating-star-${i}`}
-                className={`w-6 h-6 ${
-                  i < Math.floor(institutionInfo.rating)
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-gray-300"
-                }`}
+                className={`w-6 h-6 ${i < Math.floor(institutionInfo.rating)
+                  ? "fill-yellow-400 text-yellow-400"
+                  : "text-gray-300"
+                  }`}
               />
             ))}
             <span className="ml-3 text-lg font-medium">{institutionInfo.rating} ({institutionInfo.totalReviews} reviews)</span>
           </motion.div>
-          <motion.p 
+          <motion.p
             className="text-xl md:text-2xl max-w-3xl mb-4 leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -464,7 +441,7 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
           >
             {institutionInfo.tagline}
           </motion.p>
-          <motion.p 
+          <motion.p
             className="text-lg md:text-xl max-w-3xl mb-10 leading-relaxed text-white/90"
             initial={{ opacity: 0, y: 20 }}
             animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
@@ -482,10 +459,10 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
             </Button>
           </motion.div>
         </div>
-        
+
         {/* Decorative Elements */}
-        <div className="absolute top-20 right-20 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
-        <div className="absolute bottom-32 left-20 w-32 h-32 rounded-full bg-primary/30 blur-2xl"></div>
+        <div className="absolute top-20 right-20 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute bottom-32 left-20 w-32 h-32 rounded-full bg-primary/30 blur-2xl" />
       </div>
 
       <div className="container mx-auto px-4 py-16">
@@ -494,16 +471,16 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
           <div className="lg:col-span-2 space-y-20">
             {/* Courses/Programs */}
             <section ref={coursesRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-8 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isCoursesInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Our Programs
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
-              
+
               {/* Search and Filter */}
               <motion.div
                 className="flex flex-col md:flex-row gap-4 mb-8"
@@ -526,20 +503,19 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
                       key={category}
                       variant={activeTab === category ? "default" : "outline"}
                       onClick={() => setActiveTab(category)}
-                      className={`rounded-full whitespace-nowrap ${
-                        activeTab === category 
-                          ? "bg-primary hover:bg-primary/90 text-primary-foreground" 
-                          : "border-border hover:bg-primary/10"
-                      }`}
+                      className={`rounded-full whitespace-nowrap ${activeTab === category
+                        ? "bg-primary hover:bg-primary/90 text-primary-foreground"
+                        : "border-border hover:bg-primary/10"
+                        }`}
                     >
-                      {category === "all" ? "All Programs" : 
-                       category === "popular" ? "Popular" : 
-                       category}
+                      {category === "all" ? "All Programs" :
+                        category === "popular" ? "Popular" :
+                          category}
                     </Button>
                   ))}
                 </div>
               </motion.div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {filteredCourses.map((course, index) => (
                   <motion.div
@@ -626,14 +602,14 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
 
             {/* Instructors/Faculty */}
             <section ref={instructorsRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isInstructorsInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Meet Our Faculty
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {instructors.map((instructor, index) => (
@@ -664,11 +640,10 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={`instructor-rating-star-${instructor.id}-${i}`}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(instructor.rating)
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
+                              className={`w-4 h-4 ${i < Math.floor(instructor.rating)
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-gray-300"
+                                }`}
                             />
                           ))}
                           <span className="text-sm ml-1">{instructor.rating}</span>
@@ -703,14 +678,14 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
 
             {/* Admission Process */}
             <section ref={admissionRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isAdmissionInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Admission Process
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -789,14 +764,14 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
 
             {/* Achievements */}
             <section ref={achievementsRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isAchievementsInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Our Achievements
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {achievements.map((achievement, index) => (
@@ -828,14 +803,14 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
 
             {/* FAQ */}
             <section ref={faqRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isFAQInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Frequently Asked Questions
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="max-w-3xl mx-auto space-y-4">
                 {faqs.map((faq, index) => (
@@ -845,15 +820,15 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
                     animate={isFAQInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
                     transition={{ duration: 0.4, delay: index * 0.1 }}
                   >
-                    <Card 
+                    <Card
                       className="border border-border rounded-xl overflow-hidden cursor-pointer"
                       onClick={() => setActiveFAQ(activeFAQ === faq.id ? null : faq.id)}
                     >
                       <CardHeader className="pb-4">
                         <div className="flex justify-between items-center">
                           <CardTitle className="text-lg">{faq.question}</CardTitle>
-                          <ArrowRight 
-                            className={`w-5 h-5 transition-transform duration-300 ${activeFAQ === faq.id ? 'rotate-90' : ''}`} 
+                          <ArrowRight
+                            className={`w-5 h-5 transition-transform duration-300 ${activeFAQ === faq.id ? 'rotate-90' : ''}`}
                           />
                         </div>
                       </CardHeader>
@@ -876,14 +851,14 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
 
             {/* Contact Form */}
             <section ref={contactRef}>
-              <motion.h2 
+              <motion.h2
                 className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
                 initial={{ opacity: 0, x: -20 }}
                 animate={isContactInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
                 transition={{ duration: 0.6 }}
               >
                 Get In Touch
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
