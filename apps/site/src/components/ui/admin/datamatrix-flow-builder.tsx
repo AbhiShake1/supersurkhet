@@ -310,16 +310,16 @@ export function DataMatrixFlowBuilder() {
 								id={`params-${block.id}`}
 								value={block.config.paramsRaw || JSON.stringify(block.config.params || {}, null, 2)}
 								onChange={(e) =>
-									updateBlockConfig(block.id, { 
-										...block.config, 
-										paramsRaw: e.target.value 
+									updateBlockConfig(block.id, {
+										...block.config,
+										paramsRaw: e.target.value
 									})
 								}
 								onBlur={(e) => {
 									try {
 										const params = JSON.parse(e.target.value);
-										updateBlockConfig(block.id, { 
-											...block.config, 
+										updateBlockConfig(block.id, {
+											...block.config,
 											params,
 											paramsRaw: undefined // Clear raw value after successful parse
 										});
@@ -654,8 +654,8 @@ export function DataMatrixFlowBuilder() {
 													<Card
 														className={cn(
 															"transition-all duration-200 hover:shadow-md cursor-pointer",
-															selectedBlock === block.id 
-																? "border-primary shadow-md ring-2 ring-primary/20" 
+															selectedBlock === block.id
+																? "border-primary shadow-md ring-2 ring-primary/20"
 																: "border-border"
 														)}
 														onClick={() => setSelectedBlock(block.id)}
@@ -664,9 +664,9 @@ export function DataMatrixFlowBuilder() {
 															<div className="flex items-center justify-between">
 																<div className="flex items-center gap-3">
 																	<SortableItemHandle asChild>
-																		<Button 
-																			variant="ghost" 
-																			size="icon" 
+																		<Button
+																			variant="ghost"
+																			size="icon"
 																			className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted"
 																		>
 																			<GripVertical className="h-4 w-4" />
@@ -737,7 +737,7 @@ export function DataMatrixFlowBuilder() {
 							Preview
 						</CardTitle>
 					</CardHeader>
-										<CardContent>
+					<CardContent>
 						<div className="space-y-6">
 							<div className="flex flex-col items-center gap-4">
 								{previewAction ? (
@@ -767,8 +767,8 @@ export function DataMatrixFlowBuilder() {
 
 							{previewAction && (
 								<div className="flex flex-wrap justify-center gap-2">
-									<Button 
-										variant="outline" 
+									<Button
+										variant="outline"
 										size="sm"
 										onClick={() => {
 											// Print functionality
@@ -806,9 +806,9 @@ export function DataMatrixFlowBuilder() {
 										<Printer className="h-4 w-4 mr-2" />
 										Print
 									</Button>
-									
-									<Button 
-										variant="outline" 
+
+									<Button
+										variant="outline"
 										size="sm"
 										onClick={() => {
 											// Download functionality
@@ -824,7 +824,7 @@ export function DataMatrixFlowBuilder() {
 										<Download className="h-4 w-4 mr-2" />
 										Download
 									</Button>
-									
+
 									<CopyButton
 										copyType="image"
 										getImage={async () => {
@@ -839,9 +839,9 @@ export function DataMatrixFlowBuilder() {
 										variant="outline"
 										size="sm"
 									/>
-									
-									<Button 
-										variant="outline" 
+
+									<Button
+										variant="outline"
 										size="sm"
 										onClick={() => {
 											// Share functionality
@@ -880,7 +880,7 @@ export function DataMatrixFlowBuilder() {
 											(at) => at.value === block.type,
 										);
 										const Icon = actionType?.icon || Database;
-										
+
 										return (
 											<div key={block.id} className="space-y-2 text-sm p-2 bg-background rounded border">
 												<div className="flex items-center gap-2">
@@ -889,7 +889,7 @@ export function DataMatrixFlowBuilder() {
 														{actionType?.label || block.type.replace("_", " ")}
 													</span>
 												</div>
-												
+
 												{block.type === "wifi_connect" && block.config.ssid && (
 													<div className="ml-6 space-y-1">
 														<div className="flex justify-between">
@@ -904,7 +904,7 @@ export function DataMatrixFlowBuilder() {
 														)}
 													</div>
 												)}
-												
+
 												{block.type === "navigate" && block.config.url && (
 													<div className="ml-6 space-y-1">
 														<div className="flex justify-between">
@@ -926,7 +926,7 @@ export function DataMatrixFlowBuilder() {
 														)}
 													</div>
 												)}
-												
+
 												{block.type === "notification" && block.config.title && (
 													<div className="ml-6 space-y-1">
 														<div className="flex justify-between">
@@ -940,7 +940,7 @@ export function DataMatrixFlowBuilder() {
 														)}
 													</div>
 												)}
-												
+
 												{block.type === "restaurant_ordering" && (block.config.restaurantId || block.config.table) && (
 													<div className="ml-6 space-y-1">
 														{block.config.restaurantId && (
@@ -957,7 +957,7 @@ export function DataMatrixFlowBuilder() {
 														)}
 													</div>
 												)}
-												
+
 												{block.type === "equipment_session" && (block.config.equipmentId || block.config.equipmentType) && (
 													<div className="ml-6 space-y-1">
 														{block.config.equipmentId && (
@@ -980,7 +980,7 @@ export function DataMatrixFlowBuilder() {
 														)}
 													</div>
 												)}
-												
+
 												{block.type === "product_interaction" && (block.config.productId || block.config.sku) && (
 													<div className="ml-6 space-y-1">
 														{block.config.productId && (
@@ -997,7 +997,7 @@ export function DataMatrixFlowBuilder() {
 														)}
 													</div>
 												)}
-												
+
 												{block.type === "profile_enrichment" && block.config.field && (
 													<div className="ml-6 space-y-1">
 														<div className="flex justify-between">

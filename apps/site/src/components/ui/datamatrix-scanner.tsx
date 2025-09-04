@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -15,14 +13,22 @@ import {
 	RotateCcw,
 	Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 interface ScannerProps {
 	onActionDetected?: (action: DataMatrixAction) => void;
+	showControls?: boolean;
+	showManualInput?: boolean;
+	showScanResults?: boolean;
 }
 
-export function DataMatrixScanner({ onActionDetected }: ScannerProps) {
+export function DataMatrixScanner({
+	onActionDetected,
+	showControls = true,
+	showManualInput = true,
+	showScanResults = true
+}: ScannerProps) {
 	const [isScanning, setIsScanning] = useState(true);
 	const [scannedData, setScannedData] = useState<string | null>(null);
 	const [parsedAction, setParsedAction] = useState<DataMatrixAction | null>(
@@ -101,7 +107,7 @@ export function DataMatrixScanner({ onActionDetected }: ScannerProps) {
 										);
 									}}
 									formats={["qr_code", "data_matrix"]}
-									className="w-full aspect-square"
+								// className="w-full aspect-square"
 								/>
 								<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
 									<div className="border-2 border-white rounded-lg w-64 h-64" />
@@ -114,62 +120,66 @@ export function DataMatrixScanner({ onActionDetected }: ScannerProps) {
 							</div>
 						)}
 
-						<div className="flex flex-wrap gap-2">
-							<Button
-								onClick={() => setIsScanning(!isScanning)}
-								variant={isScanning ? "secondary" : "default"}
-							>
-								{isScanning ? (
-									<>
-										<Pause className="h-4 w-4 mr-2" />
-										Pause Scanner
-									</>
-								) : (
-									<>
-										<Play className="h-4 w-4 mr-2" />
-										Start Scanner
-									</>
-								)}
-							</Button>
+						{showControls && (
+							<div className="flex flex-wrap gap-2">
+								<Button
+									onClick={() => setIsScanning(!isScanning)}
+									variant={isScanning ? "secondary" : "default"}
+								>
+									{isScanning ? (
+										<>
+											<Pause className="h-4 w-4 mr-2" />
+											Pause Scanner
+										</>
+									) : (
+										<>
+											<Play className="h-4 w-4 mr-2" />
+											Start Scanner
+										</>
+									)}
+								</Button>
 
-							<Button onClick={resetScanner} variant="outline">
-								<RotateCcw className="h-4 w-4 mr-2" />
-								Reset
-							</Button>
-						</div>
+								<Button onClick={resetScanner} variant="outline">
+									<RotateCcw className="h-4 w-4 mr-2" />
+									Reset
+								</Button>
+							</div>
+						)}
 					</div>
 				</CardContent>
 			</Card>
 
 			{/* Manual Input */}
-			<Card>
-				<CardHeader>
-					<CardTitle className="flex items-center gap-2">
-						<Zap className="h-5 w-5" />
-						Manual Input
-					</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-4">
-						<div>
-							<Label htmlFor="manualInput">Action Data (JSON)</Label>
-							<Textarea
-								id="manualInput"
-								value={manualInput}
-								onChange={(e) => setManualInput(e.target.value)}
-								placeholder='Paste JSON action data here: {"version": "1.0", "action": "wifi_connect", ...}'
-								rows={6}
-							/>
+			{showManualInput && (
+				<Card>
+					<CardHeader>
+						<CardTitle className="flex items-center gap-2">
+							<Zap className="h-5 w-5" />
+							Manual Input
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<div className="space-y-4">
+							<div>
+								<Label htmlFor="manualInput">Action Data (JSON)</Label>
+								<Textarea
+									id="manualInput"
+									value={manualInput}
+									onChange={(e) => setManualInput(e.target.value)}
+									placeholder='Paste JSON action data here: {"version": "1.0", "action": "wifi_connect", ...}'
+									rows={6}
+								/>
+							</div>
+							<Button onClick={handleSubmitManualInput} className="w-full">
+								Process Action Data
+							</Button>
 						</div>
-						<Button onClick={handleSubmitManualInput} className="w-full">
-							Process Action Data
-						</Button>
-					</div>
-				</CardContent>
-			</Card>
+					</CardContent>
+				</Card>
+			)}
 
 			{/* Scan Results */}
-			{scannedData && (
+			{showScanResults && scannedData && (
 				<Card>
 					<CardHeader>
 						<CardTitle className="flex items-center gap-2">

@@ -28,6 +28,9 @@ import {
 } from "@/integrations/tanstack-query/google-login-provider";
 import { setGTADefaultOptions } from "@/lib/gun/options";
 import { appSchema, transformSchema } from "@/lib/schema";
+import { QRScannerButton } from "@/components/ui/qr-scanner-button";
+import { toast } from "sonner";
+import type { DataMatrixAction } from "@/lib/datamatrix";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -210,6 +213,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		gun.user().recall({ sessionStorage: true });
 	}, []);
+
+	const handleActionDetected = (action: DataMatrixAction) => {
+		// TODO: Implement action handling logic
+		console.log("Action detected:", action);
+		toast.success(`Action detected: ${action.action}`);
+	};
+
 	return (
 		<html lang="en" className="dark">
 			<head>
@@ -221,7 +231,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 						<AuthProvider>
 							<OneTapLoginProvider>
 								<ConfettiProvider>
-									<LoginPromptProvider>{children}</LoginPromptProvider>
+									<LoginPromptProvider>
+										{children}
+										<QRScannerButton onActionDetected={handleActionDetected} />
+									</LoginPromptProvider>
 								</ConfettiProvider>
 							</OneTapLoginProvider>
 						</AuthProvider>
