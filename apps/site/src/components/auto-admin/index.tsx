@@ -13,13 +13,14 @@ import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { notFound, useLocation } from "@tanstack/react-router";
 import _ from "lodash";
-import { GripVertical, type LucideIcon } from "lucide-react";
+import { GripVertical, Home, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { AdminDashboard } from "../admin-dashboard";
 
 export interface AutoAdminProps {
 	tabs: PossibleTabConfig[];
@@ -33,21 +34,30 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
 	title: string;
 	icon?: LucideIcon;
 } & (
-	| {
+		| {
 			children: ReactNode;
-	  }
-	| AutoTableProps<K extends SchemaKeys ? K : never>
-);
+		}
+		| AutoTableProps<K extends SchemaKeys ? K : never>
+	);
 
 export function AutoAdmin({ tabs }: AutoAdminProps) {
+	const tabsWithHome = [
+		{
+			title: "Home",
+			icon: Home,
+			children: <AdminDashboard />,
+		},
+		...tabs,
+	];
+
 	const data: SidebarItems = {
-		items: tabs,
+		items: tabsWithHome,
 	};
 	const { search, pathname: currentPathname } = useLocation();
 	// @ts-expect-error
-	const tab = (search.tab as string) ?? tabs[0].title;
+	const tab = (search.tab as string) ?? tabsWithHome[0].title;
 
-	const currentItem = tabs.find((t) => t.title === tab);
+	const currentItem = tabsWithHome.find((t) => t.title === tab);
 
 	const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
 
@@ -59,7 +69,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
 	async function getComponents() {
 		if (!canGetComponents) return null;
-		if ("schema" in currentItem!) {
+		if (!!currentItem && "schema" in currentItem) {
 			const currentSchema = appSchema[currentItem.schema];
 			if ("components" in currentSchema) {
 				const components = await currentSchema.components();
@@ -116,17 +126,18 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 						/>
 					) : (
 						<Tabs
+							key={tab}
 							defaultValue={
-								localStorage.getItem(`tab-#${basePath}`) ??
+								localStorage.getItem(`tab-#${basePath}-${tab}`) ??
 								components[0]?.name ??
 								"table"
 							}
 							className="flex flex-1 flex-col"
 							onValueChange={(value) => {
-								localStorage.setItem(`tab-#${basePath}`, value);
+								localStorage.setItem(`tab-#${basePath}-${tab}`, value);
 							}}
 						>
-							<TabsList className="">
+							<TabsList>
 								<TabsTrigger value="table">Table</TabsTrigger>
 								{components.map(({ name }) => (
 									<TabsTrigger value={name} key={name}>
@@ -166,10 +177,10 @@ export function AutoKanban<K extends SchemaKeys>({
 	groupKey,
 	cardBuilder,
 }: AutoKanbanProps<K>) {
-	const { data: orders = [], isLoading } = api[schemaName]?.useGet({
+	const { data: orders = [], isLoading } = api[schemaName].useGet({
 		keys: [slug],
 	});
-	const { mutate: update } = api[schemaName]?.useUpdate({ keys: [slug] });
+	const { mutate: update } = api[schemaName].useUpdate({ keys: [slug] });
 	const columns = _.groupBy(orders, (o) => o[groupKey]);
 	const schema = getNestedZodShape(schemaName, appSchema.schemaShape);
 
@@ -283,16 +294,16 @@ function KanbanColumn<K extends SchemaKeys>({
 			<div className="flex flex-col gap-2 p-0.5">
 				{context.loading
 					? Array.from({ length: 3 }).map((_, i) => (
-							<Skeleton key={i} className="w-full h-12" />
-						))
+						<Skeleton key={i} className="w-full h-12" />
+					))
 					: orders.map((order) => (
-							<KanbanCard
-								key={order._?.soul}
-								order={order}
-								cardBuilder={cardBuilder}
-								asHandle
-							/>
-						))}
+						<KanbanCard
+							key={order._?.soul}
+							order={order}
+							cardBuilder={cardBuilder}
+							asHandle
+						/>
+					))}
 			</div>
 		</Kanban.Column>
 	);
