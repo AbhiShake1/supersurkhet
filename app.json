@@ -1,0 +1,8 @@
+{
+  "android": {
+    "package": "com.abhishake001.tanstartcfpages"
+  },
+  "ios": {
+    "bundleIdentifier": "com.abhishake001.tanstartcfpages"
+  }
+}

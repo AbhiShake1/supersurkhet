@@ -1,6 +1,7 @@
 import WifiManager from 'react-native-wifi-reborn';
 import { Platform, PermissionsAndroid } from 'react-native';
 
+// biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
 export class WifiService {
   static async requestLocationPermission(): Promise<boolean> {
     if (Platform.OS === 'android') {
@@ -23,10 +24,10 @@ export class WifiService {
     return true; // iOS doesn't require this permission
   }
 
-  static async connectToWifi(ssid: string, password: string, isWep: boolean = false, isHidden: boolean = false): Promise<boolean> {
+  static async connectToWifi(ssid: string, password: string, isWep = false, isHidden = false): Promise<boolean> {
     try {
       // Request location permission for Android
-      const hasPermission = await this.requestLocationPermission();
+      const hasPermission = await WifiService.requestLocationPermission();
       if (!hasPermission && Platform.OS === 'android') {
         throw new Error('Location permission is required to connect to WiFi');
       }
@@ -54,11 +55,13 @@ export class WifiService {
     try {
       if (Platform.OS === 'android') {
         return await WifiManager.connectionStatus();
-      } else {
-        // For iOS, we'll check if we can get the current SSID
-        const ssid = await this.getCurrentWifiSSID();
-        return ssid !== null;
       }
+
+      // For iOS, we'll check if we can get the current SSID
+      // biome-ignore lint/complexity/noThisInStatic: <explanation>
+      const ssid = await this.getCurrentWifiSSID();
+      return ssid !== null;
+
     } catch (error) {
       console.error('Failed to check WiFi connection status:', error);
       return false;

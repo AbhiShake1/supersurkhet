@@ -5,8 +5,8 @@
  * responsive user experience while performing sophisticated workflows.
  */
 
-import type { DataMatrixAction } from "@/lib/schema";
 import { toast } from "sonner";
+import type { DataMatrixAction } from "../datamatrix";
 
 export interface ActionExecutorState {
 	phase: "initial" | "context_loading" | "interactive" | "completed" | "error";

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { Camera, useCameraDevices } from 'react-native-vision-camera';
-import { useScanBarcodes, BarcodeFormat } from 'vision-camera-code-scanner';
+import { useCodeScanner } from 'react-native-vision-camera';
 import { DataMatrixAction } from './DataMatrixTypes';
 
 interface QRScannerProps {
@@ -15,8 +15,21 @@ export function QRScanner({ onCodeScanned, onClose }: QRScannerProps) {
   const device = devices.back;
   const camera = useRef<Camera>(null);
 
-  const [frameProcessor, barcodes] = useScanBarcodes([BarcodeFormat.QR_CODE, BarcodeFormat.DATA_MATRIX], {
-    checkInverted: true,
+  const codeScanner = useCodeScanner({
+    codeTypes: ['qr', 'data-matrix'],
+    onCodeScanned: (codes) => {
+      if (codes.length > 0) {
+        const barcode = codes[0];
+        if (barcode.value) {
+          try {
+            const action: DataMatrixAction = JSON.parse(barcode.value);
+            onCodeScanned(action);
+          } catch (error) {
+            Alert.alert('Invalid QR Code', 'The scanned QR code does not contain valid data.');
+          }
+        }
+      }
+    }
   });
 
   useEffect(() => {
@@ -25,20 +38,6 @@ export function QRScanner({ onCodeScanned, onClose }: QRScannerProps) {
       setHasPermission(status === 'authorized');
     })();
   }, []);
-
-  useEffect(() => {
-    if (barcodes.length > 0) {
-      const barcode = barcodes[0];
-      if (barcode.rawValue) {
-        try {
-          const action: DataMatrixAction = JSON.parse(barcode.rawValue);
-          onCodeScanned(action);
-        } catch (error) {
-          Alert.alert('Invalid QR Code', 'The scanned QR code does not contain valid data.');
-        }
-      }
-    }
-  }, [barcodes, onCodeScanned]);
 
   if (!hasPermission) {
     return (
@@ -69,8 +68,7 @@ export function QRScanner({ onCodeScanned, onClose }: QRScannerProps) {
         style={StyleSheet.absoluteFill}
         device={device}
         isActive={true}
-        frameProcessor={frameProcessor}
-        frameProcessorFps={5}
+        codeScanner={codeScanner}
       />
       <View style={styles.overlay}>
         <View style={styles.topOverlay} />

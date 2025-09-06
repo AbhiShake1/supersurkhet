@@ -7,6 +7,7 @@ import { QRScanner } from '@/components/QRScanner';
 import { WifiService } from '@/components/WifiService';
 import { WebAppView } from '@/components/WebAppView';
 import type { DataMatrixAction } from '@/components/DataMatrixTypes';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function QRScreen() {
   const [isScanning, setIsScanning] = useState(false);
@@ -15,7 +16,7 @@ export default function QRScreen() {
 
   const handleCodeScanned = async (action: DataMatrixAction) => {
     setIsScanning(false);
-    
+
     // Handle different action types
     if (action.action === 'wifi_connect' && action.wifi) {
       // Connect to WiFi
@@ -24,10 +25,10 @@ export default function QRScreen() {
         action.wifi.password,
         action.wifi.security === 'WEP'
       );
-      
+
       if (success) {
         Alert.alert('Success', `Connected to WiFi network: ${action.wifi.ssid}`);
-        
+
         // Handle post-connect actions
         if (action.post_connect) {
           Alert.alert(
@@ -35,13 +36,13 @@ export default function QRScreen() {
             action.post_connect.notification.message
           );
         }
-        
+
         // Handle navigation after WiFi connection
         if (action.navigation) {
           setNavigationUrl(action.navigation.url);
           setShowWebApp(true);
         }
-        
+
         if (action.on_complete?.type === 'navigate' && action.on_complete.url) {
           setNavigationUrl(action.on_complete.url);
           setShowWebApp(true);
@@ -67,19 +68,19 @@ export default function QRScreen() {
 
   if (showWebApp) {
     return (
-      <View style={styles.container}>
-        <WebAppView 
+      <SafeAreaView style={styles.container}>
+        <WebAppView
           onDataMatrixAction={handleDataMatrixAction}
           initialUrl={navigationUrl || 'https://supersurkhet.com'}
         />
         <View style={styles.webAppControls}>
-          <Button 
-            title="Back to Scanner" 
+          <Button
+            title="Back to Scanner"
             onPress={() => setShowWebApp(false)}
             style={styles.controlButton}
           />
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -88,23 +89,23 @@ export default function QRScreen() {
       <ThemedText type="title" style={styles.title}>
         QR Scanner
       </ThemedText>
-      
+
       <ThemedText style={styles.description}>
         Scan QR codes or DataMatrix codes to connect to WiFi networks or access services.
       </ThemedText>
-      
+
       {!isScanning ? (
         <View style={styles.buttonContainer}>
-          <Button 
-            title="Start Scanning" 
+          <Button
+            title="Start Scanning"
             onPress={() => setIsScanning(true)}
             style={styles.button}
           />
         </View>
       ) : (
-        <QRScanner 
-          onCodeScanned={handleCodeScanned} 
-          onClose={() => setIsScanning(false)} 
+        <QRScanner
+          onCodeScanned={handleCodeScanned}
+          onClose={() => setIsScanning(false)}
         />
       )}
     </ThemedView>

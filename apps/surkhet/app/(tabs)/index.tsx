@@ -1,14 +1,50 @@
-import React from 'react';
-import { View, StyleSheet, Button } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, Button, Platform } from 'react-native';
 import { WebView } from 'react-native-webview';
-import Constants from 'expo-constants';
 import { useConfig } from '@/contexts/ConfigContext';
 import { ConfigDialog } from '@/components/ConfigDialog';
+import { QRScanner } from '@/components/QRScanner';
+import type { DataMatrixAction } from '@/components/DataMatrixTypes';
 
 export default function HomeScreen() {
   const { websiteUrl, showConfigDialog } = useConfig();
+  const [isScanning, setIsScanning] = useState(false);
+  const webViewRef = useRef<WebView>(null);
 
   const isDevelopment = __DEV__;
+
+  const handleCodeScanned = (action: DataMatrixAction) => {
+    setIsScanning(false);
+    const messageString = JSON.stringify({
+      type: 'DATAMATRIX_ACTION',
+      payload: action
+    });
+    
+    webViewRef.current?.injectJavaScript(`
+      window.postMessage(${messageString}, '*');
+      true;
+    `);
+  };
+
+  const handleWebViewMessage = (event: { nativeEvent: { data: string } }) => {
+    try {
+      const message = JSON.parse(event.nativeEvent.data);
+      if (message.type === 'QR_SCANNER_REQUEST') {
+        setIsScanning(true);
+      }
+    } catch (error) {
+      console.error('Failed to parse message from web app:', error);
+    }
+  };
+
+  if (isScanning) {
+    return (
+      <QRScanner
+        onCodeScanned={handleCodeScanned}
+        onClose={() => setIsScanning(false)}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -23,12 +59,15 @@ export default function HomeScreen() {
       )}
       
       <WebView
+        ref={webViewRef}
         source={{ uri: websiteUrl }}
         style={styles.webview}
         javaScriptEnabled={true}
         domStorageEnabled={true}
         startInLoadingState={true}
         scalesPageToFit={true}
+        onMessage={handleWebViewMessage}
+        mediaPlaybackRequiresUserAction={Platform.OS === 'ios'}
       />
       
       <ConfigDialog />

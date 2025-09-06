@@ -1,15 +1,43 @@
 import React, { useRef } from 'react';
 import { WebView } from 'react-native-webview';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Alert, Platform } from 'react-native';
 import type { DataMatrixAction } from '@/components/DataMatrixTypes';
+import { QRScanner } from '@/components/QRScanner';
 
 interface WebAppViewProps {
   onDataMatrixAction?: (action: DataMatrixAction) => void;
+  onQRScannerRequest?: () => void;
   initialUrl?: string;
 }
 
-export function WebAppView({ onDataMatrixAction, initialUrl = 'https://supersurkhet.com' }: WebAppViewProps) {
+export function WebAppView({ 
+  onDataMatrixAction, 
+  onQRScannerRequest,
+  initialUrl = 'https://supersurkhet.com' 
+}: WebAppViewProps) {
   const webViewRef = useRef<WebView>(null);
+  const [showQRScanner, setShowQRScanner] = React.useState(false);
+
+  // Handle QR code scanned in native scanner
+  const handleCodeScanned = (action: DataMatrixAction) => {
+    setShowQRScanner(false);
+    
+    // Send the scanned action to the web app
+    const messageString = JSON.stringify({
+      type: 'DATAMATRIX_ACTION',
+      payload: action
+    });
+    
+    webViewRef.current?.injectJavaScript(`
+      window.dispatchEvent(new MessageEvent('message', { data: ${JSON.stringify(messageString)} }));
+      true;
+    `);
+    
+    // Also notify the parent component
+    if (onDataMatrixAction) {
+      onDataMatrixAction(action);
+    }
+  };
 
   // Handle messages from the web app
   const handleWebViewMessage = (event: { nativeEvent: { data: string } }) => {
@@ -26,6 +54,15 @@ export function WebAppView({ onDataMatrixAction, initialUrl = 'https://supersurk
         case 'NAVIGATE':
           // Handle navigation requests from the web app
           console.log('Navigation request from web app:', message.payload);
+          break;
+        case 'QR_SCANNER_REQUEST':
+          // Handle QR scanner request from web app
+          if (onQRScannerRequest) {
+            onQRScannerRequest();
+          } else {
+            // Default behavior: show native QR scanner
+            setShowQRScanner(true);
+          }
           break;
         default:
           console.log('Unknown message from web app:', message);
@@ -71,8 +108,20 @@ export function WebAppView({ onDataMatrixAction, initialUrl = 'https://supersurk
     true;
   `;
 
+  // If showing QR scanner, render it instead of WebView
+  if (showQRScanner) {
+    return (
+      <View>
+        <QRScanner 
+          onCodeScanned={handleCodeScanned} 
+          onClose={() => setShowQRScanner(false)} 
+        />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.container}>
+    <View>
       <WebView
         ref={webViewRef}
         source={{ uri: initialUrl }}
@@ -82,13 +131,8 @@ export function WebAppView({ onDataMatrixAction, initialUrl = 'https://supersurk
         domStorageEnabled={true}
         startInLoadingState={true}
         scalesPageToFit={true}
+        mediaPlaybackRequiresUserAction={Platform.OS === 'ios'}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});

@@ -220,58 +220,131 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 function RootDocument({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		gun.user().recall({ sessionStorage: true });
+		
+		// Set up message listener for communication with Expo app
+		const handleMessage = (event: MessageEvent) => {
+			try {
+				const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+				
+				// Handle messages from the Expo app
+				if (message.type === 'DEVICE_READY') {
+					console.log('Expo app is ready and connected');
+				} else if (message.type === 'WEB_TO_NATIVE') {
+					// Handle responses from native app
+					console.log('Received response from Expo app:', message.payload);
+				}
+			} catch (error) {
+				console.error('Failed to parse message from Expo app:', error);
+			}
+		};
+
+		window.addEventListener('message', handleMessage);
+		
+		return () => {
+			window.removeEventListener('message', handleMessage);
+		};
 	}, []);
 
 	const handleActionDetected = (action: DataMatrixAction) => {
 		console.log("Action detected:", action);
 
+		// Import utility functions for Expo communication
+		const isExpoContext = () => typeof window !== 'undefined' && !!(window as any).ReactNativeWebView;
+		const sendMessageToExpo = (message: any) => {
+			try {
+				if (isExpoContext()) {
+					(window as any).ReactNativeWebView.postMessage(JSON.stringify(message));
+				}
+			} catch (error) {
+				console.error('Failed to send message to Expo app:', error);
+			}
+		};
+
 		switch (action.action) {
 			case 'wifi_connect':
 				if (action.wifi) {
-					// In a web context, we can't directly connect to WiFi
-					// Instead, we'll show instructions to the user
-					toast.info(`WiFi Network: ${action.wifi.ssid}`, {
-						description: "Please connect to this WiFi network manually in your device settings.",
-						duration: 10000,
-					});
+					// Check if we're in Expo app context
+					if (isExpoContext()) {
+						// Send WiFi connection request to Expo app
+						sendMessageToExpo({
+							type: 'DATAMATRIX_ACTION',
+							payload: action
+						});
+					} else {
+						// In a web context, we can't directly connect to WiFi
+						// Instead, we'll show instructions to the user
+						toast.info(`WiFi Network: ${action.wifi.ssid}`, {
+							description: "Please connect to this WiFi network manually in your device settings.",
+							duration: 10000,
+						});
 
-					// If there's a post-connect notification, show it
-					if (action.post_connect) {
-						setTimeout(() => {
-							toast.success(
-								action.post_connect?.notification.title,
-								{ description: action.post_connect?.notification.message }
-							);
-						}, 3000);
-					}
+						// If there's a post-connect notification, show it
+						if (action.post_connect) {
+							setTimeout(() => {
+								toast.success(
+									action.post_connect?.notification.title,
+									{ description: action.post_connect?.notification.message }
+								);
+							}, 3000);
+						}
 
-					// If there's navigation after connection, show it
-					if (action.navigation) {
-						setTimeout(() => {
-							toast.info("Next Step", {
-								description: `After connecting to WiFi, navigate to: ${action.navigation?.url}`,
-							});
-						}, 6000);
+						// If there's navigation after connection, show it
+						if (action.navigation) {
+							setTimeout(() => {
+								toast.info("Next Step", {
+									description: `After connecting to WiFi, navigate to: ${action.navigation?.url}`,
+								});
+							}, 6000);
+						}
 					}
 				}
 				break;
 
 			case 'navigate':
 				if (action.navigation) {
-					// Navigate to the specified URL
-					window.location.href = action.navigation.url;
+					// Check if we're in Expo app context
+					if (isExpoContext()) {
+						// Send navigation request to Expo app
+						sendMessageToExpo({
+							type: 'NAVIGATE',
+							payload: action.navigation
+						});
+					} else {
+						// Navigate to the specified URL in web context
+						window.location.href = action.navigation.url;
+					}
 				}
 				break;
 
 			case 'notification':
-				// Show a notification
-				toast.info("Notification", {
-					description: "You've received a notification from the QR code.",
-				});
+				// Check if we're in Expo app context
+				if (isExpoContext()) {
+					// Send notification request to Expo app
+					sendMessageToExpo({
+						type: 'NOTIFICATION',
+						payload: {
+							title: "Notification",
+							message: "You've received a notification from the QR code."
+						}
+					});
+				} else {
+					// Show a notification in web context
+					toast.info("Notification", {
+						description: "You've received a notification from the QR code.",
+					});
+				}
 				break;
 
 			default:
-				toast.success(`Action detected: ${action.action}`);
+				// For all other actions, send to Expo app if available
+				if (isExpoContext()) {
+					sendMessageToExpo({
+						type: 'DATAMATRIX_ACTION',
+						payload: action
+					});
+				} else {
+					toast.success(`Action detected: ${action.action}`);
+				}
 		}
 	};
 

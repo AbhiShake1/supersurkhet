@@ -14,14 +14,14 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {isDevelopment && (
         <View style={styles.devButtonContainer}>
-          <Button 
-            title="Config" 
+          <Button
+            title="Config"
             onPress={showConfigDialog}
             color="#0a7ea4"
           />
         </View>
       )}
-      
+
       <WebView
         source={{ uri: websiteUrl }}
         style={styles.webview}
@@ -30,7 +30,7 @@ export default function HomeScreen() {
         startInLoadingState={true}
         scalesPageToFit={true}
       />
-      
+
       <ConfigDialog />
     </View>
   );

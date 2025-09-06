@@ -43,7 +43,7 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 					className={cn(
 						"mx-auto mt-2 max-w-6xl px-6 transition-all duration-300 lg:px-12",
 						isScrolled &&
-							"bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5",
+						"bg-background/50 max-w-4xl rounded-2xl border backdrop-blur-lg lg:px-5",
 					)}
 				>
 					<div className="relative flex flex-wrap items-center justify-between gap-6 py-3 lg:gap-0 lg:py-4">
@@ -57,8 +57,9 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 							</Link>
 
 							<button
+								type="button"
 								onClick={() => setMenuState(!menuState)}
-								aria-label={menuState == true ? "Close Menu" : "Open Menu"}
+								aria-label={menuState === true ? "Close Menu" : "Open Menu"}
 								className="relative z-20 -m-2.5 -mr-4 block cursor-pointer p-2.5 lg:hidden"
 							>
 								<Menu className="in-data-[state=active]:rotate-180 in-data-[state=active]:scale-0 in-data-[state=active]:opacity-0 m-auto size-6 duration-200" />
