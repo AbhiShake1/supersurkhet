@@ -259,7 +259,7 @@ export function MenuSection({ title, items }: MenuSectionProps) {
 			>
 				<h2 className="text-3xl md:text-4xl font-bold mb-4 relative inline-block">
 					{title}
-					<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"/>
+					<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
 				</h2>
 			</motion.div>
 			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
@@ -280,7 +280,7 @@ export function MenuSection({ title, items }: MenuSectionProps) {
 	);
 }
 
-export interface MenuItemType extends NestedSchemaType<"menuItem"> {}
+export interface MenuItemType extends NestedSchemaType<"menuItem"> { }
 
 const _checkout = createServerFn({ method: "POST" })
 	.validator(z.object({ amount: z.number() }))
@@ -379,7 +379,7 @@ export function CartButton() {
 			paymentStatus: "paid",
 		});
 	};
-	
+
 	// Refs for animations
 	const cartRef = useRef(null);
 	const isCartInView = useInView(cartRef, { once: true, margin: "-100px" });
@@ -442,7 +442,7 @@ export function CartButton() {
 													</p>
 													<Button
 														className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-400/90 hover:to-orange-500/90 transition-all duration-300 transform hover:scale-[1.02]"
-														// onClick={() => onOpenChange(false)}
+													// onClick={() => onOpenChange(false)}
 													>
 														Browse Menu
 													</Button>
@@ -590,7 +590,7 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 	const { data: _menuItems = [], isLoading } = api.menuItem.useGet({
 		keys: [slug],
 	});
-	
+
 	const menuItems = (() => {
 		const __menuItems = _menuItems.map((m) => ({
 			...m,
@@ -607,7 +607,7 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 	// Refs for animations
 	const menuRef = useRef(null);
 	const categoriesRef = useRef(null);
-	
+
 	const isMenuInView = useInView(menuRef, { once: true, margin: "-100px" });
 	const isCategoriesInView = useInView(categoriesRef, { once: true, margin: "-100px" });
 
@@ -615,166 +615,154 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 		<div className="min-h-screen bg-background">
 			<div className="container mx-auto px-4 py-16">
 				{/* Main Content */}
-					<div className="lg:col-span-2 space-y-20">
-						{/* Search Bar */}
-						<motion.div
-							initial={{ opacity: 0, y: 30 }}
-							animate={isMenuInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-							transition={{ duration: 0.6 }}
-							ref={menuRef}
-						>
-							<div className="flex justify-end mb-6">
-								<div className="relative w-64">
-									<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
-									<Input
-										value={search}
-										onChange={(e) => setSearch(e.target.value)}
-										type="search"
-										placeholder="Search our delicious menu..."
-										className="w-full pl-10 pr-4 py-3 rounded-full border-amber-500/30 dark:border-amber-400/30 bg-card/50 dark:bg-card/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all duration-200 hover:border-amber-500/50 dark:hover:border-amber-400/50"
-									/>
-								</div>
-							</div>
-						</motion.div>
-
-						{/* Promotional Banner */}
-						<motion.div
-							initial={{ opacity: 0, y: 30 }}
-							animate={isMenuInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-							transition={{ duration: 0.6, delay: 0.1 }}
-						>
-							<div className="mb-8 relative">
-								<Carousel
-									slides={[
-										{
-											title: "Family Special",
-											button: "View Offer",
-											src: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop",
-										},
-										{
-											title: "Happy Hours",
-											button: "Learn More",
-											src: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1974&auto=format&fit=crop",
-										},
-										{
-											title: "Weekend Brunch",
-											button: "Book Now",
-											src: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1970&auto=format&fit=crop",
-										},
-										{
-											title: "Chef's Table Experience",
-											button: "Reserve Now",
-											src: "https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?q=80&w=2070&auto=format&fit=crop",
-										},
-										{
-											title: "Seasonal Menu",
-											button: "Explore Menu",
-											src: "https://images.unsplash.com/photo-1547496502-affa22d38842?q=80&w=2077&auto=format&fit=crop",
-										},
-										{
-											title: "Wine Tasting Events",
-											button: "Join Event",
-											src: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=2070&auto=format&fit=crop",
-										},
-										{
-											title: "Private Dining",
-											button: "Inquire Now",
-											src: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop",
-										},
-										{
-											title: "Cooking Classes",
-											button: "Register",
-											src: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=2070&auto=format&fit=crop",
-										},
-										{
-											title: "Local Ingredients",
-											button: "Learn More",
-											src: "https://images.unsplash.com/photo-1506484381205-f7945653044d?q=80&w=2070&auto=format&fit=crop",
-										},
-										{
-											title: "Festive Celebrations",
-											button: "Book Event",
-											src: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop",
-										},
-										{
-											title: "Corporate Events",
-											button: "Contact Us",
-											src: "https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?q=80&w=2070&auto=format&fit=crop",
-										},
-										{
-											title: "Gift Cards",
-											button: "Purchase Now",
-											src: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop",
-										},
-									]}
+				<div className="lg:col-span-2 space-y-20">
+					{/* Search Bar */}
+					<motion.div
+						initial={{ opacity: 0, y: 30 }}
+						animate={isMenuInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+						transition={{ duration: 0.6 }}
+						ref={menuRef}
+					>
+						<div className="flex justify-end mb-6">
+							<div className="relative w-64">
+								<Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary" />
+								<Input
+									value={search}
+									onChange={(e) => setSearch(e.target.value)}
+									type="search"
+									placeholder="Search our delicious menu..."
+									className="w-full pl-10 pr-4 py-3 rounded-full border-amber-500/30 dark:border-amber-400/30 bg-card/50 dark:bg-card/30 text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-amber-500 dark:focus:border-amber-400 focus:ring-1 focus:ring-amber-500 dark:focus:ring-amber-400 transition-all duration-200 hover:border-amber-500/50 dark:hover:border-amber-400/50"
 								/>
 							</div>
-						</motion.div>
-						<div className="h-8" />
+						</div>
+					</motion.div>
 
-						{/* Menu Categories */}
-						<section ref={categoriesRef}>
-							<motion.h2
-								className="text-3xl md:text-4xl font-bold mb-12 relative inline-block"
-								initial={{ opacity: 0, x: -20 }}
-								animate={isCategoriesInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-								transition={{ duration: 0.6 }}
-							>
-								Our Menu
-								<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
-							</motion.h2>
-						</section>
+					{/* Promotional Banner */}
+					<motion.div
+						initial={{ opacity: 0, y: 30 }}
+						animate={isMenuInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+						transition={{ duration: 0.6, delay: 0.1 }}
+					>
+						<div className="mb-8 relative">
+							<Carousel
+								slides={[
+									{
+										title: "Family Special",
+										button: "View Offer",
+										src: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop",
+									},
+									{
+										title: "Happy Hours",
+										button: "Learn More",
+										src: "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1974&auto=format&fit=crop",
+									},
+									{
+										title: "Weekend Brunch",
+										button: "Book Now",
+										src: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1970&auto=format&fit=crop",
+									},
+									{
+										title: "Chef's Table Experience",
+										button: "Reserve Now",
+										src: "https://images.unsplash.com/photo-1600565193348-f74bd3c7ccdf?q=80&w=2070&auto=format&fit=crop",
+									},
+									{
+										title: "Seasonal Menu",
+										button: "Explore Menu",
+										src: "https://images.unsplash.com/photo-1547496502-affa22d38842?q=80&w=2077&auto=format&fit=crop",
+									},
+									{
+										title: "Wine Tasting Events",
+										button: "Join Event",
+										src: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=2070&auto=format&fit=crop",
+									},
+									{
+										title: "Private Dining",
+										button: "Inquire Now",
+										src: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop",
+									},
+									{
+										title: "Cooking Classes",
+										button: "Register",
+										src: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?q=80&w=2070&auto=format&fit=crop",
+									},
+									{
+										title: "Local Ingredients",
+										button: "Learn More",
+										src: "https://images.unsplash.com/photo-1506484381205-f7945653044d?q=80&w=2070&auto=format&fit=crop",
+									},
+									{
+										title: "Festive Celebrations",
+										button: "Book Event",
+										src: "https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop",
+									},
+									{
+										title: "Corporate Events",
+										button: "Contact Us",
+										src: "https://images.unsplash.com/photo-1533777857889-4be7c70b33f7?q=80&w=2070&auto=format&fit=crop",
+									},
+									{
+										title: "Gift Cards",
+										button: "Purchase Now",
+										src: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=2070&auto=format&fit=crop",
+									},
+								]}
+							/>
+						</div>
+					</motion.div>
+					<div className="h-8" />
 
-						{/* Menu Items */}
-						{isLoading ? (
-							<section className="mb-16 gap-6 flex flex-col">
-								<Skeleton className="h-12 w-36" />
-								<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-									{Array.from({ length: 10 }).map((_, i) => (
-										<Card className="relative h-96" key={i}>
-											<div className="z-50 absolute top-6 right-6">
-												<Skeleton className="h-6 w-24 rounded-full" />
+					{/* Menu Categories */}
+					{/* Menu Items */}
+					{isLoading ? (
+						<section className="mb-16 gap-6 flex flex-col">
+							<Skeleton className="h-12 w-36" />
+							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+								{Array.from({ length: 10 }).map((_, i) => (
+									<Card className="relative h-96" key={i}>
+										<div className="z-50 absolute top-6 right-6">
+											<Skeleton className="h-6 w-24 rounded-full" />
+										</div>
+
+										<Skeleton className="h-[320px] w-full rounded-md" />
+
+										<CardContent className="pt-4">
+											<div className="flex justify-between items-start mb-2">
+												<Skeleton className="h-6 w-1/2 rounded" />
+												<Skeleton className="h-6 w-16 rounded" />
 											</div>
+											<Skeleton className="h-4 w-full mb-1 rounded" />
+											<Skeleton className="h-4 w-5/6 mb-1 rounded" />
+											<Skeleton className="h-4 w-2/3 rounded" />
+										</CardContent>
 
-											<Skeleton className="h-[320px] w-full rounded-md" />
-
-											<CardContent className="pt-4">
-												<div className="flex justify-between items-start mb-2">
-													<Skeleton className="h-6 w-1/2 rounded" />
-													<Skeleton className="h-6 w-16 rounded" />
+										<CardFooter className="border-t border-muted/50 dark:border-muted/30 pt-4">
+											<div className="flex items-center justify-between w-full">
+												<div className="flex items-center space-x-2">
+													<Skeleton className="h-8 w-8 rounded-full" />
+													<Skeleton className="h-6 w-6 rounded" />
+													<Skeleton className="h-8 w-8 rounded-full" />
 												</div>
-												<Skeleton className="h-4 w-full mb-1 rounded" />
-												<Skeleton className="h-4 w-5/6 mb-1 rounded" />
-												<Skeleton className="h-4 w-2/3 rounded" />
-											</CardContent>
-
-											<CardFooter className="border-t border-muted/50 dark:border-muted/30 pt-4">
-												<div className="flex items-center justify-between w-full">
-													<div className="flex items-center space-x-2">
-														<Skeleton className="h-8 w-8 rounded-full" />
-														<Skeleton className="h-6 w-6 rounded" />
-														<Skeleton className="h-8 w-8 rounded-full" />
-													</div>
-													<Skeleton className="h-10 w-28 rounded-md" />
-												</div>
-											</CardFooter>
-										</Card>
-									))}
-								</div>
-							</section>
-						) : (
-							Object.entries(menuData).map(([category, items], index) => (
-								<motion.div
-									key={category}
-									initial={{ opacity: 0, y: 30 }}
-									animate={isMenuInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-									transition={{ duration: 0.6, delay: index * 0.1 }}
-								>
-									<MenuSection key={category} title={category} items={items} />
-								</motion.div>
-							))
-						)}
-					</div>
+												<Skeleton className="h-10 w-28 rounded-md" />
+											</div>
+										</CardFooter>
+									</Card>
+								))}
+							</div>
+						</section>
+					) : (
+						Object.entries(menuData).map(([category, items], index) => (
+							<motion.div
+								key={category}
+								initial={{ opacity: 0, y: 30 }}
+								animate={isMenuInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+								transition={{ duration: 0.6, delay: index * 0.1 }}
+							>
+								<MenuSection key={category} title={category} items={items} />
+							</motion.div>
+						))
+					)}
+				</div>
 			</div>
 
 			<CartButton />

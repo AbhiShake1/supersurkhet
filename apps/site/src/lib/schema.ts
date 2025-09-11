@@ -354,14 +354,14 @@ export const featureSchema = createSchema({
 		components: async () => {
 			const { MenuManagement } = await import(
 				"@/components/ui/admin/menu-management"
-			)
+			);
 
 			return [
 				{
 					name: "Menu Items",
 					component: MenuManagement,
-				}
-			]
+				},
+			];
 		},
 	},
 	dataMatrixAction: {

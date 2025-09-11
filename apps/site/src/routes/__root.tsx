@@ -220,12 +220,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 function RootDocument({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		gun.user().recall({ sessionStorage: true });
-		
+
 		// Set up message listener for communication with Expo app
 		const handleMessage = (event: MessageEvent) => {
 			try {
 				const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-				
+
 				// Handle messages from the Expo app
 				if (message.type === 'DEVICE_READY') {
 					console.log('Expo app is ready and connected');
@@ -239,7 +239,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 		};
 
 		window.addEventListener('message', handleMessage);
-		
+
 		return () => {
 			window.removeEventListener('message', handleMessage);
 		};

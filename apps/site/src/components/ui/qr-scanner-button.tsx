@@ -109,8 +109,8 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
 
       // If the button didn't move much, treat it as a click
       const distance = Math.sqrt(
-        Math.pow(position.x - initialPosition.x, 2) +
-        Math.pow(position.y - initialPosition.y, 2)
+        (position.x - initialPosition.x) ** 2 +
+        (position.y - initialPosition.y) ** 2
       );
 
       if (distance < 5) {
@@ -174,7 +174,7 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
         {isOpen && (
           <div
             className="fixed inset-0 z-[100] bg-background flex flex-col"
-            onClick={(e) => {
+            onKeyDown={(e) => {
               if (e.target === e.currentTarget) {
                 setIsOpen(false);
               }
