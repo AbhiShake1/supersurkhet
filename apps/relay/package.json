@@ -8,12 +8,10 @@
     "build": "pnpx esbuild ./src/index.ts --bundle --platform=node --external:node:* --outfile=build/worker.js"
   },
   "dependencies": {
-    "gun": "^0.2020.1239",
-    "uuid": "^13.0.0"
+    "gun": "^0.2020.1239"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240208.0",
-    "@types/uuid": "^10.0.0",
     "typescript": "^5.3.3",
     "wrangler": "^3.28.2"
   }
