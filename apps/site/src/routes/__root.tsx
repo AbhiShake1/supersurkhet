@@ -75,11 +75,13 @@ function getCurrentUser() {
 }
 
 function recallUser() {
-	return gun.user().recall({ sessionStorage: true });
+	gun.user().auth(JSON.parse(localStorage.getItem("gun-user") || "{}"));
+	return gun.user().recall({ sessionStorage: false });
 }
 
 function logout() {
 	gun.user().leave();
+	localStorage.removeItem("gun-user")
 	window.location.reload();
 }
 

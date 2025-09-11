@@ -105,6 +105,9 @@ export function AuthForm({
 			return new Promise((resolve, reject) => {
 				gun.user().auth(alias, password, (ack) => {
 					if ("err" in ack && ack.err) return reject(new Error(ack.err));
+					if ("sea" in ack) {
+						localStorage.setItem("gun-user", JSON.stringify(ack.sea));
+					}
 					resolve(gun.user().is); // Return the authenticated user object
 				});
 			});
