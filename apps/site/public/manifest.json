@@ -1,16 +1,25 @@
 {
-  "short_name": "SuperSurkhet",
+  "short_name": "surkhet",
   "name": "SuperSurkhet - Digital Hub of Surkhet",
   "icons": [
     {
       "src": "/icon.png",
+      "sizes": "1024x1024",
+      "type": "image/png"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-wide.png",
+      "sizes": "1402x882",
       "type": "image/png",
-      "sizes": "192x192"
+      "form_factor": "wide"
     },
     {
-      "src": "/icon.png",
+      "src": "/screenshots/mobile-narrow.png",
+      "sizes": "644x1136",
       "type": "image/png",
-      "sizes": "512x512"
+      "form_factor": "narrow"
     }
   ],
   "start_url": "/",

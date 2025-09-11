@@ -55,7 +55,7 @@ async function getUserProfile() {
 }
 
 function getCurrentUser() {
-	const user = gun.user().recall({ sessionStorage: true });
+	const user = recallUser();
 	if (!user || !user.is) return null;
 	// const dbUser = await new Promise((resolve, reject) => {
 	// 	gun.get("user").put(user)
@@ -74,13 +74,17 @@ function getCurrentUser() {
 	};
 }
 
+function recallUser() {
+	return gun.user().recall({ sessionStorage: true });
+}
+
 function logout() {
 	gun.user().leave();
 	window.location.reload();
 }
 
 function isAuthenticated() {
-	gun.user().recall({ sessionStorage: true });
+	recallUser()
 	return !!gun.user().is;
 }
 
@@ -90,6 +94,10 @@ const auth = {
 	isAuthenticated,
 	getUserProfile,
 };
+
+function isMobile() {
+	return /Android|webOS|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+}
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
 	head: () => ({
@@ -219,7 +227,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
-		gun.user().recall({ sessionStorage: true });
+		recallUser();
 
 		// Set up message listener for communication with Expo app
 		const handleMessage = (event: MessageEvent) => {
@@ -361,7 +369,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 								<ConfettiProvider>
 									<LoginPromptProvider>
 										{children}
-										<QRScannerButton onActionDetected={handleActionDetected} />
+										{
+											isMobile() && <QRScannerButton onActionDetected={handleActionDetected} />
+										}
 									</LoginPromptProvider>
 								</ConfettiProvider>
 							</OneTapLoginProvider>
