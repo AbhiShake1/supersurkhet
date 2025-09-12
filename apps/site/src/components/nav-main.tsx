@@ -26,7 +26,7 @@ export function NavMain({ items }: NavMainProps) {
 		<SidebarGroup>
 			<SidebarMenu>
 				{items.map((item) => (
-					<SidebarMenuItem>
+					<SidebarMenuItem key={item.title}>
 						<SidebarMenuButton
 							tooltip={item.title}
 							className={cn(tab === item.title && "bg-accent")}

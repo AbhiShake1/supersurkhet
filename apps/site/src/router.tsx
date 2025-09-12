@@ -18,6 +18,7 @@ export function createRouter() {
 			},
 			scrollRestoration: true,
 			defaultPreloadStaleTime: 0,
+			defaultViewTransition: true,
 		}),
 		TanstackQuery.getContext().queryClient,
 	);

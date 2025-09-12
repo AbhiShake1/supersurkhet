@@ -7,7 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { AutoFormFieldProps } from "@autoform/react";
 import { TooltipTrigger } from "@radix-ui/react-tooltip";
-import { ImagePlus, Trash2, Upload, X } from "lucide-react";
+import { Trash2, Upload, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useState, type ComponentProps } from "react";
 import { Tooltip, TooltipContent } from "../../tooltip";
@@ -37,8 +37,8 @@ export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
 
 export interface ImageUploadItemProps
 	extends Omit<ComponentProps<"input">, "defaultValue">,
-		UseImageUploadProps,
-		Pick<AutoFormFieldProps, "control" | "path"> {}
+	UseImageUploadProps,
+	Pick<AutoFormFieldProps, "control" | "path"> { }
 
 export function ImageUploadItem({
 	className,
@@ -88,7 +88,7 @@ export function ImageUploadItem({
 			setIsDragging(false);
 
 			const file = e.dataTransfer.files?.[0];
-			if (file && file.type.startsWith("image/")) {
+			if (file?.type.startsWith("image/")) {
 				const fakeEvent = {
 					target: {
 						files: [file],
@@ -138,9 +138,7 @@ export function ImageUploadItem({
 						isDragging && "border-primary/50 bg-primary/5",
 					)}
 				>
-					<div className="rounded-full bg-background p-3 shadow-sm">
-						<ImagePlus className="h-6 w-6 text-muted-foreground" />
-					</div>
+					<UploadIllustration />
 					<div className="text-center">
 						<p className="text-sm font-medium">Click to select</p>
 						<p className="text-xs text-muted-foreground">
@@ -190,6 +188,7 @@ export function ImageUploadItem({
 						<div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
 							<span className="truncate">{fileName}</span>
 							<button
+								type="button"
 								onClick={handleRemove}
 								className="ml-auto rounded-full p-1 hover:bg-muted"
 							>
@@ -202,3 +201,91 @@ export function ImageUploadItem({
 		</div>
 	);
 }
+
+const UploadIllustration = () => (
+	<div className="relative w-16 h-16">
+		<svg
+			viewBox="0 0 100 100"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+			className="w-full h-full"
+			aria-label="Upload illustration"
+		>
+			<title>Upload File Illustration</title>
+			<circle
+				cx="50"
+				cy="50"
+				r="45"
+				className="stroke-gray-200 dark:stroke-gray-700"
+				strokeWidth="2"
+				strokeDasharray="4 4"
+			>
+				<animateTransform
+					attributeName="transform"
+					type="rotate"
+					from="0 50 50"
+					to="360 50 50"
+					dur="60s"
+					repeatCount="indefinite"
+				/>
+			</circle>
+
+			<path
+				d="M30 35H70C75 35 75 40 75 40V65C75 70 70 70 70 70H30C25 70 25 65 25 65V40C25 35 30 35 30 35Z"
+				className="fill-accent stroke-primary"
+				strokeWidth="2"
+			>
+				<animate
+					attributeName="d"
+					dur="2s"
+					repeatCount="indefinite"
+					values="
+                        M30 35H70C75 35 75 40 75 40V65C75 70 70 70 70 70H30C25 70 25 65 25 65V40C25 35 30 35 30 35Z;
+                        M30 38H70C75 38 75 43 75 43V68C75 73 70 73 70 73H30C25 73 25 68 25 68V43C25 38 30 38 30 38Z;
+                        M30 35H70C75 35 75 40 75 40V65C75 70 70 70 70 70H30C25 70 25 65 25 65V40C25 35 30 35 30 35Z"
+				/>
+			</path>
+
+			<path
+				d="M30 35C30 35 35 35 40 35C45 35 45 30 50 30C55 30 55 35 60 35C65 35 70 35 70 35"
+				className="stroke-primary"
+				strokeWidth="2"
+				fill="none"
+			/>
+
+			<g className="transform translate-y-2">
+				<line
+					x1="50"
+					y1="45"
+					x2="50"
+					y2="60"
+					className="stroke-primary"
+					strokeWidth="2"
+					strokeLinecap="round"
+				>
+					<animate
+						attributeName="y2"
+						values="60;55;60"
+						dur="2s"
+						repeatCount="indefinite"
+					/>
+				</line>
+				<polyline
+					points="42,52 50,45 58,52"
+					className="stroke-primary"
+					strokeWidth="2"
+					strokeLinecap="round"
+					strokeLinejoin="round"
+					fill="none"
+				>
+					<animate
+						attributeName="points"
+						values="42,52 50,45 58,52;42,47 50,40 58,47;42,52 50,45 58,52"
+						dur="2s"
+						repeatCount="indefinite"
+					/>
+				</polyline>
+			</g>
+		</svg>
+	</div>
+);

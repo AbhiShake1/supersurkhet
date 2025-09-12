@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Carousel } from "@/components/ui/carousel";
+// import { Carousel } from "@/components/ui/carousel";
 import {
 	Credenza,
 	CredenzaBody,
@@ -615,7 +615,7 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 		<div className="min-h-screen bg-background">
 			<div className="container mx-auto px-4 py-16">
 				{/* Main Content */}
-				<div className="lg:col-span-2 space-y-20">
+				<div className="lg:col-span-2 space-y-4">
 					{/* Search Bar */}
 					<motion.div
 						initial={{ opacity: 0, y: 30 }}
@@ -638,7 +638,7 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 					</motion.div>
 
 					{/* Promotional Banner */}
-					<motion.div
+					{/* <motion.div
 						initial={{ opacity: 0, y: 30 }}
 						animate={isMenuInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
 						transition={{ duration: 0.6, delay: 0.1 }}
@@ -709,7 +709,7 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 								]}
 							/>
 						</div>
-					</motion.div>
+					</motion.div> */}
 					<div className="h-8" />
 
 					{/* Menu Categories */}
