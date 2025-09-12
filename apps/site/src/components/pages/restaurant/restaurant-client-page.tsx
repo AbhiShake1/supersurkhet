@@ -178,24 +178,24 @@ export function MenuItem({ item }: MenuItemProps) {
 
 	return (
 		<motion.div
-			// initial={{ opacity: 0, y: 20 }}
-			// animate={{ opacity: 1, y: 0 }}
-			// transition={{ duration: 0.3 }}
-			// whileHover={{ y: -10 }}
+			initial={{ opacity: 0, y: 20 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.3 }}
+			whileHover={{ y: -10 }}
 			className="transition-all duration-300"
 			ref={cardRef}
 		>
 			<MinimalCard className="relative h-full border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
 				{item.isSpecial && (
 					<motion.div
-						layoutId={`menu-item-badge-${itemId}`}
+						id={`menu-item-badge-${itemId}`}
 						className="z-50 absolute top-6 right-6 bg-primary px-3 py-1 rounded-full text-xs font-bold shadow-md"
 					>
 						Chef's Special
 					</motion.div>
 				)}
 				<motion.div
-					layoutId={`menu-item-image-${itemId}`}
+					id={`menu-item-image-${itemId}`}
 					className="h-[320px] w-full cursor-pointer"
 					onClick={handleViewDetails}
 				>
@@ -208,7 +208,7 @@ export function MenuItem({ item }: MenuItemProps) {
 				<MinimalCardDescription className="pt-4">
 					<div className="flex justify-between items-start mb-2">
 						<motion.h3
-							layoutId={`menu-item-title-${itemId}`}
+							id={`menu-item-title-${itemId}`}
 							className="text-xl font-semibold text-foreground cursor-pointer"
 							onClick={handleViewDetails}
 						>
@@ -216,7 +216,7 @@ export function MenuItem({ item }: MenuItemProps) {
 						</motion.h3>
 						{item.price && (
 							<motion.span
-								layoutId={`menu-item-price-${itemId}`}
+								id={`menu-item-price-${itemId}`}
 								className="font-bold text-lg text-primary"
 							>
 								Rs. {item.price.toFixed(2)}
@@ -224,7 +224,7 @@ export function MenuItem({ item }: MenuItemProps) {
 						)}
 					</div>
 					<motion.p
-						layoutId={`menu-item-description-${itemId}`}
+						id={`menu-item-description-${itemId}`}
 						className="text-muted-foreground text-sm mb-4 line-clamp-2 cursor-pointer"
 						onClick={handleViewDetails}
 					>
@@ -256,7 +256,7 @@ export function MenuItem({ item }: MenuItemProps) {
 						<Button
 							onClick={addToCart}
 							disabled={quantity === 0 || isAdding}
-							className={`flex items-center gap-2 py-5 text-base rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02] ${isAdding ? "animate-pulse" : ""}`}
+							className={`flex items-center gap-2 py-5 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02] ${isAdding ? "animate-pulse" : ""}`}
 						>
 							{isAdding ? (
 								"Adding..."
@@ -393,7 +393,8 @@ export function CartButton() {
 	});
 	const handleCheckout = async () => {
 		const orderItems = items.reduce((acc, item) => {
-			acc[item._?.soul!] = {
+			if (!item._?.soul) return acc;
+			acc[item._?.soul] = {
 				quantity: item.quantity,
 				unitPrice: item.price,
 			};
@@ -413,191 +414,188 @@ export function CartButton() {
 
 	// Refs for animations
 	const cartRef = useRef(null);
-	const isCartInView = useInView(cartRef, { once: true, margin: "-100px" });
 
 	return (
-		<>
-			<div className="fixed bottom-6 right-6 z-50" ref={cartRef}>
-				<AnimatePresence>
-					{itemCount > 0 && (
-						<motion.div
-							initial={{ scale: 0 }}
-							animate={isCartInView ? { scale: 1 } : { scale: 0 }}
-							exit={{ scale: 0 }}
-							transition={{ type: "spring", stiffness: 500, damping: 30 }}
-						>
-							<Credenza>
-								<CredenzaTrigger asChild>
-									<Button className="h-14 w-14 rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-105">
-										<ShoppingCart className="h-6 w-6" />
-										<span className="absolute -top-2 -right-2 bg-white dark:bg-black text-primary rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold">
-											{itemCount}
-										</span>
-									</Button>
-								</CredenzaTrigger>
-								<CredenzaContent>
-									<CredenzaHeader>
-										<CredenzaTitle asChild>
-											<div className="flex items-center justify-between mb-4">
-												<h2 className="text-2xl font-bold">Your Order</h2>
-												{items.length > 0 && (
-													<Button
-														variant="ghost"
-														size="sm"
-														onClick={clearCart}
-														className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-300"
-													>
-														<Trash2 className="h-4 w-4 mr-1" />
-														Clear All
-													</Button>
-												)}
+		<div className="fixed bottom-6 right-6 z-50" ref={cartRef}>
+			<AnimatePresence>
+				{itemCount > 0 && (
+					<motion.div
+						initial={{ scale: 0 }}
+						animate={{ scale: 1 }}
+						exit={{ scale: 0 }}
+						transition={{ type: "spring", stiffness: 500, damping: 30 }}
+					>
+						<Credenza>
+							<CredenzaTrigger asChild>
+								<Button className="h-14 w-14 rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-105">
+									<ShoppingCart className="h-6 w-6" />
+									<span className="absolute -top-2 -right-2 bg-white dark:bg-black text-primary rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold">
+										{itemCount}
+									</span>
+								</Button>
+							</CredenzaTrigger>
+							<CredenzaContent>
+								<CredenzaHeader>
+									<CredenzaTitle asChild>
+										<div className="flex items-center justify-between mb-4">
+											<h2 className="text-2xl font-bold">Your Order</h2>
+											{items.length > 0 && (
+												<Button
+													variant="ghost"
+													size="sm"
+													onClick={clearCart}
+													className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-300"
+												>
+													<Trash2 className="h-4 w-4 mr-1" />
+													Clear All
+												</Button>
+											)}
+										</div>
+									</CredenzaTitle>
+									<CredenzaDescription>
+										<Separator className="mb-4" />
+									</CredenzaDescription>
+								</CredenzaHeader>
+								<CredenzaBody
+									asChild
+									className="max-h-[30vh] overflow-y-auto"
+								>
+									<ScrollArea>
+										{items.length === 0 ? (
+											<div className="flex flex-col items-center justify-center flex-grow py-8 text-center">
+												<ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
+												<h3 className="text-xl font-medium mb-2">
+													Your cart is empty
+												</h3>
+												<p className="text-muted-foreground">
+													Add some delicious items to get started!
+												</p>
+												<Button
+													className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-400/90 hover:to-orange-500/90 transition-all duration-300 transform hover:scale-[1.02]"
+												// onClick={() => onOpenChange(false)}
+												>
+													Browse Menu
+												</Button>
 											</div>
-										</CredenzaTitle>
-										<CredenzaDescription>
-											<Separator className="mb-4" />
-										</CredenzaDescription>
-									</CredenzaHeader>
-									<CredenzaBody
-										asChild
-										className="max-h-[30vh] overflow-y-auto"
-									>
-										<ScrollArea>
-											{items.length === 0 ? (
-												<div className="flex flex-col items-center justify-center flex-grow py-8 text-center">
-													<ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
-													<h3 className="text-xl font-medium mb-2">
-														Your cart is empty
-													</h3>
-													<p className="text-muted-foreground">
-														Add some delicious items to get started!
-													</p>
-													<Button
-														className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-400/90 hover:to-orange-500/90 transition-all duration-300 transform hover:scale-[1.02]"
-													// onClick={() => onOpenChange(false)}
-													>
-														Browse Menu
-													</Button>
-												</div>
-											) : (
-												<>
-													<ScrollArea className="flex-grow pr-4 -mr-4">
-														<AnimatePresence initial={false}>
-															{items.map((item, index) => (
-																<motion.div
-																	key={item._?.soul}
-																	initial={{ opacity: 0, height: 0 }}
-																	animate={{ opacity: 1, height: "auto" }}
-																	exit={{ opacity: 0, height: 0 }}
-																	transition={{ duration: 0.2 }}
-																	className="overflow-hidden"
-																>
-																	<div className="flex items-center gap-3 py-3">
-																		<div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
-																			<img
-																				src={item.imageUrl}
-																				alt={item.name}
-																				className="object-cover w-full h-full"
-																			/>
-																		</div>
-																		<div className="flex-grow">
-																			<h4 className="font-medium">
-																				{item.name}
-																			</h4>
-																			<div className="flex items-center justify-between mt-1">
-																				<div className="flex items-center gap-2">
-																					<Button
-																						variant="ghost"
-																						size="icon"
-																						className="h-6 w-6 rounded-full p-0 hover:bg-primary/10 transition-all duration-300"
-																						onClick={() =>
-																							item._?.soul &&
-																							updateQuantity(
-																								item._?.soul,
-																								item.quantity - 1,
-																							)
-																						}
-																					>
-																						<MinusCircle className="h-4 w-4" />
-																					</Button>
-																					<span className="w-6 text-center">
-																						{item.quantity}
-																					</span>
-																					<Button
-																						variant="ghost"
-																						size="icon"
-																						className="h-6 w-6 rounded-full p-0 hover:bg-primary/10 transition-all duration-300"
-																						onClick={() =>
-																							item._?.soul &&
-																							updateQuantity(
-																								item._?.soul,
-																								item.quantity + 1,
-																							)
-																						}
-																					>
-																						<PlusCircle className="h-4 w-4" />
-																					</Button>
-																				</div>
-																				<div className="flex items-center gap-2">
-																					<span className="font-medium">
-																						Rs.{(item.price * item.quantity).toFixed(2)}
-																					</span>
-																					<Button
-																						variant="ghost"
-																						size="icon"
-																						className="h-6 w-6 rounded-full p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-300"
-																						onClick={() =>
-																							item._?.soul &&
-																							removeItem(item._?.soul)
-																						}
-																					>
-																						<Trash2 className="h-4 w-4" />
-																					</Button>
-																				</div>
+										) : (
+											<>
+												<ScrollArea className="flex-grow pr-4 -mr-4">
+													<AnimatePresence initial={false}>
+														{items.map((item, index) => (
+															<motion.div
+																key={item._?.soul}
+																initial={{ opacity: 0, height: 0 }}
+																animate={{ opacity: 1, height: "auto" }}
+																exit={{ opacity: 0, height: 0 }}
+																transition={{ duration: 0.2 }}
+																className="overflow-hidden"
+															>
+																<div className="flex items-center gap-3 py-3">
+																	<div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
+																		<img
+																			src={item.imageUrl}
+																			alt={item.name}
+																			className="object-cover w-full h-full"
+																		/>
+																	</div>
+																	<div className="flex-grow">
+																		<h4 className="font-medium">
+																			{item.name}
+																		</h4>
+																		<div className="flex items-center justify-between mt-1">
+																			<div className="flex items-center gap-2">
+																				<Button
+																					variant="ghost"
+																					size="icon"
+																					className="h-6 w-6 rounded-full p-0 hover:bg-primary/10 transition-all duration-300"
+																					onClick={() =>
+																						item._?.soul &&
+																						updateQuantity(
+																							item._?.soul,
+																							item.quantity - 1,
+																						)
+																					}
+																				>
+																					<MinusCircle className="h-4 w-4" />
+																				</Button>
+																				<span className="w-6 text-center">
+																					{item.quantity}
+																				</span>
+																				<Button
+																					variant="ghost"
+																					size="icon"
+																					className="h-6 w-6 rounded-full p-0 hover:bg-primary/10 transition-all duration-300"
+																					onClick={() =>
+																						item._?.soul &&
+																						updateQuantity(
+																							item._?.soul,
+																							item.quantity + 1,
+																						)
+																					}
+																				>
+																					<PlusCircle className="h-4 w-4" />
+																				</Button>
+																			</div>
+																			<div className="flex items-center gap-2">
+																				<span className="font-medium">
+																					Rs.{(item.price * item.quantity).toFixed(2)}
+																				</span>
+																				<Button
+																					variant="ghost"
+																					size="icon"
+																					className="h-6 w-6 rounded-full p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-300"
+																					onClick={() =>
+																						item._?.soul &&
+																						removeItem(item._?.soul)
+																					}
+																				>
+																					<Trash2 className="h-4 w-4" />
+																				</Button>
 																			</div>
 																		</div>
 																	</div>
-																	<Separator />
-																</motion.div>
-															))}
-														</AnimatePresence>
-													</ScrollArea>
-												</>
-											)}
-										</ScrollArea>
-									</CredenzaBody>
-									<CredenzaFooter asChild>
-										<div className="pt-4 space-y-4 w-full">
-											<div className="flex items-center justify-between font-medium">
-												<span>Subtotal</span>
-												<span>Rs. {subtotal.toFixed(2)}</span>
-											</div>
-											<div className="flex items-center justify-between text-sm text-muted-foreground">
-												<span>VAT (13%)</span>
-												<span>Rs. {(subtotal * 0.13).toFixed(2)}</span>
-											</div>
-											<Separator />
-											<div className="flex items-center justify-between font-bold text-lg">
-												<span>Total</span>
-												<span>Rs. {(subtotal * 1.13).toFixed(2)}</span>
-											</div>
-											{/* <CredenzaClose asChild> */}
-											<Button
-												className="w-full py-6 text-lg rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]"
-												onClick={handleCheckout}
-												loading={createOrderMutation.isPending}
-											>
-												Proceed to Checkout
-											</Button>
-											{/* </CredenzaClose> */}
+																</div>
+																<Separator />
+															</motion.div>
+														))}
+													</AnimatePresence>
+												</ScrollArea>
+											</>
+										)}
+									</ScrollArea>
+								</CredenzaBody>
+								<CredenzaFooter asChild>
+									<div className="pt-4 space-y-4 w-full">
+										<div className="flex items-center justify-between font-medium">
+											<span>Subtotal</span>
+											<span>Rs. {subtotal.toFixed(2)}</span>
 										</div>
-									</CredenzaFooter>
-								</CredenzaContent>
-							</Credenza>
-						</motion.div>
-					)}
-				</AnimatePresence>
-			</div>
-		</>
+										<div className="flex items-center justify-between text-sm text-muted-foreground">
+											<span>VAT (13%)</span>
+											<span>Rs. {(subtotal * 0.13).toFixed(2)}</span>
+										</div>
+										<Separator />
+										<div className="flex items-center justify-between font-bold text-lg">
+											<span>Total</span>
+											<span>Rs. {(subtotal * 1.13).toFixed(2)}</span>
+										</div>
+										{/* <CredenzaClose asChild> */}
+										<Button
+											className="w-full py-6 text-lg rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]"
+											onClick={handleCheckout}
+											loading={createOrderMutation.isPending}
+										>
+											Proceed to Checkout
+										</Button>
+										{/* </CredenzaClose> */}
+									</div>
+								</CredenzaFooter>
+							</CredenzaContent>
+						</Credenza>
+					</motion.div>
+				)}
+			</AnimatePresence>
+		</div>
 	);
 }
 
