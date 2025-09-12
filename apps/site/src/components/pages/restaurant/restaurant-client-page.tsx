@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 // import { Carousel } from "@/components/ui/carousel";
@@ -35,10 +33,13 @@ import {
 	Search,
 	ShoppingCart,
 	ShoppingCartIcon,
-	Trash2
+	Trash2,
+	X
 } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
+import { RestaurantMenuItemDetail } from "./restaurant-menu-item-detail";
 
 export interface CartItem extends MenuItemType {
 	quantity: number;
@@ -145,6 +146,9 @@ export function MenuItem({ item }: MenuItemProps) {
 	const [quantity, setQuantity] = useState(0);
 	const [isAdding, setIsAdding] = useState(false);
 	const { addItem } = useCart();
+	const navigate = useNavigate();
+	const cardRef = useRef<HTMLDivElement>(null);
+	const itemId = item._?.soul || '';
 
 	const incrementQuantity = () => {
 		setQuantity(quantity + 1);
@@ -166,39 +170,66 @@ export function MenuItem({ item }: MenuItemProps) {
 		}
 	};
 
+	const handleViewDetails = () => {
+		navigate({
+			search: (prev) => ({ ...prev, item: itemId }),
+		});
+	};
+
 	return (
 		<motion.div
-			initial={{ opacity: 0, y: 20 }}
-			animate={{ opacity: 1, y: 0 }}
-			transition={{ duration: 0.3 }}
-			whileHover={{ y: -10 }}
+			// initial={{ opacity: 0, y: 20 }}
+			// animate={{ opacity: 1, y: 0 }}
+			// transition={{ duration: 0.3 }}
+			// whileHover={{ y: -10 }}
 			className="transition-all duration-300"
+			ref={cardRef}
 		>
 			<MinimalCard className="relative h-full border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
 				{item.isSpecial && (
-					<div className="z-50 absolute top-6 right-6 bg-primary px-3 py-1 rounded-full text-xs font-bold shadow-md">
+					<motion.div
+						layoutId={`menu-item-badge-${itemId}`}
+						className="z-50 absolute top-6 right-6 bg-primary px-3 py-1 rounded-full text-xs font-bold shadow-md"
+					>
 						Chef's Special
-					</div>
+					</motion.div>
 				)}
-				<MinimalCardImage
-					className="h-[320px] w-full object-cover"
-					src={item.imageUrl ?? ""}
-					alt={item.name ?? ""}
-				/>
+				<motion.div
+					layoutId={`menu-item-image-${itemId}`}
+					className="h-[320px] w-full cursor-pointer"
+					onClick={handleViewDetails}
+				>
+					<MinimalCardImage
+						className="h-full w-full object-cover"
+						src={item.imageUrl ?? ""}
+						alt={item.name ?? ""}
+					/>
+				</motion.div>
 				<MinimalCardDescription className="pt-4">
 					<div className="flex justify-between items-start mb-2">
-						<h3 className="text-xl font-semibold text-foreground">
+						<motion.h3
+							layoutId={`menu-item-title-${itemId}`}
+							className="text-xl font-semibold text-foreground cursor-pointer"
+							onClick={handleViewDetails}
+						>
 							{item.name}
-						</h3>
+						</motion.h3>
 						{item.price && (
-							<span className="font-bold text-lg text-primary">
+							<motion.span
+								layoutId={`menu-item-price-${itemId}`}
+								className="font-bold text-lg text-primary"
+							>
 								Rs. {item.price.toFixed(2)}
-							</span>
+							</motion.span>
 						)}
 					</div>
-					<p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+					<motion.p
+						layoutId={`menu-item-description-${itemId}`}
+						className="text-muted-foreground text-sm mb-4 line-clamp-2 cursor-pointer"
+						onClick={handleViewDetails}
+					>
 						{item.description}
-					</p>
+					</motion.p>
 				</MinimalCardDescription>
 				<MinimalCardFooter className="border-t border-muted/50 dark:border-muted/30 pt-4">
 					<div className="flex items-center justify-between w-full">
@@ -590,6 +621,8 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 	const { data: _menuItems = [], isLoading } = api.menuItem.useGet({
 		keys: [slug],
 	});
+	const searchParams = useSearch({ strict: false });
+	const [showDetail, setShowDetail] = useState(!!searchParams.item);
 
 	const menuItems = (() => {
 		const __menuItems = _menuItems.map((m) => ({
@@ -610,6 +643,15 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 
 	const isMenuInView = useInView(menuRef, { once: true, margin: "-100px" });
 	const isCategoriesInView = useInView(categoriesRef, { once: true, margin: "-100px" });
+
+	// Reset showDetail when item param is removed
+	useEffect(() => {
+		setShowDetail(!!searchParams.item);
+	}, [searchParams.item]);
+
+	const handleCloseDetail = () => {
+		setShowDetail(false);
+	};
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -764,6 +806,10 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 					)}
 				</div>
 			</div>
+
+			<AnimatePresence>
+				{showDetail && <RestaurantMenuItemDetail slug={slug} onClose={handleCloseDetail} />}
+			</AnimatePresence>
 
 			<CartButton />
 		</div>
