@@ -15,6 +15,7 @@ export type GoogleLoginSchema = z.infer<typeof googleLoginSchema>;
 export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
 	if (!import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR) return;
 
+	// biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
 	return new Promise<IGunUserInstance["is"]>(async (resolve, reject) => {
 		const alias = email.toLowerCase();
 		const userExists = await new Promise((resolve) => {
@@ -26,6 +27,9 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
 				.user()
 				.auth(alias, import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR, (ack) => {
 					if ("err" in ack && ack.err) return reject(new Error(ack.err));
+					if ("sea" in ack) {
+						localStorage.setItem("gun-user", JSON.stringify(ack.sea));
+					}
 					resolve(gun.user().is);
 				});
 		} else {
@@ -48,6 +52,9 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
 						.user()
 						.auth(alias, import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR, (ack) => {
 							if ("err" in ack && ack.err) return reject(new Error(ack.err));
+							if ("sea" in ack) {
+								localStorage.setItem("gun-user", JSON.stringify(ack.sea));
+							}
 							resolve(gun.user().is);
 						});
 				});
