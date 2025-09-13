@@ -81,7 +81,12 @@ import {
   Upload,
   User,
   Wifi,
-  X
+  X,
+  Circle,
+  Square,
+  Type,
+  FileText,
+  ArrowRight
 } from "lucide-react";
 
 import {
@@ -103,6 +108,7 @@ import { CustomEdge, type CustomEdgeData } from "@/components/custom-edge";
 import { DataEdge } from "@/components/data-edge";
 import { NodeStats } from "@/components/node-stats";
 import { type NodeStatus, NodeStatusIndicator } from "@/components/node-status-indicator";
+import { flowNodeTypes } from "@/components/custom-flow-nodes";
 import {
   Drawer,
   DrawerClose,
@@ -129,7 +135,15 @@ type NodeType =
   | "loop"
   | "apiCall"
   | "custom"
-  | "runner"; // Add runner node type
+  | "runner" // Add runner node type
+  // Custom flow node types with special shapes
+  | "start"
+  | "end"
+  | "input"
+  | "output"
+  | "process"
+  | "predefined"
+  | "document";
 
 type BaseNodeData = {
   label: string;
@@ -170,6 +184,21 @@ const getNodeLabelAndDescription = (type: NodeType) => {
       return { label: "API Call", description: "Make an API request" };
     case "runner":
       return { label: "Workflow Runner", description: "Execute and monitor workflow" };
+    // Custom flow node types
+    case "start":
+      return { label: "Start", description: "Start of the workflow" };
+    case "end":
+      return { label: "End", description: "End of the workflow" };
+    case "input":
+      return { label: "Input", description: "Input data or parameters" };
+    case "output":
+      return { label: "Output", description: "Output results or data" };
+    case "process":
+      return { label: "Process", description: "Process or transformation" };
+    case "predefined":
+      return { label: "Predefined Process", description: "Predefined or named process" };
+    case "document":
+      return { label: "Document", description: "Document or report generation" };
     default:
       return { label: type, description: `Configure this ${type} node` };
   }
@@ -918,6 +947,8 @@ const nodeTypes: NodeTypes = {
   loop: LoopNode,
   apiCall: APICallNode,
   runner: RunnerNode, // Add runner node type
+  // Custom flow nodes with special shapes
+  ...flowNodeTypes,
 };
 
 // Edge type configuration
@@ -992,6 +1023,14 @@ const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => 
     { type: "loop", label: "Loop", icon: Repeat, color: "bg-indigo-500/20 dark:bg-indigo-600/20", order: 10 },
     { type: "apiCall", label: "API Call", icon: Globe, color: "bg-emerald-500/20 dark:bg-emerald-600/20", order: 11 },
     { type: "runner", label: "Workflow Runner", icon: Play, color: "bg-violet-500/20 dark:bg-violet-600/20", order: 12 },
+    // Custom flow nodes with special shapes
+    { type: "start", label: "Start", icon: Circle, color: "bg-green-500/20 dark:bg-green-600/20", order: 13 },
+    { type: "end", label: "End", icon: Circle, color: "bg-red-500/20 dark:bg-red-600/20", order: 14 },
+    { type: "input", label: "Input", icon: ArrowRight, color: "bg-blue-500/20 dark:bg-blue-600/20", order: 15 },
+    { type: "output", label: "Output", icon: ArrowRight, color: "bg-blue-500/20 dark:bg-blue-600/20", order: 16 },
+    { type: "process", label: "Process", icon: Square, color: "bg-purple-500/20 dark:bg-purple-600/20", order: 17 },
+    { type: "predefined", label: "Predefined Process", icon: Square, color: "bg-indigo-500/20 dark:bg-indigo-600/20", order: 18 },
+    { type: "document", label: "Document", icon: FileText, color: "bg-amber-500/20 dark:bg-amber-600/20", order: 19 },
   ];
 
   // Serializable node type data for storage (without icon)
