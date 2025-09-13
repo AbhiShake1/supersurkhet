@@ -1,31 +1,39 @@
-import { Badge } from "@/components/ui/badge";
-import type { BaseNodeData } from "@/components/qr/visual-flow-builder";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
-export function NodeStats({ stats }: { stats?: BaseNodeData["stats"] }) {
+interface NodeStatsProps {
+  stats?: {
+    started?: number;
+    running?: number;
+    completed?: number;
+    error?: number;
+    progress?: number;
+  };
+  className?: string;
+}
+
+export function NodeStats({ stats, className }: NodeStatsProps) {
   if (!stats) return null;
 
+  const total = (stats.started || 0) + (stats.running || 0) + (stats.completed || 0) + (stats.error || 0);
+  if (total === 0) return null;
+
   return (
-    <div className="flex flex-wrap gap-1 mt-2">
-      {stats.started !== undefined && (
-        <Badge variant="secondary" className="text-xs">
-          Started: {stats.started}
-        </Badge>
-      )}
-      {stats.running !== undefined && (
-        <Badge variant="default" className="text-xs">
-          Running: {stats.running}
-        </Badge>
-      )}
-      {stats.completed !== undefined && (
-        <Badge variant="outline" className="text-xs">
-          Completed: {stats.completed}
-        </Badge>
-      )}
-      {stats.error !== undefined && (
-        <Badge variant="destructive" className="text-xs">
-          Errors: {stats.error}
-        </Badge>
-      )}
+    <div className={cn("space-y-1", className)}>
+      <div className="flex justify-between text-xs">
+        <span>Progress</span>
+        <span>{stats.progress !== undefined ? `${stats.progress}%` : `${stats.completed || 0}/${total}`}</span>
+      </div>
+      <Progress 
+        value={stats.progress !== undefined ? stats.progress : ((stats.completed || 0) / total) * 100} 
+        className="h-1.5"
+      />
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>{stats.started || 0} started</span>
+        <span>{stats.running || 0} running</span>
+        <span>{stats.completed || 0} completed</span>
+        <span>{stats.error || 0} errors</span>
+      </div>
     </div>
   );
 }

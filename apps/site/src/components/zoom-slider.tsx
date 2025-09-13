@@ -62,13 +62,13 @@ export const ZoomSlider = forwardRef<
       >
         {(100 * zoom).toFixed(0)}%
       </Button>
-      <Button
+      {/* <Button
         variant="ghost"
         size="icon"
         onClick={() => fitView({ duration: 300 })}
       >
         <Maximize className="h-4 w-4" />
-      </Button>
+      </Button> */}
     </Panel>
   );
 });

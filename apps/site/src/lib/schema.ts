@@ -367,15 +367,16 @@ export const featureSchema = createSchema({
 	dataMatrixAction: {
 		schema: dataMatrixActionSchema,
 		components: async () => {
-			const { DataMatrixFlowBuilder } = await import(
-				"@/components/ui/admin/datamatrix-flow-builder"
-			);
-			return [
-				{
-					name: "Flow Builder",
-					component: DataMatrixFlowBuilder,
-				},
-			];
+			return []
+			// const { DataMatrixFlowBuilder } = await import(
+			// 	"@/components/ui/admin/datamatrix-flow-builder"
+			// );
+			// return [
+			// 	{
+			// 		name: "Flow Builder",
+			// 		component: DataMatrixFlowBuilder,
+			// 	},
+			// ];
 		},
 	},
 	propertyListing: {

@@ -16,7 +16,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus } from "lucide-react";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Plus, Info, Play, Square, Globe } from "lucide-react";
 import {
   Wifi,
   User,
@@ -27,11 +32,12 @@ import {
   Bell,
   GripVertical,
   Repeat,
-  Globe
 } from "lucide-react";
 
 // Define node types with icons and colors
 const nodeTypes = [
+  { type: "start", label: "Start", icon: Play, color: "bg-green-500" },
+  { type: "end", label: "End", icon: Square, color: "bg-red-500" },
   { type: "wifiConnect", label: "WiFi Connection", icon: Wifi, color: "bg-blue-500" },
   { type: "profileEnrichment", label: "Profile Enrichment", icon: User, color: "bg-purple-500" },
   { type: "equipmentSession", label: "Equipment Session", icon: Settings, color: "bg-orange-500" },
@@ -42,11 +48,14 @@ const nodeTypes = [
   { type: "condition", label: "Condition", icon: GripVertical, color: "bg-yellow-500" },
   { type: "loop", label: "Loop", icon: Repeat, color: "bg-indigo-500" },
   { type: "apiCall", label: "API Call", icon: Globe, color: "bg-emerald-500" },
+  { type: "runner", label: "Workflow Runner", icon: Play, color: "bg-violet-500" },
 ];
 
 export type CustomEdgeData = {
   onAddNode?: (edgeId: string, nodeType: string) => void;
   isAddButtonHidden?: boolean;
+  label?: string;
+  description?: string;
 };
 
 export function CustomEdge({
@@ -100,37 +109,61 @@ export function CustomEdge({
           }}
           className="nodrag nopan"
         >
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                size="icon" 
-                variant="secondary" 
-                className="w-6 h-6 rounded-full shadow-lg"
-              >
-                <Plus className="w-3 h-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuLabel>Node Types</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuGroup>
-                {nodeTypes.map((nodeType) => {
-                  const Icon = nodeType.icon;
-                  return (
-                    <DropdownMenuItem 
-                      key={nodeType.type} 
-                      onSelect={() => onAddNode(nodeType.type)}
-                      className="flex items-center gap-2"
-                    >
-                      <div className={`w-2 h-2 rounded-full ${nodeType.color}`} />
-                      <Icon className="w-4 h-4" />
-                      <span>{nodeType.label}</span>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-1">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  size="icon" 
+                  variant="secondary" 
+                  className="w-6 h-6 rounded-full shadow-lg"
+                >
+                  <Plus className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56">
+                <DropdownMenuLabel>Node Types</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  {nodeTypes.map((nodeType) => {
+                    const Icon = nodeType.icon;
+                    return (
+                      <DropdownMenuItem 
+                        key={nodeType.type} 
+                        onSelect={() => onAddNode(nodeType.type)}
+                        className="flex items-center gap-2"
+                      >
+                        <div className={`w-2 h-2 rounded-full ${nodeType.color}`} />
+                        <Icon className="w-4 h-4" />
+                        <span>{nodeType.label}</span>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {data?.label && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    size="icon" 
+                    variant="ghost" 
+                    className="w-6 h-6 rounded-full shadow-lg"
+                  >
+                    <Info className="w-3 h-3" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                  <div className="space-y-2">
+                    <h4 className="font-medium leading-none">{data.label}</h4>
+                    {data.description && (
+                      <p className="text-sm text-muted-foreground">{data.description}</p>
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
         </div>
       </EdgeLabelRenderer>
     </>
