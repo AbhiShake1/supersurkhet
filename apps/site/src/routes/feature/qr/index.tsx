@@ -7,7 +7,6 @@ import {
 	CardTitle,
 } from "@/components/ui/card";
 import { DataMatrixCode } from "@/components/ui/datamatrix-code";
-import { DataMatrixFlowBuilder } from "@/components/ui/admin/datamatrix-flow-builder";
 import { DataMatrixScanner } from "@/components/ui/datamatrix-scanner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { createFileRoute } from "@tanstack/react-router";
@@ -18,6 +17,9 @@ import {
 	dataMatrixActionSchema,
 	type DataMatrixAction,
 } from "@/lib/datamatrix";
+
+// Import the visual flow builder
+import { VisualFlowBuilder } from "@/components/qr/visual-flow-builder";
 
 export const Route = createFileRoute("/feature/qr/")({
 	component: FeatureQrRoute,
@@ -79,11 +81,11 @@ function FeatureQrRoute() {
 							Showcase
 						</TabsTrigger>
 						<TabsTrigger value="builder" className="flex items-center gap-2">
-							<Code className="h-4 w-4" />
+							<Zap className="h-4 w-4" />
 							Flow Builder
 						</TabsTrigger>
 						<TabsTrigger value="scanner" className="flex items-center gap-2">
-							<Zap className="h-4 w-4" />
+							<QrCode className="h-4 w-4" />
 							Scanner
 						</TabsTrigger>
 					</TabsList>
@@ -182,15 +184,15 @@ function FeatureQrRoute() {
 						<Card>
 							<CardHeader>
 								<CardTitle className="flex items-center gap-2">
-									<Code className="h-5 w-5" />
+									<Zap className="h-5 w-5" />
 									Visual Flow Builder
 								</CardTitle>
 								<CardDescription>
-									Create sophisticated interaction flows without coding
+									Create sophisticated interaction flows with powerful capabilities
 								</CardDescription>
 							</CardHeader>
 							<CardContent>
-								<DataMatrixFlowBuilder />
+								<VisualFlowBuilder />
 							</CardContent>
 						</Card>
 					</TabsContent>
@@ -199,7 +201,7 @@ function FeatureQrRoute() {
 						<Card>
 							<CardHeader>
 								<CardTitle className="flex items-center gap-2">
-									<Zap className="h-5 w-5" />
+									<QrCode className="h-5 w-5" />
 									DataMatrix Scanner
 								</CardTitle>
 								<CardDescription>
