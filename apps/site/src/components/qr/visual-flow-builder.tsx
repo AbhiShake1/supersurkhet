@@ -72,12 +72,14 @@ import { toast } from "sonner";
 
 import { AnimatedSvgEdge } from "@/components/animated-svg-edge";
 import { BaseNode, BaseNodeContent, BaseNodeHeader, BaseNodeHeaderTitle } from "@/components/base-node";
-import { ButtonEdge } from "@/components/button-edge";
 import { DataEdge } from "@/components/data-edge";
+import { CustomEdge, type CustomEdgeData } from "@/components/custom-edge";
+import { NodeStats } from "@/components/node-stats";
 import { type NodeStatus, NodeStatusIndicator } from "@/components/node-status-indicator";
 import { ZoomSlider } from "@/components/zoom-slider";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { BaseHandle } from "../base-handle";
+import { getLayoutedElements } from "@/lib/auto-layout-utils";
 
 // Define custom node types
 type NodeType =
@@ -100,7 +102,45 @@ type BaseNodeData = {
   description?: string;
   status?: NodeStatus;
   config?: Record<string, unknown>;
+  stats?: {
+    started?: number;
+    running?: number;
+    completed?: number;
+    error?: number;
+  };
 }
+
+// Helper function to get fixed label and description for each node type
+const getNodeLabelAndDescription = (type: NodeType) => {
+  switch (type) {
+    case "start":
+      return { label: "Start", description: "Starting point of the flow" };
+    case "end":
+      return { label: "End", description: "Ending point of the flow" };
+    case "wifiConnect":
+      return { label: "WiFi Connection", description: "Connect to a WiFi network" };
+    case "profileEnrichment":
+      return { label: "Profile Enrichment", description: "Collect user profile information" };
+    case "equipmentSession":
+      return { label: "Equipment Session", description: "Manage equipment access session" };
+    case "restaurantOrdering":
+      return { label: "Restaurant Ordering", description: "Place restaurant orders" };
+    case "productInteraction":
+      return { label: "Product Interaction", description: "Interact with products" };
+    case "navigate":
+      return { label: "Navigation", description: "Navigate to a URL" };
+    case "notification":
+      return { label: "Notification", description: "Send a notification" };
+    case "condition":
+      return { label: "Condition", description: "Conditional branching" };
+    case "loop":
+      return { label: "Loop", description: "Repeat a set of actions" };
+    case "apiCall":
+      return { label: "API Call", description: "Make an API request" };
+    default:
+      return { label: type, description: `Configure this ${type} node` };
+  }
+};
 
 interface CustomNode extends Node<BaseNodeData> {
   type: NodeType;
@@ -145,6 +185,7 @@ const StartNode = ({ data, id }: NodeProps) => {
         </BaseNodeHeader>
         <BaseNodeContent className="p-2 text-xs text-green-900 dark:text-green-100">
           {data.description && <div>{data.description}</div>}
+          <NodeStats stats={data.stats} />
         </BaseNodeContent>
         <BaseHandle
           type="source"
@@ -205,6 +246,7 @@ const WifiConnectNode = ({ data, id }: NodeProps) => {
               <span>{data.config?.security || "WPA2"}</span>
             </div>
           </div>
+          <NodeStats stats={data.stats} />
         </BaseNodeContent>
         <BaseHandle
           type="target"
@@ -480,6 +522,7 @@ const ConditionNode = ({ data, id }: NodeProps) => {
               <span className="font-mono truncate max-w-[100px]">{data.config?.condition || "Not set"}</span>
             </div>
           </div>
+          <NodeStats stats={data.stats} />
         </BaseNodeContent>
         <BaseHandle
           type="target"
@@ -634,7 +677,7 @@ const nodeTypes: NodeTypes = {
 
 // Edge type configuration
 const edgeTypes: EdgeTypes = {
-  default: ButtonEdge,
+  default: CustomEdge,
   data: DataEdge,
   animated: AnimatedSvgEdge,
 };
@@ -1150,31 +1193,6 @@ const NodeConfigPanel = ({
       </CardHeader>
       <CardContent className="flex-1 overflow-y-auto">
         <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="label">Node Label</Label>
-            <Input
-              id="label"
-              value={selectedNode.data.label || ""}
-              onChange={(e) => onUpdateNode(selectedNode.id, {
-                ...selectedNode.data,
-                label: e.target.value
-              })}
-              placeholder="Enter node label"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={selectedNode.data.description || ""}
-              onChange={(e) => onUpdateNode(selectedNode.id, {
-                ...selectedNode.data,
-                description: e.target.value
-              })}
-              placeholder="Enter node description"
-              rows={2}
-            />
-          </div>
           {renderConfigFields()}
         </div>
       </CardContent>
@@ -1333,7 +1351,30 @@ const PreviewPanel = ({ action }: { action: DataMatrixAction | null }) => {
 // Flow Builder Component
 const FlowBuilder = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState<CustomNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<CustomEdgeData>>([]);
+
+  // Custom onEdgesChange that ensures all edges have the onAddNode function
+  const customOnEdgesChange = useCallback((changes: any) => {
+    // Process changes to add onAddNode function to all edges
+    const processedChanges = changes.map((change: any) => {
+      if (change.type === 'add' && change.item && !change.item.data?.onAddNode) {
+        return {
+          ...change,
+          item: {
+            ...change.item,
+            data: {
+              ...(change.item.data || {}),
+              onAddNode: onAddNodeToEdge
+            }
+          }
+        };
+      }
+      return change;
+    });
+
+    // Apply the processed changes
+    onEdgesChange(processedChanges);
+  }, [onEdgesChange]);
   const [selectedNode, setSelectedNode] = useState<CustomNode | null>(null);
   const [previewAction, setPreviewAction] = useState<DataMatrixAction | null>(null);
   const [isPreviewValid, setIsPreviewValid] = useState(true);
@@ -1341,20 +1382,81 @@ const FlowBuilder = () => {
   const reactFlowInstance = useReactFlow();
 
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => {
+      const newEdge: Edge<CustomEdgeData> = {
+        ...params,
+        type: 'default',
+        data: { onAddNode: onAddNodeToEdge },
+      };
+      setEdges((eds) => addEdge(newEdge, eds));
+    },
     [setEdges]
   );
+
+  const onAddNodeToEdge = useCallback((edgeId: string, nodeType: string) => {
+    console.log("onAddNodeToEdge called with edgeId:", edgeId, "nodeType:", nodeType);
+    // Get current edges from React Flow instance
+    const currentEdges = reactFlowInstance?.getEdges() || [];
+    const edge = currentEdges.find(e => e.id === edgeId);
+    if (!edge) {
+      console.log("Edge not found:", edgeId);
+      console.log("Current edges:", currentEdges);
+      return;
+    }
+
+    // Get fixed label and description for the node type
+    const { label, description } = getNodeLabelAndDescription(nodeType as NodeType);
+
+    // Create new node
+    const newNodeId = `${nodeType}-${Date.now()}`;
+    const newNode: CustomNode = {
+      id: newNodeId,
+      type: nodeType as NodeType,
+      position: { x: 0, y: 0 }, // Will be positioned by auto-layout
+      data: {
+        label,
+        description,
+        status: "initial"
+      },
+    };
+
+    // Create new edges
+    const newEdge1: Edge<CustomEdgeData> = {
+      id: `e-${edge.source}-${newNodeId}`,
+      source: edge.source,
+      target: newNodeId,
+      type: 'default',
+      data: { onAddNode: onAddNodeToEdge },
+    };
+
+    const newEdge2: Edge<CustomEdgeData> = {
+      id: `e-${newNodeId}-${edge.target}`,
+      source: newNodeId,
+      target: edge.target,
+      type: 'default',
+      data: { onAddNode: onAddNodeToEdge },
+    };
+
+    // Update state
+    setNodes((nds) => [...nds, newNode]);
+    setEdges((eds) => {
+      const updatedEdges = eds.filter(e => e.id !== edgeId);
+      return [...updatedEdges, newEdge1, newEdge2];
+    });
+  }, [reactFlowInstance, setNodes, setEdges]);
 
   const onAddNode = useCallback((type: NodeType) => {
     if (!reactFlowInstance) return;
 
+    const { label, description } = getNodeLabelAndDescription(type);
+    
     const newNode: CustomNode = {
       id: `${type}-${Date.now()}`,
       type,
       position: { x: Math.random() * 500, y: Math.random() * 500 },
       data: {
-        label: type.replace(/([A-Z])/g, ' $1').trim(),
-        description: `Configure this ${type.replace(/([A-Z])/g, ' $1').trim()} node`,
+        label,
+        description,
         status: "initial"
       },
     };
@@ -1366,14 +1468,6 @@ const FlowBuilder = () => {
       nds.map((node) => (node.id === id ? { ...node, data } : node))
     );
   }, [setNodes]);
-
-  const onDeleteNode = useCallback((id: string) => {
-    setNodes((nds) => nds.filter((node) => node.id !== id));
-    setEdges((eds) => eds.filter((edge) => edge.source !== id && edge.target !== id));
-    if (selectedNode?.id === id) {
-      setSelectedNode(null);
-    }
-  }, [setNodes, setEdges, selectedNode]);
 
   // Generate preview action from nodes and edges
   const generatePreviewAction = useCallback(() => {
@@ -1449,6 +1543,16 @@ const FlowBuilder = () => {
     }
   }, [generatePreviewAction, isPreviewValid]);
 
+  // Auto-layout functionality
+  const onLayout = useCallback(() => {
+    const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+      nodes,
+      edges
+    );
+    setNodes(layoutedNodes);
+    setEdges(layoutedEdges);
+  }, [nodes, edges, setNodes, setEdges]);
+
   // Import functionality
   const importFlow = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -1481,7 +1585,7 @@ const FlowBuilder = () => {
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
+          onEdgesChange={customOnEdgesChange}
           onConnect={onConnect}
           onNodeClick={(_, node) => setSelectedNode(node as CustomNode)}
           nodeTypes={nodeTypes}
@@ -1494,6 +1598,26 @@ const FlowBuilder = () => {
           <Panel position="top-right" className="flex gap-2">
             <TooltipProvider>
               <div className="flex rounded-md border overflow-hidden">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-none border-0 border-r last:border-r-0"
+                      onClick={onLayout}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <line x1="3" y1="9" x2="21" y2="9" />
+                        <line x1="9" y1="21" x2="9" y2="9" />
+                      </svg>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Auto Layout</p>
+                  </TooltipContent>
+                </Tooltip>
+
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
