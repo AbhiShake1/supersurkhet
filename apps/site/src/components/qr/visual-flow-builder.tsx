@@ -58,10 +58,13 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useWifiNetworks } from "@/hooks/use-wifi";
 import {
+  ArrowRight,
   Bell,
+  Circle,
   Database,
   Download,
   Eye,
+  FileText,
   Globe,
   GripVertical,
   LoaderCircle,
@@ -76,17 +79,13 @@ import {
   Settings,
   Share2,
   ShoppingCart,
+  Square,
   Trash,
   Unlock,
   Upload,
   User,
   Wifi,
-  X,
-  Circle,
-  Square,
-  Type,
-  FileText,
-  ArrowRight
+  X
 } from "lucide-react";
 
 import {
@@ -105,10 +104,10 @@ import { toast } from "sonner";
 import { AnimatedSvgEdge } from "@/components/animated-svg-edge";
 import { BaseNode, BaseNodeContent, BaseNodeHeader, BaseNodeHeaderTitle } from "@/components/base-node";
 import { CustomEdge, type CustomEdgeData } from "@/components/custom-edge";
+import { flowNodeTypes } from "@/components/custom-flow-nodes";
 import { DataEdge } from "@/components/data-edge";
 import { NodeStats } from "@/components/node-stats";
 import { type NodeStatus, NodeStatusIndicator } from "@/components/node-status-indicator";
-import { flowNodeTypes } from "@/components/custom-flow-nodes";
 import {
   Drawer,
   DrawerClose,
@@ -137,8 +136,6 @@ type NodeType =
   | "custom"
   | "runner" // Add runner node type
   // Custom flow node types with special shapes
-  | "start"
-  | "end"
   | "input"
   | "output"
   | "process"
@@ -185,10 +182,6 @@ const getNodeLabelAndDescription = (type: NodeType) => {
     case "runner":
       return { label: "Workflow Runner", description: "Execute and monitor workflow" };
     // Custom flow node types
-    case "start":
-      return { label: "Start", description: "Start of the workflow" };
-    case "end":
-      return { label: "End", description: "End of the workflow" };
     case "input":
       return { label: "Input", description: "Input data or parameters" };
     case "output":
@@ -624,72 +617,6 @@ type ConditionNodeData = {
   };
 };
 
-const ConditionNode = ({ data, id }: NodeProps<Node<ConditionNodeData>>) => {
-  // Calculate progress based on stats
-  const progress = data.stats?.progress ??
-    (data.stats?.completed && data.stats?.started ?
-      (data.stats.completed / data.stats.started) * 100 : 0);
-
-  return (
-    <NodeStatusIndicator status={data.status}>
-      <BaseNode className="w-48 bg-yellow-500/20 dark:bg-yellow-600/20 backdrop-blur-sm border border-yellow-500/30 dark:border-yellow-600/30 text-yellow-900 dark:text-yellow-100 shadow-sm">
-        <BaseNodeHeader className="text-yellow-900 dark:text-yellow-100">
-          <BaseNodeHeaderTitle className="text-yellow-900 dark:text-yellow-100 flex items-center gap-2">
-            <GripVertical className="h-4 w-4" />
-            {data.label}
-          </BaseNodeHeaderTitle>
-          <DeleteNodeButton id={id} />
-        </BaseNodeHeader>
-        <BaseNodeContent className="p-2 text-xs text-yellow-900 dark:text-yellow-100">
-          {data.description && <div className="mb-2">{data.description}</div>}
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span>Condition:</span>
-              <span className="font-mono truncate max-w-[100px]">{data.config?.condition || "Not set"}</span>
-            </div>
-          </div>
-          <NodeStats stats={data.stats} className="mt-2" />
-          {data.status === "loading" && (
-            <div className="mt-2">
-              <Progress value={progress} className="h-1.5" />
-            </div>
-          )}
-        </BaseNodeContent>
-        <BaseHandle
-          type="target"
-          position={Position.Top}
-          id="condition-input"
-          className="bg-yellow-500 dark:bg-yellow-600 border-yellow-600 dark:border-yellow-700"
-        />
-        <div className="flex justify-between px-2 pb-2">
-          <div className="flex flex-col items-center">
-            <span className="text-xs text-yellow-900 dark:text-yellow-100">
-              {data.config?.truePath || "True"}
-            </span>
-            <BaseHandle
-              type="source"
-              position={Position.Bottom}
-              id="true-output"
-              className="bg-yellow-500 dark:bg-yellow-600 border-yellow-600 dark:border-yellow-700"
-            />
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xs text-yellow-900 dark:text-yellow-100">
-              {data.config?.falsePath || "False"}
-            </span>
-            <BaseHandle
-              type="source"
-              position={Position.Bottom}
-              id="false-output"
-              className="bg-yellow-500 dark:bg-yellow-600 border-yellow-600 dark:border-yellow-700"
-            />
-          </div>
-        </div>
-      </BaseNode>
-    </NodeStatusIndicator>
-  );
-};
-
 type LoopNodeData = {
   label: string;
   status: NodeStatus;
@@ -704,74 +631,6 @@ type LoopNodeData = {
     completed: number;
     started: number;
   };
-};
-
-const LoopNode = ({ data, id }: NodeProps<Node<LoopNodeData>>) => {
-  // Calculate progress based on stats
-  const progress = data.stats?.progress ??
-    (data.stats?.completed && data.stats?.started ?
-      (data.stats.completed / data.stats.started) * 100 : 0);
-
-  return (
-    <NodeStatusIndicator status={data.status}>
-      <BaseNode className="w-48 bg-indigo-500/20 dark:bg-indigo-600/20 backdrop-blur-sm border border-indigo-500/30 dark:border-indigo-600/30 text-indigo-900 dark:text-indigo-100 shadow-sm">
-        <BaseNodeHeader className="text-indigo-900 dark:text-indigo-100">
-          <BaseNodeHeaderTitle className="text-indigo-900 dark:text-indigo-100 flex items-center gap-2">
-            <svg
-              role="img" aria-label="Loop Node"
-              xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
-              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-              <path d="M12 3v18" />
-            </svg>
-            {data.label}
-          </BaseNodeHeaderTitle>
-          <DeleteNodeButton id={id} />
-        </BaseNodeHeader>
-        <BaseNodeContent className="p-2 text-xs text-indigo-900 dark:text-indigo-100">
-          {data.description && <div className="mb-2">{data.description}</div>}
-          <div className="space-y-1">
-            <div className="flex justify-between">
-              <span>Iterations:</span>
-              <span>{data.config?.iterations || "Not set"}</span>
-            </div>
-          </div>
-          <NodeStats stats={data.stats} className="mt-2" />
-          {data.status === "loading" && (
-            <div className="mt-2">
-              <Progress value={progress} className="h-1.5" />
-            </div>
-          )}
-        </BaseNodeContent>
-        <BaseHandle
-          type="target"
-          position={Position.Top}
-          id="loop-input"
-          className="bg-indigo-500 dark:bg-indigo-600 border-indigo-600 dark:border-indigo-700"
-        />
-        <div className="flex justify-between px-2 pb-2">
-          <div className="flex flex-col items-center">
-            <span className="text-xs text-indigo-900 dark:text-indigo-100">Body</span>
-            <BaseHandle
-              type="source"
-              position={Position.Bottom}
-              id="body-output"
-              className="bg-indigo-500 dark:bg-indigo-600 border-indigo-600 dark:border-indigo-700"
-            />
-          </div>
-          <div className="flex flex-col items-center">
-            <span className="text-xs text-indigo-900 dark:text-indigo-100">Done</span>
-            <BaseHandle
-              type="source"
-              position={Position.Right}
-              id="done-output"
-              className="bg-indigo-500 dark:bg-indigo-600 border-indigo-600 dark:border-indigo-700"
-            />
-          </div>
-        </div>
-      </BaseNode>
-    </NodeStatusIndicator>
-  );
 };
 
 type ApiCallNodeData = {
@@ -943,8 +802,6 @@ const nodeTypes: NodeTypes = {
   productInteraction: ProductInteractionNode,
   navigate: NavigateNode,
   notification: NotificationNode,
-  condition: ConditionNode,
-  loop: LoopNode,
   apiCall: APICallNode,
   runner: RunnerNode, // Add runner node type
   // Custom flow nodes with special shapes
@@ -984,8 +841,22 @@ const DraggableNode = ({
 
   const Icon = nodeType.icon;
 
+  // Native drag start handler for HTML5 drag and drop
+  const onNativeDragStart = (event: React.DragEvent) => {
+    event.dataTransfer.setData('application/reactflow', nodeType.type);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="w-full">
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="w-full"
+      draggable
+      onDragStart={onNativeDragStart}
+    >
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
@@ -1957,6 +1828,50 @@ const FlowBuilder = () => {
     })
   );
 
+  // Drag and drop handlers for React Flow
+  const onDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const onDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+
+    // Check if we have a valid reactFlowInstance
+    if (!reactFlowInstance) return;
+
+    // Get the node type from dataTransfer
+    const nodeType = event.dataTransfer.getData('application/reactflow');
+
+    // Check if the dropped element is valid
+    if (!nodeType || !nodeTypes[nodeType as NodeType]) return;
+
+    // Convert screen coordinates to flow coordinates
+    const position = reactFlowInstance.screenToFlowPosition({
+      x: event.clientX,
+      y: event.clientY,
+    });
+
+    // Get label and description for the node type
+    const { label, description } = getNodeLabelAndDescription(nodeType as NodeType);
+
+    // Create new node
+    const newNode: CustomNode = {
+      id: `${nodeType}-${Date.now()}`,
+      type: nodeType as NodeType,
+      position,
+      data: {
+        label,
+        description,
+        status: "initial",
+        config: {}
+      },
+    };
+
+    // Add the new node to the flow
+    setNodes((nds) => nds.concat(newNode));
+  }, [reactFlowInstance, setNodes]);
+
   const onDragStart = (event: DragStartEvent) => {
     const { active } = event;
     setActiveDragType(active.data.current?.type as string);
@@ -2389,6 +2304,8 @@ const FlowBuilder = () => {
               nodesDraggable={!isLocked}
               nodesConnectable={!isLocked}
               elementsSelectable={!isLocked}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
             >
               <svg role="img" aria-label="Flow Builder">
                 <defs>
