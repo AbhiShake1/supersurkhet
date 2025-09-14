@@ -1,9 +1,17 @@
-import { createContext, useContext, useCallback } from "react";
+import { createContext, useContext, useCallback, useState, useEffect } from "react";
 import { useNodesState, useEdgesState, useReactFlow } from "@xyflow/react";
 import type { CustomNode, NodeType } from "@/components/qr/visual-flow-builder";
 import type { Edge } from "@xyflow/react";
 import { addEdge } from "@xyflow/react";
 import { getNodeLabelAndDescription } from "@/components/qr/visual-flow-builder";
+
+// Define node library item type (without icon for serialization)
+type NodeLibraryItemType = {
+  type: string;
+  label: string;
+  color: string;
+  order?: number;
+};
 
 interface FlowContextType {
   nodes: CustomNode[];
@@ -21,6 +29,10 @@ interface FlowContextType {
   ) => void;
   onAddNodeToEdge: (edgeId: string, nodeType: string) => void;
   onConnect: (params: any) => void;
+  // Node library order management
+  nodeLibraryOrder: NodeLibraryItemType[];
+  setNodeLibraryOrder: (order: NodeLibraryItemType[]) => void;
+  resetNodeLibraryOrder: () => void;
 }
 
 const FlowContext = createContext<FlowContextType | undefined>(undefined);
@@ -29,6 +41,63 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
   const [nodes, setNodes, onNodesChange] = useNodesState<CustomNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const reactFlowInstance = useReactFlow();
+  
+  // Define default node library order
+  const defaultNodeLibraryOrder: NodeLibraryItemType[] = [
+    { type: "wifiConnect", label: "WiFi Connection", color: "bg-blue-500/20 dark:bg-blue-600/20", order: 2 },
+    { type: "profileEnrichment", label: "Profile Enrichment", color: "bg-purple-500/20 dark:bg-purple-600/20", order: 3 },
+    { type: "equipmentSession", label: "Equipment Session", color: "bg-orange-500/20 dark:bg-orange-600/20", order: 4 },
+    { type: "restaurantOrdering", label: "Restaurant Ordering", color: "bg-amber-500/20 dark:bg-amber-600/20", order: 5 },
+    { type: "productInteraction", label: "Product Interaction", color: "bg-teal-500/20 dark:bg-teal-600/20", order: 6 },
+    { type: "navigate", label: "Navigation", color: "bg-cyan-500/20 dark:bg-cyan-600/20", order: 7 },
+    { type: "notification", label: "Notification", color: "bg-pink-500/20 dark:bg-pink-600/20", order: 8 },
+    { type: "condition", label: "Condition", color: "bg-yellow-500/20 dark:bg-yellow-600/20", order: 9 },
+    { type: "loop", label: "Loop", color: "bg-indigo-500/20 dark:bg-indigo-600/20", order: 10 },
+    { type: "apiCall", label: "API Call", color: "bg-emerald-500/20 dark:bg-emerald-600/20", order: 11 },
+    { type: "runner", label: "Workflow Runner", color: "bg-violet-500/20 dark:bg-violet-600/20", order: 12 },
+    // Custom flow nodes with special shapes
+    { type: "input", label: "Input", color: "bg-blue-500/20 dark:bg-blue-600/20", order: 15 },
+    { type: "output", label: "Output", color: "bg-blue-500/20 dark:bg-blue-600/20", order: 16 },
+    { type: "process", label: "Process", color: "bg-purple-500/20 dark:bg-purple-600/20", order: 17 },
+    { type: "predefined", label: "Predefined Process", color: "bg-indigo-500/20 dark:bg-indigo-600/20", order: 18 },
+    { type: "document", label: "Document", color: "bg-amber-500/20 dark:bg-amber-600/20", order: 19 },
+  ];
+
+  // Node library order state with localStorage persistence
+  const [nodeLibraryOrder, setNodeLibraryOrder] = useState<NodeLibraryItemType[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const storedOrder = localStorage.getItem('nodeLibraryOrder');
+        if (storedOrder) {
+          const parsedOrder: NodeLibraryItemType[] = JSON.parse(storedOrder);
+          // Merge with default to ensure all node types are present
+          return defaultNodeLibraryOrder.map(defaultNode => {
+            const storedNode = parsedOrder.find(n => n.type === defaultNode.type);
+            return storedNode ? { ...defaultNode, ...storedNode } : defaultNode;
+          }).sort((a, b) => (a.order ?? defaultNodeLibraryOrder.findIndex(n => n.type === a.type)) - (b.order ?? defaultNodeLibraryOrder.findIndex(n => n.type === b.type)));
+        }
+      } catch (error) {
+        console.error('Error parsing node library order from localStorage:', error);
+      }
+    }
+    return defaultNodeLibraryOrder;
+  });
+
+  // Save node library order to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem('nodeLibraryOrder', JSON.stringify(nodeLibraryOrder));
+      } catch (error) {
+        console.error('Error saving node library order to localStorage:', error);
+      }
+    }
+  }, [nodeLibraryOrder]);
+
+  // Reset node library order to default
+  const resetNodeLibraryOrder = useCallback(() => {
+    setNodeLibraryOrder(defaultNodeLibraryOrder);
+  }, []);
 
   const onAddNode = useCallback((type: NodeType) => {
     if (!reactFlowInstance) return;
@@ -195,7 +264,10 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
         onAddNode,
         onAddNodeAtHandle,
         onAddNodeToEdge,
-        onConnect
+        onConnect,
+        nodeLibraryOrder,
+        setNodeLibraryOrder,
+        resetNodeLibraryOrder
       }}
     >
       {children}

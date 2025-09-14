@@ -30,7 +30,8 @@ import {
   useCallback,
   useEffect,
   useRef,
-  useState
+  useState,
+  useMemo
 } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -839,13 +840,32 @@ const DraggableNode = ({
   nodeType: {
     type: string;
     label: string;
-    icon: React.ComponentType<{ className?: string }>;
     color: string;
     order?: number;
   };
   onAddNode: (type: NodeType) => void;
 }) => {
-  const Icon = nodeType.icon;
+  // Map node types to icons
+  const iconMap = {
+    wifiConnect: Wifi,
+    profileEnrichment: User,
+    equipmentSession: Settings,
+    restaurantOrdering: ShoppingCart,
+    productInteraction: Database,
+    navigate: Navigation,
+    notification: Bell,
+    condition: GripVertical,
+    loop: Repeat,
+    apiCall: Globe,
+    runner: Play,
+    input: ArrowRight,
+    output: ArrowRight,
+    process: Square,
+    predefined: Square,
+    document: FileText,
+  };
+
+  const Icon = iconMap[nodeType.type as keyof typeof iconMap] || Database;
 
   // Native drag start handler for HTML5 drag and drop
   const onNativeDragStart = (event: React.DragEvent) => {
@@ -881,68 +901,21 @@ const DraggableNode = ({
 
 // Sidebar component for node library with drag and drop
 const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => {
-  // Define node types with all properties including icon
-  const nodeTypesDefinition = [
-    { type: "wifiConnect", label: "WiFi Connection", icon: Wifi, color: "bg-blue-500/20 dark:bg-blue-600/20", order: 2 },
-    { type: "profileEnrichment", label: "Profile Enrichment", icon: User, color: "bg-purple-500/20 dark:bg-purple-600/20", order: 3 },
-    { type: "equipmentSession", label: "Equipment Session", icon: Settings, color: "bg-orange-500/20 dark:bg-orange-600/20", order: 4 },
-    { type: "restaurantOrdering", label: "Restaurant Ordering", icon: ShoppingCart, color: "bg-amber-500/20 dark:bg-amber-600/20", order: 5 },
-    { type: "productInteraction", label: "Product Interaction", icon: Database, color: "bg-teal-500/20 dark:bg-teal-600/20", order: 6 },
-    { type: "navigate", label: "Navigation", icon: Navigation, color: "bg-cyan-500/20 dark:bg-cyan-600/20", order: 7 },
-    { type: "notification", label: "Notification", icon: Bell, color: "bg-pink-500/20 dark:bg-pink-600/20", order: 8 },
-    { type: "condition", label: "Condition", icon: GripVertical, color: "bg-yellow-500/20 dark:bg-yellow-600/20", order: 9 },
-    { type: "loop", label: "Loop", icon: Repeat, color: "bg-indigo-500/20 dark:bg-indigo-600/20", order: 10 },
-    { type: "apiCall", label: "API Call", icon: Globe, color: "bg-emerald-500/20 dark:bg-emerald-600/20", order: 11 },
-    { type: "runner", label: "Workflow Runner", icon: Play, color: "bg-violet-500/20 dark:bg-violet-600/20", order: 12 },
-    // Custom flow nodes with special shapes
-    { type: "input", label: "Input", icon: ArrowRight, color: "bg-blue-500/20 dark:bg-blue-600/20", order: 15 },
-    { type: "output", label: "Output", icon: ArrowRight, color: "bg-blue-500/20 dark:bg-blue-600/20", order: 16 },
-    { type: "process", label: "Process", icon: Square, color: "bg-purple-500/20 dark:bg-purple-600/20", order: 17 },
-    { type: "predefined", label: "Predefined Process", icon: Square, color: "bg-indigo-500/20 dark:bg-indigo-600/20", order: 18 },
-    { type: "document", label: "Document", icon: FileText, color: "bg-amber-500/20 dark:bg-amber-600/20", order: 19 },
-  ];
+  const { nodeLibraryOrder, setNodeLibraryOrder, resetNodeLibraryOrder } = useFlow();
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // Serializable node type data for storage (without icon)
-  type StoredNodeType = Omit<typeof nodeTypesDefinition[number], 'icon'>;
-
-  // Default node types for storage (without icon)
-  const defaultStoredNodeTypes: StoredNodeType[] = nodeTypesDefinition.map(({ icon, ...rest }) => rest);
-
-  // Get stored order from localStorage or use default
-  const getNodeLibraryOrder = (): typeof nodeTypesDefinition => {
-    try {
-      const storedOrder = localStorage.getItem('nodeLibraryOrder');
-      if (storedOrder) {
-        const parsedOrder: StoredNodeType[] = JSON.parse(storedOrder);
-        // Merge with default to ensure all node types are present
-        return nodeTypesDefinition.map(defaultNode => {
-          const storedNode = parsedOrder.find(n => n.type === defaultNode.type);
-          return storedNode ? { ...defaultNode, ...storedNode } : defaultNode;
-        }).sort((a, b) => (a.order ?? defaultStoredNodeTypes.findIndex(n => n.type === a.type)) - (b.order ?? defaultStoredNodeTypes.findIndex(n => n.type === b.type)));
-      }
-    } catch (error) {
-      console.error('Error parsing node library order from localStorage:', error);
-    }
-    return nodeTypesDefinition;
-  };
-
-  const [nodeTypes, setNodeTypes] = useState(getNodeLibraryOrder());
-
-  // Save order to localStorage when it changes
-  const saveNodeLibraryOrder = (newOrder: typeof nodeTypesDefinition) => {
-    try {
-      // Remove icons before storing
-      const serializableOrder = newOrder.map(({ icon, ...rest }) => rest);
-      localStorage.setItem('nodeLibraryOrder', JSON.stringify(serializableOrder));
-    } catch (error) {
-      console.error('Error saving node library order to localStorage:', error);
-    }
-  };
+  // Filter node types based on search term
+  const filteredNodeTypes = useMemo(() => {
+    if (!searchTerm) return nodeLibraryOrder;
+    return nodeLibraryOrder.filter(nodeType => 
+      nodeType.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      nodeType.type.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [nodeLibraryOrder, searchTerm]);
 
   // Handle reordering
-  const handleReorder = (newOrder: typeof nodeTypesDefinition) => {
-    setNodeTypes(newOrder);
-    saveNodeLibraryOrder(newOrder);
+  const handleReorder = (newOrder: typeof nodeLibraryOrder) => {
+    setNodeLibraryOrder(newOrder);
   };
 
   return (
@@ -957,10 +930,7 @@ const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => 
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => {
-                setNodeTypes(nodeTypesDefinition);
-                saveNodeLibraryOrder(nodeTypesDefinition);
-              }}
+              onClick={resetNodeLibraryOrder}
               className="h-8 w-8"
             >
               <RefreshCw className="h-4 w-4" />
@@ -972,15 +942,23 @@ const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => 
         </Tooltip>
       </CardHeader>
       <CardContent className="flex-1">
+        <div className="pb-2">
+          <Input
+            placeholder="Search nodes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="h-8 text-xs"
+          />
+        </div>
         <ScrollArea>
           <Sortable
-            value={nodeTypes}
+            value={filteredNodeTypes}
             onValueChange={handleReorder}
             getItemValue={(item) => item.type}
           >
             <SortableContent asChild>
               <div className="space-y-2">
-                {nodeTypes.map((nodeType) => (
+                {filteredNodeTypes.map((nodeType) => (
                   <SortableItem key={nodeType.type} value={nodeType.type} asChild>
                     <div className="flex items-center gap-2">
                       <SortableItemHandle asChild>
