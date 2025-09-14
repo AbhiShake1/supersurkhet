@@ -33,6 +33,11 @@ interface FlowContextType {
   nodeLibraryOrder: NodeLibraryItemType[];
   setNodeLibraryOrder: (order: NodeLibraryItemType[]) => void;
   resetNodeLibraryOrder: () => void;
+  // Drag state management
+  isDraggingNode: boolean;
+  activeDragType: string | null;
+  setIsDraggingNode: (isDragging: boolean) => void;
+  setActiveDragType: (type: string | null) => void;
 }
 
 const FlowContext = createContext<FlowContextType | undefined>(undefined);
@@ -41,7 +46,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
   const [nodes, setNodes, onNodesChange] = useNodesState<CustomNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const reactFlowInstance = useReactFlow();
-  
+
   // Define default node library order
   const defaultNodeLibraryOrder: NodeLibraryItemType[] = [
     { type: "wifiConnect", label: "WiFi Connection", color: "bg-blue-500/20 dark:bg-blue-600/20", order: 2 },
@@ -56,16 +61,16 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
     { type: "apiCall", label: "API Call", color: "bg-emerald-500/20 dark:bg-emerald-600/20", order: 11 },
     { type: "runner", label: "Workflow Runner", color: "bg-violet-500/20 dark:bg-violet-600/20", order: 12 },
     // Custom flow nodes with special shapes
-    { type: "input", label: "Input", color: "bg-blue-500/20 dark:bg-blue-600/20", order: 15 },
-    { type: "output", label: "Output", color: "bg-blue-500/20 dark:bg-blue-600/20", order: 16 },
-    { type: "process", label: "Process", color: "bg-purple-500/20 dark:bg-purple-600/20", order: 17 },
-    { type: "predefined", label: "Predefined Process", color: "bg-indigo-500/20 dark:bg-indigo-600/20", order: 18 },
-    { type: "document", label: "Document", color: "bg-amber-500/20 dark:bg-amber-600/20", order: 19 },
+    { type: "input", label: "Input", color: "bg-blue-500/20 dark:bg-blue-600/20", order: 13 },
+    { type: "output", label: "Output", color: "bg-blue-500/20 dark:bg-blue-600/20", order: 14 },
+    { type: "process", label: "Process", color: "bg-purple-500/20 dark:bg-purple-600/20", order: 15 },
+    { type: "predefined", label: "Predefined Process", color: "bg-indigo-500/20 dark:bg-indigo-600/20", order: 16 },
+    { type: "document", label: "Document", color: "bg-amber-500/20 dark:bg-amber-600/20", order: 17 },
   ];
 
   // Node library order state with localStorage persistence
   const [nodeLibraryOrder, setNodeLibraryOrder] = useState<NodeLibraryItemType[]>(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window === "undefined") {
       try {
         const storedOrder = localStorage.getItem('nodeLibraryOrder');
         if (storedOrder) {
@@ -98,6 +103,10 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
   const resetNodeLibraryOrder = useCallback(() => {
     setNodeLibraryOrder(defaultNodeLibraryOrder);
   }, []);
+
+  // Drag state management
+  const [isDraggingNode, setIsDraggingNode] = useState(false);
+  const [activeDragType, setActiveDragType] = useState<string | null>(null);
 
   const onAddNode = useCallback((type: NodeType) => {
     if (!reactFlowInstance) return;
@@ -267,7 +276,11 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
         onConnect,
         nodeLibraryOrder,
         setNodeLibraryOrder,
-        resetNodeLibraryOrder
+        resetNodeLibraryOrder,
+        isDraggingNode,
+        activeDragType,
+        setIsDraggingNode,
+        setActiveDragType
       }}
     >
       {children}

@@ -54,7 +54,6 @@ import { useWifiNetworks } from "@/hooks/use-wifi";
 import {
   ArrowRight,
   Bell,
-  Circle,
   Database,
   Download,
   Eye,
@@ -907,7 +906,7 @@ const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => 
   // Filter node types based on search term
   const filteredNodeTypes = useMemo(() => {
     if (!searchTerm) return nodeLibraryOrder;
-    return nodeLibraryOrder.filter(nodeType => 
+    return nodeLibraryOrder.filter(nodeType =>
       nodeType.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
       nodeType.type.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -1750,7 +1749,8 @@ const FlowBuilder = () => {
     setNodes,
     setEdges,
     onAddNode,
-    onConnect
+    onConnect,
+    setIsDraggingNode
   } = useFlow();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -1827,7 +1827,9 @@ const FlowBuilder = () => {
 
   const onDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    setActiveDragType(active.data.current?.type as string);
+    const dragType = active.data.current?.type as string;
+    setActiveDragType(dragType);
+    setIsDraggingNode(true);
   };
 
   const onDragMove = (event: any) => {
@@ -1844,6 +1846,7 @@ const FlowBuilder = () => {
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragType(null);
+    setIsDraggingNode(false);
     setDragPreviewPosition(null);
 
     // Check if we're dropping on the flow area
