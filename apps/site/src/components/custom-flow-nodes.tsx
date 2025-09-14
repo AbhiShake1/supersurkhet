@@ -2,45 +2,74 @@
 
 import { BaseHandle } from "@/components/base-handle";
 import { BaseNode, BaseNodeContent, BaseNodeHeader, BaseNodeHeaderTitle } from "@/components/base-node";
-import { NodeStatusIndicator } from "@/components/node-status-indicator";
+import { NodeStatusIndicator, type NodeStatus } from "@/components/node-status-indicator";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { type NodeProps, Position } from "@xyflow/react";
+import { type Node, type NodeProps, Position, useReactFlow } from "@xyflow/react";
 import { Trash } from "lucide-react";
+import { useCallback } from "react";
 
-// Delete button component for nodes
-function DeleteNodeButton({ id }: { id: string }) {
-  // Note: In a real implementation, you would use useReactFlow() hook to delete the node
-  // For this example, we'll just provide the UI component
-  const handleDelete = () => {
-    // This would typically use the useReactFlow hook:
-    // const { setNodes } = useReactFlow();
-    // setNodes((prevNodes) => prevNodes.filter((node) => node.id !== id));
-    console.log(`Delete node with id: ${id}`);
-  };
+export function DeleteNodeButton({ id }: { id: string }) {
+  const { setNodes } = useReactFlow();
 
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger>
-          <Button
-            variant="link"
-            className="nodrag p-1 text-white"
-            onClick={handleDelete}
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>Delete Node</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
+  const handleDelete = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setNodes((prevNodes) => prevNodes.filter((node) => node.id !== id));
+  }, [id, setNodes]);
+
+  return <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger>
+        <Button
+          variant="link"
+          className="nodrag p-1 text-white"
+          onClick={handleDelete}
+        >
+          <Trash className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Delete Node</p>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
 }
 
+type ConditionNodeData = {
+  label: string;
+  status: NodeStatus;
+  condition: string;
+  description: string;
+  config: {
+    condition: string;
+    truePath: string;
+    falsePath: string;
+  };
+  stats: {
+    progress: number;
+    completed: number;
+    started: number;
+  };
+};
+
+type LoopNodeData = {
+  label: string;
+  status: NodeStatus;
+  iterations: number;
+  description: string;
+  config: {
+    iterations: number;
+    loopVariable: string;
+  };
+  stats: {
+    progress: number;
+    completed: number;
+    started: number;
+  };
+};
+
 // Diamond-shaped node for conditions
-export const ConditionNode = ({ data, id }: NodeProps) => {
+export const ConditionNode = ({ data, id }: NodeProps<Node<ConditionNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div className="relative" style={{ width: 120, height: 120 }}>
@@ -58,7 +87,7 @@ export const ConditionNode = ({ data, id }: NodeProps) => {
             borderRadius: 4,
           }}
         />
-        
+
         {/* Content (not rotated) */}
         <div
           style={{
@@ -77,7 +106,7 @@ export const ConditionNode = ({ data, id }: NodeProps) => {
             <div style={{ fontSize: 12, marginTop: 4 }}>{data.description}</div>
           )}
         </div>
-        
+
         {/* Handles */}
         <BaseHandle
           type="target"
@@ -117,58 +146,17 @@ export const ConditionNode = ({ data, id }: NodeProps) => {
   );
 };
 
-// Circular node for start/end
-export const StartEndNode = ({ data, id }: NodeProps) => {
-  const isStart = data.type === "start";
-  const bgColor = isStart
-    ? "bg-green-500/20 dark:bg-green-600/20"
-    : "bg-red-500/20 dark:bg-red-600/20";
-  const borderColor = isStart
-    ? "border-green-500/30 dark:border-green-600/30"
-    : "border-red-500/30 dark:border-red-600/30";
-  const handleColor = isStart
-    ? "bg-green-500 dark:bg-green-600 border-green-600 dark:border-green-700"
-    : "bg-red-500 dark:bg-red-600 border-red-600 dark:border-red-700";
-
-  return (
-    <NodeStatusIndicator status={data.status}>
-      <div
-        className={`rounded-full ${bgColor} ${borderColor} backdrop-blur-sm text-center shadow-sm flex flex-col items-center justify-center relative`}
-        style={{
-          width: 100,
-          height: 100,
-        }}
-      >
-        <div className="font-semibold px-2">{data.label}</div>
-        {data.description && (
-          <div className="text-xs px-2 mt-1">{data.description}</div>
-        )}
-        {isStart ? (
-          <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
-            <BaseHandle
-              type="source"
-              position={Position.Bottom}
-              id="start-output"
-              className={handleColor}
-            />
-          </div>
-        ) : (
-          <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-            <BaseHandle
-              type="target"
-              position={Position.Top}
-              id="end-input"
-              className={handleColor}
-            />
-          </div>
-        )}
-      </div>
-    </NodeStatusIndicator>
-  );
+type IO_NodeData = {
+  label: string;
+  status: NodeStatus;
+  description: string;
+  config: {
+    ioType: "input" | "output";
+  };
 };
 
 // Parallelogram node for input/output
-export const IO_Node = ({ data, id }: NodeProps) => {
+export const IO_Node = ({ data, id }: NodeProps<Node<IO_NodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div
@@ -212,8 +200,17 @@ export const IO_Node = ({ data, id }: NodeProps) => {
   );
 };
 
+type ProcessNodeData = {
+  label: string;
+  status: NodeStatus;
+  description: string;
+  config: {
+    action: string;
+  };
+};
+
 // Rectangle node for process
-export const ProcessNode = ({ data, id }: NodeProps) => {
+export const ProcessNode = ({ data, id }: NodeProps<Node<ProcessNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-purple-500/20 dark:bg-purple-600/20 backdrop-blur-sm border border-purple-500/30 dark:border-purple-600/30 text-purple-900 dark:text-purple-100 shadow-sm">
@@ -249,8 +246,18 @@ export const ProcessNode = ({ data, id }: NodeProps) => {
   );
 };
 
+type PredefinedProcessNodeData = {
+  label: string;
+  status: NodeStatus;
+  description: string;
+  config: {
+    predefinedProcessId: string;
+    table: string;
+  };
+};
+
 // Rounded rectangle node for predefined process
-export const PredefinedProcessNode = ({ data, id }: NodeProps) => {
+export const PredefinedProcessNode = ({ data, id }: NodeProps<Node<PredefinedProcessNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div
@@ -290,8 +297,18 @@ export const PredefinedProcessNode = ({ data, id }: NodeProps) => {
   );
 };
 
+type DocumentNodeData = {
+  label: string;
+  status: NodeStatus;
+  description: string;
+  config: {
+    documentId: string;
+    table: string;
+  };
+};
+
 // Document node (rectangle with wavy bottom)
-export const DocumentNode = ({ data, id }: NodeProps) => {
+export const DocumentNode = ({ data, id }: NodeProps<Node<DocumentNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div
@@ -342,7 +359,7 @@ export const DocumentNode = ({ data, id }: NodeProps) => {
 };
 
 // Loop node (hexagon)
-export const LoopNode = ({ data, id }: NodeProps) => {
+export const LoopNode = ({ data, id }: NodeProps<Node<LoopNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div
@@ -394,8 +411,6 @@ export const LoopNode = ({ data, id }: NodeProps) => {
 // Export all node types
 export const flowNodeTypes = {
   condition: ConditionNode,
-  start: StartEndNode,
-  end: StartEndNode,
   input: IO_Node,
   output: IO_Node,
   process: ProcessNode,

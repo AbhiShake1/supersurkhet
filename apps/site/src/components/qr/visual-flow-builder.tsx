@@ -3,8 +3,6 @@
 import {
   Background,
   BackgroundVariant,
-  type Connection,
-  type Edge,
   type EdgeTypes,
   type Node,
   type NodeProps,
@@ -13,9 +11,6 @@ import {
   Position,
   ReactFlow,
   ReactFlowProvider,
-  addEdge,
-  useEdgesState,
-  useNodesState,
   useReactFlow
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -27,11 +22,9 @@ import {
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
-  useDraggable,
   useSensor,
   useSensors
 } from "@dnd-kit/core";
-import { CSS } from "@dnd-kit/utilities";
 import type React from "react";
 import {
   useCallback,
@@ -80,7 +73,6 @@ import {
   Share2,
   ShoppingCart,
   Square,
-  Trash,
   Unlock,
   Upload,
   User,
@@ -103,9 +95,11 @@ import { toast } from "sonner";
 
 import { AnimatedSvgEdge } from "@/components/animated-svg-edge";
 import { BaseNode, BaseNodeContent, BaseNodeHeader, BaseNodeHeaderTitle } from "@/components/base-node";
-import { CustomEdge, type CustomEdgeData } from "@/components/custom-edge";
-import { flowNodeTypes } from "@/components/custom-flow-nodes";
+import { CustomEdge } from "@/components/custom-edge";
+import { DeleteNodeButton, flowNodeTypes } from "@/components/custom-flow-nodes";
 import { DataEdge } from "@/components/data-edge";
+import { FlowProvider, useFlow } from "@/components/flow-context";
+import { NodeButtonHandle } from "@/components/node-button-handle";
 import { NodeStats } from "@/components/node-stats";
 import { type NodeStatus, NodeStatusIndicator } from "@/components/node-status-indicator";
 import {
@@ -118,11 +112,10 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { ZoomSlider } from "@/components/zoom-slider";
 import { getLayoutedElements } from "@/lib/auto-layout-utils";
-import { BaseHandle } from "../base-handle";
 import { ScrollArea } from "../ui/scroll-area";
 
 // Define custom node types
-type NodeType =
+export type NodeType =
   | "wifiConnect"
   | "profileEnrichment"
   | "equipmentSession"
@@ -134,7 +127,7 @@ type NodeType =
   | "loop"
   | "apiCall"
   | "custom"
-  | "runner" // Add runner node type
+  | "runner"
   // Custom flow node types with special shapes
   | "input"
   | "output"
@@ -157,7 +150,7 @@ type BaseNodeData = {
 }
 
 // Helper function to get fixed label and description for each node type
-const getNodeLabelAndDescription = (type: NodeType) => {
+export const getNodeLabelAndDescription = (type: NodeType) => {
   switch (type) {
     case "wifiConnect":
       return { label: "WiFi Connection", description: "Connect to a WiFi network" };
@@ -201,32 +194,6 @@ interface CustomNode extends Node<BaseNodeData> {
   type: NodeType;
 }
 
-function DeleteNodeButton({ id }: { id: string }) {
-  const { setNodes } = useReactFlow();
-
-  const handleDelete = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setNodes((prevNodes) => prevNodes.filter((node) => node.id !== id));
-  }, [id, setNodes]);
-
-  return <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger>
-        <Button
-          variant="link"
-          className="nodrag p-1 text-white"
-          onClick={handleDelete}
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>Delete Node</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
-}
-
 type WifiConnectNodeData = {
   stats: {
     progress: number;
@@ -244,6 +211,7 @@ type WifiConnectNodeData = {
 }
 
 const WifiConnectNode = ({ data, id }: NodeProps<Node<WifiConnectNodeData>>) => {
+  const { onAddNodeAtHandle } = useFlow();
   // Calculate progress based on stats
   const progress = data.stats?.progress ??
     (data.stats?.completed && data.stats?.started ?
@@ -278,16 +246,24 @@ const WifiConnectNode = ({ data, id }: NodeProps<Node<WifiConnectNodeData>>) => 
             </div>
           )}
         </BaseNodeContent>
-        <BaseHandle
+        <NodeButtonHandle
           type="target"
           position={Position.Top}
           id="wifi-input"
+          nodeId={id}
+          handleId="wifi-input"
+          handleType="target"
+          onAddNode={onAddNodeAtHandle}
           className="bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-700"
         />
-        <BaseHandle
+        <NodeButtonHandle
           type="source"
           position={Position.Bottom}
           id="wifi-output"
+          nodeId={id}
+          handleId="wifi-output"
+          handleType="source"
+          onAddNode={onAddNodeAtHandle}
           className="bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-700"
         />
       </BaseNode>
@@ -311,6 +287,7 @@ type ProfileEnrichmentNodeData = {
 }
 
 const ProfileEnrichmentNode = ({ data, id }: NodeProps<Node<ProfileEnrichmentNodeData>>) => {
+  const { onAddNodeAtHandle } = useFlow();
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-purple-500/20 dark:bg-purple-600/20 backdrop-blur-sm border border-purple-500/30 dark:border-purple-600/30 text-purple-900 dark:text-purple-100 shadow-sm">
@@ -334,16 +311,24 @@ const ProfileEnrichmentNode = ({ data, id }: NodeProps<Node<ProfileEnrichmentNod
             </div>
           </div>
         </BaseNodeContent>
-        <BaseHandle
+        <NodeButtonHandle
           type="target"
           position={Position.Top}
           id="profile-input"
+          nodeId={id}
+          handleId="profile-input"
+          handleType="target"
+          onAddNode={onAddNodeAtHandle}
           className="bg-purple-500 dark:bg-purple-600 border-purple-600 dark:border-purple-700"
         />
-        <BaseHandle
+        <NodeButtonHandle
           type="source"
           position={Position.Bottom}
           id="profile-output"
+          nodeId={id}
+          handleId="profile-output"
+          handleType="source"
+          onAddNode={onAddNodeAtHandle}
           className="bg-purple-500 dark:bg-purple-600 border-purple-600 dark:border-purple-700"
         />
       </BaseNode>
@@ -363,6 +348,7 @@ type EquipmentSessionNodeData = {
 };
 
 const EquipmentSessionNode = ({ data, id }: NodeProps<Node<EquipmentSessionNodeData>>) => {
+  const { onAddNodeAtHandle } = useFlow();
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-orange-500/20 dark:bg-orange-600/20 backdrop-blur-sm border border-orange-500/30 dark:border-orange-600/30 text-orange-900 dark:text-orange-100 shadow-sm">
@@ -386,16 +372,24 @@ const EquipmentSessionNode = ({ data, id }: NodeProps<Node<EquipmentSessionNodeD
             </div>
           </div>
         </BaseNodeContent>
-        <BaseHandle
+        <NodeButtonHandle
           type="target"
           position={Position.Top}
           id="equipment-input"
+          nodeId={id}
+          handleId="equipment-input"
+          handleType="target"
+          onAddNode={onAddNodeAtHandle}
           className="bg-orange-500 dark:bg-orange-600 border-orange-600 dark:border-orange-700"
         />
-        <BaseHandle
+        <NodeButtonHandle
           type="source"
           position={Position.Bottom}
           id="equipment-output"
+          nodeId={id}
+          handleId="equipment-output"
+          handleType="source"
+          onAddNode={onAddNodeAtHandle}
           className="bg-orange-500 dark:bg-orange-600 border-orange-600 dark:border-orange-700"
         />
       </BaseNode>
@@ -415,6 +409,7 @@ type RestaurantOrderingNodeData = {
 };
 
 const RestaurantOrderingNode = ({ data, id }: NodeProps<Node<RestaurantOrderingNodeData>>) => {
+  const { onAddNodeAtHandle } = useFlow();
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-amber-500/20 dark:bg-amber-600/20 backdrop-blur-sm border border-amber-500/30 dark:border-amber-600/30 text-amber-900 dark:text-amber-100 shadow-sm">
@@ -438,16 +433,24 @@ const RestaurantOrderingNode = ({ data, id }: NodeProps<Node<RestaurantOrderingN
             </div>
           </div>
         </BaseNodeContent>
-        <BaseHandle
+        <NodeButtonHandle
           type="target"
           position={Position.Top}
           id="restaurant-input"
+          nodeId={id}
+          handleId="restaurant-input"
+          handleType="target"
+          onAddNode={onAddNodeAtHandle}
           className="bg-amber-500 dark:bg-amber-600 border-amber-600 dark:border-amber-700"
         />
-        <BaseHandle
+        <NodeButtonHandle
           type="source"
           position={Position.Bottom}
           id="restaurant-output"
+          nodeId={id}
+          handleId="restaurant-output"
+          handleType="source"
+          onAddNode={onAddNodeAtHandle}
           className="bg-amber-500 dark:bg-amber-600 border-amber-600 dark:border-amber-700"
         />
       </BaseNode>
@@ -467,6 +470,7 @@ type ProductInteractionNodeData = {
 };
 
 const ProductInteractionNode = ({ data, id }: NodeProps<Node<ProductInteractionNodeData>>) => {
+  const { onAddNodeAtHandle } = useFlow();
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-teal-500/20 dark:bg-teal-600/20 backdrop-blur-sm border border-teal-500/30 dark:border-teal-600/30 text-teal-900 dark:text-teal-100 shadow-sm">
@@ -490,16 +494,24 @@ const ProductInteractionNode = ({ data, id }: NodeProps<Node<ProductInteractionN
             </div>
           </div>
         </BaseNodeContent>
-        <BaseHandle
+        <NodeButtonHandle
           type="target"
           position={Position.Top}
           id="product-input"
+          nodeId={id}
+          handleId="product-input"
+          handleType="target"
+          onAddNode={onAddNodeAtHandle}
           className="bg-teal-500 dark:bg-teal-600 border-teal-600 dark:border-teal-700"
         />
-        <BaseHandle
+        <NodeButtonHandle
           type="source"
           position={Position.Bottom}
           id="product-output"
+          nodeId={id}
+          handleId="product-output"
+          handleType="source"
+          onAddNode={onAddNodeAtHandle}
           className="bg-teal-500 dark:bg-teal-600 border-teal-600 dark:border-teal-700"
         />
       </BaseNode>
@@ -518,6 +530,7 @@ type NavigateNodeData = {
 };
 
 const NavigateNode = ({ data, id }: NodeProps<Node<NavigateNodeData>>) => {
+  const { onAddNodeAtHandle } = useFlow();
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-cyan-500/20 dark:bg-cyan-600/20 backdrop-blur-sm border border-cyan-500/30 dark:border-cyan-600/30 text-cyan-900 dark:text-cyan-100 shadow-sm">
@@ -537,16 +550,24 @@ const NavigateNode = ({ data, id }: NodeProps<Node<NavigateNodeData>>) => {
             </div>
           </div>
         </BaseNodeContent>
-        <BaseHandle
+        <NodeButtonHandle
           type="target"
           position={Position.Top}
           id="navigate-input"
+          nodeId={id}
+          handleId="navigate-input"
+          handleType="target"
+          onAddNode={onAddNodeAtHandle}
           className="bg-cyan-500 dark:bg-cyan-600 border-cyan-600 dark:border-cyan-700"
         />
-        <BaseHandle
+        <NodeButtonHandle
           type="source"
           position={Position.Bottom}
           id="navigate-output"
+          nodeId={id}
+          handleId="navigate-output"
+          handleType="source"
+          onAddNode={onAddNodeAtHandle}
           className="bg-cyan-500 dark:bg-cyan-600 border-cyan-600 dark:border-cyan-700"
         />
       </BaseNode>
@@ -565,6 +586,7 @@ type NotificationNodeData = {
 };
 
 const NotificationNode = ({ data, id }: NodeProps<Node<NotificationNodeData>>) => {
+  const { onAddNodeAtHandle } = useFlow();
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-pink-500/20 dark:bg-pink-600/20 backdrop-blur-sm border border-pink-500/30 dark:border-pink-600/30 text-pink-900 dark:text-pink-100 shadow-sm">
@@ -584,54 +606,29 @@ const NotificationNode = ({ data, id }: NodeProps<Node<NotificationNodeData>>) =
             </div>
           </div>
         </BaseNodeContent>
-        <BaseHandle
+        <NodeButtonHandle
           type="target"
           position={Position.Top}
           id="notification-input"
+          nodeId={id}
+          handleId="notification-input"
+          handleType="target"
+          onAddNode={onAddNodeAtHandle}
           className="bg-pink-500 dark:bg-pink-600 border-pink-600 dark:border-pink-700"
         />
-        <BaseHandle
+        <NodeButtonHandle
           type="source"
           position={Position.Bottom}
           id="notification-output"
+          nodeId={id}
+          handleId="notification-output"
+          handleType="source"
+          onAddNode={onAddNodeAtHandle}
           className="bg-pink-500 dark:bg-pink-600 border-pink-600 dark:border-pink-700"
         />
       </BaseNode>
     </NodeStatusIndicator>
   );
-};
-
-type ConditionNodeData = {
-  label: string;
-  status: NodeStatus;
-  condition: string;
-  description: string;
-  config: {
-    condition: string;
-    truePath: string;
-    falsePath: string;
-  };
-  stats: {
-    progress: number;
-    completed: number;
-    started: number;
-  };
-};
-
-type LoopNodeData = {
-  label: string;
-  status: NodeStatus;
-  iterations: number;
-  description: string;
-  config: {
-    iterations: number;
-    loopVariable: string;
-  };
-  stats: {
-    progress: number;
-    completed: number;
-    started: number;
-  };
 };
 
 type ApiCallNodeData = {
@@ -650,6 +647,7 @@ type ApiCallNodeData = {
 }
 
 const APICallNode = ({ data, id }: NodeProps<Node<ApiCallNodeData>>) => {
+  const { onAddNodeAtHandle } = useFlow();
   // Calculate progress based on stats
   const progress = data.stats?.progress ??
     (data.stats?.completed && data.stats?.started ?
@@ -702,16 +700,24 @@ const APICallNode = ({ data, id }: NodeProps<Node<ApiCallNodeData>>) => {
             </div>
           )}
         </BaseNodeContent>
-        <BaseHandle
+        <NodeButtonHandle
           type="target"
           position={Position.Top}
           id="api-input"
+          nodeId={id}
+          handleId="api-input"
+          handleType="target"
+          onAddNode={onAddNodeAtHandle}
           className="bg-emerald-500 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-700"
         />
-        <BaseHandle
+        <NodeButtonHandle
           type="source"
           position={Position.Bottom}
           id="api-output"
+          nodeId={id}
+          handleId="api-output"
+          handleType="source"
+          onAddNode={onAddNodeAtHandle}
           className="bg-emerald-500 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-700"
         />
       </BaseNode>
@@ -737,6 +743,7 @@ type RunnerNodeData = {
 }
 
 const RunnerNode = ({ data, id }: NodeProps<Node<RunnerNodeData>>) => {
+  const { onAddNodeAtHandle } = useFlow();
   // Calculate progress based on stats
   const progress = data.stats?.progress ??
     (data.stats?.completed && data.stats?.started ?
@@ -777,16 +784,24 @@ const RunnerNode = ({ data, id }: NodeProps<Node<RunnerNodeData>>) => {
             </div>
           )}
         </BaseNodeContent>
-        <BaseHandle
+        <NodeButtonHandle
           type="target"
           position={Position.Top}
           id="runner-input"
+          nodeId={id}
+          handleId="runner-input"
+          handleType="target"
+          onAddNode={onAddNodeAtHandle}
           className="bg-violet-500 dark:bg-violet-600 border-violet-600 dark:border-violet-700"
         />
-        <BaseHandle
+        <NodeButtonHandle
           type="source"
           position={Position.Bottom}
           id="runner-output"
+          nodeId={id}
+          handleId="runner-output"
+          handleType="source"
+          onAddNode={onAddNodeAtHandle}
           className="bg-violet-500 dark:bg-violet-600 border-violet-600 dark:border-violet-700"
         />
       </BaseNode>
@@ -880,8 +895,6 @@ const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => 
     { type: "apiCall", label: "API Call", icon: Globe, color: "bg-emerald-500/20 dark:bg-emerald-600/20", order: 11 },
     { type: "runner", label: "Workflow Runner", icon: Play, color: "bg-violet-500/20 dark:bg-violet-600/20", order: 12 },
     // Custom flow nodes with special shapes
-    { type: "start", label: "Start", icon: Circle, color: "bg-green-500/20 dark:bg-green-600/20", order: 13 },
-    { type: "end", label: "End", icon: Circle, color: "bg-red-500/20 dark:bg-red-600/20", order: 14 },
     { type: "input", label: "Input", icon: ArrowRight, color: "bg-blue-500/20 dark:bg-blue-600/20", order: 15 },
     { type: "output", label: "Output", icon: ArrowRight, color: "bg-blue-500/20 dark:bg-blue-600/20", order: 16 },
     { type: "process", label: "Process", icon: Square, color: "bg-purple-500/20 dark:bg-purple-600/20", order: 17 },
@@ -1751,8 +1764,17 @@ const PreviewPanel = ({ action }: { action: DataMatrixAction | null }) => {
 
 // Flow Builder Component
 const FlowBuilder = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState<CustomNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge<CustomEdgeData>>([]);
+  const {
+    nodes,
+    edges,
+    onNodesChange,
+    onEdgesChange,
+    setNodes,
+    setEdges,
+    onAddNode,
+    onConnect
+  } = useFlow();
+
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const selectedNode = nodes.find(node => node.id === selectedNodeId);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -1763,41 +1785,7 @@ const FlowBuilder = () => {
 
   // State for drag and drop
   const [activeDragType, setActiveDragType] = useState<string | null>(null);
-
-  // Custom onEdgesChange that ensures all edges have the onAddNode function
-  const customOnEdgesChange = useCallback((changes: any) => {
-    // Process changes to add onAddNode function to all edges
-    const processedChanges = changes.map((change: any) => {
-      if (change.type === 'add' && change.item) {
-        const updatedItem = { ...change.item };
-
-        // Add onAddNode function if missing
-        if (!updatedItem.data?.onAddNode) {
-          updatedItem.data = {
-            ...(updatedItem.data || {}),
-            onAddNode: onAddNodeToEdge
-          };
-        }
-
-        // Add markerEnd if missing
-        if (!updatedItem.markerEnd) {
-          updatedItem.markerEnd = {
-            type: 'arrow',
-            color: '#94a3b8',
-          };
-        }
-
-        return {
-          ...change,
-          item: updatedItem
-        };
-      }
-      return change;
-    });
-
-    // Apply the processed changes
-    onEdgesChange(processedChanges);
-  }, [onEdgesChange]);
+  const [dragPreviewPosition, setDragPreviewPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Sensors for drag and drop
   const sensors = useSensors(
@@ -1864,10 +1852,21 @@ const FlowBuilder = () => {
     setActiveDragType(active.data.current?.type as string);
   };
 
+  const onDragMove = (event: any) => {
+    if (!reactFlowInstance) return;
+
+    const position = reactFlowInstance.screenToFlowPosition({
+      x: event.clientX,
+      y: event.clientY,
+    });
+
+    setDragPreviewPosition(position);
+  };
+
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragType(null);
-    // setDragPreviewPosition(null);
+    setDragPreviewPosition(null);
 
     // Check if we're dropping on the flow area
     if (over?.id === 'flow-canvas' && reactFlowInstance) {
@@ -1896,107 +1895,11 @@ const FlowBuilder = () => {
     }
   };
 
-  const onAddNodeToEdge = useCallback((edgeId: string, nodeType: string) => {
-    console.log("onAddNodeToEdge called with edgeId:", edgeId, "nodeType:", nodeType);
-    // Get current edges from React Flow instance
-    const currentEdges = reactFlowInstance?.getEdges() || [];
-    const edge = currentEdges.find(e => e.id === edgeId);
-    if (!edge) {
-      console.log("Edge not found:", edgeId);
-      console.log("Current edges:", currentEdges);
-      return;
-    }
-
-    // Get fixed label and description for the node type
-    const { label, description } = getNodeLabelAndDescription(nodeType as NodeType);
-
-    // Create new node
-    const newNodeId = `${nodeType}-${Date.now()}`;
-    const newNode: CustomNode = {
-      id: newNodeId,
-      type: nodeType as NodeType,
-      position: { x: 0, y: 0 }, // Will be positioned by auto-layout
-      data: {
-        label,
-        description,
-        status: "initial",
-        config: {} // Initialize empty config object
-      },
-    };
-
-    // Create new edges
-    const newEdge1: Edge<CustomEdgeData> = {
-      id: `e-${edge.source}-${newNodeId}`,
-      source: edge.source,
-      target: newNodeId,
-      type: 'default',
-      data: { onAddNode: onAddNodeToEdge },
-      markerEnd: {
-        type: 'arrow',
-        color: '#94a3b8',
-      },
-    };
-
-    const newEdge2: Edge<CustomEdgeData> = {
-      id: `e-${newNodeId}-${edge.target}`,
-      source: newNodeId,
-      target: edge.target,
-      type: 'default',
-      data: { onAddNode: onAddNodeToEdge },
-      markerEnd: {
-        type: 'arrow',
-        color: '#94a3b8',
-      },
-    };
-
-    // Update state
-    setNodes((nds) => [...nds, newNode]);
-    setEdges((eds) => {
-      const updatedEdges = eds.filter(e => e.id !== edgeId);
-      return [...updatedEdges, newEdge1, newEdge2];
-    });
-  }, [reactFlowInstance, setNodes, setEdges]);
-
-  const onAddNode = useCallback((type: NodeType) => {
-    if (!reactFlowInstance) return;
-
-    const { label, description } = getNodeLabelAndDescription(type);
-
-    const newNode: CustomNode = {
-      id: `${type}-${Date.now()}`,
-      type,
-      position: { x: Math.random() * 500, y: Math.random() * 500 },
-      data: {
-        label,
-        description,
-        status: "initial",
-        config: {} // Initialize empty config object
-      },
-    };
-    setNodes((nds) => nds.concat(newNode));
-  }, [setNodes, reactFlowInstance]);
-
   const onUpdateNode = useCallback((id: string, data: BaseNodeData) => {
     setNodes((nds) =>
       nds.map((node) => (node.id === id ? { ...node, data } : node))
     );
   }, [setNodes]);
-
-  const onConnect = useCallback(
-    (params: Connection) => {
-      const newEdge: Edge<CustomEdgeData> = {
-        ...params,
-        type: 'default',
-        data: { onAddNode: onAddNodeToEdge },
-        markerEnd: {
-          type: 'arrow',
-          color: '#94a3b8',
-        },
-      };
-      setEdges((eds) => addEdge(newEdge, eds));
-    },
-    [setEdges, onAddNodeToEdge]
-  );
 
   // Generate preview action from nodes and edges
   const generatePreviewAction = useCallback(() => {
@@ -2271,6 +2174,7 @@ const FlowBuilder = () => {
           <DndContext
             sensors={sensors}
             onDragStart={onDragStart}
+            onDragMove={onDragMove}
             onDragEnd={onDragEnd}
           >
             <DragOverlay>
@@ -2280,12 +2184,22 @@ const FlowBuilder = () => {
                 </div>
               )}
             </DragOverlay>
+            {dragPreviewPosition && (
+              <div
+                className="absolute w-48 h-24 border-2 border-dashed border-blue-500 rounded-md bg-blue-500/10 pointer-events-none"
+                style={{
+                  left: dragPreviewPosition.x,
+                  top: dragPreviewPosition.y,
+                  transform: 'translate(-50%, -50%)'
+                }}
+              />
+            )}
           </DndContext>
           <ReactFlow
             nodes={nodes}
             edges={edges}
             onNodesChange={isLocked ? undefined : onNodesChange}
-            onEdgesChange={isLocked ? undefined : customOnEdgesChange}
+            onEdgesChange={isLocked ? undefined : onEdgesChange}
             onConnect={isLocked ? undefined : onConnect}
             onNodeClick={(_, node) => {
               setSelectedNodeId(node.id);
@@ -2519,7 +2433,9 @@ export function VisualFlowBuilder() {
   return (
     <div className="w-full">
       <ReactFlowProvider>
-        <FlowBuilder />
+        <FlowProvider>
+          <FlowBuilder />
+        </FlowProvider>
       </ReactFlowProvider>
     </div>
   );
