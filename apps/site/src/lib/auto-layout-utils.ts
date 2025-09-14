@@ -3,6 +3,10 @@ import type { Node, Edge } from "@xyflow/react";
 
 const nodeWidth = 250;
 const nodeHeight = 80;
+const conditionNodeWidth = 120;
+const conditionNodeHeight = 120;
+const startEndNodeWidth = 100;
+const startEndNodeHeight = 100;
 
 export const getLayoutedElements = (
   nodes: Node[],
@@ -16,9 +20,23 @@ export const getLayoutedElements = (
   dagreGraph.setGraph({ rankdir: direction });
 
   nodes.forEach((node) => {
+    // Special handling for different node types
+    let width, height;
+    
+    if (node.type === "condition") {
+      width = conditionNodeWidth;
+      height = conditionNodeHeight;
+    } else if (node.type === "start" || node.type === "end") {
+      width = startEndNodeWidth;
+      height = startEndNodeHeight;
+    } else {
+      width = node.measured?.width || nodeWidth;
+      height = node.measured?.height || nodeHeight;
+    }
+    
     dagreGraph.setNode(node.id, {
-      width: node.measured?.width || nodeWidth,
-      height: node.measured?.height || nodeHeight,
+      width,
+      height,
     });
   });
 
@@ -30,11 +48,26 @@ export const getLayoutedElements = (
 
   const newNodes = nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
+    
+    // Special handling for different node types
+    let width, height;
+    
+    if (node.type === "condition") {
+      width = conditionNodeWidth;
+      height = conditionNodeHeight;
+    } else if (node.type === "start" || node.type === "end") {
+      width = startEndNodeWidth;
+      height = startEndNodeHeight;
+    } else {
+      width = node.measured?.width || nodeWidth;
+      height = node.measured?.height || nodeHeight;
+    }
+    
     const newNode = {
       ...node,
       position: {
-        x: nodeWithPosition.x - (node.measured?.width || nodeWidth) / 2,
-        y: nodeWithPosition.y - (node.measured?.height || nodeHeight) / 2,
+        x: nodeWithPosition.x - width / 2,
+        y: nodeWithPosition.y - height / 2,
       },
     };
     return newNode;
