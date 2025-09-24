@@ -1,7 +1,7 @@
 import React from "react";
-import { 
-  BaseEdge, 
-  EdgeLabelRenderer, 
+import {
+  BaseEdge,
+  EdgeLabelRenderer,
   EdgeProps,
   getBezierPath,
   useReactFlow
@@ -16,7 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -36,8 +36,6 @@ import {
 
 // Define node types with icons and colors
 const nodeTypes = [
-  { type: "start", label: "Start", icon: Play, color: "bg-green-500" },
-  { type: "end", label: "End", icon: Square, color: "bg-red-500" },
   { type: "wifiConnect", label: "WiFi Connection", icon: Wifi, color: "bg-blue-500" },
   { type: "profileEnrichment", label: "Profile Enrichment", icon: User, color: "bg-purple-500" },
   { type: "equipmentSession", label: "Equipment Session", icon: Settings, color: "bg-orange-500" },
@@ -112,9 +110,9 @@ export function CustomEdge({
           <div className="flex items-center gap-1">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  size="icon" 
-                  variant="secondary" 
+                <Button
+                  size="icon"
+                  variant="secondary"
                   className="w-6 h-6 rounded-full shadow-lg"
                 >
                   <Plus className="w-3 h-3" />
@@ -127,8 +125,8 @@ export function CustomEdge({
                   {nodeTypes.map((nodeType) => {
                     const Icon = nodeType.icon;
                     return (
-                      <DropdownMenuItem 
-                        key={nodeType.type} 
+                      <DropdownMenuItem
+                        key={nodeType.type}
                         onSelect={() => onAddNode(nodeType.type)}
                         className="flex items-center gap-2"
                       >
@@ -141,13 +139,13 @@ export function CustomEdge({
                 </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
-            
+
             {data?.label && (
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     className="w-6 h-6 rounded-full shadow-lg"
                   >
                     <Info className="w-3 h-3" />
