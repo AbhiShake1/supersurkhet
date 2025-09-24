@@ -1,132 +1,141 @@
 # Quickstart Guide: SuperSurkhet Super-Dapp/Super-Network Platform
 
 ## Overview
-This guide will walk you through setting up and using the SuperSurkhet Super-Dapp/Super-Network Platform to digitize your business operations or discover local businesses. The platform uses GunDB for real-time, decentralized data storage and schema-driven development for dynamic UI generation.
+This guide will help you get started with the SuperSurkhet platform, a decentralized application that enables business owners to digitize their operations with minimal technical expertise.
 
-## For Business Owners
+## Prerequisites
+- Node.js 20.x or higher
+- pnpm package manager
+- Git
+- A Google Cloud Platform account for OAuth setup
 
-### Step 1: Sign Up and Create Your Business Profile
-1. Visit the SuperSurkhet platform website
-2. Click on "Start for Free" or "Create Business Profile"
-3. Sign in using your Google account (Google OAuth)
-4. Select your business type from the available options (restaurant, gym, petrol pump, hotel, cinema, financial firm, ride sharing, etc.)
-5. Fill in your business details using the auto-generated form based on your business type schema:
-   - Business name
-   - Location (address)
-   - Business type-specific fields are automatically generated based on the schema
-6. Submit the form - your digital presence will be generated instantly with auto-generated admin panels and customer interfaces
+## Setup Instructions
 
-### Step 2: Customize Your Digital Presence
-1. Navigate to your business admin panel which is automatically generated based on your business schema
-2. Customize your offerings using the schema-driven forms:
-   - For restaurants: add menu items with prices, descriptions, dietary options
-   - For gyms: add equipment, membership packages, class schedules
-   - For petrol pumps: add fuel types, prices, services
-   - For hotels: add room types, amenities, pricing
-3. Your changes are instantly synchronized across all connected peers via GunDB
-4. The admin panel adapts to your business type with relevant components and views
-5. All data entities automatically receive a unique _.soul identifier from GunDB for referencing and relationships
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd supersurkhet
+```
 
-### Step 3: Manage Your Business Operations
-1. Use the auto-generated components to manage your business:
-   - Orders/Bookings: Real-time updates as customers place orders/requests
-   - Inventory/Availability: Update in real-time to reflect current status
-   - Transactions: Track payments and financial data
-2. All data is stored in GunDB and automatically synchronized across all peers
-3. No need to manually refresh - all changes appear in real-time
+### 2. Install Dependencies
+```bash
+pnpm install
+```
 
-### Step 4: Generate Your Data Matrix Code
-1. Go to the "Data Matrix" section in your admin panel
-2. Generate a unique Data Matrix code for your business
-3. Download or print the code and place it at your business location
-4. When customers scan this Data Matrix code, they can instantly access your services through the platform
+### 3. Set Up Environment Variables
+Create a `.env.local` file in the `apps/site` directory with the following:
+```env
+VITE_SENTRY_DSN=<your-sentry-dsn>
+VITE_GOOGLE_OAUTH_CLIENT_ID=<your-google-oauth-client-id>
+VITE_GOOGLE_LOGIN_BACKDOOR=<your-google-login-backdoor-uuid>
+CLOUDINARY_API_KEY=<your-cloudinary-api-key>
+CLOUDINARY_API_SECRET=<your-cloudinary-api-secret>
+```
 
-### Step 5: Accept Payments
-1. Connect your Fonepay merchant account in the payment settings
-2. Configure which payment methods you accept
-3. Use the payment transaction schema to track all transactions
-4. Test the payment flow by making a sample transaction
-5. All payment data is stored in GunDB and updates in real-time
+### 4. Start Development Server
+```bash
+pnpm dev
+```
 
-## For Customers
+The application will be available at `http://localhost:3000`.
 
-### Step 1: Discover Local Businesses
-1. Visit the SuperSurkhet platform
-2. Browse by business category (e.g., /restaurants, /gyms, /hotels) to see all businesses of that type
-3. Or search for specific business names to find individual businesses
-4. View each business's offerings, location, and other details - all data is real-time via GunDB
+## Creating Your First Business
 
-### Step 2: Use Data Matrix Codes for Instant Access
-1. When you're at a business location, scan their Data Matrix code using your phone's camera
-2. You'll be instantly connected to the business's digital interface
-3. If you've configured the Expo app, WiFi will connect automatically
-4. Access their offerings, place orders, or make payments directly
+### For Business Owners:
+1. Navigate to the platform homepage
+2. Click "Sign Up" to create an account (you'll get read-only access initially)
+3. Contact support to be upgraded to a business owner account
+4. Once approved, click "Create Business" from your dashboard
+5. Select your business type (restaurant, gym, etc.)
+6. Fill in business details
+7. Your business website and admin panel will be automatically generated
 
-### Step 3: Take Advantage of Real-Time Features
-1. Experience real-time updates as business information changes:
-   - Menu items, availability, and prices update instantly
-   - Wait times and service status are always current
-   - New offerings appear immediately
-2. When you visit a location regularly, you'll receive location-based notifications
-3. Your profile details can be shared with businesses when you scan their Data Matrix codes (if you consent), avoiding paperwork
+### For Super Admins:
+1. Access the admin panel at `/admin`
+2. Navigate to "Business Management"
+3. Click "Create Business Owner Account"
+4. Fill in the business owner's details
+5. The system will generate an invitation for the business owner
 
-### Step 4: Compare and Order
-1. Use the unified category pages to compare similar businesses
-2. View offerings, prices, and other details side-by-side
-3. Place orders and make payments directly through the platform
-4. All order status updates appear in real-time
-5. Track your visit history and favorite businesses
+## Using the Schema-Driven UI System
 
-## Schema-Driven Architecture Benefits
+### Auto-Generated Components:
+- **AutoAdmin**: Dynamic admin panel based on your business schema
+- **AutoTable**: Data tables with sorting and filtering
+- **AutoForm**: Forms with validation based on Zod schemas
+- **AutoKanban**: Drag-and-drop Kanban boards for workflow management
 
-### Automatic UI Generation
-- Admin panels, forms, and data tables are auto-generated based on Zod schemas
-- No need to manually create interfaces for each business type
-- Validation is automatically applied based on schema definitions
+### Customizing Your Business:
+- All UI elements are generated from Zod schemas
+- Business owners can customize layout and branding in the settings
+- Advanced users can modify schemas for custom data models
 
-### Real-Time Data with GunDB
-- All data changes are instantly synchronized across all peers
-- Offline capability - data persists locally and syncs when connection is restored
-- No need to manually invalidate caches or refresh data
-- Decentralized storage ensures data sovereignty
-- Each data entity automatically receives a unique _.soul identifier from GunDB
-- Relationships between entities are handled through GunDB references and nested schemas
+## QR/DMX Code Integration
 
-### Schema-Based Access Control
-- Business owners have full administrative control over their business data
-- Access control is managed through the schema system
-- Business owners have full administrative control
-- Professional-grade security features protect business data
+### Generating QR Codes:
+1. Go to your business admin panel
+2. Navigate to "QR Codes" section
+3. Configure the action that should occur when scanned
+4. Download the QR code image
 
-### Extensible Business Types
-- New business types can be added by creating new schemas
-- Auto-generated admin interfaces adapt to new business models
-- Consistent user experience across all business types
+### QR Code Capabilities:
+- Automatically connect to WiFi (with Expo app)
+- Open specific app interfaces
+- Share user profile information
+- Trigger location-based notifications
 
-### Data Integrity & Validation
-- One-to-one relationships enforced using .max(1) validation
-- Prevents creation of duplicate configuration records per business
-- Ensures data consistency across the platform
-- Validation occurs both client-side and server-side
+## Authentication and Permissions
+
+### User Types:
+1. **Super Admin**: Full platform access
+2. **Business Owner**: Full access to their business, ability to manage employees
+3. **Employee**: Permissions assigned by business owner
+4. **Read-Only User**: Public access only
+
+### Adding Employees:
+1. Business owners can add employees from the admin panel
+2. Assign roles and permissions as needed
+3. Employees receive invitations via email
+4. Once accepted, they can access the system within the business context
+
+## Payment Integration
+
+### Fonepay Setup:
+1. Business owners can configure Fonepay in BusinessConfig
+2. Payment settings are encrypted and stored securely
+3. Transactions are processed through the integrated Fonepay gateway
+4. Transaction history is available in the admin panel
+
+## Mobile Experience
+
+### Progressive Web App:
+- The platform works as a PWA on mobile devices
+- All functionality is available on mobile
+- Offline capability with GunDB synchronization
+
+### Native Mobile Features:
+- For enhanced functionality, install the Expo app
+- Automatic WiFi connection when scanning QR codes
+- Native notifications and device APIs
 
 ## Troubleshooting
 
-### If Data Isn't Updating in Real-Time
-- Check your internet connection - GunDB requires a connection to sync data
-- Verify that other peers have the correct permissions to modify data
-- Ensure the schema validation is passing for your data changes
+### Common Issues:
+1. **GunDB synchronization problems**: Ensure proper network connectivity; data syncs automatically when connection is restored
+2. **OAuth issues**: Verify that your Google OAuth credentials are correctly configured
+3. **Schema validation errors**: Check that all required fields are properly filled according to the Zod schema
 
-### If the Data Matrix Code Isn't Working
-- Ensure you're using the latest version of the app or web browser
-- Check that your camera has permission to scan Data Matrix codes
-- Verify that the business is active on the platform
+## Next Steps
 
-### If Admin Panels Aren't Loading
-- Confirm that your business schema is correctly defined
-- Check that you have the required permissions to access the admin panel
-- Verify your auth credentials are valid
+1. Explore the different business types to see available features
+2. Customize your business schema for specific needs
+3. Set up payment processing for your business
+4. Generate QR codes for customer interactions
+5. Add employees and assign appropriate permissions
+6. Monitor analytics to understand customer behavior
 
-### If Payments Aren't Processing
-- Confirm the business has properly configured their Fonepay account
-- Check your own payment method is set up correctly
-- Contact support if issues persist
+## Support
+
+- Documentation: Check the `/docs` directory
+- Issue Tracker: Report issues on GitHub
+- Community: Join our developer community for support

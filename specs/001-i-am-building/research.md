@@ -1,97 +1,79 @@
 # Research Summary: SuperSurkhet Super-Dapp/Super-Network Platform
 
-## Decision: Technology Stack for the Super-Dapp Platform
-**Rationale**: The platform requires a modern full-stack solution that can handle real-time, decentralized data synchronization while providing a responsive UI for various business types. TanStack Start provides a suitable full-stack framework with built-in SSR, while GunDB offers the decentralized data storage that ensures data sovereignty. The schema-driven approach using Zod ensures consistent data validation and UI generation.
+## Decision: Architecture Approach
+Based on the feature specification and constitutional requirements, the SuperSurkhet platform will be built as a decentralized application with TanStack Start as the frontend framework and GunDB as the primary data store. This approach ensures compliance with the constitutional principles of decentralization and data sovereignty while providing a modern, schema-driven development experience.
 
-## Key Technologies Selected
+## Rationale: Why This Architecture
+- **Data Sovereignty**: GunDB enables users to retain full ownership and control of their data, satisfying the core constitutional principle
+- **Real-time Sync**: GunDB's peer-to-peer architecture provides automatic real-time data updates without complex query invalidation
+- **Schema-Driven**: Zod schemas enable automatic UI generation (AutoAdmin, AutoTable, AutoForm) as required by the constitution
+- **Mobile-First**: TanStack Start provides excellent mobile performance and responsive design capabilities
+- **Offline Capability**: GunDB's offline-first architecture ensures the platform works without network connectivity
 
-### Frontend Framework
-- **TanStack Start**: Provides full-stack React framework with server-side rendering, routing, and data fetching
-- **TanStack Router**: For efficient routing with nested route conventions
-- **TanStack Query**: For server state management (though GunDB handles real-time syncing)
+## Technical Implementation Details
 
-### Backend/Data Layer
-- **GunDB**: Decentralized peer-to-peer database that provides real-time synchronization via WebSockets, offline-first capabilities, and data sovereignty
-- **Zod**: For schema validation and schema-driven UI generation
-- **Schema System**: Comprehensive schema definitions at @apps/site/src/lib/schema.ts that define all data models and their relationships
+### GunDB Integration
+- GunDB will serve as the primary decentralized data storage system
+- All business data, user data, and configuration will be stored in GunDB
+- Automatic synchronization between peers ensures real-time consistency
+- Offline operation is supported with eventual consistency when connectivity returns
 
-### UI/UX
-- **shadcn/ui v4**: Pre-built accessible React components with consistent design system
-- **AutoForm/AutoAdmin components**: Schema-driven UI components that automatically generate forms, tables, and admin interfaces
-- **Tailwind CSS**: For responsive styling with mobile-first approach
-- **Tangerine Theme**: Custom theme to provide the modern, sleek aesthetic
+### Schema-Driven Architecture
+- All data models are defined using Zod schemas before implementation
+- Auto-generated UI components (AutoAdmin, AutoTable, AutoForm, AutoKanban) will be created from schemas
+- This ensures consistency and validation across the platform
+- Enables non-technical users to create and manage their digital solutions
 
-### Other Key Components
-- **QR/DMX Scanning**: React-qr-scanner for QR scanning functionality
-- **Fonepay Integration**: For payment processing
-- **Cloudflare Domain Integration**: For custom domain support
+### Authentication System
+- Google OAuth integration for primary authentication
+- Hierarchical role-based access control for super admins, business owners, employees, and read-only users
+- Multi-context authentication supporting both global and business-specific sessions
+- Business data isolation to ensure proper permissions
 
-## Decisions Made
+### Mobile-First Design
+- All interfaces designed with mobile devices as the primary platform
+- Responsive design ensures optimal experience across all screen sizes
+- Touch-first interactions optimized for mobile use
+- Progressive enhancement approach for desktop interfaces
 
-### Schema-Driven Development Approach
-**Decision**: Use Zod schemas as the single source of truth for data models, UI generation, and validation. The comprehensive schema system at @apps/site/src/lib/schema.ts serves as the foundation for all data operations.
-**Rationale**: This aligns with the constitutional principle of Schema-Driven Architecture. It ensures consistency between data validation, UI generation, and business logic while enabling dynamic admin interfaces.
+### QR/DMX Code Integration
+- All business interactions will be accessible via QR/DMX scanning
+- Integration with Expo app for automatic WiFi connection and interface opening
+- Location-based notifications for users who have visited businesses before
+- Secure profile sharing when scanning business QR codes
 
-### GunDB with Schema Integration
-**Decision**: Directly integrate GunDB with the schema system using useCreate, useGet, useUpdate, useDelete patterns instead of a separate API layer.
-**Rationale**: This leverages GunDB's real-time capabilities without the overhead of an API layer. Schemas provide validation before data enters GunDB, ensuring data integrity across all peers.
+## Alternatives Considered
 
-### Auto-Generated UI Components
-**Decision**: Use AutoAdmin, AutoForm, AutoTable and other components that generate interfaces directly from schemas defined in @apps/site/src/lib/schema.ts and @apps/site/src/lib/schemas/
-**Rationale**: This reduces development time and ensures consistency across different business types. New business types can be added by simply defining new schemas.
+### Centralized Database Approach
+- **Rejected** because it violates the constitutional principle of data sovereignty
+- Would require users to trust a central authority with their data
+- Would not support the peer-to-peer architecture required by the platform
 
-### Mobile-First Responsive Design
-**Decision**: Implement mobile-first responsive design that works optimally across mobile, tablet, and desktop.
-**Rationale**: Aligns with the constitutional principle of Mobile-First Design and ensures accessibility for the target demographic.
+### Traditional Backend Framework (Express/Next.js API routes)
+- **Rejected** in favor of GunDB's decentralized approach
+- Would require server infrastructure and create single points of failure
+- Would not provide the offline-first capabilities required by the constitution
 
-### Data Matrix (QR) Integration
-**Decision**: Use Data Matrix codes as the primary mechanism for location-based interactions rather than traditional URLs.
-**Rationale**: Data Matrix codes can store more information than QR codes and enable complex interactions when scanned.
+### Traditional UI Framework (vanilla React without schema-driven approach)
+- **Rejected** because it doesn't support the constitutional requirement for schema-driven architecture
+- Would require manual UI development for each business type
+- Would not enable the self-service empowerment goal
 
-## Architecture Considerations
+## Performance Considerations
+- GunDB's eventual consistency model may introduce slight delays in data synchronization
+- Mobile-first approach ensures optimal performance on low-end devices
+- Schema-driven architecture enables efficient component generation and reusability
+- Caching strategies will be implemented to optimize performance while maintaining real-time sync
 
-### Data Flow
-- Business owners define their data models via Zod schemas in the schema system
-- Auto-generated UI components (AutoAdmin, AutoForm, AutoTable, etc.) are created from schemas
-- Direct GunDB interactions using useCreate/useGet/useUpdate/useDelete hooks
-- All data changes automatically synchronize across all peers via GunDB
-- Custom business views are generated from schema structures
-- Relationships between entities are managed through GunDB references and nested schemas
-- The _.soul property is automatically added by GunDB as the unique identifier for each node
-
-### User Experience Flow
-- Unified category pages (e.g., /restaurants) show all businesses of that type using schema-consistent interfaces
-- Individual business pages (e.g., /abhi-restaurant) show specific business data based on the business type schema
-- Data Matrix codes trigger location-specific actions and notifications
-- Fonepay handles payment processing seamlessly with transaction data stored in GunDB using paymentTransactionSchema
-
-### Relationship Management
-- One-to-many relationships are implemented by nesting child entities directly within parent entities
-- Many-to-many relationships are implemented using junction entities with references to related entities
-- One-to-one relationships are enforced using max(1) validation to ensure only one related entity exists
-- All references use GunDB's automatic _.soul property as the unique identifier
-- No need to manually maintain id fields since GunDB provides unique identification through _.soul
-
-### Schema-Based Access Control
-- Business owners have full administrative control over their business data
-- Access control is managed through the schema system
-- Client-side validation ensures security and performance
-- Business-based permissions allow for customization while maintaining security
-- Professional-grade permission system improves overall security
-- Permissions are managed through Role and Membership schemas that link users to businesses with specific roles
-
-## Implementation Challenges Identified
-
-1. **Real-time Data Consistency**: GunDB's eventual consistency model requires careful handling of UI states during synchronization
-2. **Offline-First Design**: The application must gracefully degrade when network connectivity is unavailable
-3. **Performance with Multiple Peers**: As the network grows, GunDB synchronization performance needs optimization
-4. **Schema Evolution**: Handling changes to business schemas without breaking existing data
-5. **Complex Schema Relationships**: Managing relationships between entities defined in the schema system
+## Integration Requirements
+- Fonepay payment gateway integration for business transactions
+- Cloudinary for image handling and optimization
+- Expo app for native mobile functionality and QR code scanning
+- Cloudflare Pages for deployment and custom domain support
 
 ## Security Considerations
-
-- GunDB peer-to-peer security for data transmission
-- OAuth 2.0 for user authentication
-- Schema-level validation to prevent invalid data
-- Secure Data Matrix code generation to prevent spoofing
-- Encrypted payment processing through Fonepay
+- All data will be encrypted in transit using HTTPS
+- OAuth 2.0 and OpenID Connect best practices for authentication
+- Client-side permission validation to enhance security
+- Server-side validation will remain the authoritative security layer
+- Business context isolation to prevent unauthorized cross-business data access

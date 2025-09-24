@@ -1,7 +1,8 @@
+
 # Implementation Plan: SuperSurkhet Super-Dapp/Super-Network Platform
 
-**Branch**: `001-i-am-building` | **Date**: 2025-07-16 | **Spec**: [link]
-**Input**: Feature specification from `/specs/[###-feature-name]/spec.md`
+**Branch**: `001-i-am-building` | **Date**: 2025-09-24 | **Spec**: [spec.md](spec.md)
+**Input**: Feature specification from `/specs/001-i-am-building/spec.md`
 
 ## Execution Flow (/plan command scope)
 ```
@@ -30,37 +31,45 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-This feature implements a super-dapp/super-network platform using TanStack Start and GunDB for real-time, decentralized data. The platform enables business owners to create digital presences with minimal effort, featuring schema-driven UI generation using the existing schema system at @apps/site/src/lib/schema.ts, Data Matrix code integration, and responsive design across all screen sizes. No separate API layer is needed as all data operations happen directly with GunDB using useCreate/useGet/useUpdate/useDelete hooks.
+The SuperSurkhet platform is a super-dapp/super-network that enables business owners to digitize their operations with minimal technical expertise. It provides a schema-driven development framework with GunDB for real-time decentralized data, and auto-generated UI components (forms, admin panels) based on Zod schemas. The platform supports business-specific websites with customer-facing UIs and admin panels, unified category views for multiple businesses of the same type, and QR/DMX code-driven interactions. The implementation follows mobile-first design principles with tangerine-themed UI and integrates with payment systems like Fonepay.
 
 ## Technical Context
-**Language/Version**: TypeScript with React 19  
-**Primary Dependencies**: TanStack Start, TanStack Router, TanStack Query, GunDB, Zod, shadcn/ui v4, AutoForm/AutoAdmin components  
-**Storage**: GunDB (decentralized peer-to-peer database)  
-**Schema System**: @apps/site/src/lib/schema.ts and @apps/site/src/lib/schemas/* for all data models and validation  
-**Testing**: Vitest, React Testing Library  
-**Target Platform**: Web application with mobile-first responsive design (mobile, tablet, desktop)  
-**Project Type**: web (frontend with backend functionality via TanStack Start)  
-**Performance Goals**: Real-time data synchronization, Core Web Vitals optimized, sub-2-second load times  
-**Constraints**: Offline-first architecture, mobile-responsive, schema-driven development, real-time updates via WebSockets, direct GunDB interactions (no API layer)  
-**Scale/Scope**: Multi-tenant platform supporting various business types through schema system, unified views by category and individual business views
+**Language/Version**: TypeScript 5.6, React 19, Node.js 20.x  
+**Primary Dependencies**: TanStack Start, TanStack Router, TanStack Query, GunDB, Zod, shadcn/ui v4, React Hook Form, Tailwind CSS  
+**Storage**: GunDB (decentralized P2P database), with local storage for offline capability  
+**Testing**: Vitest, React Testing Library, Playwright for E2E tests  
+**Target Platform**: Web application (mobile-first), with Expo app for native mobile functionality  
+**Project Type**: web (frontend with TanStack Start and backend API endpoints)  
+**Performance Goals**: <200ms p95 response times, offline-first capability with real-time sync, mobile-optimized performance  
+**Constraints**: Decentralized data sovereignty, real-time data sync via GunDB, mobile-first responsive design, schema-driven architecture  
+**Scale/Scope**: Multi-tenant SaaS platform supporting multiple business types, 10k+ potential businesses, real-time collaboration
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Based on the constitution, this implementation plan:
+### Core Principles Compliance:
+- [x] **Decentralization & Data Sovereignty**: Using GunDB as primary data store to ensure users retain data ownership
+- [x] **Schema-Driven Architecture**: All data models defined with Zod schemas, UI components generated from schemas
+- [x] **Mobile-First Design**: All interfaces designed with mobile as primary platform, responsive design approach
+- [x] **Self-Service & Empowerment**: Platform enables business owners to create solutions without technical expertise
+- [x] **Interconnected Ecosystem**: QR/DMX codes enable cross-service functionality between business modules
 
-1. **Decentralization & Data Sovereignty**: Uses GunDB as the primary data store ensuring users retain full ownership and control of their data. All components are designed for peer-to-peer environment with eventual consistency.
-2. **Schema-Driven Architecture**: All data models are defined with Zod schemas in the existing schema system (@apps/site/src/lib/schema.ts). UI components are generated from these schemas to ensure consistency.
-3. **Mobile-First Design**: The design is mobile-first with responsive design across all screen sizes.
-4. **Self-Service & Empowerment**: The platform enables users to create and manage their digital solutions without technical expertise through auto-generated admin interfaces.
-5. **Interconnected Ecosystem**: Business modules are designed to interconnect seamlessly with Data Matrix code functionality.
-6. **Framework & State Management**: Uses TanStack Router, TanStack Query, and TanStack Start as required.
-7. **Database & Storage**: GunDB is the primary data store with versioned schemas and offline-first architecture.
-8. **UI & Components**: Uses shadcn/ui v4 components with accessibility and theme support.
-9. **Schema-Driven UI System**: Implements AutoAdmin, AutoTable, AutoForm, and AutoKanban as part of the schema-driven system using the existing schema definitions.
-10. **Schema-Based Access Control**: Implements access control through the schema system that allows business owners and admins to have appropriate access while restricting users to their authorized actions.
-11. **Client-Side Security**: Implements client-side permission validation to enhance security and performance.
-12. **Business Context Security**: Ensures permissions are properly scoped to specific business contexts to prevent cross-business data access.
+### Technology Standards Compliance:
+- [x] **Framework & State Management**: Using TanStack Router, Query, and Start as required
+- [x] **Database & Storage**: GunDB as primary data store with offline-first architecture
+- [x] **UI & Components**: Using shadcn/ui v4 components with ARIA accessibility standards
+- [x] **Security & Authentication**: Google OAuth implementation with proper session management
+
+### Development Workflow Compliance:
+- [x] **Architecture Requirements**: Schema-driven business logic, mobile-first design, zero-code configuration
+- [x] **Code Quality**: Strict TypeScript usage, Biome linting, comprehensive documentation
+- [x] **Performance Standards**: Code splitting, virtualization for large datasets, Core Web Vitals optimization
+- [x] **Integration Standards**: Modular external service integration with fallback mechanisms
+
+### Innovation Requirements Compliance:
+- [x] **Schema-Driven UI System**: AutoAdmin, AutoTable, AutoForm, AutoKanban components implemented
+- [x] **Decentralized Features**: Peer-to-peer data sharing, offline capability with sync
+- [x] **Business Module Standards**: Configurable modules with dynamic admin panels and client UIs
 
 ## Project Structure
 
@@ -77,18 +86,42 @@ specs/[###-feature]/
 
 ### Source Code (repository root)
 ```
+# Option 1: Single project (DEFAULT)
+src/
+├── models/
+├── services/
+├── cli/
+└── lib/
+
+tests/
+├── contract/
+├── integration/
+└── unit/
+
 # Option 2: Web application (when "frontend" + "backend" detected)
-apps/site/
+backend/
+├── src/
+│   ├── models/
+│   ├── services/
+│   └── api/
+└── tests/
+
+frontend/
 ├── src/
 │   ├── components/
 │   ├── pages/
-│   ├── lib/              # Contains schema.ts and schemas/ directory
-│   ├── hooks/            # Contains useCreate/useGet/useUpdate/useDelete hooks
-│   └── routes/
+│   └── services/
 └── tests/
+
+# Option 3: Mobile + API (when "iOS/Android" detected)
+api/
+└── [same as backend above]
+
+ios/ or android/
+└── [platform-specific structure]
 ```
 
-**Structure Decision**: Option 2 - Web application structure to accommodate TanStack Start's full-stack capabilities with schema-driven architecture
+**Structure Decision**: Option 2 - Web application structure with frontend (TanStack Start) and backend API endpoints
 
 ## Phase 0: Outline & Research
 1. **Extract unknowns from Technical Context** above:
@@ -119,17 +152,14 @@ apps/site/
    - Validation rules from requirements
    - State transitions if applicable
 
-2. **Generate data contracts** from functional requirements:
-   - For each user action → GunDB interaction pattern
-   - Use useCreate/useGet/useUpdate/useDelete patterns
-   - Reference schemas from @apps/site/src/lib/schema.ts
-   - Define relationships using GunDB references and nested schemas
-   - Leverage automatic _.soul property for unique identification
-   - Output schema definitions to `/contracts/`
+2. **Generate API contracts** from functional requirements:
+   - For each user action → endpoint
+   - Use standard REST/GraphQL patterns
+   - Output OpenAPI/GraphQL schema to `/contracts/`
 
 3. **Generate contract tests** from contracts:
-   - One test file per schema interaction
-   - Assert schema validation and GunDB operations
+   - One test file per endpoint
+   - Assert request/response schemas
    - Tests must fail (no implementation yet)
 
 4. **Extract test scenarios** from user stories:
@@ -154,13 +184,13 @@ apps/site/
 - Load `.specify/templates/tasks-template.md` as base
 - Generate tasks from Phase 1 design docs (contracts, data model, quickstart)
 - Each contract → contract test task [P]
-- Each entity → schema implementation task [P] 
+- Each entity → model creation task [P] 
 - Each user story → integration test task
 - Implementation tasks to make tests pass
 
 **Ordering Strategy**:
 - TDD order: Tests before implementation 
-- Dependency order: Schemas before hooks before UI components
+- Dependency order: Models before services before UI
 - Mark [P] for parallel execution (independent files)
 
 **Estimated Output**: 25-30 numbered, ordered tasks in tasks.md
@@ -181,6 +211,7 @@ apps/site/
 |-----------|------------|-------------------------------------|
 | [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
 | [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |
+
 
 ## Progress Tracking
 *This checklist is updated during execution flow*
