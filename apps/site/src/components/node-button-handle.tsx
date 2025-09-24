@@ -1,6 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Position, type HandleProps } from "@xyflow/react";
 import { ButtonHandle } from "@/components/button-handle";
+import { BaseHandle } from "@/components/base-handle";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import {
@@ -141,6 +142,23 @@ export const NodeButtonHandle = ({
   // Show placeholder when dragging a compatible node
   const showPlaceholder = isDraggingNode && activeDragType;
 
+  if (isConnected) {
+    // If the handle is connected, render a BaseHandle without the button functionality
+    return (
+      <BaseHandle
+        position={position}
+        id={props.id}
+        {...props}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
+        {children}
+      </BaseHandle>
+    );
+  }
+
+  // If not connected, render the full ButtonHandle functionality
   return (
     <ButtonHandle
       position={position}

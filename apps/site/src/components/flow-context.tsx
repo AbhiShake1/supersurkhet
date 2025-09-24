@@ -46,7 +46,7 @@ const FlowContext = createContext<FlowContextType | undefined>(undefined);
 
 export function FlowProvider({ children }: { children: React.ReactNode }) {
   const [nodes, setNodes, onNodesChange] = useNodesState<CustomNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   const reactFlowInstance = useReactFlow();
 
   // Define default node library order
@@ -131,7 +131,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
 
   const onAddNodeAtHandle = useCallback((
     nodeId: string,
-    handleId: string,
+    _handleId: string,
     handleType: "target" | "source",
     nodeType: NodeType
   ) => {
@@ -269,10 +269,22 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
     return edges.some(edge => {
       if (handleType === "source") {
         // Check if this node is the source of the edge
-        return edge.source === nodeId && edge.sourceHandle === handleId;
+        // If handleId is specified and edge has sourceHandle, check both node and handle
+        // Otherwise, just check the node
+        if (handleId && edge.sourceHandle !== undefined) {
+          return edge.source === nodeId && edge.sourceHandle === handleId;
+        } else {
+          return edge.source === nodeId;
+        }
       } else {
         // Check if this node is the target of the edge
-        return edge.target === nodeId && edge.targetHandle === handleId;
+        // If handleId is specified and edge has targetHandle, check both node and handle
+        // Otherwise, just check the node
+        if (handleId && edge.targetHandle !== undefined) {
+          return edge.target === nodeId && edge.targetHandle === handleId;
+        } else {
+          return edge.target === nodeId;
+        }
       }
     });
   }, [edges]);
