@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useState, useEffect } from "react";
+import { createContext, useContext, useCallback, useState, useEffect, useMemo } from "react";
 import { useNodesState, useEdgesState, useReactFlow } from "@xyflow/react";
 import type { CustomNode, NodeType } from "@/components/qr/visual-flow-builder";
 import type { Edge } from "@xyflow/react";
@@ -38,6 +38,8 @@ interface FlowContextType {
   activeDragType: string | null;
   setIsDraggingNode: (isDragging: boolean) => void;
   setActiveDragType: (type: string | null) => void;
+  // Handle connection status
+  isHandleConnected: (nodeId: string, handleId: string, handleType: "target" | "source") => boolean;
 }
 
 const FlowContext = createContext<FlowContextType | undefined>(undefined);
@@ -245,21 +247,22 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
     });
   }, [reactFlowInstance, setNodes, setEdges]);
 
-  const onConnect = useCallback(
-    (params: any) => {
-      const newEdge: Edge = {
-        ...params,
-        type: 'default',
-        data: { onAddNode: onAddNodeToEdge },
-        markerEnd: {
-          type: 'arrow',
-          color: '#94a3b8',
-        },
-      };
-      setEdges((eds) => addEdge(newEdge, eds));
-    },
-    [setEdges, onAddNodeToEdge]
-  );
+  // Helper function to check if a handle is connected to another node
+  const isHandleConnected = useCallback((
+    nodeId: string,
+    handleId: string,
+    handleType: "target" | "source"
+  ) => {
+    return edges.some(edge => {
+      if (handleType === "source") {
+        // Check if this node is the source of the edge
+        return edge.source === nodeId && edge.sourceHandle === handleId;
+      } else {
+        // Check if this node is the target of the edge
+        return edge.target === nodeId && edge.targetHandle === handleId;
+      }
+    });
+  }, [edges]);
 
   return (
     <FlowContext.Provider
@@ -280,7 +283,8 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
         isDraggingNode,
         activeDragType,
         setIsDraggingNode,
-        setActiveDragType
+        setActiveDragType,
+        isHandleConnected
       }}
     >
       {children}

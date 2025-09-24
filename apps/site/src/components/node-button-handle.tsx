@@ -40,10 +40,15 @@ export const NodeButtonHandle = ({
   handleType: "target" | "source";
   onAddNode: (nodeId: string, handleId: string, handleType: "target" | "source", nodeType: NodeType) => void;
 }) => {
-  const { nodeLibraryOrder, isDraggingNode, activeDragType } = useFlow();
+  const { nodeLibraryOrder, isDraggingNode, activeDragType, isHandleConnected } = useFlow();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // Check if this handle is already connected to another node
+  const isConnected = useMemo(() => {
+    return isHandleConnected(nodeId, handleId, handleType);
+  }, [isHandleConnected, nodeId, handleId, handleType]);
 
   // Create icon map with actual components
   const iconComponents = {
@@ -145,7 +150,7 @@ export const NodeButtonHandle = ({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
     >
-      {showButton && (
+      {showButton && !isConnected && (
         showPlaceholder ? (
           <div className={cn(
             "w-6 h-6 rounded-full bg-blue-500/20 dark:bg-blue-600/20 border border-blue-500/30 dark:border-blue-600/30 flex items-center justify-center cursor-pointer hover:bg-blue-500/30 dark:hover:bg-blue-600/30 transition-colors",
