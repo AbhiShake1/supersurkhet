@@ -163,7 +163,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
         source: nodeId,
         target: newNodeId,
         type: 'default',
-        data: { onAddNode: onAddNode },
+        data: { onAddNode: onAddNodeToEdge },
         markerEnd: {
           type: 'arrow',
           color: '#94a3b8',
