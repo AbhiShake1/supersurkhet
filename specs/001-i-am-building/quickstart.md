@@ -92,10 +92,22 @@ This guide will walk you through setting up and using the SuperSurkhet Super-Dap
 - Each data entity automatically receives a unique _.soul identifier from GunDB
 - Relationships between entities are handled through GunDB references and nested schemas
 
+### Schema-Based Access Control
+- Business owners have full administrative control over their business data
+- Access control is managed through the schema system
+- Business owners have full administrative control
+- Professional-grade security features protect business data
+
 ### Extensible Business Types
 - New business types can be added by creating new schemas
 - Auto-generated admin interfaces adapt to new business models
 - Consistent user experience across all business types
+
+### Data Integrity & Validation
+- One-to-one relationships enforced using .max(1) validation
+- Prevents creation of duplicate configuration records per business
+- Ensures data consistency across the platform
+- Validation occurs both client-side and server-side
 
 ## Troubleshooting
 

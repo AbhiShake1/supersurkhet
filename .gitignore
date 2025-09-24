@@ -9,3 +9,6 @@ dist-ssr
 .wrangler
 .env
 apps/relay/.dev.vars
+
+.gemini/
+gha-creds-*.json

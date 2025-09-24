@@ -92,6 +92,13 @@ As a business owner (like Abhi the restaurant owner or Puspa the gym owner), I w
 - **FR-015**: System MUST follow a modern, sleek tangerine-themed UI design
 - **FR-016**: System MUST ensure data sovereignty with decentralized storage via GunDB
 - **FR-017**: System MUST support schema-driven development for all business types
+- **FR-018**: System MUST implement a hierarchical permission management system for business owners, employees, and users
+- **FR-019**: System MUST allow business owners to assign roles and permissions to employees based on hierarchy levels
+- **FR-020**: System MUST enforce one-to-one relationships with validation (e.g., max 1 business config per business)
+- **FR-021**: System MUST validate permissions on the client-side to enhance security
+- **FR-022**: System MUST support business-specific role customization while maintaining security
+- **FR-023**: System MUST ensure that each business can have only one configuration record
+- **FR-024**: System MUST ensure that permissions are properly scoped to specific business contexts to prevent cross-business data access
 
 ### Key Entities *(include if feature involves data)*
 - **Business**: Represents a business entity that signs up to the platform (restaurant, gym, petrol pump, etc.), with attributes like name, type, location, nested offerings, payment settings, and customization options. Each business automatically receives a unique _.soul identifier from GunDB.
@@ -101,6 +108,11 @@ As a business owner (like Abhi the restaurant owner or Puspa the gym owner), I w
 - **Transaction**: Represents a payment transaction processed through Fonepay, with attributes like amount, business reference, user reference, and status. Each transaction automatically receives a unique _.soul identifier from GunDB.
 - **Notification**: Represents a location-based or interaction-based notification sent to users, with attributes like trigger condition, message content, and delivery status. Each notification automatically receives a unique _.soul identifier from GunDB.
 - **Analytics Data**: Represents business performance metrics collected from the platform, with attributes like visitor count, revenue, popular offerings, and customer demographics. Each analytics record automatically receives a unique _.soul identifier from GunDB.
+- **BusinessConfig**: Represents the business configuration settings with a one-to-one relationship to Business (max 1 per business). Each config automatically receives a unique _.soul identifier from GunDB.
+- **Employee**: Represents an employee of a business with specific role and permissions. Each employee automatically receives a unique _.soul identifier from GunDB.
+- **EmployeePermission**: Represents the hierarchical permission structure for employees within a business. Each permission record automatically receives a unique _.soul identifier from GunDB.
+- **EmployeeBusinessRole**: Represents the specific role an employee has within a specific business context. Each role assignment automatically receives a unique _.soul identifier from GunDB.
+- **Role**: Defines hierarchical permissions and access control for users within business contexts. Each role automatically receives a unique _.soul identifier from GunDB.
 
 ---
 

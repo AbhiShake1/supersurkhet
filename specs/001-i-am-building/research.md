@@ -68,8 +68,17 @@
 ### Relationship Management
 - One-to-many relationships are implemented by nesting child entities directly within parent entities
 - Many-to-many relationships are implemented using junction entities with references to related entities
+- One-to-one relationships are enforced using max(1) validation to ensure only one related entity exists
 - All references use GunDB's automatic _.soul property as the unique identifier
 - No need to manually maintain id fields since GunDB provides unique identification through _.soul
+
+### Schema-Based Access Control
+- Business owners have full administrative control over their business data
+- Access control is managed through the schema system
+- Client-side validation ensures security and performance
+- Business-based permissions allow for customization while maintaining security
+- Professional-grade permission system improves overall security
+- Permissions are managed through Role and Membership schemas that link users to businesses with specific roles
 
 ## Implementation Challenges Identified
 

@@ -58,6 +58,9 @@ Based on the constitution, this implementation plan:
 7. **Database & Storage**: GunDB is the primary data store with versioned schemas and offline-first architecture.
 8. **UI & Components**: Uses shadcn/ui v4 components with accessibility and theme support.
 9. **Schema-Driven UI System**: Implements AutoAdmin, AutoTable, AutoForm, and AutoKanban as part of the schema-driven system using the existing schema definitions.
+10. **Schema-Based Access Control**: Implements access control through the schema system that allows business owners and admins to have appropriate access while restricting users to their authorized actions.
+11. **Client-Side Security**: Implements client-side permission validation to enhance security and performance.
+12. **Business Context Security**: Ensures permissions are properly scoped to specific business contexts to prevent cross-business data access.
 
 ## Project Structure
 

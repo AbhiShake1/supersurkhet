@@ -13,8 +13,7 @@
 - isActive (boolean): Whether the business is currently active (default: true)
 - created_by (string): User ID of the creator (optional)
 - timestamp (number): Unix timestamp of the last update (optional)
-- offerings (array): Nested schema items/services offered by this business, using productSchema, menuItemSchema, etc.
-- _ (object): Internal metadata with soul property (added automatically by GunDB as unique identifier)
+- _ (object): Internal metadata with soul property automatically added by GunDB for unique identification
 
 ### User
 **Description**: Represents an individual who interacts with businesses on the platform
@@ -28,14 +27,13 @@
 - role (string): User role (optional, default: "user")
 - created_by (string): User ID of the creator (optional)
 - timestamp (number): Unix timestamp of the last update (optional)
-- visitedBusinesses (array): References to businesses the user has visited, with visit history details
 - _ (object): Internal metadata with soul property (added automatically by GunDB as unique identifier)
 
 ### Role
 **Description**: Defines permissions and access control for users
 **Fields** (from roleSchema):
 - name (string): Role name
-- permissions (record): Record of permissions enabled for this role (key-value pairs of permission and boolean)
+- permissions (record): Permissions enabled for this role (key-value pairs of permission and boolean)
 - created_by (string): User ID of the creator (optional)
 - timestamp (number): Unix timestamp of the last update (optional)
 - _ (object): Internal metadata with soul property (added automatically by GunDB as unique identifier)
@@ -49,6 +47,8 @@
 - created_by (string): User ID of the creator (optional)
 - timestamp (number): Unix timestamp of the last update (optional)
 - _ (object): Internal metadata with soul property (added automatically by GunDB as unique identifier)
+
+
 
 ### Base Listing
 **Description**: Generalized schema for items/services offered by businesses (used as base for products, menu items, etc.)
@@ -141,7 +141,7 @@
 ### Order
 **Description**: Schema for customer orders
 **Fields** (from orderSchema):
-- customerId (reference): Reference to the user who placed the order (optional)
+- customer (reference): Reference to the user who placed the order (optional)
 - items (record): Ordered items with their details (key-value pairs where value has quantity, unitPrice, customizations, specialInstructions)
 - subTotal (number): Subtotal amount (positive number with coercion)
 - taxes (number): Tax amount (non-negative number with coercion)
@@ -158,9 +158,8 @@
 ### Appointment
 **Description**: Schema for scheduled appointments
 **Fields** (from appointmentSchema):
-- customerId (reference): Reference to the customer (required)
-- employeeId (reference): Reference to the employee (optional)
-- serviceId (reference): Reference to the service (required, from serviceSchema)
+- customer (reference): Reference to the customer (required)
+- service (reference): Reference to the service (required, from serviceSchema)
 - startTime (string): Start time of the appointment (required)
 - endTime (string): End time of the appointment (required)
 - status (enum): Status of the appointment ("scheduled", "confirmed", "completed", "cancelled", "no_show")
@@ -171,8 +170,8 @@
 ### Trip
 **Description**: Schema for ride-sharing trips
 **Fields** (from tripSchema):
-- driverId (reference): Reference to the driver (required)
-- customerId (reference): Reference to the customer (required)
+- driver (reference): Reference to the driver (required)
+- customer (reference): Reference to the customer (required)
 - startTime (string): Start time of the trip (required)
 - endTime (string): End time of the trip (optional)
 - startLocation (string): Starting location (required)
@@ -183,12 +182,18 @@
 - timestamp (number): Unix timestamp of the last update (optional)
 - _ (object): Internal metadata with soul property (added automatically by GunDB as unique identifier)
 
+
+
+
+
+
+
 ### Chat Message
 **Description**: Schema for chat messages between users
 **Fields** (from chatMessageSchema):
 - created_by (string): User ID of the creator (optional)
 - content (string): Message content (required)
-- sender_id (reference): Reference to the sender (required)
+- sender (reference): Reference to the sender (required)
 - sender_name (string): Name of the sender (required)
 - timestamp (number): Unix timestamp of the message (required, integer with coercion)
 - delivered (boolean): Whether the message was delivered (optional, default: false)
@@ -208,9 +213,9 @@
 - isActive (boolean): Whether the transaction is active (optional, default: true)
 - created_by (string): User ID of the creator (optional)
 - timestamp (number): Unix timestamp of the last update (optional)
-- orderId (reference): Reference to the associated order (optional)
-- customerId (reference): Reference to the customer who made the payment (optional)
-- businessId (reference): Reference to the business receiving the payment (required)
+- order (reference): Reference to the associated order (optional)
+- customer (reference): Reference to the customer who made the payment (optional)
+- business (reference): Reference to the business receiving the payment (required)
 - amount (number): Payment amount in the smallest currency unit (required, positive with coercion)
 - currency (string): Three-letter currency code (optional, default: "NPR")
 - paymentMethod (enum): Payment method used ("cash", "card", "online", "bank_transfer", "mobile_wallet")
@@ -231,8 +236,8 @@
 - billingAddress (object): Billing address information (optional with fields: name, email, phone, addressLine1, addressLine2, city, state, postalCode, country)
 - shippingAddress (object): Shipping address information (optional with fields: name, email, phone, addressLine1, addressLine2, city, state, postalCode, country)
 - receiptUrl (string): URL to the payment receipt (optional, valid URL)
-- invoiceId (string): ID of the associated invoice (optional)
-- subscriptionId (string): ID of the associated subscription (optional)
+- invoice (reference): Reference to the associated invoice (optional)
+- subscription (reference): Reference to the associated subscription (optional)
 - notes (string): Internal notes about the payment (optional)
 - _ (object): Internal metadata with soul property (added automatically by GunDB as unique identifier)
 
@@ -358,17 +363,13 @@
 
 ## Relationships
 
-### Business → Listings/Products/MenuItems
-- One-to-Many: A business can have multiple listings, products, or menu items
-- Implemented as: Listings/Products/MenuItems are nested directly within the Business schema as an offerings array
-
 ### User → Business (via Membership)
 - Many-to-Many through Membership: A user can belong to multiple businesses with different roles
 - Implemented as: Membership schema with references to User, Business, and Role schemas
 
 ### User → Orders
 - One-to-Many: A user can place multiple orders
-- Implemented as: Order.customerId contains a reference to the User schema
+- Implemented as: Order.customer contains a reference to the User schema
 
 ### Business → Orders
 - One-to-Many: A business can receive multiple orders
@@ -376,11 +377,11 @@
 
 ### User → Payment Transactions
 - One-to-Many: A user can make multiple payment transactions
-- Implemented as: PaymentTransaction.customerId contains a reference to the User schema
+- Implemented as: PaymentTransaction.customer contains a reference to the User schema
 
 ### Business → Payment Transactions
 - One-to-Many: A business can receive multiple payment transactions
-- Implemented as: PaymentTransaction.businessId contains a reference to the Business schema
+- Implemented as: PaymentTransaction.business contains a reference to the Business schema
 
 ### General Relationship Implementation
 - All references between entities are implemented using GunDB's reference mechanism
@@ -404,7 +405,7 @@
 
 ### Payment Transaction Entity
 - amount: Required, must be a positive number with coercion (enforced by zod)
-- businessId: Required reference to business schema (enforced by schema)
+- business: Required reference to business schema (enforced by schema)
 - status: Must be one of predefined values (enum validation)
 
 ## State Transitions
