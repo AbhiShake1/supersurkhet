@@ -2,9 +2,8 @@ import React from "react";
 import {
   BaseEdge,
   EdgeLabelRenderer,
-  EdgeProps,
+  type EdgeProps,
   getBezierPath,
-  useReactFlow
 } from "@xyflow/react";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,7 +20,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Plus, Info, Play, Square, Globe } from "lucide-react";
+import { Plus, Info, Play, Globe } from "lucide-react";
 import {
   Wifi,
   User,
@@ -67,7 +66,6 @@ export function CustomEdge({
   data,
   markerEnd,
 }: EdgeProps) {
-  const { fitView } = useReactFlow();
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
     sourceY,
@@ -79,7 +77,7 @@ export function CustomEdge({
 
   const onAddNode = (nodeType: string) => {
     console.log("Adding node of type:", nodeType, "to edge:", id);
-    if (data?.onAddNode) {
+    if (data?.onAddNode && "onAddNode" in data && typeof data.onAddNode === "function") {
       data.onAddNode(id, nodeType);
     } else {
       console.log("No onAddNode function found in edge data");
