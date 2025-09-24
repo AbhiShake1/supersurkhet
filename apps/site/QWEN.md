@@ -21,9 +21,34 @@ The platform moves beyond being a single application and instead provides buildi
 - **State Management:** TanStack Query
 - **Database:** GunDB (decentralized)
 - **Deployment:** Cloudflare Pages
-- **Authentication:** Google OAuth integration
+- **Authentication:** Google OAuth integration with multi-context support
+- **Authorization:** Hierarchical role-based access control (RBAC)
 - **Error Monitoring:** Sentry
 - **Code Quality:** Biome (formatter and linter)
+
+## Authentication and Permission System
+
+The SuperSurkhet platform implements a robust, hierarchical authentication and permission management system:
+
+### User Roles
+1. **Super Admin** - Full system access and business management capabilities
+2. **Business Owner** - Full control over a specific business and its employees
+3. **Employee** - Permissions determined by business owner within business context
+4. **Read-Only User** - Basic access through sign-up, limited to viewing public features
+
+### Key Features
+- Multi-context authentication supporting both global and business-specific sessions
+- Granular, feature-specific permissions within business contexts
+- Business data isolation to ensure data sovereignty
+- Custom role creation capability for business owners
+- Context-aware permission validation at the API layer
+- Audit trail for permission-related actions
+
+### Permission Hierarchy
+- Super Admins have global platform access
+- Business Owners control permissions within their specific business
+- Employees' access is limited to assigned business contexts and permissions
+- Read-Only users have limited access to public features only
 
 ## Project Structure
 
@@ -52,6 +77,15 @@ The technical heart of the platform, enabling automatic generation of CRUD inter
 - `AutoForm`: Data entry forms with validation
 - `AutoKanban`: Drag-and-drop Kanban boards
 - Custom builders for specialized views (calendar, maps, etc.)
+
+### Authentication and Authorization System
+A comprehensive security layer supporting multiple user types with context-aware permissions:
+- Multi-context authentication (platform-wide and business-specific sessions)
+- Hierarchical role system (Super Admin, Business Owner, Employee, Read-Only User)
+- Granular, feature-level permissions within business contexts
+- Business data isolation and sovereignty
+- Custom role creation for business owners
+- Context-aware permission validation
 
 ### Business Modules
 1. **Retail & eCommerce** - Inventory, POS, online storefronts
