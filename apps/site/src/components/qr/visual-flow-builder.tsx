@@ -190,7 +190,7 @@ export const getNodeLabelAndDescription = (type: NodeType) => {
   }
 };
 
-interface CustomNode extends Node<BaseNodeData> {
+export interface CustomNode extends Node<BaseNodeData> {
   type: NodeType;
 }
 
@@ -212,6 +212,7 @@ type WifiConnectNodeData = {
 
 const WifiConnectNode = ({ data, id }: NodeProps<Node<WifiConnectNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
+
   // Calculate progress based on stats
   const progress = data.stats?.progress ??
     (data.stats?.completed && data.stats?.started ?
@@ -288,6 +289,7 @@ type ProfileEnrichmentNodeData = {
 
 const ProfileEnrichmentNode = ({ data, id }: NodeProps<Node<ProfileEnrichmentNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
+
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-purple-500/20 dark:bg-purple-600/20 backdrop-blur-sm border border-purple-500/30 dark:border-purple-600/30 text-purple-900 dark:text-purple-100 shadow-sm">
@@ -349,6 +351,7 @@ type EquipmentSessionNodeData = {
 
 const EquipmentSessionNode = ({ data, id }: NodeProps<Node<EquipmentSessionNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
+
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-orange-500/20 dark:bg-orange-600/20 backdrop-blur-sm border border-orange-500/30 dark:border-orange-600/30 text-orange-900 dark:text-orange-100 shadow-sm">
@@ -410,6 +413,7 @@ type RestaurantOrderingNodeData = {
 
 const RestaurantOrderingNode = ({ data, id }: NodeProps<Node<RestaurantOrderingNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
+
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-amber-500/20 dark:bg-amber-600/20 backdrop-blur-sm border border-amber-500/30 dark:border-amber-600/30 text-amber-900 dark:text-amber-100 shadow-sm">
@@ -471,6 +475,7 @@ type ProductInteractionNodeData = {
 
 const ProductInteractionNode = ({ data, id }: NodeProps<Node<ProductInteractionNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
+
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-teal-500/20 dark:bg-teal-600/20 backdrop-blur-sm border border-teal-500/30 dark:border-teal-600/30 text-teal-900 dark:text-teal-100 shadow-sm">
@@ -531,6 +536,7 @@ type NavigateNodeData = {
 
 const NavigateNode = ({ data, id }: NodeProps<Node<NavigateNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
+
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-cyan-500/20 dark:bg-cyan-600/20 backdrop-blur-sm border border-cyan-500/30 dark:border-cyan-600/30 text-cyan-900 dark:text-cyan-100 shadow-sm">
@@ -587,6 +593,7 @@ type NotificationNodeData = {
 
 const NotificationNode = ({ data, id }: NodeProps<Node<NotificationNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
+
   return (
     <NodeStatusIndicator status={data.status}>
       <BaseNode className="w-48 bg-pink-500/20 dark:bg-pink-600/20 backdrop-blur-sm border border-pink-500/30 dark:border-pink-600/30 text-pink-900 dark:text-pink-100 shadow-sm">

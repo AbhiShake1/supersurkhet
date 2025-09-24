@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useState, useEffect, useMemo } from "react";
+import { createContext, useContext, useCallback, useState, useEffect } from "react";
 import { useNodesState, useEdgesState, useReactFlow } from "@xyflow/react";
 import type { CustomNode, NodeType } from "@/components/qr/visual-flow-builder";
 import type { Edge } from "@xyflow/react";
@@ -72,7 +72,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
 
   // Node library order state with localStorage persistence
   const [nodeLibraryOrder, setNodeLibraryOrder] = useState<NodeLibraryItemType[]>(() => {
-    if (typeof window === "undefined") {
+    if (typeof window !== "undefined") {
       try {
         const storedOrder = localStorage.getItem('nodeLibraryOrder');
         if (storedOrder) {
@@ -104,7 +104,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
   // Reset node library order to default
   const resetNodeLibraryOrder = useCallback(() => {
     setNodeLibraryOrder(defaultNodeLibraryOrder);
-  }, []);
+  }, [defaultNodeLibraryOrder]);
 
   // Drag state management
   const [isDraggingNode, setIsDraggingNode] = useState(false);
@@ -163,7 +163,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
         source: nodeId,
         target: newNodeId,
         type: 'default',
-        data: { onAddNode: onAddNodeToEdge },
+        data: { onAddNode: onAddNode },
         markerEnd: {
           type: 'arrow',
           color: '#94a3b8',
@@ -176,7 +176,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
         source: newNodeId,
         target: nodeId,
         type: 'default',
-        data: { onAddNode: onAddNodeToEdge },
+        data: { onAddNode: onAddNode },
         markerEnd: {
           type: 'arrow',
           color: '#94a3b8',
@@ -220,7 +220,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       source: edge.source,
       target: newNodeId,
       type: 'default',
-      data: { onAddNode: onAddNodeToEdge },
+      data: { onAddNode: onAddNode },
       markerEnd: {
         type: 'arrow',
         color: '#94a3b8',
@@ -232,7 +232,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       source: newNodeId,
       target: edge.target,
       type: 'default',
-      data: { onAddNode: onAddNodeToEdge },
+      data: { onAddNode: onAddNode },
       markerEnd: {
         type: 'arrow',
         color: '#94a3b8',
@@ -246,6 +246,19 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       return [...updatedEdges, newEdge1, newEdge2];
     });
   }, [reactFlowInstance, setNodes, setEdges]);
+
+  const onConnect = useCallback((params: any) => {
+    const newEdge = {
+      ...params,
+      type: 'default',
+      data: { onAddNode: onAddNode },
+      markerEnd: {
+        type: 'arrow',
+        color: '#94a3b8',
+      },
+    };
+    setEdges((eds) => addEdge(newEdge, eds));
+  }, [setEdges, onAddNode]);
 
   // Helper function to check if a handle is connected to another node
   const isHandleConnected = useCallback((
