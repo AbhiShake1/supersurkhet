@@ -5,12 +5,12 @@ import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const DrawerContext = React.createContext<{ direction?: 'right' | 'top' | 'bottom' | 'left' }>({
-	direction: 'right',
+	direction: 'bottom',
 });
 
 const Drawer = ({
 	shouldScaleBackground = true,
-	direction = 'right',
+	direction = 'bottom',
 	...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) => (
 	<DrawerContext.Provider value={{ direction }}>

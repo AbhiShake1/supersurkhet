@@ -13,7 +13,7 @@ interface ConfigContextType {
 const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 
 export function ConfigProvider({ children }: { children: React.ReactNode }) {
-  const [websiteUrl, setWebsiteUrl] = useState('https://surkhet.pages.dev');
+  const [websiteUrl, setWebsiteUrl] = useState('https://surkhet.pages.dev/apps/');
   const [isConfigDialogVisible, setIsConfigDialogVisible] = useState(false);
 
   // Load saved URL from storage on mount

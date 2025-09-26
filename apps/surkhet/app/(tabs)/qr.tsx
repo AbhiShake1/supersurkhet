@@ -71,7 +71,7 @@ export default function QRScreen() {
       <SafeAreaView style={styles.container}>
         <WebAppView
           onDataMatrixAction={handleDataMatrixAction}
-          initialUrl={navigationUrl || 'https://supersurkhet.com'}
+          initialUrl={navigationUrl || 'https://supersurkhet.com/'}
         />
         <View style={styles.webAppControls}>
           <Button

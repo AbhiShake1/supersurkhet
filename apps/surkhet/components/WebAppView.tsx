@@ -10,10 +10,10 @@ interface WebAppViewProps {
   initialUrl?: string;
 }
 
-export function WebAppView({ 
-  onDataMatrixAction, 
+export function WebAppView({
+  onDataMatrixAction,
   onQRScannerRequest,
-  initialUrl = 'https://supersurkhet.com' 
+  initialUrl = 'https://supersurkhet.com/'
 }: WebAppViewProps) {
   const webViewRef = useRef<WebView>(null);
   const [showQRScanner, setShowQRScanner] = React.useState(false);
@@ -21,18 +21,18 @@ export function WebAppView({
   // Handle QR code scanned in native scanner
   const handleCodeScanned = (action: DataMatrixAction) => {
     setShowQRScanner(false);
-    
+
     // Send the scanned action to the web app
     const messageString = JSON.stringify({
       type: 'DATAMATRIX_ACTION',
       payload: action
     });
-    
+
     webViewRef.current?.injectJavaScript(`
       window.dispatchEvent(new MessageEvent('message', { data: ${JSON.stringify(messageString)} }));
       true;
     `);
-    
+
     // Also notify the parent component
     if (onDataMatrixAction) {
       onDataMatrixAction(action);
@@ -43,7 +43,7 @@ export function WebAppView({
   const handleWebViewMessage = (event: { nativeEvent: { data: string } }) => {
     try {
       const message = JSON.parse(event.nativeEvent.data);
-      
+
       // Handle different message types
       switch (message.type) {
         case 'DATAMATRIX_ACTION':
@@ -112,9 +112,9 @@ export function WebAppView({
   if (showQRScanner) {
     return (
       <View>
-        <QRScanner 
-          onCodeScanned={handleCodeScanned} 
-          onClose={() => setShowQRScanner(false)} 
+        <QRScanner
+          onCodeScanned={handleCodeScanned}
+          onClose={() => setShowQRScanner(false)}
         />
       </View>
     );
