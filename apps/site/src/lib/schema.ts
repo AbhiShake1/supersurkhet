@@ -119,6 +119,10 @@ export const businessSchema = z
 			.boolean()
 			.default(true)
 			.describe("Whether the business is currently active"),
+		icon: z.string()
+			.base64()
+			.describe("Business icon")
+			.optional(),
 	})
 	.extend(table);
 

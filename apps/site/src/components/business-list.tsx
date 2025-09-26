@@ -17,7 +17,7 @@ import { api } from "@/lib/api";
 import { Skeleton } from "./ui/skeleton";
 
 export interface BusinessListProps
-	extends React.ComponentPropsWithoutRef<typeof ScrollArea> {}
+	extends React.ComponentPropsWithoutRef<typeof ScrollArea> { }
 
 export function BusinessList(props: BusinessListProps) {
 	const { data: allBusinesses = [], isLoading } = api.business.useGet();
@@ -28,8 +28,7 @@ export function BusinessList(props: BusinessListProps) {
 		return (
 			business.name?.toLowerCase().includes(lowerCaseSearchTerm) ||
 			business.businessType?.toLowerCase().includes(lowerCaseSearchTerm) ||
-			(business.location &&
-				business.location?.toLowerCase().includes(lowerCaseSearchTerm))
+			(business.location?.toLowerCase().includes(lowerCaseSearchTerm))
 		);
 	});
 
