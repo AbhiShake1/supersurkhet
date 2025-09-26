@@ -18,12 +18,13 @@ export class GunRelay implements DurableObject {
     this.state = state;
     this.server = new Server();
     this.gun = Gun({
-      s3: {
-        bucket: env.S3_BUCKET,
-        key: env.S3_KEY,
-        secret: env.S3_SECRET,
-        fakes3: env.S3_ENDPOINT,
-      },
+      file: "./data/gun",
+      // s3: {
+      //   bucket: env.S3_BUCKET,
+      //   key: env.S3_KEY,
+      //   secret: env.S3_SECRET,
+      //   fakes3: env.S3_ENDPOINT,
+      // },
       peers: env.GUN_PEERS ? env.GUN_PEERS.split(',') : [],
       web: this.server,
     });
