@@ -92,19 +92,16 @@ export function AppDrawer(props: AppDrawerProps) {
     );
   }, [recentlyUsedBusinessObjects, searchTerm]);
 
-  // Filter all other business objects based on search term and exclude recently used
+  // Filter all business objects based on search term (include recently used in all apps too)
   const filteredAllBusinesses = useMemo(() => {
     if (searchTerm) {
-      // If searching, return all filtered businesses (already done above)
-      // but exclude the recently used ones to avoid duplication
-      const recentlyUsedIds = new Set(recentlyUsedBusinessObjects.map(b => b._?.soul));
-      return filteredBusinesses.filter(business => !recentlyUsedIds.has(business._?.soul));
+      // If searching, return all filtered businesses
+      return filteredBusinesses;
     }
 
-    // If not searching, return all businesses except the recently used ones
-    const recentlyUsedIds = new Set(recentlyUsedBusinessObjects.map(b => b._?.soul));
-    return allBusinesses.filter(business => !recentlyUsedIds.has(business._?.soul));
-  }, [allBusinesses, filteredBusinesses, recentlyUsedBusinessObjects, searchTerm]);
+    // If not searching, return all businesses (including recently used ones)
+    return allBusinesses;
+  }, [allBusinesses, filteredBusinesses, searchTerm]);
 
   return (
     <div className="space-y-6">
@@ -178,7 +175,6 @@ export function AppDrawer(props: AppDrawerProps) {
             {/* Recently Used Apps Section */}
             {filteredRecentlyUsed.length > 0 && (
               <div>
-                <h2 className="text-lg font-semibold mb-3">Recently Used</h2>
                 <AppGrid
                   businesses={filteredRecentlyUsed}
                   gridColumns={settings.gridColumns}
@@ -188,18 +184,17 @@ export function AppDrawer(props: AppDrawerProps) {
             )}
 
             {/* Separator for All Apps */}
-            {(filteredRecentlyUsed.length > 0 && filteredAllBusinesses.length > 0) && (
-              <div className="flex items-center my-4">
-                <Separator className="flex-grow" />
-                <span className="px-4 text-muted-foreground text-sm">All Apps</span>
-                <Separator className="flex-grow" />
+            {filteredAllBusinesses.length > 0 && (
+              <div className="flex items-center my-4 flex-row">
+                <div className="h-[1px] w-full bg-muted" />
+                <span className="px-4 text-muted-foreground text-sm whitespace-nowrap flex-shrink-0">All Apps</span>
+                <div className="h-[1px] w-full bg-muted" />
               </div>
             )}
 
             {/* All Apps Section */}
             {filteredAllBusinesses.length > 0 && (
               <div>
-                {filteredRecentlyUsed.length === 0 && <h2 className="text-lg font-semibold mb-3">All Apps</h2>}
                 <AppGrid
                   businesses={filteredAllBusinesses}
                   gridColumns={settings.gridColumns}
