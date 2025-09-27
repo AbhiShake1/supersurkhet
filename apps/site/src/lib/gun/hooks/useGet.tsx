@@ -7,6 +7,7 @@ import type { NestedSchemaType, SchemaKeys } from "..";
 import { mergeKeys } from "../utils";
 import { decrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
+import type { GunCallbackMap } from "gun/types";
 
 function attachSouls(obj: any, currentPath: string): any {
 	if (typeof obj !== "object" || obj === null) return obj;
@@ -24,7 +25,7 @@ function attachSouls(obj: any, currentPath: string): any {
 
 export type UseGetBuilder<T extends SchemaKeys> = {
 	separator?: string;
-	mapper?: (d: NestedSchemaType<T>) => boolean;
+	mapper?: GunCallbackMap<NestedSchemaType<T>, string, any>;
 };
 
 export const useGet = createGunHook((messenger) => {
@@ -32,10 +33,16 @@ export const useGet = createGunHook((messenger) => {
 		key:
 			| T
 			| (UseGetBuilder<T> & {
-					key: T;
-			  }),
+				key: T;
+			}),
 		...restKeys: string[]
 	) => {
+		function getMapper() {
+			if (typeof key !== "string") {
+				return key.mapper
+			}
+			return undefined
+		}
 		const queryClient = useQueryClient();
 		const options = messenger._options;
 		const k = typeof key === "string" ? key : key.key;
@@ -82,7 +89,8 @@ export const useGet = createGunHook((messenger) => {
 					const timeout = setTimeout(() => {
 						res([]);
 					}, 1000);
-					node.map().once(async () => {
+					// @ts-expect-error
+					node.map(getMapper()).once(async () => {
 						clearTimeout(timeout);
 						res([]);
 					});

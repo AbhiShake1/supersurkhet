@@ -15,13 +15,11 @@ interface AppDrawerSettingsProps {
 	settings: {
 		gridColumns: number;
 		iconSize: "sm" | "md" | "lg";
-		viewMode: "grid" | "list" | "group";
 	};
 	onSettingsChange: (
 		newSettings: Partial<{
 			gridColumns: number;
 			iconSize: "sm" | "md" | "lg";
-			viewMode: "grid" | "list" | "group";
 		}>,
 	) => void;
 	onClose: () => void;

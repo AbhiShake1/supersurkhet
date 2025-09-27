@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Search, XCircle, Grid3X3, List, Folder, Settings } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Search, XCircle, Settings } from "lucide-react";
 import { ScrollArea } from "../ui/scroll-area";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
@@ -15,8 +15,6 @@ import {
 } from "../ui/credenza";
 import { AppDrawerSettings } from "./settings";
 import { AppGrid } from "./app-grid";
-import { AppList } from "./app-list";
-import { AppGrouping } from "./grouping";
 
 export interface AppDrawerProps
   extends React.ComponentPropsWithoutRef<typeof ScrollArea> { }
@@ -24,16 +22,12 @@ export interface AppDrawerProps
 export function AppDrawer(props: AppDrawerProps) {
   const { data: allBusinesses = [], isLoading } = api.business.useGet();
   const [searchTerm, setSearchTerm] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list" | "group">("grid");
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [gridColumns, setGridColumns] = useState(4);
-  const [iconSize, setIconSize] = useState<"sm" | "md" | "lg">("md");
 
   // Settings for app drawer customization
   const [settings, setSettings] = useState({
     gridColumns: 4,
     iconSize: "md" as "sm" | "md" | "lg",
-    viewMode: "grid" as "grid" | "list" | "group",
   });
 
   // Load saved settings from localStorage
@@ -42,10 +36,11 @@ export function AppDrawer(props: AppDrawerProps) {
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
-        setSettings(parsed);
-        setGridColumns(parsed.gridColumns);
-        setIconSize(parsed.iconSize);
-        setViewMode(parsed.viewMode);
+        // Ensure we only use the properties we need, ignoring any old viewMode
+        setSettings({
+          gridColumns: parsed.gridColumns || 4,
+          iconSize: parsed.iconSize || "md",
+        });
       } catch (e) {
         console.error("Failed to parse app drawer settings", e);
       }
@@ -70,6 +65,9 @@ export function AppDrawer(props: AppDrawerProps) {
     const updatedSettings = { ...settings, ...newSettings };
     saveSettings(updatedSettings);
   };
+
+  // Create stable skeleton IDs for loading state
+  const skeletonIds = useMemo(() => Array.from({ length: 10 }, (_, i) => `skeleton-${i}`), []);
 
   return (
     <div className="space-y-6">
@@ -96,33 +94,7 @@ export function AppDrawer(props: AppDrawerProps) {
         </div>
 
         <div className="flex gap-2">
-          {/* View mode toggle */}
-          <div className="flex border rounded-md p-1">
-            <Button
-              variant={viewMode === "grid" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("grid")}
-              className="h-8 w-8 p-0"
-            >
-              <Grid3X3 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "list" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("list")}
-              className="h-8 w-8 p-0"
-            >
-              <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === "group" ? "default" : "ghost"}
-              size="sm"
-              onClick={() => setViewMode("group")}
-              className="h-8 w-8 p-0"
-            >
-              <Folder className="h-4 w-4" />
-            </Button>
-          </div>
+          
 
           {/* Settings button */}
           <Credenza open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -151,9 +123,9 @@ export function AppDrawer(props: AppDrawerProps) {
       {/* App display area */}
       <ScrollArea {...props}>
         {isLoading ? (
-          <div className={`grid grid-cols-${settings.gridColumns || 4} gap-4`}>
-            {Array.from({ length: 10 }).map((_, i) => (
-              <Skeleton key={`skeleton-${i}`} className="w-full h-32" />
+          <div className={`grid grid-cols-${settings.gridColumns} gap-4`}>
+            {skeletonIds.map((id) => (
+              <Skeleton key={id} className="w-full h-32" />
             ))}
           </div>
         ) : filteredBusinesses.length === 0 ? (
@@ -168,27 +140,11 @@ export function AppDrawer(props: AppDrawerProps) {
               </div>
             )}
           </div>
-        ) : viewMode === "grid" ? (
+        ) : (
           <AppGrid
             businesses={filteredBusinesses}
             gridColumns={settings.gridColumns}
             iconSize={settings.iconSize}
-          />
-        ) : viewMode === "list" ? (
-          <AppList
-            businesses={filteredBusinesses}
-            iconSize={settings.iconSize}
-          />
-        ) : (
-          <AppGrouping
-            businesses={filteredBusinesses}
-            gridColumns={settings.gridColumns}
-            iconSize={settings.iconSize}
-            onBusinessesChange={(newBusinessesOrder) => {
-              // Update the display to reflect the new order
-              // For now, we'll just log it, but eventually we'd update state to reorder
-              console.log("Businesses reordered:", newBusinessesOrder);
-            }}
           />
         )}
       </ScrollArea>
