@@ -71,6 +71,7 @@ function getCurrentUser() {
 		isActive: user._?.isActive ?? true,
 		avatar: user._?.avatar,
 		phone: user._?.phone,
+		...user,
 	};
 }
 

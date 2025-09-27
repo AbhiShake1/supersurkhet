@@ -257,6 +257,20 @@ export const chatMessageSchema = z
 	})
 	.extend(table); // Placeholder
 
+export const recentlyUsedAppSchema = z
+	.object({
+		appId: withLabel(z.string(), "App ID"),
+		timestamp: z
+			.number({ coerce: true })
+			.describe("Unix timestamp of when the app was used")
+			.default(() => Math.floor(Date.now() / 1000)),
+		usageCount: z
+			.number({ coerce: true })
+			.describe("Number of times this app has been accessed")
+			.default(1),
+	})
+	.extend(table);
+
 // #endregion
 
 // #region App Schema
@@ -602,6 +616,11 @@ export const featureSchema = createSchema({
 				},
 			];
 		},
+	},
+
+	// Recently used apps schema
+	recentlyUsedApp: {
+		schema: recentlyUsedAppSchema,
 	},
 });
 

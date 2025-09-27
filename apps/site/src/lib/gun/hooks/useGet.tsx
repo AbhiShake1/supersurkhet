@@ -86,13 +86,13 @@ export const useGet = createGunHook((messenger) => {
 				});
 
 				return new Promise<NestedSchemaType<T>[]>((res) => {
-					const timeout = setTimeout(() => {
-						res([]);
-					}, 1000);
+					// const timeout = setTimeout(() => {
+					// 	res([]);
+					// }, 1000);
 					// @ts-expect-error
 					node.map(getMapper()).once(async () => {
-						clearTimeout(timeout);
-						res([]);
+						// clearTimeout(timeout);
+						// res([]);
 					});
 				});
 			},

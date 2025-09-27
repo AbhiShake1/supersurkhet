@@ -37,12 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			.get("user")
 			.get(_authUser.pub)
 			.open((data) => {
-				setUser(data);
+				setUser({ ..._authUser, ...data });
 			});
 		return () => {
 			ref.off();
 		};
-	}, [refreshState]);
+	}, [refreshState, auth.getCurrentUser]);
 
 	const isAuthenticated = !!authUser;
 

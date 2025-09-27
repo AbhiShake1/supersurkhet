@@ -41,6 +41,7 @@ const DEBOUNCE_MS = 300;
 const THROTTLE_MS = 50;
 
 function parseSortingFromUrl() {
+	if (typeof window === "undefined") return [];
 	const rawSorting = new URL(window.location.href).searchParams.get("sort");
 
 	if (!rawSorting) return [];
@@ -56,15 +57,15 @@ function parseSortingFromUrl() {
 
 interface UseDataTableProps<TData>
 	extends Omit<
-			TableOptions<TData>,
-			| "state"
-			| "pageCount"
-			| "getCoreRowModel"
-			| "manualFiltering"
-			| "manualPagination"
-			| "manualSorting"
-		>,
-		Required<Pick<TableOptions<TData>, "pageCount">> {
+		TableOptions<TData>,
+		| "state"
+		| "pageCount"
+		| "getCoreRowModel"
+		| "manualFiltering"
+		| "manualPagination"
+		| "manualSorting"
+	>,
+	Required<Pick<TableOptions<TData>, "pageCount">> {
 	initialState?: Omit<Partial<TableState>, "sorting"> & {
 		sorting?: ExtendedColumnSort<TData>[];
 	};

@@ -11,12 +11,14 @@ export const useCreate = createGunHook((messenger) => {
 		const options = messenger._options;
 		const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
 		return async (value: Omit<NestedSchemaType<T>, "_">) => {
-			return new Promise<GunMessagePut>(async (resolve, reject) => {
+			console.log(keys)
+			const encrypted = await encrypt(parseNestedZodType(keys, value, options.schema))
+			return new Promise<GunMessagePut>((resolve, reject) => {
 				options.gun
 					.get(keys)
 					.get(Date.now().toString())
 					.put(
-						await encrypt(parseNestedZodType(keys, value, options.schema)),
+						encrypted,
 						(ack) => {
 							if ("err" in ack && !!ack.err) {
 								reject(ack.err);

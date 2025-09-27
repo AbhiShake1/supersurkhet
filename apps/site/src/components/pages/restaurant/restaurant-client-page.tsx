@@ -382,11 +382,11 @@ const _checkout = createServerFn({ method: "POST" })
 		return res.text();
 	});
 
-export function CartButton() {
+export function CartButton({ slug }: { slug: string }) {
 	const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } =
 		useCart();
 	const createOrderMutation = api.order.useCreate({
-		keys: ["restaurant"],
+		keys: [slug],
 		onSuccess() {
 			clearCart();
 		},
@@ -613,9 +613,6 @@ export function RestaurantClientPage(props: RestaurantClientPageProps) {
 
 function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 	const [search, setSearch] = useState("");
-	const [name, setName] = useState("");
-	const [email, setEmail] = useState("");
-	const [message, setMessage] = useState("");
 	const { data: _menuItems = [], isLoading } = api.menuItem.useGet({
 		keys: [slug],
 	});
@@ -809,7 +806,7 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 				{showDetail && <RestaurantMenuItemDetail slug={slug} onClose={handleCloseDetail} />}
 			</AnimatePresence>
 
-			<CartButton />
+			<CartButton slug={slug} />
 		</div>
 	);
 }
