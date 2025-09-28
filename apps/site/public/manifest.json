@@ -22,7 +22,7 @@
       "form_factor": "narrow"
     }
   ],
-  "start_url": "/",
+  "start_url": "/apps",
   "background_color": "#ffffff",
   "display": "standalone",
   "scope": "/",
