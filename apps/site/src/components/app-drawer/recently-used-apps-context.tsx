@@ -39,9 +39,10 @@ export function RecentlyUsedAppsProvider({ children }: { children: React.ReactNo
     }, [] as RecentlyUsedApp[])
 
     // Filter to only include apps for this specific user and sort by timestamp
-    const sortedApps = [...appWithTotalUsage].sort((a, b) =>
-      (b.timestamp || 0) - (a.timestamp || 0)
-    ).slice(0, 5); // Only take the 5 most recent
+    const sortedApps = [...appWithTotalUsage].sort((a, b) => {
+      if (a.usageCount === b.usageCount) return (b.timestamp ?? 0) - (a.timestamp ?? 0);
+      return b.usageCount - a.usageCount;
+    }).slice(0, 5); // Only take the 5 most recent
     return Object.values(Object.fromEntries(sortedApps.map((app) => [app.appId, app])));
   }, [fetchedApps]);
 

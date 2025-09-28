@@ -23,6 +23,7 @@ import {
 	table,
 } from "./schemas/listings";
 import { dataMatrixActionSchema } from "./datamatrix";
+import { folderSchema } from "./schemas/folder-schema";
 
 // #region Permissions & Roles
 export const permissions = {
@@ -621,6 +622,10 @@ export const featureSchema = createSchema({
 	// Recently used apps schema
 	recentlyUsedApp: {
 		schema: recentlyUsedAppSchema,
+	},
+	// Folder schema
+	folder: {
+		schema: folderSchema,
 	},
 });
 

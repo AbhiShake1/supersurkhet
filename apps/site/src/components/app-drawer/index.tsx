@@ -179,6 +179,7 @@ export function AppDrawer(props: AppDrawerProps) {
                   businesses={filteredRecentlyUsed}
                   gridColumns={settings.gridColumns}
                   iconSize={settings.iconSize}
+                  isAllApps={false}
                 />
               </div>
             )}
@@ -186,9 +187,9 @@ export function AppDrawer(props: AppDrawerProps) {
             {/* Separator for All Apps */}
             {filteredAllBusinesses.length > 0 && (
               <div className="flex items-center my-4 flex-row">
-                <div className="h-[1px] w-full bg-muted" />
+                <div className="w-full border-t border-dotted border-muted" />
                 <span className="px-4 text-muted-foreground text-sm whitespace-nowrap flex-shrink-0">All Apps</span>
-                <div className="h-[1px] w-full bg-muted" />
+                <div className="w-full border-t border-dotted border-muted" />
               </div>
             )}
 
@@ -199,6 +200,7 @@ export function AppDrawer(props: AppDrawerProps) {
                   businesses={filteredAllBusinesses}
                   gridColumns={settings.gridColumns}
                   iconSize={settings.iconSize}
+                  isAllApps={true}
                 />
               </div>
             )}

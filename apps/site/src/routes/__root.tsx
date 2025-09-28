@@ -12,6 +12,7 @@ import TanstackQueryLayout from "../integrations/tanstack-query/layout";
 import appCss from "../styles.css?url";
 
 import { NotFound } from "@/components/ui/not-found";
+import { ErrorComponent } from "@/components/ui/error";
 import { Toaster } from "@/components/ui/sonner";
 import { gun } from "@/lib/gun";
 
@@ -214,6 +215,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 	}),
 	context: () => ({ auth, gun }),
 	notFoundComponent: () => <NotFound />,
+	errorComponent: () => <ErrorComponent />,
 	component: () => (
 		<RootDocument>
 			<Toaster richColors />
