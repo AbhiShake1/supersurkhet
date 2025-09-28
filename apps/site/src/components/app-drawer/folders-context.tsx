@@ -1,13 +1,13 @@
 import { useAuth } from "@/components/auth-provider";
 import { api } from "@/lib/api";
-import { useCreate, useGet, type NestedSchemaType } from "@gta/react-hooks";
+import type { NestedSchemaType } from "@gta/react-hooks";
 import { createContext, useContext, useMemo } from "react";
 
 export type Folder = NestedSchemaType<"folder">;
 
 interface FoldersContextType {
   folders: Folder[];
-  createFolder: (name: string, apps: string[]) => Promise<void>;
+  createFolder: (name: string, appIds: string[]) => Promise<void>;
   updateFolder: (folderId: string, updates: Partial<Folder>) => Promise<void>;
   deleteFolder: (folderId: string) => Promise<void>;
   isLoading: boolean;
@@ -34,8 +34,13 @@ export function FoldersProvider({ children }: { children: React.ReactNode }) {
     return fetchedFolders.filter(folder => folder.userId === userId);
   }, [fetchedFolders, userId]);
 
-  const createFolder = async (name: string, apps: string[]) => {
+  const createFolder = async (name: string, appIds: string[]) => {
     if (!userId) return;
+
+    const apps = appIds.reduce((acc, appId) => {
+      acc[appId] = true;
+      return acc;
+    }, {} as Record<string, boolean>);
 
     try {
       await createFolderMutation.mutateAsync({
@@ -62,9 +67,7 @@ export function FoldersProvider({ children }: { children: React.ReactNode }) {
 
   const deleteFolder = async (folderId: string) => {
     try {
-      await deleteFolderMutation.mutateAsync({
-        id: folderId,
-      });
+      await deleteFolderMutation.mutateAsync(folderId);
     } catch (error) {
       console.error("Error deleting folder:", error);
     }

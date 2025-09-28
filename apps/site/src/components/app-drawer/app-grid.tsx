@@ -24,7 +24,6 @@ import {
 } from "@dnd-kit/core";
 import {
 	SortableContext,
-	rectSortingStrategy,
 	sortableKeyboardCoordinates,
 	useSortable,
 } from "@dnd-kit/sortable";
@@ -54,7 +53,7 @@ function findItem(id: UniqueIdentifier, businesses: Business[], folders: Folder[
 
 	// Look for an app inside a folder
 	for (const folder of folders) {
-		if (folder.apps?.includes(id as string)) {
+		if (folder.apps?.[id as string]) {
 			const appInFolder = businesses.find(b => b._?.soul === id);
 			if (appInFolder) {
 				return { type: "app-in-folder" as const, item: appInFolder, folderId: folder._?.soul };
@@ -169,7 +168,7 @@ function AppGridComponent({ businesses, gridColumns, iconSize, isAllApps = false
 			// Find the folder and add the app to it
 			const folder = folders.find(f => f._?.soul === folderId);
 			if (folder) {
-				const updatedApps = [...(folder.apps || []), appId];
+				const updatedApps = { ...folder.apps, [appId]: true };
 				updateFolder(folderId, { apps: updatedApps });
 			}
 			return;
@@ -187,10 +186,11 @@ function AppGridComponent({ businesses, gridColumns, iconSize, isAllApps = false
 				// Remove app from the folder
 				const folder = folders.find(f => f._?.soul === folderId);
 				if (folder) {
-					const updatedApps = (folder.apps || []).filter(id => id !== appId);
+					const updatedApps = { ...folder.apps };
+					delete updatedApps[appId];
 
 					// If the folder ends up empty, delete it
-					if (updatedApps.length === 0) {
+					if (Object.keys(updatedApps).length === 0) {
 						deleteFolder(folderId);
 					} else {
 						updateFolder(folderId, { apps: updatedApps });
@@ -208,6 +208,8 @@ function AppGridComponent({ businesses, gridColumns, iconSize, isAllApps = false
 		...folders.map(f => f._?.soul || "")
 	].filter((id) => id !== "");
 
+	const noopSortingStrategy = () => null;
+
 	return (
 		<DndContext
 			sensors={sensors}
@@ -220,7 +222,7 @@ function AppGridComponent({ businesses, gridColumns, iconSize, isAllApps = false
 				className={`grid ${gridColumnClasses[gridColumns]} gap-4`}
 				data-type="app-grid"  // Mark this as the app grid for collision detection
 			>
-				<SortableContext items={items} strategy={rectSortingStrategy}>
+				<SortableContext items={items} strategy={noopSortingStrategy}>
 					{businesses.map((business) => (
 						<BusinessIcon
 							key={business._?.soul}
@@ -278,7 +280,7 @@ function AppGridComponent({ businesses, gridColumns, iconSize, isAllApps = false
 								<div className={`${getIconSizeClass(iconSize)} rounded-md bg-primary/20 border border-primary/50 flex items-center justify-center flex-shrink-0`}>
 									<FolderIcon className="h-1/2 w-1/2 text-primary" />
 									<div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-										{activeItem.item.apps?.length || 0}
+										{Object.keys(activeItem.item.apps || {}).length}
 									</div>
 								</div>
 								<span className="text-sm mt-1">{activeItem.item.name || "Folder"}</span>
@@ -509,7 +511,7 @@ function SortableFolderIconComponent({
 
 	// Get the apps in this folder
 	const folderApps = businesses.filter(b =>
-		b._?.soul && folder.apps?.includes(b._?.soul)
+		b._?.soul && folder.apps?.[b._?.soul]
 	);
 
 	// For the folder icon, just show the first few apps as a preview
@@ -533,7 +535,7 @@ function SortableFolderIconComponent({
 					<FolderIcon className="h-1/2 w-1/2 text-muted-foreground" />
 					{/* Show number of apps in the folder */}
 					<div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-						{folder.apps?.length || 0}
+						{Object.keys(folder.apps || {}).length}
 					</div>
 
 					{/* If there are apps in the folder, show a preview */}

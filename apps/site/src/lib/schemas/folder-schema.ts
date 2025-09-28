@@ -5,7 +5,7 @@ export const folderSchema = z
   .object({
     name: withLabel(z.string().optional(), "Folder Name"),
     apps: withLabel(
-      z.array(z.string()).default([]),
+      z.record(z.boolean()).default({}),
       "Apps in Folder"
     ),
     userId: withLabel(z.string(), "User ID"),

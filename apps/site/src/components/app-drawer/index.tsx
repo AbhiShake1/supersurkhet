@@ -17,6 +17,7 @@ import { Separator } from "../ui/separator";
 import { Skeleton } from "../ui/skeleton";
 import { AppGrid } from "./app-grid";
 import { useRecentlyUsedApps } from "./recently-used-apps-context";
+import { useFolders } from "./folders-context";
 import { AppDrawerSettings } from "./settings";
 
 export interface AppDrawerProps
@@ -24,7 +25,9 @@ export interface AppDrawerProps
 
 export function AppDrawer(props: AppDrawerProps) {
   const { data: allBusinesses = [], isLoading } = api.business.useGet();
-  const { recentlyUsedApps, isLoading: isLoadingRecentlyUsed } = useRecentlyUsedApps();
+  const { recentlyUsedApps, isLoading: isLoadingRecentlyUsed } =
+    useRecentlyUsedApps();
+  const { folders } = useFolders();
   const [searchTerm, setSearchTerm] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -66,8 +69,23 @@ export function AppDrawer(props: AppDrawerProps) {
   // Create stable skeleton IDs for loading state
   const skeletonIds = useMemo(() => Array.from({ length: 10 }, (_, i) => `skeleton-${i}`), []);
 
+  // Get all app IDs that are in folders
+  const appIdsInFolders = useMemo(
+    () => folders.flatMap((folder) => Object.keys(folder.apps || {})),
+    [folders],
+  );
+
+  // Get businesses that are not in any folder
+  const businessesNotInFolders = useMemo(
+    () =>
+      allBusinesses.filter(
+        (business) => !appIdsInFolders.includes(business._?.soul || ""),
+      ),
+    [allBusinesses, appIdsInFolders],
+  );
+
   // Filter businesses based on search term
-  const filteredBusinesses = allBusinesses.filter((business) => {
+  const filteredBusinesses = businessesNotInFolders.filter((business) => {
     if (!searchTerm) return true;
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
     return business.name?.toLowerCase().includes(lowerCaseSearchTerm);
@@ -78,7 +96,9 @@ export function AppDrawer(props: AppDrawerProps) {
     if (!recentlyUsedApps || recentlyUsedApps.length === 0) return [];
 
     return recentlyUsedApps
-      .map(usedApp => allBusinesses.find(business => business._?.soul === usedApp.appId))
+      .map((usedApp) =>
+        allBusinesses.find((business) => business._?.soul === usedApp.appId),
+      )
       .filter(Boolean) as Business[]; // Remove undefined values
   }, [recentlyUsedApps, allBusinesses]);
 
@@ -87,8 +107,8 @@ export function AppDrawer(props: AppDrawerProps) {
     if (!searchTerm) return recentlyUsedBusinessObjects;
 
     const lowerCaseSearchTerm = searchTerm.toLowerCase();
-    return recentlyUsedBusinessObjects.filter(business =>
-      business?.name?.toLowerCase().includes(lowerCaseSearchTerm)
+    return recentlyUsedBusinessObjects.filter((business) =>
+      business?.name?.toLowerCase().includes(lowerCaseSearchTerm),
     );
   }, [recentlyUsedBusinessObjects, searchTerm]);
 
@@ -100,8 +120,8 @@ export function AppDrawer(props: AppDrawerProps) {
     }
 
     // If not searching, return all businesses (including recently used ones)
-    return allBusinesses;
-  }, [allBusinesses, filteredBusinesses, searchTerm]);
+    return businessesNotInFolders;
+  }, [businessesNotInFolders, filteredBusinesses, searchTerm]);
 
   return (
     <div className="space-y-6">
