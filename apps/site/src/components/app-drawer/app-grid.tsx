@@ -29,9 +29,11 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Folder } from "@/lib/schemas/folder-schema";
+import { AndroidFolder, AndroidFolderTrigger, AndroidFolderContent } from "@/components/ui/android-folder";
 
 interface AppGridProps {
 	businesses: Business[];
+	allBusinessesForFolders?: Business[];
 	gridColumns: number;
 	iconSize: "sm" | "md" | "lg";
 	isAllApps?: boolean; // Add this prop to indicate if it's the all apps section
@@ -64,7 +66,7 @@ function findItem(id: UniqueIdentifier, businesses: Business[], folders: Folder[
 	return null;
 }
 
-function AppGridComponent({ businesses, gridColumns, iconSize, isAllApps = false }: AppGridProps) {
+function AppGridComponent({ businesses, allBusinessesForFolders, gridColumns, iconSize, isAllApps = false }: AppGridProps) {
 	// Size classes mapping
 	const gridColumnClasses: Record<number, string> = {
 		1: "grid-cols-1",
@@ -82,7 +84,6 @@ function AppGridComponent({ businesses, gridColumns, iconSize, isAllApps = false
 
 	// State for drag and drop
 	const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-	const [expandedFolderId, setExpandedFolderId] = useState<string | null>(null);
 	const [dragOverId, setDragOverId] = useState<UniqueIdentifier | null>(null);
 	const [targetApp, setTargetApp] = useState<Business | null>(null);
 
@@ -234,17 +235,13 @@ function AppGridComponent({ businesses, gridColumns, iconSize, isAllApps = false
 							activeItem={activeItem}
 						/>
 					))}
-					{folders.map((folder) => (
+					{isAllApps && folders.map((folder) => (
 						<FolderIconComponent
 							key={folder._?.soul}
 							folder={folder}
-							businesses={businesses}
+							businesses={allBusinessesForFolders || businesses}
 							iconSize={iconSize}
 							isAllApps={isAllApps}
-							expanded={expandedFolderId === folder._?.soul}
-							onToggleExpand={() => setExpandedFolderId(
-								expandedFolderId === folder._?.soul ? null : folder._?.soul ?? null
-							)}
 							onUpdateFolder={updateFolder}
 							onDeleteFolder={deleteFolder}
 						/>
@@ -280,7 +277,9 @@ function AppGridComponent({ businesses, gridColumns, iconSize, isAllApps = false
 								<div className={`${getIconSizeClass(iconSize)} rounded-md bg-primary/20 border border-primary/50 flex items-center justify-center flex-shrink-0`}>
 									<FolderIcon className="h-1/2 w-1/2 text-primary" />
 									<div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-										{Object.keys(activeItem.item.apps || {}).length}
+										{(allBusinessesForFolders || businesses).filter(
+											(b) => b._?.soul && activeItem.item.apps?.[b._?.soul],
+										).length}
 									</div>
 								</div>
 								<span className="text-sm mt-1">{activeItem.item.name || "Folder"}</span>
@@ -468,8 +467,6 @@ interface FolderIconComponentProps {
 	businesses: Business[];
 	iconSize: "sm" | "md" | "lg";
 	isAllApps?: boolean;
-	expanded: boolean;
-	onToggleExpand: () => void;
 	onUpdateFolder: (folderId: string, updates: Partial<Folder>) => Promise<void>;
 	onDeleteFolder: (folderId: string) => Promise<void>;
 }
@@ -479,8 +476,6 @@ function SortableFolderIconComponent({
 	businesses,
 	iconSize,
 	isAllApps = false,
-	expanded,
-	onToggleExpand,
 	onUpdateFolder,
 	onDeleteFolder
 }: FolderIconComponentProps) {
@@ -490,7 +485,6 @@ function SortableFolderIconComponent({
 		setNodeRef,
 		transform,
 		transition,
-		isDragging
 	} = useSortable({
 		id: folder._?.soul || "",
 		data: {
@@ -509,12 +503,10 @@ function SortableFolderIconComponent({
 		transition,
 	};
 
-	// Get the apps in this folder
 	const folderApps = businesses.filter(b =>
 		b._?.soul && folder.apps?.[b._?.soul]
 	);
 
-	// For the folder icon, just show the first few apps as a preview
 	const previewApps = folderApps.slice(0, 4);
 
 	return (
@@ -522,109 +514,77 @@ function SortableFolderIconComponent({
 			ref={setNodeRef}
 			style={style}
 			className="flex flex-col items-center"
-			{...listeners}
 			{...attributes}
 		>
-			{!expanded ? (
-				// Closed folder view
-				<button
-					type="button"
-					className={`${iconSizeClasses[iconSize]} rounded-md bg-muted flex items-center justify-center flex-shrink-0 cursor-pointer relative`}
-					onClick={onToggleExpand}
-				>
-					<FolderIcon className="h-1/2 w-1/2 text-muted-foreground" />
-					{/* Show number of apps in the folder */}
-					<div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs">
-						{Object.keys(folder.apps || {}).length}
-					</div>
-
-					{/* If there are apps in the folder, show a preview */}
-					{previewApps.length > 0 && (
-						<div className="absolute inset-0 flex flex-wrap overflow-hidden p-0.5 rounded-md">
-							{previewApps.map((app, idx) => {
-								const icon = getAppIcon(app);
-								return (
-									<div
-										key={app._?.soul}
-										className={`flex-1 min-w-[50%] min-h-[50%] ${idx % 2 === 0 ? 'pr-0.5' : 'pl-0.5'} ${idx < 2 ? 'pb-0.5' : 'pt-0.5'}`}
-									>
-										{icon ? (
-											<div className="w-full h-full overflow-hidden rounded-sm">
-												<img
-													src={icon}
-													alt={app.name}
-													className="w-full h-full object-cover"
-													loading="lazy"
-												/>
+			<AndroidFolder>
+				<AndroidFolderTrigger>
+					<div className="flex flex-col items-center">
+						<button
+							type="button"
+							{...listeners}
+							className={`${iconSizeClasses[iconSize]} rounded-md bg-muted flex items-center justify-center flex-shrink-0 cursor-pointer relative`}
+						>							<FolderIcon className="h-1/2 w-1/2 text-muted-foreground" />
+							<div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full w-5 h-5 flex items-center justify-center text-xs z-10">
+								{folderApps.length}
+							</div>							{previewApps.length > 0 && (
+								<div className="absolute inset-0 flex flex-wrap overflow-hidden p-0.5 rounded-md">
+									{previewApps.map((app) => {
+										const icon = getAppIcon(app);
+										return (
+											<div key={app._?.soul} className="flex-1 min-w-[50%] min-h-[50%] p-px">
+												{icon ? (
+													<div className="w-full h-full overflow-hidden rounded-sm">
+														<img src={icon} alt={app.name} className="w-full h-full object-cover" loading="lazy" />
+													</div>
+												) : (
+													<div className="w-full h-full bg-muted rounded-sm flex items-center justify-center">
+														<AppWindow className="h-1/2 w-1/2 text-muted-foreground" />
+													</div>
+												)}
 											</div>
-										) : (
-											<div className="w-full h-full bg-muted rounded-sm flex items-center justify-center">
-												<AppWindow className="h-1/2 w-1/2 text-muted-foreground" />
-											</div>
-										)}
-									</div>
-								);
-							})}
-						</div>
-					)}
-				</button>
-			) : (
-				// Expanded folder view - render as an expanded view in the grid
-				<div className="relative w-full">
-					{/* Folder header */}
-					<div className="flex items-center mb-2 justify-center">
-						<div className="flex items-center">
-							<FolderIcon className="mr-2" />
-							<Editable
-								value={folder.name || ""}
-								onSubmit={(newValue) => folder._?.soul && onUpdateFolder(folder._?.soul, { name: newValue })}
-								placeholder="Folder name"
-								className="flex-1"
-							>
-								<EditablePreview className="w-full truncate" />
-								<EditableInput className="w-full" />
-							</Editable>
-						</div>
+										);
+									})}
+								</div>
+							)}
+						</button>
+						<Editable
+							value={folder.name || ""}
+							onSubmit={(newValue) => folder._?.soul && onUpdateFolder(folder._?.soul, { name: newValue })}
+							placeholder="Folder name"
+							className="w-full mt-1"
+							onClick={(e) => e.stopPropagation()}
+						>							<EditablePreview className="w-full truncate text-center" />
+							<EditableInput className="w-full text-center" />
+						</Editable>
 					</div>
-
-					{/* Folder apps grid */}
-					<div className="grid grid-cols-3 gap-2">
+				</AndroidFolderTrigger>
+				<AndroidFolderContent className="w-72 z-20 p-4">
+					<div className="flex items-center mb-4">
+						<FolderIcon className="mr-2 h-5 w-5" />
+						<Editable
+							value={folder.name || ""}
+							onSubmit={(newValue) => folder._?.soul && onUpdateFolder(folder._?.soul, { name: newValue })}
+							placeholder="Folder name"
+							className="flex-1"
+							onClick={(e) => e.stopPropagation()}
+						>							<EditablePreview className="text-lg font-bold" />
+							<EditableInput className="text-lg font-bold" />
+						</Editable>
+					</div>
+					<div className="grid grid-cols-4 gap-4">
 						{folderApps.map((app) => (
 							folder._?.soul &&
 							<FolderAppIcon
 								key={app._?.soul}
 								app={app}
-								iconSize={iconSize}
+								iconSize="sm"
 								folderId={folder._?.soul}
 								onUpdateFolder={onUpdateFolder}
-								onToggleExpand={onToggleExpand}
 							/>
 						))}
 					</div>
-
-					{/* Close button */}
-					<button
-						type="button"
-						className="absolute -top-3 -right-3 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs"
-						onClick={onToggleExpand}
-					>
-						✕
-					</button>
-				</div>
-			)}
-
-			{/* Folder name - only show when not expanded */}
-			{!expanded && (
-				<Editable
-					value={folder.name || ""}
-					onSubmit={(newValue) => folder._?.soul && onUpdateFolder(folder._?.soul, { name: newValue })}
-					placeholder="Folder name"
-					className="w-full mt-1"
-				>
-					<EditablePreview className="w-full truncate text-center" />
-					<EditableInput className="w-full text-center" />
-				</Editable>
-			)}
+				</AndroidFolderContent>
+			</AndroidFolder>
 		</div>
 	);
 }
@@ -635,15 +595,13 @@ interface FolderAppIconProps {
 	iconSize: "sm" | "md" | "lg";
 	folderId: string;
 	onUpdateFolder: (folderId: string, updates: Partial<Folder>) => Promise<void>;
-	onToggleExpand: () => void; // To close the folder when dragging starts
 }
 
 function FolderAppIcon({
 	app,
 	iconSize,
 	folderId,
-	onUpdateFolder,
-	onToggleExpand
+	onUpdateFolder
 }: FolderAppIconProps) {
 	const {
 		attributes,

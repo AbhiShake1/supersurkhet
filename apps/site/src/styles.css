@@ -181,7 +181,7 @@ html {
 		hsl(0 0% 0% / 0.1);
 	--shadow-lg: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 4px 6px -1px
 		hsl(0 0% 0% / 0.1);
-	--shadow-xl: 0px 1px 3px 0px hsla(0, 0%, 0%, 0.1), 0px 8px 10px -1px
+	--shadow-xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.1), 0px 8px 10px -1px
 		hsl(0 0% 0% / 0.1);
 	--shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);
 	--tracking-normal: 0em;
@@ -255,4 +255,15 @@ html {
 	--color-3: oklch(69.6% 0.165 251);
 	--color-4: oklch(80.2% 0.134 225);
 	--color-5: oklch(90.7% 0.231 133);
+}
+
+@keyframes folder-expand {
+  from {
+    transform: translate(-50%, -50%) scale(0.1);
+    opacity: 0;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
 }

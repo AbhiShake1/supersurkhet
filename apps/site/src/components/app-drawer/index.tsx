@@ -178,7 +178,7 @@ export function AppDrawer(props: AppDrawerProps) {
               <Skeleton key={id} className="w-full h-32" />
             ))}
           </div>
-        ) : filteredBusinesses.length === 0 ? (
+        ) : searchTerm && filteredBusinesses.length === 0 ? (
           <div className="text-center py-10 text-muted-foreground">
             <p>No apps found matching your search.</p>
             {searchTerm && (
@@ -205,7 +205,7 @@ export function AppDrawer(props: AppDrawerProps) {
             )}
 
             {/* Separator for All Apps */}
-            {filteredAllBusinesses.length > 0 && (
+            {(filteredAllBusinesses.length > 0 || folders.length > 0) && (
               <div className="flex items-center my-4 flex-row">
                 <div className="w-full border-t border-dotted border-muted" />
                 <span className="px-4 text-muted-foreground text-sm whitespace-nowrap flex-shrink-0">All Apps</span>
@@ -214,10 +214,11 @@ export function AppDrawer(props: AppDrawerProps) {
             )}
 
             {/* All Apps Section */}
-            {filteredAllBusinesses.length > 0 && (
+            {(filteredAllBusinesses.length > 0 || folders.length > 0) && (
               <div>
                 <AppGrid
                   businesses={filteredAllBusinesses}
+                  allBusinessesForFolders={allBusinesses}
                   gridColumns={settings.gridColumns}
                   iconSize={settings.iconSize}
                   isAllApps={true}
