@@ -20,7 +20,6 @@ import { Route as BusinessChatImport } from './routes/_business/chat'
 import { Route as AuthSettingsImport } from './routes/_auth/settings'
 import { Route as AuthAuthImport } from './routes/_auth/auth'
 import { Route as BusinessNameAdminImport } from './routes/$businessName/admin'
-import { Route as FeatureQrIndexImport } from './routes/feature/qr/index'
 import { Route as BusinessRideIndexImport } from './routes/_business/ride/index'
 import { Route as BusinessSchoolSasaImport } from './routes/_business/_school/sasa'
 import { Route as BusinessRetailAnjalstoreImport } from './routes/_business/_retail/anjalstore'
@@ -82,12 +81,6 @@ const AuthAuthRoute = AuthAuthImport.update({
 const BusinessNameAdminRoute = BusinessNameAdminImport.update({
   id: '/$businessName/admin',
   path: '/$businessName/admin',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const FeatureQrIndexRoute = FeatureQrIndexImport.update({
-  id: '/feature/qr/',
-  path: '/feature/qr/',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -235,13 +228,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessRideIndexImport
       parentRoute: typeof rootRoute
     }
-    '/feature/qr/': {
-      id: '/feature/qr/'
-      path: '/feature/qr'
-      fullPath: '/feature/qr'
-      preLoaderRoute: typeof FeatureQrIndexImport
-      parentRoute: typeof rootRoute
-    }
     '/_auth/_demos/restaurant/admin': {
       id: '/_auth/_demos/restaurant/admin'
       path: '/restaurant/admin'
@@ -321,7 +307,6 @@ export interface FileRoutesByFullPath {
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/sasa': typeof BusinessSchoolSasaRoute
   '/ride': typeof BusinessRideIndexRoute
-  '/feature/qr': typeof FeatureQrIndexRoute
   '/restaurant/admin': typeof AuthDemosRestaurantAdminRoute
   '/ride/admin/vehicle-types': typeof BusinessRideAdminVehicleTypesRoute
   '/restaurant': typeof AuthDemosRestaurantIndexRoute
@@ -341,7 +326,6 @@ export interface FileRoutesByTo {
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/sasa': typeof BusinessSchoolSasaRoute
   '/ride': typeof BusinessRideIndexRoute
-  '/feature/qr': typeof FeatureQrIndexRoute
   '/restaurant/admin': typeof AuthDemosRestaurantAdminRoute
   '/ride/admin/vehicle-types': typeof BusinessRideAdminVehicleTypesRoute
   '/restaurant': typeof AuthDemosRestaurantIndexRoute
@@ -363,7 +347,6 @@ export interface FileRoutesById {
   '/_business/_retail/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/_business/_school/sasa': typeof BusinessSchoolSasaRoute
   '/_business/ride/': typeof BusinessRideIndexRoute
-  '/feature/qr/': typeof FeatureQrIndexRoute
   '/_auth/_demos/restaurant/admin': typeof AuthDemosRestaurantAdminRoute
   '/_business/ride/admin/vehicle-types': typeof BusinessRideAdminVehicleTypesRoute
   '/_auth/_demos/restaurant/': typeof AuthDemosRestaurantIndexRoute
@@ -386,7 +369,6 @@ export interface FileRouteTypes {
     | '/anjalstore'
     | '/sasa'
     | '/ride'
-    | '/feature/qr'
     | '/restaurant/admin'
     | '/ride/admin/vehicle-types'
     | '/restaurant'
@@ -405,7 +387,6 @@ export interface FileRouteTypes {
     | '/anjalstore'
     | '/sasa'
     | '/ride'
-    | '/feature/qr'
     | '/restaurant/admin'
     | '/ride/admin/vehicle-types'
     | '/restaurant'
@@ -425,7 +406,6 @@ export interface FileRouteTypes {
     | '/_business/_retail/anjalstore'
     | '/_business/_school/sasa'
     | '/_business/ride/'
-    | '/feature/qr/'
     | '/_auth/_demos/restaurant/admin'
     | '/_business/ride/admin/vehicle-types'
     | '/_auth/_demos/restaurant/'
@@ -445,7 +425,6 @@ export interface RootRouteChildren {
   BusinessRetailAnjalstoreRoute: typeof BusinessRetailAnjalstoreRoute
   BusinessSchoolSasaRoute: typeof BusinessSchoolSasaRoute
   BusinessRideIndexRoute: typeof BusinessRideIndexRoute
-  FeatureQrIndexRoute: typeof FeatureQrIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -460,7 +439,6 @@ const rootRouteChildren: RootRouteChildren = {
   BusinessRetailAnjalstoreRoute: BusinessRetailAnjalstoreRoute,
   BusinessSchoolSasaRoute: BusinessSchoolSasaRoute,
   BusinessRideIndexRoute: BusinessRideIndexRoute,
-  FeatureQrIndexRoute: FeatureQrIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -483,8 +461,7 @@ export const routeTree = rootRoute
         "/_business/ride/admin",
         "/_business/_retail/anjalstore",
         "/_business/_school/sasa",
-        "/_business/ride/",
-        "/feature/qr/"
+        "/_business/ride/"
       ]
     },
     "/": {
@@ -537,9 +514,6 @@ export const routeTree = rootRoute
     },
     "/_business/ride/": {
       "filePath": "_business/ride/index.tsx"
-    },
-    "/feature/qr/": {
-      "filePath": "feature/qr/index.tsx"
     },
     "/_auth/_demos/restaurant/admin": {
       "filePath": "_auth/_demos/restaurant/admin.tsx",

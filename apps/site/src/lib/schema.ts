@@ -24,6 +24,7 @@ import {
 } from "./schemas/listings";
 import { dataMatrixActionSchema } from "./datamatrix";
 import { folderSchema } from "./schemas/folder-schema";
+import { qrFlowConfigSchema } from "./schemas/qr-flow-config-schema";
 
 // #region Permissions & Roles
 export const permissions = {
@@ -626,6 +627,10 @@ export const featureSchema = createSchema({
 	// Folder schema
 	folder: {
 		schema: folderSchema,
+	},
+	// QR Flow Config schema
+	qrFlowConfig: {
+		schema: qrFlowConfigSchema,
 	},
 });
 

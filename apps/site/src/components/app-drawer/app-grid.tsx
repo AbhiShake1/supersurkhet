@@ -175,39 +175,62 @@ function AppGridComponent({ businesses, allBusinessesForFolders, gridColumns, ic
 			return;
 		}
 
-		// If dragging an app from a folder to outside (remove from folder)
-		if (isAllApps &&
-			active.data?.current?.type === "app-in-folder") {
-
+		// If dragging an app from a folder
+		if (isAllApps && active.data?.current?.type === "app-in-folder") {
 			const appId = active.id as string;
-			const folderId = active.data?.current?.folderId as string;
+			const sourceFolderId = active.data?.current?.folderId as string;
 
-			// If dropped outside of a folder (on the app grid or another app that's not a folder)
-			if (!over.data?.current || over.data?.current?.type !== "folder") {
-				// Remove app from the folder
-				const folder = folders.find(f => f._?.soul === folderId);
-				if (folder) {
-					const updatedApps = { ...folder.apps };
-					delete updatedApps[appId];
-
-					// If the folder ends up empty, delete it
-					if (Object.keys(updatedApps).length === 0) {
-						deleteFolder(folderId);
-					} else {
-						updateFolder(folderId, { apps: updatedApps });
-					}
-				}
+			// Do nothing if dropped back into the same folder area
+			if (over.id === sourceFolderId) {
+				return;
 			}
-			// If dropped on a folder, add to that folder (handled by dnd-kit automatically with useDroppable)
+
+			const sourceFolder = folders.find(f => f._?.soul === sourceFolderId);
+			if (!sourceFolder) return;
+
+			// Remove app from source folder
+			const updatedSourceApps = { ...sourceFolder.apps };
+			delete updatedSourceApps[appId];
+
+			const handleSourceFolderUpdate = () => {
+				if (Object.keys(updatedSourceApps).length === 0) {
+					deleteFolder(sourceFolderId);
+				} else {
+					updateFolder(sourceFolderId, { apps: updatedSourceApps });
+				}
+			};
+
+			// Case 1: Dropped on a different folder
+			if (over.data?.current?.type === "folder" && over.id !== sourceFolderId) {
+				const targetFolderId = over.id as string;
+				const targetFolder = folders.find(f => f._?.soul === targetFolderId);
+				if (targetFolder) {
+					const updatedTargetApps = { ...targetFolder.apps, [appId]: true };
+					updateFolder(targetFolderId, { apps: updatedTargetApps });
+				}
+				handleSourceFolderUpdate();
+			}
+			// Case 2: Dropped on an app to create a new folder
+			else if (over.data?.current?.type === "app") {
+				const app2Id = over.id as string;
+				createFolder("", [appId, app2Id]);
+				handleSourceFolderUpdate();
+			}
+			// Case 3: Dropped outside of any folder
+			else if (!over.data?.current || over.data?.current?.type !== "folder") {
+				handleSourceFolderUpdate();
+			}
+
 			return;
 		}
 	};
 
 	// Prepare items for drag and drop (businesses + folders)
 	const items = [
-		...businesses.map(b => b._?.soul || ""),
+		...(allBusinessesForFolders || businesses).map(b => b._?.soul || ""),
 		...folders.map(f => f._?.soul || "")
-	].filter((id) => id !== "");
+	].filter((id) => id);
+	const uniqueItems = [...new Set(items)];
 
 	const noopSortingStrategy = () => null;
 
@@ -223,7 +246,7 @@ function AppGridComponent({ businesses, allBusinessesForFolders, gridColumns, ic
 				className={`grid ${gridColumnClasses[gridColumns]} gap-4`}
 				data-type="app-grid"  // Mark this as the app grid for collision detection
 			>
-				<SortableContext items={items} strategy={noopSortingStrategy}>
+				<SortableContext items={uniqueItems} strategy={noopSortingStrategy}>
 					{businesses.map((business) => (
 						<BusinessIcon
 							key={business._?.soul}
@@ -244,6 +267,7 @@ function AppGridComponent({ businesses, allBusinessesForFolders, gridColumns, ic
 							isAllApps={isAllApps}
 							onUpdateFolder={updateFolder}
 							onDeleteFolder={deleteFolder}
+							addRecentlyUsedApp={addRecentlyUsedApp}
 						/>
 					))}
 				</SortableContext>
@@ -469,6 +493,7 @@ interface FolderIconComponentProps {
 	isAllApps?: boolean;
 	onUpdateFolder: (folderId: string, updates: Partial<Folder>) => Promise<void>;
 	onDeleteFolder: (folderId: string) => Promise<void>;
+	addRecentlyUsedApp: (businessId: string) => Promise<void>;
 }
 
 function SortableFolderIconComponent({
@@ -477,7 +502,8 @@ function SortableFolderIconComponent({
 	iconSize,
 	isAllApps = false,
 	onUpdateFolder,
-	onDeleteFolder
+	onDeleteFolder,
+	addRecentlyUsedApp,
 }: FolderIconComponentProps) {
 	const {
 		attributes,
@@ -508,6 +534,10 @@ function SortableFolderIconComponent({
 	);
 
 	const previewApps = folderApps.slice(0, 4);
+
+	function noopSortingStrategy() {
+		return null;
+	}
 
 	return (
 		<div
@@ -579,7 +609,7 @@ function SortableFolderIconComponent({
 								app={app}
 								iconSize="sm"
 								folderId={folder._?.soul}
-								onUpdateFolder={onUpdateFolder}
+								addRecentlyUsedApp={addRecentlyUsedApp}
 							/>
 						))}
 					</div>
@@ -594,14 +624,14 @@ interface FolderAppIconProps {
 	app: Business;
 	iconSize: "sm" | "md" | "lg";
 	folderId: string;
-	onUpdateFolder: (folderId: string, updates: Partial<Folder>) => Promise<void>;
+	addRecentlyUsedApp: (businessId: string) => Promise<void>;
 }
 
 function FolderAppIcon({
 	app,
 	iconSize,
 	folderId,
-	onUpdateFolder
+	addRecentlyUsedApp,
 }: FolderAppIconProps) {
 	const {
 		attributes,
@@ -627,16 +657,28 @@ function FolderAppIcon({
 		lg: "w-16 h-16",
 	};
 
-	const style = {
+	const style: React.CSSProperties = {
 		transform: CSS.Transform.toString(transform),
 		transition,
+		touchAction: 'none',
 	};
 
 	return (
-		<div
+		<Link
 			ref={setNodeRef}
 			style={style}
+			to="/$businessName"
+			params={{ businessName: app.basePath ?? "" }}
 			className="flex flex-col items-center"
+			onClick={(e) => {
+				if (isDragging) {
+					e.preventDefault();
+					return;
+				}
+				if (app._?.soul) {
+					addRecentlyUsedApp(app._.soul);
+				}
+			}}
 			{...listeners}
 			{...attributes}
 		>
@@ -660,7 +702,7 @@ function FolderAppIcon({
 				</div>
 			)}
 			<span className="text-xs mt-1 text-center truncate w-full">{app.name}</span>
-		</div>
+		</Link>
 	);
 }
 

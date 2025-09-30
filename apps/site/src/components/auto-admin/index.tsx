@@ -13,7 +13,7 @@ import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { notFound, useLocation } from "@tanstack/react-router";
 import _ from "lodash";
-import { GripVertical, Home, type LucideIcon } from "lucide-react";
+import { GripVertical, Home, QrCodeIcon, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
@@ -21,6 +21,7 @@ import { Button } from "../ui/button";
 import { Skeleton } from "../ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { AdminDashboard } from "../admin-dashboard";
+import { QRCodePage } from "../qr-code-page";
 
 export interface AutoAdminProps {
 	tabs: PossibleTabConfig[];
@@ -41,6 +42,9 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
 	);
 
 export function AutoAdmin({ tabs }: AutoAdminProps) {
+	const { search, pathname: currentPathname } = useLocation();
+	const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
+
 	const tabsWithHome = [
 		{
 			title: "Home",
@@ -48,18 +52,20 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 			children: <AdminDashboard />,
 		},
 		...tabs,
+		{
+			title: "QR",
+			icon: QrCodeIcon,
+			children: <QRCodePage slug={basePath} />,
+		},
 	];
 
 	const data: SidebarItems = {
 		items: tabsWithHome,
 	};
-	const { search, pathname: currentPathname } = useLocation();
 	// @ts-expect-error
 	const tab = (search.tab as string) ?? tabsWithHome[0].title;
 
 	const currentItem = tabsWithHome.find((t) => t.title === tab);
-
-	const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
 
 	function _canGetComponents() {
 		return !!currentItem;

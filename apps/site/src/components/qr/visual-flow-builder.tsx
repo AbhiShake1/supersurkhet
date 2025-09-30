@@ -956,7 +956,7 @@ const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => 
             className="h-8 text-xs"
           />
         </div>
-        <ScrollArea>
+        <ScrollArea className="pb-32">
           <Sortable
             value={filteredNodeTypes}
             onValueChange={handleReorder}
