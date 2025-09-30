@@ -4,7 +4,7 @@ import {
 	type UseQueryOptions,
 } from "@tanstack/react-query";
 import type { NestedSchemaType, SchemaKeys } from "..";
-import { mergeKeys } from "../utils";
+import { getGunRef, mergeKeys } from "../utils";
 import { decrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
 import type { GunCallbackMap } from "gun/types";
@@ -44,7 +44,6 @@ export const useGet = createGunHook((messenger) => {
 			return undefined
 		}
 		const queryClient = useQueryClient();
-		const options = messenger._options;
 		const k = typeof key === "string" ? key : key.key;
 		const queryKey = ["get", key, ...restKeys];
 		return useQuery({
@@ -56,10 +55,10 @@ export const useGet = createGunHook((messenger) => {
 				const _keys = mergeKeys(k, ...restKeys) as T;
 				const keys =
 					typeof key !== "string" && key.separator?.length
-						? _keys.replaceAll(".", key.separator)
+						? _keys.replaceAll("/", key.separator)
 						: _keys;
 
-				const node = options.gun.get(keys);
+				const node = getGunRef(keys);
 
 				node.open(async (fullData) => {
 					if (!fullData || typeof fullData !== "object") return;
@@ -82,7 +81,7 @@ export const useGet = createGunHook((messenger) => {
 						}
 					}
 
-					queryClient.setQueryData(queryKey, newList);
+					queryClient.setQueryData(queryKey, newList.filter(Boolean));
 				});
 
 				return new Promise<NestedSchemaType<T>[]>((res) => {

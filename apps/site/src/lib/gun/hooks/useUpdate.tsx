@@ -1,6 +1,6 @@
 import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import type { NestedSchemaType, SchemaKeys } from "..";
-import { mergeKeys } from "../utils";
+import { getGunRef, mergeKeys } from "../utils";
 import { encrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
 import type { GunMessagePut } from "gun/types";
@@ -9,16 +9,15 @@ export type UpdaterParams<T extends SchemaKeys> = { id: string } & Partial<
 	Omit<NestedSchemaType<T>, "_" | "id">
 >;
 
-export const useUpdate = createGunHook((messenger) => {
+export const useUpdate = createGunHook(() => {
 	const fn = <T extends SchemaKeys>(key: T, ...restKeys: string[]) => {
-		const options = messenger._options;
 		return async ({ id, ...value }: UpdaterParams<T>) => {
 			const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
-			return new Promise<GunMessagePut>(async (resolve, reject) => {
-				options.gun
-					.get(keys)
+			const encrypted = await encrypt(value)
+			return new Promise<GunMessagePut>((resolve, reject) => {
+				getGunRef(keys)
 					.get(id)
-					.put(await encrypt(value), (ack) => {
+					.put(encrypted, (ack) => {
 						if ("err" in ack && !!ack.err) {
 							reject(ack.err);
 						} else {

@@ -13,7 +13,7 @@ function _parse<P extends ParseOptions>(
 	schema: P["shape"],
 	parser: (shape: P["shape"], obj: P["obj"]) => any,
 ) {
-	const keys = key.split(".");
+	const keys = key.split("/");
 
 	const [head, ...tail] = keys;
 
@@ -21,7 +21,7 @@ function _parse<P extends ParseOptions>(
 
 	if (!head?.length || !innerSchema) return parser(schema, obj);
 
-	return _parse(tail.join(".") as P["key"], obj, innerSchema, parser);
+	return _parse(tail.join("/") as P["key"], obj, innerSchema, parser);
 }
 
 export function parseNestedZodShape<P extends ParseOptions>(
@@ -38,6 +38,9 @@ export function parseNestedZodType<P extends ParseOptions>(
 	baseSchema: P["shape"],
 	{ isPartial = false } = {},
 ) {
+	if (key.startsWith("root/")) {
+		key = key.slice(5) as SchemaKeys;
+	}
 	// schema.shape.business.shape.restaurant.shape.menu._def.innerType.parse([])
 	// return _parse(key, obj, (shape, o) => shape._def.innerType.parse(o))
 	return _parse(key, obj, baseSchema, (shape, o) =>
@@ -49,12 +52,12 @@ export function getNestedZodShape<P extends ParseOptions>(
 	key: P["key"],
 	schema: P["shape"],
 ) {
-	const keys = key.split(".");
+	const keys = key.split("/");
 	const [head, ...tail] = keys;
 
 	const innerSchema = schema.shape[head as keyof P["shape"]];
 
 	if (!head?.length || !innerSchema) return schema;
 
-	return getNestedZodShape(tail.join(".") as P["key"], innerSchema);
+	return getNestedZodShape(tail.join("/") as P["key"], innerSchema);
 }

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 
 import { VisualFlowBuilder } from "@/components/qr/visual-flow-builder";
 
-export function QRCodePage() {
+export function QRCodePage({ slug }: { slug: string }) {
     const [sampleAction] = useState<DataMatrixAction>(() => {
         return dataMatrixActionSchema.parse({
             version: "1.0",

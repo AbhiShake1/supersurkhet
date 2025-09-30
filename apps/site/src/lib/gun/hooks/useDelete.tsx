@@ -1,6 +1,6 @@
 import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import type { SchemaKeys } from "..";
-import { mergeKeys } from "../utils";
+import { getGunRef, mergeKeys } from "../utils";
 import { createGunHook } from "./useGunHook";
 import type { GunMessagePut } from "gun/types";
 
@@ -9,7 +9,7 @@ export const useDelete = createGunHook((messenger) => {
 		const options = messenger._options;
 		return async (id: string) => {
 			const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
-			options.gun.get(keys).get(id).put(null);
+			getGunRef(keys).get(id).put(null);
 		};
 	};
 

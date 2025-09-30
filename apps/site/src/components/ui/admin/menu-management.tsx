@@ -30,51 +30,17 @@ import _ from "lodash";
 
 interface MenuManagementProps {
 	onAddItem: () => void;
-	menuItems: any[];
 }
 
-const mockMenuItems = [
-	{
-		id: "1",
-		name: "Classic Burger",
-		description: "Beef patty with lettuce, tomato, and special sauce",
-		price: 12.99,
-		category: "mains",
-		image: "/placeholder.svg?height=100&width=100",
-		available: true,
-		popular: true,
-	},
-	{
-		id: "2",
-		name: "Caesar Salad",
-		description: "Fresh romaine lettuce with parmesan and croutons",
-		price: 8.99,
-		category: "appetizers",
-		image: "/placeholder.svg?height=100&width=100",
-		available: true,
-		popular: false,
-	},
-	{
-		id: "3",
-		name: "Chocolate Cake",
-		description: "Rich chocolate cake with vanilla ice cream",
-		price: 6.99,
-		category: "desserts",
-		image: "/placeholder.svg?height=100&width=100",
-		available: false,
-		popular: true,
-	},
-];
-
 export const MenuManagement: AdminComponent = () => {
-	return <_MenuManagement menuItems={[]} onAddItem={() => {}} />;
+	return <_MenuManagement onAddItem={() => { }} />;
 };
 
-function _MenuManagement({ onAddItem, menuItems }: MenuManagementProps) {
+function _MenuManagement({ onAddItem }: MenuManagementProps) {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [selectedCategory, setSelectedCategory] = useState("all");
-	const { data: items = [] } = api.menuItem.useGet({ keys: ["restaurant"] });
-	const { mutate: update } = api.menuItem.useUpdate({ keys: ["restaurant"] });
+	const { data: items = [] } = api.menuItem.useGet({ keys: [] });
+	const { mutate: update } = api.menuItem.useUpdate({ keys: [] });
 
 	const groups = _.groupBy(items, "category");
 
@@ -92,7 +58,7 @@ function _MenuManagement({ onAddItem, menuItems }: MenuManagementProps) {
 			item.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
 			item.description?.toLowerCase().includes(searchQuery.toLowerCase());
 		const matchesCategory =
-			selectedCategory === "all" || item.category === selectedCategory;
+			selectedCategory === "all" || (item.category ?? "Others") === (selectedCategory ?? "Others");
 		return matchesSearch && matchesCategory;
 	});
 
@@ -188,7 +154,7 @@ function _MenuManagement({ onAddItem, menuItems }: MenuManagementProps) {
 									Rs.{" "}
 									{(
 										items.reduce((sum, item) => sum + item.price, 0) /
-											items.length || 0
+										items.length || 0
 									).toFixed(2)}
 								</p>
 							</div>

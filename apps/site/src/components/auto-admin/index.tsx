@@ -22,6 +22,7 @@ import { Skeleton } from "../ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { AdminDashboard } from "../admin-dashboard";
 import { QRCodePage } from "../qr-code-page";
+import type { z } from "zod";
 
 export interface AutoAdminProps {
 	tabs: PossibleTabConfig[];
@@ -34,6 +35,8 @@ type PossibleTabConfig = {
 export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
 	title: string;
 	icon?: LucideIcon;
+	transformer?: (data: any[]) => NestedSchemaType<K>[];
+	extender?: (shape: NestedSchemaType<K>) => z.ZodObject<any>;
 } & (
 		| {
 			children: ReactNode;
@@ -124,11 +127,15 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 						<AutoTable
 							parsedSchema={currentItem.parsedSchema}
 							slug={currentItem.slug ?? basePath}
+							transformer={currentItem.transformer}
+							extender={currentItem.extender}
 						/>
 					) : !components?.length ? (
 						<AutoTable
 							schema={currentItem.schema}
 							slug={currentItem.slug ?? basePath}
+							transformer={currentItem.transformer}
+							extender={currentItem.extender}
 						/>
 					) : (
 						<Tabs
@@ -155,6 +162,8 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 								<AutoTable
 									schema={currentItem.schema}
 									slug={currentItem.slug ?? basePath}
+									transformer={currentItem.transformer}
+									extender={currentItem.extender}
 								/>
 							</TabsContent>
 							{components.map(({ component, name }) => (

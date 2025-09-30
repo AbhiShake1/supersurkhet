@@ -1,5 +1,5 @@
 import type { NestedSchemaType, SchemaKeys } from "..";
-import { mergeKeys } from "../utils";
+import { getGunRef, mergeKeys } from "../utils";
 import { parseNestedZodType } from "../utils/parser";
 import { createGunHook } from "./useGunHook";
 import { encrypt } from "../utils/sea";
@@ -11,11 +11,9 @@ export const useCreate = createGunHook((messenger) => {
 		const options = messenger._options;
 		const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
 		return async (value: Omit<NestedSchemaType<T>, "_">) => {
-			console.log(keys)
 			const encrypted = await encrypt(parseNestedZodType(keys, value, options.schema))
 			return new Promise<GunMessagePut>((resolve, reject) => {
-				options.gun
-					.get(keys)
+				getGunRef(keys)
 					.get(Date.now().toString())
 					.put(
 						encrypted,

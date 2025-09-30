@@ -67,14 +67,16 @@ import { AutoTableActionBar } from "./auto-table-action-bar";
 
 export type AutoTableProps<T extends SchemaKeys> = {
 	slug: string;
+	transformer?: (data: any[]) => NestedSchemaType<T>[];
+	extender?: (shape: NestedSchemaType<T>) => z.ZodObject<any>;
 } & (
-	| {
+		| {
 			schema: T;
-	  }
-	| {
+		}
+		| {
 			parsedSchema: z.ZodObject<any>;
-	  }
-);
+		}
+	);
 
 export function AutoTable<T extends SchemaKeys>({
 	slug,
@@ -82,7 +84,8 @@ export function AutoTable<T extends SchemaKeys>({
 }: AutoTableProps<T>) {
 	const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
 	const [dialogOpen, setDialogOpen] = useState(false);
-	const { data: _data = [], isLoading } = useGet(schemaName, slug);
+	const { data: __data = [], isLoading } = useGet(schemaName, slug);
+	const _data = props.transformer?.(__data) ?? __data;
 	const search = useSearch({ from: "__root__" });
 	const data = useMemo(() => {
 		// @ts-expect-error
@@ -104,13 +107,22 @@ export function AutoTable<T extends SchemaKeys>({
 		return getSorted(getFiltered());
 	}, [_data, search]);
 
-	const createMutation = useCreate({ keys: [schemaName, slug] });
-	const updateMutation = useUpdate({ keys: [schemaName, slug] });
+	const createMutation = useCreate({
+		keys: [schemaName, slug], onSuccess() {
+			setDialogOpen(false)
+		}
+	});
+	const updateMutation = useUpdate({
+		keys: [schemaName, slug], onSuccess() {
+			setDialogOpen(false)
+		}
+	});
 	const { mutate: onDelete } = useDelete({ keys: [schemaName, slug] });
-	const schema =
+	const _schema =
 		"parsedSchema" in props
 			? props.parsedSchema
 			: getNestedZodShape(schemaName, appSchema.schemaShape);
+	const schema = props.extender?.(_schema) ?? _schema;
 	const [rowAction, setRowAction] = React.useState<DataTableRowAction<
 		NestedSchemaType<T>
 	> | null>(null);
