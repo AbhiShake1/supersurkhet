@@ -69,7 +69,6 @@ export const productSchema = baseListingSchema.extend({
 		.number({ coerce: true })
 		.positive()
 		.describe("Price of the item/service"),
-	name: z.string().optional().describe("Name of the item/service"),
 });
 
 export const menuItemSchema = productSchema.extend({

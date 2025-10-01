@@ -28,7 +28,7 @@ import {
 	Users,
 	Utensils,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo } from "react";
+import { useLayoutEffect, useMemo } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "./ui/button";
@@ -279,8 +279,6 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
 	const { data: allItems = [], isLoading } = useBusinessTypeData(businessType);
 	const { data: allBusinesses = [] } = api.business.useGet()
 
-	const totalBusinesses = allBusinesses.filter(b => b.businessType === businessType).length || 1
-
 	// Transform data as specified in the requirements
 	const transformedData = useMemo(() => allItems.flatMap(d => {
 		const business = d._?.soul;
@@ -289,32 +287,38 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
 		);
 	}).filter(d => !!d && typeof d === "object" && !("soul" in d)), [allItems]);
 
-	// Group items by title and calculate occurrence percentage for similar business types
-	const itemsByTitle: Record<string, { count: number; items: PrePopulateItem[]; businesses: string[] }> = {};
-
-	for (const d of transformedData) {
-		const title = d?.title?.toLowerCase();
-		if (!title) continue
-
-		if (!itemsByTitle[title]) {
-			itemsByTitle[title] = { count: 0, items: [], businesses: [] };
-		}
-		itemsByTitle[title].count++;
-		if (!itemsByTitle[title].businesses.includes(d.business)) {
-			itemsByTitle[title].businesses.push(d.business);
-		}
-		// Use the first occurrence of the item to preserve its properties
-		itemsByTitle[title].items.push(d);
-	}
-
 	// Filter to items and calculate occurrence percentage
 	const similarItems = useMemo(() => {
-		return Object.entries(itemsByTitle)
-			.map(([title, data]) => {
+		const businessesOfType = allBusinesses.filter(b => b.businessType === businessType)
+
+		// Group items by title and calculate occurrence percentage for similar business types
+		const itemsByTitle: Record<string, { count: number; items: PrePopulateItem[]; businesses: string[] }> = {};
+
+		for (const d of transformedData) {
+			const title = d?.title?.toLowerCase();
+			if (!title) continue
+
+			if (!itemsByTitle[title]) {
+				itemsByTitle[title] = { count: 0, items: [], businesses: [] };
+			}
+			itemsByTitle[title].count++;
+			if (!itemsByTitle[title].businesses.includes(d.business)) {
+				itemsByTitle[title].businesses.push(d.business);
+			}
+			if (!businessesOfType.includes(d.business)) {
+				businessesOfType.push(d.business)
+			}
+			// Use the first occurrence of the item to preserve its properties
+			itemsByTitle[title].items.push(d);
+		}
+
+		const totalBusinesses = businessesOfType.length
+
+		return Object.values(itemsByTitle)
+			.map((data) => {
 				// Use the first occurrence of the item as the base to show in the UI
 				const commonItem = data.items[0];
 				const occurrencePercentage = (data.businesses.length / totalBusinesses) * 100;
-				console.log(data.businesses.length, totalBusinesses, occurrencePercentage)
 				return {
 					...commonItem,
 					occurrencePercentage,
@@ -323,26 +327,28 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
 			})
 			.sort((a, b) => b.occurrencePercentage - a.occurrencePercentage) // Sort by most common first
 			.filter(item => item.title)
-	}, [totalBusinesses]); // Only include items with titles
+	}, [transformedData, allBusinesses, businessType]);
+
+	const newSimilarItemsValue = useMemo(() => similarItems.reduce((acc, item) => ({
+		...acc,
+		[item["#"]]: item.isPreselected,
+	}), {} as Record<string, boolean>), [similarItems])
 
 	useLayoutEffect(() => {
-		const newValue = similarItems.reduce((acc, item) => ({
-			...acc,
-			[item["#"]]: item.isPreselected,
-		}), {} as Record<string, boolean>)
-		form.setValue("prepopulateData", {
-			...newValue,
-			...form.getValues("prepopulateData"),
-		})
-	}, [similarItems, form.getValues, form.setValue])
-
-	console.log(form.watch("prepopulateData"))
+		for (const [key, val] of Object.entries(newSimilarItemsValue)) {
+			form.setValue(`prepopulateData.${key}`, val, {
+				shouldDirty: true,
+				shouldTouch: true,
+				shouldValidate: true,
+			})
+		}
+	}, [newSimilarItemsValue])
 
 	if (isLoading) {
 		return <div>Loading pre-population data...</div>;
 	}
 
-	if (similarItems.length === 0) {
+	if (!similarItems.length) {
 		return <div>No similar data found for pre-population.</div>;
 	}
 
@@ -391,7 +397,7 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
 									)}
 
 									<p className="text-xs text-muted-foreground mt-1">
-										Available at {item.occurrencePercentage.toFixed(0)}% of similar businesses
+										Available at <span className="font-semibold text-md">{item.occurrencePercentage.toFixed(0)}%</span> of similar businesses
 									</p>
 
 									{item.isPreselected && (

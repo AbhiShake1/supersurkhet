@@ -202,7 +202,7 @@ export function MenuItem({ item }: MenuItemProps) {
 					<MinimalCardImage
 						className="h-full w-full object-cover"
 						src={item.imageUrl ?? ""}
-						alt={item.name ?? ""}
+						alt={item.title ?? ""}
 					/>
 				</motion.div>
 				<MinimalCardDescription className="pt-4">
@@ -212,7 +212,7 @@ export function MenuItem({ item }: MenuItemProps) {
 							className="text-xl font-semibold text-foreground cursor-pointer"
 							onClick={handleViewDetails}
 						>
-							{item.name}
+							{item.title}
 						</motion.h3>
 						{item.price && (
 							<motion.span
@@ -494,13 +494,13 @@ export function CartButton({ slug }: { slug: string }) {
 																	<div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
 																		<img
 																			src={item.imageUrl}
-																			alt={item.name}
+																			alt={item.title}
 																			className="object-cover w-full h-full"
 																		/>
 																	</div>
 																	<div className="flex-grow">
 																		<h4 className="font-medium">
-																			{item.name}
+																			{item.title}
 																		</h4>
 																		<div className="flex items-center justify-between mt-1">
 																			<div className="flex items-center gap-2">
@@ -626,7 +626,7 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 		}));
 		if (!search?.length) return __menuItems;
 		return __menuItems.filter((item) =>
-			item.name?.toLowerCase().includes(search?.toLowerCase()),
+			item.title?.toLowerCase().includes(search?.toLowerCase()),
 		);
 	})();
 
