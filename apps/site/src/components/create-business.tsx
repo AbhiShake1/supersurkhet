@@ -15,19 +15,25 @@ import { businessSchema } from "@/lib/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import type { z } from "zod";
-import { BusinessCreationForm } from "./business-creation-form";
+import { z } from "zod";
+import { BusinessCreationForm, getBusinessTypeDataField } from "./business-creation-form";
 import { Button } from "./ui/button";
 import { Form } from "./ui/form";
 import { ScrollArea } from "./ui/scroll-area";
 import { toast } from "sonner";
 import { useAuth } from "./auth-provider";
+import { gun } from "@/lib/gun";
+import { getGunRef } from "@/lib/gun/utils";
 
-const businessCreationSchema = businessSchema.pick({
-	name: true,
-	businessType: true,
-	features: true,
-});
+const businessCreationSchema = businessSchema
+	.pick({
+		name: true,
+		businessType: true,
+		// features: true,
+	})
+	.extend({
+		prepopulateData: z.record(z.string(), z.boolean().default(false)).optional(),
+	});
 
 type BusinessCreationValues = z.infer<typeof businessCreationSchema>;
 
@@ -37,8 +43,8 @@ const stepContent = {
 		description: "What is your business and what does it do?",
 	},
 	2: {
-		title: "Choose your features.",
-		description: "Select the tools you need to run your business.",
+		title: "Pre-populate Your Data.",
+		description: "Select which items you'd like to pre-populate based on similar businesses. Common items are pre-selected for you.",
 	},
 	3: {
 		title: "Congratulations!",
@@ -110,8 +116,27 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
 
 	const onSubmit = async (values: BusinessCreationValues) => {
 		const basePath = values.name.toLowerCase().replace(/\s+/g, "-");
+		// Extract prepopulateData to avoid including it in the business creation
+		const { prepopulateData, ...businessData } = values;
+		for (const [key, value] of Object.entries(prepopulateData ?? {})) {
+			if (!value) continue
+			if (key === "undefined") continue
+			gun.get(key).load((data) => {
+				if (!data) return
+				const field = getBusinessTypeDataField(businessData.businessType)
+				const keyParts = key.split("/")
+				const indexOfField = keyParts.findIndex(v => v === field)
+				keyParts[indexOfField + 1] = businessData.name
+				const newKey = keyParts.join("/")
+				getGunRef(newKey).put(data, (ack) => {
+					if ("err" in ack && !!ack.err) {
+						console.error("Error updating prepopulated data:", ack.err);
+					}
+				})
+			})
+		}
 		await createBusiness({
-			...values,
+			...businessData,
 			basePath,
 			isActive: true,
 			created_by: user?._?.soul ?? "anon",
@@ -162,7 +187,7 @@ export function CreateBusiness({ children }: { children: React.ReactNode }) {
 								id="business-creation-form"
 								onSubmit={form.handleSubmit(onSubmit)}
 							>
-								<CredenzaBody className="">
+								<CredenzaBody>
 									<BusinessCreationForm
 										step={step}
 										form={form}

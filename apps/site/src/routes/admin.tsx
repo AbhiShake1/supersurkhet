@@ -19,10 +19,15 @@ function RouteComponent() {
 					title: s[0].toUpperCase() + s.slice(1),
 					icon: LucideBriefcaseBusiness,
 					slug: "",
-					transformer: (d) => d.flatMap(d => {
-						const business = d._?.soul;
-						return Object.values(d).map(d => !d || typeof d !== "object" ? null : ({ ...d, business }));
-					}).filter(d => !!d && typeof d === "object" && !("soul" in d)),
+					transformer: (d) => {
+						if (d.length === 0) return []
+						const firstData = d[0]
+						if ("timestamp" in firstData) return d
+						return d.flatMap(d => {
+							const business = d._?.soul;
+							return Object.values(d).map(d => !d || typeof d !== "object" ? null : ({ ...d, business }));
+						}).filter(d => !!d && typeof d === "object" && !("soul" in d))
+					},
 					extender: d => d.extend({ business: z.string() }),
 				}))}
 		/>

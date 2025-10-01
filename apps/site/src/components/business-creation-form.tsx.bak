@@ -10,50 +10,49 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api";
 import { businessSchema, featureSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
-import type { SchemaKeys } from "@gta/react-hooks";
 import { Link } from "@tanstack/react-router";
 import {
-	Building,
-	Car,
 	CheckCircle,
-	CreditCard,
+	Store,
+	Utensils,
+	Car,
+	Home,
+	School,
+	Heart,
+	Building,
+	Users,
 	Dumbbell,
 	Film,
+	CreditCard,
 	Fuel,
-	Heart,
-	Home,
 	Hotel,
-	School,
-	Store,
-	Users,
-	Utensils,
 } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo } from "react";
 import type { UseFormReturn } from "react-hook-form";
-import { z } from "zod";
+import type { z } from "zod";
 import { Button } from "./ui/button";
 import { Card, CardHeader, CardTitle } from "./ui/card";
 
-const businessCreationSchema = businessSchema
-	.pick({
-		name: true,
-		businessType: true,
-		features: true,
-	})
-	.extend({
-		prepopulateData: z.record(z.string(), z.boolean()).optional(),
-	});
+const businessCreationSchema = businessSchema.pick({
+	name: true,
+	businessType: true,
+	features: true,
+});
 
 type BusinessCreationValues = z.infer<typeof businessCreationSchema>;
 
 // Define types for pre-population data
 interface PrePopulateItem {
-	"#": string;
+	id: string;
 	title: string;
 	price: number;
 	category?: string;
 	description?: string;
 	isActive?: boolean;
+}
+
+interface BusinessData {
+	business: string;
+	item: PrePopulateItem;
 }
 
 const featureKeys = Object.keys(
@@ -208,7 +207,7 @@ export function BusinessCreationForm({
 														const isSelected = field.value === type;
 														const Icon =
 															businessTypeIcons[
-															type as keyof typeof businessTypeIcons
+																type as keyof typeof businessTypeIcons
 															] || Building;
 														return (
 															<Card
@@ -261,12 +260,25 @@ export function BusinessCreationForm({
 				</div>
 			)}
 
+
+		</div>
+			)}
+
+			)}
 			{step === 2 && (
-				<DataPrepopulateForm form={form} key="prepopulate-form" />
+				<div>
+					<div className="mb-4">
+						<h3 className="text-lg font-medium">Pre-populate Your Data</h3>
+						<p className="text-sm text-muted-foreground">
+							Select which items you'd like to pre-populate based on similar businesses.
+							Common items are pre-selected for you.
+						</p>
+					</div>
+					<DataPrepopulateForm form={form} />
+				</div>
 			)}
 		</div>
 	);
-}
 
 
 interface DataPrepopulateFormProps {
@@ -275,68 +287,56 @@ interface DataPrepopulateFormProps {
 
 function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
 	const businessType = form.watch("businessType");
-
-	const { data: allItems = [], isLoading } = useBusinessTypeData(businessType);
-	const { data: allBusinesses = [] } = api.business.useGet()
-
-	const totalBusinesses = allBusinesses.filter(b => b.businessType === businessType).length || 1
-
+	
+	// Determine which API to use based on business type
+	// For simplicity, let's implement a solution that fetches data based on business type
+	const queryResult = useBusinessTypeData(businessType);
+	
+	const { data: allItems = [], isLoading } = queryResult;
+	
 	// Transform data as specified in the requirements
-	const transformedData = useMemo(() => allItems.flatMap(d => {
+	const transformedData: BusinessData[] = allItems.flatMap(d => {
 		const business = d._?.soul;
-		return Object.values(d).map(d =>
+		return Object.values(d).map(d => 
 			!d || typeof d !== "object" ? null : ({ ...d, business })
 		);
-	}).filter(d => !!d && typeof d === "object" && !("soul" in d)), [allItems]);
+	}).filter(d => !!d && typeof d === "object" && !("soul" in d)) as BusinessData[];
 
 	// Group items by title and calculate occurrence percentage for similar business types
 	const itemsByTitle: Record<string, { count: number; items: PrePopulateItem[]; businesses: string[] }> = {};
-
+	
 	for (const d of transformedData) {
-		const title = d?.title?.toLowerCase();
-		if (!title) continue
-
-		if (!itemsByTitle[title]) {
-			itemsByTitle[title] = { count: 0, items: [], businesses: [] };
+		const title = d.item?.title?.toLowerCase();
+		if (title) {
+			if (!itemsByTitle[title]) {
+				itemsByTitle[title] = { count: 0, items: [], businesses: [] };
+			}
+			itemsByTitle[title].count++;
+			if (!itemsByTitle[title].businesses.includes(d.business)) {
+				itemsByTitle[title].businesses.push(d.business);
+			}
+			// Use the first occurrence of the item to preserve its properties
+			itemsByTitle[title].items.push(d.item);
 		}
-		itemsByTitle[title].count++;
-		if (!itemsByTitle[title].businesses.includes(d.business)) {
-			itemsByTitle[title].businesses.push(d.business);
-		}
-		// Use the first occurrence of the item to preserve its properties
-		itemsByTitle[title].items.push(d);
 	}
-
+	
+	// Calculate total number of businesses to calculate percentage
+	const totalBusinesses = [...new Set(transformedData.map(d => d.business))].length;
+	
 	// Filter to items and calculate occurrence percentage
-	const similarItems = useMemo(() => {
-		return Object.entries(itemsByTitle)
-			.map(([title, data]) => {
-				// Use the first occurrence of the item as the base to show in the UI
-				const commonItem = data.items[0];
-				const occurrencePercentage = (data.businesses.length / totalBusinesses) * 100;
-				console.log(data.businesses.length, totalBusinesses, occurrencePercentage)
-				return {
-					...commonItem,
-					occurrencePercentage,
-					isPreselected: occurrencePercentage >= 40,
-				};
-			})
-			.sort((a, b) => b.occurrencePercentage - a.occurrencePercentage) // Sort by most common first
-			.filter(item => item.title)
-	}, [totalBusinesses]); // Only include items with titles
-
-	useLayoutEffect(() => {
-		const newValue = similarItems.reduce((acc, item) => ({
-			...acc,
-			[item["#"]]: item.isPreselected,
-		}), {} as Record<string, boolean>)
-		form.setValue("prepopulateData", {
-			...newValue,
-			...form.getValues("prepopulateData"),
+	const similarItems = Object.entries(itemsByTitle)
+		.map(([title, data]) => {
+			// Use the first occurrence of the item as the base to show in the UI
+			const commonItem = data.items[0];
+			const occurrencePercentage = (data.businesses.length / totalBusinesses) * 100;
+			return {
+				...commonItem,
+				occurrencePercentage,
+				isPreselected: occurrencePercentage >= 40,
+			};
 		})
-	}, [similarItems, form.getValues, form.setValue])
-
-	console.log(form.watch("prepopulateData"))
+		.sort((a, b) => b.occurrencePercentage - a.occurrencePercentage) // Sort by most common first
+		.filter(item => item.title); // Only include items with titles
 
 	if (isLoading) {
 		return <div>Loading pre-population data...</div>;
@@ -347,96 +347,129 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
 	}
 
 	return (
-		<div
-			className="grid grid-cols-1 md:grid-cols-2 gap-3"
-			key={`${businessType}-similar-items`}
-		>
+		<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 			{similarItems.map((item) => (
-				item["#"] &&
 				<FormField
-					key={item["#"]}
+					key={item.id}
 					control={form.control}
-					name={`prepopulateData.${item["#"]}`}
-					render={({ field }) => {
-						const value = field.value;
-
-						return (
-							<FormItem
-								className={cn(
-									"flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 cursor-pointer transition-colors",
-									value && "border-primary/50 bg-primary/5"
-								)}
-								onClick={(e) => {
-									if (!(e.target as HTMLElement).closest('input[type="checkbox"]')) {
-										field.onChange(!value);
-									}
-								}}
-							>
-								<FormControl>
-									<Checkbox
-										checked={value}
-										onCheckedChange={(checked) => field.onChange(!!checked)}
-									/>
-								</FormControl>
-
-								<div className="space-y-1 leading-none flex-1">
-									<span className="capitalize text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-										{item.title}
-									</span>
-
-									{item.description && (
-										<p className="text-xs text-muted-foreground mt-1">
-											{item.description}
-										</p>
-									)}
-
+					name={`prepopulateData.${item.id}`}
+					defaultValue={!!item.isPreselected}
+					render={({ field }) => (
+						<FormItem
+							className={cn(
+								"flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 cursor-pointer transition-colors",
+								item.isPreselected && "border-primary/50 bg-primary/5",
+							)}
+							onClick={() => field.onChange(!field.value)}
+						>
+							<FormControl>
+								<Checkbox 
+									checked={field.value ?? item.isPreselected} 
+									onCheckedChange={field.onChange}
+								/>
+							</FormControl>
+							<div className="space-y-1 leading-none">
+								<span className="capitalize text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+									{item.title}
+								</span>
+								{item.description && (
 									<p className="text-xs text-muted-foreground mt-1">
-										Available at {item.occurrencePercentage.toFixed(0)}% of similar businesses
+										{item.description}
 									</p>
-
-									{item.isPreselected && (
-										<span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary mt-1">
-											Recommended
-										</span>
-									)}
-								</div>
-							</FormItem>
-						);
-					}}
+								)}
+								<p className="text-xs text-muted-foreground mt-1">
+									Available at {item.occurrencePercentage.toFixed(0)}% of similar businesses
+								</p>
+								{item.isPreselected && (
+									<span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary mt-1">
+										Recommended
+									</span>
+								)}
+							</div>
+						</FormItem>
+					)}
 				/>
 			))}
 		</div>
 	);
 }
 
-export function getBusinessTypeDataField(businessType: string | undefined): SchemaKeys {
+// Custom hook to fetch data based on business type
+function useBusinessTypeData(businessType: string | undefined) {
+	const menuItemQuery = api.menuItem.useGet({ keys: [] });
+	const productQuery = api.product.useGet({ keys: [] });
+	const serviceQuery = api.service.useGet({ keys: [] });
+	const studentProfileQuery = api.studentProfile.useGet({ keys: [] });
+	const driverProfileQuery = api.driverProfile.useGet({ keys: [] });
+	const propertyListingQuery = api.propertyListing.useGet({ keys: [] });
+	const coOpMemberProfileQuery = api.coOpMemberProfile.useGet({ keys: [] });
+	const petrolPumpQuery = api.petrolPump.useGet({ keys: [] });
+	const gymQuery = api.gym.useGet({ keys: [] });
+	const cinemaQuery = api.cinema.useGet({ keys: [] });
+	const financialFirmQuery = api.financialFirm.useGet({ keys: [] });
+
+	// Return the appropriate query based on business type
 	switch (businessType) {
 		case 'food':
 		case 'hotel':
-			return "menuItem";
+			return menuItemQuery;
 		case 'retail':
-			return "product";
+			return productQuery;
 		case 'service':
 		case 'healthcare':
-			return "service";
+			return serviceQuery;
 		case 'education':
-			return "studentProfile";
+			return studentProfileQuery;
 		case 'logistics':
 		case 'ride_sharing':
-			return "driverProfile";
+			return driverProfileQuery;
 		case 'real_estate':
-			return "propertyListing";
+			return propertyListingQuery;
 		case 'cooperative':
-			return "coOpMemberProfile";
+			return coOpMemberProfileQuery;
 		case 'petrol_pump':
-			return "petrolPump";
+			return petrolPumpQuery;
+		case 'gym':
+			return gymQuery;
+		case 'cinema':
+			return cinemaQuery;
+		case 'financial_firm':
+			return financialFirmQuery;
 		default:
-			return "menuItem";
+			return menuItemQuery; // Default to menu items
 	}
 }
 
-// Custom hook to fetch data based on business type
-function useBusinessTypeData(businessType: string | undefined) {
-	const field = getBusinessTypeDataField(businessType);
-	return api[field].useGet();
+// Helper function to get similar business types based on the selected type
+function getSimilarBusinessTypes(businessType: string | undefined): string[] {
+	switch (businessType) {
+		case 'food':
+		case 'hotel':
+			return ['food', 'hotel'];
+		case 'retail':
+			return ['retail'];
+		case 'logistics':
+		case 'ride_sharing':
+			return ['logistics', 'ride_sharing'];
+		case 'real_estate':
+			return ['real_estate'];
+		case 'education':
+			return ['education'];
+		case 'healthcare':
+			return ['healthcare'];
+		case 'service':
+			return ['service'];
+		case 'cooperative':
+			return ['cooperative'];
+		case 'petrol_pump':
+			return ['petrol_pump'];
+		case 'gym':
+			return ['gym'];
+		case 'cinema':
+			return ['cinema'];
+		case 'financial_firm':
+			return ['financial_firm'];
+		default:
+			return [];
+	}
 }
