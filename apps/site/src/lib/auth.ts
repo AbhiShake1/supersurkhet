@@ -19,7 +19,7 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
 	return new Promise<IGunUserInstance["is"]>(async (resolve, reject) => {
 		const alias = email.toLowerCase();
 		const userExists = await new Promise((resolve) => {
-			gun.get("~@" + alias).once((data) => resolve(!!data));
+			gun.get(`~@${alias}`).once((data) => resolve(!!data));
 		});
 
 		if (userExists) {

@@ -28,9 +28,9 @@ import { useAuth } from "./auth-provider";
 
 export function NavUser() {
 	const { isMobile } = useSidebar();
-	const { user, logout } = useAuth();
+	const { user, logout, isAuthenticated } = useAuth();
 
-	if (!user) return null;
+	if (!isAuthenticated) return null;
 
 	return (
 		<SidebarMenu>

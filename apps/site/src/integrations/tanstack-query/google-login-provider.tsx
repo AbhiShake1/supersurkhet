@@ -19,10 +19,15 @@ export function OneTapLoginProvider({ children }: React.PropsWithChildren) {
 }
 
 function _OneTapLoginProvider({ children }: React.PropsWithChildren) {
-	const { refreshUser } = useAuth();
+	const { refreshUser, linkAnonymousUser } = useAuth();
 	const googleLoginMutation = useMutation({
 		mutationFn: googleLogin,
-		onSuccess: () => {
+		onSuccess: async (user) => {
+			// Link anonymous user data to the Google account if exists
+			if (user) {
+				// The user object from googleLogin will be passed to linkAnonymousUser
+				await linkAnonymousUser(user);
+			}
 			refreshUser();
 		},
 		onError: (err) => {

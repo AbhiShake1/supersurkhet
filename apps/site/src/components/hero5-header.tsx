@@ -12,6 +12,7 @@ import type React from "react";
 import { useEffect, useState } from "react";
 import { Logo } from "./logo";
 import { useProfile } from "@/hooks/use-profile";
+import { useAuth } from "./auth-provider";
 
 const menuItems = [
 	{ name: "Features", href: "#features" },
@@ -32,6 +33,7 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 		return () => window.removeEventListener("scroll", handleScroll);
 	}, []);
 	const { auth } = useRouteContext({ from: "__root__" });
+	const { isAuthenticated } = useAuth()
 	const user = useProfile();
 	return (
 		<header>
@@ -85,14 +87,16 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 								</ul>
 							</div>
 							<div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-								{user ? (
+								{isAuthenticated ? (
 									<Popover>
 										<PopoverTrigger asChild>
-											<button className="flex items-center gap-2 rounded-full border px-2 py-1 hover:bg-muted/50 transition justify-center">
+											<button
+												type="button"
+												className="flex items-center gap-2 rounded-full border px-2 py-1 hover:bg-muted/50 transition justify-center">
 												<Avatar>
-													<AvatarImage src={user?.avatar} alt={user.email} />
+													<AvatarImage src={user?.avatar} alt={user?.email} />
 													<AvatarFallback className="capitalize">
-														{user.email?.[0]}
+														{user?.email?.[0]}
 													</AvatarFallback>
 												</Avatar>
 											</button>
@@ -103,13 +107,13 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 										>
 											<div className="flex flex-col items-center gap-2 p-4 border-b">
 												<Avatar>
-													<AvatarImage src={user?.avatar} alt={user.email} />
+													<AvatarImage src={user?.avatar} alt={user?.email} />
 													<AvatarFallback className="capitalize">
-														{user.email?.[0]}
+														{user?.email?.[0]}
 													</AvatarFallback>
 												</Avatar>
 												<div className="text-base font-semibold">
-													{user.email || user.email || "User"}
+													{user?.email || user?.email || "User"}
 												</div>
 											</div>
 											<div className="flex flex-col">
@@ -120,6 +124,7 @@ export const Header = ({ children }: React.PropsWithChildren) => {
 													Settings
 												</Link>
 												<button
+													type="button"
 													className="px-4 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
 													onClick={() => auth.logout?.()}
 												>

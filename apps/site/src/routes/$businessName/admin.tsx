@@ -7,32 +7,21 @@ import type { Business } from "@/lib/schema";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import {
 	Bed,
-	BookOpen,
 	Briefcase,
 	Calendar,
 	Car,
-	CreditCard,
 	Dumbbell,
-	DollarSign,
 	Film,
 	Fuel,
 	GraduationCap,
 	Heart,
 	Home,
-	Landmark,
 	Layout,
 	Loader2,
-	Map,
+	MapIcon,
 	Menu,
 	MenuSquare,
-	Monitor,
-	Phone,
-	Popcorn,
-	Ruler,
-	Stethoscope,
-	TrendingUp,
-	User,
-	Users,
+	Users
 } from "lucide-react";
 import { useEffect } from "react";
 
@@ -41,13 +30,13 @@ export const Route = createFileRoute("/$businessName/admin")({
 		const { businessName } = Route.useParams();
 		const { data: allBusinesses = [] } = api.business.useGet();
 		const { promptLogin, closeLoginPrompt } = useLoginPrompt();
-		const { user } = useAuth();
+		const { isAuthenticated } = useAuth();
 
 		useEffect(() => {
-			if (!user)
+			if (!isAuthenticated)
 				promptLogin({ dismissible: false, showBackgroundContent: false });
 			else closeLoginPrompt();
-		}, [user]);
+		}, [isAuthenticated]);
 
 		if (!allBusinesses.length) {
 			return (
@@ -253,7 +242,7 @@ function RideSharingAdminPage({ slug }: { slug: string }) {
 					schema: "trip",
 					title: "Trips",
 					slug: slug,
-					icon: Map,
+					icon: MapIcon,
 				},
 			]}
 		/>

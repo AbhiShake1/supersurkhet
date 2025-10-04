@@ -61,6 +61,8 @@ export function AuthForm({
 	const [error, setError] = useState("");
 	const { refreshUser } = useAuth();
 
+	const { linkAnonymousUser } = useAuth();
+
 	const signupMutation = useMutation({
 		mutationFn: async ({ email, password }: z.infer<typeof signupSchema>) => {
 			const alias = email?.toLowerCase();
@@ -84,11 +86,14 @@ export function AuthForm({
 					};
 					// console.log(ack)
 					gun.get("user").get(ack.pub).put(userProfile);
-					resolve("created");
+					resolve(ack);
 				});
 			});
 		},
-		onSuccess: () => {
+		onSuccess: async (ack) => {
+			// Link anonymous user data to the new account if exists
+			// The user object from GunDB will be passed to linkAnonymousUser
+			await linkAnonymousUser(ack);
 			refreshUser();
 			setError("");
 			onModeChange("login");
@@ -112,7 +117,12 @@ export function AuthForm({
 				});
 			});
 		},
-		onSuccess: (user) => {
+		onSuccess: async (user) => {
+			// Link anonymous user data to the existing account if exists
+			if (user) {
+				// The user object from GunDB authentication will be passed to linkAnonymousUser
+				await linkAnonymousUser(user);
+			}
 			refreshUser();
 			onAuthSuccess?.(user);
 		},
@@ -124,7 +134,12 @@ export function AuthForm({
 
 	const googleLoginMutation = useMutation({
 		mutationFn: googleLogin,
-		onSuccess: (user) => {
+		onSuccess: async (user) => {
+			// Link anonymous user data to the Google account if exists
+			if (user) {
+				// The user object from googleLogin will be passed to linkAnonymousUser
+				await linkAnonymousUser(user);
+			}
 			refreshUser();
 			onAuthSuccess?.(user);
 		},
