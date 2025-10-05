@@ -155,7 +155,8 @@ export function AutoTable<T extends SchemaKeys>({
 		}
 	});
 	const updateMutation = useUpdate({
-		keys: [schemaName, slug], onSuccess() {
+		keys: [schemaName, slug],
+		onSuccess() {
 			setDialogOpen(false)
 		}
 	});
@@ -197,7 +198,7 @@ export function AutoTable<T extends SchemaKeys>({
 				updateMutation.mutate({ id: rowId, ...data });
 			}
 		},
-		getRowId: (originalRow) => originalRow._?.soul ?? "", shallow: false, nttclearOnDefault: true,
+		getRowId: (originalRow) => originalRow._?.soul ?? originalRow["#"]?.split("/").slice(2).join("/") ?? "", shallow: false, nttclearOnDefault: true,
 	});
 
 	if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
