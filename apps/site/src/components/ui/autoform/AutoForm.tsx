@@ -23,6 +23,16 @@ import { SelectField } from "./components/SelectField";
 import { StringField } from "./components/StringField";
 import { SubmitButton } from "./components/SubmitButton";
 import type { AutoFormProps } from "./types";
+import { RichTextField } from "./components/RichTextField";
+import { EditorField } from "./components/EditorField";
+import { ColorField } from "./components/ColorField";
+import { FileUploadField } from "./components/FileUploadField";
+import { RatingField } from "./components/RatingField";
+import { SliderField } from "./components/SliderField";
+import { TagsField } from "./components/TagsField";
+import { CurrencyField } from "./components/CurrencyField";
+import { PhoneField } from "./components/PhoneField";
+import { UrlField } from "./components/UrlField";
 import { PasswordField } from "./components/PasswordField";
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, "FieldWrapper"> = {
@@ -44,6 +54,16 @@ export const ShadcnAutoFormFieldComponents = {
 	image: ImageUploadField,
 	record: RecordField,
 	password: PasswordField,
+	richText: RichTextField,
+	editor: EditorField,
+	color: ColorField,
+	file: FileUploadField,
+	rating: RatingField,
+	slider: SliderField,
+	tags: TagsField,
+	currency: CurrencyField,
+	phone: PhoneField,
+	url: UrlField,
 } as const;
 export type FieldTypes = keyof typeof ShadcnAutoFormFieldComponents;
 
@@ -62,7 +82,7 @@ export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
 				new ZodProvider(
 					schema instanceof ZodObject
 						? // omit default fields of schema
-							schema.omit({ _: true, created_by: true, timestamp: true })
+						schema.omit({ _: true, created_by: true, timestamp: true })
 						: schema,
 				)
 			}
@@ -92,7 +112,7 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
 				new ZodProvider(
 					schema instanceof ZodObject
 						? // omit default fields of schema
-							schema.omit({ _: true, created_by: true, timestamp: true })
+						schema.omit({ _: true, created_by: true, timestamp: true })
 						: schema,
 				)
 			}

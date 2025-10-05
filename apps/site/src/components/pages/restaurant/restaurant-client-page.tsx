@@ -1,3 +1,5 @@
+import { gun } from "@/lib/gun";
+import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Carousel } from "@/components/ui/carousel";
@@ -34,18 +36,18 @@ import {
 	ShoppingCart,
 	ShoppingCartIcon,
 	Trash2,
-	X,
 	Star,
 	Clock,
 	MapPin,
 	Leaf,
 	Flame,
-	ChefHat,
 	Wheat,
 	Minus,
-	Plus
+	Plus,
+	ChefHat,
+	X
 } from "lucide-react";
-import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
 import { RestaurantMenuItemDetail } from "./restaurant-menu-item-detail";
@@ -53,20 +55,31 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import {
+	Popover,
+	PopoverContent,
+	PopoverTrigger,
+} from "@/components/ui/popover";
+import { Textarea } from "@/components/ui/textarea";
+import { Item, ItemContent, ItemTitle, ItemDescription, ItemActions, ItemHeader, ItemGroup } from "@/components/ui/item";
+import type { Business } from "@/lib/schema";
+import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export interface CartItem extends MenuItemType {
 	quantity: number;
-	customizations?: Record<string, boolean>;
 }
 
 interface CartContextType {
 	items: CartItem[];
-	addItem: (item: MenuItemType, quantity: number, customizations?: Record<string, boolean>) => void;
+	addItem: (item: MenuItemType, quantity: number, notes?: string) => void;
 	removeItem: (itemId: string) => void;
 	updateQuantity: (itemId: string, quantity: number) => void;
 	clearCart: () => void;
 	itemCount: number;
 	subtotal: number;
+	notes: string | undefined;
+	setNotes: Dispatch<SetStateAction<string | undefined>>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -75,6 +88,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 	const [items, setItems] = useState<CartItem[]>([]);
 	const [itemCount, setItemCount] = useState(0);
 	const [subtotal, setSubtotal] = useState(0);
+	const [notes, setNotes] = useState<string>();
 
 	// Update counts when items change
 	useEffect(() => {
@@ -88,7 +102,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 		setSubtotal(total);
 	}, [items]);
 
-	const addItem = (item: MenuItemType, quantity: number, customizations?: Record<string, boolean>) => {
+	const addItem = (item: MenuItemType, quantity: number, notes?: string) => {
 		setItems((prevItems) => {
 			const existingItem = prevItems.find((i) => i._?.soul === item._?.soul);
 
@@ -100,7 +114,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 				);
 			}
 
-			return [...prevItems, { ...item, quantity, customizations: customizations || {} }];
+			return [...prevItems, { ...item, quantity, notes }];
 		});
 	};
 
@@ -130,6 +144,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 	return (
 		<CartContext.Provider
 			value={{
+				notes,
+				setNotes,
 				items,
 				addItem,
 				removeItem,
@@ -156,10 +172,92 @@ interface MenuItemProps {
 	item: MenuItemType;
 }
 
+interface CustomizationOption {
+	id: string;
+	label: string;
+	price?: number;
+}
+
+const CUSTOMIZATION_OPTIONS: CustomizationOption[] = [
+	{ id: "extra-cheese", label: "Extra Cheese", price: 50 },
+	{ id: "no-onions", label: "No Onions" },
+	{ id: "extra-sauce", label: "Extra Sauce", price: 30 },
+	{ id: "spicy-level", label: "Extra Spicy" },
+	{ id: "well-done", label: "Well Done" },
+	{ id: "rare-cooked", label: "Rare Cooked" },
+	{ id: "extra-olives", label: "Extra Olives", price: 40 },
+	{ id: "gluten-free", label: "Gluten Free" },
+];
+
+interface CustomizationPopoverProps {
+	value: string | undefined;
+	onChange: (text: string | undefined) => void;
+}
+
+function CustomizationPopover({ onChange, value }: CustomizationPopoverProps) {
+	const [isOpen, setIsOpen] = useState(false);
+
+	const handleAddToCart = () => {
+		setIsOpen(false);
+	};
+
+	const handleClearAll = () => {
+		onChange(undefined)
+	};
+
+	return (
+		<Popover open={isOpen} onOpenChange={setIsOpen}>
+			<PopoverTrigger asChild>
+				<Button
+					variant="outline"
+					size="sm"
+					className="h-10 w-10 p-0 hover:bg-primary/10 transition-all duration-300"
+				>
+					<ChefHat className="h-4 w-4" />
+				</Button>
+			</PopoverTrigger>
+			<PopoverContent
+				align="end"
+				className="w-80 p-0 rounded-2xl border-border shadow-2xl"
+				onCloseAutoFocus={(e) => e.preventDefault()}
+			>
+				<div className="p-4 border-b border-border">
+					<div className="flex items-center justify-between">
+						<h4 className="font-semibold text-lg">Customize Your Order</h4>
+						<Button
+							variant="ghost"
+							size="icon"
+							className="h-6 w-6 p-0"
+							onClick={() => setIsOpen(false)}
+						>
+							<X className="h-4 w-4" />
+						</Button>
+					</div>
+					<p className="text-sm text-muted-foreground mt-1">
+						Add special requests or modifications
+					</p>
+				</div>
+
+				<div className="max-h-96 overflow-y-auto p-4">
+					<div className="mt-6">
+						<Textarea
+							id="customText"
+							placeholder="e.g., Extra spicy, No onions..."
+							value={value}
+							onChange={e => onChange(e.target.value)}
+							className="min-h-[100px] resize-none rounded-xl border-border focus:border-primary focus:ring-1 focus:ring-primary/30"
+						/>
+					</div>
+				</div>
+			</PopoverContent>
+		</Popover>
+	);
+}
+
 export function MenuItem({ item }: MenuItemProps) {
 	const [quantity, setQuantity] = useState(0);
 	const [isAdding, setIsAdding] = useState(false);
-	const [showCustomization, setShowCustomization] = useState(false);
+	const { notes, setNotes } = useCart();
 	const { addItem } = useCart();
 	const navigate = useNavigate();
 	const cardRef = useRef<HTMLDivElement>(null);
@@ -175,14 +273,12 @@ export function MenuItem({ item }: MenuItemProps) {
 		}
 	};
 
-	const addToCart = (customizations?: Record<string, boolean>) => {
+	const addToCart = () => {
 		if (quantity > 0) {
 			setIsAdding(true);
-
-			addItem(item, quantity, customizations);
+			addItem(item, quantity, notes);
 			setIsAdding(false);
 			setQuantity(0);
-			setShowCustomization(false);
 		}
 	};
 
@@ -210,20 +306,20 @@ export function MenuItem({ item }: MenuItemProps) {
 							className="w-full h-full object-cover"
 						/>
 					</div>
-					
+
 					{item.isSpecial && (
 						<Badge className="absolute top-3 right-3 bg-amber-500 text-white z-10 px-3 py-1 rounded-full text-xs font-bold shadow-md">
 							Special
 						</Badge>
 					)}
-					
+
 					{item.isVegetarian && (
 						<Badge variant="secondary" className="absolute top-3 left-3 bg-green-100 text-green-800 z-10 px-2 py-0.5 rounded-full text-xs font-medium">
 							<Leaf className="h-3 w-3 mr-1" />
 							Veg
 						</Badge>
 					)}
-					
+
 					{item.isSpicy && (
 						<Badge variant="secondary" className="absolute top-10 left-3 bg-red-100 text-red-800 z-10 px-2 py-0.5 rounded-full text-xs font-medium">
 							<Flame className="h-3 w-3 mr-1" />
@@ -231,10 +327,10 @@ export function MenuItem({ item }: MenuItemProps) {
 						</Badge>
 					)}
 				</div>
-				
+
 				<CardHeader className="p-4 pb-2">
 					<div className="flex justify-between items-start mb-1">
-						<h3 
+						<h3
 							className="text-lg font-semibold text-foreground cursor-pointer hover:text-primary transition-colors"
 							onClick={handleViewDetails}
 						>
@@ -246,17 +342,8 @@ export function MenuItem({ item }: MenuItemProps) {
 							</span>
 						)}
 					</div>
-					
+
 					<div className="flex items-center gap-1 mb-2">
-						{item.rating && (
-							<div className="flex items-center">
-								<Star className="h-4 w-4 text-yellow-400 fill-current" />
-								<span className="text-xs text-muted-foreground ml-1">
-									{item.rating}
-								</span>
-							</div>
-						)}
-						
 						{item.preparationTime && (
 							<div className="flex items-center ml-2">
 								<Clock className="h-4 w-4 text-muted-foreground" />
@@ -266,9 +353,9 @@ export function MenuItem({ item }: MenuItemProps) {
 							</div>
 						)}
 					</div>
-					
+
 					{item.description && (
-						<p 
+						<p
 							className="text-muted-foreground text-sm line-clamp-2 cursor-pointer"
 							onClick={handleViewDetails}
 						>
@@ -276,42 +363,43 @@ export function MenuItem({ item }: MenuItemProps) {
 						</p>
 					)}
 				</CardHeader>
-				
+
 				<CardFooter className="p-4 pt-2">
 					<div className="flex items-center justify-between w-full">
 						<div className="flex items-center space-x-2">
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
-								onClick={decrementQuantity}
-								disabled={quantity === 0}
-							>
-								<Minus className="h-4 w-4" />
-							</Button>
-							<span className="w-8 text-center font-medium">{quantity}</span>
-							<Button
-								variant="outline"
-								size="sm"
-								className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
-								onClick={incrementQuantity}
-							>
-								<Plus className="h-4 w-4" />
-							</Button>
+							<ButtonGroup>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={decrementQuantity}
+									disabled={quantity === 0}
+								>
+									<MinusIcon className="size-4" />
+								</Button>
+								<Input
+									inputMode="numeric"
+									pattern="[0-9]*"
+									value={quantity}
+									onChange={e => setQuantity(Number(e.target.value))}
+									className="w-12"
+								/>
+								<Button
+									variant="outline"
+									size="icon"
+									onClick={incrementQuantity}
+								>
+									<PlusIcon className="size-4" />
+								</Button>
+								<CustomizationPopover
+									value={notes}
+									onChange={setNotes}
+								/>
+							</ButtonGroup>
 						</div>
-						
+
 						<div className="flex gap-2">
 							<Button
-								variant="outline"
-								size="sm"
-								className="h-10 w-10 p-0"
-								onClick={() => setShowCustomization(!showCustomization)}
-							>
-								<ChefHat className="h-4 w-4" />
-							</Button>
-							
-							<Button
-								onClick={() => addToCart()}
+								onClick={addToCart}
 								disabled={quantity === 0 || isAdding}
 								className={`flex items-center gap-2 py-5 px-4 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02] ${isAdding ? "animate-pulse" : ""}`}
 							>
@@ -326,38 +414,6 @@ export function MenuItem({ item }: MenuItemProps) {
 							</Button>
 						</div>
 					</div>
-					
-					{/* Customization options */}
-					{showCustomization && (
-						<motion.div
-							initial={{ opacity: 0, height: 0 }}
-							animate={{ opacity: 1, height: "auto" }}
-							exit={{ opacity: 0, height: 0 }}
-							className="mt-3 w-full pt-3 border-t border-muted/50"
-						>
-							<h4 className="text-sm font-medium mb-2">Customizations</h4>
-							<div className="space-y-2">
-								<div className="flex items-center space-x-2">
-									<Checkbox id={`extraCheese-${itemId}`} />
-									<Label htmlFor={`extraCheese-${itemId}`} className="text-sm">
-										Extra Cheese (+Rs. 50)
-									</Label>
-								</div>
-								<div className="flex items-center space-x-2">
-									<Checkbox id={`noOnions-${itemId}`} />
-									<Label htmlFor={`noOnions-${itemId}`} className="text-sm">
-										No Onions
-									</Label>
-								</div>
-								<div className="flex items-center space-x-2">
-									<Checkbox id={`extraSauce-${itemId}`} />
-									<Label htmlFor={`extraSauce-${itemId}`} className="text-sm">
-										Extra Sauce (+Rs. 30)
-									</Label>
-								</div>
-							</div>
-						</motion.div>
-					)}
 				</CardFooter>
 			</Card>
 		</motion.div>
@@ -384,7 +440,7 @@ export function MenuSection({ title, items }: MenuSectionProps) {
 						<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
 					</h2>
 				</div>
-				
+
 				<Badge variant="secondary" className="text-sm">
 					{items.length} items
 				</Badge>
@@ -479,10 +535,13 @@ const _checkout = createServerFn({ method: "POST" })
 	});
 
 export function CartButton({ slug }: { slug: string }) {
-	const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } =
+	const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal, notes, setNotes } =
 		useCart();
 	const createOrderMutation = api.order.useCreate({
 		keys: [slug],
+		onMutate() {
+			setNotes(undefined);
+		},
 		onSuccess() {
 			clearCart();
 		},
@@ -497,6 +556,7 @@ export function CartButton({ slug }: { slug: string }) {
 			return acc;
 		}, {} as any);
 		createOrderMutation.mutate({
+			notes,
 			items: orderItems,
 			subTotal: subtotal,
 			taxes: subtotal * 0.13,
@@ -697,6 +757,7 @@ export function CartButton({ slug }: { slug: string }) {
 
 export interface RestaurantClientPageProps {
 	slug: string;
+	business: Business;
 }
 
 export function RestaurantClientPage(props: RestaurantClientPageProps) {
@@ -707,13 +768,66 @@ export function RestaurantClientPage(props: RestaurantClientPageProps) {
 	);
 }
 
-function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
+function RestaurantClientPagePresenter({ slug, business }: RestaurantClientPageProps) {
 	const [search, setSearch] = useState("");
 	const { data: _menuItems = [], isLoading } = api.menuItem.useGet({
 		keys: [slug],
 	});
 	const searchParams = useSearch({ strict: false });
 	const [showDetail, setShowDetail] = useState(!!searchParams.item);
+
+	// Real-time collaboration state
+	const { user } = useAuth();
+	const [onlineUsers, setOnlineUsers] = useState<{ id: string, name: string, timestamp: number }[]>([]);
+	const viewersRef = useRef<any>(null);
+
+	// Track when user enters/leaves the page
+	useEffect(() => {
+		if (!user?._?.soul) return;
+
+		// Create a reference to the viewers list for this restaurant
+		viewersRef.current = gun.get(`restaurant/${slug}/viewers`);
+
+		// Add current user to the viewers list
+		const userData = {
+			id: user._.soul,
+			name: user.displayName || user.email || "Anonymous User",
+			timestamp: Date.now()
+		};
+
+		viewersRef.current.get(user._.soul).put(userData);
+
+		// Listen for changes to the viewers list
+		viewersRef.current.map().on((data: any, key: string) => {
+			if (data && key !== "_") {
+				setOnlineUsers(prev => {
+					// Filter out old entries (older than 30 seconds)
+					const filtered = prev.filter(u =>
+						u.id !== key && (Date.now() - u.timestamp) < 30000
+					);
+
+					// Add or update current user
+					if ((Date.now() - data.timestamp) < 30000) {
+						const existingIndex = filtered.findIndex(u => u.id === key);
+						if (existingIndex >= 0) {
+							filtered[existingIndex] = { ...data, id: key };
+						} else {
+							filtered.push({ ...data, id: key });
+						}
+					}
+
+					return filtered;
+				});
+			}
+		});
+
+		// Clean up when user leaves the page
+		return () => {
+			if (viewersRef.current && user?._?.soul) {
+				viewersRef.current.get(user._.soul).put(null);
+			}
+		};
+	}, [user, slug]);
 
 	const menuItems = (() => {
 		const __menuItems = _menuItems.map((m) => ({
@@ -747,6 +861,51 @@ function RestaurantClientPagePresenter({ slug }: RestaurantClientPageProps) {
 	return (
 		<div className="min-h-screen bg-background">
 			<div className="container mx-auto px-4 py-16">
+				{/* Header with online users indicator */}
+				<motion.div
+					initial={{ opacity: 0, y: 30 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.6 }}
+					className="mb-8"
+				>
+					<div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+						<div>
+							<h1 className="text-4xl font-bold text-foreground capitalize">{business.name} Menu</h1>
+							<p className="text-muted-foreground mt-2">
+								Browse our delicious offerings and customize your order
+							</p>
+						</div>
+
+						{/* Online users indicator */}
+						{onlineUsers.length > 1 && (
+							<div className="flex items-center gap-2 bg-primary/10 rounded-full px-4 py-2 border border-primary/20">
+								<div className="flex -space-x-2">
+									{onlineUsers.slice(0, 3).map((u, i) => (
+										<div
+											key={u.id}
+											className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold border-2 border-background"
+											style={{ zIndex: 3 - i }}
+										>
+											{u.name.charAt(0).toUpperCase()}
+										</div>
+									))}
+									{onlineUsers.length > 3 && (
+										<div
+											className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold border-2 border-background"
+											style={{ zIndex: 0 }}
+										>
+											+{onlineUsers.length - 3}
+										</div>
+									)}
+								</div>
+								<span className="text-sm font-medium text-primary">
+									{onlineUsers.length} people viewing
+								</span>
+							</div>
+						)}
+					</div>
+				</motion.div>
+
 				{/* Main Content */}
 				<div className="lg:col-span-2 space-y-4">
 					{/* Search Bar */}

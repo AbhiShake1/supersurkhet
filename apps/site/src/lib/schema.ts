@@ -204,6 +204,7 @@ export const orderSchema = z
 		paymentStatus: z.enum(["pending", "paid", "failed"]),
 		paymentMethod: z.enum(["cash", "card", "online"]).optional(),
 		estimatedDeliveryTime: z.number({ coerce: true }).optional(),
+		notes: z.string().optional().describe("Special notes or instructions"),
 		// listing: baseListingSchema.superRefine(fieldConfig({ fieldType: "record" })).optional(),
 	})
 	.extend(table);

@@ -48,7 +48,7 @@ export const Route = createFileRoute("/$businessName/")({
 
     switch (business.businessType) {
       case "food":
-        return <RestaurantClientPage slug={businessName} />;
+        return <RestaurantClientPage slug={businessName} business={business} />;
       case "hotel":
         return <HotelClientPage slug={businessName} />;
       case "petrol_pump":

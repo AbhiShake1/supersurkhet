@@ -13,7 +13,7 @@ import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { notFound, useLocation } from "@tanstack/react-router";
 import _ from "lodash";
-import { GripVertical, Home, QrCodeIcon, Settings, Search, Menu, Users, DollarSign, ShoppingCart, Package, Calendar, BarChart3, Bell, User, CreditCard, FileText, type LucideIcon } from "lucide-react";
+import { GripVertical, Home, QrCodeIcon, Settings, Search, Menu, Users, DollarSign, ShoppingCart, Package, Calendar, BarChart3, Bell, User, CreditCard, FileText, type LucideIcon, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
@@ -150,7 +150,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 	return (
 		<SidebarProvider>
 			<AppSidebar data={data} />
-			<SidebarInset>
+			<SidebarInset className="min-w-0">
 				<header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
 					<div className="flex items-center gap-2 px-4">
 						<SidebarTrigger className="-ml-1" />
@@ -233,7 +233,9 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 								components[0]?.name ??
 								"table"
 							}
-							className="flex flex-1 flex-col"
+							className={cn(
+								"flex flex-1 flex-col",
+							)}
 							onValueChange={(value) => {
 								localStorage.setItem(`tab-#${basePath}-${tab}`, value);
 							}}
@@ -246,15 +248,10 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 									</TabsTrigger>
 								))}
 							</TabsList>
-							<TabsContent value="table" className="flex-1 mt-4">
+							<TabsContent value="table" className={cn(
+								"flex-1 mt-4",
+							)}>
 								<Card className="border rounded-lg shadow-sm">
-									<div className="p-4 border-b flex justify-between items-center">
-										<h2 className="text-xl font-semibold">Manage {currentItem.title}</h2>
-										<Button size="sm" className="flex items-center gap-1">
-											<PlusIcon className="h-4 w-4 mr-1" />
-											Add New
-										</Button>
-									</div>
 									<div className="p-4">
 										<AutoTable
 											schema={currentItem.schema}

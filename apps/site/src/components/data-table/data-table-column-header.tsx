@@ -17,11 +17,12 @@ import {
 	DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import type { Renderable } from "@autoform/core";
 
 interface DataTableColumnHeaderProps<TData, TValue>
-	extends React.ComponentProps<typeof DropdownMenuTrigger> {
+	extends Omit<React.ComponentProps<typeof DropdownMenuTrigger>, 'title'> {
 	column: Column<TData, TValue>;
-	title: string;
+	title: Renderable;
 }
 
 export function DataTableColumnHeader<TData, TValue>({

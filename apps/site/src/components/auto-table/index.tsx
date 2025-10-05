@@ -35,24 +35,20 @@ import {
 import { useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-import {
-tArrowUpDown,
-tCalendarIcon,
-tCircleDashed,
-tEllipsis,
-tPlus,
-tSave,
-tText,
-tFilter,
-tSortAsc,
-tDatabaseZap,
-tDownload,
-tUpload,
-tColumns,
-} from "lucide-react";import { type ZodObject, z } from "zod";
-import { AutoPreview } from "../auto-preview";
-import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
-import { DataTableColumnHeader } from "../data-table/data-table-column-header";
+	ArrowUpDown,
+	CalendarIcon,
+	CircleDashed,
+	Ellipsis,
+	Plus,
+	Save,
+	Text,
+	Filter,
+	SortAsc,
+	DatabaseZap,
+	Download,
+	Upload,
+	Columns
+} from "lucide-react";
 import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
@@ -69,56 +65,45 @@ import {
 	CredenzaTrigger,
 } from "../ui/credenza";
 import { AutoTableActionBar } from "./auto-table-action-bar";
+import { z } from "zod";
+import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
+import { DataTableColumnHeader } from "../data-table/data-table-column-header";
+import { AutoPreview } from "../auto-preview";
 
-  | 'regex';
+type AggregationType =
+	| 'sum'
+	| 'avg'
+	| 'count'
+	| 'min'
+	| 'max'
+	| 'distinct'
+	| 'regex'
+	| 'group';
 
-type AggregationType = 
-  | 'sum'
-  | 'avg'
-  | 'count'
-  | 'min'
-  | 'max'
-  | 'distinct'
-  | 'group';
 // Enhanced column definition with aggregation capabilities
-interface EnhancedColumnDef<TData> extends ColumnDef<TData> {
-  aggregations?: AggregationType[];
-  searchable?: boolean;
-  filterable?: boolean;
-  sortable?: boolean;
-  exportable?: boolean;
+type EnhancedColumnDef<TData> = ColumnDef<TData> & {
+	aggregations?: AggregationType[];
+	searchable?: boolean;
+	filterable?: boolean;
+	sortable?: boolean;
+	exportable?: boolean;
 }
 
 export type AutoTableProps<T extends SchemaKeys> = {
-tslug: string;
-ttransformer?: (data: any[]) => NestedSchemaType<T>[];
-textender?: <E extends (shape: z.ZodObject<any>) => NestedSchemaType<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
-t// Advanced features
-tenableAdvancedFiltering?: boolean;
-tenableAdvancedSorting?: boolean;
-tenableAggregations?: boolean;
-tenableExport?: boolean;
-tenableImport?: boolean;
-tenableColumnPinning?: boolean;
-tenableColumnVisibility?: boolean;
-tenableRowSelection?: boolean;
-tenableGlobalFiltering?: boolean;
-tenablePagination?: boolean;
-tdefaultPageSize?: number;
-} & (
-tt| {
-tttschema: T;
-tt}
-tt| {
-tttparsedSchema: z.ZodObject<any>;
-tt}
-t);
-export type AutoTableProps<T extends SchemaKeys> = {
+	className?: string;
 	slug: string;
 	transformer?: (data: any[]) => NestedSchemaType<T>[];
 	extender?: <E extends (shape: z.ZodObject<any>) => NestedSchemaType<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
+	enableAdvancedFiltering?: boolean;
+	enableAdvancedSorting?: boolean;
+	enableAggregations?: boolean;
+	enableColumnPinning?: boolean;
+	enableRowSelection?: boolean;
+	enableGlobalFiltering?: boolean;
+	enablePagination?: boolean;
+	defaultPageSize?: number;
 } & (
-		| {
+		{
 			schema: T;
 		}
 		| {
@@ -126,8 +111,21 @@ export type AutoTableProps<T extends SchemaKeys> = {
 		}
 	);
 
-export function AutoTable<T extends SchemaKeys>({ntslug,ntenableAdvancedFiltering = true,ntenableAdvancedSorting = true,ntenableAggregations = false,ntenableExport = true,ntenableImport = false,ntenableColumnPinning = true,ntenableColumnVisibility = true,ntenableRowSelection = true,ntenableGlobalFiltering = true,ntenablePagination = true,ntdefaultPageSize = 10,nt...propsn}: AutoTableProps<T>) {	const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
-	const [dialogOpen, setDialogOpen] = useState(false);
+export function AutoTable<T extends SchemaKeys>({
+	className,
+	slug,
+	enableAdvancedFiltering = true,
+	enableAdvancedSorting = true,
+	enableAggregations = false,
+	enableColumnPinning = true,
+	enableRowSelection = true,
+	enableGlobalFiltering = true,
+	enablePagination = true,
+	defaultPageSize = 10,
+	...props
+}: AutoTableProps<T>) {
+	const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
+	const [dialogOpen, setDialogOpen] = React.useState(false);
 	const { data: __data = [], isLoading } = useGet(schemaName, slug);
 	const _data = props.transformer?.(__data) ?? __data;
 	const search = useSearch({ from: "__root__" });
@@ -179,11 +177,33 @@ export function AutoTable<T extends SchemaKeys>({ntslug,ntenableAdvancedFilterin
 	// @ts-expect-error
 	const perPage = search.perPage ?? 10;
 
-tconst { table, shallow, debounceMs, throttleMs } = useDataTable({nttdata,ntt// @ts-expect-errornttcolumns,nttpageCount: Math.ceil(data.length / perPage) || 1,nttenableAdvancedFilter: enableAdvancedFiltering,nttenableGlobalFilter: enableGlobalFiltering,nttenableRowSelection: enableRowSelection,nttenableColumnPinning: enableColumnPinning,nttinitialState: {ntttpagination: {nttttpageSize: defaultPageSize,nttt},ntttcolumnPinning: enableColumnPinning ? { right: ["actions"] } : undefined,ntttcolumnVisibility: {},ntt},nttmeta: {ntttupdateData(rowId: string, data: Record<string, unknown>) {nttttupdateMutation.mutate({ id: rowId, ...data });nttt},ntt},nttgetRowId: (originalRow) => originalRow._?.soul ?? "",nttshallow: false,nttclearOnDefault: true,nt});
+	const { table, shallow, debounceMs, throttleMs } = useDataTable({
+		data,
+		columns,
+		tpageCount: Math.ceil(data.length / perPage) || 1,
+		enableAdvancedFilter: enableAdvancedFiltering,
+		enableGlobalFilter: enableGlobalFiltering,
+		enableRowSelection: enableRowSelection,
+		enableColumnPinning: enableColumnPinning,
+		initialState: {
+			pagination: {
+				// pageIndex: search.pageIndex ?? 0,
+				pageSize: defaultPageSize
+			},
+			columnPinning: enableColumnPinning ? { right: ["actions"] } : undefined, columnVisibility: {}
+		},
+		meta: {
+			updateData(rowId: string, data: Record<string, unknown>) {
+				updateMutation.mutate({ id: rowId, ...data });
+			}
+		},
+		getRowId: (originalRow) => originalRow._?.soul ?? "", shallow: false, nttclearOnDefault: true,
+	});
+
 	if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
 
 	return (
-		<div className="container mx-auto py-6 space-y-4 flex flex-col items-end">
+		<div className="py-6 space-y-4 flex flex-col items-end">
 			<Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
 				<CredenzaTrigger asChild>
 					<Button className="gap-2">
@@ -228,24 +248,26 @@ tconst { table, shallow, debounceMs, throttleMs } = useDataTable({nttdata,ntt// 
 			<DataTable
 				table={table}
 				actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
+				className={className}
 			>
 				<DataTableAdvancedToolbar table={table}>
-					<DataTableSortList table={table} align="start" />
-					{/* {filterFlag === "advancedFilters" ? ( */}
-					<DataTableFilterList
-						table={table}
-						shallow={shallow}
-						debounceMs={debounceMs}
-						throttleMs={throttleMs}
-						align="start"
-					/>
-					{/* ) : ( */}
-					{/* <DataTableFilterMenu
-                            table={table}
-                            shallow={shallow}
-                            debounceMs={debounceMs}
-                            throttleMs={throttleMs}
-                        /> */}
+					{enableAdvancedFiltering && (
+						<DataTableFilterList
+							table={table}
+							shallow={shallow}
+							debounceMs={debounceMs}
+							throttleMs={throttleMs}
+							align="start"
+						>
+							<DataTableSortList table={table} align="start" />
+						</DataTableFilterList>
+					)}
+					{enableAggregations && (
+						<Button variant="outline" size="sm" className="gap-2">
+							<DatabaseZap className="size-4" />
+							Aggregations
+						</Button>
+					)}
 				</DataTableAdvancedToolbar>
 				{/* <DataTableToolbar table={table}>
              <DataTableSortList table={table} align="end" />
@@ -288,11 +310,11 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
 	schema: S;
 }
 
-function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
+function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
 	setRowAction,
 	schema,
-}: GetAutoTableColumnsProps<T, S>): ColumnDef<NestedSchemaType<T>>[] {
-	const columns: ColumnDef<NestedSchemaType<T>>[] = [
+}: GetAutoTableColumnsProps<T, S>): EnhancedColumnDef<NestedSchemaType<T>>[] {
+	const columns: EnhancedColumnDef<NestedSchemaType<T>>[] = [
 		{
 			id: "select",
 			header: ({ table }) => (
@@ -332,9 +354,8 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 			accessorKey: key,
 			header: ({ column }) => (
 				<DataTableColumnHeader
-					className="capitalize text-center w-full items-center justify-center"
+					className="capitalize text-center"
 					column={column}
-					// @ts-expect-error
 					title={description || key}
 				/>
 			),
