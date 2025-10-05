@@ -41,11 +41,11 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
 	const { user, isAuthenticated } = useAuth();
 	const isDismissibleRef = useRef(true);
 	const showBackgroundContentRef = useRef(true);
-	function setIsOpen(open: boolean, { force = false } = {}) {
+	const setIsOpen = useCallback((open: boolean, { force = false } = {}) => {
 		if (force) return _setIsOpen(open);
 		if (!open && !isDismissibleRef.current) return _setIsOpen(true);
 		_setIsOpen(open);
-	}
+	}, []);
 
 	const promptLogin = useCallback(
 		({
@@ -62,13 +62,13 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
 				rejectRef.current = reject;
 			});
 		},
-		[user],
+		[user, isAuthenticated, setIsOpen],
 	);
 
 	const handleAuthSuccess = useCallback((user: User) => {
 		setIsOpen(false);
 		resolveRef.current?.(user);
-	}, []);
+	}, [setIsOpen]);
 
 	const handleAuthError = useCallback((error: Error) => {
 		// setIsOpen(false);
@@ -81,11 +81,11 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
 			// If the dialog is closed without successful login, reject the promise
 			rejectRef.current?.(new Error("Login process cancelled."));
 		}
-	}, []);
+	}, [setIsOpen]);
 
-	function closeLoginPrompt() {
+	const closeLoginPrompt = useCallback(() => {
 		setIsOpen(false, { force: true });
-	}
+	}, [setIsOpen]);
 
 	return (
 		<LoginPromptContext.Provider value={{ promptLogin, closeLoginPrompt }}>
@@ -131,7 +131,7 @@ export const useLoginPrompt = (): LoginPromptContextType => {
 	if (!context) {
 		console.error("useLoginPrompt must be used within a LoginPromptProvider");
 		return {
-			closeLoginPrompt: () => {},
+			closeLoginPrompt: () => { },
 			promptLogin: async () => {
 				return undefined;
 			},

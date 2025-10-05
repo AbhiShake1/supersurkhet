@@ -1,7 +1,7 @@
 import { AutoAdmin } from "@/components/auto-admin";
 import { appSchema } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
-import { LucideBriefcaseBusiness } from "lucide-react";
+import { LucideBriefcaseBusiness, Settings } from "lucide-react";
 import { z } from "zod";
 
 export const Route = createFileRoute("/admin")({

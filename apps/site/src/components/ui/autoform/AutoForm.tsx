@@ -8,6 +8,7 @@ import { ArrayElementWrapper } from "./components/ArrayElementWrapper";
 import { ArrayWrapper } from "./components/ArrayWrapper";
 import { BooleanField } from "./components/BooleanField";
 import { DateField } from "./components/DateField";
+import { DateTimeField } from "./components/DateTimeField";
 import { ErrorMessage } from "./components/ErrorMessage";
 import {
 	FieldWrapper,
@@ -38,6 +39,7 @@ export const ShadcnAutoFormFieldComponents = {
 	number: NumberField,
 	boolean: BooleanField,
 	date: DateField,
+	datetime: DateTimeField,
 	select: SelectField,
 	image: ImageUploadField,
 	record: RecordField,

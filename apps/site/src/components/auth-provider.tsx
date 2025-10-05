@@ -1,5 +1,5 @@
 import type React from "react";
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useRouteContext } from "@tanstack/react-router";
 import type { User } from "@/lib/schema";
 import { gun } from "@/lib/gun";
@@ -90,7 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		}
 	}, [refreshState, auth.getCurrentUser, anonymousUserId]);
 
-	const isAuthenticated = !!authUser;
+	const isAuthenticated = useMemo(() => !!authUser, [authUser]);
 
 	async function linkAnonymousUser(authenticatedUser: User) {
 		return new Promise<void>((resolve) => {

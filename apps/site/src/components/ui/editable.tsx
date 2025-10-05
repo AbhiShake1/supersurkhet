@@ -4,6 +4,7 @@ import { composeEventHandlers, useComposedRefs } from "@/lib/composition";
 import { cn } from "@/lib/utils";
 import { VisuallyHiddenInput } from "@/components/visually-hidden-input";
 import { Slot } from "@radix-ui/react-slot";
+import { Spinner } from "./spinner";
 import * as React from "react";
 
 const ROOT_NAME = "Editable";
@@ -58,6 +59,7 @@ interface EditableContextValue {
 	readOnly?: boolean;
 	required?: boolean;
 	invalid?: boolean;
+	loading?: boolean;
 }
 
 const EditableContext = React.createContext<EditableContextValue | null>(null);
@@ -146,6 +148,9 @@ const EditableRoot = React.forwardRef<HTMLDivElement, EditableRootProps>(
 		const editing = isEditingControlled ? editingProp : uncontrolledEditing;
 		const onEditingChangeRef = React.useRef(onEditingChangeProp);
 
+		// Add loading state
+		const [loading, setLoading] = React.useState(false);
+
 		React.useEffect(() => {
 			onValueChangeRef.current = onValueChangeProp;
 			onEditingChangeRef.current = onEditingChangeProp;
@@ -189,24 +194,34 @@ const EditableRoot = React.forwardRef<HTMLDivElement, EditableRootProps>(
 			const prevValue = previousValueRef.current;
 			onValueChange(prevValue);
 			onEditingChange(false);
+			setLoading(false); // Reset loading state
 			onCancelProp?.();
 		}, [onValueChange, onCancelProp, onEditingChange]);
 
 		const onEdit = React.useCallback(() => {
 			previousValueRef.current = value;
 			onEditingChange(true);
+			setLoading(false); // Reset loading state when entering edit mode
 			onEditProp?.();
 		}, [value, onEditProp, onEditingChange]);
 
 		const onSubmit = React.useCallback(
 			(newValue: string) => {
+				setLoading(true); // Set loading state before submit
 				onValueChange(newValue);
-				onEditingChange(false);
 				onSubmitProp?.(newValue);
 			},
 
-			[onValueChange, onSubmitProp, onEditingChange],
+			[onValueChange, onSubmitProp],
 		);
+
+		// Handle finishing submission (reset loading state after a delay or based on external feedback)
+		React.useEffect(() => {
+			if (loading && !editing) {
+				// Reset loading when no longer in editing state
+				setLoading(false);
+			}
+		}, [loading, editing]);
 
 		const contextValue = React.useMemo<EditableContextValue>(
 			() => ({
@@ -230,6 +245,7 @@ const EditableRoot = React.forwardRef<HTMLDivElement, EditableRootProps>(
 				readOnly,
 				required,
 				invalid,
+				loading,
 			}),
 			[
 				id,
@@ -252,6 +268,7 @@ const EditableRoot = React.forwardRef<HTMLDivElement, EditableRootProps>(
 				required,
 				readOnly,
 				invalid,
+				loading,
 			],
 		);
 
@@ -669,7 +686,17 @@ const EditableSubmit = React.forwardRef<HTMLButtonElement, EditableSubmitProps>(
 				onClick={composeEventHandlers(submitProps.onClick, () => {
 					context.onSubmit(context.value);
 				})}
-			/>
+				disabled={context.loading}
+			>
+				{context.loading ? (
+					<>
+						<Spinner className="mr-2 h-4 w-4 animate-spin" />
+						Saving...
+					</>
+				) : (
+					submitProps.children || "Save"
+				)}
+			</SubmitPrimitive>
 		);
 	},
 );

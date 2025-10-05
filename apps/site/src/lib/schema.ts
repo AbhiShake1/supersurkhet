@@ -128,6 +128,8 @@ export const businessSchema = z
 	})
 	.extend(table);
 
+export type BusinessType = z.infer<typeof businessSchema>["businessType"];
+
 export const membershipSchema = z
 	.object({
 		userId: withLabel(z.string(), "User ID"),

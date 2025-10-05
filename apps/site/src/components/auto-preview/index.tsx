@@ -33,8 +33,28 @@ export function AutoPreview<T>({
 	return <Comp value={value} schema={schema} />;
 }
 
-const DatePreview: AutoPreviewComponent<Date> = ({ value }) =>
-	value.toLocaleString();
+const DatePreview: AutoPreviewComponent<Date> = ({ value }) => {
+	if (!value) return <span className="text-muted-foreground">-</span>;
+	
+	// If value is a string, try to parse it
+	const date = typeof value === 'string' ? new Date(value) : value;
+	
+	if (isNaN(date.getTime())) {
+		return <span className="text-muted-foreground">Invalid Date</span>;
+	}
+	
+	return (
+		<span className="font-mono text-sm">
+			{date.toLocaleDateString('en-US', { 
+				year: 'numeric', 
+				month: 'short', 
+				day: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit'
+			})}
+		</span>
+	);
+};
 
 const ImagePreview: AutoPreviewComponent<string> = ({ value }) => {
 	return (
@@ -84,10 +104,20 @@ const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
 };
 
 const BooleanPreview: AutoPreviewComponent<boolean> = ({ value }) => {
-	return value ? (
-		<CheckCircle2 className="text-green-500 size-4 w-full" />
-	) : (
-		<XCircle className="text-destructive w-full size-4" />
+	return (
+		<div className="flex justify-center">
+			{value ? (
+				<div className="inline-flex items-center gap-1.5 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900 dark:text-green-100">
+					<CheckCircle2 className="size-3.5" />
+					Active
+				</div>
+			) : (
+				<div className="inline-flex items-center gap-1.5 rounded-full bg-destructive/20 px-2.5 py-0.5 text-xs font-medium text-destructive">
+					<XCircle className="size-3.5" />
+					Inactive
+				</div>
+			)}
+		</div>
 	);
 };
 
@@ -97,6 +127,7 @@ const autoPreviewComponents: Record<
 > = {
 	boolean: BooleanPreview,
 	date: DatePreview,
+	datetime: DatePreview,
 	image: ImagePreview,
 	number: NumberPreview,
 	select: SelectPreview,

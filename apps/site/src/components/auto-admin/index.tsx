@@ -6,14 +6,14 @@ import {
 	SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { api } from "@/lib/api";
-import { appSchema } from "@/lib/schema";
+import { appSchema, type Business } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import type { NestedSchemaType, SchemaKeys } from "@gta/react-hooks";
 import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { notFound, useLocation } from "@tanstack/react-router";
 import _ from "lodash";
-import { GripVertical, Home, QrCodeIcon, type LucideIcon } from "lucide-react";
+import { GripVertical, Home, QrCodeIcon, Settings, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
@@ -22,13 +22,14 @@ import { Skeleton } from "../ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { AdminDashboard } from "../admin-dashboard";
 import { QRCodePage } from "../qr-code-page";
+import { RolesAndPermissionsPage } from "../roles-and-permissions-page";
 import type { z } from "zod";
 
 export interface AutoAdminProps {
 	tabs: PossibleTabConfig[];
 }
 
-type PossibleTabConfig = {
+export type PossibleTabConfig = {
 	[K in SchemaKeys]: AutoTableTab<K>;
 }[SchemaKeys];
 
@@ -48,7 +49,12 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 	const { search, pathname: currentPathname } = useLocation();
 	const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
 
-	const tabsWithHome = [
+	const { data: allBusinesses = [] } = api.business.useGet();
+	const business = allBusinesses.find(
+		(b: Business) => b.basePath === basePath,
+	);
+
+	const tabsWithHomeWithoutRoles = [
 		{
 			title: "Home",
 			icon: Home,
@@ -61,6 +67,15 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 			children: <QRCodePage slug={basePath} />,
 		},
 	];
+
+	const tabsWithHome = [
+		...tabsWithHomeWithoutRoles,
+		{
+			title: "Roles & Permissions",
+			icon: Settings,
+			children: <RolesAndPermissionsPage slug={basePath} tabs={tabs} />,
+		},
+	]
 
 	const data: SidebarItems = {
 		items: tabsWithHome,

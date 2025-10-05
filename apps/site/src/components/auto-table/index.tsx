@@ -68,7 +68,7 @@ import { AutoTableActionBar } from "./auto-table-action-bar";
 export type AutoTableProps<T extends SchemaKeys> = {
 	slug: string;
 	transformer?: (data: any[]) => NestedSchemaType<T>[];
-	extender?: (shape: NestedSchemaType<T>) => z.ZodObject<any>;
+	extender?: <E extends (shape: z.ZodObject<any>) => NestedSchemaType<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
 } & (
 		| {
 			schema: T;
@@ -327,6 +327,9 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 						placeholder="-"
 						className="text-center"
 						triggerMode="dblclick"
+						onSubmit={(newValue) => {
+							update({ [key]: newValue });
+						}}
 					>
 						<Editable.Area>
 							<Editable.Preview className="max-w-56">
@@ -352,7 +355,9 @@ function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
 									}}
 									defaultValues={{ [key]: value as string }}
 									schema={childSchema}
-									onSubmit={update}
+									onSubmit={(data) => {
+										update(data);
+									}}
 								/>
 							</Editable.Input>
 						</Editable.Area>

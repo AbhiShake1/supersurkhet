@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { Spinner } from "@/components/ui/spinner";
 import { MediaPlayer, MediaPlayerVideo, MediaPlayerControls, MediaPlayerPlay, MediaPlayerSeek, MediaPlayerTime, MediaPlayerVolume, MediaPlayerFullscreen, MediaPlayerLoading, MediaPlayerControlsOverlay, MediaPlayerSeekBackward, MediaPlayerSeekForward, MediaPlayerPlaybackSpeed, MediaPlayerPiP, MediaPlayerError, MediaPlayerVolumeIndicator, MediaPlayerCaptions, MediaPlayerSettings } from "@/components/ui/media-player";
 import {
   Calendar,
@@ -115,6 +117,7 @@ export function CinemaClientPage({ slug }: CinemaClientPageProps) {
   const [trailerMuted, setTrailerMuted] = useState(true);
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [activeTab, setActiveTab] = useState("now-showing");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Mock data - in a real implementation, this would come from the API
   const cinemaInfo = {
@@ -430,13 +433,19 @@ export function CinemaClientPage({ slug }: CinemaClientPageProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real implementation, this would connect to the contact system
-    alert(
-      `Thank you ${name}! Your message has been sent to ${cinemaInfo.name}.`,
-    );
-    setName("");
-    setEmail("");
-    setMessage("");
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      // In a real implementation, this would connect to the contact system
+      alert(
+        `Thank you ${name}! Your message has been sent to ${cinemaInfo.name}.`,
+      );
+      setName("");
+      setEmail("");
+      setMessage("");
+      setIsSubmitting(false);
+    }, 1500);
   };
 
   const playTrailer = (movie: Movie) => {
@@ -789,42 +798,61 @@ export function CinemaClientPage({ slug }: CinemaClientPageProps) {
                 <Card className="border border-border rounded-2xl shadow-lg">
                   <CardContent className="pt-8">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label htmlFor="name" className="text-lg">Name</Label>
+                      <FieldGroup>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <Field
+                            label="Name"
+                            htmlFor="name"
+                            required={true}
+                          >
+                            <Input
+                              id="name"
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              className="py-6 text-lg rounded-xl border-border focus:border-primary focus:ring-2 focus:ring-primary/30"
+                            />
+                          </Field>
+                          <Field
+                            label="Email"
+                            htmlFor="email"
+                            required={true}
+                          >
+                            <Input
+                              id="email"
+                              type="email"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="py-6 text-lg rounded-xl border-border focus:border-primary focus:ring-2 focus:ring-primary/30"
+                            />
+                          </Field>
+                        </div>
+                        <Field
+                          label="Message"
+                          htmlFor="message"
+                          required={true}
+                        >
                           <Input
-                            id="name"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            required
+                            id="message"
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
                             className="py-6 text-lg rounded-xl border-border focus:border-primary focus:ring-2 focus:ring-primary/30"
                           />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="email" className="text-lg">Email</Label>
-                          <Input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className="py-6 text-lg rounded-xl border-border focus:border-primary focus:ring-2 focus:ring-primary/30"
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="message" className="text-lg">Message</Label>
-                        <Input
-                          id="message"
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          required
-                          className="py-6 text-lg rounded-xl border-border focus:border-primary focus:ring-2 focus:ring-primary/30"
-                        />
-                      </div>
-                      <Button type="submit" className="w-full text-lg py-7 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]">
-                        Send Message
-                      </Button>
+                        </Field>
+                        <Button 
+                          type="submit" 
+                          className="w-full text-lg py-7 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]"
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Spinner className="mr-2 h-4 w-4 animate-spin" />
+                              Sending...
+                            </>
+                          ) : (
+                            "Send Message"
+                          )}
+                        </Button>
+                      </FieldGroup>
                     </form>
                   </CardContent>
                 </Card>
