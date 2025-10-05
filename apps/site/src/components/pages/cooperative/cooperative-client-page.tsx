@@ -322,7 +322,7 @@ export function CooperativeClientPage({ slug }: CooperativeClientPageProps) {
             </Button>
           </motion.div>
         </div>
-        
+
         {/* Decorative Elements */}
         <div className="absolute top-20 right-20 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
         <div className="absolute bottom-32 left-20 w-32 h-32 rounded-full bg-primary/30 blur-2xl" />
@@ -341,7 +341,7 @@ export function CooperativeClientPage({ slug }: CooperativeClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Board Members
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {boardMembers.map((member, index) => (
@@ -399,7 +399,7 @@ export function CooperativeClientPage({ slug }: CooperativeClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Committees
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {committees.map((committee, index) => (
@@ -460,7 +460,7 @@ export function CooperativeClientPage({ slug }: CooperativeClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Meetings
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="space-y-8">
                 {meetings.map((meeting, index) => (
@@ -542,7 +542,7 @@ export function CooperativeClientPage({ slug }: CooperativeClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Financial Reports
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {financialReports.map((report, index) => (
@@ -607,7 +607,7 @@ export function CooperativeClientPage({ slug }: CooperativeClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Get In Touch
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <motion.div
                 initial={{ opacity: 0, y: 30 }}

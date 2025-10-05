@@ -13,7 +13,7 @@ import {
   Activity
 } from "lucide-react";
 
-export function AdminDashboard() {
+export function AdminDashboard({ slug }: { slug: string }) {
   return (
     <div className="space-y-6">
       <div>

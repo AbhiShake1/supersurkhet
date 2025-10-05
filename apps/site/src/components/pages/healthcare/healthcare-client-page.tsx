@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Credenza, CredenzaBody, CredenzaContent, CredenzaDescription, CredenzaFooter, CredenzaHeader, CredenzaTitle, CredenzaTrigger } from "@/components/ui/credenza";
 import {
   Card,
   CardContent,
@@ -11,6 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   Phone,
   Mail,
@@ -79,9 +82,15 @@ import {
   Settings,
   Bell,
   X,
+  Minus,
+  Plus,
+  ShoppingCartIcon,
+  ShoppingCart,
+  Trash2,
 } from "lucide-react";
-import { useState, useRef } from "react";
-import { motion, useInView } from "framer-motion";
+import { AnimatePresence, motion, useInView } from "framer-motion";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Service {
   id: string;
@@ -113,11 +122,235 @@ interface Department {
   services: string[];
 }
 
+interface CartItem extends Service {
+  quantity: number;
+}
+
+interface CartContextType {
+  items: CartItem[];
+  addItem: (item: Service, quantity: number) => void;
+  removeItem: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  clearCart: () => void;
+  itemCount: number;
+  subtotal: number;
+}
+
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [itemCount, setItemCount] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
+
+  // Update counts when items change
+  useEffect(() => {
+    const count = items.reduce((total, item) => total + item.quantity, 0);
+    const total = items.reduce(
+      (total, item) => total + (item.price || 0) * item.quantity,
+      0,
+    );
+
+    setItemCount(count);
+    setSubtotal(total);
+  }, [items]);
+
+  const addItem = (item: Service, quantity: number) => {
+    setItems((prevItems) => {
+      const existingItem = prevItems.find((i) => i.id === item.id);
+
+      if (existingItem) {
+        return prevItems.map((i) =>
+          i.id === item.id
+            ? { ...i, quantity: i.quantity + quantity }
+            : i,
+        );
+      }
+
+      return [...prevItems, { ...item, quantity }];
+    });
+  };
+
+  const removeItem = (itemId: string) => {
+    setItems((prevItems) =>
+      prevItems.filter((item) => item.id !== itemId),
+    );
+  };
+
+  const updateQuantity = (itemId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeItem(itemId);
+      return;
+    }
+
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === itemId ? { ...item, quantity } : item,
+      ),
+    );
+  };
+
+  const clearCart = () => {
+    setItems([]);
+  };
+
+  return (
+    <CartContext.Provider
+      value={{
+        items,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        itemCount,
+        subtotal,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export function useCart() {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error("useCart must be used within a CartProvider");
+  }
+  return context;
+}
+
+interface ServiceCardProps {
+  service: Service;
+  index: number;
+  isServicesInView: boolean;
+}
+
+function ServiceCard({ service, index, isServicesInView }: ServiceCardProps) {
+  const [quantity, setQuantity] = useState(1); // Default to 1 since booking an appointment
+  const [isAdding, setIsAdding] = useState(false);
+  const { addItem } = useCart();
+
+  const incrementQuantity = () => {
+    setQuantity(quantity + 1);
+  };
+
+  const decrementQuantity = () => {
+    if (quantity > 1) {
+      setQuantity(quantity - 1);
+    }
+  };
+
+  const addToCart = () => {
+    setIsAdding(true);
+    addItem(service, quantity);
+    setQuantity(1); // Reset to 1 after adding
+    setIsAdding(false);
+  };
+
+  return (
+    <motion.div
+      key={service.id}
+      initial={{ opacity: 0, y: 30 }}
+      animate={isServicesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+      transition={{ duration: 0.6, delay: index * 0.1 }}
+      whileHover={{ y: -8 }}
+      className="transition-all duration-300"
+    >
+      <Card
+        className={`overflow-hidden h-full border-2 ${service.popular ? "border-primary shadow-xl relative" : "border-border"} rounded-2xl hover:shadow-lg transition-all duration-300`}
+      >
+        {service.popular && (
+          <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-bold z-10">
+            MOST POPULAR
+          </div>
+        )}
+        <CardHeader className="pb-4">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="flex items-center gap-2 text-2xl">
+                <Stethoscope className="w-6 h-6 text-primary" />
+                {service.name}
+              </CardTitle>
+              <CardDescription className="mt-1">
+                {service.department}
+              </CardDescription>
+            </div>
+            {service.price && (
+              <span className="text-xl font-bold text-primary">
+                Rs. {service.price}
+              </span>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            {service.description}
+          </p>
+          <div className="flex items-center text-sm mb-3">
+            <Clock className="w-4 h-4 mr-1 text-primary" />
+            <span>{service.duration}</span>
+          </div>
+          <ul className="space-y-2 mb-4">
+            {service.features.map((feature, idx) => (
+              <li key={idx} className="flex items-start">
+                <CheckCircle className="w-4 h-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                <span className="text-sm">{feature}</span>
+              </li>
+            ))}
+          </ul>
+        </CardContent>
+        <CardFooter className="flex flex-col gap-3">
+          <div className="flex items-center justify-center space-x-3 w-full">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
+              onClick={decrementQuantity}
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <span className="w-8 text-center font-medium">{quantity}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
+              onClick={incrementQuantity}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button
+            className={`w-full py-5 text-base rounded-xl ${service.popular
+              ? "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              : "bg-secondary hover:bg-secondary/90"
+              } text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]`}
+            variant={service.popular ? "default" : "secondary"}
+            onClick={addToCart}
+            disabled={isAdding}
+          >
+            {isAdding ? (
+              <>
+                <Spinner />
+                Adding...
+              </>
+            ) : (
+              <>
+                <Calendar className="h-4 w-4 mr-2" />
+                Add to Booking
+              </>
+            )}
+          </Button>
+        </CardFooter>
+      </Card>
+    </motion.div>
+  );
+}
+
 interface HealthcareClientPageProps {
   slug: string;
 }
 
-export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
+function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -462,6 +695,184 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
   const isFAQInView = useInView(faqRef, { once: true, margin: "-100px" });
   const isContactInView = useInView(contactRef, { once: true, margin: "-100px" });
 
+  // Cart button component
+  const CartButton = () => {
+    const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } = useCart();
+    // Refs for animations
+    const cartRef = useRef(null);
+
+    return (
+      <div className="fixed bottom-6 right-6 z-50" ref={cartRef}>
+        <AnimatePresence>
+          {itemCount > 0 && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
+              <Credenza>
+                <CredenzaTrigger asChild>
+                  <Button className="h-14 w-14 rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-105">
+                    <ShoppingCart className="h-6 w-6" />
+                    <span className="absolute -top-2 -right-2 bg-white dark:bg-black text-primary rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold">
+                      {itemCount}
+                    </span>
+                  </Button>
+                </CredenzaTrigger>
+                <CredenzaContent>
+                  <CredenzaHeader>
+                    <CredenzaTitle asChild>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-2xl font-bold">Your Appointments</h2>
+                        {items.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearCart}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-300"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Clear All
+                          </Button>
+                        )}
+                      </div>
+                    </CredenzaTitle>
+                    <CredenzaDescription>
+                      <Separator className="mb-4" />
+                    </CredenzaDescription>
+                  </CredenzaHeader>
+                  <CredenzaBody
+                    asChild
+                    className="max-h-[30vh] overflow-y-auto"
+                  >
+                    <ScrollArea>
+                      {items.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center flex-grow py-8 text-center">
+                          <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
+                          <h3 className="text-xl font-medium mb-2">
+                            Your cart is empty
+                          </h3>
+                          <p className="text-muted-foreground">
+                            Add some healthcare services to get started!
+                          </p>
+                          <Button
+                            className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-400/90 hover:to-orange-500/90 transition-all duration-300 transform hover:scale-[1.02]"
+                          >
+                            Browse Services
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <ScrollArea className="flex-grow pr-4 -mr-4">
+                            <AnimatePresence initial={false}>
+                              {items.map((item, index) => (
+                                <motion.div
+                                  key={item.id}
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="flex items-center gap-3 py-3">
+                                    <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
+                                      <Stethoscope className="w-10 h-10 text-primary m-3" />
+                                    </div>
+                                    <div className="flex-grow">
+                                      <h4 className="font-medium">
+                                        {item.name}
+                                      </h4>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <div className="flex items-center gap-2">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full p-0 hover:bg-primary/10 transition-all duration-300"
+                                            onClick={() =>
+                                              updateQuantity(
+                                                item.id,
+                                                item.quantity - 1,
+                                              )
+                                            }
+                                          >
+                                            <MinusCircle className="h-4 w-4" />
+                                          </Button>
+                                          <span className="w-6 text-center">
+                                            {item.quantity}
+                                          </span>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full p-0 hover:bg-primary/10 transition-all duration-300"
+                                            onClick={() =>
+                                              updateQuantity(
+                                                item.id,
+                                                item.quantity + 1,
+                                              )
+                                            }
+                                          >
+                                            <PlusCircle className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium">
+                                            {(() => {
+                                              const { price, quantity } = item
+                                              if (!price) return "Free";
+                                              return `Rs.${(price * quantity).toFixed(2)}`;
+                                            })()}
+                                          </span>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-300"
+                                            onClick={() =>
+                                              removeItem(item.id)
+                                            }
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </AnimatePresence>
+                          </ScrollArea>
+                        </>
+                      )}
+                    </ScrollArea>
+                  </CredenzaBody>
+                  <CredenzaFooter asChild>
+                    <div className="pt-4 space-y-4 w-full">
+                      <div className="flex items-center justify-between font-medium">
+                        <span>Subtotal</span>
+                        <span>Rs. {subtotal.toFixed(2)}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between font-bold text-lg">
+                        <span>Total</span>
+                        <span>Rs. {subtotal.toFixed(2)}</span>
+                      </div>
+                      <Button
+                        className="w-full py-6 text-lg rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]"
+                        onClick={() => alert('Booking functionality would be implemented here')}
+                      >
+                        Proceed to Booking
+                      </Button>
+                    </div>
+                  </CredenzaFooter>
+                </CredenzaContent>
+              </Credenza>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -491,11 +902,10 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
               {[...Array(5)].map((_, i) => (
                 <Star
                   key={`healthcare-rating-star-${i}`}
-                  className={`w-6 h-6 ${
-                    i < Math.floor(healthcareInfo.rating)
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-gray-300"
-                  }`}
+                  className={`w-6 h-6 ${i < Math.floor(healthcareInfo.rating)
+                    ? "fill-yellow-400 text-yellow-400"
+                    : "text-gray-300"
+                    }`}
                 />
               ))}
             </div>
@@ -534,8 +944,8 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
         </div>
 
         {/* Decorative Elements */}
-        <div className="absolute top-20 right-20 w-40 h-40 rounded-full bg-white/10 blur-2xl"></div>
-        <div className="absolute bottom-32 left-20 w-32 h-32 rounded-full bg-primary/30 blur-2xl"></div>
+        <div className="absolute top-20 right-20 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="absolute bottom-32 left-20 w-32 h-32 rounded-full bg-primary/30 blur-2xl" />
       </div>
 
       <div className="container mx-auto px-4 py-16">
@@ -551,7 +961,7 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Our Departments
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {departments.map((department, index) => (
@@ -623,7 +1033,7 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Medical Services
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {services.map((service, index) => (
@@ -636,9 +1046,8 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                     className="transition-all duration-300"
                   >
                     <Card
-                      className={`overflow-hidden h-full border-2 ${
-                        service.popular ? "border-primary shadow-xl relative" : "border-border"
-                      } rounded-2xl hover:shadow-lg transition-all duration-300`}
+                      className={`overflow-hidden h-full border-2 ${service.popular ? "border-primary shadow-xl relative" : "border-border"
+                        } rounded-2xl hover:shadow-lg transition-all duration-300`}
                     >
                       {service.popular && (
                         <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-bold z-10">
@@ -682,11 +1091,10 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                       </CardContent>
                       <CardFooter>
                         <Button
-                          className={`w-full py-5 text-base rounded-xl ${
-                            service.popular
-                              ? "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                              : "bg-secondary hover:bg-secondary/90"
-                          } text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]`}
+                          className={`w-full py-5 text-base rounded-xl ${service.popular
+                            ? "bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                            : "bg-secondary hover:bg-secondary/90"
+                            } text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]`}
                           variant={service.popular ? "default" : "secondary"}
                         >
                           Book Appointment
@@ -707,7 +1115,7 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Meet Our Specialists
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {doctors.map((doctor, index) => (
@@ -736,11 +1144,10 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={`doctor-rating-star-${doctor.id}-${i}`}
-                              className={`w-4 h-4 ${
-                                i < Math.floor(doctor.rating)
-                                  ? "fill-yellow-400 text-yellow-400"
-                                  : "text-gray-300"
-                              }`}
+                              className={`w-4 h-4 ${i < Math.floor(doctor.rating)
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "text-gray-300"
+                                }`}
                             />
                           ))}
                           <span className="text-sm ml-1">{doctor.rating}</span>
@@ -782,7 +1189,7 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Health Resources
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {healthResources.map((resource, index) => (
@@ -824,7 +1231,7 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Frequently Asked Questions
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <div className="max-w-3xl mx-auto space-y-4">
                 {faqs.map((faq, index) => (
@@ -842,9 +1249,8 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                         <div className="flex justify-between items-center">
                           <CardTitle className="text-lg">{faq.question}</CardTitle>
                           <ArrowRight
-                            className={`w-5 h-5 transition-transform duration-300 ${
-                              activeFAQ === faq.id ? "rotate-90" : ""
-                            }`}
+                            className={`w-5 h-5 transition-transform duration-300 ${activeFAQ === faq.id ? "rotate-90" : ""
+                              }`}
                           />
                         </div>
                       </CardHeader>
@@ -874,7 +1280,7 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                 transition={{ duration: 0.6 }}
               >
                 Get In Touch
-                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full"></span>
+                <span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
               </motion.h2>
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
@@ -1131,7 +1537,7 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
+                  {/* <div className="grid grid-cols-3 gap-4">
                     <Button
                       variant="outline"
                       size="icon"
@@ -1180,7 +1586,7 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
                     >
                       <Mail className="w-5 h-5 text-primary" />
                     </Button>
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             </motion.div>
@@ -1239,6 +1645,15 @@ export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
           </div>
         </div>
       </div>
+      <CartButton />
     </div>
+  );
+}
+
+export function HealthcareClientPage({ slug }: HealthcareClientPageProps) {
+  return (
+    <CartProvider>
+      <HealthcareClientPagePresenter slug={slug} />
+    </CartProvider>
   );
 }

@@ -13,7 +13,7 @@ import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { notFound, useLocation } from "@tanstack/react-router";
 import _ from "lodash";
-import { GripVertical, Home, QrCodeIcon, Settings, type LucideIcon } from "lucide-react";
+import { GripVertical, Home, QrCodeIcon, Settings, Search, Menu, Users, DollarSign, ShoppingCart, Package, Calendar, BarChart3, Bell, User, CreditCard, FileText, type LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
@@ -23,6 +23,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { AdminDashboard } from "../admin-dashboard";
 import { QRCodePage } from "../qr-code-page";
 import { RolesAndPermissionsPage } from "../roles-and-permissions-page";
+import { Input } from "../ui/input";
+import { Separator } from "../ui/separator";
+import Card from "../ui/minimal-card";
+import { useState, useEffect } from "react";
 import type { z } from "zod";
 
 export interface AutoAdminProps {
@@ -48,21 +52,39 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
 export function AutoAdmin({ tabs }: AutoAdminProps) {
 	const { search, pathname: currentPathname } = useLocation();
 	const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
+	const [searchQuery, setSearchQuery] = useState("");
+	const [showNotifications, setShowNotifications] = useState(false);
+
+	// Keyboard shortcuts
+	const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.ctrlKey && e.key === 'k') {
+				e.preventDefault();
+				setShowKeyboardShortcuts(prev => !prev);
+			}
+		};
+
+		window.addEventListener('keydown', handleKeyDown);
+		return () => window.removeEventListener('keydown', handleKeyDown);
+	}, []);
 
 	const { data: allBusinesses = [] } = api.business.useGet();
 	const business = allBusinesses.find(
 		(b: Business) => b.basePath === basePath,
 	);
 
+	// Enhanced navigation structure with icons
 	const tabsWithHomeWithoutRoles = [
 		{
-			title: "Home",
-			icon: Home,
-			children: <AdminDashboard />,
+			title: "Dashboard",
+			icon: BarChart3,
+			children: <AdminDashboard slug={basePath} />,
 		},
 		...tabs,
 		{
-			title: "QR",
+			title: "QR Management",
 			icon: QrCodeIcon,
 			children: <QRCodePage slug={basePath} />,
 		},
@@ -71,14 +93,18 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 	const tabsWithHome = [
 		...tabsWithHomeWithoutRoles,
 		{
-			title: "Roles & Permissions",
-			icon: Settings,
+			title: "Users & Permissions",
+			icon: Users,
 			children: <RolesAndPermissionsPage slug={basePath} tabs={tabs} />,
 		},
 	]
 
 	const data: SidebarItems = {
-		items: tabsWithHome,
+		items: tabsWithHome.map(tab => ({
+			title: tab.title,
+			url: `?tab=${tab.title}`,
+			icon: tab.icon,
+		})),
 	};
 	// @ts-expect-error
 	const tab = (search.tab as string) ?? tabsWithHome[0].title;
@@ -125,15 +151,62 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 		<SidebarProvider>
 			<AppSidebar data={data} />
 			<SidebarInset>
-				<header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+				<header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
 					<div className="flex items-center gap-2 px-4">
 						<SidebarTrigger className="-ml-1" />
+						<Separator orientation="vertical" className="mr-2 h-4" />
+						<div className="flex items-center gap-2">
+							<h1 className="font-bold text-lg">{currentItem.title}</h1>
+							{business && (
+								<Badge variant="secondary" className="rounded-md px-2 py-1 text-xs">
+									{business.name}
+								</Badge>
+							)}
+						</div>
+					</div>
+
+					{/* Search and Action Bar */}
+					<div className="ml-auto flex items-center gap-2 px-4">
+						<div className="relative">
+							<Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+							<Input
+								type="search"
+								placeholder="Search..."
+								value={searchQuery}
+								onChange={(e) => setSearchQuery(e.target.value)}
+								className="w-64 bg-background pl-8 md:w-[200px] lg:w-[300px]"
+							/>
+						</div>
+
+						<Button variant="outline" size="icon" className="h-8 w-8 relative">
+							<Bell className="h-4 w-4" />
+							<span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 text-xs flex items-center justify-center text-white">3</span>
+						</Button>
+
+						<Button variant="outline" size="icon" className="h-8 w-8">
+							<Settings className="h-4 w-4" />
+						</Button>
+
+						{/* Keyboard shortcuts indicator */}
+						<Button
+							variant="outline"
+							size="sm"
+							onClick={() => setShowKeyboardShortcuts(true)}
+							className="hidden md:flex items-center gap-1 text-xs"
+						>
+							<span className="hidden sm:inline">Help</span>
+							<span className="flex gap-1">
+								<kbd className="kbd kbd-xs">⌘</kbd>
+								<kbd className="kbd kbd-xs">K</kbd>
+							</span>
+						</Button>
 					</div>
 				</header>
+
 				<section
 					className={cn(
-						"mx-6 items-start justify-center",
-						"min-w-[85%] max-w-[85%]",
+						"mx-6 items-start justify-center mt-6",
+						"min-w-[95%] max-w-[95%]",
 					)}
 				>
 					{"children" in currentItem ? (
@@ -165,34 +238,107 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 								localStorage.setItem(`tab-#${basePath}-${tab}`, value);
 							}}
 						>
-							<TabsList>
-								<TabsTrigger value="table">Table</TabsTrigger>
+							<TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+								<TabsTrigger value="table">Table View</TabsTrigger>
 								{components.map(({ name }) => (
 									<TabsTrigger value={name} key={name}>
 										{name}
 									</TabsTrigger>
 								))}
 							</TabsList>
-							<TabsContent value="table" className="flex-1">
-								<AutoTable
-									schema={currentItem.schema}
-									slug={currentItem.slug ?? basePath}
-									transformer={currentItem.transformer}
-									extender={currentItem.extender}
-								/>
+							<TabsContent value="table" className="flex-1 mt-4">
+								<Card className="border rounded-lg shadow-sm">
+									<div className="p-4 border-b flex justify-between items-center">
+										<h2 className="text-xl font-semibold">Manage {currentItem.title}</h2>
+										<Button size="sm" className="flex items-center gap-1">
+											<PlusIcon className="h-4 w-4 mr-1" />
+											Add New
+										</Button>
+									</div>
+									<div className="p-4">
+										<AutoTable
+											schema={currentItem.schema}
+											slug={currentItem.slug ?? basePath}
+											transformer={currentItem.transformer}
+											extender={currentItem.extender}
+										/>
+									</div>
+								</Card>
 							</TabsContent>
 							{components.map(({ component, name }) => (
-								<TabsContent value={name} key={name} className="flex-1">
-									{component}
+								<TabsContent value={name} key={name} className="flex-1 mt-4">
+									<Card className="border rounded-lg shadow-sm">
+										<div className="p-4 border-b">
+											<h2 className="text-xl font-semibold">{name}</h2>
+										</div>
+										<div className="p-4">
+											{component}
+										</div>
+									</Card>
 								</TabsContent>
 							))}
 						</Tabs>
 					)}
 				</section>
+
+				{/* Keyboard Shortcuts Modal */}
+				{showKeyboardShortcuts && (
+					<div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+						<Card className="w-full max-w-md border rounded-lg shadow-lg p-6">
+							<div className="flex justify-between items-center mb-4">
+								<h3 className="text-lg font-semibold">Keyboard Shortcuts</h3>
+								<Button
+									variant="ghost"
+									size="icon"
+									onClick={() => setShowKeyboardShortcuts(false)}
+								>
+									<X className="h-4 w-4" />
+								</Button>
+							</div>
+							<div className="space-y-3">
+								<div className="flex items-center justify-between">
+									<span>Open search</span>
+									<span className="flex gap-1">
+										<kbd className="kbd kbd-xs">⌘</kbd>
+										<kbd className="kbd kbd-xs">K</kbd>
+									</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span>Global search</span>
+									<span className="flex gap-1">
+										<kbd className="kbd kbd-xs">⌘</kbd>
+										<kbd className="kbd kbd-xs">P</kbd>
+									</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span>Quick add</span>
+									<span className="flex gap-1">
+										<kbd className="kbd kbd-xs">⌘</kbd>
+										<kbd className="kbd kbd-xs">N</kbd>
+									</span>
+								</div>
+								<div className="flex items-center justify-between">
+									<span>Close modal</span>
+									<span className="flex gap-1">
+										<kbd className="kbd kbd-xs">ESC</kbd>
+									</span>
+								</div>
+							</div>
+						</Card>
+					</div>
+				)}
 			</SidebarInset>
 		</SidebarProvider>
 	);
 }
+
+// We need to define PlusIcon separately since it's used but not imported
+const PlusIcon = ({ className }: { className?: string }) => (
+	<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+		<path d="M5 12h14" />
+		<path d="M12 5v14" />
+	</svg>
+);
 
 export type AutoKanbanProps<K extends SchemaKeys> = {
 	slug: string;

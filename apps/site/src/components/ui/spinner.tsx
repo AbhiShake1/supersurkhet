@@ -1,35 +1,16 @@
-import { cn } from "@/lib/utils";
-import { type VariantProps, cva } from "class-variance-authority";
-import { Loader2 } from "lucide-react";
-import type React from "react";
+import { Loader2Icon } from "lucide-react"
 
-const spinnerVariants = cva("animate-spin", {
-	variants: {
-		size: {
-			default: "h-4 w-4",
-			sm: "h-3 w-3",
-			lg: "h-6 w-6",
-			xl: "h-8 w-8",
-		},
-	},
-	defaultVariants: {
-		size: "default",
-	},
-});
+import { cn } from "@/lib/utils"
 
-interface SpinnerProps
-	extends React.SVGProps<SVGSVGElement>,
-	VariantProps<typeof spinnerVariants> {
-	className?: string;
+function Spinner({ className, ...props }: React.ComponentProps<"svg">) {
+  return (
+    <Loader2Icon
+      role="status"
+      aria-label="Loading"
+      className={cn("size-4 animate-spin", className)}
+      {...props}
+    />
+  )
 }
 
-export function Spinner({ size, className, ...props }: SpinnerProps) {
-	return (
-		<Loader2
-			className={cn(spinnerVariants({ size }), className)}
-			{...props}
-		/>
-	);
-}
-
-export { spinnerVariants };
+export { Spinner }

@@ -19,7 +19,7 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 	const { data: items = [], isLoading } = api.menuItem.useGet({
 		keys: [slug],
 	});
-	
+
 	const item = items.find((i: any) => i._?.soul === itemId);
 	const [quantity, setQuantity] = useState(1);
 
@@ -38,9 +38,8 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 	const handleClose = () => {
 		// Navigate back to the menu without the item parameter
 		navigate({
-			search: (prev: any) => {
+			search: ({ item, ...prev }: any) => {
 				const newSearch = { ...prev };
-				delete newSearch.item;
 				return newSearch;
 			},
 		});
@@ -51,15 +50,15 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 		return (
 			<div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
 				<div className="container mx-auto px-4 py-8">
-					<Button 
-						variant="ghost" 
+					<Button
+						variant="ghost"
 						onClick={handleClose}
 						className="mb-6 flex items-center gap-2"
 					>
 						<ArrowLeft className="h-4 w-4" />
 						Back to Menu
 					</Button>
-					
+
 					<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 						<div>
 							<Skeleton className="w-full h-96 rounded-xl" />
@@ -88,8 +87,8 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 			<div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
 				<div className="container mx-auto px-4 py-8 text-center">
 					<h2 className="text-2xl font-bold">Item not found</h2>
-					<Button 
-						variant="ghost" 
+					<Button
+						variant="ghost"
 						onClick={handleClose}
 						className="mt-4"
 					>
@@ -109,15 +108,15 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 			className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
 		>
 			<div className="container mx-auto px-4 py-8">
-				<Button 
-					variant="ghost" 
+				<Button
+					variant="ghost"
 					onClick={handleClose}
 					className="mb-6 flex items-center gap-2"
 				>
 					<ArrowLeft className="h-4 w-4" />
 					Back to Menu
 				</Button>
-				
+
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 					<motion.div
 						layoutId={`menu-item-image-${itemId}`}
@@ -128,7 +127,7 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 					>
 						<img
 							src={item.imageUrl ?? ""}
-							alt={item.name ?? ""}
+							alt={item.title ?? ""}
 							className="w-full h-96 object-cover rounded-xl shadow-lg"
 						/>
 						{item.isSpecial && (
@@ -140,7 +139,7 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 							</motion.div>
 						)}
 					</motion.div>
-					
+
 					<motion.div
 						initial={{ opacity: 0, x: 20 }}
 						animate={{ opacity: 1, x: 0 }}
@@ -151,9 +150,9 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 							layoutId={`menu-item-title-${itemId}`}
 							className="text-3xl font-bold text-foreground"
 						>
-							{item.name}
+							{item.title}
 						</motion.h1>
-						
+
 						{item.price && (
 							<motion.p
 								layoutId={`menu-item-price-${itemId}`}
@@ -162,14 +161,14 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 								Rs. {item.price.toFixed(2)}
 							</motion.p>
 						)}
-						
+
 						<motion.p
 							layoutId={`menu-item-description-${itemId}`}
 							className="text-muted-foreground text-lg"
 						>
 							{item.description}
 						</motion.p>
-						
+
 						<div className="pt-4">
 							<h3 className="text-lg font-semibold mb-2">Quantity</h3>
 							<div className="flex items-center space-x-4">
@@ -194,10 +193,14 @@ export function RestaurantMenuItemDetail({ slug, onClose }: RestaurantMenuItemDe
 								</div>
 							</div>
 						</div>
-						
+
 						<Button className="w-full py-6 text-lg rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02] flex items-center gap-2">
 							<ShoppingCartIcon className="h-5 w-5" />
-							Add to Cart - Rs. {(item.price! * quantity).toFixed(2)}
+							Add to Cart - Rs. {(() => {
+								const { price } = item
+								if (!price) return "Free";
+								return (price * quantity).toFixed(2);
+							})()}
 						</Button>
 					</motion.div>
 				</div>

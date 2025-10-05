@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Credenza, CredenzaBody, CredenzaContent, CredenzaDescription, CredenzaFooter, CredenzaHeader, CredenzaTitle, CredenzaTrigger } from "@/components/ui/credenza";
 import {
   Card,
   CardContent,
@@ -11,7 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { motion, useInView } from "framer-motion";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import {
   ArrowRight,
   Award,
@@ -55,9 +57,18 @@ import {
   Users,
   Utensils,
   Video,
-  Youtube
+  Youtube,
+  Minus,
+  Plus,
+  ShoppingCartIcon,
+  ShoppingCart,
+  PlusCircle,
+  MinusCircle,
+  Trash2
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { AnimatePresence, motion, useInView } from "framer-motion";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { Spinner } from "@/components/ui/spinner";
 
 interface Course {
   id: string;
@@ -83,11 +94,116 @@ interface Instructor {
   certifications: string[];
 }
 
+interface CartItem extends Course {
+  quantity: number;
+}
+
+interface CartContextType {
+  items: CartItem[];
+  addItem: (item: Course, quantity: number) => void;
+  removeItem: (itemId: string) => void;
+  updateQuantity: (itemId: string, quantity: number) => void;
+  clearCart: () => void;
+  itemCount: number;
+  subtotal: number;
+}
+
+const CartContext = createContext<CartContextType | undefined>(undefined);
+
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [itemCount, setItemCount] = useState(0);
+  const [subtotal, setSubtotal] = useState(0);
+
+  // Update counts when items change
+  useEffect(() => {
+    const count = items.reduce((total, item) => total + item.quantity, 0);
+    const total = items.reduce(
+      (total, item) => total + (item.fees || 0) * item.quantity,
+      0,
+    );
+
+    setItemCount(count);
+    setSubtotal(total);
+  }, [items]);
+
+  const addItem = (item: Course, quantity: number) => {
+    setItems((prevItems) => {
+      const existingItem = prevItems.find((i) => i.id === item.id);
+
+      if (existingItem) {
+        return prevItems.map((i) =>
+          i.id === item.id
+            ? { ...i, quantity: i.quantity + quantity }
+            : i,
+        );
+      }
+
+      return [...prevItems, { ...item, quantity }];
+    });
+  };
+
+  const removeItem = (itemId: string) => {
+    setItems((prevItems) =>
+      prevItems.filter((item) => item.id !== itemId),
+    );
+  };
+
+  const updateQuantity = (itemId: string, quantity: number) => {
+    if (quantity <= 0) {
+      removeItem(itemId);
+      return;
+    }
+
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === itemId ? { ...item, quantity } : item,
+      ),
+    );
+  };
+
+  const clearCart = () => {
+    setItems([]);
+  };
+
+  return (
+    <CartContext.Provider
+      value={{
+        items,
+        addItem,
+        removeItem,
+        updateQuantity,
+        clearCart,
+        itemCount,
+        subtotal,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export function useCart() {
+  const context = useContext(CartContext);
+  if (context === undefined) {
+    throw new Error("useCart must be used within a CartProvider");
+  }
+  return context;
+}
+
 interface EducationClientPageProps {
   slug: string;
 }
 
 export function EducationClientPage({ slug }: EducationClientPageProps) {
+  return (
+    <CartProvider>
+      <EducationClientPagePresenter slug={slug} />
+    </CartProvider>
+  );
+}
+
+function EducationClientPagePresenter({ slug }: EducationClientPageProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -397,6 +513,318 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
   const isFAQInView = useInView(faqRef, { once: true, margin: "-100px" });
   const isContactInView = useInView(contactRef, { once: true, margin: "-100px" });
 
+  // Course card component
+  const CourseCard = ({ course, index, isCoursesInView }: { course: Course, index: number, isCoursesInView: boolean }) => {
+    const [quantity, setQuantity] = useState(1); // Default to 1 for enrollment
+    const [isAdding, setIsAdding] = useState(false);
+    const { addItem } = useCart();
+
+    const incrementQuantity = () => {
+      setQuantity(quantity + 1);
+    };
+
+    const decrementQuantity = () => {
+      if (quantity > 1) {
+        setQuantity(quantity - 1);
+      }
+    };
+
+    const addToCart = () => {
+      setIsAdding(true);
+      addItem(course, quantity);
+      setQuantity(1); // Reset to 1 after adding
+      setIsAdding(false);
+    };
+
+    return (
+      <motion.div
+        key={course.id}
+        initial={{ opacity: 0, y: 30 }}
+        animate={isCoursesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+        transition={{ duration: 0.6, delay: index * 0.1 }}
+        whileHover={{ y: -10 }}
+        className="transition-all duration-300"
+      >
+        <Card className={`overflow-hidden h-full border-2 ${course.popular ? 'border-primary shadow-xl relative' : 'border-border'} rounded-2xl hover:shadow-lg transition-all duration-300`}>
+          {course.popular && (
+            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-bold z-10">
+              MOST POPULAR
+            </div>
+          )}
+          <div className="relative">
+            <img
+              src={course.imageUrl}
+              alt={course.name}
+              className="w-full h-48 object-cover"
+            />
+            <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold flex items-center shadow-lg">
+              <GraduationCap className="w-4 h-4 mr-1" />
+              {course.category}
+            </div>
+          </div>
+          <CardHeader className="pb-4">
+            <div className="flex justify-between items-start">
+              <div>
+                <CardTitle className="flex items-center gap-3 text-2xl">
+                  <Book className="w-6 h-6 text-primary" />
+                  {course.name}
+                </CardTitle>
+                <CardDescription className="text-base mt-2">
+                  {course.description}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="space-y-4">
+              <div className="flex items-center text-sm">
+                <Clock className="w-4 h-4 mr-1 text-primary" />
+                <span>Duration: {course.duration}</span>
+              </div>
+              <div className="flex items-center text-sm">
+                <User className="w-4 h-4 mr-1 text-primary" />
+                <span>Instructor: {course.instructor}</span>
+              </div>
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-3xl font-bold text-primary">
+                  Rs. {course.fees.toLocaleString()}
+                </p>
+                <span className="text-base text-muted-foreground">
+                  per year
+                </span>
+              </div>
+              <div className="space-y-2">
+                <p className="font-medium text-sm">Key Features:</p>
+                <div className="flex flex-wrap gap-2">
+                  {course.features.map((feature, idx) => (
+                    <span
+                      key={idx}
+                      className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary"
+                    >
+                      {feature}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col gap-3">
+            <div className="flex items-center justify-center space-x-3 w-full">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
+                onClick={decrementQuantity}
+              >
+                <Minus className="h-4 w-4" />
+              </Button>
+              <span className="w-8 text-center font-medium">{quantity}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
+                onClick={incrementQuantity}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button
+              className={`w-full py-6 text-lg rounded-xl ${course.popular ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70' : 'bg-secondary hover:bg-secondary/90'} text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]`}
+              onClick={addToCart}
+              disabled={isAdding}
+            >
+              {isAdding ? (
+                <>
+                  <Spinner className="mr-2 h-4 w-4 animate-spin" />
+                  Adding...
+                </>
+              ) : (
+                <>
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Add to Enrollment
+                </>
+              )}
+            </Button>
+          </CardFooter>
+        </Card>
+      </motion.div>
+    );
+  };
+
+  // Cart button component
+  const CartButton = () => {
+    const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal } = useCart();
+    // Refs for animations
+    const cartRef = useRef(null);
+
+    return (
+      <div className="fixed bottom-6 right-6 z-50" ref={cartRef}>
+        <AnimatePresence>
+          {itemCount > 0 && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              exit={{ scale: 0 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            >
+              <Credenza>
+                <CredenzaTrigger asChild>
+                  <Button className="h-14 w-14 rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-105">
+                    <ShoppingCart className="h-6 w-6" />
+                    <span className="absolute -top-2 -right-2 bg-white dark:bg-black text-primary rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold">
+                      {itemCount}
+                    </span>
+                  </Button>
+                </CredenzaTrigger>
+                <CredenzaContent>
+                  <CredenzaHeader>
+                    <CredenzaTitle asChild>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-2xl font-bold">Your Courses</h2>
+                        {items.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearCart}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-300"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Clear All
+                          </Button>
+                        )}
+                      </div>
+                    </CredenzaTitle>
+                    <CredenzaDescription>
+                      <Separator className="mb-4" />
+                    </CredenzaDescription>
+                  </CredenzaHeader>
+                  <CredenzaBody
+                    asChild
+                    className="max-h-[30vh] overflow-y-auto"
+                  >
+                    <ScrollArea>
+                      {items.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center flex-grow py-8 text-center">
+                          <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
+                          <h3 className="text-xl font-medium mb-2">
+                            Your cart is empty
+                          </h3>
+                          <p className="text-muted-foreground">
+                            Add some courses to get started!
+                          </p>
+                          <Button
+                            className="mt-6 bg-gradient-to-r from-amber-500 to-orange-600 dark:from-amber-400 dark:to-orange-500 hover:from-amber-400/90 hover:to-orange-500/90 transition-all duration-300 transform hover:scale-[1.02]"
+                          >
+                            Browse Courses
+                          </Button>
+                        </div>
+                      ) : (
+                        <>
+                          <ScrollArea className="flex-grow pr-4 -mr-4">
+                            <AnimatePresence initial={false}>
+                              {items.map((item, index) => (
+                                <motion.div
+                                  key={item.id}
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: "auto" }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.2 }}
+                                  className="overflow-hidden"
+                                >
+                                  <div className="flex items-center gap-3 py-3">
+                                    <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
+                                      <Book className="w-10 h-10 text-primary m-3" />
+                                    </div>
+                                    <div className="flex-grow">
+                                      <h4 className="font-medium">
+                                        {item.name}
+                                      </h4>
+                                      <div className="flex items-center justify-between mt-1">
+                                        <div className="flex items-center gap-2">
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full p-0 hover:bg-primary/10 transition-all duration-300"
+                                            onClick={() =>
+                                              updateQuantity(
+                                                item.id,
+                                                item.quantity - 1,
+                                              )
+                                            }
+                                          >
+                                            <MinusCircle className="h-4 w-4" />
+                                          </Button>
+                                          <span className="w-6 text-center">
+                                            {item.quantity}
+                                          </span>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full p-0 hover:bg-primary/10 transition-all duration-300"
+                                            onClick={() =>
+                                              updateQuantity(
+                                                item.id,
+                                                item.quantity + 1,
+                                              )
+                                            }
+                                          >
+                                            <PlusCircle className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-medium">
+                                            Rs.{(item.fees * item.quantity).toLocaleString()}
+                                          </span>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 rounded-full p-0 text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-300"
+                                            onClick={() =>
+                                              removeItem(item.id)
+                                            }
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              ))}
+                            </AnimatePresence>
+                          </ScrollArea>
+                        </>
+                      )}
+                    </ScrollArea>
+                  </CredenzaBody>
+                  <CredenzaFooter asChild>
+                    <div className="pt-4 space-y-4 w-full">
+                      <div className="flex items-center justify-between font-medium">
+                        <span>Subtotal</span>
+                        <span>Rs. {subtotal.toLocaleString()}</span>
+                      </div>
+                      <Separator />
+                      <div className="flex items-center justify-between font-bold text-lg">
+                        <span>Total</span>
+                        <span>Rs. {subtotal.toLocaleString()}</span>
+                      </div>
+                      <Button
+                        className="w-full py-6 text-lg rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]"
+                        onClick={() => alert('Enrollment functionality would be implemented here')}
+                      >
+                        Proceed to Enrollment
+                      </Button>
+                    </div>
+                  </CredenzaFooter>
+                </CredenzaContent>
+              </Credenza>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -518,84 +946,7 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {filteredCourses.map((course, index) => (
-                  <motion.div
-                    key={course.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={isCoursesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-                    transition={{ duration: 0.6, delay: index * 0.1 }}
-                    whileHover={{ y: -10 }}
-                    className="transition-all duration-300"
-                  >
-                    <Card className={`overflow-hidden h-full border-2 ${course.popular ? 'border-primary shadow-xl relative' : 'border-border'} rounded-2xl hover:shadow-lg transition-all duration-300`}>
-                      {course.popular && (
-                        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-bold z-10">
-                          MOST POPULAR
-                        </div>
-                      )}
-                      <div className="relative">
-                        <img
-                          src={course.imageUrl}
-                          alt={course.name}
-                          className="w-full h-48 object-cover"
-                        />
-                        <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-bold flex items-center shadow-lg">
-                          <GraduationCap className="w-4 h-4 mr-1" />
-                          {course.category}
-                        </div>
-                      </div>
-                      <CardHeader className="pb-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="flex items-center gap-3 text-2xl">
-                              <Book className="w-6 h-6 text-primary" />
-                              {course.name}
-                            </CardTitle>
-                            <CardDescription className="text-base mt-2">
-                              {course.description}
-                            </CardDescription>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pb-4">
-                        <div className="space-y-4">
-                          <div className="flex items-center text-sm">
-                            <Clock className="w-4 h-4 mr-1 text-primary" />
-                            <span>Duration: {course.duration}</span>
-                          </div>
-                          <div className="flex items-center text-sm">
-                            <User className="w-4 h-4 mr-1 text-primary" />
-                            <span>Instructor: {course.instructor}</span>
-                          </div>
-                          <div className="flex items-center justify-between mt-4">
-                            <p className="text-3xl font-bold text-primary">
-                              Rs. {course.fees.toLocaleString()}
-                            </p>
-                            <span className="text-base text-muted-foreground">
-                              per year
-                            </span>
-                          </div>
-                          <div className="space-y-2">
-                            <p className="font-medium text-sm">Key Features:</p>
-                            <div className="flex flex-wrap gap-2">
-                              {course.features.map((feature, idx) => (
-                                <span
-                                  key={idx}
-                                  className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary"
-                                >
-                                  {feature}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button className={`w-full py-6 text-lg rounded-xl ${course.popular ? 'bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70' : 'bg-secondary hover:bg-secondary/90'} text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]`}>
-                          Enroll Now
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  </motion.div>
+                  <CourseCard course={course} index={index} isCoursesInView={isCoursesInView} key={course.id} />
                 ))}
               </div>
             </section>
@@ -1150,6 +1501,7 @@ export function EducationClientPage({ slug }: EducationClientPageProps) {
           </div>
         </div>
       </div>
+      <CartButton />
 
       <style>{`
         .hide-scrollbar {

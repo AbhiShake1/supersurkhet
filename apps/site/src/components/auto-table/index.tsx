@@ -35,16 +35,21 @@ import {
 import { useSearch } from "@tanstack/react-router";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
-	ArrowUpDown,
-	CalendarIcon,
-	CircleDashed,
-	Ellipsis,
-	Plus,
-	Save,
-	Text,
-} from "lucide-react";
-import { useState } from "react";
-import { type ZodObject, z } from "zod";
+import {
+tArrowUpDown,
+tCalendarIcon,
+tCircleDashed,
+tEllipsis,
+tPlus,
+tSave,
+tText,
+tFilter,
+tSortAsc,
+tDatabaseZap,
+tDownload,
+tUpload,
+tColumns,
+} from "lucide-react";import { type ZodObject, z } from "zod";
 import { AutoPreview } from "../auto-preview";
 import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
 import { DataTableColumnHeader } from "../data-table/data-table-column-header";
@@ -65,6 +70,49 @@ import {
 } from "../ui/credenza";
 import { AutoTableActionBar } from "./auto-table-action-bar";
 
+  | 'regex';
+
+type AggregationType = 
+  | 'sum'
+  | 'avg'
+  | 'count'
+  | 'min'
+  | 'max'
+  | 'distinct'
+  | 'group';
+// Enhanced column definition with aggregation capabilities
+interface EnhancedColumnDef<TData> extends ColumnDef<TData> {
+  aggregations?: AggregationType[];
+  searchable?: boolean;
+  filterable?: boolean;
+  sortable?: boolean;
+  exportable?: boolean;
+}
+
+export type AutoTableProps<T extends SchemaKeys> = {
+tslug: string;
+ttransformer?: (data: any[]) => NestedSchemaType<T>[];
+textender?: <E extends (shape: z.ZodObject<any>) => NestedSchemaType<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
+t// Advanced features
+tenableAdvancedFiltering?: boolean;
+tenableAdvancedSorting?: boolean;
+tenableAggregations?: boolean;
+tenableExport?: boolean;
+tenableImport?: boolean;
+tenableColumnPinning?: boolean;
+tenableColumnVisibility?: boolean;
+tenableRowSelection?: boolean;
+tenableGlobalFiltering?: boolean;
+tenablePagination?: boolean;
+tdefaultPageSize?: number;
+} & (
+tt| {
+tttschema: T;
+tt}
+tt| {
+tttparsedSchema: z.ZodObject<any>;
+tt}
+t);
 export type AutoTableProps<T extends SchemaKeys> = {
 	slug: string;
 	transformer?: (data: any[]) => NestedSchemaType<T>[];
@@ -78,11 +126,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
 		}
 	);
 
-export function AutoTable<T extends SchemaKeys>({
-	slug,
-	...props
-}: AutoTableProps<T>) {
-	const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
+export function AutoTable<T extends SchemaKeys>({ntslug,ntenableAdvancedFiltering = true,ntenableAdvancedSorting = true,ntenableAggregations = false,ntenableExport = true,ntenableImport = false,ntenableColumnPinning = true,ntenableColumnVisibility = true,ntenableRowSelection = true,ntenableGlobalFiltering = true,ntenablePagination = true,ntdefaultPageSize = 10,nt...propsn}: AutoTableProps<T>) {	const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
 	const [dialogOpen, setDialogOpen] = useState(false);
 	const { data: __data = [], isLoading } = useGet(schemaName, slug);
 	const _data = props.transformer?.(__data) ?? __data;
@@ -135,26 +179,7 @@ export function AutoTable<T extends SchemaKeys>({
 	// @ts-expect-error
 	const perPage = search.perPage ?? 10;
 
-	const { table, shallow, debounceMs, throttleMs } = useDataTable({
-		data,
-		// @ts-expect-error
-		columns,
-		pageCount: Math.ceil(data.length / perPage) || 1,
-		enableAdvancedFilter: true,
-		initialState: {
-			// sorting: [{ id: "createdAt", desc: true }],
-			columnPinning: { right: ["actions"] },
-		},
-		meta: {
-			updateData(rowId: string, data: Record<string, unknown>) {
-				updateMutation.mutate({ id: rowId, ...data });
-			},
-		},
-		getRowId: (originalRow) => originalRow._?.soul ?? "",
-		shallow: false,
-		clearOnDefault: true,
-	});
-
+tconst { table, shallow, debounceMs, throttleMs } = useDataTable({nttdata,ntt// @ts-expect-errornttcolumns,nttpageCount: Math.ceil(data.length / perPage) || 1,nttenableAdvancedFilter: enableAdvancedFiltering,nttenableGlobalFilter: enableGlobalFiltering,nttenableRowSelection: enableRowSelection,nttenableColumnPinning: enableColumnPinning,nttinitialState: {ntttpagination: {nttttpageSize: defaultPageSize,nttt},ntttcolumnPinning: enableColumnPinning ? { right: ["actions"] } : undefined,ntttcolumnVisibility: {},ntt},nttmeta: {ntttupdateData(rowId: string, data: Record<string, unknown>) {nttttupdateMutation.mutate({ id: rowId, ...data });nttt},ntt},nttgetRowId: (originalRow) => originalRow._?.soul ?? "",nttshallow: false,nttclearOnDefault: true,nt});
 	if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
 
 	return (

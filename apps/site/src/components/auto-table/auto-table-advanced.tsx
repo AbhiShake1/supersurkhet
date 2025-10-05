@@ -1,0 +1,526 @@
+import { applyFilters } from "@/lib/filter";
+import type { DataTableRowAction, FilterVariant } from "@/types/data-table";
+import * as React from "react";
+import { useMemo } from "react";
+
+import { DataTable } from "@/components/data-table";
+import { useDataTable } from "@/hooks/use-data-table";
+
+import { AutoForm, AutoFormWithoutLabel } from "@/components/ui/autoform";
+import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import * as Editable from "@/components/ui/editable";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { appSchema } from "@/lib/schema";
+import { applySorting } from "@/lib/sort";
+import { parseSchema } from "@autoform/zod";
+import {
+  type NestedSchemaType,
+  type SchemaKeys,
+  getNestedZodShape,
+  useCreate,
+  useDelete,
+  useGet,
+  useUpdate,
+} from "@gta/react-hooks";
+import { useSearch } from "@tanstack/react-router";
+import type { ColumnDef } from "@tanstack/react-table";
+import {
+  ArrowUpDown,
+  CalendarIcon,
+  CircleDashed,
+  Ellipsis,
+  Plus,
+  Save,
+  Text,
+  Filter,
+  SortAsc,
+  DatabaseZap,
+  Download,
+  Upload,
+  Columns,
+} from "lucide-react";
+import { useState } from "react";
+import { type ZodObject, z } from "zod";
+import { AutoPreview } from "../auto-preview";
+import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
+import { DataTableColumnHeader } from "../data-table/data-table-column-header";
+import { DataTableFilterList } from "../data-table/data-table-filter-list";
+import { DataTableSortList } from "../data-table/data-table-sort-list";
+import { DeleteRowDialog } from "../data-table/delete-row-dialog";
+import { EditRowDialog } from "../data-table/edit-row-dialog";
+import SkeletonTableOneWrapper from "../mvpblocks/skeleton-table-1";
+import {
+  Credenza,
+  CredenzaBody,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaFooter,
+  CredenzaHeader,
+  CredenzaTitle,
+  CredenzaTrigger,
+} from "../ui/credenza";
+import { AutoTableActionBar } from "./auto-table-action-bar";
+
+// Enhanced types for advanced filtering and sorting
+type AdvancedFilterType = 
+  | 'text'
+  | 'number'
+  | 'date'
+  | 'boolean'
+  | 'select'
+  | 'multiSelect'
+  | 'range'
+  | 'dateRange'
+  | 'fuzzy'
+  | 'regex';
+
+type AggregationType = 
+  | 'sum'
+  | 'avg'
+  | 'count'
+  | 'min'
+  | 'max'
+  | 'distinct'
+  | 'group';
+
+// Enhanced column definition with aggregation capabilities
+interface EnhancedColumnDef<TData> extends ColumnDef<TData> {
+  aggregations?: AggregationType[];
+  searchable?: boolean;
+  filterable?: boolean;
+  sortable?: boolean;
+  exportable?: boolean;
+}
+
+export type AutoTableAdvancedProps<T extends SchemaKeys> = {
+  slug: string;
+  transformer?: (data: any[]) => NestedSchemaType<T>[];
+  extender?: <E extends (shape: z.ZodObject<any>) => NestedSchemaType<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
+  enableAdvancedFiltering?: boolean;
+  enableAdvancedSorting?: boolean;
+  enableAggregations?: boolean;
+  enableExport?: boolean;
+  enableImport?: boolean;
+  enableColumnPinning?: boolean;
+  enableColumnVisibility?: boolean;
+  enableRowSelection?: boolean;
+  enableGlobalFiltering?: boolean;
+  defaultPageSize?: number;
+  enablePagination?: boolean;
+} & (
+  | {
+      schema: T;
+    }
+  | {
+      parsedSchema: z.ZodObject<any>;
+    }
+);
+
+export function AutoTableAdvanced<T extends SchemaKeys>({
+  slug,
+  enableAdvancedFiltering = true,
+  enableAdvancedSorting = true,
+  enableAggregations = false,
+  enableExport = true,
+  enableImport = false,
+  enableColumnPinning = true,
+  enableColumnVisibility = true,
+  enableRowSelection = true,
+  enableGlobalFiltering = true,
+  defaultPageSize = 10,
+  enablePagination = true,
+  ...props
+}: AutoTableAdvancedProps<T>) {
+  const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { data: __data = [], isLoading } = useGet(schemaName, slug);
+  const _data = props.transformer?.(__data) ?? __data;
+  const search = useSearch({ from: "__root__" });
+  const data = useMemo(() => {
+    // @ts-expect-error
+    const filters = search.filters;
+    // @ts-expect-error
+    const sorting = search.sort;
+    function getFiltered() {
+      if (filters) {
+        return applyFilters(_data, filters);
+      }
+      return _data;
+    }
+    function getSorted(data: typeof _data) {
+      if (sorting) {
+        return applySorting(data, sorting);
+      }
+      return data;
+    }
+    return getSorted(getFiltered());
+  }, [_data, search]);
+
+  const createMutation = useCreate({
+    keys: [schemaName, slug], 
+    onSuccess() {
+      setDialogOpen(false)
+    }
+  });
+  const updateMutation = useUpdate({
+    keys: [schemaName, slug], 
+    onSuccess() {
+      setDialogOpen(false)
+    }
+  });
+  const { mutate: onDelete } = useDelete({ keys: [schemaName, slug] });
+  const _schema =
+    "parsedSchema" in props
+      ? props.parsedSchema
+      : getNestedZodShape(schemaName, appSchema.schemaShape);
+  const schema = props.extender?.(_schema) ?? _schema;
+  const [rowAction, setRowAction] = React.useState<DataTableRowAction<
+    NestedSchemaType<T>
+  > | null>(null);
+
+  const columns = getAutoTableColumns({
+    schema,
+    setRowAction,
+  });
+
+  // @ts-expect-error
+  const perPage = search.perPage ?? defaultPageSize;
+
+  const { table, shallow, debounceMs, throttleMs } = useDataTable({
+    data,
+    // @ts-expect-error
+    columns,
+    pageCount: Math.ceil(data.length / perPage) || 1,
+    enableAdvancedFilter: enableAdvancedFiltering,
+    enableGlobalFilter: enableGlobalFiltering,
+    enableRowSelection: enableRowSelection,
+    enableColumnPinning: enableColumnPinning,
+    getRowId: (originalRow) => originalRow._?.soul ?? "",
+    initialState: {
+      pagination: {
+        pageSize: defaultPageSize,
+      },
+      columnPinning: enableColumnPinning ? { right: ["actions"] } : undefined,
+      columnVisibility: {},
+    },
+    meta: {
+      updateData(rowId: string, data: Record<string, unknown>) {
+        updateMutation.mutate({ id: rowId, ...data });
+      },
+    },
+    shallow: false,
+    clearOnDefault: true,
+  });
+
+  if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
+
+  return (
+    <div className="container mx-auto py-6 space-y-4 flex flex-col items-end">
+      <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
+        <CredenzaTrigger asChild>
+          <Button className="gap-2">
+            <Plus className="size-4" />
+            Add New
+          </Button>
+        </CredenzaTrigger>
+        <CredenzaContent>
+          <CredenzaHeader>
+            <CredenzaTitle>Add</CredenzaTitle>
+            <CredenzaDescription>Add new</CredenzaDescription>
+          </CredenzaHeader>
+          <CredenzaBody asChild>
+            <ScrollArea className="h-[50vh]">
+              <AutoForm
+                schema={schema}
+                onSubmit={(b) => createMutation.mutate(b)}
+                formProps={{ id: "auto-table-add-form" }}
+              />
+            </ScrollArea>
+          </CredenzaBody>
+          <CredenzaFooter className="flex gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={() => setDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <SubmitButton
+              form="auto-table-add-form"
+              className="gap-2 w-full"
+              loading={updateMutation.isPending || createMutation.isPending}
+            >
+              <Save className="size-4" />
+              Save
+            </SubmitButton>
+          </CredenzaFooter>
+        </CredenzaContent>
+      </Credenza>
+      <DataTable
+        table={table}
+        actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
+      >
+        <DataTableAdvancedToolbar table={table}>
+          {enableAdvancedFiltering && (
+            <>
+              <DataTableFilterList
+                table={table}
+                shallow={shallow}
+                debounceMs={debounceMs}
+                throttleMs={throttleMs}
+                align="start"
+              />
+              <DataTableSortList table={table} align="start" />
+            </>
+          )}
+          {enableAggregations && (
+            <Button variant="outline" size="sm" className="gap-2">
+              <DatabaseZap className="size-4" />
+              Aggregations
+            </Button>
+          )}
+          {enableExport && (
+            <Button variant="outline" size="sm" className="gap-2">
+              <Download className="size-4" />
+              Export
+            </Button>
+          )}
+          {enableImport && (
+            <Button variant="outline" size="sm" className="gap-2">
+              <Upload className="size-4" />
+              Import
+            </Button>
+          )}
+          {(enableColumnVisibility || enableColumnPinning) && (
+            <Button variant="outline" size="sm" className="gap-2">
+              <Columns className="size-4" />
+              Columns
+            </Button>
+          )}
+        </DataTableAdvancedToolbar>
+      </DataTable>
+      <DeleteRowDialog
+        open={rowAction?.variant === "delete"}
+        onOpenChange={() => setRowAction(null)}
+        data={rowAction?.row.original ? [rowAction?.row.original] : []}
+        showTrigger={false}
+        onConfirm={() => {
+          console.log("confirm");
+          setRowAction(null);
+          onDelete(rowAction?.row.id ?? "");
+          rowAction?.row.toggleSelected(false);
+        }}
+      />
+      <EditRowDialog
+        open={rowAction?.variant === "update"}
+        onOpenChange={() => setRowAction(null)}
+        data={rowAction?.row.original}
+        schema={schema}
+        onSubmit={(data) => {
+          setRowAction(null);
+          if (data) {
+            updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data });
+          }
+        }}
+        showTrigger={false}
+      />
+    </div>
+  );
+}
+
+interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
+  setRowAction: React.Dispatch<
+    React.SetStateAction<DataTableRowAction<NestedSchemaType<T>> | null>
+  >;
+  schema: S;
+}
+
+function getAutoTableColumns<T extends SchemaKeys, S extends ZodObject<any>>({
+  setRowAction,
+  schema,
+}: GetAutoTableColumnsProps<T, S>): EnhancedColumnDef<NestedSchemaType<T>>[] {
+  const columns: EnhancedColumnDef<NestedSchemaType<T>>[] = [];
+
+  // Add row selection column if enabled
+  columns.push({
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={
+          table.getIsAllPageRowsSelected() ||
+          (table.getIsSomePageRowsSelected() && "indeterminate")
+        }
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+        aria-label="Select all"
+        className="translate-y-0.5"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
+        aria-label="Select row"
+        className="translate-y-0.5"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+    size: 40,
+  });
+
+  const parsedSchema = parseSchema(schema);
+
+  for (const field of parsedSchema.fields) {
+    const { key, description } = field;
+    const childSchema = z.object({ [key]: schema.shape[key] });
+    if (["_", "id"].includes(key)) continue;
+
+    const column: EnhancedColumnDef<NestedSchemaType<T>> = {
+      id: key,
+      accessorKey: key,
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          className="capitalize text-center w-full items-center justify-center"
+          column={column}
+          // @ts-expect-error
+          title={description || key}
+        />
+      ),
+      cell: ({ cell, table, row }) => {
+        const value = cell.getValue();
+
+        function update(value: Record<string, unknown>) {
+          // @ts-expect-error
+          table.options.meta?.updateData(row.id, value);
+        }
+
+        return (
+          <Editable.Root
+            defaultValue={value as string}
+            placeholder="-"
+            className="text-center"
+            triggerMode="dblclick"
+            onSubmit={(newValue) => {
+              update({ [key]: newValue });
+            }}
+          >
+            <Editable.Area>
+              <Editable.Preview className="max-w-56">
+                <AutoPreview
+                  field={field}
+                  key={field.key}
+                  value={value}
+                  baseSchema={schema.shape[field.key]}
+                />
+              </Editable.Preview>
+              <Editable.Input asChild>
+                <AutoFormWithoutLabel
+                  formProps={{
+                    // onBlur: (e) => {
+                    //   e.currentTarget.requestSubmit()
+                    // },
+                    onKeyDown: (e) => {
+                      if (e.code === "Enter") {
+                        e.currentTarget.requestSubmit();
+                      }
+                    },
+                    // autoSave: "onUpload",
+                  }}
+                  defaultValues={{ [key]: value as string }}
+                  schema={childSchema}
+                  onSubmit={(data) => {
+                    update(data);
+                  }}
+                />
+              </Editable.Input>
+            </Editable.Area>
+          </Editable.Root>
+        );
+      },
+      meta: {
+        // @ts-expect-error
+        label: field?._def?.description || key,
+        // @ts-expect-error
+        variant: getFilterVariant(field),
+        // @ts-expect-error
+        icon: getFieldIcon(field),
+      },
+      enableColumnFilter: true,
+      enableSorting: true,
+      searchable: true,
+      filterable: true,
+      sortable: true,
+      exportable: true,
+    };
+
+    columns.push(column);
+  }
+
+  // Add actions column
+  columns.push({
+    id: "actions",
+    cell: function Cell({ row }) {
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              aria-label="Open menu"
+              variant="secondary"
+              className="flex size-8 p-0 data-[state=open]:bg-muted"
+            >
+              <Ellipsis className="size-4" aria-hidden="true" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuItem
+              onSelect={() => setRowAction({ row, variant: "update" })}
+            >
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={() => setRowAction({ row, variant: "delete" })}
+            >
+              Delete
+              <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
+    size: 40,
+    enableSorting: false,
+    enableHiding: false,
+  });
+
+  return columns;
+}
+
+// Helper function to determine filter variant based on field type
+function getFilterVariant(field: z.ZodTypeAny): FilterVariant {
+  if (field instanceof z.ZodString) return "text";
+  if (field instanceof z.ZodNumber) return "range";
+  if (field instanceof z.ZodEnum) return "multiSelect";
+  if (field instanceof z.ZodBoolean) return "multiSelect";
+  if (field instanceof z.ZodDate) return "dateRange";
+  return "text";
+}
+
+// Helper function to get appropriate icon for field type
+function getFieldIcon(field: z.ZodTypeAny) {
+  if (field instanceof z.ZodDate) return CalendarIcon;
+  if (field instanceof z.ZodNumber) return ArrowUpDown;
+  if (field instanceof z.ZodBoolean) return CircleDashed;
+  return Text;
+}

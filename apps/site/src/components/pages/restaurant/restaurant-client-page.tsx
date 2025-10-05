@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Carousel } from "@/components/ui/carousel";
 import {
 	Credenza,
@@ -34,20 +34,34 @@ import {
 	ShoppingCart,
 	ShoppingCartIcon,
 	Trash2,
-	X
+	X,
+	Star,
+	Clock,
+	MapPin,
+	Leaf,
+	Flame,
+	ChefHat,
+	Wheat,
+	Minus,
+	Plus
 } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
 import { RestaurantMenuItemDetail } from "./restaurant-menu-item-detail";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export interface CartItem extends MenuItemType {
 	quantity: number;
+	customizations?: Record<string, boolean>;
 }
 
 interface CartContextType {
 	items: CartItem[];
-	addItem: (item: MenuItemType, quantity: number) => void;
+	addItem: (item: MenuItemType, quantity: number, customizations?: Record<string, boolean>) => void;
 	removeItem: (itemId: string) => void;
 	updateQuantity: (itemId: string, quantity: number) => void;
 	clearCart: () => void;
@@ -66,7 +80,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 	useEffect(() => {
 		const count = items.reduce((total, item) => total + item.quantity, 0);
 		const total = items.reduce(
-			(total, item) => total + item.price * item.quantity,
+			(total, item) => total + (item.price || 0) * item.quantity,
 			0,
 		);
 
@@ -74,7 +88,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 		setSubtotal(total);
 	}, [items]);
 
-	const addItem = (item: MenuItemType, quantity: number) => {
+	const addItem = (item: MenuItemType, quantity: number, customizations?: Record<string, boolean>) => {
 		setItems((prevItems) => {
 			const existingItem = prevItems.find((i) => i._?.soul === item._?.soul);
 
@@ -86,7 +100,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 				);
 			}
 
-			return [...prevItems, { ...item, quantity }];
+			return [...prevItems, { ...item, quantity, customizations: customizations || {} }];
 		});
 	};
 
@@ -145,6 +159,7 @@ interface MenuItemProps {
 export function MenuItem({ item }: MenuItemProps) {
 	const [quantity, setQuantity] = useState(0);
 	const [isAdding, setIsAdding] = useState(false);
+	const [showCustomization, setShowCustomization] = useState(false);
 	const { addItem } = useCart();
 	const navigate = useNavigate();
 	const cardRef = useRef<HTMLDivElement>(null);
@@ -160,13 +175,14 @@ export function MenuItem({ item }: MenuItemProps) {
 		}
 	};
 
-	const addToCart = () => {
+	const addToCart = (customizations?: Record<string, boolean>) => {
 		if (quantity > 0) {
 			setIsAdding(true);
 
-			addItem(item, quantity);
+			addItem(item, quantity, customizations);
 			setIsAdding(false);
 			setQuantity(0);
+			setShowCustomization(false);
 		}
 	};
 
@@ -181,95 +197,169 @@ export function MenuItem({ item }: MenuItemProps) {
 			initial={{ opacity: 0, y: 20 }}
 			animate={{ opacity: 1, y: 0 }}
 			transition={{ duration: 0.3 }}
-			whileHover={{ y: -10 }}
+			whileHover={{ y: -5 }}
 			className="transition-all duration-300"
 			ref={cardRef}
 		>
-			<MinimalCard className="relative h-full border border-border rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300">
-				{item.isSpecial && (
-					<motion.div
-						id={`menu-item-badge-${itemId}`}
-						className="z-50 absolute top-6 right-6 bg-primary px-3 py-1 rounded-full text-xs font-bold shadow-md"
-					>
-						Chef's Special
-					</motion.div>
-				)}
-				<motion.div
-					id={`menu-item-image-${itemId}`}
-					className="h-[320px] w-full cursor-pointer"
-					onClick={handleViewDetails}
-				>
-					<MinimalCardImage
-						className="h-full w-full object-cover"
-						src={item.imageUrl ?? ""}
-						alt={item.title ?? ""}
-					/>
-				</motion.div>
-				<MinimalCardDescription className="pt-4">
-					<div className="flex justify-between items-start mb-2">
-						<motion.h3
-							id={`menu-item-title-${itemId}`}
-							className="text-xl font-semibold text-foreground cursor-pointer"
+			<Card className="relative h-full border border-border rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300">
+				<div className="relative">
+					<div className="h-48 w-full overflow-hidden">
+						<img
+							src={item.imageUrl || "https://utfs.io/f/placeholder-food.jpg"}
+							alt={item.title || "Menu item"}
+							className="w-full h-full object-cover"
+						/>
+					</div>
+					
+					{item.isSpecial && (
+						<Badge className="absolute top-3 right-3 bg-amber-500 text-white z-10 px-3 py-1 rounded-full text-xs font-bold shadow-md">
+							Special
+						</Badge>
+					)}
+					
+					{item.isVegetarian && (
+						<Badge variant="secondary" className="absolute top-3 left-3 bg-green-100 text-green-800 z-10 px-2 py-0.5 rounded-full text-xs font-medium">
+							<Leaf className="h-3 w-3 mr-1" />
+							Veg
+						</Badge>
+					)}
+					
+					{item.isSpicy && (
+						<Badge variant="secondary" className="absolute top-10 left-3 bg-red-100 text-red-800 z-10 px-2 py-0.5 rounded-full text-xs font-medium">
+							<Flame className="h-3 w-3 mr-1" />
+							Spicy
+						</Badge>
+					)}
+				</div>
+				
+				<CardHeader className="p-4 pb-2">
+					<div className="flex justify-between items-start mb-1">
+						<h3 
+							className="text-lg font-semibold text-foreground cursor-pointer hover:text-primary transition-colors"
 							onClick={handleViewDetails}
 						>
 							{item.title}
-						</motion.h3>
+						</h3>
 						{item.price && (
-							<motion.span
-								id={`menu-item-price-${itemId}`}
-								className="font-bold text-lg text-primary"
-							>
+							<span className="font-bold text-lg text-primary">
 								Rs. {item.price.toFixed(2)}
-							</motion.span>
+							</span>
 						)}
 					</div>
-					<motion.p
-						id={`menu-item-description-${itemId}`}
-						className="text-muted-foreground text-sm mb-4 line-clamp-2 cursor-pointer"
-						onClick={handleViewDetails}
-					>
-						{item.description}
-					</motion.p>
-				</MinimalCardDescription>
-				<MinimalCardFooter className="border-t border-muted/50 dark:border-muted/30 pt-4">
+					
+					<div className="flex items-center gap-1 mb-2">
+						{item.rating && (
+							<div className="flex items-center">
+								<Star className="h-4 w-4 text-yellow-400 fill-current" />
+								<span className="text-xs text-muted-foreground ml-1">
+									{item.rating}
+								</span>
+							</div>
+						)}
+						
+						{item.preparationTime && (
+							<div className="flex items-center ml-2">
+								<Clock className="h-4 w-4 text-muted-foreground" />
+								<span className="text-xs text-muted-foreground ml-1">
+									{item.preparationTime} min
+								</span>
+							</div>
+						)}
+					</div>
+					
+					{item.description && (
+						<p 
+							className="text-muted-foreground text-sm line-clamp-2 cursor-pointer"
+							onClick={handleViewDetails}
+						>
+							{item.description}
+						</p>
+					)}
+				</CardHeader>
+				
+				<CardFooter className="p-4 pt-2">
 					<div className="flex items-center justify-between w-full">
 						<div className="flex items-center space-x-2">
 							<Button
 								variant="outline"
-								size="icon"
+								size="sm"
 								className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
 								onClick={decrementQuantity}
 								disabled={quantity === 0}
 							>
-								<MinusIcon className="h-4 w-4" />
+								<Minus className="h-4 w-4" />
 							</Button>
 							<span className="w-8 text-center font-medium">{quantity}</span>
 							<Button
 								variant="outline"
-								size="icon"
+								size="sm"
 								className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
 								onClick={incrementQuantity}
 							>
-								<PlusIcon className="h-4 w-4" />
+								<Plus className="h-4 w-4" />
 							</Button>
 						</div>
-						<Button
-							onClick={addToCart}
-							disabled={quantity === 0 || isAdding}
-							className={`flex items-center gap-2 py-5 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02] ${isAdding ? "animate-pulse" : ""}`}
-						>
-							{isAdding ? (
-								"Adding..."
-							) : (
-								<>
-									<ShoppingCartIcon className="h-4 w-4" />
-									Add to Cart
-								</>
-							)}
-						</Button>
+						
+						<div className="flex gap-2">
+							<Button
+								variant="outline"
+								size="sm"
+								className="h-10 w-10 p-0"
+								onClick={() => setShowCustomization(!showCustomization)}
+							>
+								<ChefHat className="h-4 w-4" />
+							</Button>
+							
+							<Button
+								onClick={() => addToCart()}
+								disabled={quantity === 0 || isAdding}
+								className={`flex items-center gap-2 py-5 px-4 text-base bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02] ${isAdding ? "animate-pulse" : ""}`}
+							>
+								{isAdding ? (
+									"Adding..."
+								) : (
+									<>
+										<ShoppingCartIcon className="h-4 w-4" />
+										Add to Cart
+									</>
+								)}
+							</Button>
+						</div>
 					</div>
-				</MinimalCardFooter>
-			</MinimalCard>
+					
+					{/* Customization options */}
+					{showCustomization && (
+						<motion.div
+							initial={{ opacity: 0, height: 0 }}
+							animate={{ opacity: 1, height: "auto" }}
+							exit={{ opacity: 0, height: 0 }}
+							className="mt-3 w-full pt-3 border-t border-muted/50"
+						>
+							<h4 className="text-sm font-medium mb-2">Customizations</h4>
+							<div className="space-y-2">
+								<div className="flex items-center space-x-2">
+									<Checkbox id={`extraCheese-${itemId}`} />
+									<Label htmlFor={`extraCheese-${itemId}`} className="text-sm">
+										Extra Cheese (+Rs. 50)
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox id={`noOnions-${itemId}`} />
+									<Label htmlFor={`noOnions-${itemId}`} className="text-sm">
+										No Onions
+									</Label>
+								</div>
+								<div className="flex items-center space-x-2">
+									<Checkbox id={`extraSauce-${itemId}`} />
+									<Label htmlFor={`extraSauce-${itemId}`} className="text-sm">
+										Extra Sauce (+Rs. 30)
+									</Label>
+								</div>
+							</div>
+						</motion.div>
+					)}
+				</CardFooter>
+			</Card>
 		</motion.div>
 	);
 }
@@ -288,10 +378,16 @@ export function MenuSection({ title, items }: MenuSectionProps) {
 				animate={{ opacity: 1, x: 0 }}
 				transition={{ duration: 0.6 }}
 			>
-				<h2 className="text-3xl md:text-4xl font-bold mb-4 relative inline-block">
-					{title}
-					<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
-				</h2>
+				<div className="relative">
+					<h2 className="text-3xl md:text-4xl font-bold relative inline-block">
+						{title}
+						<span className="absolute bottom-0 left-0 w-1/3 h-1 bg-primary rounded-full" />
+					</h2>
+				</div>
+				
+				<Badge variant="secondary" className="text-sm">
+					{items.length} items
+				</Badge>
 			</motion.div>
 			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
 				{items.map((item, index) => (
