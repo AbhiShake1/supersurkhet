@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as PrivacyImport } from './routes/privacy'
 import { Route as AdminImport } from './routes/admin'
 import { Route as AuthImport } from './routes/_auth'
 import { Route as IndexImport } from './routes/index'
@@ -30,6 +31,12 @@ import { Route as BusinessRideAdminVehicleTypesImport } from './routes/_business
 import { Route as AuthDemosRestaurantAdminImport } from './routes/_auth/_demos/restaurant/admin'
 
 // Create/Update Routes
+
+const PrivacyRoute = PrivacyImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const AdminRoute = AdminImport.update({
   id: '/admin',
@@ -156,6 +163,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminImport
+      parentRoute: typeof rootRoute
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyImport
       parentRoute: typeof rootRoute
     }
     '/$businessName/admin': {
@@ -297,6 +311,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
+  '/privacy': typeof PrivacyRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
@@ -317,6 +332,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
+  '/privacy': typeof PrivacyRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
@@ -337,6 +353,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
+  '/privacy': typeof PrivacyRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/_auth/auth': typeof AuthAuthRoute
   '/_auth/settings': typeof AuthSettingsRoute
@@ -359,6 +376,7 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/admin'
+    | '/privacy'
     | '/$businessName/admin'
     | '/auth'
     | '/settings'
@@ -378,6 +396,7 @@ export interface FileRouteTypes {
     | '/'
     | ''
     | '/admin'
+    | '/privacy'
     | '/$businessName/admin'
     | '/auth'
     | '/settings'
@@ -396,6 +415,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_auth'
     | '/admin'
+    | '/privacy'
     | '/$businessName/admin'
     | '/_auth/auth'
     | '/_auth/settings'
@@ -417,6 +437,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRouteWithChildren
   AdminRoute: typeof AdminRoute
+  PrivacyRoute: typeof PrivacyRoute
   BusinessNameAdminRoute: typeof BusinessNameAdminRoute
   BusinessChatRoute: typeof BusinessChatRoute
   BusinessNameIndexRoute: typeof BusinessNameIndexRoute
@@ -431,6 +452,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRouteWithChildren,
   AdminRoute: AdminRoute,
+  PrivacyRoute: PrivacyRoute,
   BusinessNameAdminRoute: BusinessNameAdminRoute,
   BusinessChatRoute: BusinessChatRoute,
   BusinessNameIndexRoute: BusinessNameIndexRoute,
@@ -454,6 +476,7 @@ export const routeTree = rootRoute
         "/",
         "/_auth",
         "/admin",
+        "/privacy",
         "/$businessName/admin",
         "/_business/chat",
         "/$businessName/",
@@ -478,6 +501,9 @@ export const routeTree = rootRoute
     },
     "/admin": {
       "filePath": "admin.tsx"
+    },
+    "/privacy": {
+      "filePath": "privacy.tsx"
     },
     "/$businessName/admin": {
       "filePath": "$businessName/admin.tsx"
