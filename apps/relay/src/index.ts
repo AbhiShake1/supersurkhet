@@ -103,7 +103,7 @@ class Server {
 
 export default {
   async fetch(request: Request, env: Env) {
-    const id = env.RELAY.idFromName('gun-relay');
+    const id = env.RELAY.idFromName('RELAY');
     const relay = env.RELAY.get(id);
     return relay.fetch(request);
   }
