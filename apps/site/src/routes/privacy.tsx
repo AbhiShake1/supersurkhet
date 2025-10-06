@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/privacy")({
   component: PrivacyPage,
@@ -167,12 +168,23 @@ function PrivacyPage() {
               <ul className="list-disc pl-6 space-y-2">
                 <li><span className="font-medium">Access:</span> You can access all your data stored in the network</li>
                 <li><span className="font-medium">Portability:</span> You can export your data in standard formats</li>
-                <li><span className="font-medium">Deletion:</span> You can request removal of your data from the network</li>
+                <li><span className="font-medium">Deletion:</span> You can request removal of your data from the network. Note that in a P2P system, complete deletion from all peers may take time and depends on network behavior.</li>
                 <li><span className="font-medium">Control:</span> You control who has access to your data through our permission system</li>
                 <li><span className="font-medium">Correction:</span> You can update and correct your information at any time</li>
               </ul>
               
-              <p>
+              <div className="mt-4">
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Data Retention in P2P Network</h3>
+                <p>
+                  In our decentralized architecture, data retention works differently than centralized systems. 
+                  When you delete data, it's removed from your node and peers will gradually update to reflect 
+                  this change. However, complete removal from all peers in the network may take time and 
+                  depends on the network's behavior. We recommend contacting us if you need to ensure 
+                  complete data removal.
+                </p>
+              </div>
+              
+              <p className="mt-4">
                 As a business owner, you also have the right to control all data related to your business, 
                 including customer information, employee access, and business operations data.
               </p>
@@ -189,8 +201,9 @@ function PrivacyPage() {
               <div>
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Cryptography</h3>
                 <p>
-                  We use industry-standard encryption (SEA protocol) to protect your data. Each user 
-                  has private keys that control access to their information.
+                  We use GunDB's SEA (Secure, Encrypted, Autonomy) protocol to encrypt your data. 
+                  Each user has cryptographic keys that control access to their information, ensuring 
+                  that only authorized parties can decrypt and access your data.
                 </p>
               </div>
               
@@ -198,8 +211,8 @@ function PrivacyPage() {
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Network Security</h3>
                 <p>
                   The distributed nature of our network means that there is no single point of failure. 
-                  Even if some peers in the network go offline, your data remains accessible through 
-                  other peers.
+                  Data is replicated across multiple peers in the network, ensuring availability while 
+                  maintaining decentralization principles.
                 </p>
               </div>
               
@@ -208,11 +221,59 @@ function PrivacyPage() {
                 <p>
                   We use strong authentication mechanisms including password-based access and 
                   optional Google OAuth, while maintaining the decentralized control of your identity.
+                  Your authentication credentials are used to manage your cryptographic keys.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Data Minimization</h3>
+                <p>
+                  We only store data that is necessary for the operation of the platform. Our 
+                  decentralized architecture inherently limits data collection compared to centralized 
+                  systems, as data doesn't need to be aggregated in a central location.
                 </p>
               </div>
             </CardContent>
           </Card>
 
+          <Card className="border-0 shadow-lg dark:bg-zinc-800/50 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="text-2xl text-gray-900 dark:text-white">
+                Third-Party Services & Cookies
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4 text-gray-700 dark:text-gray-300">
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Third-Party Authentication</h3>
+                <p>
+                  We use Google OAuth for optional authentication. When you use Google Sign-In, 
+                  Google will share your email address, name, and profile picture with us. We 
+                  store this information in your decentralized profile and use it only to 
+                  personalize your experience.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Cookies & Local Storage</h3>
+                <p>
+                  We use browser cookies and local storage to maintain your session, remember 
+                  your preferences, and improve your experience. These are stored locally on 
+                  your device and are not shared with the network unless you explicitly choose 
+                  to do so.
+                </p>
+              </div>
+              
+              <div>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Analytics</h3>
+                <p>
+                  We use privacy-focused analytics tools to understand how our platform is 
+                  used and to improve our services. All analytics data is aggregated and does 
+                  not identify individual users.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
           <Card className="border-0 shadow-lg dark:bg-zinc-800/50 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="text-2xl text-gray-900 dark:text-white">
@@ -240,8 +301,8 @@ function PrivacyPage() {
         </div>
 
         <div className="mt-12 text-center">
-          <Button variant="outline" className="dark:border-gray-600 dark:text-gray-200">
-            <a href="/">Back to Home</a>
+          <Button variant="outline" className="dark:border-gray-600 dark:text-gray-200" asChild>
+            <Link to="/">Back to Home</Link>
           </Button>
         </div>
       </div>
