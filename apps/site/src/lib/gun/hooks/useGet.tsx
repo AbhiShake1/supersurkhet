@@ -7,7 +7,6 @@ import type { NestedSchemaType, SchemaKeys } from "..";
 import { getGunRef, mergeKeys } from "../utils";
 import { decrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
-import type { GunCallbackMap } from "gun/types";
 
 function attachSouls(obj: any, currentPath: string): any {
 	if (typeof obj !== "object" || obj === null) return obj;
@@ -25,7 +24,7 @@ function attachSouls(obj: any, currentPath: string): any {
 
 export type UseGetBuilder<T extends SchemaKeys> = {
 	separator?: string;
-	mapper?: GunCallbackMap<NestedSchemaType<T>, string, any>;
+	filter?: (item: NestedSchemaType<T>) => boolean;
 };
 
 export const useGet = createGunHook((messenger) => {
@@ -38,8 +37,13 @@ export const useGet = createGunHook((messenger) => {
 		...restKeys: string[]
 	) => {
 		function getMapper() {
-			if (typeof key !== "string") {
-				return key.mapper
+			if (typeof key !== "string" && key.filter) {
+				return (data: NestedSchemaType<T>) => {
+					if (key.filter?.(data)) {
+						return data;
+					}
+					return undefined
+				};
 			}
 			return undefined
 		}

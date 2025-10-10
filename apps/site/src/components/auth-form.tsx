@@ -13,6 +13,9 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { useAuth } from "./auth-provider";
 import { cn } from "@/lib/utils";
+import { sendMail } from "@/emails/send-mail";
+import AccountVerifyEmail from "@/emails/account-verify";
+import { render } from "@react-email/render";
 
 const loginSchema = z.object({
 	email: z.string().email(),
@@ -65,6 +68,14 @@ export function AuthForm({
 
 	const signupMutation = useMutation({
 		mutationFn: async ({ email, password }: z.infer<typeof signupSchema>) => {
+			// await sendMail({
+			// 	data: {
+			// 		from: "SuperSurkhet <onboarding@surkhet.app>",
+			// 		to: email,
+			// 		subject: "SuperSurkhet Email Verification",
+			// 		html: await render(<AccountVerifyEmail verificationCode="xxxx" />)
+			// 	}
+			// })
 			const alias = email?.toLowerCase();
 			const userExists = await new Promise((resolve) => {
 				gun.get("~@" + alias).once((data) => resolve(!!data));
@@ -241,15 +252,11 @@ export function AuthForm({
 						</SubmitButton>
 						<p className="text-accent-foreground text-center text-sm pb-2">
 							Already have an account?
-							<Button asChild variant="link" className="px-2">
-								<a
-									onClick={() => {
-										setError("");
-										onModeChange("login");
-									}}
-								>
-									Sign in
-								</a>
+							<Button variant="link" className="px-2" onClick={() => {
+								setError("");
+								onModeChange("login");
+							}}>
+								Sign in
 							</Button>
 						</p>
 					</AutoForm>

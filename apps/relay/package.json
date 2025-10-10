@@ -8,6 +8,7 @@
     "build": "pnpx esbuild ./src/index.ts --bundle --platform=node --external:node:* --outfile=build/worker.js"
   },
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "gun": "^0.2020.1239"
   },
   "devDependencies": {

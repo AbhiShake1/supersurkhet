@@ -16,9 +16,7 @@ interface AccountVerifyEmailProps {
   verificationCode?: string;
 }
 
-const baseUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : '';
+const baseUrl = "https://surkhet.app";
 
 export default function AccountVerifyEmail({
   verificationCode,
@@ -29,49 +27,65 @@ export default function AccountVerifyEmail({
       <Body style={main}>
         <Preview>SuperSurkhet Email Verification</Preview>
         <Container style={container}>
-          <Section style={coverSection}>
-            <Section style={imageSection}>
-              <Img
-                src={`${baseUrl}/icon.png`}
-                width="50"
-                height="50"
-                alt="SuperSurkhet's Logo"
-              />
-            </Section>
-            <Section style={upperSection}>
-              <Heading style={h1}>Verify your email address</Heading>
-              <Text style={mainText}>
-                Thanks for starting the new SuperSurkhet account creation process. We
-                want to make sure it's really you. Please enter the following
-                verification code when prompted to complete your registration and gain
-                access to tools designed to digitally empower your business in Surkhet.
-                If you don&apos;t want to create an account, you can ignore this message.
-              </Text>
-              <Section style={verificationSection}>
-                <Text style={verifyText}>Verification code</Text>
-
-                <Text style={codeText}>{verificationCode}</Text>
-                <Text style={validityText}>
-                  (This code is valid for 10 minutes)
-                </Text>
-              </Section>
-            </Section>
-            <Hr />
-            <Section style={lowerSection}>
-              <Text style={cautionText}>
-                SuperSurkhet will never email you and ask you to disclose
-                or verify your password, credit card, or banking account number.
-              </Text>
-            </Section>
+          {/* Header with centered logo */}
+          <Section style={headerSection}>
+            <Img
+              src={`${baseUrl}/icon.png`}
+              width="80"
+              height="80"
+              alt="SuperSurkhet's Logo"
+              style={logo}
+            />
           </Section>
-          <Text style={footerText}>
-            This message was sent to you by SuperSurkhet - Digitally empowering businesses in Surkhet, Nepal.
-            © 2025 SuperSurkhet. All rights reserved. View our{' '}
-            <Link href="https://surkhet.app/privacy" target="_blank" style={link}>
-              privacy policy
-            </Link>
-            .
-          </Text>
+
+          {/* Main content card */}
+          <Section style={card}>
+            <Heading style={heading}>Verify Your Email Address</Heading>
+
+            <Text style={paragraph}>
+              Thank you for creating a SuperSurkhet account. We're excited to have you on board
+              and help you digitally empower your business in Surkhet.
+            </Text>
+
+            <Text style={paragraph}>
+              Please enter the following verification code when prompted to complete your
+              registration and gain access to our tools designed to transform your business operations.
+            </Text>
+
+            {/* Verification code card */}
+            <Section style={verificationCard}>
+              <Text style={verificationLabel}>Your Verification Code</Text>
+              <Text style={verificationCodeCode}>{verificationCode}</Text>
+              <Text style={verificationTime}>
+                (This code is valid for 10 minutes)
+              </Text>
+            </Section>
+
+            <Text style={paragraph}>
+              If you didn't create an account, please disregard this message.
+            </Text>
+          </Section>
+
+          {/* Footer */}
+          <Section style={footerSection}>
+            <Text style={footerText}>
+              SuperSurkhet will never email you asking for your password, credit card,
+              or banking information.
+            </Text>
+            <Hr style={footerDivider} />
+            <Text style={footerCopyright}>
+              © 2025 SuperSurkhet. Digitally empowering businesses in Surkhet, Nepal.
+            </Text>
+            <Text style={footerLinks}>
+              <Link href="https://surkhet.app/privacy" target="_blank" style={footerLink}>
+                Privacy Policy
+              </Link>
+              {' '} | {' '}
+              <Link href="https://surkhet.app/terms" target="_blank" style={footerLink}>
+                Terms of Service
+              </Link>
+            </Text>
+          </Section>
         </Container>
       </Body>
     </Html>
@@ -82,89 +96,116 @@ AccountVerifyEmail.PreviewProps = {
   verificationCode: '596853',
 } satisfies AccountVerifyEmailProps;
 
+// Styles
 const main = {
-  backgroundColor: '#fff',
-  color: '#212121',
+  backgroundColor: '#f6f9fc',
+  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 };
 
 const container = {
-  padding: '20px',
+  maxWidth: '600px',
   margin: '0 auto',
-  backgroundColor: '#eee',
+  padding: '20px 0 40px',
 };
 
-const h1 = {
-  color: '#333',
-  fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
-  fontSize: '20px',
+const headerSection = {
+  textAlign: 'center' as const,
+  padding: '30px 0',
+};
+
+const logo = {
+  margin: '0 auto',
+};
+
+const card = {
+  backgroundColor: '#ffffff',
+  borderRadius: '12px',
+  padding: '40px',
+  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
+  textAlign: 'center' as const,
+};
+
+const heading = {
+  fontSize: '24px',
   fontWeight: 'bold',
-  marginBottom: '15px',
+  color: '#1a1a1a',
+  margin: '0 0 20px',
+  textAlign: 'center' as const,
 };
 
-const link = {
-  color: '#2754C5',
-  fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+const paragraph = {
+  fontSize: '16px',
+  lineHeight: '1.5',
+  color: '#333333',
+  margin: '0 0 16px',
+  textAlign: 'center' as const,
+};
+
+const verificationCard = {
+  backgroundColor: '#f0f9ff',
+  borderRadius: '12px',
+  padding: '24px',
+  margin: '30px 0',
+  border: '1px solid #dbeafe',
+};
+
+const verificationLabel = {
   fontSize: '14px',
-  textDecoration: 'underline',
+  fontWeight: '600',
+  color: '#4f46e5',
+  margin: '0 0 12px',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.5px',
 };
 
-const text = {
-  color: '#333',
-  fontFamily:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+const verificationCodeCode = {
+  fontSize: '32px',
+  fontWeight: 'bold',
+  color: '#1e293b',
+  margin: '0 0 8px',
+  letterSpacing: '4px',
+  fontFamily: 'monospace',
+};
+
+const verificationTime = {
   fontSize: '14px',
-  margin: '24px 0',
+  color: '#64748b',
+  margin: '0',
 };
 
-const imageSection = {
-  backgroundColor: '#252f3d',
-  display: 'flex',
-  padding: '20px 0',
-  alignItems: 'center',
-  justifyContent: 'center',
+const footerSection = {
+  marginTop: '40px',
+  padding: '0 20px',
+  textAlign: 'center' as const,
 };
-
-const coverSection = { backgroundColor: '#fff' };
-
-const upperSection = { padding: '25px 35px' };
-
-const lowerSection = { padding: '25px 35px' };
 
 const footerText = {
-  ...text,
   fontSize: '12px',
-  padding: '0 20px',
-};
-
-const verifyText = {
-  ...text,
-  margin: 0,
-  fontWeight: 'bold',
+  color: '#6b7280',
+  margin: '0 0 16px',
   textAlign: 'center' as const,
 };
 
-const codeText = {
-  ...text,
-  fontWeight: 'bold',
-  fontSize: '36px',
-  margin: '10px 0',
+const footerDivider = {
+  borderColor: '#e5e7eb',
+  margin: '20px auto',
+};
+
+const footerCopyright = {
+  fontSize: '12px',
+  color: '#6b7280',
+  margin: '0 0 12px',
   textAlign: 'center' as const,
 };
 
-const validityText = {
-  ...text,
-  margin: '0px',
+const footerLinks = {
+  fontSize: '12px',
+  color: '#6b7280',
+  margin: '0',
   textAlign: 'center' as const,
 };
 
-const verificationSection = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'center',
+const footerLink = {
+  color: '#4f46e5',
+  textDecoration: 'none',
 };
-
-const mainText = { ...text, marginBottom: '14px' };
-
-const cautionText = { ...text, margin: '0px' };

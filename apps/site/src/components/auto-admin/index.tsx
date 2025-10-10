@@ -70,10 +70,10 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 		return () => window.removeEventListener('keydown', handleKeyDown);
 	}, []);
 
-	const { data: allBusinesses = [] } = api.business.useGet();
-	const business = allBusinesses.find(
-		(b: Business) => b.basePath === basePath,
-	);
+	const { data: allBusinesses = [], isLoading: isLoadingBusiness } = api.business.useGet({
+		filter: (b: Business) => b.basePath === basePath,
+	});
+	const business = allBusinesses[0];
 
 	// Enhanced navigation structure with icons
 	const tabsWithHomeWithoutRoles = [
