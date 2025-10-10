@@ -15,6 +15,7 @@ export class GunRelay implements DurableObject {
   private server: any;
 
   constructor(state: DurableObjectState, env: Env) {
+    console.log({ env })
     this.state = state;
     this.server = new Server();
     this.gun = Gun({

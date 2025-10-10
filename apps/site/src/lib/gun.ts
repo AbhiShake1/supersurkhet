@@ -17,7 +17,7 @@ import "gun/sea";
 export const gun = GUN({
 	localStorage: false,
 	peers: [
-		"wss://gun-relay.abhi-shake-np.workers.dev/gun",
+		"wss://relay.surkhet.app/gun",
 		"wss://gun-manhattan.herokuapp.com/gun",
 	],
 });

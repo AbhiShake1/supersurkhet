@@ -539,7 +539,7 @@ export class SecureGunDB {
     this.gun = GUN({
       localStorage: false, // Disable localStorage for security
       peers: [
-        "wss://gun-relay.abhi-shake-np.workers.dev/gun",
+        "wss://relay.surkhet.app/gun",
         "wss://gun-manhattan.herokuapp.com/gun",
       ],
     })
