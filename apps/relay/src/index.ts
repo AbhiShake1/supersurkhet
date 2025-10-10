@@ -1,21 +1,23 @@
-import Gun from 'gun';
+import Gun, { type IGunInstance } from 'gun';
+import { DurableObject } from "cloudflare:workers";
 
-export interface Env {
-  RELAY: DurableObjectNamespace;
-  GUN_PEERS: string;
+interface Env {
+  GUN_PEERS: "";
   S3_BUCKET: string;
   S3_KEY: string;
   S3_SECRET: string;
   S3_ENDPOINT: string;
+  S3_REGION: string;
+  RELAY: DurableObjectNamespace<GunRelay>;
 }
 
-export class GunRelay implements DurableObject {
+export class GunRelay extends DurableObject {
   private state: DurableObjectState;
-  private gun: any;
+  private gun: IGunInstance;
   private server: any;
 
   constructor(state: DurableObjectState, env: Env) {
-    console.log({ env })
+    super(state, env);
     this.state = state;
     this.server = new Server();
     this.gun = Gun({
@@ -24,6 +26,7 @@ export class GunRelay implements DurableObject {
         bucket: env.S3_BUCKET,
         key: env.S3_KEY,
         secret: env.S3_SECRET,
+        region: env.S3_REGION,
         // fakes3: env.S3_ENDPOINT,
       },
       peers: env.GUN_PEERS ? env.GUN_PEERS.split(',') : [],
