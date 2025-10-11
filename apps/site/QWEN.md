@@ -140,6 +140,38 @@ Deployed to Cloudflare Pages with configuration in `wrangler.toml`.
 - **Decentralized data architecture** with GunDB
 - **Unified ID system** for cross-platform authentication
 
+## Hard Rules for Data Flow Implementation
+
+When implementing new features or modifying existing ones, you MUST follow these hard rules for data flow:
+
+1. **Always use the custom GunDB hooks**: Use `api.{schema}.useGet()`, `api.{schema}.useCreate()`, `api.{schema}.useUpdate()`, and `api.{schema}.useDelete()` for all data operations
+   - Never directly access GunDB instance in components
+   - Always go through the `api` layer for consistency
+
+2. **Never use `createServerFn` for real-time UI updates**: Server functions are for server-side operations only
+   - Use GunDB hooks for real-time client-side data
+   - Server functions should only be used for operations that don't require real-time sync
+
+3. **Always use the existing schema definitions**: When creating new data types, extend from the base schemas in `src/lib/schema.ts`
+   - Use existing Zod schemas or create new ones following the same patterns
+   - Never create duplicate schema definitions
+
+4. **Use business-specific keys when needed**: When fetching data specific to a business, always pass the business slug as a key
+   - Example: `api.menuItem.useGet({ keys: [slug] })` for restaurant menu items
+   - This ensures data isolation between different businesses
+
+5. **Leverage context providers for complex state**: For features like folders or recently used apps, use the existing context providers
+   - These providers properly encapsulate the GunDB hooks with business logic
+   - Don't reimplement the same logic in multiple places
+
+6. **Maintain real-time synchronization**: All data operations should support real-time updates
+   - The GunDB hooks automatically handle real-time sync
+   - Don't implement custom polling or manual refresh logic
+
+7. **Follow security patterns**: All data is encrypted at the GunDB level
+   - Trust the encryption provided by the hooks
+   - Don't implement additional client-side encryption for data at rest
+
 ## Routing Structure
 
 Main routes:

@@ -8,7 +8,7 @@ import { pixelArt } from "@dicebear/collection";
 import { createAvatar } from "@dicebear/core";
 import { useGoogleLogin } from "@react-oauth/google";
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useAuth } from "./auth-provider";
@@ -16,6 +16,19 @@ import { cn } from "@/lib/utils";
 import { sendMail } from "@/emails/send-mail";
 import AccountVerifyEmail from "@/emails/account-verify";
 import { render } from "@react-email/render";
+import { getGunRef, mergeKeys } from "@/lib/gun/utils";
+import type { OTP } from "@/lib/schema";
+import { generateId } from "@/lib/id";
+import {
+	Credenza,
+	CredenzaBody,
+	CredenzaContent,
+	CredenzaHeader,
+	CredenzaTitle,
+	CredenzaTrigger,
+} from "./ui/credenza";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
+import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
 	email: z.string().email(),
@@ -50,6 +63,39 @@ interface AuthFormProps extends React.ComponentProps<"div"> {
 	headerWrapperProps?: React.ComponentProps<"div">;
 }
 
+function verifyOTP({ data: { otp, userId } }: { data: { otp: string, userId: string } }) {
+	const otpKey = mergeKeys("otp", userId);
+	return new Promise((resolve, reject) => {
+		getGunRef(otpKey).not(() => {
+			console.log(otpKey, "doesnt exist")
+			reject(new Error("OTP expired"));
+		}).once(async (otpData: unknown) => {
+			const { otp: otpInDb, _ } = otpData as OTP;
+			const createdAtStr = _?.[">"]?.["otp"]
+			if (otpInDb === otp && !!createdAtStr) {
+				const createdAt = new Date(createdAtStr);
+				const wasCreatedWithinLast10Minutes = Date.now() - createdAt.getTime() < 10 * 60 * 1000;
+				if (!wasCreatedWithinLast10Minutes) {
+					reject(new Error("OTP expired"));
+				}
+				resolve(otpData);
+			} else {
+				reject(new Error("Invalid OTP"));
+			}
+		})
+	})
+}
+
+function createOTP({ data: { userId } }: { data: { userId: string } }) {
+	const otpKey = mergeKeys("otp", userId);
+	const otp = generateId({ length: 6 }).toLowerCase();
+	getGunRef(otpKey).put({
+		otp,
+	})
+
+	return otp
+}
+
 export function AuthForm({
 	mode,
 	onModeChange,
@@ -61,53 +107,42 @@ export function AuthForm({
 	...props
 }: AuthFormProps) {
 	const isSignup = mode === "signup";
+	const [otp, setOtp] = useState("");
 	const [error, setError] = useState("");
+	const [showOTPModal, setShowOTPModal] = useState(false);
+	const [signupData, setSignupData] = useState<z.infer<typeof signupSchema> | null>(null);
 	const { refreshUser } = useAuth();
 
 	const { linkAnonymousUser } = useAuth();
 
 	const signupMutation = useMutation({
 		mutationFn: async ({ email, password }: z.infer<typeof signupSchema>) => {
-			// await sendMail({
-			// 	data: {
-			// 		from: "SuperSurkhet <onboarding@surkhet.app>",
-			// 		to: email,
-			// 		subject: "SuperSurkhet Email Verification",
-			// 		html: await render(<AccountVerifyEmail verificationCode="xxxx" />)
-			// 	}
-			// })
 			const alias = email?.toLowerCase();
 			const userExists = await new Promise((resolve) => {
-				gun.get("~@" + alias).once((data) => resolve(!!data));
+				gun.get(`~@${alias}`).once((data) => resolve(!!data));
 			});
 			if (userExists) {
 				throw new Error("This email is already registered");
 			}
-			return new Promise((resolve, reject) => {
-				gun.user().create(alias, password, (ack) => {
-					if ("err" in ack) return reject(new Error(ack.err));
 
-					const userProfile = {
-						email: alias,
-						role: "user",
-						isActive: true,
-						avatar: createAvatar(pixelArt).toDataUri(),
-						phone: "",
-						permissions: {},
-					};
-					// console.log(ack)
-					gun.get("user").get(ack.pub).put(userProfile);
-					resolve(ack);
-				});
+			const otp = await createOTP({ data: { userId: alias } });
+
+			// Send verification email
+			await sendMail({
+				data: {
+					from: "SuperSurkhet <onboarding@surkhet.app>",
+					to: email,
+					subject: "SuperSurkhet Email Verification",
+					html: await render(<AccountVerifyEmail verificationCode={otp} />)
+				}
 			});
+
+			// Store signup data and show OTP modal
+			setSignupData({ email, password, confirmPassword: password });
+			setShowOTPModal(true);
 		},
-		onSuccess: async (ack) => {
-			// Link anonymous user data to the new account if exists
-			// The user object from GunDB will be passed to linkAnonymousUser
-			await linkAnonymousUser(ack);
-			refreshUser();
+		onSuccess: () => {
 			setError("");
-			onModeChange("login");
 		},
 		onError: (err) => {
 			setError(err.message);
@@ -174,6 +209,49 @@ export function AuthForm({
 		},
 		onError: () => {
 			toast.error("Login Failed");
+		},
+	});
+
+	// OTP verification mutation
+	const verifyOtpMutation = useMutation({
+		mutationFn: async ({ otp }: { otp: string }) => {
+			if (!signupData) throw new Error("No signup data available");
+			const alias = signupData.email.toLowerCase();
+
+			await verifyOTP({ data: { otp, userId: alias } });
+
+			// Create the actual user account after OTP verification
+			return new Promise((resolve, reject) => {
+				gun.user().create(alias, signupData.password, (ack) => {
+					if ("err" in ack) return reject(new Error(ack.err));
+
+					const userProfile = {
+						email: alias,
+						role: "user",
+						isActive: true,
+						avatar: createAvatar(pixelArt).toDataUri(),
+						phone: "",
+						permissions: {},
+					};
+					gun.get("user").get(ack.pub).put(userProfile);
+					resolve(ack);
+				});
+			});
+		},
+		onSuccess: async (ack) => {
+			// Link anonymous user data to the new account if exists
+			// The user object from GunDB will be passed to linkAnonymousUser
+			await linkAnonymousUser(ack);
+			refreshUser();
+			setError("");
+			setShowOTPModal(false);
+			setSignupData(null);
+			onModeChange("login");
+			toast.success("Account created successfully!");
+		},
+		onError: (err) => {
+			setError(err.message);
+			onAuthError?.(err);
 		},
 	});
 
@@ -245,10 +323,13 @@ export function AuthForm({
 				{isSignup ? (
 					<AutoForm
 						schema={signupSchema}
-						onSubmit={(v) => signupMutation.mutate(v)}
+						onSubmit={(v) => {
+							// Create OTP and send email instead of directly creating account
+							signupMutation.mutate(v);
+						}}
 					>
 						<SubmitButton className="w-full" loading={signupMutation.isPending}>
-							Create Account
+							Send Verification OTP Email
 						</SubmitButton>
 						<p className="text-accent-foreground text-center text-sm pb-2">
 							Already have an account?
@@ -284,6 +365,78 @@ export function AuthForm({
 					</AutoForm>
 				)}
 			</div>
+
+			{/* OTP Verification Modal */}
+			<Credenza open={showOTPModal} onOpenChange={setShowOTPModal}>
+				<CredenzaContent>
+					<CredenzaHeader>
+						<CredenzaTitle>Email Verification</CredenzaTitle>
+					</CredenzaHeader>
+					<CredenzaBody>
+						<div className="space-y-4 py-4">
+							<p className="text-sm text-muted-foreground">
+								Please enter the 6-digit code sent to your email address
+							</p>
+
+							<div className="flex justify-center">
+								<InputOTP
+									value={otp}
+									onChange={setOtp}
+									maxLength={6}
+									onComplete={(value) => {
+										if (signupData) {
+											verifyOtpMutation.mutate({ otp: value });
+										}
+									}}
+								>
+									<InputOTPGroup>
+										<InputOTPSlot index={0} />
+										<InputOTPSlot index={1} />
+										<InputOTPSlot index={2} />
+										<InputOTPSlot index={3} />
+										<InputOTPSlot index={4} />
+										<InputOTPSlot index={5} />
+									</InputOTPGroup>
+								</InputOTP>
+							</div>
+
+							{verifyOtpMutation.isError && (
+								<div className="text-red-500 text-sm">
+									{verifyOtpMutation.error.message}
+								</div>
+							)}
+
+							<div className="flex justify-between">
+								<Button
+									variant="outline"
+									onClick={() => setShowOTPModal(false)}
+									disabled={verifyOtpMutation.isPending}
+								>
+									Cancel
+								</Button>
+
+								<Button
+									onClick={() => {
+										if (signupData) {
+											verifyOtpMutation.mutate({ otp });
+										}
+									}}
+									disabled={verifyOtpMutation.isPending}
+								>
+									{verifyOtpMutation.isPending ? (
+										<>
+											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+											Verifying...
+										</>
+									) : (
+										"Verify OTP"
+									)}
+								</Button>
+							</div>
+						</div>
+					</CredenzaBody>
+				</CredenzaContent>
+			</Credenza>
 		</div>
 	);
 }

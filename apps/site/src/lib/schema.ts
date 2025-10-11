@@ -79,8 +79,15 @@ export const userSchema = z
 			.describe("Whether the user account is active")
 			.optional(),
 		role: z.string().default("user").optional(),
+		// isVerified: z.boolean().default(false).optional(),
 	})
 	.extend(table);
+
+export const otpSchema = z.object({
+	otp: z.string().length(6).describe("OTP"),
+}).extend(table)
+
+export type OTP = z.infer<typeof otpSchema>
 
 export const businessSchema = z
 	.object({
@@ -342,6 +349,9 @@ export const coreSchema = createSchema({
 	membership: {
 		schema: membershipSchema,
 	},
+	otp: {
+		schema: otpSchema,
+	}
 });
 
 export const featureSchema = createSchema({

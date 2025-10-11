@@ -1,4 +1,4 @@
-// const isServer = typeof window === "undefined";
+const isServer = typeof window === "undefined";
 
 import "gun/axe";
 import GUN from "gun/gun";
@@ -13,9 +13,11 @@ import "gun/lib/rindexed";
 import "gun/lib/webrtc";
 // }
 import "gun/sea";
+import "gun/lib/not"
 
 export const gun = GUN({
 	localStorage: false,
+	radisk: false,
 	peers: [
 		"wss://relay.surkhet.app/gun",
 		"wss://gun-manhattan.herokuapp.com/gun",
