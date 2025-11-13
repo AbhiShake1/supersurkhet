@@ -74,7 +74,7 @@ interface CooperativeClientPageProps {
   slug: string;
 }
 
-export function CooperativeClientPage({ slug }: CooperativeClientPageProps) {
+export default function CooperativeClientPage({ slug }: CooperativeClientPageProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");

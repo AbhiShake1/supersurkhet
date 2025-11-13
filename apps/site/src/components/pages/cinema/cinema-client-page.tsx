@@ -1254,7 +1254,7 @@ function CinemaClientPagePresenter({ slug }: CinemaClientPageProps) {
   );
 }
 
-export function CinemaClientPage({ slug }: CinemaClientPageProps) {
+export default function CinemaClientPage({ slug }: CinemaClientPageProps) {
   return (
     <CartProvider>
       <CinemaClientPagePresenter slug={slug} />

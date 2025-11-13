@@ -79,7 +79,7 @@ interface HotelClientPageProps {
   slug: string;
 }
 
-export function HotelClientPage({ slug }: HotelClientPageProps) {
+export default function HotelClientPage({ slug }: HotelClientPageProps) {
   const [checkIn, setCheckIn] = useState("");
   const [checkOut, setCheckOut] = useState("");
   const [guests, setGuests] = useState(2);

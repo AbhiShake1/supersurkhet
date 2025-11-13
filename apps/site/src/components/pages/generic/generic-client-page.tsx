@@ -52,7 +52,7 @@ interface GenericClientPageProps {
   businessType: string;
 }
 
-export function GenericClientPage({
+export default function GenericClientPage({
   slug,
   businessType,
 }: GenericClientPageProps) {
@@ -185,7 +185,7 @@ export function GenericClientPage({
   const testimonialsRef = useRef(null);
   const faqRef = useRef(null);
   const contactRef = useRef(null);
-  
+
   const isHeroInView = useInView(heroRef, { once: true, margin: "-100px" });
   const isServicesInView = useInView(servicesRef, { once: true, margin: "-100px" });
   const isTestimonialsInView = useInView(testimonialsRef, { once: true, margin: "-100px" });
@@ -219,11 +219,10 @@ export function GenericClientPage({
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={`business-rating-star-${i}`}
-                    className={`w-5 h-5 ${
-                      i < Math.floor(businessInfo.rating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-white/30"
-                    }`}
+                    className={`w-5 h-5 ${i < Math.floor(businessInfo.rating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-white/30"
+                      }`}
                   />
                 ))}
                 <span className="ml-2 text-white font-medium">{businessInfo.rating}</span>
@@ -257,7 +256,7 @@ export function GenericClientPage({
               Comprehensive solutions tailored to meet your specific needs
             </p>
           </motion.div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {services.map((service, index) => (
               <motion.div
@@ -291,7 +290,7 @@ export function GenericClientPage({
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button 
+                    <Button
                       className={`w-full py-6 text-lg rounded-xl ${service.popular ? 'bg-primary hover:bg-primary/90' : 'bg-secondary hover:bg-secondary/90'}`}
                       variant={service.popular ? "default" : "secondary"}
                     >
@@ -317,7 +316,7 @@ export function GenericClientPage({
               Don't just take our word for it - hear from our satisfied customers
             </p>
           </motion.div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {testimonials.map((testimonial, index) => (
               <motion.div
@@ -341,11 +340,10 @@ export function GenericClientPage({
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={`testimonial-rating-${testimonial.id}-${i}`}
-                          className={`w-4 h-4 ${
-                            i < testimonial.rating
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-gray-300"
-                          }`}
+                          className={`w-4 h-4 ${i < testimonial.rating
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                            }`}
                         />
                       ))}
                     </div>
@@ -370,7 +368,7 @@ export function GenericClientPage({
               Find answers to common questions about our services
             </p>
           </motion.div>
-          
+
           <div className="max-w-3xl mx-auto space-y-4">
             {faqs.map((faq, index) => (
               <motion.div
@@ -380,14 +378,14 @@ export function GenericClientPage({
                 transition={{ duration: 0.4, delay: index * 0.1 }}
               >
                 <Card className="border border-border rounded-xl overflow-hidden">
-                  <CardHeader 
+                  <CardHeader
                     className="cursor-pointer pb-4"
                     onClick={() => setActiveFAQ(activeFAQ === faq.id ? null : faq.id)}
                   >
                     <div className="flex justify-between items-center">
                       <CardTitle className="text-lg">{faq.question}</CardTitle>
-                      <ArrowRight 
-                        className={`w-5 h-5 transition-transform duration-300 ${activeFAQ === faq.id ? 'rotate-90' : ''}`} 
+                      <ArrowRight
+                        className={`w-5 h-5 transition-transform duration-300 ${activeFAQ === faq.id ? 'rotate-90' : ''}`}
                       />
                     </div>
                   </CardHeader>
@@ -421,7 +419,7 @@ export function GenericClientPage({
               <p className="text-lg text-muted-foreground mb-8">
                 Ready to get started? Contact us today for a free consultation.
               </p>
-              
+
               <div className="space-y-6">
                 <div className="flex items-start">
                   <MapPin className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
@@ -430,7 +428,7 @@ export function GenericClientPage({
                     <p className="text-muted-foreground">{businessInfo.address}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <Phone className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
@@ -438,7 +436,7 @@ export function GenericClientPage({
                     <p className="text-muted-foreground">{businessInfo.phone}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <Mail className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
@@ -446,7 +444,7 @@ export function GenericClientPage({
                     <p className="text-muted-foreground">{businessInfo.email}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <Clock className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
@@ -455,7 +453,7 @@ export function GenericClientPage({
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-10 p-6 bg-muted rounded-2xl">
                 <h3 className="font-semibold text-lg mb-3">Need Immediate Assistance?</h3>
                 <p className="text-muted-foreground mb-4">Call us directly for urgent inquiries.</p>
@@ -464,7 +462,7 @@ export function GenericClientPage({
                 </Button>
               </div>
             </motion.div>
-            
+
             {/* Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}

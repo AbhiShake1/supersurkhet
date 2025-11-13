@@ -29,6 +29,8 @@ import {
 } from "./ui/credenza";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
 import { Loader2 } from "lucide-react";
+import { ResendCountdown } from "./resend-countdown";
+import { checkRateLimit, clearRateLimit, updateRateLimit } from "@/hooks/use-rate-limit";
 
 const loginSchema = z.object({
 	email: z.string().email(),
@@ -111,12 +113,25 @@ export function AuthForm({
 	const [error, setError] = useState("");
 	const [showOTPModal, setShowOTPModal] = useState(false);
 	const [signupData, setSignupData] = useState<z.infer<typeof signupSchema> | null>(null);
+	
+	// Resend OTP functionality
+	const [resendCooldown, setResendCooldown] = useState(0);
+	const [isResending, setIsResending] = useState(false);
 	const { refreshUser } = useAuth();
 
 	const { linkAnonymousUser } = useAuth();
 
-	const signupMutation = useMutation({
+	
+
+const signupMutation = useMutation({
 		mutationFn: async ({ email, password }: z.infer<typeof signupSchema>) => {
+			// Check rate limit
+			const rateLimitResult = checkRateLimit(email);
+			if (!rateLimitResult.allowed) {
+				const secondsLeft = Math.ceil(rateLimitResult.timeLeft / 1000);
+				throw new Error(`RATE_LIMIT:${secondsLeft}`);
+			}
+
 			const alias = email?.toLowerCase();
 			const userExists = await new Promise((resolve) => {
 				gun.get(`~@${alias}`).once((data) => resolve(!!data));
@@ -137,6 +152,9 @@ export function AuthForm({
 				}
 			});
 
+			// Update rate limit
+			updateRateLimit(email);
+
 			// Store signup data and show OTP modal
 			setSignupData({ email, password, confirmPassword: password });
 			setShowOTPModal(true);
@@ -145,8 +163,15 @@ export function AuthForm({
 			setError("");
 		},
 		onError: (err) => {
-			setError(err.message);
-			onAuthError?.(err);
+			// Only show non-rate limit errors as regular errors
+			if (!err.message.startsWith("RATE_LIMIT:")) {
+				setError(err.message);
+				onAuthError?.(err);
+			}
+			if (err.message.startsWith("RATE_LIMIT:")) {
+				const seconds = err.message.split(":")[1];
+				toast.error(`Please wait ${seconds} seconds before requesting another verification email.`);
+			}
 		},
 	});
 
@@ -212,6 +237,64 @@ export function AuthForm({
 		},
 	});
 
+	// Resend OTP mutation
+	const resendOtpMutation = useMutation({
+		mutationFn: async ({ email }: { email: string }) => {
+			const rateLimitResult = checkRateLimit(email);
+			if (!rateLimitResult.allowed) {
+				const secondsLeft = Math.ceil(rateLimitResult.timeLeft / 1000);
+				throw new Error(`RATE_LIMIT:${secondsLeft}`);
+			}
+
+			const alias = email.toLowerCase();
+			const otp = await createOTP({ data: { userId: alias } });
+
+			// Send verification email
+			await sendMail({
+				data: {
+					from: "SuperSurkhet <onboarding@surkhet.app>",
+					to: email,
+					subject: "SuperSurkhet Email Verification",
+					html: await render(<AccountVerifyEmail verificationCode={otp} />)
+				}
+			});
+
+			// Update rate limit
+			updateRateLimit(email);
+			
+			return otp;
+		},
+		onSuccess: () => {
+			setError("");
+			toast.success("Verification email sent successfully!");
+		},
+		onError: (err) => {
+			// Only show non-rate limit errors as regular errors
+			if (!err.message.startsWith("RATE_LIMIT:")) {
+				setError(err.message);
+			}
+			if (err.message.startsWith("RATE_LIMIT:")) {
+				const seconds = err.message.split(":")[1];
+				toast.error(`Please wait ${seconds} seconds before requesting another verification email.`);
+			}
+		},
+	});
+
+	// Handle resend cooldown
+	useEffect(() => {
+		let interval: NodeJS.Timeout;
+		
+		if (resendCooldown > 0) {
+			interval = setInterval(() => {
+				setResendCooldown((prev) => Math.max(0, prev - 1));
+			}, 1000);
+		}
+		
+		return () => {
+			if (interval) clearInterval(interval);
+		};
+	}, [resendCooldown]);
+
 	// OTP verification mutation
 	const verifyOtpMutation = useMutation({
 		mutationFn: async ({ otp }: { otp: string }) => {
@@ -246,6 +329,12 @@ export function AuthForm({
 			setError("");
 			setShowOTPModal(false);
 			setSignupData(null);
+			
+			// Clear rate limit after successful verification
+			if (signupData) {
+				clearRateLimit(signupData.email);
+			}
+			
 			onModeChange("login");
 			toast.success("Account created successfully!");
 		},
@@ -406,32 +495,83 @@ export function AuthForm({
 								</div>
 							)}
 
-							<div className="flex justify-between">
-								<Button
-									variant="outline"
-									onClick={() => setShowOTPModal(false)}
-									disabled={verifyOtpMutation.isPending}
-								>
-									Cancel
-								</Button>
+							<div className="flex flex-col gap-2">
+								<div className="flex justify-between">
+									<Button
+										variant="outline"
+										onClick={() => setShowOTPModal(false)}
+										disabled={verifyOtpMutation.isPending || resendOtpMutation.isPending}
+									>
+										Cancel
+									</Button>
 
-								<Button
-									onClick={() => {
-										if (signupData) {
-											verifyOtpMutation.mutate({ otp });
-										}
-									}}
-									disabled={verifyOtpMutation.isPending}
-								>
-									{verifyOtpMutation.isPending ? (
-										<>
-											<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-											Verifying...
-										</>
-									) : (
-										"Verify OTP"
-									)}
-								</Button>
+									<Button
+										onClick={() => {
+											if (signupData) {
+												verifyOtpMutation.mutate({ otp });
+											}
+										}}
+										disabled={verifyOtpMutation.isPending}
+									>
+										{verifyOtpMutation.isPending ? (
+											<>
+												<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+												Verifying...
+											</>
+										) : (
+											"Verify OTP"
+										)}
+									</Button>
+								</div>
+								
+								{signupData && (
+									<>
+										<ResendCountdown 
+											email={signupData.email} 
+											onCountdownComplete={() => setResendCooldown(0)} 
+										/>
+										
+										{resendCooldown <= 0 && !(resendOtpMutation.isPending || isResending) && (
+											<div className="text-center text-sm text-muted-foreground mt-2">
+												Didn't receive a code?{" "}
+												<Button
+													variant="link"
+													className="px-1 text-muted-foreground underline"
+													onClick={async () => {
+														// Check if we're still under rate limit before attempting to resend
+														const rateLimitResult = checkRateLimit(signupData.email);
+														if (!rateLimitResult.allowed) {
+															const secondsLeft = Math.ceil(rateLimitResult.timeLeft / 1000);
+															toast.error(`Please wait ${secondsLeft} seconds before requesting another email`);
+															return;
+														}
+														
+														setIsResending(true);
+														try {
+															await resendOtpMutation.mutateAsync({ email: signupData.email });
+															
+															// The countdown is now handled by the ResendCountdown component
+														} catch (error) {
+															// Error is already handled in onError
+														} finally {
+															setIsResending(false);
+														}
+													}}
+													disabled={resendOtpMutation.isPending}
+												>
+													{resendOtpMutation.isPending || isResending ? (
+														<>
+															<Loader2 className="mr-2 h-3 w-3 animate-spin inline" />
+															Resending...
+														</>
+													) : (
+														"Resend"
+													)}
+												</Button>
+											</div>
+										)}
+									</>
+								)}
 							</div>
 						</div>
 					</CredenzaBody>

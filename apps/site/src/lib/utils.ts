@@ -4,15 +4,15 @@ import { LucideIcon } from "lucide-react";
 import type { Business } from "./schema";
 
 export function cn(...inputs: ClassValue[]) {
-	return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs));
 }
 
 export function recordToList<R extends Record<string, any>>(record: R) {
-	return Object.entries(record)
-		.filter(([, v]) => typeof v !== "string")
-		.map(([soul, v]) => ({ ...v, _: { ...v._, soul } })) as Array<
-			R[string] & { _: { soul: string } }
-		>;
+  return Object.entries(record)
+    .filter(([, v]) => typeof v !== "string")
+    .map(([soul, v]) => ({ ...v, _: { ...v._, soul } })) as Array<
+      R[string] & { _: { soul: string } }
+    >;
 }
 
 // Function to get app icon from business data
@@ -37,3 +37,4 @@ export function getBusinessTypeIcon(businessType: string): LucideIcon | null {
   // This would map business types to specific Lucide icons
   return null;
 }
+

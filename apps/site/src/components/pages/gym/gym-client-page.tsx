@@ -57,7 +57,7 @@ interface GymClientPageProps {
   slug: string;
 }
 
-export function GymClientPage({ slug }: GymClientPageProps) {
+export default function GymClientPage({ slug }: GymClientPageProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -192,7 +192,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
   const trainersRef = useRef(null);
   const equipmentRef = useRef(null);
   const contactRef = useRef(null);
-  
+
   const isHeroInView = useInView(heroRef, { once: true, margin: "-100px" });
   const isMembershipInView = useInView(membershipRef, { once: true, margin: "-100px" });
   const isScheduleInView = useInView(scheduleRef, { once: true, margin: "-100px" });
@@ -227,11 +227,10 @@ export function GymClientPage({ slug }: GymClientPageProps) {
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={`gym-rating-star-${i}`}
-                    className={`w-5 h-5 ${
-                      i < Math.floor(gymInfo.rating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-white/30"
-                    }`}
+                    className={`w-5 h-5 ${i < Math.floor(gymInfo.rating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-white/30"
+                      }`}
                   />
                 ))}
                 <span className="ml-2 text-white font-medium">{gymInfo.rating}</span>
@@ -265,7 +264,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
               Choose the perfect plan to achieve your fitness goals
             </p>
           </motion.div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
             {membershipPlans.map((plan, index) => (
               <motion.div
@@ -299,7 +298,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
                     </ul>
                   </CardContent>
                   <CardFooter>
-                    <Button 
+                    <Button
                       className={`w-full py-6 text-lg rounded-xl ${plan.popular ? 'bg-primary hover:bg-primary/90' : 'bg-secondary hover:bg-secondary/90'}`}
                       variant={plan.popular ? "default" : "secondary"}
                     >
@@ -325,7 +324,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
               Find the perfect class to match your fitness level and schedule
             </p>
           </motion.div>
-          
+
           <div className="max-w-4xl mx-auto">
             <div className="flex flex-wrap gap-2 mb-8 justify-center">
               {['monday', 'tuesday', 'wednesday'].map((day) => (
@@ -339,7 +338,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
                 </Button>
               ))}
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {weeklySchedule[activeTab as keyof typeof weeklySchedule]?.map((classItem, index) => (
                 <motion.div
@@ -401,7 +400,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
               Certified professionals dedicated to helping you achieve your fitness goals
             </p>
           </motion.div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
             {trainers.map((trainer, index) => (
               <motion.div
@@ -423,11 +422,10 @@ export function GymClientPage({ slug }: GymClientPageProps) {
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={`trainer-rating-${trainer.id}-${i}`}
-                          className={`w-4 h-4 ${
-                            i < Math.floor(trainer.rating)
-                              ? "fill-yellow-400 text-yellow-400"
-                              : "text-gray-300"
-                          }`}
+                          className={`w-4 h-4 ${i < Math.floor(trainer.rating)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300"
+                            }`}
                         />
                       ))}
                       <span className="ml-1 text-sm">{trainer.rating}</span>
@@ -458,7 +456,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
               State-of-the-art machines and free weights from leading brands
             </p>
           </motion.div>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {equipment.map((item, index) => (
               <motion.div
@@ -499,7 +497,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
               <p className="text-lg text-muted-foreground mb-8">
                 Have questions? Our team is here to help you start your fitness journey.
               </p>
-              
+
               <div className="space-y-6">
                 <div className="flex items-start">
                   <MapPin className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
@@ -508,7 +506,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
                     <p className="text-muted-foreground">{gymInfo.address}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <Phone className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
@@ -516,7 +514,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
                     <p className="text-muted-foreground">{gymInfo.phone}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <Mail className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
@@ -524,7 +522,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
                     <p className="text-muted-foreground">{gymInfo.email}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-start">
                   <Clock className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
@@ -533,7 +531,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
                   </div>
                 </div>
               </div>
-              
+
               <div className="mt-10 p-6 bg-muted rounded-2xl">
                 <h3 className="font-semibold text-lg mb-3">Ready to Get Started?</h3>
                 <p className="text-muted-foreground mb-4">Schedule a free consultation with one of our trainers.</p>
@@ -542,7 +540,7 @@ export function GymClientPage({ slug }: GymClientPageProps) {
                 </Button>
               </div>
             </motion.div>
-            
+
             {/* Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}

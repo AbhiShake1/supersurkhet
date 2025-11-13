@@ -75,7 +75,7 @@ interface FinancialFirmClientPageProps {
   slug: string;
 }
 
-export function FinancialFirmClientPage({
+export default function FinancialFirmClientPage({
   slug,
 }: FinancialFirmClientPageProps) {
   const [name, setName] = useState("");

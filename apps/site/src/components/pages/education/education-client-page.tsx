@@ -195,7 +195,7 @@ interface EducationClientPageProps {
   slug: string;
 }
 
-export function EducationClientPage({ slug }: EducationClientPageProps) {
+export default function EducationClientPage({ slug }: EducationClientPageProps) {
   return (
     <CartProvider>
       <EducationClientPagePresenter slug={slug} />

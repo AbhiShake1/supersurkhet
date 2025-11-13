@@ -41,7 +41,7 @@ interface PetrolPumpClientPageProps {
   slug: string;
 }
 
-export function PetrolPumpClientPage({ slug }: PetrolPumpClientPageProps) {
+export default function PetrolPumpClientPage({ slug }: PetrolPumpClientPageProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");

@@ -1,24 +1,26 @@
-import { RestaurantClientPage } from "@/components/pages/restaurant/restaurant-client-page";
-import { HotelClientPage } from "@/components/pages/hotel/hotel-client-page";
-import { PetrolPumpClientPage } from "@/components/pages/petrol-pump/petrol-pump-client-page";
-import { GymClientPage } from "@/components/pages/gym/gym-client-page";
-import { CinemaClientPage } from "@/components/pages/cinema/cinema-client-page";
-import { FinancialFirmClientPage } from "@/components/pages/financial-firm/financial-firm-client-page";
-import { RideSharingClientPage } from "@/components/pages/ride-sharing/ride-sharing-client-page";
-import { ServiceClientPage } from "@/components/pages/service/service-client-page";
-import { EducationClientPage } from "@/components/pages/education/education-client-page";
-import { HealthcareClientPage } from "@/components/pages/healthcare/healthcare-client-page";
-import { RealEstateClientPage } from "@/components/pages/real-estate/real-estate-client-page";
-import { CooperativeClientPage } from "@/components/pages/cooperative/cooperative-client-page";
-import { GenericClientPage } from "@/components/pages/generic/generic-client-page";
-// Import specific client pages as they become available
-// import { RetailClientPage } from "@/components/pages/retail/retail-client-page";
-// import { LogisticsClientPage } from "@/components/pages/logistics/logistics-client-page";
-
 import { api } from "@/lib/api";
 import type { Business } from "@/lib/schema";
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
+import { lazy } from "react";
+
+const RestaurantClientPage = lazy(() => import("@/components/pages/restaurant/restaurant-client-page"));
+const HotelClientPage = lazy(() => import("@/components/pages/hotel/hotel-client-page"));
+const PetrolPumpClientPage = lazy(() => import("@/components/pages/petrol-pump/petrol-pump-client-page"));
+const GymClientPage = lazy(() => import("@/components/pages/gym/gym-client-page"));
+const CinemaClientPage = lazy(() => import("@/components/pages/cinema/cinema-client-page"));
+const FinancialFirmClientPage = lazy(() => import("@/components/pages/financial-firm/financial-firm-client-page"));
+const RideSharingClientPage = lazy(() => import("@/components/pages/ride-sharing/ride-sharing-client-page"));
+const ServiceClientPage = lazy(() => import("@/components/pages/service/service-client-page"));
+const EducationClientPage = lazy(() => import("@/components/pages/education/education-client-page"));
+const HealthcareClientPage = lazy(() => import("@/components/pages/healthcare/healthcare-client-page"));
+const RealEstateClientPage = lazy(() => import("@/components/pages/real-estate/real-estate-client-page"));
+const CooperativeClientPage = lazy(() => import("@/components/pages/cooperative/cooperative-client-page"));
+// Import specific client pages as they become available
+// const RetailClientPage = lazy(() => import("@/components/pages/retail/retail-client-page"));
+// const LogisticsClientPage = lazy(() => import("@/components/pages/logistics/logistics-client-page"));
+const GenericClientPage = lazy(() => import("@/components/pages/generic/generic-client-page"));
+
 
 export const Route = createFileRoute("/$businessName/")({
   component: () => {

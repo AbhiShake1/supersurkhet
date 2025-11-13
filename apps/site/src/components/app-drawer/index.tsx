@@ -13,7 +13,6 @@ import {
 } from "../ui/credenza";
 import { Input } from "../ui/input";
 import { ScrollArea } from "../ui/scroll-area";
-import { Separator } from "../ui/separator";
 import { Skeleton } from "../ui/skeleton";
 import { AppGrid } from "./app-grid";
 import { useRecentlyUsedApps } from "./recently-used-apps-context";
