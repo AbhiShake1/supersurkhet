@@ -102,6 +102,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       title: tab.title,
       url: `?tab=${tab.title}`,
       icon: tab.icon,
+      group: tab.group,
     })),
   };
   // @ts-expect-error

@@ -20,6 +20,7 @@ function RouteComponent() {
             schema: s,
             title: s[0].toUpperCase() + s.slice(1),
             icon: schemaConfig.icon || LucideBriefcaseBusiness,
+            group: schemaConfig.group, // Use group from schema definition
             slug: "",
             transformer: (d) => {
               if (d.length === 0) return []

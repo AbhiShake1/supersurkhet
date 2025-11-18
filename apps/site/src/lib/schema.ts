@@ -39,6 +39,7 @@ export interface GTAAppConfig {
     [table: string]: {
       schema: NonNullable<z.ZodObject<any>>;
       icon?: ReactNode,
+      group?: string,
       components?: () => Promise<
         Array<{
           name: string;
@@ -342,46 +343,56 @@ export const coreSchema = createSchema({
   user: {
     schema: userSchema,
     icon: LucideUser,
+    group: "User Management",
   },
   business: {
     schema: businessSchema,
     icon: Building,
+    group: "System Configuration",
   },
   role: {
     schema: roleSchema,
     icon: List,
+    group: "User Management",
   },
   membership: {
     schema: membershipSchema,
     icon: Users,
+    group: "User Management",
   },
   otp: {
     schema: otpSchema,
     icon: Lock,
+    group: "System Configuration",
   }
 });
 
 export const featureSchema = createSchema({
   driverProfile: {
     icon: Car,
+    group: "User Management",
     schema: driverProfileSchema,
   },
   studentProfile: {
     icon: GraduationCap,
+    group: "User Management",
     schema: studentProfileSchema,
   },
   coOpMemberProfile: {
     icon: Users,
+    group: "User Management",
     schema: coOpMemberProfileSchema,
   },
 
   baseListing: {
     icon: Package,
+    group: "Products & Inventory",
     schema: baseListingSchema,
   },
   product: {
     schema: productSchema,
     icon: Package,
+    group: "Products & Inventory",
     components: async () => {
       const { MenuManagement } = await import(
         "@/components/ui/admin/menu-management"
@@ -397,6 +408,7 @@ export const featureSchema = createSchema({
   menuItem: {
     schema: menuItemSchema,
     icon: Package,
+    group: "Products & Inventory",
     components: async () => {
       const { MenuManagement } = await import(
         "@/components/ui/admin/menu-management"
@@ -413,6 +425,7 @@ export const featureSchema = createSchema({
   dataMatrixAction: {
     schema: dataMatrixActionSchema,
     icon: QrCode,
+    group: "System Configuration",
     components: async () => {
       return []
       // const { DataMatrixFlowBuilder } = await import(
@@ -429,6 +442,7 @@ export const featureSchema = createSchema({
   propertyListing: {
     schema: propertyListingSchema,
     icon: Home,
+    group: "Products & Inventory",
   },
   service: {
     schema: serviceSchema,
@@ -449,6 +463,7 @@ export const featureSchema = createSchema({
   order: {
     schema: orderSchema,
     icon: DollarSign,
+    group: "Business Operations",
     components: async () => {
       const { OrderKanban } = await import(
         "@/components/ui/admin/order-kanban"
@@ -464,18 +479,22 @@ export const featureSchema = createSchema({
   appointment: {
     schema: appointmentSchema,
     icon: Calendar,
+    group: "Business Operations",
   },
   trip: {
     schema: tripSchema,
     icon: CarIcon,
+    group: "Business Operations",
   },
   expense: {
     schema: expenseSchema,
     icon: DollarSign,
+    group: "Financial",
   },
   chat: {
     schema: chatMessageSchema,
     icon: MessageCircle,
+    group: "System Configuration",
   },
 
   // Hotel schema
@@ -651,7 +670,7 @@ export const featureSchema = createSchema({
   // Payment Transaction schema
   paymentTransaction: {
     schema: paymentTransactionSchema,
-    icon: PaymentAddress,
+    icon: DollarSign,
     components: async () => {
       const { PaymentManagement } = await import(
         "@/components/ui/admin/payment-management"
@@ -669,16 +688,19 @@ export const featureSchema = createSchema({
   recentlyUsedApp: {
     schema: recentlyUsedAppSchema,
     icon: Clock,
+    group: "System Configuration",
   },
   // Folder schema
   folder: {
     schema: folderSchema,
     icon: Folder,
+    group: "System Configuration",
   },
   // QR Flow Config schema
   qrFlowConfig: {
     schema: qrFlowConfigSchema,
     icon: QrCode,
+    group: "System Configuration",
   },
 });
 
