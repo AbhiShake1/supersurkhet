@@ -107,7 +107,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode, savedThemeName
   };
 
   const toggleDarkMode = (coords?: { x: number; y: number }) => {
-    const { x, y } = coords ?? { x: 0, y: 0 };
+    const { x, y } = coords ?? {};
     const root = document.documentElement;
     const newMode = !isDarkMode;
 
