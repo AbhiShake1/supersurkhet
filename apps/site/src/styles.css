@@ -287,13 +287,13 @@ html {
 
 @keyframes reveal {
   from {
-    /* Set the circle origin explicitly to the bottom center (50% X, 100% Y) */
-    clip-path: circle(0% at 50% 0%);
+    /* Use CSS variables for the origin, defaulting to bottom center if not set */
+    clip-path: circle(0% at var(--x, 50%) var(--y, 100%));
     opacity: 0.7;
   }
   to {
-    /* Keep the origin at bottom center for the expansion */
-    clip-path: circle(150% at 50% 0%);
+    /* Use CSS variables for the origin, defaulting to bottom center if not set */
+    clip-path: circle(150% at var(--x, 50%) var(--y, 100%));
     opacity: 1;
   }
 }
