@@ -123,6 +123,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode, savedThemeName
     if (x) {
       root.style.setProperty("--x", `${x}px`);
       root.style.setProperty("--y", `${y}px`);
+    } else {
+      root.style.removeProperty("--x");
+      root.style.removeProperty("--y");
     }
 
     document.startViewTransition(() => {
