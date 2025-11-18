@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { baseListingSchema, table } from "./listings";
 import { fieldConfig } from "@/components/ui/autoform";
+import { Home, LucideIcon } from "lucide-react";
 
 // Real Estate schema
 export const realEstateSchema = baseListingSchema
@@ -77,3 +78,6 @@ export const realEstateSchema = baseListingSchema
 			.describe("ID of the agent responsible for this property"),
 	})
 	.extend(table);
+
+export const realEstateIcon = Home;
+export type RealEstateIconType = LucideIcon;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { baseListingSchema, table } from "./listings";
 import { fieldConfig } from "@/components/ui/autoform";
+import { HeartPulse, LucideIcon } from "lucide-react";
 
 // Healthcare schema
 export const healthcareSchema = baseListingSchema
@@ -42,3 +43,6 @@ export const healthcareSchema = baseListingSchema
 			.superRefine(fieldConfig({ fieldType: "record" })),
 	})
 	.extend(table);
+
+export const healthcareIcon = HeartPulse;
+export type HealthcareIconType = LucideIcon;

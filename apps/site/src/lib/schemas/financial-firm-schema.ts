@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { baseListingSchema, table } from "./listings";
+import { CreditCard, LucideIcon } from "lucide-react";
 
 // Financial Firm schema
 export const financialFirmSchema = baseListingSchema
@@ -59,3 +60,6 @@ export const financialFirmSchema = baseListingSchema
 			.superRefine(fieldConfig({ fieldType: "record" })),
 	})
 	.extend(table);
+
+export const financialFirmIcon = CreditCard;
+export type FinancialFirmIconType = LucideIcon;

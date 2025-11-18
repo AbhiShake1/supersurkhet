@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { baseListingSchema, table } from "./listings";
+import { Building, LucideIcon } from "lucide-react";
 
 // Service schema
 export const serviceSchema = baseListingSchema
@@ -75,3 +76,6 @@ export const serviceSchema = baseListingSchema
 			.describe("Service guarantee or warranty information"),
 	})
 	.extend(table);
+
+export const serviceIcon = Building;
+export type ServiceIconType = LucideIcon;

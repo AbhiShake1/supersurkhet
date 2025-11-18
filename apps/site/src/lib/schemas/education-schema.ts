@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { baseListingSchema, table } from "./listings";
 import { fieldConfig } from "@/components/ui/autoform";
+import { GraduationCap, LucideIcon } from "lucide-react";
 
 // Education schema
 export const educationSchema = baseListingSchema
@@ -41,3 +42,6 @@ export const educationSchema = baseListingSchema
 			.describe("Admission requirements and criteria"),
 	})
 	.extend(table);
+
+export const educationIcon = GraduationCap;
+export type EducationIconType = LucideIcon;

@@ -1,0 +1,317 @@
+import React, { useState, useEffect } from "react";
+import {
+  ChevronDown,
+  ChevronsRight,
+  Search,
+  Menu,
+  BadgeCheck,
+  Bell,
+  ChevronsUpDown,
+  CreditCard,
+  LogOut,
+} from "lucide-react";
+import { Link, useLocation } from "@tanstack/react-router";
+import { Input } from "./input";
+import { useAuth } from "../auth-provider";
+import type { LucideIcon } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "./dropdown-menu";
+import { useSidebar } from "./sidebar";
+
+export interface SidebarItems {
+  items: {
+    title: string;
+    url: string;
+    icon?: LucideIcon;
+    group?: string;
+  }[];
+}
+
+export interface CollapsibleSidebarProps {
+  data: SidebarItems;
+  businessName?: string;
+}
+
+const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessName }) => {
+  const [open, setOpen] = useState(true);
+  const [selected, setSelected] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const { search } = useLocation();
+  const currentTab = (search.tab as string) ?? (data.items.length > 0 ? data.items[0].title : "");
+
+  // Set initial selected tab based on URL or first item
+  useEffect(() => {
+    if (currentTab) {
+      setSelected(currentTab);
+    } else if (data.items.length > 0) {
+      setSelected(data.items[0].title);
+    }
+  }, [currentTab, data.items]);
+
+  // Filter items based on search query
+  const filteredItems = searchQuery
+    ? data.items.filter((item) => {
+      try {
+        const regex = new RegExp(searchQuery, "i"); // case-insensitive search
+        return regex.test(item.title);
+      } catch (e) {
+        // If the regex is invalid, fallback to simple string includes
+        return item.title.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+    })
+    : data.items;
+
+  // Group items by group property if available
+  const groupedItems: { [key: string]: typeof data.items } = {};
+  const ungroupedItems: typeof data.items = [];
+
+  filteredItems.forEach(item => {
+    if (item.group) {
+      if (!groupedItems[item.group]) {
+        groupedItems[item.group] = [];
+      }
+      groupedItems[item.group].push(item);
+    } else {
+      ungroupedItems.push(item);
+    }
+  });
+
+  return (
+    <nav
+      className={`sticky top-0 h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? "w-64" : "w-16"
+        } border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-2 shadow-sm z-50 flex flex-col`}
+    >
+      {/* User profile section at the top */}
+      <div className="flex-shrink-0">
+        <TitleSection open={open} businessName={businessName} />
+
+        {/* Search bar */}
+        {open && (
+          <div className="px-2 py-1 mb-2 relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+            <Input
+              placeholder="Filter items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="text-xs pl-8"
+            />
+          </div>
+        )}
+      </div>
+
+      {/* Navigation items */}
+      <div className="flex-grow overflow-y-auto pb-16">
+        <div className="space-y-1 mb-4">
+          {ungroupedItems.map((item, index) => (
+            <Option
+              key={index}
+              Icon={item.icon || Menu}
+              title={item.title}
+              url={item.url}
+              selected={selected}
+              setSelected={setSelected}
+              open={open}
+            />
+          ))}
+        </div>
+
+        {/* Grouped navigation items */}
+        {Object.entries(groupedItems).map(([groupName, items]) => (
+          <div key={groupName} className="mb-4">
+            {open && (
+              <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                {groupName}
+              </div>
+            )}
+            <div className="space-y-1">
+              {items.map((item, index) => (
+                <Option
+                  key={`${groupName}-${index}`}
+                  Icon={item.icon || Menu}
+                  title={item.title}
+                  url={item.url}
+                  selected={selected}
+                  setSelected={setSelected}
+                  open={open}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Toggle button at the bottom */}
+      <div className="absolute bottom-0 left-0 right-0 border-t border-gray-200 dark:border-gray-800">
+        <ToggleClose open={open} setOpen={setOpen} />
+      </div>
+    </nav>
+  );
+};
+
+const Option: React.FC<{
+  Icon: LucideIcon;
+  title: string;
+  url: string;
+  selected: string;
+  setSelected: (title: string) => void;
+  open: boolean;
+}> = ({ Icon, title, selected, setSelected, open }) => {
+  const isSelected = selected === title;
+
+  const handleClick = () => {
+    setSelected(title);
+  };
+
+  return (
+    <Link
+      onClick={handleClick}
+      to="."
+      search={{ tab: title }}
+      className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${isSelected
+        ? "bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 shadow-sm border-l-2 border-blue-500"
+        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+        }`}
+    >
+      <div className="grid h-full w-12 place-content-center">
+        <Icon className="h-4 w-4" />
+      </div>
+
+      {open && (
+        <span
+          className={`text-sm font-medium transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
+            }`}
+        >
+          {title}
+        </span>
+      )}
+    </Link>
+  );
+};
+
+const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open, businessName }) => {
+  const { user, logout, isAuthenticated } = useAuth();
+
+  if (!isAuthenticated) return null;
+
+  return (
+    <div className="mb-4 border-b border-gray-200 dark:border-gray-800 pb-4">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <div className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+            <div className="flex items-center gap-3">
+              <Logo />
+              {open && (
+                <div className={`transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}>
+                  <div className="flex flex-col">
+                    <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                      {JSON.stringify(user)}
+                      {user?.name || user?.email || "User"}
+                    </span>
+                    {businessName && (
+                      <span className="block text-xs text-gray-500 dark:text-gray-400">
+                        {businessName}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            {open && <ChevronsUpDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />}
+          </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+          side={"bottom"}
+        >
+          <DropdownMenuLabel className="p-0 font-normal">
+            <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+              <Avatar className="h-8 w-8 rounded-lg">
+                <AvatarImage src={user?.avatar} alt={user?.name} />
+                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+              </Avatar>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-medium">{user?.name}</span>
+                <span className="truncate text-xs">{user?.email}</span>
+              </div>
+            </div>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuGroup>
+            <DropdownMenuItem className="gap-2">
+              <BadgeCheck className="size-4" />
+              Account
+            </DropdownMenuItem>
+            <DropdownMenuItem className="gap-2">
+              <CreditCard className="size-4" />
+              Billing
+            </DropdownMenuItem>
+            <DropdownMenuItem className="gap-2">
+              <Bell className="size-4" />
+              Notifications
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="gap-2" onClick={() => logout()}>
+            <LogOut className="size-4" />
+            Log out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};
+
+const Logo: React.FC = () => {
+  return (
+    <div className="grid size-10 shrink-0 place-content-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
+      <svg
+        width="20"
+        height="auto"
+        viewBox="0 0 50 39"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        className="fill-white"
+      >
+        <path d="M16.4992 2H37.5808L22.0816 24.9729H1L16.4992 2Z" />
+        <path d="M17.4224 27.102L11.4192 36H33.5008L49 13.0271H32.7024L23.2064 27.102H17.4224Z" />
+      </svg>
+    </div>
+  );
+};
+
+const ToggleClose: React.FC<{ open: boolean; setOpen: (open: boolean) => void }> = ({ open, setOpen }) => {
+  return (
+    <button
+      onClick={() => setOpen(!open)}
+      className="w-full border-t border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 backdrop-blur-2xl"
+    >
+      <div className="flex items-center p-3">
+        <div className="grid size-10 place-content-center">
+          <ChevronsRight
+            className={`h-4 w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${open ? "rotate-180" : ""
+              }`}
+          />
+        </div>
+        {open && (
+          <span
+            className={`text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
+              }`}
+          >
+            Hide
+          </span>
+        )}
+      </div>
+    </button>
+  );
+};
+
+export default CollapsibleSidebar;

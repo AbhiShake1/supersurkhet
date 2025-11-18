@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { baseListingSchema, table } from "./listings";
+import { Car, LucideIcon } from "lucide-react";
 
 // Ride Sharing schema
 export const rideSharingSchema = baseListingSchema
@@ -72,3 +73,6 @@ export const rideSharingSchema = baseListingSchema
 			.superRefine(fieldConfig({ fieldType: "record" })),
 	})
 	.extend(table);
+
+export const rideSharingIcon = Car;
+export type RideSharingIconType = LucideIcon;

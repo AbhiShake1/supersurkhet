@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { baseListingSchema, table } from "./listings";
+import { Fuel, LucideIcon } from "lucide-react";
 
 // Petrol Pump schema
 export const petrolPumpSchema = baseListingSchema
@@ -51,3 +52,6 @@ export const petrolPumpSchema = baseListingSchema
 			.describe("Business address details"),
 	})
 	.extend(table);
+
+export const petrolPumpIcon = Fuel;
+export type PetrolPumpIconType = LucideIcon;

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { baseListingSchema, table } from "./listings";
+import { Dumbbell, LucideIcon } from "lucide-react";
 
 // Gym schema
 export const gymSchema = baseListingSchema
@@ -50,3 +51,6 @@ export const gymSchema = baseListingSchema
 			.describe("Business address details"),
 	})
 	.extend(table);
+
+export const gymIcon = Dumbbell;
+export type GymIconType = LucideIcon;

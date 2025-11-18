@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { baseListingSchema, table } from "./listings";
 import { fieldConfig } from "@/components/ui/autoform";
+import { Film, LucideIcon } from "lucide-react";
 
 // Cinema schema
 export const cinemaSchema = baseListingSchema
@@ -50,3 +51,6 @@ export const cinemaSchema = baseListingSchema
 			.describe("Business address details"),
 	})
 	.extend(table);
+
+export const cinemaIcon = Film;
+export type CinemaIconType = LucideIcon;

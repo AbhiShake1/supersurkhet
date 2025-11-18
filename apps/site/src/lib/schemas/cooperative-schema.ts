@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { baseListingSchema, table } from "./listings";
 import { fieldConfig } from "@/components/ui/autoform";
+import { Users, LucideIcon } from "lucide-react";
 
 // Cooperative schema
 export const cooperativeSchema = baseListingSchema
@@ -59,3 +60,6 @@ export const cooperativeSchema = baseListingSchema
 			.describe("Governing body or authority"),
 	})
 	.extend(table);
+
+export const cooperativeIcon = Users;
+export type CooperativeIconType = LucideIcon;
