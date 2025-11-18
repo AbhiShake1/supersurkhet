@@ -88,7 +88,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
   return (
     <nav
       className={`sticky top-0 h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? "w-64" : "w-16"
-        } border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-2 shadow-sm z-50 flex flex-col`}
+        } border-gray-200 dark:border-gray-800 bg-card p-2 shadow-sm z-50 flex flex-col`}
     >
       {/* User profile section at the top */}
       <div className="flex-shrink-0">
