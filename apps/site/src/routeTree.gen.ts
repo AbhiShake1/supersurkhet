@@ -26,9 +26,7 @@ import { Route as BusinessSchoolSasaImport } from './routes/_business/_school/sa
 import { Route as BusinessRetailAnjalstoreImport } from './routes/_business/_retail/anjalstore'
 import { Route as BusinessRideAdminRouteImport } from './routes/_business/ride/admin/route'
 import { Route as BusinessRideAdminIndexImport } from './routes/_business/ride/admin/index'
-import { Route as AuthDemosRestaurantIndexImport } from './routes/_auth/_demos/restaurant/index'
 import { Route as BusinessRideAdminVehicleTypesImport } from './routes/_business/ride/admin/vehicle-types'
-import { Route as AuthDemosRestaurantAdminImport } from './routes/_auth/_demos/restaurant/admin'
 
 // Create/Update Routes
 
@@ -121,24 +119,12 @@ const BusinessRideAdminIndexRoute = BusinessRideAdminIndexImport.update({
   getParentRoute: () => BusinessRideAdminRouteRoute,
 } as any)
 
-const AuthDemosRestaurantIndexRoute = AuthDemosRestaurantIndexImport.update({
-  id: '/_demos/restaurant/',
-  path: '/restaurant/',
-  getParentRoute: () => AuthRoute,
-} as any)
-
 const BusinessRideAdminVehicleTypesRoute =
   BusinessRideAdminVehicleTypesImport.update({
     id: '/vehicle-types',
     path: '/vehicle-types',
     getParentRoute: () => BusinessRideAdminRouteRoute,
   } as any)
-
-const AuthDemosRestaurantAdminRoute = AuthDemosRestaurantAdminImport.update({
-  id: '/_demos/restaurant/admin',
-  path: '/restaurant/admin',
-  getParentRoute: () => AuthRoute,
-} as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -242,26 +228,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessRideIndexImport
       parentRoute: typeof rootRoute
     }
-    '/_auth/_demos/restaurant/admin': {
-      id: '/_auth/_demos/restaurant/admin'
-      path: '/restaurant/admin'
-      fullPath: '/restaurant/admin'
-      preLoaderRoute: typeof AuthDemosRestaurantAdminImport
-      parentRoute: typeof AuthImport
-    }
     '/_business/ride/admin/vehicle-types': {
       id: '/_business/ride/admin/vehicle-types'
       path: '/vehicle-types'
       fullPath: '/ride/admin/vehicle-types'
       preLoaderRoute: typeof BusinessRideAdminVehicleTypesImport
       parentRoute: typeof BusinessRideAdminRouteImport
-    }
-    '/_auth/_demos/restaurant/': {
-      id: '/_auth/_demos/restaurant/'
-      path: '/restaurant'
-      fullPath: '/restaurant'
-      preLoaderRoute: typeof AuthDemosRestaurantIndexImport
-      parentRoute: typeof AuthImport
     }
     '/_business/ride/admin/': {
       id: '/_business/ride/admin/'
@@ -278,15 +250,11 @@ declare module '@tanstack/react-router' {
 interface AuthRouteChildren {
   AuthAuthRoute: typeof AuthAuthRoute
   AuthSettingsRoute: typeof AuthSettingsRoute
-  AuthDemosRestaurantAdminRoute: typeof AuthDemosRestaurantAdminRoute
-  AuthDemosRestaurantIndexRoute: typeof AuthDemosRestaurantIndexRoute
 }
 
 const AuthRouteChildren: AuthRouteChildren = {
   AuthAuthRoute: AuthAuthRoute,
   AuthSettingsRoute: AuthSettingsRoute,
-  AuthDemosRestaurantAdminRoute: AuthDemosRestaurantAdminRoute,
-  AuthDemosRestaurantIndexRoute: AuthDemosRestaurantIndexRoute,
 }
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
@@ -322,9 +290,7 @@ export interface FileRoutesByFullPath {
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/sasa': typeof BusinessSchoolSasaRoute
   '/ride': typeof BusinessRideIndexRoute
-  '/restaurant/admin': typeof AuthDemosRestaurantAdminRoute
   '/ride/admin/vehicle-types': typeof BusinessRideAdminVehicleTypesRoute
-  '/restaurant': typeof AuthDemosRestaurantIndexRoute
   '/ride/admin/': typeof BusinessRideAdminIndexRoute
 }
 
@@ -342,9 +308,7 @@ export interface FileRoutesByTo {
   '/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/sasa': typeof BusinessSchoolSasaRoute
   '/ride': typeof BusinessRideIndexRoute
-  '/restaurant/admin': typeof AuthDemosRestaurantAdminRoute
   '/ride/admin/vehicle-types': typeof BusinessRideAdminVehicleTypesRoute
-  '/restaurant': typeof AuthDemosRestaurantIndexRoute
   '/ride/admin': typeof BusinessRideAdminIndexRoute
 }
 
@@ -364,9 +328,7 @@ export interface FileRoutesById {
   '/_business/_retail/anjalstore': typeof BusinessRetailAnjalstoreRoute
   '/_business/_school/sasa': typeof BusinessSchoolSasaRoute
   '/_business/ride/': typeof BusinessRideIndexRoute
-  '/_auth/_demos/restaurant/admin': typeof AuthDemosRestaurantAdminRoute
   '/_business/ride/admin/vehicle-types': typeof BusinessRideAdminVehicleTypesRoute
-  '/_auth/_demos/restaurant/': typeof AuthDemosRestaurantIndexRoute
   '/_business/ride/admin/': typeof BusinessRideAdminIndexRoute
 }
 
@@ -387,9 +349,7 @@ export interface FileRouteTypes {
     | '/anjalstore'
     | '/sasa'
     | '/ride'
-    | '/restaurant/admin'
     | '/ride/admin/vehicle-types'
-    | '/restaurant'
     | '/ride/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -406,9 +366,7 @@ export interface FileRouteTypes {
     | '/anjalstore'
     | '/sasa'
     | '/ride'
-    | '/restaurant/admin'
     | '/ride/admin/vehicle-types'
-    | '/restaurant'
     | '/ride/admin'
   id:
     | '__root__'
@@ -426,9 +384,7 @@ export interface FileRouteTypes {
     | '/_business/_retail/anjalstore'
     | '/_business/_school/sasa'
     | '/_business/ride/'
-    | '/_auth/_demos/restaurant/admin'
     | '/_business/ride/admin/vehicle-types'
-    | '/_auth/_demos/restaurant/'
     | '/_business/ride/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -494,9 +450,7 @@ export const routeTree = rootRoute
       "filePath": "_auth.tsx",
       "children": [
         "/_auth/auth",
-        "/_auth/settings",
-        "/_auth/_demos/restaurant/admin",
-        "/_auth/_demos/restaurant/"
+        "/_auth/settings"
       ]
     },
     "/admin": {
@@ -541,17 +495,9 @@ export const routeTree = rootRoute
     "/_business/ride/": {
       "filePath": "_business/ride/index.tsx"
     },
-    "/_auth/_demos/restaurant/admin": {
-      "filePath": "_auth/_demos/restaurant/admin.tsx",
-      "parent": "/_auth"
-    },
     "/_business/ride/admin/vehicle-types": {
       "filePath": "_business/ride/admin/vehicle-types.tsx",
       "parent": "/_business/ride/admin"
-    },
-    "/_auth/_demos/restaurant/": {
-      "filePath": "_auth/_demos/restaurant/index.tsx",
-      "parent": "/_auth"
     },
     "/_business/ride/admin/": {
       "filePath": "_business/ride/admin/index.tsx",

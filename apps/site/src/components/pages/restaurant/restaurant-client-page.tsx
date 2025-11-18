@@ -1,7 +1,7 @@
 import { gun } from "@/lib/gun";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 // import { Carousel } from "@/components/ui/carousel";
 import {
   Credenza,
@@ -14,11 +14,6 @@ import {
   CredenzaTrigger,
 } from "@/components/ui/credenza";
 import { Input } from "@/components/ui/input";
-import MinimalCard, {
-  MinimalCardDescription,
-  MinimalCardFooter,
-  MinimalCardImage,
-} from "@/components/ui/minimal-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -35,16 +30,8 @@ import {
   Search,
   ShoppingCart,
   ShoppingCartIcon,
-  Trash2,
-  Star,
-  Clock,
-  MapPin,
-  Leaf,
-  Flame,
-  Wheat,
-  Minus,
-  Plus,
-  ChefHat,
+  Trash2, Clock, Leaf,
+  Flame, ChefHat,
   X
 } from "lucide-react";
 import { createContext, useContext, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
@@ -52,19 +39,14 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { z } from "zod";
 import { RestaurantMenuItemDetail } from "./restaurant-menu-item-detail";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
-import { Item, ItemContent, ItemTitle, ItemDescription, ItemActions, ItemHeader, ItemGroup } from "@/components/ui/item";
 import type { Business } from "@/lib/schema";
-import { ButtonGroup, ButtonGroupText } from "@/components/ui/button-group";
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ButtonGroup } from "@/components/ui/button-group";
 
 export interface CartItem extends MenuItemType {
   quantity: number;
