@@ -32,6 +32,9 @@ import { appSchema, transformSchema } from "@/lib/schema";
 import { QRScannerButton } from "@/components/ui/qr-scanner-button";
 import { toast } from "sonner";
 import type { DataMatrixAction } from "@/lib/datamatrix";
+import { getAppTheme, getAppDarkMode, getAppThemeData } from "@/contexts/theme-context";
+import { ThemeProvider as ThemeModeProvider } from "@/contexts/theme-context";
+import { defaultPresets } from "@/lib/theme";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -104,7 +107,38 @@ function isMobile() {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  head: () => ({
+  loader: async () => {
+    const savedThemeName = await getAppTheme();
+    const savedDarkMode = await getAppDarkMode();
+    const _savedTheme = await getAppThemeData();
+    const savedTheme = _savedTheme ?? defaultPresets["modern-minimal"].styles
+
+    // Generate critical CSS for the current theme to prevent FOUC
+    let criticalThemeCSS = '';
+    if (savedTheme) {
+      const themeToUse = savedDarkMode === 'true' ? savedTheme.dark : savedTheme.light;
+      const themeNotToUse = savedDarkMode === 'true' ? savedTheme.light : savedTheme.dark;
+      if (themeToUse) {
+        const variables = Object.entries({ ...themeNotToUse, ...themeToUse })
+          .filter(([_, value]) => value !== undefined)
+          .map(([key, value]) => `--${key}: ${value}`)
+          .join('; ');
+
+        criticalThemeCSS = savedDarkMode === 'true'
+          ? `:root { ${variables}; } .dark { ${variables}; }`
+          : `:root { ${variables}; }`;
+      }
+
+    }
+
+    return {
+      savedThemeName,
+      savedDarkMode,
+      savedTheme,
+      criticalThemeCSS
+    };
+  },
+  head: (ctx) => ({
     meta: [
       {
         charSet: "utf-8",
@@ -197,6 +231,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         rel: "stylesheet",
         href: appCss,
       },
+      // {
+      //   rel: "stylesheet",
+      //   children: ctx.loaderData.criticalThemeCSS,
+      // },
       {
         rel: "icon",
         type: "image/x-icon",
@@ -216,8 +254,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   context: () => ({ auth, gun }),
   notFoundComponent: () => <NotFound />,
   errorComponent: () => <ErrorComponent />,
-  component: () => (
-    <RootDocument>
+  component: () => {
+    const loaderData = Route.useLoaderData()
+    return <RootDocument>
+      <style>
+        {loaderData.criticalThemeCSS}
+      </style>
       <Toaster richColors />
       <TooltipProvider>
         <NuqsAdapter>
@@ -227,7 +269,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       <TanStackRouterDevtools position="bottom-right" />
       <TanstackQueryLayout />
     </RootDocument>
-  ),
+  },
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
@@ -361,6 +403,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loaderData = Route.useLoaderData()
+
   return (
     <html lang="en" className="dark">
       <head>
@@ -368,20 +412,22 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <div data-vaul-drawer-wrapper="">
-          <GoogleLoginProvider>
-            <AuthProvider>
-              <OneTapLoginProvider>
-                <ConfettiProvider>
-                  <LoginPromptProvider>
-                    {children}
-                    {
-                      isMobile() && <QRScannerButton onActionDetected={handleActionDetected} />
-                    }
-                  </LoginPromptProvider>
-                </ConfettiProvider>
-              </OneTapLoginProvider>
-            </AuthProvider>
-          </GoogleLoginProvider>
+          <ThemeModeProvider savedDarkMode={loaderData.savedDarkMode} savedTheme={loaderData.savedTheme} savedThemeName={loaderData.savedThemeName}>
+            <GoogleLoginProvider>
+              <AuthProvider>
+                <OneTapLoginProvider>
+                  <ConfettiProvider>
+                    <LoginPromptProvider>
+                      {children}
+                      {
+                        isMobile() && <QRScannerButton onActionDetected={handleActionDetected} />
+                      }
+                    </LoginPromptProvider>
+                  </ConfettiProvider>
+                </OneTapLoginProvider>
+              </AuthProvider>
+            </GoogleLoginProvider>
+          </ThemeModeProvider>
           <Scripts />
         </div>
       </body>

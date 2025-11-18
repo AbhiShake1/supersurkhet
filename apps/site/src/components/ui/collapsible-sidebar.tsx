@@ -177,7 +177,7 @@ const Option: React.FC<{
       to="."
       search={{ tab: title }}
       className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${isSelected
-        ? "bg-blue-50 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 shadow-sm border-l-2 border-blue-500"
+        ? "bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50"
         : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
         }`}
     >
