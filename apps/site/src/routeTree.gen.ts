@@ -11,6 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as TestrouteImport } from './routes/testroute'
 import { Route as PrivacyImport } from './routes/privacy'
 import { Route as AdminImport } from './routes/admin'
 import { Route as AuthImport } from './routes/_auth'
@@ -29,6 +30,12 @@ import { Route as BusinessRideAdminIndexImport } from './routes/_business/ride/a
 import { Route as BusinessRideAdminVehicleTypesImport } from './routes/_business/ride/admin/vehicle-types'
 
 // Create/Update Routes
+
+const TestrouteRoute = TestrouteImport.update({
+  id: '/testroute',
+  path: '/testroute',
+  getParentRoute: () => rootRoute,
+} as any)
 
 const PrivacyRoute = PrivacyImport.update({
   id: '/privacy',
@@ -158,6 +165,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyImport
       parentRoute: typeof rootRoute
     }
+    '/testroute': {
+      id: '/testroute'
+      path: '/testroute'
+      fullPath: '/testroute'
+      preLoaderRoute: typeof TestrouteImport
+      parentRoute: typeof rootRoute
+    }
     '/$businessName/admin': {
       id: '/$businessName/admin'
       path: '/$businessName/admin'
@@ -280,6 +294,7 @@ export interface FileRoutesByFullPath {
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
+  '/testroute': typeof TestrouteRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
@@ -299,6 +314,7 @@ export interface FileRoutesByTo {
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
+  '/testroute': typeof TestrouteRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
@@ -318,6 +334,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
+  '/testroute': typeof TestrouteRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/_auth/auth': typeof AuthAuthRoute
   '/_auth/settings': typeof AuthSettingsRoute
@@ -339,6 +356,7 @@ export interface FileRouteTypes {
     | ''
     | '/admin'
     | '/privacy'
+    | '/testroute'
     | '/$businessName/admin'
     | '/auth'
     | '/settings'
@@ -357,6 +375,7 @@ export interface FileRouteTypes {
     | ''
     | '/admin'
     | '/privacy'
+    | '/testroute'
     | '/$businessName/admin'
     | '/auth'
     | '/settings'
@@ -374,6 +393,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/admin'
     | '/privacy'
+    | '/testroute'
     | '/$businessName/admin'
     | '/_auth/auth'
     | '/_auth/settings'
@@ -394,6 +414,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   AdminRoute: typeof AdminRoute
   PrivacyRoute: typeof PrivacyRoute
+  TestrouteRoute: typeof TestrouteRoute
   BusinessNameAdminRoute: typeof BusinessNameAdminRoute
   BusinessChatRoute: typeof BusinessChatRoute
   BusinessNameIndexRoute: typeof BusinessNameIndexRoute
@@ -409,6 +430,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   AdminRoute: AdminRoute,
   PrivacyRoute: PrivacyRoute,
+  TestrouteRoute: TestrouteRoute,
   BusinessNameAdminRoute: BusinessNameAdminRoute,
   BusinessChatRoute: BusinessChatRoute,
   BusinessNameIndexRoute: BusinessNameIndexRoute,
@@ -433,6 +455,7 @@ export const routeTree = rootRoute
         "/_auth",
         "/admin",
         "/privacy",
+        "/testroute",
         "/$businessName/admin",
         "/_business/chat",
         "/$businessName/",
@@ -458,6 +481,9 @@ export const routeTree = rootRoute
     },
     "/privacy": {
       "filePath": "privacy.tsx"
+    },
+    "/testroute": {
+      "filePath": "testroute.tsx"
     },
     "/$businessName/admin": {
       "filePath": "$businessName/admin.tsx"
