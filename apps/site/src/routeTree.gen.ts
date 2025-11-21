@@ -11,7 +11,7 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
-import { Route as TestrouteImport } from './routes/testroute'
+import { Route as S3testImport } from './routes/s3test'
 import { Route as PrivacyImport } from './routes/privacy'
 import { Route as AdminImport } from './routes/admin'
 import { Route as AuthImport } from './routes/_auth'
@@ -31,9 +31,9 @@ import { Route as BusinessRideAdminVehicleTypesImport } from './routes/_business
 
 // Create/Update Routes
 
-const TestrouteRoute = TestrouteImport.update({
-  id: '/testroute',
-  path: '/testroute',
+const S3testRoute = S3testImport.update({
+  id: '/s3test',
+  path: '/s3test',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -165,11 +165,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyImport
       parentRoute: typeof rootRoute
     }
-    '/testroute': {
-      id: '/testroute'
-      path: '/testroute'
-      fullPath: '/testroute'
-      preLoaderRoute: typeof TestrouteImport
+    '/s3test': {
+      id: '/s3test'
+      path: '/s3test'
+      fullPath: '/s3test'
+      preLoaderRoute: typeof S3testImport
       parentRoute: typeof rootRoute
     }
     '/$businessName/admin': {
@@ -294,7 +294,7 @@ export interface FileRoutesByFullPath {
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
-  '/testroute': typeof TestrouteRoute
+  '/s3test': typeof S3testRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
@@ -314,7 +314,7 @@ export interface FileRoutesByTo {
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
-  '/testroute': typeof TestrouteRoute
+  '/s3test': typeof S3testRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
@@ -334,7 +334,7 @@ export interface FileRoutesById {
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
-  '/testroute': typeof TestrouteRoute
+  '/s3test': typeof S3testRoute
   '/$businessName/admin': typeof BusinessNameAdminRoute
   '/_auth/auth': typeof AuthAuthRoute
   '/_auth/settings': typeof AuthSettingsRoute
@@ -356,7 +356,7 @@ export interface FileRouteTypes {
     | ''
     | '/admin'
     | '/privacy'
-    | '/testroute'
+    | '/s3test'
     | '/$businessName/admin'
     | '/auth'
     | '/settings'
@@ -375,7 +375,7 @@ export interface FileRouteTypes {
     | ''
     | '/admin'
     | '/privacy'
-    | '/testroute'
+    | '/s3test'
     | '/$businessName/admin'
     | '/auth'
     | '/settings'
@@ -393,7 +393,7 @@ export interface FileRouteTypes {
     | '/_auth'
     | '/admin'
     | '/privacy'
-    | '/testroute'
+    | '/s3test'
     | '/$businessName/admin'
     | '/_auth/auth'
     | '/_auth/settings'
@@ -414,7 +414,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   AdminRoute: typeof AdminRoute
   PrivacyRoute: typeof PrivacyRoute
-  TestrouteRoute: typeof TestrouteRoute
+  S3testRoute: typeof S3testRoute
   BusinessNameAdminRoute: typeof BusinessNameAdminRoute
   BusinessChatRoute: typeof BusinessChatRoute
   BusinessNameIndexRoute: typeof BusinessNameIndexRoute
@@ -430,7 +430,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   AdminRoute: AdminRoute,
   PrivacyRoute: PrivacyRoute,
-  TestrouteRoute: TestrouteRoute,
+  S3testRoute: S3testRoute,
   BusinessNameAdminRoute: BusinessNameAdminRoute,
   BusinessChatRoute: BusinessChatRoute,
   BusinessNameIndexRoute: BusinessNameIndexRoute,
@@ -455,7 +455,7 @@ export const routeTree = rootRoute
         "/_auth",
         "/admin",
         "/privacy",
-        "/testroute",
+        "/s3test",
         "/$businessName/admin",
         "/_business/chat",
         "/$businessName/",
@@ -482,8 +482,8 @@ export const routeTree = rootRoute
     "/privacy": {
       "filePath": "privacy.tsx"
     },
-    "/testroute": {
-      "filePath": "testroute.tsx"
+    "/s3test": {
+      "filePath": "s3test.tsx"
     },
     "/$businessName/admin": {
       "filePath": "$businessName/admin.tsx"

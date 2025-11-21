@@ -14,7 +14,7 @@ interface Env {
 export class GunRelay extends DurableObject {
   private state: DurableObjectState;
   private gun: IGunInstance;
-  private server: any;
+  private server: Server;
 
   constructor(state: DurableObjectState, env: Env) {
     super(state, env);
@@ -29,7 +29,7 @@ export class GunRelay extends DurableObject {
       //   region: env.S3_REGION,
       //   // fakes3: env.S3_ENDPOINT,
       // },
-      peers: env.GUN_PEERS ? env.GUN_PEERS.split(',') : [],
+      peers: env.GUN_PEERS ? env.GUN_PEERS?.split(',') : [],
       web: this.server,
     });
   }

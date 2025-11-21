@@ -16,15 +16,15 @@ import "gun/sea";
 import "gun/lib/not"
 
 export const gun = GUN({
-	localStorage: false,
-	radisk: false,
-	peers: [
-		"wss://relay.surkhet.app/gun",
-		"wss://gun-manhattan.herokuapp.com/gun",
-	],
+  localStorage: false,
+  radisk: false,
+  peers: [
+    "wss://relay.surkhet.app/gun",
+    "wss://gun-manhattan.herokuapp.com/gun",
+  ],
 });
 
 if (import.meta.env.DEV && typeof window !== "undefined") {
-	// @ts-expect-error
-	window.gun = gun;
+  // @ts-expect-error
+  window.gun = gun;
 }
