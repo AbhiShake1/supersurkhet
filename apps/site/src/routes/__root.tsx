@@ -36,6 +36,7 @@ import { getAppTheme, getAppDarkMode, getAppThemeData } from "@/contexts/theme-c
 import { ThemeProvider as ThemeModeProvider } from "@/contexts/theme-context";
 import { defaultPresets } from "@/lib/theme";
 import { getUser, removeUser } from "@/server-functions/user";
+import type { IGunUserInstance } from "gun/types";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -63,21 +64,22 @@ async function getCurrentUser() {
   // const user = await recallUser();
   const userLocal = await getUser()
   gun.user().auth(userLocal);
-  const user = gun.user().recall({ sessionStorage: false });
-  if (!user || !user.is) return null;
-  // const dbUser = await new Promise((resolve, reject) => {
-  // 	gun.get("user").put(user)
-  // })
-  // Fetch user profile from Gun
-  // This is a sync placeholder; in real use, fetch async and cache
+  const user = gun.user().recall({ sessionStorage: false }) as IGunUserInstance<any, any, any, any> | undefined;
+  if (!user?.is) return null;
   return {
     pub: user.is.pub,
     email: user.is.alias,
+    // @ts-expect-error
     role: user._?.role || "user",
+    // @ts-expect-error
     businessId: user._?.businessId,
+    // @ts-expect-error
     permissions: user._?.permissions,
+    // @ts-expect-error
     isActive: user._?.isActive ?? true,
+    // @ts-expect-error
     avatar: user._?.avatar,
+    // @ts-expect-error
     phone: user._?.phone,
     ...user,
   };
