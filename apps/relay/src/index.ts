@@ -2,7 +2,7 @@ import Gun, { type IGunInstance } from 'gun';
 import { DurableObject } from "cloudflare:workers";
 
 interface Env {
-  GUN_PEERS: "";
+  GUN_PEERS: string;
   S3_BUCKET: string;
   S3_KEY: string;
   S3_SECRET: string;
@@ -22,6 +22,8 @@ export class GunRelay extends DurableObject {
     this.server = new Server();
     this.gun = Gun({
       radisk: true,
+      localStorage: false,
+      // file: 'data/gun',
       // file: "./data/gun",
       // s3: {
       //   bucket: env.S3_BUCKET,
@@ -30,7 +32,7 @@ export class GunRelay extends DurableObject {
       //   region: env.S3_REGION,
       //   // fakes3: env.S3_ENDPOINT,
       // },
-      peers: env.GUN_PEERS ? env.GUN_PEERS?.split(',') : [],
+      peers: env.GUN_PEERS ? env.GUN_PEERS.split(',') : [],
       web: this.server,
     });
   }
