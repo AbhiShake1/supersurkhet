@@ -35,6 +35,7 @@ import type { DataMatrixAction } from "@/lib/datamatrix";
 import { getAppTheme, getAppDarkMode, getAppThemeData } from "@/contexts/theme-context";
 import { ThemeProvider as ThemeModeProvider } from "@/contexts/theme-context";
 import { defaultPresets } from "@/lib/theme";
+import { getUser, removeUser } from "@/server-functions/user";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -51,15 +52,18 @@ export interface UserProfile {
 }
 
 async function getUserProfile() {
-  const user = getCurrentUser();
+  const user = await getCurrentUser();
   if (!user) return null;
   return await new Promise<UserProfile>((resolve) => {
     gun.get("user").get(user.pub).once(resolve);
   });
 }
 
-function getCurrentUser() {
-  const user = recallUser();
+async function getCurrentUser() {
+  // const user = await recallUser();
+  const userLocal = await getUser()
+  gun.user().auth(userLocal);
+  const user = gun.user().recall({ sessionStorage: false });
   if (!user || !user.is) return null;
   // const dbUser = await new Promise((resolve, reject) => {
   // 	gun.get("user").put(user)
@@ -79,19 +83,20 @@ function getCurrentUser() {
   };
 }
 
-function recallUser() {
-  gun.user().auth(JSON.parse(localStorage.getItem("gun-user") || "{}"));
+async function recallUser() {
+  const user = await getUser();
+  gun.user().auth(user);
   return gun.user().recall({ sessionStorage: false });
 }
 
 function logout() {
   gun.user().leave();
-  localStorage.removeItem("gun-user")
+  removeUser()
   window.location.reload();
 }
 
-function isAuthenticated() {
-  recallUser()
+async function isAuthenticated() {
+  await recallUser()
   return !!gun.user().is;
 }
 
