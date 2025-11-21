@@ -1,6 +1,5 @@
 import Gun, { type IGunInstance } from 'gun';
 import { DurableObject } from "cloudflare:workers";
-import "gun/lib/radisk"
 
 interface Env {
   GUN_PEERS: "";
@@ -22,6 +21,7 @@ export class GunRelay extends DurableObject {
     this.state = state;
     this.server = new Server();
     this.gun = Gun({
+      radisk: true,
       // file: "./data/gun",
       // s3: {
       //   bucket: env.S3_BUCKET,
