@@ -1,5 +1,6 @@
 import Gun, { type IGunInstance } from 'gun';
 import { DurableObject } from "cloudflare:workers";
+import "gun/lib/radisk2"
 
 interface Env {
   GUN_PEERS: "";
