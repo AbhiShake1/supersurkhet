@@ -1,6 +1,7 @@
+import { NotFound } from "@/components/ui/not-found";
 import { api } from "@/lib/api";
 import type { Business } from "@/lib/schema";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { lazy } from "react";
 
@@ -26,9 +27,11 @@ export const Route = createFileRoute("/$businessName/")({
   component: () => {
     const { businessName } = Route.useParams();
 
-    const { data: allBusinesses = [] } = api.business.useGet();
+    const { data: allBusinesses = [], isLoading } = api.business.useGet({
+      filter: (b: Business) => b?.basePath === businessName,
+    });
 
-    if (!allBusinesses.length) {
+    if (isLoading) {
       return (
         <div className="items-center justify-center w-screen h-screen flex">
           <Loader2
@@ -45,7 +48,8 @@ export const Route = createFileRoute("/$businessName/")({
     );
 
     if (!business) {
-      throw notFound();
+      // TODO: replace with business picker
+      return <NotFound />
     }
 
     switch (business.businessType) {

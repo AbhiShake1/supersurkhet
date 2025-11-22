@@ -201,7 +201,6 @@ const Option: React.FC<{
 const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open, businessName }) => {
   const { logout, isAuthenticated } = useAuth();
   const user = useProfile();
-  console.log({ user, isAuthenticated })
 
   if (!isAuthenticated) return null;
 
