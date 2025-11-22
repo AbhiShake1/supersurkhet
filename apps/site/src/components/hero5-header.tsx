@@ -113,7 +113,7 @@ export const Header = ({ children }: React.PropsWithChildren) => {
                           </AvatarFallback>
                         </Avatar>
                         <div className="text-base font-semibold">
-                          {user?.email || user?.email || "User"}
+                          {user?.name || user?.email || "User"}
                         </div>
                       </div>
                       <div className="flex flex-col">

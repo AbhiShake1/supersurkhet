@@ -68,7 +68,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   }, []);
 
   const { data: allBusinesses = [], isLoading: isLoadingBusiness } = api.business.useGet({
-    filter: (b: Business) => b.basePath === basePath,
+    filter: (b: Business) => b?.basePath === basePath,
   });
   const business = allBusinesses[0];
 

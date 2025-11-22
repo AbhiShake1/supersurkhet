@@ -15,6 +15,7 @@ import { Route as S3testImport } from './routes/s3test'
 import { Route as PrivacyImport } from './routes/privacy'
 import { Route as AdminImport } from './routes/admin'
 import { Route as AuthImport } from './routes/_auth'
+import { Route as BusinessNameImport } from './routes/$businessName'
 import { Route as IndexImport } from './routes/index'
 import { Route as AppsIndexImport } from './routes/apps/index'
 import { Route as BusinessNameIndexImport } from './routes/$businessName/index'
@@ -22,12 +23,6 @@ import { Route as BusinessChatImport } from './routes/_business/chat'
 import { Route as AuthSettingsImport } from './routes/_auth/settings'
 import { Route as AuthAuthImport } from './routes/_auth/auth'
 import { Route as BusinessNameAdminImport } from './routes/$businessName/admin'
-import { Route as BusinessRideIndexImport } from './routes/_business/ride/index'
-import { Route as BusinessSchoolSasaImport } from './routes/_business/_school/sasa'
-import { Route as BusinessRetailAnjalstoreImport } from './routes/_business/_retail/anjalstore'
-import { Route as BusinessRideAdminRouteImport } from './routes/_business/ride/admin/route'
-import { Route as BusinessRideAdminIndexImport } from './routes/_business/ride/admin/index'
-import { Route as BusinessRideAdminVehicleTypesImport } from './routes/_business/ride/admin/vehicle-types'
 
 // Create/Update Routes
 
@@ -54,6 +49,12 @@ const AuthRoute = AuthImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const BusinessNameRoute = BusinessNameImport.update({
+  id: '/$businessName',
+  path: '/$businessName',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
@@ -67,9 +68,9 @@ const AppsIndexRoute = AppsIndexImport.update({
 } as any)
 
 const BusinessNameIndexRoute = BusinessNameIndexImport.update({
-  id: '/$businessName/',
-  path: '/$businessName/',
-  getParentRoute: () => rootRoute,
+  id: '/',
+  path: '/',
+  getParentRoute: () => BusinessNameRoute,
 } as any)
 
 const BusinessChatRoute = BusinessChatImport.update({
@@ -91,47 +92,10 @@ const AuthAuthRoute = AuthAuthImport.update({
 } as any)
 
 const BusinessNameAdminRoute = BusinessNameAdminImport.update({
-  id: '/$businessName/admin',
-  path: '/$businessName/admin',
-  getParentRoute: () => rootRoute,
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => BusinessNameRoute,
 } as any)
-
-const BusinessRideIndexRoute = BusinessRideIndexImport.update({
-  id: '/_business/ride/',
-  path: '/ride/',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const BusinessSchoolSasaRoute = BusinessSchoolSasaImport.update({
-  id: '/_business/_school/sasa',
-  path: '/sasa',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const BusinessRetailAnjalstoreRoute = BusinessRetailAnjalstoreImport.update({
-  id: '/_business/_retail/anjalstore',
-  path: '/anjalstore',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const BusinessRideAdminRouteRoute = BusinessRideAdminRouteImport.update({
-  id: '/_business/ride/admin',
-  path: '/ride/admin',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const BusinessRideAdminIndexRoute = BusinessRideAdminIndexImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => BusinessRideAdminRouteRoute,
-} as any)
-
-const BusinessRideAdminVehicleTypesRoute =
-  BusinessRideAdminVehicleTypesImport.update({
-    id: '/vehicle-types',
-    path: '/vehicle-types',
-    getParentRoute: () => BusinessRideAdminRouteRoute,
-  } as any)
 
 // Populate the FileRoutesByPath interface
 
@@ -142,6 +106,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/$businessName': {
+      id: '/$businessName'
+      path: '/$businessName'
+      fullPath: '/$businessName'
+      preLoaderRoute: typeof BusinessNameImport
       parentRoute: typeof rootRoute
     }
     '/_auth': {
@@ -174,10 +145,10 @@ declare module '@tanstack/react-router' {
     }
     '/$businessName/admin': {
       id: '/$businessName/admin'
-      path: '/$businessName/admin'
+      path: '/admin'
       fullPath: '/$businessName/admin'
       preLoaderRoute: typeof BusinessNameAdminImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof BusinessNameImport
     }
     '/_auth/auth': {
       id: '/_auth/auth'
@@ -202,10 +173,10 @@ declare module '@tanstack/react-router' {
     }
     '/$businessName/': {
       id: '/$businessName/'
-      path: '/$businessName'
-      fullPath: '/$businessName'
+      path: '/'
+      fullPath: '/$businessName/'
       preLoaderRoute: typeof BusinessNameIndexImport
-      parentRoute: typeof rootRoute
+      parentRoute: typeof BusinessNameImport
     }
     '/apps/': {
       id: '/apps/'
@@ -214,52 +185,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsIndexImport
       parentRoute: typeof rootRoute
     }
-    '/_business/ride/admin': {
-      id: '/_business/ride/admin'
-      path: '/ride/admin'
-      fullPath: '/ride/admin'
-      preLoaderRoute: typeof BusinessRideAdminRouteImport
-      parentRoute: typeof rootRoute
-    }
-    '/_business/_retail/anjalstore': {
-      id: '/_business/_retail/anjalstore'
-      path: '/anjalstore'
-      fullPath: '/anjalstore'
-      preLoaderRoute: typeof BusinessRetailAnjalstoreImport
-      parentRoute: typeof rootRoute
-    }
-    '/_business/_school/sasa': {
-      id: '/_business/_school/sasa'
-      path: '/sasa'
-      fullPath: '/sasa'
-      preLoaderRoute: typeof BusinessSchoolSasaImport
-      parentRoute: typeof rootRoute
-    }
-    '/_business/ride/': {
-      id: '/_business/ride/'
-      path: '/ride'
-      fullPath: '/ride'
-      preLoaderRoute: typeof BusinessRideIndexImport
-      parentRoute: typeof rootRoute
-    }
-    '/_business/ride/admin/vehicle-types': {
-      id: '/_business/ride/admin/vehicle-types'
-      path: '/vehicle-types'
-      fullPath: '/ride/admin/vehicle-types'
-      preLoaderRoute: typeof BusinessRideAdminVehicleTypesImport
-      parentRoute: typeof BusinessRideAdminRouteImport
-    }
-    '/_business/ride/admin/': {
-      id: '/_business/ride/admin/'
-      path: '/'
-      fullPath: '/ride/admin/'
-      preLoaderRoute: typeof BusinessRideAdminIndexImport
-      parentRoute: typeof BusinessRideAdminRouteImport
-    }
   }
 }
 
 // Create and export the route tree
+
+interface BusinessNameRouteChildren {
+  BusinessNameAdminRoute: typeof BusinessNameAdminRoute
+  BusinessNameIndexRoute: typeof BusinessNameIndexRoute
+}
+
+const BusinessNameRouteChildren: BusinessNameRouteChildren = {
+  BusinessNameAdminRoute: BusinessNameAdminRoute,
+  BusinessNameIndexRoute: BusinessNameIndexRoute,
+}
+
+const BusinessNameRouteWithChildren = BusinessNameRoute._addFileChildren(
+  BusinessNameRouteChildren,
+)
 
 interface AuthRouteChildren {
   AuthAuthRoute: typeof AuthAuthRoute
@@ -273,24 +216,9 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
-interface BusinessRideAdminRouteRouteChildren {
-  BusinessRideAdminVehicleTypesRoute: typeof BusinessRideAdminVehicleTypesRoute
-  BusinessRideAdminIndexRoute: typeof BusinessRideAdminIndexRoute
-}
-
-const BusinessRideAdminRouteRouteChildren: BusinessRideAdminRouteRouteChildren =
-  {
-    BusinessRideAdminVehicleTypesRoute: BusinessRideAdminVehicleTypesRoute,
-    BusinessRideAdminIndexRoute: BusinessRideAdminIndexRoute,
-  }
-
-const BusinessRideAdminRouteRouteWithChildren =
-  BusinessRideAdminRouteRoute._addFileChildren(
-    BusinessRideAdminRouteRouteChildren,
-  )
-
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$businessName': typeof BusinessNameRouteWithChildren
   '': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
@@ -299,14 +227,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
-  '/$businessName': typeof BusinessNameIndexRoute
+  '/$businessName/': typeof BusinessNameIndexRoute
   '/apps': typeof AppsIndexRoute
-  '/ride/admin': typeof BusinessRideAdminRouteRouteWithChildren
-  '/anjalstore': typeof BusinessRetailAnjalstoreRoute
-  '/sasa': typeof BusinessSchoolSasaRoute
-  '/ride': typeof BusinessRideIndexRoute
-  '/ride/admin/vehicle-types': typeof BusinessRideAdminVehicleTypesRoute
-  '/ride/admin/': typeof BusinessRideAdminIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -321,16 +243,12 @@ export interface FileRoutesByTo {
   '/chat': typeof BusinessChatRoute
   '/$businessName': typeof BusinessNameIndexRoute
   '/apps': typeof AppsIndexRoute
-  '/anjalstore': typeof BusinessRetailAnjalstoreRoute
-  '/sasa': typeof BusinessSchoolSasaRoute
-  '/ride': typeof BusinessRideIndexRoute
-  '/ride/admin/vehicle-types': typeof BusinessRideAdminVehicleTypesRoute
-  '/ride/admin': typeof BusinessRideAdminIndexRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/$businessName': typeof BusinessNameRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
@@ -341,18 +259,13 @@ export interface FileRoutesById {
   '/_business/chat': typeof BusinessChatRoute
   '/$businessName/': typeof BusinessNameIndexRoute
   '/apps/': typeof AppsIndexRoute
-  '/_business/ride/admin': typeof BusinessRideAdminRouteRouteWithChildren
-  '/_business/_retail/anjalstore': typeof BusinessRetailAnjalstoreRoute
-  '/_business/_school/sasa': typeof BusinessSchoolSasaRoute
-  '/_business/ride/': typeof BusinessRideIndexRoute
-  '/_business/ride/admin/vehicle-types': typeof BusinessRideAdminVehicleTypesRoute
-  '/_business/ride/admin/': typeof BusinessRideAdminIndexRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$businessName'
     | ''
     | '/admin'
     | '/privacy'
@@ -361,14 +274,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/settings'
     | '/chat'
-    | '/$businessName'
+    | '/$businessName/'
     | '/apps'
-    | '/ride/admin'
-    | '/anjalstore'
-    | '/sasa'
-    | '/ride'
-    | '/ride/admin/vehicle-types'
-    | '/ride/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -382,14 +289,10 @@ export interface FileRouteTypes {
     | '/chat'
     | '/$businessName'
     | '/apps'
-    | '/anjalstore'
-    | '/sasa'
-    | '/ride'
-    | '/ride/admin/vehicle-types'
-    | '/ride/admin'
   id:
     | '__root__'
     | '/'
+    | '/$businessName'
     | '/_auth'
     | '/admin'
     | '/privacy'
@@ -400,45 +303,29 @@ export interface FileRouteTypes {
     | '/_business/chat'
     | '/$businessName/'
     | '/apps/'
-    | '/_business/ride/admin'
-    | '/_business/_retail/anjalstore'
-    | '/_business/_school/sasa'
-    | '/_business/ride/'
-    | '/_business/ride/admin/vehicle-types'
-    | '/_business/ride/admin/'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BusinessNameRoute: typeof BusinessNameRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   AdminRoute: typeof AdminRoute
   PrivacyRoute: typeof PrivacyRoute
   S3testRoute: typeof S3testRoute
-  BusinessNameAdminRoute: typeof BusinessNameAdminRoute
   BusinessChatRoute: typeof BusinessChatRoute
-  BusinessNameIndexRoute: typeof BusinessNameIndexRoute
   AppsIndexRoute: typeof AppsIndexRoute
-  BusinessRideAdminRouteRoute: typeof BusinessRideAdminRouteRouteWithChildren
-  BusinessRetailAnjalstoreRoute: typeof BusinessRetailAnjalstoreRoute
-  BusinessSchoolSasaRoute: typeof BusinessSchoolSasaRoute
-  BusinessRideIndexRoute: typeof BusinessRideIndexRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BusinessNameRoute: BusinessNameRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   AdminRoute: AdminRoute,
   PrivacyRoute: PrivacyRoute,
   S3testRoute: S3testRoute,
-  BusinessNameAdminRoute: BusinessNameAdminRoute,
   BusinessChatRoute: BusinessChatRoute,
-  BusinessNameIndexRoute: BusinessNameIndexRoute,
   AppsIndexRoute: AppsIndexRoute,
-  BusinessRideAdminRouteRoute: BusinessRideAdminRouteRouteWithChildren,
-  BusinessRetailAnjalstoreRoute: BusinessRetailAnjalstoreRoute,
-  BusinessSchoolSasaRoute: BusinessSchoolSasaRoute,
-  BusinessRideIndexRoute: BusinessRideIndexRoute,
 }
 
 export const routeTree = rootRoute
@@ -452,22 +339,24 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/$businessName",
         "/_auth",
         "/admin",
         "/privacy",
         "/s3test",
-        "/$businessName/admin",
         "/_business/chat",
-        "/$businessName/",
-        "/apps/",
-        "/_business/ride/admin",
-        "/_business/_retail/anjalstore",
-        "/_business/_school/sasa",
-        "/_business/ride/"
+        "/apps/"
       ]
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/$businessName": {
+      "filePath": "$businessName.tsx",
+      "children": [
+        "/$businessName/admin",
+        "/$businessName/"
+      ]
     },
     "/_auth": {
       "filePath": "_auth.tsx",
@@ -486,7 +375,8 @@ export const routeTree = rootRoute
       "filePath": "s3test.tsx"
     },
     "/$businessName/admin": {
-      "filePath": "$businessName/admin.tsx"
+      "filePath": "$businessName/admin.tsx",
+      "parent": "/$businessName"
     },
     "/_auth/auth": {
       "filePath": "_auth/auth.tsx",
@@ -500,34 +390,11 @@ export const routeTree = rootRoute
       "filePath": "_business/chat.tsx"
     },
     "/$businessName/": {
-      "filePath": "$businessName/index.tsx"
+      "filePath": "$businessName/index.tsx",
+      "parent": "/$businessName"
     },
     "/apps/": {
       "filePath": "apps/index.tsx"
-    },
-    "/_business/ride/admin": {
-      "filePath": "_business/ride/admin/route.tsx",
-      "children": [
-        "/_business/ride/admin/vehicle-types",
-        "/_business/ride/admin/"
-      ]
-    },
-    "/_business/_retail/anjalstore": {
-      "filePath": "_business/_retail/anjalstore.tsx"
-    },
-    "/_business/_school/sasa": {
-      "filePath": "_business/_school/sasa.tsx"
-    },
-    "/_business/ride/": {
-      "filePath": "_business/ride/index.tsx"
-    },
-    "/_business/ride/admin/vehicle-types": {
-      "filePath": "_business/ride/admin/vehicle-types.tsx",
-      "parent": "/_business/ride/admin"
-    },
-    "/_business/ride/admin/": {
-      "filePath": "_business/ride/admin/index.tsx",
-      "parent": "/_business/ride/admin"
     }
   }
 }

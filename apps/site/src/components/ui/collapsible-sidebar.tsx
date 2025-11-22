@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "./dropdown-menu";
 import { useSidebar } from "./sidebar";
+import { useProfile } from "@/hooks/use-profile";
 
 export interface SidebarItems {
   items: {
@@ -97,7 +98,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
         {/* Search bar */}
         {open && (
           <div className="px-2 py-1 mb-2 relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
             <Input
               placeholder="Filter items..."
               value={searchQuery}
@@ -198,7 +199,9 @@ const Option: React.FC<{
 };
 
 const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open, businessName }) => {
-  const { user, logout, isAuthenticated } = useAuth();
+  const { logout, isAuthenticated } = useAuth();
+  const user = useProfile();
+  console.log({ user, isAuthenticated })
 
   if (!isAuthenticated) return null;
 
@@ -208,12 +211,16 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
         <DropdownMenuTrigger asChild>
           <div className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
             <div className="flex items-center gap-3">
-              <Logo />
+              <Avatar>
+                <AvatarImage src={user?.avatar} alt={user?.name} />
+                <AvatarFallback className="capitalize">
+                  {user?.email?.[0]}
+                </AvatarFallback>
+              </Avatar>
               {open && (
                 <div className={`transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}>
                   <div className="flex flex-col">
                     <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {JSON.stringify(user)}
                       {user?.name || user?.email || "User"}
                     </span>
                     {businessName && (
