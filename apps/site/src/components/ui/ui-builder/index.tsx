@@ -294,7 +294,6 @@ export function PageConfigPanel({
   tabsContent: TabsContentConfig;
 }) {
   const { layers, appearance, data } = tabsContent;
-  const tabCount = 1 + (appearance ? 1 : 0) + (data ? 1 : 0);
 
   return (
     <Tabs
@@ -302,7 +301,7 @@ export function PageConfigPanel({
       defaultValue="layers"
       className={cn(className)}
     >
-      <TabsList className={`grid grid-cols-${tabCount} mx-4`}>
+      <TabsList className="w-full">
         <TabsTrigger value="layers">{layers.title}</TabsTrigger>
         {appearance && <TabsTrigger value="appearance">{appearance.title}</TabsTrigger>}
         {data && <TabsTrigger value="variables">{data.title}</TabsTrigger>}
