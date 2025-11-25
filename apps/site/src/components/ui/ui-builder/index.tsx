@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import LayersPanel from "@/components/ui/ui-builder/internal/layers-panel";
 import EditorPanel from "@/components/ui/ui-builder/internal/editor-panel";
@@ -16,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useStore } from "@/hooks/use-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
-import {
+import type {
   ComponentRegistry,
   ComponentLayer,
   Variable,
@@ -27,6 +25,7 @@ import { TailwindThemePanel } from "@/components/ui/ui-builder/internal/tailwind
 import { ConfigPanel } from "@/components/ui/ui-builder/internal/config-panel";
 import { VariablesPanel } from "@/components/ui/ui-builder/internal/variables-panel";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 /**
  * TabsContentConfig defines the structure for the content of the page config panel tabs.
@@ -169,7 +168,7 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
       disableTransitionOnChange
     >
       <TooltipProvider>
-      {layout}
+        {layout}
       </TooltipProvider>
     </ThemeProvider>
   );
@@ -181,7 +180,7 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
 
   const mainPanels = useMemo(() => {
     const panels = [];
-    
+
     if (showLeftPanel) {
       panels.push({
         title: "Page Config",
@@ -189,13 +188,13 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
         defaultSize: showRightPanel ? 25 : 33,
       });
     }
-    
+
     panels.push({
       title: "UI Editor",
       content: panelConfig.editorPanel,
       defaultSize: showLeftPanel && showRightPanel ? 50 : (showLeftPanel || showRightPanel ? 67 : 100),
     });
-    
+
     if (showRightPanel) {
       panels.push({
         title: "Props",
@@ -203,7 +202,7 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
         defaultSize: showLeftPanel ? 25 : 33,
       });
     }
-    
+
     return panels;
   }, [panelConfig, showLeftPanel, showRightPanel]);
 
@@ -216,7 +215,7 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
   useEffect(() => {
     const editorPanel = mainPanels.find(panel => panel.title === "UI Editor");
     const currentPanel = mainPanels.find(panel => panel.title === selectedPanel.title);
-    
+
     if (!currentPanel) {
       setSelectedPanel(editorPanel || mainPanels[0]);
     }
@@ -296,12 +295,12 @@ export function PageConfigPanel({
 }) {
   const { layers, appearance, data } = tabsContent;
   const tabCount = 1 + (appearance ? 1 : 0) + (data ? 1 : 0);
-  
+
   return (
     <Tabs
       data-testid="page-config-panel"
       defaultValue="layers"
-      className={className}
+      className={cn(className)}
     >
       <TabsList className={`grid grid-cols-${tabCount} mx-4`}>
         <TabsTrigger value="layers">{layers.title}</TabsTrigger>
@@ -334,10 +333,11 @@ export function PageConfigPanel({
 export function defaultConfigTabsContent() {
   return {
     layers: { title: "Layers", content: <LayersPanel /> },
-    appearance: { title: "Appearance", content: (
-      <div className="py-2 px-4 gap-2 flex flex-col overflow-y-auto overflow-x-auto">
-        <ConfigPanel />
-        <TailwindThemePanel />
+    appearance: {
+      title: "Appearance", content: (
+        <div className="py-2 px-4 gap-2 flex flex-col overflow-y-auto overflow-x-auto">
+          <ConfigPanel />
+          <TailwindThemePanel />
         </div>
       ),
     },
@@ -372,7 +372,7 @@ export function LoadingSkeleton() {
  * @param {TabsContentConfig} tabsContent - The content for the page config panel tabs.
  * @returns {PanelConfig} The default panel configuration.
  */
-export const getDefaultPanelConfigValues = ( tabsContent: TabsContentConfig) => {
+export const getDefaultPanelConfigValues = (tabsContent: TabsContentConfig) => {
   return {
     navBar: <NavBar />,
     pageConfigPanel: (

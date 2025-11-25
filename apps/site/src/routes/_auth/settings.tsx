@@ -17,7 +17,6 @@ import { useForm } from "react-hook-form";
 import { ThemePresetSelector } from "@/components/theme-preset-selector";
 import { ThemeEditor } from "@/components/theme-editor";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useTheme } from "@/contexts/theme-context";
 
 export const Route = createFileRoute("/_auth/settings")({
   component: RouteComponent,
@@ -34,7 +33,6 @@ function RouteComponent() {
       language: "en",
     },
   });
-  const { isDarkMode } = useTheme();
   const onSubmit = (data: any) => {
     setSaving(true);
     setSaved(false);

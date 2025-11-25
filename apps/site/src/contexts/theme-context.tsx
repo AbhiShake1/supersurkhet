@@ -79,9 +79,9 @@ export function applyTheme(theme: ThemeStyles, isDarkMode: boolean, currentTheme
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode, savedThemeName: string | null | undefined, savedDarkMode: string | null | undefined, savedTheme: ThemeStyles | null | undefined }> = ({ children, savedTheme, savedDarkMode, savedThemeName }) => {
   const [currentThemeName, setCurrentThemeName] = useState(savedThemeName ?? null);
-  const [isDarkMode, setIsDarkMode] = useState(savedDarkMode === "true");
+  const [isDarkMode, setIsDarkMode] = useState(savedDarkMode === undefined || savedDarkMode === "true");
   const [theme, setTheme] = useState(() => {
-    const theme = savedTheme ?? defaultPresets["modern-minimal"].styles
+    const theme = savedTheme ?? defaultPresets["tangerine"].styles
     // applyTheme(theme, isDarkMode, currentThemeName ?? null)
     return theme
   });

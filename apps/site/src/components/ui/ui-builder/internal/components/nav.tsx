@@ -59,10 +59,10 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { CodePanel } from "@/components/ui/ui-builder/components/code-panel";
 import {
-  EditorStore,
+  type EditorStore,
   useEditorStore,
 } from "@/lib/ui-builder/store/editor-store";
-import {
+import type {
   ComponentRegistry,
   ComponentLayer,
 } from "@/components/ui/ui-builder/types";
@@ -72,15 +72,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  KeyCombination,
+  type KeyCombination,
   useKeyboardShortcuts,
 } from "@/hooks/use-keyboard-shortcuts";
 import { useStore } from "zustand";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-const Z_INDEX = 1000;
-
-
+const Z_INDEX = 40;
 
 export function NavBar() {
   const selectedPageId = useLayerStore((state) => state.selectedPageId);
@@ -460,29 +458,26 @@ const PreviewDialog: React.FC<PreviewDialogProps> = ({
   page,
   componentRegistry,
 }) => {
-  const style = useMemo(() => ({ zIndex: Z_INDEX + 1 }), []);
-
-  const shortcuts = useMemo(
-    () => [
-      {
-        keys: { metaKey: true, shiftKey: true },
-        key: "p",
-        handler: () => {
-          onOpenChange(true);
-        },
-      },
-    ],
-    [onOpenChange]
-  );
-
-  useKeyboardShortcuts(shortcuts);
+  // const shortcuts = useMemo(
+  //   () => [
+  //     {
+  //       keys: { metaKey: true, shiftKey: true },
+  //       key: "p",
+  //       handler: () => {
+  //         onOpenChange(true);
+  //       },
+  //     },
+  //   ],
+  //   [onOpenChange]
+  // );
+  //
+  // useKeyboardShortcuts(shortcuts);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger />
       <DialogContentWithZIndex
         className="max-w-[calc(100dvw)] max-h-[calc(100dvh)] overflow-auto p-0 gap-0"
-        style={style}
       >
         <DialogHeader>
           <DialogTitle className="py-3 bg-yellow-600 text-center">
@@ -508,29 +503,26 @@ interface CodeDialogProps {
 }
 
 const CodeDialog: React.FC<CodeDialogProps> = ({ isOpen, onOpenChange }) => {
-  const style = useMemo(() => ({ zIndex: Z_INDEX + 1 }), []);
-
-  const shortcuts = useMemo(
-    () => [
-      {
-        keys: { metaKey: true, shiftKey: true },
-        key: "e",
-        handler: () => {
-          onOpenChange(true);
-        },
-      },
-    ],
-    [onOpenChange]
-  );
-
-  useKeyboardShortcuts(shortcuts);
+  // const shortcuts = useMemo(
+  //   () => [
+  //     {
+  //       keys: { metaKey: true, shiftKey: true },
+  //       key: "e",
+  //       handler: () => {
+  //         onOpenChange(true);
+  //       },
+  //     },
+  //   ],
+  //   [onOpenChange]
+  // );
+  //
+  // useKeyboardShortcuts(shortcuts);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger />
       <DialogContentWithZIndex
         className="sm:max-w-[625px] max-h-[625px]"
-        style={style}
       >
         <DialogHeader>
           <DialogTitle>Generated Code</DialogTitle>
@@ -626,8 +618,7 @@ function PagesPopover() {
             <TooltipTrigger asChild>
               <Button
                 variant="outline"
-                size="default"
-                className="max-w-30 overflow-hidden"
+                className="whitespace-nowrap"
               >
                 {selectedPageData?.name}
               </Button>

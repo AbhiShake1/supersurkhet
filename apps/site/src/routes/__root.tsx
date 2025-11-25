@@ -118,7 +118,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     const savedThemeName = await getAppTheme();
     const savedDarkMode = await getAppDarkMode();
     const _savedTheme = await getAppThemeData();
-    const savedTheme = _savedTheme ?? defaultPresets["modern-minimal"].styles
+    const savedTheme = _savedTheme ?? defaultPresets["tangerine"].styles
 
     // Generate critical CSS for the current theme to prevent FOUC
     let criticalThemeCSS = '';

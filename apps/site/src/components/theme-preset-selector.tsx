@@ -114,7 +114,7 @@ const DemoButton = ({ variant = "default", className = "", themeStyles, currentT
 
 export function ThemePresetSelector() {
   const { getAvailablePresets, applyPreset, currentThemeName, isDarkMode } = useTheme();
-  const [selectedPreset, setSelectedPreset] = useState(currentThemeName || "modern-minimal");
+  const [selectedPreset, setSelectedPreset] = useState(currentThemeName || "tangerine");
 
   const handlePresetSelect = (presetName: string) => {
     setSelectedPreset(presetName);
