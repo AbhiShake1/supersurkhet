@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { LucideIcon } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Business } from "./schema";
 
 export function cn(...inputs: ClassValue[]) {
