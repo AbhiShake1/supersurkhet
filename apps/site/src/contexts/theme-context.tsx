@@ -19,7 +19,7 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const setAppTheme = createServerFn().validator(z.string().nullable()).handler(({ data }) => {
   if (!data) return deleteCookie("app-theme")
-  return setCookie("app-theme", JSON.stringify(data))
+  return setCookie("app-theme", data)
 })
 
 export const getAppTheme = createServerFn().handler(async () => {
