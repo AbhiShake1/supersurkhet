@@ -7,7 +7,7 @@ import isDeepEqual from 'fast-deep-equal';
 import { visitLayer, addLayer, hasLayerChildren, findLayerRecursive, createId, countLayers, duplicateWithNewIdsAndName, findAllParentLayersRecursive, migrateV1ToV2, migrateV2ToV3, createComponentLayer, moveLayer } from '@/lib/ui-builder/store/layer-utils';
 import { getDefaultProps } from '@/lib/ui-builder/store/schema-utils';
 import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
-import { ComponentLayer, Variable, PropValue, VariableValueType, isVariableReference } from '@/components/ui/ui-builder/types';
+import { type ComponentLayer, type Variable, type PropValue, type VariableValueType, isVariableReference } from '@/components/ui/ui-builder/types';
 
 const DEFAULT_PAGE_PROPS = {
   className: "h-screen p-4 flex flex-col gap-2 bg-background overflow-y-scroll",
@@ -67,19 +67,19 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
         state.selectedPageId = selectedPageId || pages[0].id;
         state.selectedLayerId = selectedLayerId || null;
         state.variables = variables || [];
-        
+
         // Initialize immutable bindings for existing layers
         const { registry } = useEditorStore.getState();
-        
+
         // Helper function to set up immutable bindings for layers
         const setupImmutableBindings = (layer: ComponentLayer) => {
           const componentDef = registry[layer.type];
           const defaultVariableBindings = componentDef?.defaultVariableBindings || [];
-          
+
           // Check each default variable binding to see if this layer has a matching variable reference
           for (const binding of defaultVariableBindings) {
             const propValue = layer.props[binding.propName];
-            
+
             // If the prop has a variable reference and it matches the binding's variable ID
             if (isVariableReference(propValue) && propValue.__variableRef === binding.variableId) {
               // Set up immutable binding if specified
@@ -91,12 +91,12 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
               }
             }
           }
-          
+
           return layer;
         };
-        
+
         // Process all pages and their layers to set up immutable bindings
-        state.pages = state.pages.map(page => 
+        state.pages = state.pages.map(page =>
           visitLayer(page, null, setupImmutableBindings)
         );
       }));
@@ -114,10 +114,10 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
     findLayersForPageId: (pageId: string) => {
       const { pages } = get();
       const page = pages.find(page => page.id === pageId);
-      if(page && hasLayerChildren(page)) {
+      if (page && hasLayerChildren(page)) {
         return page?.children || [];
       }
-      return  [];
+      return [];
     },
 
     isLayerAPage: (layerId: string) => {
@@ -127,7 +127,7 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
 
     addComponentLayer: (layerType: string, parentId: string, parentPosition?: number) => set(produce((state: LayerStore) => {
       const { registry } = useEditorStore.getState();
-      
+
       // Create the new layer using the utility function
       const newLayer = createComponentLayer(layerType, registry, {
         applyVariableBindings: true,
@@ -187,7 +187,7 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
         })
       );
       if (!layerToDuplicate) {
-        console.warn(`Layer with ID ${ layerId } not found.`);
+        console.warn(`Layer with ID ${layerId} not found.`);
         return;
       }
 
@@ -261,7 +261,7 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
 
         const pageExists = pages.some(page => page.id === selectedPageId);
         if (!pageExists) {
-          console.warn(`No layers found for page ID: ${ selectedPageId }`);
+          console.warn(`No layers found for page ID: ${selectedPageId}`);
           return state;
         }
 
@@ -295,7 +295,7 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
         const isUnchanged = updatedLayers.every((layer, index) => layer === layers[index]);
 
         if (isUnchanged) {
-          console.warn(`Layer with ID ${ layerId } was not found.`);
+          console.warn(`Layer with ID ${layerId} was not found.`);
           return state;
         }
 
@@ -312,7 +312,7 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
     selectLayer: (layerId: string) => set(produce((state: LayerStore) => {
       const { selectedPageId, findLayersForPageId } = get();
       const layers = findLayersForPageId(selectedPageId);
-      if(selectedPageId === layerId) {
+      if (selectedPageId === layerId) {
         return {
           selectedLayerId: layerId
         };
@@ -349,15 +349,15 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
     // Remove a variable
     removeVariable: (variableId) => set(produce((state: LayerStore) => {
       state.variables = state.variables.filter(v => v.id !== variableId);
-      
+
       // Remove any references to the variable in the layers and set default value from schema
       const { registry } = useEditorStore.getState();
-      
+
       // Helper function to clean variable references from props
       const cleanVariableReferences = (layer: ComponentLayer): ComponentLayer => {
         const updatedProps = { ...layer.props };
         let hasChanges = false;
-        
+
         // Check each prop for variable references
         Object.entries(updatedProps).forEach(([propName, propValue]) => {
           if (isVariableReference(propValue) && propValue.__variableRef === variableId) {
@@ -375,12 +375,12 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
             }
           }
         });
-        
+
         return hasChanges ? { ...layer, props: updatedProps } : layer;
       };
-      
+
       // Update all pages and their layers
-      state.pages = state.pages.map(page => 
+      state.pages = state.pages.map(page =>
         visitLayer(page, null, cleanVariableReferences)
       );
     })),
@@ -401,7 +401,7 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
 
       const { registry } = useEditorStore.getState();
       const layer = get().findLayerById(layerId);
-      
+
       if (!layer) {
         console.warn(`Layer with ID ${layerId} not found.`);
         return;
@@ -410,12 +410,12 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
       // Get the default value from the schema
       const layerSchema = registry[layer.type]?.schema;
       let defaultValue: any = undefined;
-      
+
       if (layerSchema && 'shape' in layerSchema && layerSchema.shape && layerSchema.shape[propName]) {
         const defaultProps = getDefaultProps(layerSchema as any);
         defaultValue = defaultProps[propName];
       }
-      
+
       // If no default value found in schema, use empty string for string-like props
       if (defaultValue === undefined) {
         defaultValue = "";
@@ -470,7 +470,7 @@ const conditionalLocalStorage = {
   removeItem: (name: string): Promise<void> => {
     const { persistLayerStoreConfig } = useEditorStore.getState();
     if (!persistLayerStoreConfig) {
-        return Promise.resolve();
+      return Promise.resolve();
     }
     localStorage.removeItem(name);
     return Promise.resolve();

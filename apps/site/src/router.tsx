@@ -1,4 +1,5 @@
 import { createRouter as createTanstackRouter } from "@tanstack/react-router";
+import { ErrorComponent } from "@/components/ui/error";
 
 import { routerWithQueryClient } from "@tanstack/react-router-with-query";
 import * as TanstackQuery from "./integrations/tanstack-query/root-provider";
@@ -19,6 +20,7 @@ export function createRouter() {
       scrollRestoration: true,
       defaultPreloadStaleTime: 0,
       defaultViewTransition: true,
+      defaultErrorComponent: ({ error }) => <ErrorComponent />,
     }),
     TanstackQuery.getContext().queryClient,
   );

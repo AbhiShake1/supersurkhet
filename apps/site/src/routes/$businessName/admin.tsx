@@ -2,6 +2,7 @@ import { useAuth } from "@/components/auth-provider";
 import { AutoAdmin } from "@/components/auto-admin";
 import { useLoginPrompt } from "@/components/login-prompt-provider";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
+import { NotFound } from "@/components/ui/not-found";
 import { api } from "@/lib/api";
 import type { Business } from "@/lib/schema";
 import { createFileRoute, notFound } from "@tanstack/react-router";
@@ -21,7 +22,9 @@ import {
   MapIcon,
   Menu,
   MenuSquare,
-  Users
+  ShoppingBag,
+  Users,
+  Wrench
 } from "lucide-react";
 import { useEffect } from "react";
 
@@ -33,10 +36,10 @@ export const Route = createFileRoute("/$businessName/admin")({
     const { isAuthenticated } = useAuth();
 
     useEffect(() => {
-      if (!isAuthenticated)
+      if (!isAuthenticated && !isLoading)
         promptLogin({ dismissible: false, showBackgroundContent: false });
       else closeLoginPrompt();
-    }, [isAuthenticated]);
+    }, [isAuthenticated, isLoading]);
 
     if (isLoading) {
       return (
@@ -55,7 +58,7 @@ export const Route = createFileRoute("/$businessName/admin")({
     );
 
     if (!business) {
-      return notFound();
+      return <NotFound />
     }
 
     switch (business.businessType) {
@@ -83,6 +86,8 @@ export const Route = createFileRoute("/$businessName/admin")({
         return <RealEstateAdminPage slug={businessName} />;
       case "cooperative":
         return <CooperativeAdminPage slug={businessName} />;
+      case "retail":
+        return <RetailAdminPage slug={businessName} />;
       default:
         return (
           <div className="p-2">
@@ -348,6 +353,27 @@ function CooperativeAdminPage({ slug }: { slug: string }) {
           title: "Meetings",
           slug: slug,
           icon: Calendar,
+        },
+      ]}
+    />
+  );
+}
+
+function RetailAdminPage({ slug }: { slug: string }) {
+  return (
+    <AutoAdmin
+      tabs={[
+        {
+          schema: "product",
+          title: "Products",
+          slug: slug,
+          icon: ShoppingBag,
+        },
+        {
+          schema: "order",
+          title: "Orders",
+          slug: slug,
+          icon: Menu,
         },
       ]}
     />

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
-import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, Folder, QrCode, Package } from "lucide-react";
+import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, Folder, QrCode, Package, Square } from "lucide-react";
 import type { AdminComponent } from "@/components/ui/admin";
 import { educationSchema } from "./schemas/education-schema";
 import { healthcareSchema } from "./schemas/healthcare-schema";
@@ -26,6 +26,7 @@ import { dataMatrixActionSchema } from "./datamatrix";
 import { folderSchema } from "./schemas/folder-schema";
 import { qrFlowConfigSchema } from "./schemas/qr-flow-config-schema";
 import type { ReactNode } from "@tanstack/react-router";
+import type { ComponentLayer, Variable } from "@/components/ui/ui-builder/types";
 
 // #region Permissions & Roles
 export const permissions = {
@@ -367,6 +368,69 @@ export const coreSchema = createSchema({
   }
 });
 
+function zStringified<T extends z.ZodTypeAny>(schema: T) {
+  return z.string().superRefine((val, ctx) => {
+    try {
+      const parsed = JSON.parse(val);
+      const result = schema.safeParse(parsed);
+
+      if (!result.success) {
+        ctx.addIssue({
+          code: "custom",
+          message: "String does not match required JSON shape",
+        });
+      }
+    } catch (err) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Invalid JSON string",
+      });
+    }
+  });
+}
+
+const uiBuilderLayerSchema: z.ZodType<ComponentLayer> = z.lazy(() =>
+  z.object({
+    id: z.string(),
+    name: z.string().optional(),
+    type: z.string(),
+    props: z.record(z.string(), z.any()),
+    children: z.union([
+      z.string(),
+      z.array(uiBuilderLayerSchema),
+    ])
+  })
+);
+
+export const uiBuilderVariableSchema: z.ZodType<Variable> = z.discriminatedUnion(
+  "type",
+  [
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.literal("string"),
+      defaultValue: z.string(),
+    }),
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.literal("number"),
+      defaultValue: z.number(),
+    }),
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      type: z.literal("boolean"),
+      defaultValue: z.boolean(),
+    }),
+  ]
+);
+
+export const uiBuilderSchema = z.object({
+  variables: zStringified(uiBuilderVariableSchema.array()),
+  layers: zStringified(uiBuilderLayerSchema.array()),
+}).extend(table)
+
 export const featureSchema = createSchema({
   driverProfile: {
     icon: Car,
@@ -702,6 +766,11 @@ export const featureSchema = createSchema({
     icon: QrCode,
     group: "System Configuration",
   },
+  uiBuilder: {
+    schema: uiBuilderSchema,
+    icon: Square,
+    group: "System Configuration",
+  }
 });
 
 // A composite schema that brings together all the individual schemas.

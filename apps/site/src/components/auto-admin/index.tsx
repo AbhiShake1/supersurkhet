@@ -9,7 +9,7 @@ import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { notFound, useLocation } from "@tanstack/react-router";
 import _ from "lodash";
-import { GripVertical, Home, QrCodeIcon, Settings, Search, Menu, Users, DollarSign, ShoppingCart, Package, Calendar, BarChart3, Bell, User, CreditCard, FileText, type LucideIcon, X } from "lucide-react";
+import { GripVertical, QrCodeIcon, Settings, Search, Users, BarChart3, Bell, type LucideIcon, X, Sigma } from "lucide-react";
 import type { ReactNode } from "react";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
@@ -24,6 +24,8 @@ import { Separator } from "../ui/separator";
 import Card from "../ui/minimal-card";
 import { useState, useEffect } from "react";
 import type { z } from "zod";
+import { NotFound } from "../ui/not-found";
+import { CustomUiBuilderPage } from "../ui-builder";
 
 export interface AutoAdminProps {
   tabs: PossibleTabConfig[];
@@ -50,7 +52,6 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   const { search, pathname: currentPathname } = useLocation();
   const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showNotifications, setShowNotifications] = useState(false);
 
   // Keyboard shortcuts
   const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
@@ -67,13 +68,13 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const { data: allBusinesses = [], isLoading: isLoadingBusiness } = api.business.useGet({
+  const { data: allBusinesses = [] } = api.business.useGet({
     filter: (b: Business) => b?.basePath === basePath,
   });
   const business = allBusinesses[0];
 
   // Enhanced navigation structure with icons
-  const tabsWithHomeWithoutRoles = [
+  const tabsWithHome = [
     {
       title: "Dashboard",
       icon: BarChart3,
@@ -85,17 +86,19 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       icon: QrCodeIcon,
       children: <QRCodePage slug={basePath} />,
     },
-  ];
-
-  const tabsWithHome = [
-    ...tabsWithHomeWithoutRoles,
     {
       title: "Users & Permissions",
       icon: Users,
       children: <RolesAndPermissionsPage slug={basePath} tabs={tabs} />,
       group: "User Management",
     },
-  ]
+    {
+      title: "Website UI",
+      icon: Sigma,
+      children: <CustomUiBuilderPage slug={basePath} />,
+      group: "System Configuration"
+    }
+  ];
 
   const data: SidebarItems = {
     items: tabsWithHome.map(tab => ({
@@ -108,7 +111,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   // @ts-expect-error
   const tab = (search.tab as string) ?? tabsWithHome[0].title;
 
-  const currentItem = tabsWithHome.find((t) => t.title === tab);
+  const currentItem = tabsWithHome.find((t) => t.title === tab) ?? tabsWithHome?.[0];
 
   function _canGetComponents() {
     return !!currentItem;
@@ -143,7 +146,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
 
   if (!currentItem) {
-    throw notFound();
+    return <NotFound />
   }
 
   return (
@@ -329,12 +332,6 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 }
 
 // We need to define PlusIcon separately since it's used but not imported
-const PlusIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="M5 12h14" />
-    <path d="M12 5v14" />
-  </svg>
-);
 
 export type AutoKanbanProps<K extends SchemaKeys> = {
   slug: string;

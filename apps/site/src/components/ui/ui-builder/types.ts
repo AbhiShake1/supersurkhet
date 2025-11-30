@@ -1,24 +1,24 @@
 import { ZodObject, ZodSchema } from "zod";
-import { ComponentType as ReactComponentType, ReactNode } from 'react';
-import {
-    FieldConfigItem,
-  } from "@/components/ui/auto-form/types";
+import type { ComponentType as ReactComponentType, ReactNode } from 'react';
+import type {
+  FieldConfigItem,
+} from "@/components/ui/auto-form/types";
 
 export type {
-    AutoFormInputComponentProps,
-    FieldConfigItem,
-  } from "@/components/ui/auto-form/types";
+  AutoFormInputComponentProps,
+  FieldConfigItem,
+} from "@/components/ui/auto-form/types";
 
 // Enhanced prop value types that can accommodate React props, variables, and common data types
-export type PropValue = 
-  | ReactNode 
-  | VariableReference 
-  | Record<string, any> 
-  | any[] 
-  | string 
-  | number 
-  | boolean 
-  | null 
+export type PropValue =
+  | ReactNode
+  | VariableReference
+  | Record<string, any>
+  | any[]
+  | string
+  | number
+  | boolean
+  | null
   | undefined;
 
 // Generic component props that allow for flexible but safer typing
@@ -26,18 +26,18 @@ export type ComponentProps<TProps extends Record<string, PropValue> = Record<str
 
 // Enhanced ComponentLayer with generic prop typing
 export interface ComponentLayer<TProps extends Record<string, PropValue> = Record<string, PropValue>> {
-    id: string;
-    name?: string;
-    type: string;
-    props: ComponentProps<TProps>;
-    children: ComponentLayer[] | string;
+  id: string;
+  name?: string;
+  type: string;
+  props: ComponentProps<TProps>;
+  children: ComponentLayer[] | string;
 }
 
 // Variable value types - more specific than before
 export type VariableValueType = 'string' | 'number' | 'boolean';
 
 // Type-safe variable values based on their type
-export type VariableValue<T extends VariableValueType> = 
+export type VariableValue<T extends VariableValueType> =
   T extends 'string' ? string :
   T extends 'number' ? number :
   T extends 'boolean' ? boolean :
@@ -81,7 +81,7 @@ export type FieldConfigFunction = (layer: ComponentLayer, allowVariableBinding?:
 export type ComponentRegistry = Record<string, RegistryEntry<ReactComponentType<any>>>;
 
 // Type-safe layer change handler with registry awareness
-export type LayerChangeHandler<TRegistry extends ComponentRegistry = ComponentRegistry> = 
+export type LayerChangeHandler<TRegistry extends ComponentRegistry = ComponentRegistry> =
   (layers: Array<ComponentLayer & {
     type: keyof TRegistry;
   }>) => void;
@@ -98,7 +98,7 @@ export type ExtractComponentProps<
   : never;
 
 // Type-safe layer change handler with registry awareness
-export type TypedLayerChangeHandler<TRegistry extends ComponentRegistry> = 
+export type TypedLayerChangeHandler<TRegistry extends ComponentRegistry> =
   (layers: Array<ComponentLayer & {
     type: keyof TRegistry;
   }>) => void;

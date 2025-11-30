@@ -18,7 +18,7 @@ export const INPUT_COMPONENTS = {
   number: AutoFormNumber,
   file: AutoFormFile,
   fallback: AutoFormInput,
-};
+} as const;
 
 /**
  * Define handlers for specific Zod types.

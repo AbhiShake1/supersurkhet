@@ -50,7 +50,7 @@ interface PanelConfig {
 /**
  * UIBuilderProps defines the props for the UIBuilder component with enhanced type safety.
  */
-interface UIBuilderProps<TRegistry extends ComponentRegistry = ComponentRegistry> {
+export interface UIBuilderProps<TRegistry extends ComponentRegistry = ComponentRegistry> {
   initialLayers?: ComponentLayer[];
   onChange?: LayerChangeHandler<TRegistry>;
   initialVariables?: Variable[];
@@ -61,6 +61,8 @@ interface UIBuilderProps<TRegistry extends ComponentRegistry = ComponentRegistry
   allowVariableEditing?: boolean;
   allowPagesCreation?: boolean;
   allowPagesDeletion?: boolean;
+  isLoading?: boolean;
+  createNew?: boolean;
 }
 
 /**
@@ -80,6 +82,7 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   allowVariableEditing = true,
   allowPagesCreation = true,
   allowPagesDeletion = true,
+  createNew = true,
 }: UIBuilderProps<TRegistry>) => {
   const layerStore = useStore(useLayerStore, (state) => state);
   const editorStore = useStore(useEditorStore, (state) => state);
@@ -120,12 +123,12 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   // Effect 2: Conditionally initialize Layer Store *after* Editor Store is initialized
   useEffect(() => {
     if (layerStore && editorStore) {
-      if (initialLayers && !layerStoreInitialized) {
+      if (initialLayers?.length && !layerStoreInitialized) {
         layerStore.initialize(initialLayers, undefined, undefined, initialVariables);
         setLayerStoreInitialized(true);
         const { clear } = useLayerStore.temporal.getState();
         clear();
-      } else {
+      } else if (createNew) {
         setLayerStoreInitialized(true);
       }
     }
@@ -136,6 +139,7 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
     initialLayers,
     initialVariables,
     layerStoreInitialized,
+    createNew,
   ]);
 
   // Effect 3: Handle onChange callback when pages change

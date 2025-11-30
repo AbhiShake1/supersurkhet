@@ -4,22 +4,40 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import type { NestedSchemaType, SchemaKeys } from "..";
-import { getGunRef, mergeKeys } from "../utils";
+import { getGunRef, getNestedZodShape, mergeKeys } from "../utils";
 import { decrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
 
-function attachSouls(obj: any, currentPath: string): any {
-  if (typeof obj !== "object" || obj === null) return obj;
+function attachSouls(value: any, currentPath: string): any {
+  // primitives stay untouched
+  if (typeof value !== "object" || value === null) return value;
 
-  const withSoul = { ...obj, "#": currentPath };
+  // ------------------------------------------------------------
+  // CASE: ARRAY
+  // ------------------------------------------------------------
+  if (Array.isArray(value)) {
+    const result = value.map((item, index) =>
+      attachSouls(item, `${currentPath}/${index}`)
+    );
 
-  for (const [k, v] of Object.entries(obj)) {
-    if (typeof v === "object" && v !== null) {
-      withSoul[k] = attachSouls(v, `${currentPath}/${k}`);
+    // give the array itself a soul too
+    return Object.assign([...result], { "#": currentPath });
+  }
+
+  // ------------------------------------------------------------
+  // CASE: OBJECT
+  // ------------------------------------------------------------
+  const result: Record<string, any> = { "#": currentPath };
+
+  for (const [key, val] of Object.entries(value)) {
+    if (typeof val === "object" && val !== null) {
+      result[key] = attachSouls(val, `${currentPath}/${key}`);
+    } else {
+      result[key] = val;
     }
   }
 
-  return withSoul;
+  return result;
 }
 
 export type UseGetBuilder<T extends SchemaKeys> = {
@@ -50,6 +68,8 @@ export const useGet = createGunHook((messenger) => {
     const queryClient = useQueryClient();
     const k = typeof key === "string" ? key : key.key;
     const queryKey = ["get", key, ...restKeys];
+    const schema = getNestedZodShape(k, messenger._options.schema)
+    let timeout: NodeJS.Timeout
     return useQuery({
       queryKey,
       queryFn: async () => {
@@ -67,6 +87,8 @@ export const useGet = createGunHook((messenger) => {
         node.open(async (fullData) => {
           if (!fullData || typeof fullData !== "object") return;
 
+          if (timeout) clearTimeout(timeout)
+
           const entries = Object.entries(fullData) as [string, any][];
           const newList: NestedSchemaType<T>[] = [];
 
@@ -76,7 +98,7 @@ export const useGet = createGunHook((messenger) => {
             const decrypted = await decrypt<NestedSchemaType<T>>({
               ...val,
               _: { soul },
-            });
+            }, schema);
 
             if (decrypted) {
               const item = attachSouls(decrypted, `${keys}/${soul}`);
@@ -89,8 +111,12 @@ export const useGet = createGunHook((messenger) => {
         });
 
         return new Promise<NestedSchemaType<T>[]>((res) => {
+          timeout = setTimeout(() => {
+            res([])
+          }, 3000)
           node.not(() => {
             res([]);
+            clearTimeout(timeout)
           })
         });
       },
