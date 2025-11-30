@@ -7,6 +7,6 @@ export const Route = createFileRoute('/builder')({
 
 function RouteComponent() {
   return (
-    <CustomUiBuilderPage slug="builder1990" />
+    <CustomUiBuilderPage slug="builder1989" />
   );
 }

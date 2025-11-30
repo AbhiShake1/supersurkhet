@@ -54,32 +54,7 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
       create({ variables: JSON.stringify(variables), layers: "[]", timestamp: Date.now() })
   }
 
-  const handleLayersChange: LayerChangeHandler = (_layers) => {
-    type Layer = typeof _layers[number];
-    const assignDummyProps = (layer: Layer): Layer => {
-      // Copy props or assign dummy if empty
-      const newProps =
-        !layer.props || Object.keys(layer.props).length === 0
-          ? { className: "" }
-          : { ...layer.props };
-
-      // Recursively copy children if array
-      const newChildren =
-        Array.isArray(layer.children)
-          ? layer.children.map((child) =>
-            typeof child === "object" ? assignDummyProps(child) : child
-          )
-          : layer.children;
-
-      return {
-        ...layer,
-        props: newProps,
-        children: newChildren,
-      };
-    };
-
-    // Map over the top-level layers to get a new copy
-    const newLayers = _layers.map(assignDummyProps);
+  const handleLayersChange: LayerChangeHandler = (newLayers) => {
     if (id) {
       upsert({ id, layers: JSON.stringify(newLayers), timestamp: Date.now() })
     } else if (!data)
