@@ -326,7 +326,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   const autoFrameProps = useMemo(() => ({
     height: frameSize.height,
     className: cn("shadow-lg", widthClass, heightClass),
-    frameRef: frameRef,
+    // frameRef: frameRef,
     pointerEventsEnabled: pointerEventsEnabled
   }), [frameSize.height, widthClass, heightClass, frameRef, pointerEventsEnabled]);
 

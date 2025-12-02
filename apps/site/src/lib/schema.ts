@@ -26,7 +26,7 @@ import { dataMatrixActionSchema } from "./datamatrix";
 import { folderSchema } from "./schemas/folder-schema";
 import { qrFlowConfigSchema } from "./schemas/qr-flow-config-schema";
 import type { ReactNode } from "@tanstack/react-router";
-import type { ComponentLayer, Variable } from "@/components/ui/ui-builder/types";
+import { uiBuilderSchema } from "./schemas/ui-builder-schema";
 
 // #region Permissions & Roles
 export const permissions = {
@@ -136,6 +136,7 @@ export const businessSchema = z
       .base64()
       .describe("Business icon")
       .optional(),
+    uiBuilder: uiBuilderSchema.optional(),
   })
   .extend(table);
 
@@ -365,71 +366,8 @@ export const coreSchema = createSchema({
     schema: otpSchema,
     icon: Lock,
     group: "System Configuration",
-  }
+  },
 });
-
-function zStringified<T extends z.ZodTypeAny>(schema: T) {
-  return z.string().superRefine((val, ctx) => {
-    try {
-      const parsed = JSON.parse(val);
-      const result = schema.safeParse(parsed);
-
-      if (!result.success) {
-        ctx.addIssue({
-          code: "custom",
-          message: "String does not match required JSON shape",
-        });
-      }
-    } catch (err) {
-      ctx.addIssue({
-        code: "custom",
-        message: "Invalid JSON string",
-      });
-    }
-  });
-}
-
-const uiBuilderLayerSchema: z.ZodType<ComponentLayer> = z.lazy(() =>
-  z.object({
-    id: z.string(),
-    name: z.string().optional(),
-    type: z.string(),
-    props: z.record(z.string(), z.any()),
-    children: z.union([
-      z.string(),
-      z.array(uiBuilderLayerSchema),
-    ])
-  })
-);
-
-export const uiBuilderVariableSchema: z.ZodType<Variable> = z.discriminatedUnion(
-  "type",
-  [
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      type: z.literal("string"),
-      defaultValue: z.string(),
-    }),
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      type: z.literal("number"),
-      defaultValue: z.number(),
-    }),
-    z.object({
-      id: z.string(),
-      name: z.string(),
-      type: z.literal("boolean"),
-      defaultValue: z.boolean(),
-    }),
-  ]
-);
-
-export const uiBuilderSchema = z.object({
-  variables: zStringified(uiBuilderVariableSchema.array()),
-  layers: zStringified(uiBuilderLayerSchema.array()),
-}).extend(table)
 
 export const featureSchema = createSchema({
   driverProfile: {
@@ -766,11 +704,6 @@ export const featureSchema = createSchema({
     icon: QrCode,
     group: "System Configuration",
   },
-  uiBuilder: {
-    schema: uiBuilderSchema,
-    icon: Square,
-    group: "System Configuration",
-  }
 });
 
 // A composite schema that brings together all the individual schemas.

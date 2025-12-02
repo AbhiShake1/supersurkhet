@@ -1,6 +1,6 @@
+import { CustomUiRendererPage } from "@/components/ui-builder";
 import { NotFound } from "@/components/ui/not-found";
 import { api } from "@/lib/api";
-import type { Business } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { lazy } from "react";
@@ -28,7 +28,8 @@ export const Route = createFileRoute("/$businessName/")({
     const { businessName } = Route.useParams();
 
     const { data: allBusinesses = [], isLoading } = api.business.useGet({
-      filter: (b: Business) => b?.basePath === businessName,
+      keys: [businessName],
+      single: true,
     });
 
     if (isLoading) {
@@ -43,13 +44,15 @@ export const Route = createFileRoute("/$businessName/")({
       );
     }
 
-    const business = allBusinesses.find(
-      (b: Business) => b.basePath === businessName,
-    );
+    const business = allBusinesses?.[0];
 
     if (!business) {
       // TODO: replace with business picker
       return <NotFound />
+    }
+
+    if (business.uiBuilder?.layers) {
+      return <CustomUiRendererPage slug={businessName} />;
     }
 
     switch (business.businessType) {

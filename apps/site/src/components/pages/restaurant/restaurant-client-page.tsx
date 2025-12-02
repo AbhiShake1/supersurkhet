@@ -773,8 +773,7 @@ function RestaurantClientPagePresenter({ slug, business }: RestaurantClientPageP
     // Add current user to the viewers list
     const userData = {
       id: user._.soul,
-      name: user.displayName || user.email || "Anonymous User",
-      timestamp: Date.now()
+      name: user.name || user.email || "Anonymous User",
     };
 
     viewersRef.current.get(user._.soul).put(userData);

@@ -2,9 +2,15 @@ import _UIBuilder from "@/components/ui/ui-builder";
 import { primitiveComponentDefinitions } from "@/lib/ui-builder/registry/primitive-component-definitions";
 import { complexComponentDefinitions } from "@/lib/ui-builder/registry/complex-component-definitions";
 import { api } from "@/lib/api";
-import { memo, useMemo } from "react";
+import { lazy, memo, useMemo } from "react";
 import type { LayerChangeHandler, VariableChangeHandler } from "./ui/ui-builder/types";
 import _ from "lodash";
+import { Spinner } from "./ui/spinner";
+import { NotFound } from "./ui/not-found";
+// import LayerRenderer from;
+//
+
+const LayerRenderer = lazy(() => import('@/components/ui/ui-builder/layer-renderer'))
 
 const UIBuilder = memo(_UIBuilder, (prevProps, nextProps) => {
   return _.isEqual(prevProps.componentRegistry, nextProps.componentRegistry)
@@ -35,30 +41,24 @@ function omitMeta<T>(obj: T): T {
 }
 
 export function CustomUiBuilderPage({ slug }: { slug: string }) {
-  const { mutate: create } = api.uiBuilder.useCreate({ keys: [slug] })
-  const { mutate: upsert } = api.uiBuilder.useUpdate({ keys: [slug] })
-  const { data: _data, isLoading } = api.uiBuilder.useGet({
-    keys: [slug]
+  const { mutate: upsert } = api.business.useUpdate()
+  const { data: _data, isLoading } = api.business.useGet({
+    keys: [slug],
+    single: true,
   })
   const data = omitMeta(_data?.[0])
 
-  const id = data?._?.soul
-  const currentLayers = data?.layers
-  const currentVariables = data?.variables
+  const currentLayers = data?.uiBuilder?.layers
+  const currentVariables = data?.uiBuilder?.variables
 
   const handleVariablesChange: VariableChangeHandler = (variables) => {
     if (isLoading) return
-    if (id)
-      upsert({ id, variables: JSON.stringify(variables), timestamp: Date.now() })
-    else
-      create({ variables: JSON.stringify(variables), layers: "[]", timestamp: Date.now() })
+    upsert({ id: slug, uiBuilder: { variables: JSON.stringify(variables) } })
   }
 
   const handleLayersChange: LayerChangeHandler = (newLayers) => {
-    if (id) {
-      upsert({ id, layers: JSON.stringify(newLayers), timestamp: Date.now() })
-    } else if (!data)
-      create({ layers: JSON.stringify(newLayers), variables: "[]", timestamp: Date.now() })
+    if (isLoading) return
+    upsert({ id: slug, uiBuilder: { layers: JSON.stringify(newLayers) } })
   }
 
   const createNew = useMemo(() => {
@@ -77,4 +77,21 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
       createNew={createNew}
     />
   )
+}
+
+export function CustomUiRendererPage({ slug }: { slug: string }) {
+  const { data: _business, isLoading } = api.business.useGet({ keys: [slug], single: true })
+
+  if (isLoading) return <Spinner />
+
+  const business = _business?.[0]
+
+  if (!business?.uiBuilder?.layers || !business.uiBuilder?.variables) return <NotFound />
+
+  return <LayerRenderer
+    componentRegistry={componentRegistry}
+    variables={JSON.parse(business.uiBuilder?.variables)}
+    page={JSON.parse(business.uiBuilder?.layers)?.[0]}
+  // layers={JSON.parse(business.uiBuilder?.layers)?.[0]}
+  />
 }

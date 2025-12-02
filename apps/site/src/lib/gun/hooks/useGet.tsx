@@ -43,6 +43,7 @@ function attachSouls(value: any, currentPath: string): any {
 export type UseGetBuilder<T extends SchemaKeys> = {
   separator?: string;
   filter?: (item: NestedSchemaType<T>) => boolean;
+  single?: boolean;
 };
 
 export const useGet = createGunHook((messenger) => {
@@ -65,6 +66,7 @@ export const useGet = createGunHook((messenger) => {
       }
       return undefined
     }
+    const isSingle = typeof key !== "string" && key.single || false
     const queryClient = useQueryClient();
     const k = typeof key === "string" ? key : key.key;
     const queryKey = ["get", key, ...restKeys];
@@ -92,18 +94,26 @@ export const useGet = createGunHook((messenger) => {
           const entries = Object.entries(fullData) as [string, any][];
           const newList: NestedSchemaType<T>[] = [];
 
-          for (const [soul, val] of entries) {
-            if (soul === "_" || val === null) continue;
-
-            const decrypted = await decrypt<NestedSchemaType<T>>({
-              ...val,
-              _: { soul },
-            }, schema);
-
+          if (isSingle) {
+            const decrypted = await decrypt<NestedSchemaType<T>>(fullData, schema);
             if (decrypted) {
-              const item = attachSouls(decrypted, `${keys}/${soul}`);
-              // if (newList.every(i => i._?.soul !== decrypted._?.soul))
+              const item = attachSouls(decrypted, keys);
               newList.push(item);
+            }
+          } else {
+            for (const [soul, val] of entries) {
+              if (soul === "_" || val === null) continue;
+
+              const decrypted = await decrypt<NestedSchemaType<T>>({
+                ...val,
+                _: { soul },
+              }, schema);
+
+              if (decrypted) {
+                const item = attachSouls(decrypted, `${keys}/${soul}`);
+                // if (newList.every(i => i._?.soul !== decrypted._?.soul))
+                newList.push(item);
+              }
             }
           }
 

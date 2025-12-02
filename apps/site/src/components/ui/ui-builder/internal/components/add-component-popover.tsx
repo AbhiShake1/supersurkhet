@@ -19,7 +19,7 @@ import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
 import { cn } from "@/lib/utils";
 import LayerRenderer from "@/components/ui/ui-builder/layer-renderer";
-import { ComponentLayer, ComponentRegistry } from "@/components/ui/ui-builder/types";
+import type { ComponentLayer, ComponentRegistry } from "@/components/ui/ui-builder/types";
 import { createComponentLayer } from "@/lib/ui-builder/store/layer-utils";
 
 const fallback = <div className="w-full h-full bg-muted rounded border animate-pulse" />;
