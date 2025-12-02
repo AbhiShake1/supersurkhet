@@ -19,6 +19,15 @@ import { ThemeEditor } from '@/components/theme/theme-editor';
 import { Confetti } from '@/components/magicui/confetti';
 import { RainbowButton } from '@/components/magicui/rainbow-button';
 import ShapeHero from '@/components/kokonutui/shape-hero';
+import TweetCard, { TweetCardSchema } from '@/components/kokonutui/tweet-card';
+import ScrollText, { ScrollTextSchema } from '@/components/kokonutui/scroll-text';
+import TypewriterTitle, { TypewriterTitleSchema } from '@/components/kokonutui/type-writer';
+import MatrixText, { MatrixTextSchema } from '@/components/kokonutui/matrix-text';
+import DynamicText, { DynamicTextSchema } from '@/components/kokonutui/dynamic-text';
+import ShimmerText, { ShimmerTextSchema } from '@/components/kokonutui/shimmer-text';
+import SlicedText, { SlicedTextSchema } from '@/components/kokonutui/sliced-text';
+import SwooshText, { SwooshTextSchema } from '@/components/kokonutui/swoosh-text';
+import SocialButton from '@/components/kokonutui/social-button';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -548,5 +557,59 @@ export const complexComponentDefinitions: ComponentRegistry = {
     }),
     from: '@/components/kokonutui/shape-hero',
     fieldOverrides: commonFieldOverrides()
-  }
+  },
+  TweetCard: {
+    component: TweetCard,
+    schema: TweetCardSchema,
+    from: '@/components/kokonutui/tweet-card',
+    fieldOverrides: commonFieldOverrides()
+  },
+  ScrollText: {
+    component: ScrollText,
+    schema: ScrollTextSchema,
+    from: '@/components/kokonutui/scroll-text',
+    fieldOverrides: commonFieldOverrides()
+  },
+  TypingText: {
+    component: TypewriterTitle,
+    schema: TypewriterTitleSchema,
+    from: '@/components/kokonutui/type-writer',
+    fieldOverrides: commonFieldOverrides()
+  },
+  MatrixText: {
+    component: MatrixText,
+    schema: MatrixTextSchema,
+    from: '@/components/kokonutui/matrix-text',
+    fieldOverrides: commonFieldOverrides()
+  },
+  DynamicText: {
+    component: DynamicText,
+    schema: DynamicTextSchema,
+    from: '@/components/kokonutui/dynamic-text',
+    fieldOverrides: commonFieldOverrides()
+  },
+  ShimmerText: {
+    component: ShimmerText,
+    schema: ShimmerTextSchema,
+    from: '@/components/kokonutui/shimmer-text',
+    fieldOverrides: commonFieldOverrides()
+  },
+  SlicedText: {
+    component: SlicedText,
+    schema: SlicedTextSchema,
+    from: '@/components/kokonutui/sliced-text',
+    fieldOverrides: commonFieldOverrides()
+  },
+  SwooshText: {
+    component: SwooshText,
+    schema: SwooshTextSchema,
+    from: '@/components/kokonutui/swoosh-text',
+    fieldOverrides: commonFieldOverrides()
+  },
+  SocialButton: {
+    component: SocialButton,
+    schema: ButtonSchema,
+    from: '@/components/kokonutui/social-button',
+    fieldOverrides: commonFieldOverrides()
+  },
 };
