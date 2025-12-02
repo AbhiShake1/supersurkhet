@@ -1,12 +1,12 @@
-import React, { useState, ReactNode, useMemo, useEffect } from 'react';
+import React, { useState, type ReactNode, useMemo, useEffect } from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { createTransformAwareCollisionDetection } from '@/lib/ui-builder/context/dnd-context-colission-utils';
 import { getIframeElements } from '@/lib/ui-builder/context/dnd-utils';
-import { 
-  DndContextStateContext, 
+import {
+  DndContextStateContext,
   ComponentDragContext,
-  DndContextState,
-  ComponentDragContextState,
+  type DndContextState,
+  type ComponentDragContextState,
   useDndContext,
   useComponentDragContext
 } from '@/lib/ui-builder/context/dnd-contexts';
@@ -27,7 +27,7 @@ interface DndContextProviderProps {
 export const DndContextProvider: React.FC<DndContextProviderProps> = ({ children }) => {
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [componentDragging, setComponentDragging] = useState(false);
-  
+
   // Use extracted hooks
   const { handleParentMouseMove, handleIframeMouseMove, stopAutoScroll } = useAutoScroll();
   const sensors = useDndSensors();
@@ -36,7 +36,7 @@ export const DndContextProvider: React.FC<DndContextProviderProps> = ({ children
     setActiveLayerId,
   });
   const { canDropOnLayer } = useDropValidation(activeLayerId, isLayerDescendantOf);
-  
+
   // Use keyboard shortcuts hook
   useKeyboardShortcutsDnd(activeLayerId, handleDragCancel);
 
@@ -61,11 +61,11 @@ export const DndContextProvider: React.FC<DndContextProviderProps> = ({ children
       // Add global mouse move listener for auto-scroll on parent document
       const handleParentMove = (event: MouseEvent) => handleParentMouseMove(event, activeLayerId);
       document.addEventListener('mousemove', handleParentMove);
-      
+
       // Also add mouse move listener to iframe content window
       const iframeElements = getIframeElements();
       let iframeCleanup: (() => void) | null = null;
-      
+
       if (iframeElements) {
         const { window: iframeWindow } = iframeElements;
         if (iframeWindow) {
@@ -81,7 +81,7 @@ export const DndContextProvider: React.FC<DndContextProviderProps> = ({ children
           };
         }
       }
-      
+
       return () => {
         document.removeEventListener('mousemove', handleParentMove);
         if (iframeCleanup) {

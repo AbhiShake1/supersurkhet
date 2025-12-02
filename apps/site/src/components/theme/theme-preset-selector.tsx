@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useTheme } from "@/contexts/theme-context";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { defaultPresets, type ThemeStyles } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
 // Demo components to preview themes
 const DemoCard = ({ className = "", themeStyles, currentThemeMode }: {
@@ -112,7 +113,9 @@ const DemoButton = ({ variant = "default", className = "", themeStyles, currentT
   );
 };
 
-export function ThemePresetSelector() {
+export interface ThemePresetSelectorProps extends React.ComponentProps<"div"> { }
+
+export function ThemePresetSelector({ className, ...props }: ThemePresetSelectorProps) {
   const { getAvailablePresets, applyPreset, currentThemeName, isDarkMode } = useTheme();
   const [selectedPreset, setSelectedPreset] = useState(currentThemeName || "tangerine");
 
@@ -124,7 +127,7 @@ export function ThemePresetSelector() {
   const presets = getAvailablePresets();
 
   return (
-    <div className="space-y-6">
+    <div {...props} className={cn("space-y-6", className)}>
       <div>
         <h2 className="text-xl font-bold">Theme Presets</h2>
         <p className="text-muted-foreground">

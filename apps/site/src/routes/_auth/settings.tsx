@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { ThemePresetSelector } from "@/components/theme-preset-selector";
-import { ThemeEditor } from "@/components/theme-editor";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemePresetSelector } from "@/components/theme/theme-preset-selector";
+import { ThemeEditor } from "@/components/theme/theme-editor";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export const Route = createFileRoute("/_auth/settings")({
   component: RouteComponent,

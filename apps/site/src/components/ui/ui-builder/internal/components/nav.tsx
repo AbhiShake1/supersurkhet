@@ -6,8 +6,6 @@ import {
   FileUp,
   Redo,
   Undo,
-  SunIcon,
-  MoonIcon,
   CheckIcon,
   X,
   PlusIcon,
@@ -32,7 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import LayerRenderer from "@/components/ui/ui-builder/layer-renderer";
-import { useTheme } from "next-themes";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,7 +73,7 @@ import {
   useKeyboardShortcuts,
 } from "@/hooks/use-keyboard-shortcuts";
 import { useStore } from "zustand";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 const Z_INDEX = 40;
 

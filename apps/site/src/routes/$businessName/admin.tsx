@@ -5,7 +5,7 @@ import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-lay
 import { NotFound } from "@/components/ui/not-found";
 import { api } from "@/lib/api";
 import type { Business } from "@/lib/schema";
-import { createFileRoute, notFound } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   Bed,
   Briefcase,

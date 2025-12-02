@@ -12,26 +12,35 @@ import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { ThemePresetSelector } from '@/components/theme/theme-preset-selector';
+import { DivSchema } from './primitive-component-definitions';
+import { ThemeEditor } from '@/components/theme/theme-editor';
+import { Confetti } from '@/components/magicui/confetti';
+import { RainbowButton } from '@/components/magicui/rainbow-button';
+import ShapeHero from '@/components/kokonutui/shape-hero';
+
+const ButtonSchema = z.object({
+  className: z.string().optional(),
+  children: z.any().optional(),
+  asChild: z.boolean().optional(),
+  variant: z
+    .enum([
+      "default",
+      "destructive",
+      "outline",
+      "secondary",
+      "ghost",
+      "link",
+    ])
+    .default("default"),
+  size: z.enum(["default", "sm", "lg", "icon"]).default("default"),
+})
 
 export const complexComponentDefinitions: ComponentRegistry = {
   Button: {
     component: Button,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-      asChild: z.boolean().optional(),
-      variant: z
-        .enum([
-          "default",
-          "destructive",
-          "outline",
-          "secondary",
-          "ghost",
-          "link",
-        ])
-        .default("default"),
-      size: z.enum(["default", "sm", "lg", "icon"]).default("default"),
-    }),
+    schema: ButtonSchema,
     from: "@/components/ui/button",
     defaultChildren: [
       {
@@ -465,4 +474,79 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: '@/components/user/user-avatar-dropdown',
     fieldOverrides: commonFieldOverrides()
   },
+
+  ThemeToggle: {
+    component: ThemeToggle,
+    schema: ButtonSchema,
+    from: '@/components/theme/theme-toggle',
+    fieldOverrides: commonFieldOverrides()
+  },
+  ThemePresetSelector: {
+    component: ThemePresetSelector,
+    schema: DivSchema,
+    from: '@/components/theme/theme-preset-selector',
+    fieldOverrides: commonFieldOverrides()
+  },
+  ThemeEditor: {
+    component: ThemeEditor,
+    schema: z.object({
+      className: z.string().optional(),
+      compact: z.boolean().optional(),
+    }),
+    from: '@/components/theme/theme-editor',
+    fieldOverrides: commonFieldOverrides()
+  },
+
+  Confetti: {
+    component: Confetti,
+    schema: z.object({
+      className: z.string().optional(),
+      options: z.object({
+        angle: z.number().optional(),
+        colors: z.array(z.string()).optional(),
+        decay: z.number().optional(),
+        disableForReducedMotion: z.boolean().optional(),
+        drift: z.number().optional(),
+        flat: z.boolean().optional(),
+        gravity: z.number().optional(),
+        particleCount: z.number().optional(),
+        scalar: z.number().optional(),
+        spread: z.number().optional(),
+        startVelocity: z.number().optional(),
+        ticks: z.number().optional(),
+        zIndex: z.number().optional(),
+        // shapes: z.array(z.object({})).optional(),
+        origin: z.object({
+          x: z.number().optional(),
+          y: z.number().optional(),
+        }).optional()
+      }).optional(),
+      globalOptions: z.object({
+        disableForReducedMotion: z.boolean().optional(),
+        resize: z.boolean().optional(),
+        useWorker: z.boolean().optional(),
+      }).optional(),
+      manualstart: z.boolean().optional(),
+      children: z.any().optional(),
+    }),
+    from: '@/components/magicui/confetti',
+    fieldOverrides: commonFieldOverrides()
+  },
+  RainbowButton: {
+    component: RainbowButton,
+    schema: ButtonSchema,
+    from: '@/components/magicui/rainbow-button',
+    fieldOverrides: commonFieldOverrides()
+  },
+
+  ShapeHero: {
+    component: ShapeHero,
+    schema: z.object({
+      title1: z.string().optional(),
+      title2: z.string().optional(),
+      description: z.string().optional(),
+    }),
+    from: '@/components/kokonutui/shape-hero',
+    fieldOverrides: commonFieldOverrides()
+  }
 };

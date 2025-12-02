@@ -6,17 +6,18 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/contexts/theme-context";
 import { type ThemeStyleProps } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 
-interface ThemeEditorProps {
+interface ThemeEditorProps extends React.ComponentProps<"div"> {
   compact?: boolean;
 }
 
-export function ThemeEditor({ compact = false }: ThemeEditorProps) {
+export function ThemeEditor({ compact = false, className, props }: ThemeEditorProps) {
   const { theme, setTheme } = useTheme();
   const [lightTheme, setLightTheme] = useState(theme.light);
   const [darkTheme, setDarkTheme] = useState(theme.dark);
 
-  const handleThemeChange = <const T extends "light" | "dark">(mode: T, property: keyof ThemeStyleProps, value: typeof theme["mode"]) => {
+  const handleThemeChange = <const T extends "light" | "dark">(mode: T, property: keyof ThemeStyleProps, value: ThemeStyleProps[keyof ThemeStyleProps]) => {
     if (mode === "light") {
       const newLightTheme = { ...lightTheme, [property]: value };
       setLightTheme(newLightTheme);
@@ -47,7 +48,7 @@ export function ThemeEditor({ compact = false }: ThemeEditorProps) {
 
   if (compact) {
     return (
-      <Card className="w-full">
+      <Card {...props} className={cn("w-full", className)}>
         <CardHeader>
           <CardTitle>Theme Editor</CardTitle>
           <CardDescription>Customize your application theme</CardDescription>

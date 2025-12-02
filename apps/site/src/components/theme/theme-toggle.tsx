@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Moon, Sun, Check, ChevronDown, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { defaultPresets } from "@/lib/theme";
-import { ButtonGroup } from "./ui/button-group";
+import { ButtonGroup } from "@/components/ui/button-group";
 
 interface ThemeToggleProps extends React.ComponentProps<typeof Button> { }
 

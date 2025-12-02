@@ -6,7 +6,7 @@ import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server
 
 interface ThemeContextType {
   theme: ThemeStyles;
-  setTheme: (theme: ThemeStyles) => void;
+  setTheme: React.Dispatch<React.SetStateAction<ThemeStyles>>;
   currentThemeName: string | null;
   setCurrentThemeName: (name: string | null) => void;
   applyPreset: (presetName: string) => void;

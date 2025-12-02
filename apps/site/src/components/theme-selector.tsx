@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useTheme } from "@/contexts/theme-context";
-import { ThemeToggle } from "./theme-toggle";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 export function ThemeSelector() {
   const { currentThemeName, getAvailablePresets, applyPreset } = useTheme();
