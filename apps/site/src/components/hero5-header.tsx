@@ -1,18 +1,10 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { Link, useRouteContext } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { Menu, X } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
 import { Logo } from "./logo";
-import { useProfile } from "@/hooks/use-profile";
-import { useAuth } from "./auth-provider";
+import { UserAvatarDropdown } from "./user/user-avatar-dropdown";
 
 const menuItems = [
   { name: "Features", href: "#features" },
@@ -32,9 +24,6 @@ export const Header = ({ children }: React.PropsWithChildren) => {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-  const { auth } = useRouteContext({ from: "__root__" });
-  const { isAuthenticated } = useAuth()
-  const user = useProfile();
   return (
     <header>
       <nav
@@ -87,75 +76,7 @@ export const Header = ({ children }: React.PropsWithChildren) => {
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                {isAuthenticated ? (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="flex items-center gap-2 rounded-full border px-2 py-1 hover:bg-muted/50 transition justify-center">
-                        <Avatar>
-                          <AvatarImage src={user?.avatar} alt={user?.email} />
-                          <AvatarFallback className="capitalize">
-                            {user?.email?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent
-                      align="end"
-                      className="w-56 p-0 overflow-hidden"
-                    >
-                      <div className="flex flex-col items-center gap-2 p-4 border-b">
-                        <Avatar>
-                          <AvatarImage src={user?.avatar} alt={user?.email} />
-                          <AvatarFallback className="capitalize">
-                            {user?.email?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="text-base font-semibold">
-                          {user?.name || user?.email || "User"}
-                        </div>
-                      </div>
-                      <div className="flex flex-col">
-                        <Link
-                          to="/settings"
-                          className="px-4 py-2 hover:bg-muted text-left text-sm"
-                        >
-                          Settings
-                        </Link>
-                        <button
-                          type="button"
-                          className="px-4 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
-                          onClick={() => auth.logout?.()}
-                        >
-                          Log out
-                        </button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                ) : (
-                  <>
-                    <Button
-                      asChild
-                      variant="outline"
-                      size="sm"
-                      className={cn(isScrolled && "lg:hidden")}
-                    >
-                      <Link to="/auth" search={{ m: "login" }}>
-                        <span>Login</span>
-                      </Link>
-                    </Button>
-                    <Button
-                      asChild
-                      size="sm"
-                      className={cn(isScrolled && "lg:hidden")}
-                    >
-                      <Link to="/auth" search={{ m: "signup" }}>
-                        <span>Sign Up</span>
-                      </Link>
-                    </Button>
-                  </>
-                )}
+                <UserAvatarDropdown />
               </div>
             </div>
           </div>

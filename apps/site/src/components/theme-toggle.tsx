@@ -1,16 +1,12 @@
 import { useState } from "react";
 import { useTheme } from "@/contexts/theme-context";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 import { Moon, Sun, Check, ChevronDown, Palette } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { defaultPresets, type ThemeStyles } from "@/lib/theme";
+import { defaultPresets } from "@/lib/theme";
 import { ButtonGroup } from "./ui/button-group";
 
 interface ThemeToggleProps extends React.ComponentProps<typeof Button> { }

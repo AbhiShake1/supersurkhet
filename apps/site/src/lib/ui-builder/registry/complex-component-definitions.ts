@@ -11,6 +11,7 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
 
 export const complexComponentDefinitions: ComponentRegistry = {
   Button: {
@@ -452,6 +453,16 @@ export const complexComponentDefinitions: ComponentRegistry = {
       children: z.any().optional(),
     }),
     from: '@/components/ui/card',
+    fieldOverrides: commonFieldOverrides()
+  },
+
+  UserAvatarDropdown: {
+    component: UserAvatarDropdown,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    from: '@/components/user/user-avatar-dropdown',
     fieldOverrides: commonFieldOverrides()
   },
 };
