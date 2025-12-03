@@ -28,6 +28,7 @@ import ShimmerText, { ShimmerTextSchema } from '@/components/kokonutui/shimmer-t
 import SlicedText, { SlicedTextSchema } from '@/components/kokonutui/sliced-text';
 import SwooshText, { SwooshTextSchema } from '@/components/kokonutui/swoosh-text';
 import SocialButton from '@/components/kokonutui/social-button';
+import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -506,6 +507,12 @@ export const complexComponentDefinitions: ComponentRegistry = {
     fieldOverrides: commonFieldOverrides()
   },
 
+  PixelImage: {
+    component: PixelImage,
+    schema: PixelImageSchema,
+    from: '@/components/magicui/pixel-image',
+    fieldOverrides: commonFieldOverrides()
+  },
   Confetti: {
     component: Confetti,
     schema: z.object({

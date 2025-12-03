@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import type { NestedSchemaType, SchemaKeys } from "@gta/react-hooks";
 import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
-import { notFound, useLocation } from "@tanstack/react-router";
+import { useLocation } from "@tanstack/react-router";
 import _ from "lodash";
 import { GripVertical, QrCodeIcon, Settings, Search, Users, BarChart3, Bell, type LucideIcon, X, Sigma } from "lucide-react";
 import type { ReactNode } from "react";

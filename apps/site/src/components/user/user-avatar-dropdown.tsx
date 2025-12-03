@@ -10,7 +10,11 @@ import { useRouteContext, Link } from "@tanstack/react-router";
 import { useAuth } from "../auth-provider";
 import { cn } from "@/lib/utils";
 
-export interface UserAvatarDropdownProps extends React.ComponentProps<"button"> { }
+export interface UserAvatarDropdownProps extends React.ComponentProps<"button"> {
+  button: {
+    className?: string;
+  }
+}
 
 export function UserAvatarDropdown(props: UserAvatarDropdownProps) {
   const { auth } = useRouteContext({ from: "__root__" });
@@ -78,7 +82,7 @@ export function UserAvatarDropdown(props: UserAvatarDropdownProps) {
             asChild
             variant="outline"
             size="sm"
-            className={cn(isScrolled && "lg:hidden")}
+            className={cn(props.button.className)}
           >
             <Link to="/auth" search={{ m: "login" }}>
               <span>Login</span>
@@ -87,7 +91,7 @@ export function UserAvatarDropdown(props: UserAvatarDropdownProps) {
           <Button
             asChild
             size="sm"
-            className={cn(isScrolled && "lg:hidden")}
+            className={cn(props.button.className)}
           >
             <Link to="/auth" search={{ m: "signup" }}>
               <span>Sign Up</span>

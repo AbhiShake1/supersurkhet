@@ -76,7 +76,9 @@ export const Header = ({ children }: React.PropsWithChildren) => {
                 </ul>
               </div>
               <div className="flex w-full flex-col space-y-3 sm:flex-row sm:gap-3 sm:space-y-0 md:w-fit">
-                <UserAvatarDropdown />
+                <UserAvatarDropdown button={{
+                  className: cn(isScrolled && "lg:hidden")
+                }} />
               </div>
             </div>
           </div>
