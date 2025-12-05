@@ -10,6 +10,7 @@ import { NotFound } from "./ui/not-found";
 import { ContextDataStore } from "@/lib/ui-builder/context/context-data-store";
 import type { Business } from "@/lib/schema";
 import { useProfile } from "@/hooks/use-profile";
+import { useAuth } from "./auth-provider";
 
 const LayerRenderer = lazy(() => import('@/components/ui/ui-builder/layer-renderer'))
 
@@ -69,12 +70,12 @@ interface UseContextDataProps {
 
 function useContextData({ business }: UseContextDataProps) {
   const user = useProfile()
+  const { isLoading: isUserLoading } = useAuth()
   const context = useMemo(() => {
     return {
       context: flattenObject({
         business,
         user: _.pick(user, ["name", "email", "avatar", "isActive", "role"]),
-        // user: omitMeta(user),
         date: {
           currentTime: new Date().toISOString(),
           locale: "en-US",
@@ -84,7 +85,12 @@ function useContextData({ business }: UseContextDataProps) {
     }
   }, [business, user])
 
-  return context
+  const isLoading = isUserLoading
+
+  return {
+    contextData: context,
+    isLoading,
+  }
 }
 
 export function CustomUiBuilderPage({ slug }: { slug: string }) {
@@ -113,7 +119,7 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
   }, [isLoading, data])
 
   // Create dynamic context data based on actual business data if available
-  const contextData = useContextData({ business: data });
+  const { contextData } = useContextData({ business: data });
 
   return (
     <ContextDataStore contextData={contextData}>
@@ -138,10 +144,12 @@ export function CustomUiRendererPage({ slug }: { slug: string }) {
 
   const business = _business?.[0]
 
-  if (!business?.uiBuilder?.layers || !business.uiBuilder?.variables) return <NotFound />
-
   // Create context data for rendering - using business data if available
-  const contextData = useContextData({ business });
+  const { contextData, isLoadig } = useContextData({ business });
+
+  if (isLoading) return <Spinner />
+
+  if (!business?.uiBuilder?.layers || !business.uiBuilder?.variables) return <NotFound />
 
   return <LayerRenderer
     componentRegistry={componentRegistry}
