@@ -3,6 +3,7 @@ import { AutoAdmin } from "@/components/auto-admin";
 import { useLoginPrompt } from "@/components/login-prompt-provider";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import { NotFound } from "@/components/ui/not-found";
+import { BusinessProvider } from "@/contexts/business-context";
 import { api } from "@/lib/api";
 import type { Business } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
@@ -61,44 +62,48 @@ export const Route = createFileRoute("/$businessName/admin")({
       return <NotFound />
     }
 
-    switch (business.businessType) {
-      case "food":
-        return <RestaurantAdminPage slug={businessName} />;
-      case "hotel":
-        return <HotelAdminPage slug={businessName} />;
-      case "petrol_pump":
-        return <PetrolPumpAdminPage slug={businessName} />;
-      case "gym":
-        return <GymAdminPage slug={businessName} />;
-      case "cinema":
-        return <CinemaAdminPage slug={businessName} />;
-      case "financial_firm":
-        return <FinancialFirmAdminPage slug={businessName} />;
-      case "ride_sharing":
-        return <RideSharingAdminPage slug={businessName} />;
-      case "service":
-        return <ServiceAdminPage slug={businessName} />;
-      case "education":
-        return <EducationAdminPage slug={businessName} />;
-      case "healthcare":
-        return <HealthcareAdminPage slug={businessName} />;
-      case "real_estate":
-        return <RealEstateAdminPage slug={businessName} />;
-      case "cooperative":
-        return <CooperativeAdminPage slug={businessName} />;
-      case "retail":
-        return <RetailAdminPage slug={businessName} />;
-      default:
-        return (
-          <div className="p-2">
-            <h3>{businessName} Admin Dashboard</h3>
-            <p>This is the admin panel for {businessName}.</p>
-            <pre className="bg-muted p-4 rounded-md overflow-auto text-sm">
-              <code>{JSON.stringify(business, null, 2)}</code>
-            </pre>
-          </div>
-        );
+    function getChild() {
+      switch (business.businessType) {
+        case "food":
+          return <RestaurantAdminPage slug={businessName} />;
+        case "hotel":
+          return <HotelAdminPage slug={businessName} />;
+        case "petrol_pump":
+          return <PetrolPumpAdminPage slug={businessName} />;
+        case "gym":
+          return <GymAdminPage slug={businessName} />;
+        case "cinema":
+          return <CinemaAdminPage slug={businessName} />;
+        case "financial_firm":
+          return <FinancialFirmAdminPage slug={businessName} />;
+        case "ride_sharing":
+          return <RideSharingAdminPage slug={businessName} />;
+        case "service":
+          return <ServiceAdminPage slug={businessName} />;
+        case "education":
+          return <EducationAdminPage slug={businessName} />;
+        case "healthcare":
+          return <HealthcareAdminPage slug={businessName} />;
+        case "real_estate":
+          return <RealEstateAdminPage slug={businessName} />;
+        case "cooperative":
+          return <CooperativeAdminPage slug={businessName} />;
+        case "retail":
+          return <RetailAdminPage slug={businessName} />;
+        default:
+          return (
+            <div className="p-2">
+              <h3>{businessName} Admin Dashboard</h3>
+              <p>This is the admin panel for {businessName}.</p>
+              <pre className="bg-muted p-4 rounded-md overflow-auto text-sm">
+                <code>{JSON.stringify(business, null, 2)}</code>
+              </pre>
+            </div>
+          );
+      }
     }
+
+    return <BusinessProvider business={business}>{getChild()}</BusinessProvider>
   },
 });
 

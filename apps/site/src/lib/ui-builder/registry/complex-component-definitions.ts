@@ -49,6 +49,8 @@ import {
   ProductActionsSchema,
   ProductBadge,
   ProductBadgeSchema,
+  ProductDetail,
+  ProductDetailSchema,
 } from '@/components/supersurkhet/products';
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog';
 import { Credenza, CredenzaBody, CredenzaFooter, CredenzaHeader, CredenzaTrigger } from '@/components/ui/credenza';
@@ -872,6 +874,74 @@ export const complexComponentDefinitions: ComponentRegistry = {
     schema: ProductImageSchema,
     from: '@/components/supersurkhet/products',
     fieldOverrides: commonFieldOverrides(),
+  },
+  ProductDetail: {
+    component: ProductDetail,
+    schema: ProductDetailSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "product-detail-image",
+        type: "ProductImage",
+        name: "ProductImage",
+        props: {},
+        children: [
+          {
+            id: "product-detail-image-image",
+            type: "img",
+            name: "img",
+            props: {},
+            children: "Product Image",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "product-detail-title",
+        type: "ProductTitle",
+        name: "ProductTitle",
+        props: {},
+        children: [
+          {
+            id: "product-detail-title-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Product Title",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "product-detail-description",
+        type: "ProductDescription",
+        name: "ProductDescription",
+        props: {},
+        children: [
+          {
+            id: "product-detail-description-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Product Description",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "product-detail-price",
+        type: "ProductPrice",
+        name: "ProductPrice",
+        props: {},
+        children: [
+          {
+            id: "product-detail-price-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "$100",
+          } satisfies ComponentLayer,
+        ],
+      },
+    ],
   },
   ProductList: {
     component: ProductList,

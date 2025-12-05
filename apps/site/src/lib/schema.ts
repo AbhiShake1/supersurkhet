@@ -96,6 +96,7 @@ export type OTP = z.infer<typeof otpSchema>
 export const businessSchema = z
   .object({
     name: z.string().describe("Official name of the business"),
+    id: z.string().describe("Unique ID for the business"),
     location: z
       .string()
       .describe("Physical address or area of the business")

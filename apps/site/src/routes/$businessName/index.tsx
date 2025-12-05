@@ -1,5 +1,6 @@
 import { CustomUiRendererPage } from "@/components/ui-builder";
 import { NotFound } from "@/components/ui/not-found";
+import { BusinessProvider } from "@/contexts/business-context";
 import { api } from "@/lib/api";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
@@ -51,50 +52,55 @@ export const Route = createFileRoute("/$businessName/")({
       return <NotFound />
     }
 
-    if (business.uiBuilder?.layers) {
-      return <CustomUiRendererPage slug={businessName} />;
+    function getChild() {
+      if (business.uiBuilder?.layers) {
+        return <CustomUiRendererPage slug={businessName} />;
+      }
+
+      switch (business.businessType) {
+        case "food":
+          return <RestaurantClientPage slug={businessName} business={business} />;
+        case "hotel":
+          return <HotelClientPage slug={businessName} />;
+        case "petrol_pump":
+          return <PetrolPumpClientPage slug={businessName} />;
+        case "gym":
+          return <GymClientPage slug={businessName} />;
+        case "cinema":
+          return <CinemaClientPage slug={businessName} />;
+        case "financial_firm":
+          return <FinancialFirmClientPage slug={businessName} />;
+        case "ride_sharing":
+          return <RideSharingClientPage slug={businessName} />;
+        case "education":
+          return <EducationClientPage slug={businessName} />;
+        case "healthcare":
+          return <HealthcareClientPage slug={businessName} />;
+        case "real_estate":
+          return <RealEstateClientPage slug={businessName} />;
+        case "cooperative":
+          return <CooperativeClientPage slug={businessName} />;
+        case "service":
+          return <ServiceClientPage slug={businessName} />;
+        // Add specific client pages as they become available
+        // case "retail":
+        //   return <RetailClientPage slug={businessName} />
+        // case "logistics":
+        //   return <LogisticsClientPage slug={businessName} />
+        case "retail":
+        case "logistics":
+        case "other":
+        default:
+          return (
+            <GenericClientPage
+              slug={businessName}
+              businessType={business.businessType}
+            />
+          );
+      }
     }
 
-    switch (business.businessType) {
-      case "food":
-        return <RestaurantClientPage slug={businessName} business={business} />;
-      case "hotel":
-        return <HotelClientPage slug={businessName} />;
-      case "petrol_pump":
-        return <PetrolPumpClientPage slug={businessName} />;
-      case "gym":
-        return <GymClientPage slug={businessName} />;
-      case "cinema":
-        return <CinemaClientPage slug={businessName} />;
-      case "financial_firm":
-        return <FinancialFirmClientPage slug={businessName} />;
-      case "ride_sharing":
-        return <RideSharingClientPage slug={businessName} />;
-      case "education":
-        return <EducationClientPage slug={businessName} />;
-      case "healthcare":
-        return <HealthcareClientPage slug={businessName} />;
-      case "real_estate":
-        return <RealEstateClientPage slug={businessName} />;
-      case "cooperative":
-        return <CooperativeClientPage slug={businessName} />;
-      case "service":
-        return <ServiceClientPage slug={businessName} />;
-      // Add specific client pages as they become available
-      // case "retail":
-      //   return <RetailClientPage slug={businessName} />
-      // case "logistics":
-      //   return <LogisticsClientPage slug={businessName} />
-      case "retail":
-      case "logistics":
-      case "other":
-      default:
-        return (
-          <GenericClientPage
-            slug={businessName}
-            businessType={business.businessType}
-          />
-        );
-    }
+    return <BusinessProvider business={business}>{getChild()}</BusinessProvider>
+
   },
 });

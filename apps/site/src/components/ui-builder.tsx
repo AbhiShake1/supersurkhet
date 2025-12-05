@@ -49,12 +49,14 @@ interface UseContextDataProps {
 }
 
 function useContextData({ business }: UseContextDataProps) {
+  const search = useSearch({ from: "__root__" })
   const user = useProfile()
   const { isLoading: isUserLoading } = useAuth()
   const context = useMemo(() => {
     return {
       business,
       user: _.pick(user, ["name", "email", "avatar", "isActive", "role"]),
+      search,
       date: {
         currentTime: new Date().toISOString(),
         locale: "en-US",

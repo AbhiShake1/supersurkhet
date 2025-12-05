@@ -1,4 +1,5 @@
-import React, { createContext, useContext, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
+import _ from 'lodash';
 
 interface ContextData {
   [key: string]: any;
@@ -7,6 +8,11 @@ interface ContextData {
 interface ContextDataStoreProps {
   children: ReactNode;
   contextData: ContextData;
+}
+
+interface ContextDataReturn {
+  context: ContextData;
+  useAddContextData: (context: ContextData) => void;
 }
 
 export function flattenObject(
@@ -32,24 +38,44 @@ export function flattenObject(
   return result;
 }
 
-export const ContextDataStoreContext = createContext<ContextData | undefined>(undefined);
+export const ContextDataStoreContext = createContext<ContextDataReturn | undefined>(undefined);
 
 export const ContextDataStore: React.FC<ContextDataStoreProps> = ({
   children,
-  contextData: _contextData,
+  contextData: __contextData,
 }) => {
-  const contextData = React.useMemo(() => {
-    return {
-      context: flattenObject(_contextData),
-    };
-  }, [_contextData]);
+  const [_contextData, setContextData] = React.useState(__contextData)
+
+  function useAddContextData(context: ContextData) {
+    useEffect(() => {
+      const prevContext = _contextData
+      setContextData(prevContext => {
+        return _.merge({}, prevContext, context)
+      })
+
+      return () => {
+        setContextData(prevContext)
+      }
+    }, [__contextData])
+  }
+
+  const contextData = useMemo(() => {
+    return flattenObject(_contextData)
+  }, [_contextData])
+
   return (
-    <ContextDataStoreContext.Provider value={contextData}>
+    <ContextDataStoreContext.Provider value={{
+      context: contextData,
+      useAddContextData,
+    }}>
       {children}
     </ContextDataStoreContext.Provider>
   );
 };
 
-export const useContextData = (): ContextData => {
-  return useContext(ContextDataStoreContext) ?? {};
+export const useContextData = (): ContextDataReturn => {
+  return useContext(ContextDataStoreContext) ?? {
+    context: {},
+    useAddContextData: () => { },
+  };
 };

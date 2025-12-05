@@ -3,6 +3,9 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import type { Product } from "@/lib/schemas/listings";
+import { useContextData } from "@/lib/ui-builder/context/context-data-store";
+import { NotFound } from "@/components/ui/not-found";
+import { useBusiness } from "@/contexts/business-context";
 import { z } from "zod";
 
 // Product context types
@@ -21,6 +24,51 @@ const useProduct = () => {
   return context;
 };
 
+export const ProductDetailSchema = z.object({
+  children: z.any().optional(),
+  className: z.string().optional(),
+  productId: z.string(),
+})
+
+interface ProductDetailProps extends React.HTMLAttributes<HTMLDivElement> {
+  productId: string;
+}
+
+const ProductDetail = React.forwardRef<HTMLDivElement, ProductDetailProps>(
+  ({ className, productId, children, ...props }, ref) => {
+    productId = productId.trim()
+    const { business } = useBusiness()
+    const { data: _product = [], isLoading } = api.product.useGet({ keys: [business?.id ?? "", productId], single: true })
+    const product = _product?.[0]
+    const { useAddContextData } = useContextData()
+    useAddContextData({ product })
+
+    if (isLoading) {
+      return (
+        <div ref={ref} className={cn("rounded-xl border bg-card p-4", className)} {...props}>
+          <Skeleton className="h-40 w-full rounded-md mb-3" />
+          <Skeleton className="h-4 w-3/4 mb-2" />
+          <Skeleton className="h-3 w-1/2 mb-3" />
+          <Skeleton className="h-8 w-full rounded" />
+        </div>
+      );
+    }
+
+    if (!product) {
+      return <NotFound />
+    }
+
+    return (
+      <ProductProvider product={product}>
+        <div ref={ref} className={cn("rounded-xl border bg-card p-4 flex flex-col", className)} {...props}>
+          {children}
+        </div>
+      </ProductProvider>
+    );
+  }
+);
+ProductDetail.displayName = "ProductDetail";
+
 export const ProductListSchema = z.object({
   children: z.any().optional(),
   className: z.string().optional(),
@@ -33,7 +81,10 @@ interface ProductListProps extends React.HTMLAttributes<HTMLDivElement> {
 // ProductList component - the main container
 const ProductList = React.forwardRef<HTMLDivElement, ProductListProps>(
   ({ className, children, ...props }, ref) => {
-    const { data: products = [], isLoading } = api.product.useGet({ keys: ["anjal-store"] })
+    const { business } = useBusiness()
+    const { data: products = [], isLoading } = api.product.useGet({ keys: [business?.id ?? ""] })
+    const { useAddContextData } = useContextData()
+    useAddContextData({ products })
 
     if (isLoading) {
       return (
@@ -65,6 +116,8 @@ interface ProductProviderProps {
 }
 
 const ProductProvider: React.FC<ProductProviderProps> = ({ product, children }) => {
+  const { useAddContextData } = useContextData()
+  useAddContextData({ product })
   return (
     <ProductContext.Provider value={{ product }}>
       {children}
@@ -301,6 +354,7 @@ export {
   ProductPrice,
   ProductActions,
   ProductBadge,
+  ProductDetail,
   type Product,
   useProduct,
 };

@@ -76,28 +76,6 @@ export function MentionInputTextarea({
       // If no query, return first 5 top-level suggestions
       const allSuggestions: MentionSuggestion[] = [];
 
-      if (contextData.user) {
-        Object.entries(contextData.user).slice(0, 5).forEach(([key, val]) => {
-          allSuggestions.push({
-            id: `user.${key}`,
-            label: `user.${key}`,
-            category: 'User',
-            value: val,
-          });
-        });
-      }
-
-      if (contextData.business) {
-        Object.entries(contextData.business).slice(0, 5).forEach(([key, val]) => {
-          allSuggestions.push({
-            id: `business.${key}`,
-            label: `business.${key}`,
-            category: 'Business',
-            value: val,
-          });
-        });
-      }
-
       if (contextData.context) {
         Object.entries(contextData.context).slice(0, 5).forEach(([key, val]) => {
           allSuggestions.push({
@@ -360,9 +338,8 @@ export function MentionInputTextarea({
             {suggestions.map((suggestion, index) => (
               <div
                 key={suggestion.id}
-                className={`p-2 cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground ${
-                  index === activeSuggestionIndex ? 'bg-accent text-accent-foreground' : ''
-                }`}
+                className={`p-2 cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground ${index === activeSuggestionIndex ? 'bg-accent text-accent-foreground' : ''
+                  }`}
                 onClick={() => insertMention(suggestion)}
               >
                 <div className="font-medium">{suggestion.label}</div>

@@ -78,36 +78,15 @@ export function MentionInput({
       // If no query, return first 5 top-level suggestions
       const allSuggestions: MentionSuggestion[] = [];
 
-      if (contextData.user) {
-        Object.entries(contextData.user).slice(0, 5).forEach(([key, val]) => {
-          allSuggestions.push({
-            id: `user.${key}`,
-            label: `user.${key}`,
-            category: "User",
-            value: val,
-          });
-        });
-      }
-
-      if (contextData.business) {
-        Object.entries(contextData.business).slice(0, 5).forEach(([key, val]) => {
-          allSuggestions.push({
-            id: `business.${key}`,
-            label: `business.${key}`,
-            category: "Business",
-            value: val,
-          });
-        });
-      }
-
       if (contextData.context) {
         Object.entries(contextData.context).slice(0, 5).forEach(([key, val]) => {
-          allSuggestions.push({
-            id: `context.${key}`,
-            label: `context.${key}`,
-            category: "Context",
-            value: val,
-          });
+          if (typeof val !== 'function')
+            allSuggestions.push({
+              id: `context.${key}`,
+              label: `context.${key}`,
+              category: "Context",
+              value: val,
+            });
         });
       }
 
@@ -122,12 +101,13 @@ export function MentionInput({
       const firstPart = key.split('.')[0];
       const category = firstPart.charAt(0).toUpperCase() + firstPart.slice(1);
 
-      allSuggestions.push({
-        id: key,
-        label: key,
-        category,
-        value: val,
-      });
+      if (typeof val !== 'function')
+        allSuggestions.push({
+          id: key,
+          label: key,
+          category,
+          value: val,
+        });
     });
 
     // Filter and rank the suggestions based on the query
