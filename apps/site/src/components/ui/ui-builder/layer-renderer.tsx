@@ -1,9 +1,9 @@
 import React from "react";
 
-import { EditorConfig, RenderLayer } from "@/components/ui/ui-builder/internal/utils/render-utils";
+import { type EditorConfig, RenderLayer } from "@/components/ui/ui-builder/internal/utils/render-utils";
 import { DevProfiler } from "@/components/ui/ui-builder/internal/components/dev-profiler";
 
-import { Variable, ComponentLayer, ComponentRegistry, PropValue } from '@/components/ui/ui-builder/types';
+import type { Variable, ComponentLayer, ComponentRegistry, PropValue } from '@/components/ui/ui-builder/types';
 
 interface LayerRendererProps<TRegistry extends ComponentRegistry = ComponentRegistry> {
   className?: string;
@@ -14,6 +14,8 @@ interface LayerRendererProps<TRegistry extends ComponentRegistry = ComponentRegi
   variables?: Variable[];
   /** Optional variable values to override defaults */
   variableValues?: Record<string, PropValue>;
+  /** Contextual data for mentions and dynamic content */
+  contextData?: Record<string, any>;
 }
 
 const LayerRenderer = React.memo<LayerRendererProps>(function LayerRenderer({
@@ -23,17 +25,19 @@ const LayerRenderer = React.memo<LayerRendererProps>(function LayerRenderer({
   componentRegistry,
   variables,
   variableValues,
+  contextData,
 }) {
 
   return (
     <DevProfiler id="LayerRenderer" threshold={30}>
-      <div className={className}>
-        <RenderLayer 
-          layer={page} 
-          editorConfig={editorConfig} 
-          componentRegistry={componentRegistry} 
+      <div className={className} >
+        <RenderLayer
+          layer={page}
+          editorConfig={editorConfig}
+          componentRegistry={componentRegistry}
           variables={variables}
-          variableValues={variableValues} 
+          variableValues={variableValues}
+          contextData={contextData}
         />
       </div>
     </DevProfiler>

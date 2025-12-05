@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import {
   FormControl,
   FormDescription,
@@ -6,7 +6,7 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { ChildrenSearchableSelect } from "@/components/ui/ui-builder/internal/form-fields/children-searchable-select";
-import {
+import type {
   AutoFormInputComponentProps,
   ComponentLayer,
   FieldConfigFunction,
@@ -35,6 +35,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import BreakpointClassNameControl from "@/components/ui/ui-builder/internal/form-fields/classname-control";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { MentionInput } from "@/components/ui/mention-input";
+import { ContextDataStoreContext } from "../context/context-data-store";
+import { MentionInputTextarea } from "@/components/ui/mention-input-textarea";
 
 export const classNameFieldOverrides: FieldConfigFunction = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -117,19 +120,25 @@ export const childrenAsTextareaFieldOverrides: FieldConfigFunction = (
       fieldConfigItem,
       field,
       fieldProps,
-    }: AutoFormInputComponentProps) => (
-      <FormFieldWrapper
-        label={label}
-        isRequired={isRequired}
-        fieldConfigItem={fieldConfigItem}
-      >
-        <Textarea
-          value={layer.children as string}
-          onChange={field.onChange}
-          {...fieldProps}
-        />
-      </FormFieldWrapper>
-    ),
+    }: AutoFormInputComponentProps) => {
+      // Try to get context data from the context store
+      const contextData = useContext(ContextDataStoreContext);
+
+      return (
+        <FormFieldWrapper
+          label={label}
+          isRequired={isRequired}
+          fieldConfigItem={fieldConfigItem}
+        >
+          <MentionInputTextarea
+            value={layer.children as string}
+            onChange={field.onChange}
+            contextData={contextData}
+            {...fieldProps}
+          />
+        </FormFieldWrapper>
+      );
+    },
   };
 };
 
@@ -178,12 +187,12 @@ export const commonFieldOverrides = (allowBinding = false) => {
   if (memoizedCommonFieldOverrides.has(allowBinding)) {
     return memoizedCommonFieldOverrides.get(allowBinding)!;
   }
-  
+
   const overrides = {
     className: (layer: ComponentLayer) => classNameFieldOverrides(layer),
     children: (layer: ComponentLayer) => childrenFieldOverrides(layer),
   };
-  
+
   memoizedCommonFieldOverrides.set(allowBinding, overrides);
   return overrides;
 };
@@ -204,10 +213,10 @@ export const textInputFieldOverrides = (
   return {
     renderParent: allowVariableBinding
       ? ({ children }: { children: React.ReactNode }) => (
-          <VariableBindingWrapper propName={propName}>
-            {children}
-          </VariableBindingWrapper>
-        )
+        <VariableBindingWrapper propName={propName}>
+          {children}
+        </VariableBindingWrapper>
+      )
       : undefined,
     fieldType: ({
       label,
@@ -215,20 +224,25 @@ export const textInputFieldOverrides = (
       fieldConfigItem,
       field,
       fieldProps,
-    }: AutoFormInputComponentProps) => (
-      <FormFieldWrapper
-        label={label}
-        isRequired={isRequired}
-        fieldConfigItem={fieldConfigItem}
-      >
-        <Input
-          value={field.value as string}
-          // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
-          onChange={(e) => field.onChange(e.target.value)}
-          {...fieldProps}
-        />
-      </FormFieldWrapper>
-    ),
+    }: AutoFormInputComponentProps) => {
+      // Try to get context data from the context store
+      const contextData = useContext(ContextDataStoreContext);
+
+      return (
+        <FormFieldWrapper
+          label={label}
+          isRequired={isRequired}
+          fieldConfigItem={fieldConfigItem}
+        >
+          <MentionInput
+            value={field.value as string}
+            onChange={field.onChange}
+            contextData={contextData}
+            {...fieldProps}
+          />
+        </FormFieldWrapper>
+      );
+    },
   };
 };
 

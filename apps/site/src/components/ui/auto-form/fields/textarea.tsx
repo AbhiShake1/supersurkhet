@@ -1,8 +1,10 @@
 import { FormControl, FormItem, FormMessage } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
+import { MentionInputTextarea } from "@/components/ui/mention-input-textarea";
 import AutoFormLabel from "../common/label";
 import AutoFormTooltip from "../common/tooltip";
-import { AutoFormInputComponentProps } from "../types";
+import type { AutoFormInputComponentProps } from "../types";
+import { useContext } from "react";
+import { ContextDataStoreContext } from "@/lib/ui-builder/context/context-data-store";
 
 export default function AutoFormTextarea({
   label,
@@ -12,6 +14,10 @@ export default function AutoFormTextarea({
 }: AutoFormInputComponentProps) {
   const { showLabel: _showLabel, ...fieldPropsWithoutShowLabel } = fieldProps;
   const showLabel = _showLabel === undefined ? true : _showLabel;
+
+  // Try to get context data from the context store
+  const contextData = useContext(ContextDataStoreContext);
+
   return (
     <FormItem>
       {showLabel && (
@@ -21,7 +27,13 @@ export default function AutoFormTextarea({
         />
       )}
       <FormControl>
-        <Textarea {...fieldPropsWithoutShowLabel} />
+          <MentionInputTextarea
+            value={fieldPropsWithoutShowLabel.value as string}
+            onChange={fieldPropsWithoutShowLabel.onChange}
+            placeholder={fieldPropsWithoutShowLabel.placeholder}
+            contextData={contextData}
+            className={fieldPropsWithoutShowLabel.className}
+          />
       </FormControl>
       <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
       <FormMessage />

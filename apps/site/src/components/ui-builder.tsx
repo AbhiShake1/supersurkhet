@@ -7,8 +7,9 @@ import type { LayerChangeHandler, VariableChangeHandler } from "./ui/ui-builder/
 import _ from "lodash";
 import { Spinner } from "./ui/spinner";
 import { NotFound } from "./ui/not-found";
-// import LayerRenderer from;
-//
+import { ContextDataStore } from "@/lib/ui-builder/context/context-data-store";
+import type { Business } from "@/lib/schema";
+import { useProfile } from "@/hooks/use-profile";
 
 const LayerRenderer = lazy(() => import('@/components/ui/ui-builder/layer-renderer'))
 
@@ -39,6 +40,52 @@ function omitMeta<T>(obj: T): T {
     }
   });
 }
+export function flattenObject(
+  obj: Record<string, any>,
+  prefix = ""
+): Record<string, any> {
+  const result: Record<string, any> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}.${key}` : key;
+
+    if (
+      value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value)
+    ) {
+      Object.assign(result, flattenObject(value, path));
+    } else {
+      result[path] = value;
+    }
+  }
+
+  return result;
+}
+
+interface UseContextDataProps {
+  business?: Business;
+}
+
+function useContextData({ business }: UseContextDataProps) {
+  const user = useProfile()
+  const context = useMemo(() => {
+    return {
+      context: flattenObject({
+        business,
+        user: _.pick(user, ["name", "email", "avatar", "isActive", "role"]),
+        // user: omitMeta(user),
+        date: {
+          currentTime: new Date().toISOString(),
+          locale: "en-US",
+          timezone: "Asia/Kathmandu"
+        }
+      })
+    }
+  }, [business, user])
+
+  return context
+}
 
 export function CustomUiBuilderPage({ slug }: { slug: string }) {
   const { mutate: upsert } = api.business.useUpdate()
@@ -65,17 +112,22 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
     return !isLoading && !currentLayers?.length
   }, [isLoading, data])
 
+  // Create dynamic context data based on actual business data if available
+  const contextData = useContextData({ business: data });
+
   return (
-    <UIBuilder
-      componentRegistry={componentRegistry}
-      isLoading={isLoading}
-      persistLayerStore={false}
-      onChange={handleLayersChange}
-      onVariablesChange={handleVariablesChange}
-      initialVariables={currentVariables ? JSON.parse(currentVariables) : undefined}
-      initialLayers={currentLayers ? JSON.parse(currentLayers) : undefined}
-      createNew={createNew}
-    />
+    <ContextDataStore contextData={contextData}>
+      <UIBuilder
+        componentRegistry={componentRegistry}
+        isLoading={isLoading}
+        persistLayerStore={false}
+        onChange={handleLayersChange}
+        onVariablesChange={handleVariablesChange}
+        initialVariables={currentVariables ? JSON.parse(currentVariables) : undefined}
+        initialLayers={currentLayers ? JSON.parse(currentLayers) : undefined}
+        createNew={createNew}
+      />
+    </ContextDataStore>
   )
 }
 
@@ -88,10 +140,14 @@ export function CustomUiRendererPage({ slug }: { slug: string }) {
 
   if (!business?.uiBuilder?.layers || !business.uiBuilder?.variables) return <NotFound />
 
+  // Create context data for rendering - using business data if available
+  const contextData = useContextData({ business });
+
   return <LayerRenderer
     componentRegistry={componentRegistry}
     variables={JSON.parse(business.uiBuilder?.variables)}
     page={JSON.parse(business.uiBuilder?.layers)?.[0]}
+    contextData={contextData}
   // layers={JSON.parse(business.uiBuilder?.layers)?.[0]}
   />
 }

@@ -10,10 +10,10 @@ import { ErrorFallback } from "@/components/ui/ui-builder/internal/components/er
 import { isPrimitiveComponent } from "@/lib/ui-builder/store/editor-utils";
 import { hasLayerChildren, canLayerAcceptChildren } from "@/lib/ui-builder/store/layer-utils";
 import { DevProfiler } from "@/components/ui/ui-builder/internal/components/dev-profiler";
-import { ComponentRegistry, ComponentLayer, Variable, PropValue } from '@/components/ui/ui-builder/types';
+import type { ComponentRegistry, ComponentLayer, Variable, PropValue } from '@/components/ui/ui-builder/types';
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
-import { resolveVariableReferences } from "@/lib/ui-builder/utils/variable-resolver";
+import { resolveVariableReferences, resolveContextualMentions } from "@/lib/ui-builder/utils/variable-resolver";
 
 // Custom hook to safely use DND context
 const useSafeDndContext = () => {
@@ -42,13 +42,14 @@ export const RenderLayer: React.FC<{
   editorConfig?: EditorConfig;
   variables?: Variable[];
   variableValues?: Record<string, PropValue>;
+  contextData?: Record<string, any>;
 }> = memo(
-  ({ layer, componentRegistry, editorConfig, variables, variableValues }) => {
+  ({ layer, componentRegistry, editorConfig, variables, variableValues, contextData }) => {
     const storeVariables = useLayerStore((state) => state.variables);
     const isLayerAPage = useLayerStore((state) => state.isLayerAPage(layer.id));
     const registry = useEditorStore((state) => state.registry);
     const dndContext = useSafeDndContext();
-    
+
     // Use provided variables or fall back to store variables
     const effectiveVariables = variables || storeVariables;
     const componentDefinition =
@@ -64,14 +65,27 @@ export const RenderLayer: React.FC<{
       layer: layer
     }), [layer, componentRegistry]);
 
-    // Resolve variable references in props with proper memoization
-    const resolvedProps = useMemo(() => 
-      resolveVariableReferences(layer.props, effectiveVariables, variableValues),
-      [layer.props, effectiveVariables, variableValues]
+    // Resolve variable references in pops with proper memoization
+    const resolvedProps = useMemo(() =>
+      resolveVariableReferences(layer.props, effectiveVariables, variableValues, contextData),
+      [layer.props, effectiveVariables, variableValues, contextData]
     );
-    
-    const childProps: Record<string, PropValue> = useMemo(() => ({ ...resolvedProps }), [resolvedProps]);
-    
+
+    // Also resolve contextual mentions in layer children if it's a string
+    const resolvedChildren = useMemo(() => {
+      if (typeof layer.children === 'string' && contextData) {
+        // Process string children for contextual mentions
+        return resolveContextualMentions(layer.children, contextData);
+      }
+      return layer.children;
+    }, [layer.children, contextData]);
+
+    const childProps: Record<string, PropValue> = useMemo(() => ({
+      ...resolvedProps,
+      // Update children if it was a string that got processed
+      ...(typeof layer.children === 'string' ? { children: resolvedChildren } : {})
+    }), [resolvedProps, resolvedChildren]);
+
     // Memoize child editor config to avoid creating objects in JSX
     const childEditorConfig = useMemo(() => {
       return editorConfig
@@ -81,14 +95,14 @@ export const RenderLayer: React.FC<{
 
     // Check if this layer can accept children and if drag is active (must be before early returns)
     const canAcceptChildren = useMemo(() => canLayerAcceptChildren(layer, registry), [layer, registry]);
-    const showDropZones = useMemo(() => 
+    const showDropZones = useMemo(() =>
       editorConfig && dndContext?.isDragging && canAcceptChildren,
       [editorConfig, dndContext?.isDragging, canAcceptChildren]
     );
 
     if (!componentDefinition) {
       console.error(
-        `[UIBuilder] Component definition not found in registry:`, 
+        `[UIBuilder] Component definition not found in registry:`,
         infoData
       );
       return null;
@@ -103,7 +117,7 @@ export const RenderLayer: React.FC<{
     }
 
     if (!Component) return null;
-    
+
     // Handle children rendering with improved drop zones
     if (hasLayerChildren(layer) && layer.children.length > 0) {
       const childElements = layer.children.map((child, index) => {
@@ -115,6 +129,7 @@ export const RenderLayer: React.FC<{
             variables={variables}
             variableValues={variableValues}
             editorConfig={childEditorConfig}
+            contextData={contextData}
           />
         );
 
@@ -151,7 +166,8 @@ export const RenderLayer: React.FC<{
 
       childProps.children = childElements;
     } else if (typeof layer.children === "string") {
-      childProps.children = layer.children;
+      // Use the resolved children we processed earlier
+      childProps.children = resolvedChildren;
     } else if (showDropZones && hasLayerChildren(layer)) {
       // Show drop zone for empty containers
       childProps.children = (
@@ -210,7 +226,7 @@ export const RenderLayer: React.FC<{
     }
   },
   (prevProps, nextProps) => {
-    if(nextProps.editorConfig?.parentUpdated) {
+    if (nextProps.editorConfig?.parentUpdated) {
       return false;
     }
     const editorConfigEqual = isDeepEqual(
@@ -229,7 +245,7 @@ const ErrorSuspenseWrapper: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
   const loadingFallback = useMemo(() => <LoadingComponent />, []);
-  
+
   return (
     <ErrorBoundary fallbackRender={ErrorFallback}>
       <Suspense fallback={loadingFallback}>{children}</Suspense>

@@ -1,8 +1,10 @@
 import { FormControl, FormItem, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
+import { MentionInput } from "@/components/ui/mention-input";
 import AutoFormLabel from "../common/label";
 import AutoFormTooltip from "../common/tooltip";
-import { AutoFormInputComponentProps } from "../types";
+import type { AutoFormInputComponentProps } from "../types";
+import { useContext } from "react";
+import { ContextDataStoreContext } from "@/lib/ui-builder/context/context-data-store";
 
 export default function AutoFormInput({
   label,
@@ -12,7 +14,9 @@ export default function AutoFormInput({
 }: AutoFormInputComponentProps) {
   const { showLabel: _showLabel, ...fieldPropsWithoutShowLabel } = fieldProps;
   const showLabel = _showLabel === undefined ? true : _showLabel;
-  const type = fieldProps.type || "text";
+
+  // Try to get context data from the context store
+  const contextData = useContext(ContextDataStoreContext);
 
   return (
     <div className="flex flex-row  items-center space-x-2">
@@ -24,7 +28,13 @@ export default function AutoFormInput({
           />
         )}
         <FormControl>
-          <Input type={type} {...fieldPropsWithoutShowLabel} />
+          <MentionInput
+            value={fieldPropsWithoutShowLabel.value as string}
+            onChange={fieldPropsWithoutShowLabel.onChange}
+            placeholder={fieldPropsWithoutShowLabel.placeholder}
+            contextData={contextData}
+            className={fieldPropsWithoutShowLabel.className}
+          />
         </FormControl>
         <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
         <FormMessage />

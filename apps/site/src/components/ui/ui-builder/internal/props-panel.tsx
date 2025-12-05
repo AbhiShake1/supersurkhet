@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo, useContext } from "react";
 import { z } from "zod";
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
@@ -13,6 +13,7 @@ import { addDefaultValues } from "@/lib/ui-builder/store/schema-utils";
 import { getBaseType } from "@/components/ui/auto-form/utils";
 import { isVariableReference } from "@/lib/ui-builder/utils/variable-resolver";
 import { resolveVariableReferences } from "@/lib/ui-builder/utils/variable-resolver";
+import { ContextDataStore, useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 interface PropsPanelProps {
   className?: string;
@@ -142,6 +143,9 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
     (state) => state.allowPagesDeletion
   );
 
+  // Get context data for contextual field overrides
+  const contextData = useContextData();
+
   // Retrieve the appropriate schema from componentRegistry
   const { schema } = useMemo(() => {
     if (
@@ -231,7 +235,9 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
     // First resolve variable references to get display values
     const resolvedProps = resolveVariableReferences(
       selectedLayer.props,
-      variables
+      variables,
+      undefined,
+      contextData
     );
 
     const transformedProps: Record<string, any> = {};
@@ -270,7 +276,7 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
 
     return { ...transformedProps, children: selectedLayer.children };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedLayer, schema, revisionCounter]); // Include revisionCounter to detect undo/redo changes
+  }, [selectedLayer, schema, revisionCounter, contextData]); // Include revisionCounter to detect undo/redo changes and contextData
 
   const autoFormSchema = useMemo(() => {
     // Only pass ZodObject schemas to addDefaultValues, otherwise return the original schema
@@ -287,9 +293,10 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
 
   const autoFormFieldConfig = useMemo(() => {
     if (!selectedLayer) return undefined; // Or a default config if appropriate
-    return generateFieldOverrides(componentRegistry, selectedLayer);
+    // Pass context data to field overrides to enable contextual mentions
+    return generateFieldOverrides(componentRegistry, selectedLayer, contextData);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentRegistry, selectedLayer, selectedLayer?.props]);
+  }, [componentRegistry, selectedLayer, selectedLayer?.props, contextData]);
 
   // Create a unique key that changes when we need to force re-render the form
   // This includes selectedLayerId and revisionCounter to handle both layer changes and undo/redo
