@@ -130,6 +130,9 @@ export function AddComponentsPopover({
           {categories.length > 0 ? (
             <Tabs defaultValue={defaultTab} className="w-full">
               <TabsList className={cn(categories.length > 1 ? "h-14 w-full rounded-none border-b flex flex-row overflow-x-scroll justify-start" : "hidden")}>
+                <TabsTrigger value="all" className="flex flex-col justify-center items-center overflow-hidden min-w-24 min-h-11 flex-shrink-0">
+                  All
+                </TabsTrigger>
                 {categories.map((category) => (
                   <TabsTrigger key={category} value={category} className="flex flex-col justify-start items-start overflow-hidden px-2 py-1 min-w-24 min-h-11 flex-shrink-0">
                     <div className="text-sm">{formatCategoryName(category)}</div>
@@ -139,6 +142,29 @@ export function AddComponentsPopover({
                 ))}
               </TabsList>
 
+              <TabsContent value="all" className="m-0">
+                <Command className="border-0">
+                  <div className="flex items-center px-3 w-full [&>div:first-child]:w-full">
+                    {/* <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" /> */}
+                    <CommandInput
+                      placeholder="Find components"
+                      className="border-0 focus:ring-0 w-full"
+                    />
+                  </div>
+                  <CommandList className="max-h-[250px]">
+                    <CommandEmpty>No components found</CommandEmpty>
+                    <CommandGroup>
+                      {Object.values(groupedOptions).flat().map((component) => (
+                        <GroupedComponentItem
+                          key={component.value}
+                          component={component}
+                          onClick={handleSelect}
+                        />
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </TabsContent>
               {categories.map((category) => (
                 <TabsContent key={category} value={category} className="m-0">
                   <Command className="border-0">
