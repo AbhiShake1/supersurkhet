@@ -29,6 +29,19 @@ import SlicedText, { SlicedTextSchema } from '@/components/kokonutui/sliced-text
 import SwooshText, { SwooshTextSchema } from '@/components/kokonutui/swoosh-text';
 import SocialButton from '@/components/kokonutui/social-button';
 import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
+import { Car } from 'lucide-react';
+import { Carousel } from '@/components/ui/carousel';
+
+
+
+// import { CarouselConfig } from '@/components/Image Carousel/imgcarousel.tsx';
+// import { CarouselItem } from '@/components/Image Carousel/imgcarousel.tsx';
+// import { CarouselLayout } from '@/components/Image Carousel/imgcarousel.tsx';
+
+
+
+import { ProductOnboardingCard } from '@/components/onboarding/product-definition';
+import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -619,4 +632,119 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: '@/components/kokonutui/social-button',
     fieldOverrides: commonFieldOverrides()
   },
+
+  ProductOnboardingCard: {
+  component: ProductOnboardingCard,
+  schema: ProductOnboardingCardSchema,
+  from: "@/components/onboarding/product-definition",
+  fieldOverrides: commonFieldOverrides(),
+  defaultChildren: [
+    {
+      id: "onboarding-main-icon",
+      type: "Icon",
+      name: "Icon",
+      props: {
+        iconName: "Sparkles",
+        size: "large",
+        className: "text-white",
+      },
+      children: [],
+    } satisfies ComponentLayer,
+    {
+      id: "onboarding-title",
+      type: "span",
+      name: "span",
+      props: {
+        className: "text-3xl font-bold",
+      },
+      children: "Welcome to Our Product",
+    } satisfies ComponentLayer,
+    {
+      id: "onboarding-description",
+      type: "span",
+      name: "span",
+      props: {
+        className: "text-muted-foreground",
+      },
+      children: "Get started with our amazing features",
+    } satisfies ComponentLayer,
+    {
+      id: "onboarding-card-content",
+      type: "Card",
+      name: "Card",
+      props: {},
+      children: [
+        {
+          id: "onboarding-card-header",
+          type: "CardHeader",
+          name: "CardHeader",
+          props: {},
+          children: [
+            {
+              id: "card-icon",
+              type: "Icon",
+              name: "Icon",
+              props: {
+                iconName: "CheckCircle",
+                size: "medium",
+              },
+              children: [],
+            },
+            {
+              id: "card-header-label",
+              type: "span",
+              name: "span",
+              props: {
+                className: "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+              },
+              children: "FEATURE",
+            } satisfies ComponentLayer,
+          ],
+        },
+        {
+          id: "onboarding-card-body",
+          type: "CardContent",
+          name: "CardContent",
+          props: {},
+          children: [
+            {
+              id: "card-title",
+              type: "CardTitle",
+              name: "CardTitle",
+              props: {},
+              children: "First Steps",
+            } satisfies ComponentLayer,
+            {
+              id: "card-description",
+              type: "CardDescription",
+              name: "CardDescription",
+              props: {},
+              children: "Complete these initial tasks to get started",
+            } satisfies ComponentLayer,
+          ],
+        },
+      ],
+    },
+    {
+      id: "onboarding-button",
+      type: "Button",
+      name: "Button",
+      props: {
+        className: "w-full max-w-xs",
+        variant: "default",
+      },
+      children: "Get Started",
+    } satisfies ComponentLayer,
+  ],
+},
+
+  // Carousel: {
+  // component: Carousel,
+  // schema: CarouselConfig,
+  // from: '@/components/ui/carousel',
+  // fieldOverrides: commonFieldOverrides()
+// },
+
+
+
 };

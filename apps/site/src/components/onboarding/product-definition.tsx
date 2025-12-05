@@ -9,13 +9,13 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export const ProductOnboardingCardSchema = z.object({
   mainIcon: z.any(), 
-  title: z.string().min(1),
+  title: z.string().optional().default("Default Title"),
   description: z.string().default("This is a default description"),
   cardIcon: z.any(),
   cardHeaderLabel: z.string().optional(),
-  cardTitle: z.string().min(1, "Card title is required"),
+  cardTitle: z.string().optional(),
   cardDescription: z.string().optional(),
-  buttonText: z.string().min(1),
+  buttonText: z.string().optional().default("Default Button"),
   buttonVariant: z.string().optional().default("default"),
   onButtonClick: z.function().args().returns(z.void()).optional(),
   className: z.string().optional(),
