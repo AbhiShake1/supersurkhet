@@ -29,31 +29,19 @@ import SlicedText, { SlicedTextSchema } from '@/components/kokonutui/sliced-text
 import SwooshText, { SwooshTextSchema } from '@/components/kokonutui/swoosh-text';
 import SocialButton from '@/components/kokonutui/social-button';
 import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
-import { SignedInOnly, SignedInOnlySchema } from '@/components/security/signed-in-only';
-import { SignedOutOnly, SignedOutOnlySchema } from '@/components/security/signed-out-only';
-import { Link, LinkSchema } from '@/components/ui/navigation/link';
-import {
-  ProductList,
-  ProductListSchema,
-  SingleProduct,
-  ProductSchema,
-  ProductImage,
-  ProductImageSchema,
-  ProductTitle,
-  ProductTitleSchema,
-  ProductDescription,
-  ProductDescriptionSchema,
-  ProductPrice,
-  ProductPriceSchema,
-  ProductActions,
-  ProductActionsSchema,
-  ProductBadge,
-  ProductBadgeSchema,
-  ProductDetail,
-  ProductDetailSchema,
-} from '@/components/supersurkhet/products';
-import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog';
-import { Credenza, CredenzaBody, CredenzaFooter, CredenzaHeader, CredenzaTrigger } from '@/components/ui/credenza';
+import { Car } from 'lucide-react';
+import { Carousel } from '@/components/ui/carousel';
+
+
+
+// import { CarouselConfig } from '@/components/Image Carousel/imgcarousel.tsx';
+// import { CarouselItem } from '@/components/Image Carousel/imgcarousel.tsx';
+// import { CarouselLayout } from '@/components/Image Carousel/imgcarousel.tsx';
+
+
+
+import { ProductOnboardingCard } from '@/components/onboarding/product-definition';
+import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -214,171 +202,6 @@ export const complexComponentDefinitions: ComponentRegistry = {
       className: (layer) => classNameFieldOverrides(layer),
       iconName: (layer) => iconNameFieldOverrides(layer)
     }
-  },
-
-  // Dialog
-  Dialog: {
-    component: Dialog,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-    }),
-    from: "@/components/ui/dialog",
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "dialog-header",
-        type: "DialogHeader",
-        name: "DialogHeader",
-        props: {},
-        children: [
-          {
-            id: "dialog-header-text",
-            type: "span",
-            name: "span",
-            props: {},
-            children: "Dialog Header",
-          } satisfies ComponentLayer,
-        ],
-      },
-      {
-        id: "dialog-body",
-        type: "DialogContent",
-        name: "DialogContent",
-        props: {},
-        children: [
-          {
-            id: "dialog-body-text",
-            type: "span",
-            name: "span",
-            props: {},
-            children: "Dialog Body",
-          } satisfies ComponentLayer,
-        ],
-      },
-      {
-        id: "dialog-footer",
-        type: "DialogFooter",
-        name: "DialogFooter",
-        props: {},
-        children: [
-          {
-            id: "dialog-footer-text",
-            type: "span",
-            name: "span",
-            props: {},
-            children: "Dialog Footer",
-          } satisfies ComponentLayer,
-        ],
-      },
-    ],
-  },
-  DialogHeader: {
-    component: DialogHeader,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-    }),
-    from: "@/components/ui/dialog",
-    fieldOverrides: commonFieldOverrides(),
-  },
-  DialogContent: {
-    component: DialogContent,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-    }),
-    from: "@/components/ui/dialog",
-    fieldOverrides: commonFieldOverrides(),
-  },
-  DialogFooter: {
-    component: DialogFooter,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-    }),
-    from: "@/components/ui/dialog",
-    fieldOverrides: commonFieldOverrides(),
-  },
-
-  // Credenza
-  Credenza: {
-    component: Credenza,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-    }),
-    from: "@/components/ui/credenza",
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "credenza-trigger",
-        type: "CredenzaTrigger",
-        name: "CredenzaTrigger",
-        props: {},
-        children: [
-          {
-            id: "credenza-trigger-text",
-            type: "span",
-            name: "span",
-            props: {},
-            children: "Credenza Trigger",
-          } satisfies ComponentLayer,
-        ],
-      },
-      {
-        id: "credenza-content",
-        type: "CredenzaContent",
-        name: "CredenzaContent",
-        props: {},
-        children: [
-          {
-            id: "credenza-content-text",
-            type: "span",
-            name: "span",
-            props: {},
-            children: "Credenza Content",
-          } satisfies ComponentLayer,
-        ],
-      },
-    ],
-  },
-  CredenzaTrigger: {
-    component: CredenzaTrigger,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-      asChild: z.boolean().optional(),
-    }),
-    from: "@/components/ui/credenza",
-    fieldOverrides: commonFieldOverrides(),
-  },
-  CredenzaHeader: {
-    component: CredenzaHeader,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-    }),
-    from: "@/components/ui/credenza",
-    fieldOverrides: commonFieldOverrides(),
-  },
-  CredenzaBody: {
-    component: CredenzaBody,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-    }),
-    from: "@/components/ui/credenza",
-    fieldOverrides: commonFieldOverrides(),
-  },
-  CredenzaFooter: {
-    component: CredenzaFooter,
-    schema: z.object({
-      className: z.string().optional(),
-      children: z.any().optional(),
-    }),
-    from: "@/components/ui/credenza",
-    fieldOverrides: commonFieldOverrides(),
   },
 
   //Accordion
@@ -810,213 +633,118 @@ export const complexComponentDefinitions: ComponentRegistry = {
     fieldOverrides: commonFieldOverrides()
   },
 
-  // security
-  SignedInOnly: {
-    component: SignedInOnly,
-    schema: SignedInOnlySchema,
-    from: '@/components/security/signed-in-only',
-    fieldOverrides: commonFieldOverrides()
-  },
-  SignedOutOnly: {
-    component: SignedOutOnly,
-    schema: SignedOutOnlySchema,
-    from: '@/components/security/signed-out-only',
-    fieldOverrides: commonFieldOverrides()
-  },
+  ProductOnboardingCard: {
+  component: ProductOnboardingCard,
+  schema: ProductOnboardingCardSchema,
+  from: "@/components/onboarding/product-definition",
+  fieldOverrides: commonFieldOverrides(),
+  defaultChildren: [
+    {
+      id: "onboarding-main-icon",
+      type: "Icon",
+      name: "Icon",
+      props: {
+        iconName: "Sparkles",
+        size: "large",
+        className: "text-white",
+      },
+      children: [],
+    } satisfies ComponentLayer,
+    {
+      id: "onboarding-title",
+      type: "span",
+      name: "span",
+      props: {
+        className: "text-3xl font-bold",
+      },
+      children: "Welcome to Our Product",
+    } satisfies ComponentLayer,
+    {
+      id: "onboarding-description",
+      type: "span",
+      name: "span",
+      props: {
+        className: "text-muted-foreground",
+      },
+      children: "Get started with our amazing features",
+    } satisfies ComponentLayer,
+    {
+      id: "onboarding-card-content",
+      type: "Card",
+      name: "Card",
+      props: {},
+      children: [
+        {
+          id: "onboarding-card-header",
+          type: "CardHeader",
+          name: "CardHeader",
+          props: {},
+          children: [
+            {
+              id: "card-icon",
+              type: "Icon",
+              name: "Icon",
+              props: {
+                iconName: "CheckCircle",
+                size: "medium",
+              },
+              children: [],
+            },
+            {
+              id: "card-header-label",
+              type: "span",
+              name: "span",
+              props: {
+                className: "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+              },
+              children: "FEATURE",
+            } satisfies ComponentLayer,
+          ],
+        },
+        {
+          id: "onboarding-card-body",
+          type: "CardContent",
+          name: "CardContent",
+          props: {},
+          children: [
+            {
+              id: "card-title",
+              type: "CardTitle",
+              name: "CardTitle",
+              props: {},
+              children: "First Steps",
+            } satisfies ComponentLayer,
+            {
+              id: "card-description",
+              type: "CardDescription",
+              name: "CardDescription",
+              props: {},
+              children: "Complete these initial tasks to get started",
+            } satisfies ComponentLayer,
+          ],
+        },
+      ],
+    },
+    {
+      id: "onboarding-button",
+      type: "Button",
+      name: "Button",
+      props: {
+        className: "w-full max-w-xs",
+        variant: "default",
+      },
+      children: "Get Started",
+    } satisfies ComponentLayer,
+  ],
+},
 
-  // navigation
-  Link: {
-    component: Link,
-    schema: LinkSchema,
-    from: '@/components/ui/navigation/link',
-    fieldOverrides: commonFieldOverrides()
-  },
+  // Carousel: {
+  // component: Carousel,
+  // schema: CarouselConfig,
+  // from: '@/components/ui/carousel',
+  // fieldOverrides: commonFieldOverrides()
+// },
 
-  // products
-  SingleProduct: {
-    component: SingleProduct,
-    schema: ProductSchema,
-    from: '@/components/supersurkhet/products',
-    fieldOverrides: commonFieldOverrides()
-  },
-  ProductTitle: {
-    component: ProductTitle,
-    schema: ProductTitleSchema,
-    from: '@/components/supersurkhet/products',
-    fieldOverrides: commonFieldOverrides(),
-  },
-  ProductDescription: {
-    component: ProductDescription,
-    schema: ProductDescriptionSchema,
-    from: '@/components/supersurkhet/products',
-    fieldOverrides: commonFieldOverrides(),
-  },
-  ProductPrice: {
-    component: ProductPrice,
-    schema: ProductPriceSchema,
-    from: '@/components/supersurkhet/products',
-    fieldOverrides: commonFieldOverrides(),
-  },
-  ProductActions: {
-    component: ProductActions,
-    schema: ProductActionsSchema,
-    from: '@/components/supersurkhet/products',
-    fieldOverrides: commonFieldOverrides(),
-  },
-  ProductBadge: {
-    component: ProductBadge,
-    schema: ProductBadgeSchema,
-    from: '@/components/supersurkhet/products',
-    fieldOverrides: commonFieldOverrides(),
-  },
-  ProductImage: {
-    component: ProductImage,
-    schema: ProductImageSchema,
-    from: '@/components/supersurkhet/products',
-    fieldOverrides: commonFieldOverrides(),
-  },
-  ProductDetail: {
-    component: ProductDetail,
-    schema: ProductDetailSchema,
-    from: '@/components/supersurkhet/products',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "product-detail-image",
-        type: "ProductImage",
-        name: "ProductImage",
-        props: {},
-        children: [
-          {
-            id: "product-detail-image-image",
-            type: "img",
-            name: "img",
-            props: {},
-            children: "Product Image",
-          } satisfies ComponentLayer,
-        ],
-      },
-      {
-        id: "product-detail-title",
-        type: "ProductTitle",
-        name: "ProductTitle",
-        props: {},
-        children: [
-          {
-            id: "product-detail-title-text",
-            type: "span",
-            name: "span",
-            props: {},
-            children: "Product Title",
-          } satisfies ComponentLayer,
-        ],
-      },
-      {
-        id: "product-detail-description",
-        type: "ProductDescription",
-        name: "ProductDescription",
-        props: {},
-        children: [
-          {
-            id: "product-detail-description-text",
-            type: "span",
-            name: "span",
-            props: {},
-            children: "Product Description",
-          } satisfies ComponentLayer,
-        ],
-      },
-      {
-        id: "product-detail-price",
-        type: "ProductPrice",
-        name: "ProductPrice",
-        props: {},
-        children: [
-          {
-            id: "product-detail-price-text",
-            type: "span",
-            name: "span",
-            props: {},
-            children: "$100",
-          } satisfies ComponentLayer,
-        ],
-      },
-    ],
-  },
-  ProductList: {
-    component: ProductList,
-    schema: ProductListSchema,
-    from: '@/components/supersurkhet/products',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "product-1",
-        type: "SingleProduct",
-        name: "SingleProduct",
-        props: {},
-        children: [
-          {
-            id: "product-image",
-            type: "ProductImage",
-            name: "ProductImage",
-            props: {},
-            children: [
-              {
-                id: "product-image-image",
-                type: "img",
-                name: "img",
-                props: {},
-                children: "Product Image",
-              } satisfies ComponentLayer,
-            ],
-          },
-          {
-            id: "product-title",
-            type: "ProductTitle",
-            name: "ProductTitle",
-            props: {},
-            children: [
-              {
-                id: "product-title-text",
-                type: "span",
-                name: "span",
-                props: {},
-                children: "Product Title",
-              } satisfies ComponentLayer,
-            ],
-          },
-          {
-            id: "product-description",
-            type: "ProductDescription",
-            name: "ProductDescription",
-            props: {},
-            children: [
-              {
-                id: "product-description-text",
-                type: "span",
-                name: "span",
-                props: {},
-                children: "Product Description",
-              } satisfies ComponentLayer,
-            ],
-          },
-          {
-            id: "product-price",
-            type: "ProductPrice",
-            name: "ProductPrice",
-            props: {},
-            children: [
-              {
-                id: "product-price-text",
-                type: "span",
-                name: "span",
-                props: {},
-                children: "$100",
-              } satisfies ComponentLayer,
-            ],
-          },
-        ],
-      },
-    ]
-  },
+
+
 };
