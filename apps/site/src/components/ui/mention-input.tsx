@@ -72,54 +72,154 @@ export function MentionInput({
     return flat;
   }, [contextData]);
 
-  // Generate suggestions based on context data
+  // Generate suggestions based on context data with fuzzy matching and ranking
   const generateSuggestions = useCallback((query: string) => {
-    const suggestions: MentionSuggestion[] = [];
+    if (!query) {
+      // If no query, return first 5 top-level suggestions
+      const allSuggestions: MentionSuggestion[] = [];
 
-    // Add user context suggestions
-    if (contextData.user) {
-      Object.entries(contextData.user).forEach(([key, val]) => {
-        if (key.toLowerCase().includes(query.toLowerCase())) {
-          suggestions.push({
+      if (contextData.user) {
+        Object.entries(contextData.user).slice(0, 5).forEach(([key, val]) => {
+          allSuggestions.push({
             id: `user.${key}`,
             label: `user.${key}`,
             category: "User",
             value: val,
           });
-        }
-      });
-    }
+        });
+      }
 
-    // Add business context suggestions
-    if (contextData.business) {
-      Object.entries(contextData.business).forEach(([key, val]) => {
-        if (key.toLowerCase().includes(query.toLowerCase())) {
-          suggestions.push({
+      if (contextData.business) {
+        Object.entries(contextData.business).slice(0, 5).forEach(([key, val]) => {
+          allSuggestions.push({
             id: `business.${key}`,
             label: `business.${key}`,
             category: "Business",
             value: val,
           });
-        }
-      });
-    }
+        });
+      }
 
-    // Add general context suggestions
-    if (contextData.context) {
-      Object.entries(contextData.context).forEach(([key, val]) => {
-        if (key.toLowerCase().includes(query.toLowerCase())) {
-          suggestions.push({
+      if (contextData.context) {
+        Object.entries(contextData.context).slice(0, 5).forEach(([key, val]) => {
+          allSuggestions.push({
             id: `context.${key}`,
             label: `context.${key}`,
             category: "Context",
             value: val,
           });
-        }
-      });
+        });
+      }
+
+      return allSuggestions;
     }
 
-    return suggestions;
+    const allSuggestions: MentionSuggestion[] = [];
+
+    // Add suggestions from flattened context data to support deep nesting
+    Object.entries(flatContextData).forEach(([key, val]) => {
+      // Extract the first part of the key to determine category
+      const firstPart = key.split('.')[0];
+      const category = firstPart.charAt(0).toUpperCase() + firstPart.slice(1);
+
+      allSuggestions.push({
+        id: key,
+        label: key,
+        category,
+        value: val,
+      });
+    });
+
+    // Filter and rank the suggestions based on the query
+    return allSuggestions
+      .filter(suggestion =>
+        // Check if the query matches the label (case-insensitive)
+        suggestion.label.toLowerCase().includes(query.toLowerCase()) ||
+        // Fuzzy matching: check if characters in query appear in sequence in label
+        fuzzyMatch(suggestion.label.toLowerCase(), query.toLowerCase())
+      )
+      .sort((a, b) => {
+        // Ranking algorithm:
+        // 1. Exact prefix matches first (query matches start of label)
+        const aStartsWith = a.label.toLowerCase().startsWith(query.toLowerCase());
+        const bStartsWith = b.label.toLowerCase().startsWith(query.toLowerCase());
+
+        if (aStartsWith && !bStartsWith) return -1;
+        if (!aStartsWith && bStartsWith) return 1;
+
+        // 2. If both start with the query, sort by length (shorter is better)
+        if (aStartsWith && bStartsWith) {
+          return a.label.length - b.label.length;
+        }
+
+        // 3. Check for fuzzy match score
+        const aFuzzyScore = fuzzyMatch(a.label.toLowerCase(), query.toLowerCase()) ?
+          fuzzyMatchScore(a.label.toLowerCase(), query.toLowerCase()) : 0;
+        const bFuzzyScore = fuzzyMatch(b.label.toLowerCase(), query.toLowerCase()) ?
+          fuzzyMatchScore(b.label.toLowerCase(), query.toLowerCase()) : 0;
+
+        if (aFuzzyScore !== bFuzzyScore) {
+          return bFuzzyScore - aFuzzyScore; // Higher score first
+        }
+
+        // 4. If all else is equal, sort alphabetically
+        return a.label.localeCompare(b.label);
+      })
+      .slice(0, 10); // Return top 10 matches
   }, [contextData, flatContextData]);
+
+  // Fuzzy matching function
+  const fuzzyMatch = (str: string, query: string): boolean => {
+    let strIndex = 0;
+    let queryIndex = 0;
+
+    while (strIndex < str.length && queryIndex < query.length) {
+      if (str[strIndex] === query[queryIndex]) {
+        queryIndex++;
+      }
+      strIndex++;
+    }
+
+    return queryIndex === query.length;
+  };
+
+  // Fuzzy matching scoring function
+  const fuzzyMatchScore = (str: string, query: string): number => {
+    let score = 0;
+    let strIndex = 0;
+    let queryIndex = 0;
+    let lastMatchIndex = -1;
+
+    // Count matches and score based on how close the matches are
+    while (strIndex < str.length && queryIndex < query.length) {
+      if (str[strIndex] === query[queryIndex]) {
+        // Add points for matching
+        score += 1;
+
+        // Bonus for consecutive matches
+        if (lastMatchIndex === strIndex - 1) {
+          score += 2;
+        } else {
+          // Penalty for gaps between matches
+          score -= (strIndex - lastMatchIndex - 1) * 0.1;
+        }
+
+        lastMatchIndex = strIndex;
+        queryIndex++;
+      }
+      strIndex++;
+    }
+
+    // Bonus for matches at the beginning of words (after spaces, periods, etc.)
+    for (let i = 0; i < query.length; i++) {
+      const charIndexInStr = str.indexOf(query[i]);
+      if (charIndexInStr === 0 || (charIndexInStr > 0 && /[\s._-]/.test(str[charIndexInStr - 1]))) {
+        score += 0.5;
+      }
+    }
+
+    return score;
+  };
 
   // Check if we should show suggestions based on input
   const checkForMentionTrigger = useCallback((input: string, selectionStart: number | null) => {
