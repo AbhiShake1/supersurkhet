@@ -38,15 +38,9 @@ import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
 //   mockOffers 
 // } from '@/components/Image Carousel/imgcarousel';
 
-import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx'
-
-
-
+import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx';
 import { ProductOnboardingCard } from '@/components/onboarding/product-definition';
 import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
-
-
-
 
 
 
@@ -639,24 +633,19 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: '@/components/kokonutui/social-button',
     fieldOverrides: commonFieldOverrides()
   },
-
-
-
-
-
-
-
-
-
-
-
-
   
   ProductOnboardingCard: {
   component: ProductOnboardingCard,
   schema: ProductOnboardingCardSchema,
   from: "@/components/onboarding/product-definition",
   fieldOverrides: commonFieldOverrides(),
+  props: {
+    mainIcon: {
+      iconName: "Sparkles",
+      size: "large",
+      className: "text-white",
+    },
+  },
   defaultChildren: [
     {
       id: "onboarding-main-icon",
@@ -668,25 +657,21 @@ export const complexComponentDefinitions: ComponentRegistry = {
         className: "text-white",
       },
       children: [],
-    } satisfies ComponentLayer,
+    },
     {
       id: "onboarding-title",
       type: "span",
       name: "span",
-      props: {
-        className: "text-3xl font-bold",
-      },
+      props: { className: "text-3xl font-bold" },
       children: "Welcome to Our Product",
-    } satisfies ComponentLayer,
+    },
     {
       id: "onboarding-description",
       type: "span",
       name: "span",
-      props: {
-        className: "text-muted-foreground",
-      },
+      props: { className: "text-muted-foreground" },
       children: "Get started with our amazing features",
-    } satisfies ComponentLayer,
+    },
     {
       id: "onboarding-card-content",
       type: "Card",
@@ -703,10 +688,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
               id: "card-icon",
               type: "Icon",
               name: "Icon",
-              props: {
-                iconName: "CheckCircle",
-                size: "medium",
-              },
+              props: { iconName: "CheckCircle", size: "medium" },
               children: [],
             },
             {
@@ -714,10 +696,11 @@ export const complexComponentDefinitions: ComponentRegistry = {
               type: "span",
               name: "span",
               props: {
-                className: "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+                className:
+                  "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
               },
               children: "FEATURE",
-            } satisfies ComponentLayer,
+            },
           ],
         },
         {
@@ -732,14 +715,14 @@ export const complexComponentDefinitions: ComponentRegistry = {
               name: "CardTitle",
               props: {},
               children: "First Steps",
-            } satisfies ComponentLayer,
+            },
             {
               id: "card-description",
               type: "CardDescription",
               name: "CardDescription",
               props: {},
               children: "Complete these initial tasks to get started",
-            } satisfies ComponentLayer,
+            },
           ],
         },
       ],
@@ -748,21 +731,11 @@ export const complexComponentDefinitions: ComponentRegistry = {
       id: "onboarding-button",
       type: "Button",
       name: "Button",
-      props: {
-        className: "w-full max-w-xs",
-        variant: "default",
-      },
+      props: { className: "w-full max-w-xs", variant: "default" },
       children: "Get Started",
-    } satisfies ComponentLayer,
-  ],
+    },
+  ] satisfies ComponentLayer[], 
 },
-
-
-
-
-
-
-
 
 
   Rating: {
@@ -815,17 +788,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
     ],
     fieldOverrides: commonFieldOverrides(),
   },
-
-
-
-
-
-
-
-
-
-
-
+};
 
 
 
@@ -879,4 +842,5 @@ export const complexComponentDefinitions: ComponentRegistry = {
   //   }),
   //   defaultProps: { offers: mockOffers, showProgress: true, autoPlay: false, variant: "default", showFilters: false },
   // },
-};
+
+

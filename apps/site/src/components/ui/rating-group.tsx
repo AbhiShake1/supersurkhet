@@ -66,15 +66,7 @@ export const RatingSchema = z.object({
 
 export type RatingProps = z.infer<typeof RatingSchema>;
 
-
-
-
-
 interface Props extends Partial<RatingProps> {}
-
-
-
-
 
 const sizeMap = {
   xs: { icon: 16, text: "text-xs" },
