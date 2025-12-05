@@ -1,21 +1,6 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, type ReactNode } from 'react';
 
 interface ContextData {
-  user?: {
-    name?: string;
-    email?: string;
-    id?: string;
-    [key: string]: any;
-  };
-  business?: {
-    name?: string;
-    id?: string;
-    [key: string]: any;
-  };
-  context?: {
-    currentTime?: string;
-    [key: string]: any;
-  };
   [key: string]: any;
 }
 
@@ -24,12 +9,40 @@ interface ContextDataStoreProps {
   contextData: ContextData;
 }
 
+export function flattenObject(
+  obj: Record<string, any>,
+  prefix = ""
+): Record<string, any> {
+  const result: Record<string, any> = {};
+
+  for (const [key, value] of Object.entries(obj)) {
+    const path = prefix ? `${prefix}_${key}` : key;
+
+    if (
+      value !== null &&
+      typeof value === "object" &&
+      !Array.isArray(value)
+    ) {
+      Object.assign(result, flattenObject(value, path));
+    } else {
+      result[path] = value;
+    }
+  }
+
+  return result;
+}
+
 export const ContextDataStoreContext = createContext<ContextData | undefined>(undefined);
 
-export const ContextDataStore: React.FC<ContextDataStoreProps> = ({ 
-  children, 
-  contextData 
+export const ContextDataStore: React.FC<ContextDataStoreProps> = ({
+  children,
+  contextData: _contextData,
 }) => {
+  const contextData = React.useMemo(() => {
+    return {
+      context: flattenObject(_contextData),
+    };
+  }, [_contextData]);
   return (
     <ContextDataStoreContext.Provider value={contextData}>
       {children}
@@ -38,9 +51,5 @@ export const ContextDataStore: React.FC<ContextDataStoreProps> = ({
 };
 
 export const useContextData = (): ContextData => {
-  const context = useContext(ContextDataStoreContext);
-  if (context === undefined) {
-    throw new Error('useContextData must be used within a ContextDataStore');
-  }
-  return context;
+  return useContext(ContextDataStoreContext) ?? {};
 };

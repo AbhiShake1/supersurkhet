@@ -12,6 +12,7 @@ import type { Business } from "@/lib/schema";
 import { useProfile } from "@/hooks/use-profile";
 import { useAuth } from "./auth-provider";
 import { useSearch } from "@tanstack/react-router";
+import { useContextData as useContextDataStore } from "@/lib/ui-builder/context/context-data-store";
 
 const LayerRenderer = lazy(() => import('@/components/ui/ui-builder/layer-renderer'))
 
@@ -42,28 +43,6 @@ function omitMeta<T>(obj: T): T {
     }
   });
 }
-export function flattenObject(
-  obj: Record<string, any>,
-  prefix = ""
-): Record<string, any> {
-  const result: Record<string, any> = {};
-
-  for (const [key, value] of Object.entries(obj)) {
-    const path = prefix ? `${prefix}_${key}` : key;
-
-    if (
-      value !== null &&
-      typeof value === "object" &&
-      !Array.isArray(value)
-    ) {
-      Object.assign(result, flattenObject(value, path));
-    } else {
-      result[path] = value;
-    }
-  }
-
-  return result;
-}
 
 interface UseContextDataProps {
   business?: Business;
@@ -74,15 +53,13 @@ function useContextData({ business }: UseContextDataProps) {
   const { isLoading: isUserLoading } = useAuth()
   const context = useMemo(() => {
     return {
-      context: flattenObject({
-        business,
-        user: _.pick(user, ["name", "email", "avatar", "isActive", "role"]),
-        date: {
-          currentTime: new Date().toISOString(),
-          locale: "en-US",
-          timezone: "Asia/Kathmandu"
-        }
-      })
+      business,
+      user: _.pick(user, ["name", "email", "avatar", "isActive", "role"]),
+      date: {
+        currentTime: new Date().toISOString(),
+        locale: "en-US",
+        timezone: "Asia/Kathmandu"
+      }
     }
   }, [business, user])
 
@@ -162,11 +139,11 @@ export function CustomUiRendererPage({ slug }: { slug: string }) {
 
   if (!business?.uiBuilder?.layers || !business.uiBuilder?.variables) return <NotFound />
 
-  return <LayerRenderer
-    componentRegistry={componentRegistry}
-    variables={JSON.parse(business.uiBuilder?.variables)}
-    page={getPage()}
-    contextData={contextData}
-  // layers={JSON.parse(business.uiBuilder?.layers)?.[0]}
-  />
+  return <ContextDataStore contextData={contextData}>
+    <LayerRenderer
+      componentRegistry={componentRegistry}
+      variables={JSON.parse(business.uiBuilder?.variables)}
+      page={getPage()}
+    />
+  </ContextDataStore>
 }
