@@ -120,7 +120,7 @@ export function AddComponentsPopover({
     [onOpenChange]
   );
 
-  const defaultTab = categories[0] || "";
+  const defaultTab = "all";
 
   return (
     <div className={cn("relative flex justify-center", className)}>
@@ -134,10 +134,8 @@ export function AddComponentsPopover({
                   All
                 </TabsTrigger>
                 {categories.map((category) => (
-                  <TabsTrigger key={category} value={category} className="flex flex-col justify-start items-start overflow-hidden px-2 py-1 min-w-24 min-h-11 flex-shrink-0">
-                    <div className="text-sm">{formatCategoryName(category)}</div>
-                    <div className="w-full min-h-[12px] text-[8px] leading-[9px] text-left text-muted-foreground text-wrap">{category}</div>
-
+                  <TabsTrigger key={category} value={category} className="flex flex-col justify-center items-center overflow-hidden min-w-24 min-h-11 flex-shrink-0">
+                    {formatCategoryName(category)}
                   </TabsTrigger>
                 ))}
               </TabsList>
