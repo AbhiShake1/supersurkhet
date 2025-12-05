@@ -3,24 +3,25 @@ import { motion } from "framer-motion";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Sparkles as SparklesIcon, CheckCircle as CheckCircleIcon } from "lucide-react";
 
 
 // Zod Schema
-
 export const ProductOnboardingCardSchema = z.object({
-  mainIcon: z.any(), 
-  title: z.string().optional().default("Default Title"),
-  description: z.string().default("This is a default description"),
-  cardIcon: z.any(),
-  cardHeaderLabel: z.string().optional(),
-  cardTitle: z.string().optional(),
-  cardDescription: z.string().optional(),
-  buttonText: z.string().optional().default("Default Button"),
+  mainIcon: z.object({
+    children: z.any(), // accepts JSX
+  }).default({ children: <SparklesIcon className="text-white" size={32} /> }),
+  title: z.string().optional().default("Welcome to Our Product"),
+  description: z.string().optional().default("Get started with our amazing features"),
+  cardIcon: z.object({ children: z.any() }).optional().default({ children: <CheckCircleIcon size={20} /> }),
+  cardHeaderLabel: z.string().optional().default("FEATURE"),
+  cardTitle: z.string().optional().default("First Steps"),
+  cardDescription: z.string().optional().default("get started"),
+  buttonText: z.string().optional().default("Get Started"),
   buttonVariant: z.string().optional().default("default"),
   onButtonClick: z.function().args().returns(z.void()).optional(),
   className: z.string().optional(),
   disableAnimation: z.boolean().optional(),
-
 });
 
 
@@ -28,12 +29,10 @@ export type ProductOnboardingCardProps = z.infer<typeof ProductOnboardingCardSch
 
 
 // Component
-
 export const ProductOnboardingCard = React.forwardRef<
   HTMLDivElement,
   ProductOnboardingCardProps
 >((props, ref) => {
-  // Runtime validation
   const parsedProps = ProductOnboardingCardSchema.parse(props);
 
   const {
@@ -49,12 +48,9 @@ export const ProductOnboardingCard = React.forwardRef<
     className,
   } = parsedProps;
 
-  // Animation variants
   const containerVariants = {
     hidden: {},
-    visible: {
-      transition: { staggerChildren: 0.1 },
-    },
+    visible: { transition: { staggerChildren: 0.1 } },
   };
 
   const itemVariants = {
@@ -65,10 +61,7 @@ export const ProductOnboardingCard = React.forwardRef<
   return (
     <motion.div
       ref={ref}
-      className={cn(
-        "flex flex-col items-center justify-center gap-6 text-center max-w-md w-full p-4",
-        className
-      )}
+      className={cn("flex flex-col items-center justify-center gap-6 text-center max-w-md w-full p-4", className)}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -78,7 +71,7 @@ export const ProductOnboardingCard = React.forwardRef<
         variants={itemVariants}
         className="rounded-xl bg-gradient-to-br from-orange-400 to-rose-500 p-3 shadow-lg"
       >
-        {mainIcon}
+        {mainIcon.children}
       </motion.div>
 
       {/* Main Title */}
@@ -97,7 +90,7 @@ export const ProductOnboardingCard = React.forwardRef<
       <motion.div variants={itemVariants} className="w-full">
         <Card className="text-left shadow-sm">
           <CardHeader className="flex flex-row items-center gap-2 pb-2">
-            {cardIcon}
+            {cardIcon?.children}
             {cardHeaderLabel && (
               <span className="text-xs font-semibold tracking-wider uppercase text-muted-foreground">
                 {cardHeaderLabel}
@@ -126,4 +119,3 @@ export const ProductOnboardingCard = React.forwardRef<
 });
 
 ProductOnboardingCard.displayName = "ProductOnboardingCard";
-

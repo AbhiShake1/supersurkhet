@@ -107,15 +107,6 @@ export const iconNameFieldOverrides: FieldConfigFunction = (layer) => {
   };
 };
 
-
-
-
-
-
-
-
-
-
 export const childrenAsTextareaFieldOverrides: FieldConfigFunction = (
   layer
 ) => {
