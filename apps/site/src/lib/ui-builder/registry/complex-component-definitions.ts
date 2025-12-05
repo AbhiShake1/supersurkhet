@@ -31,6 +31,7 @@ import SocialButton from '@/components/kokonutui/social-button';
 import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
 import { SignedInOnly, SignedInOnlySchema } from '@/components/security/signed-in-only';
 import { SignedOutOnly, SignedOutOnlySchema } from '@/components/security/signed-out-only';
+import { Link, LinkSchema } from '@/components/ui/navigation/link';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -633,6 +634,14 @@ export const complexComponentDefinitions: ComponentRegistry = {
     component: SignedOutOnly,
     schema: SignedOutOnlySchema,
     from: '@/components/security/signed-out-only',
+    fieldOverrides: commonFieldOverrides()
+  },
+
+  // navigation
+  Link: {
+    component: Link,
+    schema: LinkSchema,
+    from: '@/components/ui/navigation/link',
     fieldOverrides: commonFieldOverrides()
   },
 };

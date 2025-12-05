@@ -11,6 +11,7 @@ import { ContextDataStore } from "@/lib/ui-builder/context/context-data-store";
 import type { Business } from "@/lib/schema";
 import { useProfile } from "@/hooks/use-profile";
 import { useAuth } from "./auth-provider";
+import { useSearch } from "@tanstack/react-router";
 
 const LayerRenderer = lazy(() => import('@/components/ui/ui-builder/layer-renderer'))
 
@@ -138,23 +139,33 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
 }
 
 export function CustomUiRendererPage({ slug }: { slug: string }) {
+  const search = useSearch({ from: "__root__" })
+  const page = search?.p
   const { data: _business, isLoading } = api.business.useGet({ keys: [slug], single: true })
-
-  if (isLoading) return <Spinner />
 
   const business = _business?.[0]
 
-  // Create context data for rendering - using business data if available
-  const { contextData, isLoadig } = useContextData({ business });
+  function getPage() {
+    const layers = business?.uiBuilder?.layers ? JSON.parse(business?.uiBuilder?.layers) : undefined
+    const fallback = layers?.[0]
+    if (!page) return fallback
+    const isNumber = Number.isInteger(Number(page))
+    if (isNumber) return layers?.[page] ?? fallback
+    const pageByName = layers?.find((layer) => layer.name.toLowerCase() === page.toLowerCase())
+    return pageByName ?? fallback
+  }
 
-  if (isLoading) return <Spinner />
+  // Create context data for rendering - using business data if available
+  const { contextData, isLoading: _isLoading } = useContextData({ business });
+
+  if (isLoading || _isLoading) return <Spinner />
 
   if (!business?.uiBuilder?.layers || !business.uiBuilder?.variables) return <NotFound />
 
   return <LayerRenderer
     componentRegistry={componentRegistry}
     variables={JSON.parse(business.uiBuilder?.variables)}
-    page={JSON.parse(business.uiBuilder?.layers)?.[0]}
+    page={getPage()}
     contextData={contextData}
   // layers={JSON.parse(business.uiBuilder?.layers)?.[0]}
   />

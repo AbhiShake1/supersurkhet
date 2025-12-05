@@ -37,6 +37,7 @@ import { ThemeProvider as ThemeModeProvider } from "@/contexts/theme-context";
 import { defaultPresets } from "@/lib/theme";
 import { getUser, removeUser } from "@/server-functions/user";
 import type { IGunUserInstance } from "gun/types";
+import z from "zod";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -258,6 +259,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       },
     ],
   }),
+  validateSearch: z.object({
+    p: z.string().nullish().default(null).catch(null),
+  }).optional(),
   context: () => ({ auth, gun }),
   notFoundComponent: () => <NotFound />,
   errorComponent: () => <ErrorComponent />,
