@@ -1,16 +1,10 @@
 import { FormControl, FormItem, FormMessage } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import * as z from "zod";
 import AutoFormLabel from "../common/label";
 import AutoFormTooltip from "../common/tooltip";
 import { AutoFormInputComponentProps } from "../types";
 import { getBaseSchema } from "../utils";
+import { Combobox } from "@/components/ui/combobox";
 
 export default function AutoFormEnum({
   label,
@@ -30,9 +24,11 @@ export default function AutoFormEnum({
     values = baseValues.map((value) => [value, value]);
   }
 
-  function findItem(value: any) {
-    return values.find((item) => item[0] === value);
-  }
+  // Convert to the format expected by Combobox
+  const options = values.map(([value, label]) => ({
+    value: value.toString(),
+    label: label.toString(),
+  }));
 
   return (
     <FormItem>
@@ -41,24 +37,14 @@ export default function AutoFormEnum({
         isRequired={isRequired}
       />
       <FormControl>
-        <Select
+        <Combobox
+          options={options}
+          value={field.value?.toString()}
           onValueChange={field.onChange}
-          defaultValue={field.value}
-          {...fieldProps}
-        >
-          <SelectTrigger className={fieldProps.className}>
-            <SelectValue placeholder={fieldConfigItem.inputProps?.placeholder}>
-              {field.value ? findItem(field.value)?.[1] : "Select an option"}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {values.map(([value, label]) => (
-              <SelectItem value={label} key={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder={fieldConfigItem.inputProps?.placeholder || "Select an option..."}
+          className={fieldProps.className}
+          disabled={fieldProps.disabled}
+        />
       </FormControl>
       <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
       <FormMessage />

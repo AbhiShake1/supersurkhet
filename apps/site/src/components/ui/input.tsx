@@ -1,7 +1,41 @@
 import { cn } from "@/lib/utils";
 import * as React from "react";
+import { z } from "zod";
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+const InputSchema = z.object({
+  className: z.string().optional(),
+  type: z.enum([
+    "button", "checkbox", "color", "date", "datetime-local", "email",
+    "file", "hidden", "image", "month", "number", "password",
+    "radio", "range", "reset", "search", "submit", "tel",
+    "text", "time", "url", "week"
+  ]).default("text"),
+  disabled: z.boolean().optional(),
+  placeholder: z.string().optional(),
+  value: z.union([z.string(), z.number()]).optional(),
+  name: z.string().optional(),
+  id: z.string().optional(),
+  required: z.boolean().optional(),
+  readOnly: z.boolean().optional(),
+  autoFocus: z.boolean().optional(),
+  autoComplete: z.string().optional(),
+  autoCapitalize: z.string().optional(),
+  autoCorrect: z.string().optional(),
+  spellCheck: z.union([z.literal(true), z.literal(false)]).optional(),
+  maxLength: z.number().optional(),
+  minLength: z.number().optional(),
+  pattern: z.string().optional(),
+  min: z.union([z.string(), z.number()]).optional(),
+  max: z.union([z.string(), z.number()]).optional(),
+  step: z.union([z.literal("any"), z.string(), z.number()]).optional(),
+  multiple: z.boolean().optional(),
+  size: z.number().optional(),
+  defaultValue: z.union([z.string(), z.number()]).optional(),
+});
+
+type InputProps = z.infer<typeof InputSchema>;
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, ...props }, ref) => {
     return (
       <input
@@ -22,4 +56,4 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
 );
 Input.displayName = "Input";
 
-export { Input };
+export { Input, InputSchema };
