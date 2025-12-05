@@ -5,9 +5,12 @@ export const LinkSchema = z.object({
   page: z.string().nullish().default(null).catch(null),
   className: z.string().optional(),
   children: z.any().optional(),
+  searchParams: z.object({
+    param: z.any().optional(),
+  }).optional(),
 })
 
-export function Link({ page, ...props }: z.infer<typeof LinkSchema>) {
+export function Link({ page, searchParams, ...props }: z.infer<typeof LinkSchema>) {
   // @ts-expect-error
-  return <LinkBase {...props} search={(prev) => ({ ...prev, p: page })} />
+  return <LinkBase {...props} search={(prev) => ({ ...prev, ...searchParams, p: page })} />
 }
