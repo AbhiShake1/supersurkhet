@@ -47,7 +47,7 @@ export function flattenObject(
   const result: Record<string, any> = {};
 
   for (const [key, value] of Object.entries(obj)) {
-    const path = prefix ? `${prefix}.${key}` : key;
+    const path = prefix ? `${prefix}_${key}` : key;
 
     if (
       value !== null &&
