@@ -29,6 +29,8 @@ import SlicedText, { SlicedTextSchema } from '@/components/kokonutui/sliced-text
 import SwooshText, { SwooshTextSchema } from '@/components/kokonutui/swoosh-text';
 import SocialButton from '@/components/kokonutui/social-button';
 import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
+import { SignedInOnly, SignedInOnlySchema } from '@/components/security/signed-in-only';
+import { SignedOutOnly, SignedOutOnlySchema } from '@/components/security/signed-out-only';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -617,6 +619,20 @@ export const complexComponentDefinitions: ComponentRegistry = {
     component: SocialButton,
     schema: ButtonSchema,
     from: '@/components/kokonutui/social-button',
+    fieldOverrides: commonFieldOverrides()
+  },
+
+  // security
+  SignedInOnly: {
+    component: SignedInOnly,
+    schema: SignedInOnlySchema,
+    from: '@/components/security/signed-in-only',
+    fieldOverrides: commonFieldOverrides()
+  },
+  SignedOutOnly: {
+    component: SignedOutOnly,
+    schema: SignedOutOnlySchema,
+    from: '@/components/security/signed-out-only',
     fieldOverrides: commonFieldOverrides()
   },
 };
