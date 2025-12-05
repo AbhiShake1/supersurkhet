@@ -1,5 +1,6 @@
-import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
+import type { ComponentRegistry, ComponentLayer } from '@/components/ui/ui-builder/types';
 import { z } from 'zod';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Flexbox } from '@/components/ui/ui-builder/components/flexbox';
@@ -10,7 +11,7 @@ import { Icon, iconNames } from "@/components/ui/ui-builder/components/icon";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
-import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+
 import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { ThemePresetSelector } from '@/components/theme/theme-preset-selector';
@@ -29,19 +30,25 @@ import SlicedText, { SlicedTextSchema } from '@/components/kokonutui/sliced-text
 import SwooshText, { SwooshTextSchema } from '@/components/kokonutui/swoosh-text';
 import SocialButton from '@/components/kokonutui/social-button';
 import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
-import { Car } from 'lucide-react';
-import { Carousel } from '@/components/ui/carousel';
 
+// import { 
+//   OfferCard, 
+//   OfferCarousel, 
+//   EnhancedOfferCarousel, 
+//   mockOffers 
+// } from '@/components/Image Carousel/imgcarousel';
 
-
-// import { CarouselConfig } from '@/components/Image Carousel/imgcarousel.tsx';
-// import { CarouselItem } from '@/components/Image Carousel/imgcarousel.tsx';
-// import { CarouselLayout } from '@/components/Image Carousel/imgcarousel.tsx';
+import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx'
 
 
 
 import { ProductOnboardingCard } from '@/components/onboarding/product-definition';
 import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
+
+
+
+
+
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -633,6 +640,18 @@ export const complexComponentDefinitions: ComponentRegistry = {
     fieldOverrides: commonFieldOverrides()
   },
 
+
+
+
+
+
+
+
+
+
+
+
+  
   ProductOnboardingCard: {
   component: ProductOnboardingCard,
   schema: ProductOnboardingCardSchema,
@@ -738,13 +757,126 @@ export const complexComponentDefinitions: ComponentRegistry = {
   ],
 },
 
-  // Carousel: {
-  // component: Carousel,
-  // schema: CarouselConfig,
-  // from: '@/components/ui/carousel',
-  // fieldOverrides: commonFieldOverrides()
-// },
 
 
 
+
+
+
+
+
+  Rating: {
+    component: Rating,
+    schema: RatingSchema,
+    from: "@/components/ui/rating",
+    defaultChildren: [
+      {
+        id: "rating-header",
+        type: "span",
+        name: "span",
+        props: {
+          className: "text-lg font-semibold text-gray-900 dark:text-white",
+        },
+        children: ["Product Rating"], 
+      },
+      {
+        id: "rating-description",
+        type: "span",
+        name: "span",
+        props: {
+          className: "text-sm text-gray-600 dark:text-gray-400",
+        },
+        children: ["How would you rate this product?"],
+      },
+      {
+        id: "rating-stars",
+        type: "RatingGroup",
+        name: "RatingGroup",
+        props: {
+          maxStars: 5,
+          value: 0,
+          allowHalf: true,
+          filledColor: "text-yellow-400",
+          emptyColor: "text-gray-300 dark:text-gray-600",
+          hoverScale: 1.1,
+          starSize: 24,
+        },
+        children: [], 
+      },
+      {
+        id: "rating-feedback",
+        type: "span",
+        name: "span",
+        props: {
+          className: "text-sm font-medium text-gray-900 dark:text-white mt-2",
+        },
+        children: ["You rated this 0 stars"],
+      },
+    ],
+    fieldOverrides: commonFieldOverrides(),
+  },
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  // OfferCard: {
+  //   component: OfferCard,
+  //   schema: z.object({
+  //     offer: z.object({
+  //       id: z.union([z.string(), z.number()]),
+  //       imageSrc: z.string().url(),
+  //       imageAlt: z.string(),
+  //       tag: z.string(),
+  //       title: z.string(),
+  //       description: z.string(),
+  //       brandLogoSrc: z.string().url(),
+  //       brandName: z.string(),
+  //       promoCode: z.string().optional(),
+  //       href: z.string().url(),
+  //       rating: z.number().min(0).max(5).optional(),
+  //       discountPercentage: z.number().min(0).max(100).optional(),
+  //     }),
+  //     variant: z.enum(["default","compact","expanded"]).optional(),
+  //   }),
+  //   defaultProps: { variant: "default", offer: mockOffers[0] },
+  // },
+
+  // OfferCarousel: {
+  //   component: OfferCarousel,
+  //   schema: z.object({
+  //     offers: z.array(z.any()),
+  //     showProgress: z.boolean().optional(),
+  //     autoPlay: z.boolean().optional(),
+  //     variant: z.enum(["default","compact","expanded"]).optional(),
+  //   }),
+  //   defaultProps: { offers: mockOffers, showProgress: true, autoPlay: false, variant: "default" },
+  // },
+
+  // EnhancedOfferCarousel: {
+  //   component: EnhancedOfferCarousel,
+  //   schema: z.object({
+  //     offers: z.array(z.any()),
+  //     showProgress: z.boolean().optional(),
+  //     autoPlay: z.boolean().optional(),
+  //     variant: z.enum(["default","compact","expanded"]).optional(),
+  //     showFilters: z.boolean().optional(),
+  //     onFilterChange: z.function().args(z.any()).returns(z.void()).optional(),
+  //   }),
+  //   defaultProps: { offers: mockOffers, showProgress: true, autoPlay: false, variant: "default", showFilters: false },
+  // },
 };
