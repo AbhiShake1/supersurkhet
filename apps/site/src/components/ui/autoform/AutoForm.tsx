@@ -1,6 +1,6 @@
 import {
-	AutoForm as BaseAutoForm,
-	type AutoFormUIComponents,
+  AutoForm as BaseAutoForm,
+  type AutoFormUIComponents,
 } from "@autoform/react";
 import { ZodProvider, type ZodObjectOrWrapped } from "@autoform/zod";
 import { ZodObject } from "zod";
@@ -11,8 +11,8 @@ import { DateField } from "./components/DateField";
 import { DateTimeField } from "./components/DateTimeField";
 import { ErrorMessage } from "./components/ErrorMessage";
 import {
-	FieldWrapper,
-	FieldWrapperWithoutLabel,
+  FieldWrapper,
+  FieldWrapperWithoutLabel,
 } from "./components/FieldWrapper";
 import { Form } from "./components/Form";
 import { ImageUploadField } from "./components/ImageUploadField";
@@ -36,88 +36,88 @@ import { UrlField } from "./components/UrlField";
 import { PasswordField } from "./components/PasswordField";
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, "FieldWrapper"> = {
-	Form,
-	ErrorMessage,
-	SubmitButton,
-	ObjectWrapper,
-	ArrayWrapper,
-	ArrayElementWrapper,
+  Form,
+  ErrorMessage,
+  SubmitButton,
+  ObjectWrapper,
+  ArrayWrapper,
+  ArrayElementWrapper,
 };
 
 export const ShadcnAutoFormFieldComponents = {
-	string: StringField,
-	number: NumberField,
-	boolean: BooleanField,
-	date: DateField,
-	datetime: DateTimeField,
-	select: SelectField,
-	image: ImageUploadField,
-	record: RecordField,
-	password: PasswordField,
-	richText: RichTextField,
-	editor: EditorField,
-	color: ColorField,
-	file: FileUploadField,
-	rating: RatingField,
-	slider: SliderField,
-	tags: TagsField,
-	currency: CurrencyField,
-	phone: PhoneField,
-	url: UrlField,
+  string: StringField,
+  number: NumberField,
+  boolean: BooleanField,
+  date: DateField,
+  datetime: DateTimeField,
+  select: SelectField,
+  image: ImageUploadField,
+  record: RecordField,
+  password: PasswordField,
+  richText: RichTextField,
+  editor: EditorField,
+  color: ColorField,
+  file: FileUploadField,
+  rating: RatingField,
+  slider: SliderField,
+  tags: TagsField,
+  currency: CurrencyField,
+  phone: PhoneField,
+  url: UrlField,
 } as const;
 export type FieldTypes = keyof typeof ShadcnAutoFormFieldComponents;
 
 export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
-	uiComponents,
-	formComponents,
-	schema,
-	onSubmit,
-	...props
+  uiComponents,
+  formComponents,
+  schema,
+  onSubmit,
+  ...props
 }: AutoFormProps<F>) {
-	return (
-		<BaseAutoForm
-			{...props}
-			onSubmit={onSubmit}
-			schema={
-				new ZodProvider(
-					schema instanceof ZodObject
-						? // omit default fields of schema
-						schema.omit({ _: true, created_by: true, timestamp: true })
-						: schema,
-				)
-			}
-			uiComponents={{
-				...ShadcnUIComponents,
-				FieldWrapper: FieldWrapperWithoutLabel,
-				...uiComponents,
-			}}
-			formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
-		>
-			{props.children}
-		</BaseAutoForm>
-	);
+  return (
+    <BaseAutoForm
+      {...props}
+      onSubmit={onSubmit}
+      schema={
+        new ZodProvider(
+          schema instanceof ZodObject
+            ? // omit default fields of schema
+            schema.omit({ _: true, created_by: true, timestamp: true })
+            : schema,
+        )
+      }
+      uiComponents={{
+        ...ShadcnUIComponents,
+        FieldWrapper: FieldWrapperWithoutLabel,
+        ...uiComponents,
+      }}
+      formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
+    >
+      {props.children}
+    </BaseAutoForm>
+  );
 }
 
 export function AutoForm<F extends ZodObjectOrWrapped>({
-	uiComponents,
-	formComponents,
-	schema,
-	...props
+  uiComponents,
+  formComponents,
+  schema,
+  ...props
 }: AutoFormProps<F>) {
-	if (!schema) return null;
-	return (
-		<BaseAutoForm
-			{...props}
-			schema={
-				new ZodProvider(
-					schema instanceof ZodObject
-						? // omit default fields of schema
-						schema.omit({ _: true, created_by: true, timestamp: true })
-						: schema,
-				)
-			}
-			uiComponents={{ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }}
-			formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
-		/>
-	);
+  if (!schema) return null;
+  return (
+    <BaseAutoForm
+      {...props}
+      schema={
+        new ZodProvider(
+          schema instanceof ZodObject
+            ? // omit default fields of schema
+            schema.omit({ _: true, created_by: true, timestamp: true })
+            : schema,
+        )
+      }
+      uiComponents={{ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }}
+      formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
+    />
+  );
 }
