@@ -8,7 +8,7 @@ import { FormField } from "@/components/ui/form";
 import { useForm, useFormContext } from "react-hook-form";
 import * as z from "zod";
 import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from "../config";
-import { Dependency, FieldConfig, FieldConfigItem } from "../types";
+import type { Dependency, FieldConfig, FieldConfigItem } from "../types";
 import {
   beautifyObjectName,
   getBaseSchema,
@@ -17,6 +17,7 @@ import {
   zodToHtmlInputProps,
 } from "../utils";
 import AutoFormArray from "./array";
+import AutoFormRecord from "./record";
 import resolveDependencies from "../dependencies";
 
 function DefaultParent({ children }: { children: React.ReactNode }) {
@@ -109,6 +110,18 @@ export default function AutoFormObject<
               key={key}
               name={name}
               item={item as unknown as z.ZodArray<any>}
+              form={form}
+              fieldConfig={fieldConfig?.[name] ?? {}}
+              path={[...path, name]}
+            />
+          );
+        }
+        if (zodBaseType === "ZodRecord") {
+          return (
+            <AutoFormRecord
+              key={key}
+              name={name}
+              item={item as unknown as z.ZodRecord<any, any>}
               form={form}
               fieldConfig={fieldConfig?.[name] ?? {}}
               path={[...path, name]}

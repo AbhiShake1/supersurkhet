@@ -241,4 +241,54 @@ describe("<AutoForm />", () => {
 
     cy.get("input[name='number']").should("have.value", "0");
   });
+
+  it("renders record field with add button", () => {
+    const formSchema = z.object({
+      metadata: z.record(z.string()),
+    });
+
+    cy.mount(<AutoForm formSchema={formSchema} />);
+
+    // Check if the record field accordion exists
+    cy.get("button").contains("Metadata").click();
+
+    // Check if the add button exists
+    cy.get("button").contains("Add Key-Value Pair").should("exist");
+
+    // Initially there should be no key-value pair inputs
+    cy.get("input[placeholder='Key']").should("not.exist");
+    cy.get("input[placeholder='Value']").should("not.exist");
+  });
+
+  it("can add and remove key-value pairs in record field", () => {
+    const formSchema = z.object({
+      tags: z.record(z.string()).default({}),
+    });
+
+    cy.mount(<AutoForm formSchema={formSchema} />);
+
+    // Open the accordion
+    cy.get("button").contains("Tags").click();
+
+    // Add a new key-value pair
+    cy.get("button").contains("Add Key-Value Pair").click();
+
+    // Check if key and value inputs appear
+    cy.get("input[placeholder='Key']").should("have.length", 1);
+    cy.get("input[placeholder='Value']").should("have.length", 1);
+
+    // Add another key-value pair
+    cy.get("button").contains("Add Key-Value Pair").click();
+
+    // Check if there are now 2 key-value pairs
+    cy.get("input[placeholder='Key']").should("have.length", 2);
+    cy.get("input[placeholder='Value']").should("have.length", 2);
+
+    // Test removing a key-value pair by clicking the trash button
+    cy.get("button").find("svg").first().click(); // Click the first trash icon
+
+    // Check if there is now only 1 key-value pair
+    cy.get("input[placeholder='Key']").should("have.length", 1);
+    cy.get("input[placeholder='Value']").should("have.length", 1);
+  });
 });

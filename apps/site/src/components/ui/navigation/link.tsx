@@ -5,9 +5,7 @@ export const LinkSchema = z.object({
   page: z.string().nullish().default(null).catch(null),
   className: z.string().optional(),
   children: z.any().optional(),
-  searchParams: z.object({
-    param: z.any().optional(),
-  }).optional(),
+  searchParams: z.record(z.string()).optional(),
 })
 
 export function Link({ page, searchParams, ...props }: z.infer<typeof LinkSchema>) {
