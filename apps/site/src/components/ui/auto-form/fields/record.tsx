@@ -6,7 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useWatch } from "react-hook-form";
 import * as z from "zod";
 
 import { beautifyObjectName, getBaseType } from "../utils";
@@ -14,6 +14,14 @@ import AutoFormObject from "./object";
 import AutoFormInput from "./input";
 import type { FieldConfig } from "../types";
 import { FormField } from "../../form";
+
+function getRecordSchema(item: z.ZodRecord<any, any>) {
+  const keyType = item._def.keyType;
+  if (keyType) return [keyType, item._def.valueType] as const;
+  if ("innerType" in item._def)
+    return getRecordSchema(item._def.innerType as z.ZodRecord<any, any>);
+  return [z.string(), z.string()] as const;
+}
 
 export default function AutoFormRecord({
   name,
@@ -24,36 +32,60 @@ export default function AutoFormRecord({
 }: {
   name: string;
   item: z.ZodRecord<any, any>;
-  form: ReturnType<typeof useForm>;
+  form: any;
   path?: string[];
   fieldConfig?: FieldConfig<any>;
 }) {
   const title = item._def.description ?? beautifyObjectName(name);
 
-  const keySchema = item._def.keyType;
-  const valueSchema = item._def.valueType;
+  const [keySchema, valueSchema] = getRecordSchema(item);
 
   const valueBaseType = getBaseType(valueSchema);
 
-  // Record stored as: [{ key: "...", value: "..." }]
-  const { fields, append, remove } = useFieldArray({
-    control: form.control,
-    name,
-  });
+  // Real record stored as: { [key: string]: value }
+  const record = useWatch({ control: form.control, name }) ?? {};
+
+  const setValue = form.setValue;
+
+  const remove = (key: string) => {
+    const clone = { ...record };
+    delete clone[key];
+    setValue(name, clone);
+  };
+
+  const updateKey = (oldKey: string, newKey: string) => {
+    if (!newKey) return;
+
+    const clone = { ...record };
+
+    // Prevent duplicate keys silently
+    if (clone[newKey] !== undefined) return;
+
+    const v = clone[oldKey];
+    delete clone[oldKey];
+    clone[newKey] = v;
+
+    setValue(name, clone);
+  };
+
+  const addItem = () => {
+    const clone = { ...record };
+    clone[crypto.randomUUID()] = ""; // temporary internal key
+    setValue(name, clone);
+  };
 
   return (
     <AccordionItem value={name} className="border-none">
       <AccordionTrigger>{title}</AccordionTrigger>
 
       <AccordionContent className="space-y-4">
-        {fields.map((field, index) => {
-          const entryKey = `${field.id}`;
-          const fullKeyPath = `${name}.${index}.key`;
-          const fullValuePath = `${name}.${index}.value`;
+        {Object.entries(record).map(([internalKey]) => {
+          const keyPath = `${name}.${internalKey}.__key`;
+          const valuePath = `${name}.${internalKey}`;
 
           return (
             <div
-              key={entryKey}
+              key={internalKey}
               className="flex flex-col gap-4 border border-muted p-4 rounded-lg"
             >
               {/* KEY INPUT */}
@@ -61,16 +93,18 @@ export default function AutoFormRecord({
                 <div className="flex-1">
                   <FormField
                     control={form.control}
-                    name={fullKeyPath}
+                    name={keyPath}
+                    defaultValue={internalKey}
                     render={({ field }) => (
                       <AutoFormInput
                         label="Key"
-                        isRequired={true}
+                        isRequired
                         field={field}
                         fieldConfigItem={fieldConfig?.key}
                         fieldProps={{
-                          ...field,
-                          name: fullKeyPath,
+                          value: field.value ?? internalKey,
+                          onChange: (e: any) =>
+                            updateKey(internalKey, e.target.value),
                         }}
                       />
                     )}
@@ -81,7 +115,7 @@ export default function AutoFormRecord({
                   type="button"
                   variant="secondary"
                   size="icon"
-                  onClick={() => remove(index)}
+                  onClick={() => remove(internalKey)}
                 >
                   <Trash className="size-4" />
                 </Button>
@@ -94,24 +128,25 @@ export default function AutoFormRecord({
                     schema={valueSchema as z.ZodObject<any, any>}
                     form={form}
                     fieldConfig={fieldConfig}
-                    path={[...path, index.toString(), "value"]}
+                    path={[...path, internalKey]}
                   />
                 ) : (
                   <FormField
                     control={form.control}
-                    name={fullValuePath}
-                    render={({ field }) => (
-                      <AutoFormInput
+                    name={valuePath}
+                    render={({ field }) => {
+                      field = {
+                        ...field,
+                        value: record[field.value.__key],
+                      };
+                      return <AutoFormInput
                         label="Value"
-                        isRequired={false}
+                        isRequired
                         field={field}
                         fieldConfigItem={fieldConfig?.value}
-                        fieldProps={{
-                          ...field,
-                          name: fullValuePath,
-                        }}
+                        fieldProps={field}
                       />
-                    )}
+                    }}
                   />
                 )}
               </div>
@@ -124,7 +159,7 @@ export default function AutoFormRecord({
         <Button
           type="button"
           variant="secondary"
-          onClick={() => append({ key: "", value: "" })}
+          onClick={addItem}
           className="flex items-center"
         >
           <Plus className="mr-2" size={16} />
