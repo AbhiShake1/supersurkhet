@@ -31,18 +31,18 @@ import SwooshText, { SwooshTextSchema } from '@/components/kokonutui/swoosh-text
 import SocialButton from '@/components/kokonutui/social-button';
 import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
 
-// import { 
-//   OfferCard, 
-//   OfferCarousel, 
-//   EnhancedOfferCarousel, 
-//   mockOffers 
-// } from '@/components/Image Carousel/imgcarousel';
+import { 
+  CarouselCard, 
+  Carousel, 
+  EnhancedCarousel, 
+  mockCarouselItems 
+} from '@/components/imgcarousel/imgcarousel';
+import { CarouselItem as CarouselItemSchema, CarouselItemType } from '@/components/imgcarousel/imgcarousel';
 
 import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx';
 import { ProductOnboardingCard } from '@/components/onboarding/product-definition';
 import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
-
-
+import { Slider, sliderSchema } from '@/components/ui/slider-1';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -788,59 +788,88 @@ export const complexComponentDefinitions: ComponentRegistry = {
     ],
     fieldOverrides: commonFieldOverrides(),
   },
+
+  Slider: {
+  component: Slider,
+  schema: sliderSchema,
+  from: '@/components/ui/slider-1',
+  defaultChildren: [
+    {
+      id: "slider-track",
+      type: "SliderPrimitive.Track",
+      name: "SliderTrack",
+      props: {},
+      children: [
+        {
+          id: "slider-range",
+          type: "SliderPrimitive.Range",
+          name: "SliderRange",
+          props: {},
+          children: [],
+        },
+      ],
+    },
+    {
+      id: "slider-thumb",
+      type: "SliderPrimitive.Thumb",
+      name: "SliderThumb",
+      props: {},
+      children: [],
+    },
+  ],
+  fieldOverrides: commonFieldOverrides()
+},
+
+EnhancedCarousel: {
+  component: EnhancedCarousel,
+  schema: z.object({
+    showProgress: z.boolean().default(true),
+    autoPlay: z.boolean().default(false),
+    variant: z.enum(["default", "compact", "expanded"]).default("default"),
+    title: z.string().default("Featured Items"),
+    subtitle: z.string().default("Discover amazing content"),
+    showNavigation: z.boolean().default(true),
+    showFilters: z.boolean().default(false),
+  }),
+  from: '@/components/imgcarousel/imgcarousel',
+  defaultProps: {
+    showProgress: true,
+    autoPlay: false,
+    variant: "default",
+    title: "Featured Items",
+    subtitle: "Discover amazing content",
+    showNavigation: true,
+    showFilters: false,
+  },
+  fieldOverrides: commonFieldOverrides(),
+  defaultChildren: mockCarouselItems.map((item) => ({
+    id: item.id,
+    type: "CarouselCard",
+    name: "CarouselCard",
+    props: {
+      item,              
+      variant: "default", 
+    },
+    children: [], 
+  })) as ComponentLayer[],
+},
+
+
+CarouselCard: {
+  component: CarouselCard,
+  schema: z.object({
+    item: CarouselItemSchema,
+    variant: z.enum(["default", "compact", "expanded"]).default("default"),
+  }),
+  from: '@/components/imgcarousel/imgcarousel',
+  fieldOverrides: commonFieldOverrides(),
+  defaultChildren: [],
+},
+
 };
 
 
 
 
-
-
-
-
-  // OfferCard: {
-  //   component: OfferCard,
-  //   schema: z.object({
-  //     offer: z.object({
-  //       id: z.union([z.string(), z.number()]),
-  //       imageSrc: z.string().url(),
-  //       imageAlt: z.string(),
-  //       tag: z.string(),
-  //       title: z.string(),
-  //       description: z.string(),
-  //       brandLogoSrc: z.string().url(),
-  //       brandName: z.string(),
-  //       promoCode: z.string().optional(),
-  //       href: z.string().url(),
-  //       rating: z.number().min(0).max(5).optional(),
-  //       discountPercentage: z.number().min(0).max(100).optional(),
-  //     }),
-  //     variant: z.enum(["default","compact","expanded"]).optional(),
-  //   }),
-  //   defaultProps: { variant: "default", offer: mockOffers[0] },
-  // },
-
-  // OfferCarousel: {
-  //   component: OfferCarousel,
-  //   schema: z.object({
-  //     offers: z.array(z.any()),
-  //     showProgress: z.boolean().optional(),
-  //     autoPlay: z.boolean().optional(),
-  //     variant: z.enum(["default","compact","expanded"]).optional(),
-  //   }),
-  //   defaultProps: { offers: mockOffers, showProgress: true, autoPlay: false, variant: "default" },
-  // },
-
-  // EnhancedOfferCarousel: {
-  //   component: EnhancedOfferCarousel,
-  //   schema: z.object({
-  //     offers: z.array(z.any()),
-  //     showProgress: z.boolean().optional(),
-  //     autoPlay: z.boolean().optional(),
-  //     variant: z.enum(["default","compact","expanded"]).optional(),
-  //     showFilters: z.boolean().optional(),
-  //     onFilterChange: z.function().args(z.any()).returns(z.void()).optional(),
-  //   }),
-  //   defaultProps: { offers: mockOffers, showProgress: true, autoPlay: false, variant: "default", showFilters: false },
-  // },
 
 
