@@ -1,6 +1,6 @@
 import {
   createContext,
-  ReactNode,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
@@ -74,7 +74,7 @@ const CopyHostStyles = ({
 
   useEffect(() => {
     if (!win || !doc) {
-      return () => {};
+      return () => { };
     }
 
     const elements: { original: HTMLElement; mirror: HTMLElement }[] = [];
@@ -134,7 +134,8 @@ const CopyHostStyles = ({
             `Tried to add an element that was already mirrored. Updating instead...`
           );
 
-        elements[index].mirror.innerText = el.innerText;
+        if (elements[index]?.mirror?.innerText !== el.innerText)
+          elements[index].mirror.innerText = el.innerText;
 
         return;
       }
@@ -352,8 +353,8 @@ const AutoFrame = forwardRef<HTMLIFrameElement, AutoFrameProps>(({
   className,
   debug,
   id,
-  onReady = () => {},
-  onNotReady = () => {},
+  onReady = () => { },
+  onNotReady = () => { },
   style,
   pointerEventsEnabled = true,
   ...props
