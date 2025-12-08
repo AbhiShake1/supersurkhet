@@ -44,6 +44,9 @@ import { ProductOnboardingCard } from '@/components/onboarding/product-definitio
 import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
 import { Slider, sliderSchema } from '@/components/ui/slider-1';
 
+import DockMorph, { DockMorphSchema } from "@/components/ui/dock-morph";
+
+
 const ButtonSchema = z.object({
   className: z.string().optional(),
   children: z.any().optional(),
@@ -865,6 +868,38 @@ CarouselCard: {
   fieldOverrides: commonFieldOverrides(),
   defaultChildren: [],
 },
+
+DockMorph: {
+  component: DockMorph,
+  schema: DockMorphSchema,
+  from: "@/components/kokonutui/dock-morph",
+  defaultChildren: [],
+  fieldOverrides: commonFieldOverrides(),
+  props: {
+    items: {
+      type: "json",
+      label: "Dock Items",
+      description:
+        "Provide an array of items. Leave empty to use default dock items.",
+    },
+
+    position: {
+      type: "select",
+      options: [
+        { label: "Bottom", value: "bottom" },
+        { label: "Top", value: "top" },
+        { label: "Left", value: "left" },
+      ],
+    },
+
+    className: {
+      type: "string",
+      label: "Custom Class",
+    },
+  },
+}
+
+  
 
 };
 
