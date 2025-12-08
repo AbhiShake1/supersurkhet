@@ -14,10 +14,8 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Home, Search, Bell, User, Settings } from "lucide-react"
 import { z } from "zod"
 
-// ============================================
-// ZOD SCHEMA DEFINITION
-// ============================================
 
+//Schema
 const DockItemSchema = z.object({
   icon: z.custom<React.ComponentType<{ className?: string }>>(
     (val) => typeof val === "function",
@@ -47,9 +45,7 @@ const DockMorphSchema = z.object({
 type DockItem = z.infer<typeof DockItemSchema>
 interface DockMorphProps extends z.infer<typeof DockMorphSchema> {}
 
-// ============================================
-// DEFAULT VALUES
-// ============================================
+// Default dock items
 
 const defaultDockItems: DockItem[] = [
   { icon: Home, label: "Home", onClick: () => alert("Home clicked") },
@@ -59,9 +55,8 @@ const defaultDockItems: DockItem[] = [
   { icon: Settings, label: "Settings", onClick: () => alert("Settings clicked") },
 ]
 
-// ============================================
-// VALIDATION FUNCTION
-// ============================================
+// Validation function  
+
 
 function validateDockProps(props: unknown): DockMorphProps {
   try {
@@ -77,9 +72,7 @@ function validateDockProps(props: unknown): DockMorphProps {
   }
 }
 
-// ============================================
-// MAIN COMPONENT
-// ============================================
+// Main component
 
 export default function DockMorph(initialProps: DockMorphProps) {
   // Validate props on every render
@@ -171,14 +164,10 @@ export default function DockMorph(initialProps: DockMorphProps) {
   )
 }
 
-// ============================================
-// EXPORT UTILITIES (Optional but useful)
-// ============================================
 
-// Export the schema for use elsewhere
+
+
 export { DockItemSchema, DockMorphSchema }
-
-// Export types
 export type { DockItem, DockMorphProps }
 
 // Utility function to create dock items with validation
