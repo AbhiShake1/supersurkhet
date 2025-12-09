@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import isDeepEqual from "fast-deep-equal";
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import { ComponentLayer } from "@/components/ui/ui-builder/types";
+import type { ComponentLayer } from "@/components/ui/ui-builder/types";
 import { cn } from "@/lib/utils";
 import {
   findAllParentLayersRecursive,
@@ -23,6 +23,11 @@ import { DevProfiler } from "@/components/ui/ui-builder/internal/components/dev-
 import { AddComponentsPopover } from "@/components/ui/ui-builder/internal/components/add-component-popover";
 import { buttonVariants } from "@/components/ui/button";
 import { DividerControl } from "@/components/ui/ui-builder/internal/components/divider-control";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface LayersPanelProps {
   className?: string;
