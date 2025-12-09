@@ -68,6 +68,7 @@ import { ProductOnboardingCard } from '@/components/onboarding/product-definitio
 import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
 import { Slider, sliderSchema } from '@/components/ui/slider-1';
 import EstimatedDateBadge, { EstimatedDateBadgeSchema } from '@/components/ui/estimated-arrival';
+import { MorphingCardStack, MorphingCardStackSchema } from '@/components/ui/morphing-card-stack';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -1272,7 +1273,18 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: '@/components/ui/estimated-arrival',
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [],
-  }
+  },
+
+  MorphingCardStack: {
+    component: MorphingCardStack,
+    schema: MorphingCardStackSchema,
+    from: '@/components/ui/morphing-card-stack',
+    fieldOverrides: {
+      ...commonFieldOverrides(),
+      icon: iconNameFieldOverrides,
+    },
+    defaultChildren: [],
+  },
 
 };
 
