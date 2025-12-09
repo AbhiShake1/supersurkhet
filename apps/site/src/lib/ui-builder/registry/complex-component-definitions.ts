@@ -67,6 +67,7 @@ import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx';
 import { ProductOnboardingCard } from '@/components/onboarding/product-definition';
 import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
 import { Slider, sliderSchema } from '@/components/ui/slider-1';
+import EstimatedDateBadge, { EstimatedDateBadgeSchema } from '@/components/ui/estimated-arrival';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -1264,6 +1265,14 @@ export const complexComponentDefinitions: ComponentRegistry = {
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [],
   },
+
+  EstimatedArrival: {
+    component: EstimatedDateBadge,
+    schema: EstimatedDateBadgeSchema,
+    from: '@/components/ui/estimated-arrival',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+  }
 
 };
 

@@ -124,6 +124,94 @@ html {
       background-position: 200%;
     }
   }
+  @keyframes fadeInUp {
+  from {
+    opacity:
+    0;
+    transform:
+    translateY(20px);
+    }
+  to {
+    opacity:
+    1;
+    transform:
+    translateY(0);
+    }
+  }
+  @keyframes slideRight {
+  from {
+    width:
+    0;
+    }
+  to {
+    width:
+    100%;
+    }
+  }
+  @keyframes pulse-soft {
+  0%, 100% {
+    opacity:
+    1;
+    }
+  50% {
+    opacity:
+    0.7;
+    }
+  }
+  @keyframes bounce-gentle {
+  0%, 100% {
+    transform:
+    translateY(0);
+    }
+  50% {
+    transform:
+    translateY(-4px);
+    }
+  }
+  @keyframes slideIn {
+  from {
+    opacity:
+    0;
+    transform:
+    translateX(-10px);
+    }
+  to {
+    opacity:
+    1;
+    transform:
+    translateX(0);
+    }
+  }
+  @keyframes pulseGlow {
+  0%, 100% {
+    box-shadow:
+    0 0 0 0 rgba(219, 93, 52, 0.4);
+    }
+  50% {
+    box-shadow:
+    0 0 0 8px rgba(219, 93, 52, 0);
+    }
+  }
+  @keyframes shimmer {
+  0% {
+    background-position:
+    -1000px 0;
+    }
+  100% {
+    background-position:
+    1000px 0;
+    }
+  }
+  @keyframes slidingLine {
+  0% {
+    stroke-dashoffset:
+    1;
+    }
+  100% {
+    stroke-dashoffset:
+    0;
+    }
+  }
 }
 
 :root {
@@ -302,4 +390,3 @@ html {
   /* Apply the reveal animation */
   animation: reveal 0.4s ease-in-out forwards;
 }
-
