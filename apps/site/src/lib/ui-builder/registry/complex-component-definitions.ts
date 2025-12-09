@@ -11,7 +11,7 @@ import { Icon, iconNames } from "@/components/ui/ui-builder/components/icon";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Input, InputSchema } from "@/components/ui/input";
-import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
+import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides, childrenAsTextareaFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
 
 import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
@@ -34,6 +34,7 @@ import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
 import { SignedInOnly, SignedInOnlySchema } from '@/components/security/signed-in-only';
 import { SignedOutOnly, SignedOutOnlySchema } from '@/components/security/signed-out-only';
 import { Link, LinkSchema } from '@/components/ui/navigation/link';
+import { AnimatedIcon, AnimatedIconSchema } from '@/components/ui/svgs/animated-icon';
 import {
   ProductList,
   ProductListSchema,
@@ -69,6 +70,16 @@ import { ProductOnboardingCard } from '@/components/onboarding/product-definitio
 import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
 import { Slider, sliderSchema } from '@/components/ui/slider-1';
 import EstimatedDateBadge, { EstimatedDateBadgeSchema } from '@/components/ui/estimated-arrival';
+
+// New components with schemas added
+import Features, { FeaturesSchema } from '@/components/features-1';
+import CardBottomImageDemo, { CardBottomImageDemoSchema } from '@/components/shadcn-studio/card/card-04';
+import { AnimatedGradientText, AnimatedGradientTextSchema } from '@/components/ui/animated-gradient-text';
+import { CardContainer, CardBody, CardItem, CardContainerSchema, CardBodySchema, CardItemSchema } from '@/components/ui/3d-card';
+import { AnimatedList, AnimatedListItem, AnimatedListSchema, AnimatedListItemSchema } from '@/components/ui/animated-list';
+import { ShimmerButton, ShimmerButtonSchema } from '@/components/ui/shimmer-button';
+import { BentoCard, BentoGrid, BentoCardSchema, BentoGridSchema } from '@/components/ui/bento-grid';
+import { Modal, ModalTrigger, ModalBody, ModalContent, ModalFooter, ModalSchema, ModalTriggerSchema, ModalBodySchema, ModalContentSchema, ModalFooterSchema } from '@/components/ui/animated-modal';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -1279,12 +1290,578 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: '@/components/ui/estimated-arrival',
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [],
-  }
+  },
+
+  // New components with schemas
+  Features: {
+    component: Features,
+    schema: FeaturesSchema,
+    from: '@/components/features-1',
+    fieldOverrides: {
+      className: (layer) => classNameFieldOverrides(layer),
+      features: (layer) => childrenFieldOverrides(layer), // For features array
+    },
+    defaultChildren: [
+      {
+        id: "features-content",
+        type: "Features",
+        name: "Features",
+        props: {
+          title: "Our Powerful Features",
+          subtitle: "Everything you need in a modern solution"
+        },
+        children: [],
+      } satisfies ComponentLayer,
+    ],
+  },
+  CardBottomImageDemo: {
+    component: CardBottomImageDemo,
+    schema: CardBottomImageDemoSchema,
+    from: '@/components/shadcn-studio/card/card-04',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "card-bottom-image-demo",
+        type: "CardBottomImageDemo",
+        name: "CardBottomImageDemo",
+        props: {
+          title: "Premium Experience",
+          description: "Discover our premium features designed to elevate your workflow",
+          imageUrl: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+          imageAlt: "Mountain landscape"
+        },
+        children: [],
+      } satisfies ComponentLayer,
+    ],
+  },
+  AnimatedGradientText: {
+    component: AnimatedGradientText,
+    schema: AnimatedGradientTextSchema,
+    from: '@/components/ui/animated-gradient-text',
+    fieldOverrides: {
+      className: (layer) => classNameFieldOverrides(layer),
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
+    },
+    defaultChildren: [
+      {
+        id: "animated-gradient-text-content",
+        type: "span",
+        name: "span",
+        props: {},
+        children: "Animated Gradient Text Effect",
+      } satisfies ComponentLayer,
+    ],
+  },
+  CardBody: {
+    component: CardBody,
+    schema: CardBodySchema,
+    from: '@/components/ui/3d-card',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "example-card-body-standalone",
+        type: "CardBody",
+        name: "CardBody",
+        props: {
+          className: "bg-gray-50 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[25rem] h-auto rounded-xl p-6 border"
+        },
+        children: [
+          {
+            id: "standalone-card-title",
+            type: "CardItem",
+            name: "CardItem",
+            props: {
+              translateZ: "50",
+              className: "text-xl font-bold text-neutral-600 dark:text-white"
+            },
+            children: "3D Card Component"
+          },
+          {
+            id: "standalone-card-description",
+            type: "CardItem",
+            name: "CardItem",
+            props: {
+              as: "p",
+              translateZ: "60",
+              className: "text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300"
+            },
+            children: "This is a standalone 3D card body with interactive effects"
+          },
+          {
+            id: "standalone-card-image",
+            type: "CardItem",
+            name: "CardItem",
+            props: {
+              translateZ: "100",
+              className: "w-full mt-4"
+            },
+            children: [
+              {
+                id: "standalone-image",
+                type: "img",
+                name: "img",
+                props: {
+                  src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
+                  width: "1000",
+                  height: "1000",
+                  className: "h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl",
+                  alt: "Portrait"
+                },
+                children: []
+              }
+            ]
+          },
+          {
+            id: "standalone-card-button",
+            type: "CardItem",
+            name: "CardItem",
+            props: {
+              translateZ: "20",
+              as: "button",
+              className: "px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold mt-4"
+            },
+            children: "View Details"
+          }
+        ],
+      } satisfies ComponentLayer,
+    ],
+  },
+  CardItem: {
+    component: CardItem,
+    schema: CardItemSchema,
+    from: '@/components/ui/3d-card',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "default-card-item-interactive",
+        type: "CardItem",
+        name: "CardItem",
+        props: {
+          translateZ: "60",
+          className: "text-lg font-medium text-gray-700 dark:text-gray-200"
+        },
+        children: [
+          {
+            id: "card-item-content",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Hover-interactive element",
+          } satisfies ComponentLayer,
+        ],
+      },
+    ],
+  },
+  CardContainer: {
+    component: CardContainer,
+    schema: CardContainerSchema,
+    from: '@/components/ui/3d-card',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "example-card-body",
+        type: "CardBody",
+        name: "CardBody",
+        props: {
+          className: "bg-gray-50 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[30rem] h-auto rounded-xl p-6 border"
+        },
+        children: [
+          {
+            id: "card-title-item",
+            type: "CardItem",
+            name: "CardItem",
+            props: {
+              translateZ: "50",
+              className: "text-xl font-bold text-neutral-600 dark:text-white"
+            },
+            children: "Interactive 3D Card"
+          },
+          {
+            id: "card-description-item",
+            type: "CardItem",
+            name: "CardItem",
+            props: {
+              as: "p",
+              translateZ: "60",
+              className: "text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300"
+            },
+            children: "Hover over this card to see the 3D effect in action"
+          },
+          {
+            id: "card-image-item",
+            type: "CardItem",
+            name: "CardItem",
+            props: {
+              translateZ: "100",
+              className: "w-full mt-4"
+            },
+            children: [
+              {
+                id: "card-image",
+                type: "img",
+                name: "img",
+                props: {
+                  src: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
+                  width: "1000",
+                  height: "1000",
+                  className: "h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl",
+                  alt: "Nature scene"
+                },
+                children: []
+              }
+            ]
+          },
+          {
+            id: "card-actions-container",
+            type: "div",
+            name: "div",
+            props: {
+              className: "flex justify-between items-center mt-6"
+            },
+            children: [
+              {
+                id: "card-link-item",
+                type: "CardItem",
+                name: "CardItem",
+                props: {
+                  translateZ: "20",
+                  as: "a",
+                  href: "#",
+                  className: "px-4 py-2 rounded-xl text-xs font-normal dark:text-white"
+                },
+                children: "Learn more →"
+              },
+              {
+                id: "card-button-item",
+                type: "CardItem",
+                name: "CardItem",
+                props: {
+                  translateZ: "20",
+                  as: "button",
+                  className: "px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold"
+                },
+                children: "Get Started"
+              }
+            ]
+          }
+        ],
+      } satisfies ComponentLayer,
+    ],
+  },
+  AnimatedList: {
+    component: AnimatedList,
+    schema: AnimatedListSchema,
+    from: '@/components/ui/animated-list',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "animated-list-item-1",
+        type: "AnimatedListItem",
+        name: "AnimatedListItem",
+        props: {},
+        children: [
+          {
+            id: "list-item-content-1",
+            type: "div",
+            name: "div",
+            props: { className: "p-4 bg-blue-100 rounded mb-2" },
+            children: "First item",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "animated-list-item-2",
+        type: "AnimatedListItem",
+        name: "AnimatedListItem",
+        props: {},
+        children: [
+          {
+            id: "list-item-content-2",
+            type: "div",
+            name: "div",
+            props: { className: "p-4 bg-green-100 rounded mb-2" },
+            children: "Second item",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "animated-list-item-3",
+        type: "AnimatedListItem",
+        name: "AnimatedListItem",
+        props: {},
+        children: [
+          {
+            id: "list-item-content-3",
+            type: "div",
+            name: "div",
+            props: { className: "p-4 bg-purple-100 rounded mb-2" },
+            children: "Third item",
+          } satisfies ComponentLayer,
+        ],
+      } satisfies ComponentLayer,
+    ],
+  },
+  AnimatedListItem: {
+    component: AnimatedListItem,
+    schema: AnimatedListItemSchema,
+    from: '@/components/ui/animated-list',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "default-animated-list-item",
+        type: "div",
+        name: "div",
+        props: { className: "p-3 bg-gray-100 rounded" },
+        children: "List item",
+      } satisfies ComponentLayer,
+    ],
+  },
+  ShimmerButton: {
+    component: ShimmerButton,
+    schema: ShimmerButtonSchema,
+    from: '@/components/ui/shimmer-button',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "shimmer-button-text",
+        type: "span",
+        name: "span",
+        props: {},
+        children: "Shimmer Button",
+      } satisfies ComponentLayer,
+    ],
+  },
+  BentoGrid: {
+    component: BentoGrid,
+    schema: BentoGridSchema,
+    from: '@/components/ui/bento-grid',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "bento-card-1",
+        type: "BentoCard",
+        name: "BentoCard",
+        props: {
+          name: "Dashboard Analytics",
+          className: "md:col-span-2",
+          description: "Comprehensive analytics for your business metrics",
+          href: "/dashboard",
+          cta: "View Dashboard",
+          Icon: "BarChart3"
+        },
+        children: [
+          {
+            id: "analytics-content",
+            type: "div",
+            name: "div",
+            props: { className: "text-2xl font-bold" },
+            children: "35% Growth"
+          }
+        ],
+      } satisfies ComponentLayer,
+      {
+        id: "bento-card-2",
+        type: "BentoCard",
+        name: "BentoCard",
+        props: {
+          name: "Performance Metrics",
+          className: "md:col-span-1",
+          description: "Track and optimize your performance",
+          href: "/metrics",
+          cta: "View Metrics",
+          Icon: "Activity"
+        },
+        children: [
+          {
+            id: "metrics-content",
+            type: "div",
+            name: "div",
+            props: { className: "text-xl font-semibold" },
+            children: "Real-time"
+          }
+        ],
+      } satisfies ComponentLayer,
+    ],
+  },
+  BentoCard: {
+    component: BentoCard,
+    schema: BentoCardSchema,
+    from: '@/components/ui/bento-grid',
+    fieldOverrides: {
+      className: (layer) => classNameFieldOverrides(layer),
+      background: (layer) => childrenFieldOverrides(layer),
+      Icon: (layer) => iconNameFieldOverrides(layer), // For icon field
+    },
+    defaultChildren: [
+      {
+        id: "bento-card-content",
+        type: "div",
+        name: "div",
+        props: { className: "text-xl font-bold" },
+        children: "Card Content",
+      } satisfies ComponentLayer,
+    ],
+  },
+  Modal: {
+    component: Modal,
+    schema: ModalSchema,
+    from: '@/components/ui/animated-modal',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "modal-trigger",
+        type: "ModalTrigger",
+        name: "ModalTrigger",
+        props: { className: "px-4 py-2 rounded-md bg-blue-500 text-white" },
+        children: [
+          {
+            id: "trigger-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Open Modal",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "modal-body",
+        type: "ModalBody",
+        name: "ModalBody",
+        props: {},
+        children: [
+          {
+            id: "modal-content",
+            type: "ModalContent",
+            name: "ModalContent",
+            props: { className: "p-6" },
+            children: [
+              {
+                id: "modal-title",
+                type: "h2",
+                name: "h2",
+                props: { className: "text-xl font-bold mb-2" },
+                children: "Modal Title",
+              },
+              {
+                id: "modal-description",
+                type: "p",
+                name: "p",
+                props: { className: "text-gray-600 mb-4" },
+                children: "This is an animated modal with 3D effects",
+              }
+            ],
+          },
+          {
+            id: "modal-footer",
+            type: "ModalFooter",
+            name: "ModalFooter",
+            props: { className: "p-4 bg-gray-100" },
+            children: [
+              {
+                id: "footer-button",
+                type: "Button",
+                name: "Button",
+                props: { variant: "default", className: "mr-2" },
+                children: "Confirm",
+              },
+              {
+                id: "cancel-button",
+                type: "Button",
+                name: "Button",
+                props: { variant: "outline" },
+                children: "Cancel",
+              }
+            ],
+          }
+        ],
+      } satisfies ComponentLayer,
+    ],
+  },
+  ModalTrigger: {
+    component: ModalTrigger,
+    schema: ModalTriggerSchema,
+    from: '@/components/ui/animated-modal',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "default-modal-trigger",
+        type: "span",
+        name: "span",
+        props: {},
+        children: "Open Modal",
+      } satisfies ComponentLayer,
+    ],
+  },
+  ModalBody: {
+    component: ModalBody,
+    schema: ModalBodySchema,
+    from: '@/components/ui/animated-modal',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "modal-content-wrapper",
+        type: "ModalContent",
+        name: "ModalContent",
+        props: {},
+        children: [
+          {
+            id: "modal-body-title",
+            type: "h3",
+            name: "h3",
+            props: { className: "text-lg font-semibold" },
+            children: "Modal Content"
+          },
+          {
+            id: "modal-body-content",
+            type: "p",
+            name: "p",
+            props: {},
+            children: "This is the modal body content"
+          }
+        ],
+      } satisfies ComponentLayer,
+    ],
+  },
+  ModalContent: {
+    component: ModalContent,
+    schema: ModalContentSchema,
+    from: '@/components/ui/animated-modal',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "default-modal-content",
+        type: "p",
+        name: "p",
+        props: {},
+        children: "Modal content goes here",
+      } satisfies ComponentLayer,
+    ],
+  },
+  ModalFooter: {
+    component: ModalFooter,
+    schema: ModalFooterSchema,
+    from: '@/components/ui/animated-modal',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "default-modal-footer",
+        type: "Button",
+        name: "Button",
+        props: { variant: "default" },
+        children: "OK",
+      } satisfies ComponentLayer,
+    ],
+  },
+
+  AnimatedIcon: {
+    component: AnimatedIcon,
+    schema: AnimatedIconSchema,
+    from: '@/components/ui/svgs/animated-icon',
+    fieldOverrides: {
+      className: (layer) => classNameFieldOverrides(layer),
+    },
+    defaultChildren: [],
+  },
 
 };
-
-
-
-
-
 
