@@ -45,6 +45,7 @@ import { ProductOnboardingCardSchema } from '@/components/onboarding/product-def
 import { Slider, sliderSchema } from '@/components/ui/slider-1';
 
 import DockMorph, { DockMorphSchema } from "@/components/ui/dock-morph";
+import { Input, InputPropsSchema } from "@/components/ui/number-input";
 
 
 const ButtonSchema = z.object({
@@ -874,32 +875,78 @@ DockMorph: {
   schema: DockMorphSchema,
   from: "@/components/kokonutui/dock-morph",
   defaultChildren: [],
-  fieldOverrides: commonFieldOverrides(),
-  props: {
-    items: {
-      type: "json",
+  fieldOverrides: {
+    ...commonFieldOverrides(),
+    children: () => ({
+      type: "childArray",
       label: "Dock Items",
-      description:
-        "Provide an array of items. Leave empty to use default dock items.",
-    },
-
-    position: {
+      description: "Add icons as children to this dock",
+      childType: "DockItem",
+      childOverrides: {
+        icon: {
+          type: "iconNameFieldOverrides",
+          label: "Icon",
+          description: "Choose an icon for this dock item",
+          required: true,
+        },
+        label: {
+          type: "string",
+          label: "Label",
+          description: "Tooltip text for the dock item",
+          required: true,
+          defaultValue: "Item",
+        },
+        onClick: {
+          type: "function",
+          label: "Click Handler",
+          description: "Function to run when the dock item is clicked",
+        },
+        href: {
+          type: "string",
+          label: "Link URL",
+          description: "Optional URL to navigate to when clicked",
+          placeholder: "https://example.com",
+        },
+        external: {
+          type: "boolean",
+          label: "Open in New Tab",
+          description: "Open link in a new tab (only applicable if href is provided)",
+          defaultValue: false,
+          
+          showIf: (item: any) => !!item.href
+        },
+      },
+    }),
+    className: () => ({
+      type: "string",
+      label: "Custom Class",
+      description: "Optional custom class for the dock container",
+    }),
+    position: () => ({
       type: "select",
+      label: "Position",
       options: [
         { label: "Bottom", value: "bottom" },
         { label: "Top", value: "top" },
         { label: "Left", value: "left" },
+        { label: "Right", value: "right" },
       ],
-    },
-
-    className: {
-      type: "string",
-      label: "Custom Class",
-    },
+      defaultValue: "bottom",
+      description: "Dock position on the screen",
+    }),
   },
-}
+},
 
-  
+
+
+
+Input: {
+  component: Input,
+  schema: InputPropsSchema,
+  from: "@/components/ui/input",
+  defaultChildren: [],
+  fieldOverrides: commonFieldOverrides(),
+}
 
 };
 

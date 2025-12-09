@@ -1,4 +1,3 @@
-// dock-morph.tsx
 "use client"
 
 import * as React from "react"
@@ -11,99 +10,199 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { motion, AnimatePresence } from "framer-motion"
-import { Home, Search, Bell, User, Settings } from "lucide-react"
+import { Home, Search, Bell, User, Settings, ExternalLink } from "lucide-react"
 import { z } from "zod"
 
-
-//Schema
+// Schemas
 const DockItemSchema = z.object({
   icon: z.custom<React.ComponentType<{ className?: string }>>(
     (val) => typeof val === "function",
-    { 
-      message: "Icon must be a valid React component" 
-    }
+    { message: "Icon must be a valid React component" }
   ),
   label: z.string()
     .min(1, "Label cannot be empty")
     .max(30, "Label must be 30 characters or less"),
-  onClick: z.function()
-    .args()
-    .returns(z.void())
-    .optional(),
+  onClick: z.function().args().returns(z.void()).optional(),
+  href: z.string().url().optional(),
+  external: z.boolean().default(false),
 })
 
 const DockMorphSchema = z.object({
   className: z.string().optional(),
-  items: z.array(DockItemSchema)
-    .min(1, "At least one dock item is required")
-    .max(10, "Maximum 10 dock items allowed")
-    .optional(),
-  position: z.enum(["bottom", "top", "left"])
-    .default("bottom"),
+  position: z.enum(["bottom", "top", "left", "right"]).default("bottom"),
+  
 })
 
-type DockItem = z.infer<typeof DockItemSchema>
-interface DockMorphProps extends z.infer<typeof DockMorphSchema> {}
+export type DockItem = z.infer<typeof DockItemSchema>
+export type DockMorphProps = z.infer<typeof DockMorphSchema> & {
+  children?: React.ReactNode
+}
 
-// Default dock items
-
+// Default Dock Items
 const defaultDockItems: DockItem[] = [
-  { icon: Home, label: "Home", onClick: () => alert("Home clicked") },
-  { icon: Search, label: "Search", onClick: () => alert("Search clicked") },
-  { icon: Bell, label: "Notifications", onClick: () => alert("Notifications clicked") },
-  { icon: User, label: "Profile", onClick: () => alert("Profile clicked") },
-  { icon: Settings, label: "Settings", onClick: () => alert("Settings clicked") },
+  { 
+    icon: Home, 
+    label: "Home", 
+    onClick: () => alert("Home clicked"),
+    external: false 
+  },
+  { 
+    icon: Search, 
+    label: "Search", 
+    onClick: () => alert("Search clicked"),
+    external: false 
+  },
+  { 
+    icon: Bell, 
+    label: "Notifications", 
+    onClick: () => alert("Notifications clicked"),
+    external: false 
+  },
+  { 
+    icon: User, 
+    label: "Profile", 
+    onClick: () => alert("Profile clicked"),
+    external: false 
+  },
+  { 
+    icon: Settings, 
+    label: "Settings", 
+    onClick: () => alert("Settings clicked"),
+    external: false 
+  },
 ]
 
-// Validation function  
-
-
-function validateDockProps(props: unknown): DockMorphProps {
+// Utility Functions
+export function validateDockProps(props: unknown): DockMorphProps {
   try {
-    return DockMorphSchema.parse(props)
+    return {
+      ...DockMorphSchema.parse(props),
+      children: (props as any).children
+    }
   } catch (error) {
     console.error("DockMorph: Invalid props received, using defaults", error)
-    
-    // Return safe defaults if validation fails
     return {
       position: "bottom",
-      items: defaultDockItems,
     }
   }
 }
 
-// Main component
+export function createDockItem(
+  icon: React.ComponentType<{ className?: string }>,
+  label: string,
+  onClick?: () => void,
+  href?: string,
+  external?: boolean
+): DockItem {
+  return DockItemSchema.parse({ 
+    icon, 
+    label, 
+    onClick, 
+    href, 
+    external: external || false 
+  })
+}
 
+// DockItem Component 
+interface DockItemProps {
+  icon: React.ComponentType<{ className?: string }>
+  label: string
+  onClick?: () => void
+  href?: string
+  external?: boolean
+}
+
+export function DockItem(props: DockItemProps) {
+  
+  return null
+}
+DockItem.displayName = "DockItem"
+
+// DockMorph Component
 export default function DockMorph(initialProps: DockMorphProps) {
-  // Validate props on every render
-  const { className, items, position = "bottom" } = React.useMemo(() => {
-    return validateDockProps(initialProps)
-  }, [initialProps])
+  const { className, position = "bottom", children } = React.useMemo(
+    () => validateDockProps(initialProps),
+    [initialProps]
+  )
 
   const [hovered, setHovered] = React.useState<number | null>(null)
 
-  const dockItems = items && items.length > 0 ? items : defaultDockItems
+  // Convert children into dock items
+  const parseChildren = (): DockItem[] => {
+    const items: DockItem[] = []
+    
+    React.Children.forEach(children, (child) => {
+      if (React.isValidElement(child)) {
+        // Get the component name more reliably
+        const componentName = (child.type as any).displayName || 
+                             (child.type as any).name
+        
+        if (componentName === "DockItem") {
+          const element = child as React.ReactElement<DockItemProps>
+          try {
+            // Validate and create dock item
+            const dockItem = DockItemSchema.parse({
+              icon: element.props.icon,
+              label: element.props.label,
+              onClick: element.props.onClick,
+              href: element.props.href,
+              external: element.props.external || false,
+            })
+            items.push(dockItem)
+          } catch (error) {
+            console.error("Invalid DockItem props:", error)
+          }
+        }
+      }
+    })
+    
+    return items
+  }
 
-  // Position classes
+  let dockItems: DockItem[] = parseChildren()
+
+  // Fallback to default items if no valid children
+  if (dockItems.length === 0) {
+    dockItems = defaultDockItems
+  }
+
+  const isVertical = position === "left" || position === "right"
+
   const positionClasses = {
     bottom: "fixed bottom-6 left-1/2 -translate-x-1/2",
     top: "fixed top-6 left-1/2 -translate-x-1/2",
-    left: "fixed left-6 top-1/2 -translate-y-1/2 flex-col",
+    left: "fixed left-6 top-1/2 -translate-y-1/2",
+    right: "fixed right-6 top-1/2 -translate-y-1/2",
   }
 
+  const tooltipSide = {
+    bottom: "top",
+    top: "bottom",
+    left: "right",
+    right: "left",
+  } as const
+
+  // Handle item click
+  const handleItemClick = React.useCallback((item: DockItem, e: React.MouseEvent) => {
+    if (item.href) {
+      e.preventDefault()
+      if (item.external) {
+        window.open(item.href, '_blank', 'noopener,noreferrer')
+      } else {
+        window.location.href = item.href
+      }
+    } else if (item.onClick) {
+      item.onClick()
+    }
+  }, [])
+
   return (
-    <div
-      className={cn(
-        "z-50 flex items-center justify-center",
-        positionClasses[position],
-        className
-      )}
-    >
+    <div className={cn("z-50 flex items-center justify-center", positionClasses[position], className)}>
       <TooltipProvider delayDuration={100}>
         <div
           className={cn(
             "relative flex items-center gap-6 p-3 rounded-3xl",
-            position === "left" ? "flex-col gap-4 px-4 py-8" : "flex-row",
+            isVertical ? "flex-col gap-4 px-4 py-8" : "flex-row",
             "bg-background/30 backdrop-blur-xl shadow-lg border",
             "dark:border-white/10 border-black/10"
           )}
@@ -116,45 +215,58 @@ export default function DockMorph(initialProps: DockMorphProps) {
                   onMouseEnter={() => setHovered(i)}
                   onMouseLeave={() => setHovered(null)}
                 >
-                  {/* Morphic glass bubble */}
                   <AnimatePresence>
                     {hovered === i && (
                       <motion.div
                         initial={{ scale: 0.6, opacity: 0 }}
                         animate={{ scale: 1.4, opacity: 1 }}
                         exit={{ scale: 0.6, opacity: 0 }}
-                        transition={{
-                          type: "spring",
-                          stiffness: 200,
-                          damping: 20,
-                        }}
+                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
                         className={cn(
                           "absolute inset-0 rounded-full -z-10",
                           "bg-gradient-to-tr from-primary/40 via-primary/20 to-transparent",
-                          "backdrop-blur-2xl",
-                          "shadow-md dark:shadow-primary/20"
+                          "backdrop-blur-2xl shadow-md dark:shadow-primary/20"
                         )}
                       />
                     )}
                   </AnimatePresence>
 
-                  {/* Icon button */}
                   <Button
                     variant="ghost"
                     size="icon"
                     className="relative z-10 rounded-full hover:scale-110 transition-transform"
-                    onClick={item.onClick}
+                    onClick={(e) => handleItemClick(item, e)}
                     aria-label={item.label}
+                    asChild={!!item.href}
                   >
-                    <item.icon className="h-6 w-6" />
+                    {item.href ? (
+                      <a
+                        href={item.href}
+                        target={item.external ? "_blank" : "_self"}
+                        rel={item.external ? "noopener noreferrer" : undefined}
+                        className="flex items-center justify-center w-full h-full"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        <item.icon className="h-6 w-6" />
+                        {item.external && (
+                          <ExternalLink className="absolute -top-1 -right-1 h-3 w-3 text-primary" />
+                        )}
+                      </a>
+                    ) : (
+                      <div className="flex items-center justify-center w-full h-full">
+                        <item.icon className="h-6 w-6" />
+                      </div>
+                    )}
                   </Button>
                 </div>
               </TooltipTrigger>
-              <TooltipContent
-                side={position === "left" ? "right" : "top"}
-                className="text-xs"
-              >
-                {item.label}
+              <TooltipContent side={tooltipSide[position]} className="text-xs">
+                <div className="flex items-center gap-1">
+                  {item.label}
+                  {item.external && (
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  )}
+                </div>
               </TooltipContent>
             </Tooltip>
           ))}
@@ -164,22 +276,4 @@ export default function DockMorph(initialProps: DockMorphProps) {
   )
 }
 
-
-
-
 export { DockItemSchema, DockMorphSchema }
-export type { DockItem, DockMorphProps }
-
-// Utility function to create dock items with validation
-export function createDockItem(
-  icon: React.ComponentType<{ className?: string }>,
-  label: string,
-  onClick?: () => void
-): DockItem {
-  return DockItemSchema.parse({ icon, label, onClick })
-}
-
-// Utility function to check if props are valid
-export function isValidDockProps(props: unknown): boolean {
-  return DockMorphSchema.safeParse(props).success
-}
