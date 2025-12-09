@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react"
 import { motion, AnimatePresence, LayoutGroup, type PanInfo } from "framer-motion"
 import { cn } from "@/lib/utils"
 import { Clock, Grid3X3, Layers, LayoutList, Palette, Sparkles } from "lucide-react"
-import z from "zod"
+import z, { string } from "zod"
 
 export const LayoutModeSchema = z.enum(['stack', 'grid', 'list'])
 
@@ -20,8 +20,8 @@ export type CardData = z.infer<typeof CardDataSchema>
 
 export const MorphingCardStackSchema = z.object({
   cards: CardDataSchema.array(),
-  className: z.string(),
-  defaultLayout: LayoutModeSchema,
+  className: z.string().optional(),
+  defaultLayout: LayoutModeSchema.default("stack"),
   onCardClick: z.custom<(card: CardData) => void>().optional()
 })
 
