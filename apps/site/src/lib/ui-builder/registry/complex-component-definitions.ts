@@ -30,14 +30,38 @@ import SlicedText, { SlicedTextSchema } from '@/components/kokonutui/sliced-text
 import SwooshText, { SwooshTextSchema } from '@/components/kokonutui/swoosh-text';
 import SocialButton from '@/components/kokonutui/social-button';
 import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
+import { SignedInOnly, SignedInOnlySchema } from '@/components/security/signed-in-only';
+import { SignedOutOnly, SignedOutOnlySchema } from '@/components/security/signed-out-only';
+import { Link, LinkSchema } from '@/components/ui/navigation/link';
+import {
+  ProductList,
+  ProductListSchema,
+  SingleProduct,
+  ProductSchema,
+  ProductImage,
+  ProductImageSchema,
+  ProductTitle,
+  ProductTitleSchema,
+  ProductDescription,
+  ProductDescriptionSchema,
+  ProductPrice,
+  ProductPriceSchema,
+  ProductActions,
+  ProductActionsSchema,
+  ProductBadge,
+  ProductBadgeSchema,
+  ProductDetail,
+  ProductDetailSchema,
+} from '@/components/supersurkhet/products';
+import { Dialog, DialogContent, DialogFooter, DialogHeader } from '@/components/ui/dialog';
+import { Credenza, CredenzaBody, CredenzaFooter, CredenzaHeader, CredenzaTrigger } from '@/components/ui/credenza';
 
-import { 
-  CarouselCard, 
-  Carousel, 
-  EnhancedCarousel, 
-  mockCarouselItems 
+import {
+  CarouselCard,
+  EnhancedCarousel,
+  mockCarouselItems
 } from '@/components/imgcarousel/imgcarousel';
-import { CarouselItem as CarouselItemSchema, CarouselItemType } from '@/components/imgcarousel/imgcarousel';
+import { CarouselItem as CarouselItemSchema } from '@/components/imgcarousel/imgcarousel';
 
 import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx';
 import { ProductOnboardingCard } from '@/components/onboarding/product-definition';
@@ -203,6 +227,171 @@ export const complexComponentDefinitions: ComponentRegistry = {
       className: (layer) => classNameFieldOverrides(layer),
       iconName: (layer) => iconNameFieldOverrides(layer)
     }
+  },
+
+  // Dialog
+  Dialog: {
+    component: Dialog,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    from: "@/components/ui/dialog",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "dialog-header",
+        type: "DialogHeader",
+        name: "DialogHeader",
+        props: {},
+        children: [
+          {
+            id: "dialog-header-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Dialog Header",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "dialog-body",
+        type: "DialogContent",
+        name: "DialogContent",
+        props: {},
+        children: [
+          {
+            id: "dialog-body-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Dialog Body",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "dialog-footer",
+        type: "DialogFooter",
+        name: "DialogFooter",
+        props: {},
+        children: [
+          {
+            id: "dialog-footer-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Dialog Footer",
+          } satisfies ComponentLayer,
+        ],
+      },
+    ],
+  },
+  DialogHeader: {
+    component: DialogHeader,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    from: "@/components/ui/dialog",
+    fieldOverrides: commonFieldOverrides(),
+  },
+  DialogContent: {
+    component: DialogContent,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    from: "@/components/ui/dialog",
+    fieldOverrides: commonFieldOverrides(),
+  },
+  DialogFooter: {
+    component: DialogFooter,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    from: "@/components/ui/dialog",
+    fieldOverrides: commonFieldOverrides(),
+  },
+
+  // Credenza
+  Credenza: {
+    component: Credenza,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    from: "@/components/ui/credenza",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "credenza-trigger",
+        type: "CredenzaTrigger",
+        name: "CredenzaTrigger",
+        props: {},
+        children: [
+          {
+            id: "credenza-trigger-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Credenza Trigger",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "credenza-content",
+        type: "CredenzaContent",
+        name: "CredenzaContent",
+        props: {},
+        children: [
+          {
+            id: "credenza-content-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Credenza Content",
+          } satisfies ComponentLayer,
+        ],
+      },
+    ],
+  },
+  CredenzaTrigger: {
+    component: CredenzaTrigger,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+      asChild: z.boolean().optional(),
+    }),
+    from: "@/components/ui/credenza",
+    fieldOverrides: commonFieldOverrides(),
+  },
+  CredenzaHeader: {
+    component: CredenzaHeader,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    from: "@/components/ui/credenza",
+    fieldOverrides: commonFieldOverrides(),
+  },
+  CredenzaBody: {
+    component: CredenzaBody,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    from: "@/components/ui/credenza",
+    fieldOverrides: commonFieldOverrides(),
+  },
+  CredenzaFooter: {
+    component: CredenzaFooter,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    from: "@/components/ui/credenza",
+    fieldOverrides: commonFieldOverrides(),
   },
 
   //Accordion
@@ -633,109 +822,319 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: '@/components/kokonutui/social-button',
     fieldOverrides: commonFieldOverrides()
   },
-  
-  ProductOnboardingCard: {
-  component: ProductOnboardingCard,
-  schema: ProductOnboardingCardSchema,
-  from: "@/components/onboarding/product-definition",
-  fieldOverrides: commonFieldOverrides(),
-  props: {
-    mainIcon: {
-      iconName: "Sparkles",
-      size: "large",
-      className: "text-white",
-    },
+
+  // security
+  SignedInOnly: {
+    component: SignedInOnly,
+    schema: SignedInOnlySchema,
+    from: '@/components/security/signed-in-only',
+    fieldOverrides: commonFieldOverrides()
   },
-  defaultChildren: [
-    {
-      id: "onboarding-main-icon",
-      type: "Icon",
-      name: "Icon",
-      props: {
-        iconName: "Sparkles",
-        size: "large",
-        className: "text-white",
+  SignedOutOnly: {
+    component: SignedOutOnly,
+    schema: SignedOutOnlySchema,
+    from: '@/components/security/signed-out-only',
+    fieldOverrides: commonFieldOverrides()
+  },
+
+  // navigation
+  Link: {
+    component: Link,
+    schema: LinkSchema,
+    from: '@/components/ui/navigation/link',
+    fieldOverrides: commonFieldOverrides()
+  },
+  ProductDetail: {
+    component: ProductDetail,
+    schema: ProductDetailSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "product-detail-image",
+        type: "ProductImage",
+        name: "ProductImage",
+        props: {},
+        children: [
+          {
+            id: "product-detail-image-image",
+            type: "img",
+            name: "img",
+            props: {},
+            children: "Product Image",
+          } satisfies ComponentLayer,
+        ],
       },
-      children: [],
-    },
-    {
-      id: "onboarding-title",
-      type: "span",
-      name: "span",
-      props: { className: "text-3xl font-bold" },
-      children: "Welcome to Our Product",
-    },
-    {
-      id: "onboarding-description",
-      type: "span",
-      name: "span",
-      props: { className: "text-muted-foreground" },
-      children: "Get started with our amazing features",
-    },
-    {
-      id: "onboarding-card-content",
-      type: "Card",
-      name: "Card",
-      props: {},
-      children: [
-        {
-          id: "onboarding-card-header",
-          type: "CardHeader",
-          name: "CardHeader",
-          props: {},
-          children: [
-            {
-              id: "card-icon",
-              type: "Icon",
-              name: "Icon",
-              props: { iconName: "CheckCircle", size: "medium" },
-              children: [],
-            },
-            {
-              id: "card-header-label",
-              type: "span",
-              name: "span",
-              props: {
-                className:
-                  "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+      {
+        id: "product-detail-title",
+        type: "ProductTitle",
+        name: "ProductTitle",
+        props: {},
+        children: [
+          {
+            id: "product-detail-title-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Product Title",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "product-detail-description",
+        type: "ProductDescription",
+        name: "ProductDescription",
+        props: {},
+        children: [
+          {
+            id: "product-detail-description-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "Product Description",
+          } satisfies ComponentLayer,
+        ],
+      },
+      {
+        id: "product-detail-price",
+        type: "ProductPrice",
+        name: "ProductPrice",
+        props: {},
+        children: [
+          {
+            id: "product-detail-price-text",
+            type: "span",
+            name: "span",
+            props: {},
+            children: "$100",
+          } satisfies ComponentLayer,
+        ],
+      },
+    ],
+  },
+  ProductList: {
+    component: ProductList,
+    schema: ProductListSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "product-1",
+        type: "SingleProduct",
+        name: "SingleProduct",
+        props: {},
+        children: [
+          {
+            id: "product-image",
+            type: "ProductImage",
+            name: "ProductImage",
+            props: {},
+            children: [
+              {
+                id: "product-image-image",
+                type: "img",
+                name: "img",
+                props: {},
+                children: "Product Image",
+              } satisfies ComponentLayer,
+            ],
+          },
+          {
+            id: "product-title",
+            type: "ProductTitle",
+            name: "ProductTitle",
+            props: {},
+            children: [
+              {
+                id: "product-title-text",
+                type: "span",
+                name: "span",
+                props: {},
+                children: "Product Title",
+              } satisfies ComponentLayer,
+            ],
+          },
+          {
+            id: "product-description",
+            type: "ProductDescription",
+            name: "ProductDescription",
+            props: {},
+            children: [
+              {
+                id: "product-description-text",
+                type: "span",
+                name: "span",
+                props: {},
+                children: "Product Description",
+              } satisfies ComponentLayer,
+            ],
+          },
+          {
+            id: "product-price",
+            type: "ProductPrice",
+            name: "ProductPrice",
+            props: {},
+            children: [
+              {
+                id: "product-price-text",
+                type: "span",
+                name: "span",
+                props: {},
+                children: "$100",
+              } satisfies ComponentLayer,
+            ],
+          },
+        ],
+      },
+    ]
+  },
+
+  // products
+  SingleProduct: {
+    component: SingleProduct,
+    schema: ProductSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides()
+  },
+  ProductTitle: {
+    component: ProductTitle,
+    schema: ProductTitleSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides(),
+  },
+  ProductDescription: {
+    component: ProductDescription,
+    schema: ProductDescriptionSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides(),
+  },
+  ProductPrice: {
+    component: ProductPrice,
+    schema: ProductPriceSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides(),
+  },
+  ProductActions: {
+    component: ProductActions,
+    schema: ProductActionsSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides(),
+  },
+  ProductBadge: {
+    component: ProductBadge,
+    schema: ProductBadgeSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides(),
+  },
+  ProductImage: {
+    component: ProductImage,
+    schema: ProductImageSchema,
+    from: '@/components/supersurkhet/products',
+    fieldOverrides: commonFieldOverrides(),
+  },
+
+  ProductOnboardingCard: {
+    component: ProductOnboardingCard,
+    schema: ProductOnboardingCardSchema,
+    from: "@/components/onboarding/product-definition",
+    fieldOverrides: commonFieldOverrides(),
+    // props: {
+    //   mainIcon: {
+    //     iconName: "Sparkles",
+    //     size: "large",
+    //     className: "text-white",
+    //   },
+    // },
+    defaultChildren: [
+      {
+        id: "onboarding-main-icon",
+        type: "Icon",
+        name: "Icon",
+        props: {
+          iconName: "Sparkles",
+          size: "large",
+          className: "text-white",
+        },
+        children: [],
+      },
+      {
+        id: "onboarding-title",
+        type: "span",
+        name: "span",
+        props: { className: "text-3xl font-bold" },
+        children: "Welcome to Our Product",
+      },
+      {
+        id: "onboarding-description",
+        type: "span",
+        name: "span",
+        props: { className: "text-muted-foreground" },
+        children: "Get started with our amazing features",
+      },
+      {
+        id: "onboarding-card-content",
+        type: "Card",
+        name: "Card",
+        props: {},
+        children: [
+          {
+            id: "onboarding-card-header",
+            type: "CardHeader",
+            name: "CardHeader",
+            props: {},
+            children: [
+              {
+                id: "card-icon",
+                type: "Icon",
+                name: "Icon",
+                props: { iconName: "CheckCircle", size: "medium" },
+                children: [],
               },
-              children: "FEATURE",
-            },
-          ],
-        },
-        {
-          id: "onboarding-card-body",
-          type: "CardContent",
-          name: "CardContent",
-          props: {},
-          children: [
-            {
-              id: "card-title",
-              type: "CardTitle",
-              name: "CardTitle",
-              props: {},
-              children: "First Steps",
-            },
-            {
-              id: "card-description",
-              type: "CardDescription",
-              name: "CardDescription",
-              props: {},
-              children: "Complete these initial tasks to get started",
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: "onboarding-button",
-      type: "Button",
-      name: "Button",
-      props: { className: "w-full max-w-xs", variant: "default" },
-      children: "Get Started",
-    },
-  ] satisfies ComponentLayer[], 
-},
+              {
+                id: "card-header-label",
+                type: "span",
+                name: "span",
+                props: {
+                  className:
+                    "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+                },
+                children: "FEATURE",
+              },
+            ],
+          },
+          {
+            id: "onboarding-card-body",
+            type: "CardContent",
+            name: "CardContent",
+            props: {},
+            children: [
+              {
+                id: "card-title",
+                type: "CardTitle",
+                name: "CardTitle",
+                props: {},
+                children: "First Steps",
+              },
+              {
+                id: "card-description",
+                type: "CardDescription",
+                name: "CardDescription",
+                props: {},
+                children: "Complete these initial tasks to get started",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        id: "onboarding-button",
+        type: "Button",
+        name: "Button",
+        props: { className: "w-full max-w-xs", variant: "default" },
+        children: "Get Started",
+      },
+    ] satisfies ComponentLayer[],
+  },
 
 
   Rating: {
@@ -750,7 +1149,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
         props: {
           className: "text-lg font-semibold text-gray-900 dark:text-white",
         },
-        children: ["Product Rating"], 
+        children: "Product Rating",
       },
       {
         id: "rating-description",
@@ -759,7 +1158,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
         props: {
           className: "text-sm text-gray-600 dark:text-gray-400",
         },
-        children: ["How would you rate this product?"],
+        children: "How would you rate this product?",
       },
       {
         id: "rating-stars",
@@ -774,7 +1173,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
           hoverScale: 1.1,
           starSize: 24,
         },
-        children: [], 
+        children: [],
       },
       {
         id: "rating-feedback",
@@ -783,88 +1182,88 @@ export const complexComponentDefinitions: ComponentRegistry = {
         props: {
           className: "text-sm font-medium text-gray-900 dark:text-white mt-2",
         },
-        children: ["You rated this 0 stars"],
+        children: "You rated this 0 stars",
       },
     ],
     fieldOverrides: commonFieldOverrides(),
   },
 
   Slider: {
-  component: Slider,
-  schema: sliderSchema,
-  from: '@/components/ui/slider-1',
-  defaultChildren: [
-    {
-      id: "slider-track",
-      type: "SliderPrimitive.Track",
-      name: "SliderTrack",
-      props: {},
-      children: [
-        {
-          id: "slider-range",
-          type: "SliderPrimitive.Range",
-          name: "SliderRange",
-          props: {},
-          children: [],
-        },
-      ],
-    },
-    {
-      id: "slider-thumb",
-      type: "SliderPrimitive.Thumb",
-      name: "SliderThumb",
-      props: {},
-      children: [],
-    },
-  ],
-  fieldOverrides: commonFieldOverrides()
-},
-
-EnhancedCarousel: {
-  component: EnhancedCarousel,
-  schema: z.object({
-    showProgress: z.boolean().default(true),
-    autoPlay: z.boolean().default(false),
-    variant: z.enum(["default", "compact", "expanded"]).default("default"),
-    title: z.string().default("Featured Items"),
-    subtitle: z.string().default("Discover amazing content"),
-    showNavigation: z.boolean().default(true),
-    showFilters: z.boolean().default(false),
-  }),
-  from: '@/components/imgcarousel/imgcarousel',
-  defaultProps: {
-    showProgress: true,
-    autoPlay: false,
-    variant: "default",
-    title: "Featured Items",
-    subtitle: "Discover amazing content",
-    showNavigation: true,
-    showFilters: false,
+    component: Slider,
+    schema: sliderSchema,
+    from: '@/components/ui/slider-1',
+    defaultChildren: [
+      {
+        id: "slider-track",
+        type: "SliderPrimitive.Track",
+        name: "SliderTrack",
+        props: {},
+        children: [
+          {
+            id: "slider-range",
+            type: "SliderPrimitive.Range",
+            name: "SliderRange",
+            props: {},
+            children: [],
+          },
+        ],
+      },
+      {
+        id: "slider-thumb",
+        type: "SliderPrimitive.Thumb",
+        name: "SliderThumb",
+        props: {},
+        children: [],
+      },
+    ],
+    fieldOverrides: commonFieldOverrides()
   },
-  fieldOverrides: commonFieldOverrides(),
-  defaultChildren: mockCarouselItems.map((item) => ({
-    id: item.id,
-    type: "CarouselCard",
-    name: "CarouselCard",
-    props: {
-      item,              
-      variant: "default", 
-    },
-    children: [], 
-  })) as ComponentLayer[],
-},
+
+  Carousel: {
+    component: EnhancedCarousel,
+    schema: z.object({
+      showProgress: z.boolean().default(true),
+      autoPlay: z.boolean().default(false),
+      variant: z.enum(["default", "compact", "expanded"]).default("default"),
+      title: z.string().default("Featured Items"),
+      subtitle: z.string().default("Discover amazing content"),
+      showNavigation: z.boolean().default(true),
+      showFilters: z.boolean().default(false),
+    }),
+    from: '@/components/imgcarousel/imgcarousel',
+    // defaultProps: {
+    //   showProgress: true,
+    //   autoPlay: false,
+    //   variant: "default",
+    //   title: "Featured Items",
+    //   subtitle: "Discover amazing content",
+    //   showNavigation: true,
+    //   showFilters: false,
+    // },
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: mockCarouselItems.map((item) => ({
+      id: item.id,
+      type: "CarouselCard",
+      name: "CarouselCard",
+      props: {
+        item,
+        variant: "default",
+      },
+      children: [],
+    })) as ComponentLayer[],
+  },
 
 
-CarouselCard: {
-  component: CarouselCard,
-  schema: z.object({
-    item: CarouselItemSchema,
-    variant: z.enum(["default", "compact", "expanded"]).default("default"),
-  }),
-  from: '@/components/imgcarousel/imgcarousel',
-  fieldOverrides: commonFieldOverrides(),
-  defaultChildren: [],
-},
+  CarouselCard: {
+    component: CarouselCard,
+    schema: z.object({
+      item: CarouselItemSchema,
+      variant: z.enum(["default", "compact", "expanded"]).default("default"),
+    }),
+    from: '@/components/imgcarousel/imgcarousel',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+  },
 
 };
 
