@@ -10,6 +10,7 @@ import { Markdown } from "@/components/ui/ui-builder/components/markdown";
 import { Icon, iconNames } from "@/components/ui/ui-builder/components/icon";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Input, InputSchema } from "@/components/ui/input";
 import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
 
 import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
@@ -228,6 +229,12 @@ export const complexComponentDefinitions: ComponentRegistry = {
       className: (layer) => classNameFieldOverrides(layer),
       iconName: (layer) => iconNameFieldOverrides(layer)
     }
+  },
+  Input: {
+    component: Input,
+    schema: InputSchema,
+    from: "@/components/ui/input",
+    fieldOverrides: commonFieldOverrides()
   },
 
   // Dialog
