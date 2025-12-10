@@ -84,6 +84,7 @@ import { Modal, ModalTrigger, ModalBody, ModalContent, ModalFooter, ModalSchema,
 
 import DockMorph, { DockMorphSchema } from "@/components/ui/dock-morph";
 import { NumberInput, NumberInputPropsSchema } from "@/components/ui/number-input";
+import { Spinner, SpinnerPropsSchema } from "@/components/ui/spinner-1";
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -1270,7 +1271,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
       name: "CarouselCard",
       props: {
         item,
-        variant: "default",
+        // variant: "default",
       },
       children: [],
     })) as ComponentLayer[],
@@ -1888,7 +1889,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
         description: "Add icons as children to this dock",
         childType: "DockItem",
         childOverrides: {
-          icon: iconNameFieldOverrides, // ✅ use the function directly
+          icon: iconNameFieldOverrides,
           label: () => ({
             type: "string",
             label: "Label",
@@ -1934,6 +1935,13 @@ export const complexComponentDefinitions: ComponentRegistry = {
         description: "Dock position on the screen",
       }),
     },
+  },
+  Spinner: {
+    component: Spinner,
+    schema: SpinnerPropsSchema,
+    from: "@/components/ui/spinner-1",
+    defaultChildren: [], 
+    fieldOverrides: commonFieldOverrides(),
   },
 
   
