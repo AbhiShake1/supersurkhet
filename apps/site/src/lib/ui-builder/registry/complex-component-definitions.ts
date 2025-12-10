@@ -82,6 +82,7 @@ import { Modal, ModalTrigger, ModalBody, ModalContent, ModalFooter, ModalSchema,
 import { AnimatedIcon, AnimatedIconSchema } from '@/components/animate-ui/icons/AnimatedIcon';
 import { SvgIcon, SvgIconSchema } from '@/components/ui/svgs/SvgIcon';
 import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
+import { RatingInteraction, RatingInteractionSchema } from '@/components/ui/emoji-rating';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -1864,5 +1865,12 @@ export const complexComponentDefinitions: ComponentRegistry = {
     defaultChildren: [],
   },
 
+  EmojiRating: {
+    component: RatingInteraction,
+    schema: RatingInteractionSchema,
+    from: '@/components/ui/emoji-rating',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+  },
 };
 
