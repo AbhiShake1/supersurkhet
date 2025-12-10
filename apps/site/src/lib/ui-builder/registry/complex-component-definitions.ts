@@ -34,7 +34,6 @@ import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
 import { SignedInOnly, SignedInOnlySchema } from '@/components/security/signed-in-only';
 import { SignedOutOnly, SignedOutOnlySchema } from '@/components/security/signed-out-only';
 import { Link, LinkSchema } from '@/components/ui/navigation/link';
-import { AnimatedIcon, AnimatedIconSchema } from '@/components/ui/svgs/animated-icon';
 import {
   ProductList,
   ProductListSchema,
@@ -76,10 +75,13 @@ import Features, { FeaturesSchema } from '@/components/features-1';
 import CardBottomImageDemo, { CardBottomImageDemoSchema } from '@/components/shadcn-studio/card/card-04';
 import { AnimatedGradientText, AnimatedGradientTextSchema } from '@/components/ui/animated-gradient-text';
 import { CardContainer, CardBody, CardItem, CardContainerSchema, CardBodySchema, CardItemSchema } from '@/components/ui/3d-card';
-import { AnimatedList, AnimatedListItem, AnimatedListSchema, AnimatedListItemSchema } from '@/components/ui/animated-list';
+import { AnimatedList, AnimatedListItem, AnimatedListSchema, AnimatedListItemSchema } from '@/components/ui/animated-list/animated-list';
 import { ShimmerButton, ShimmerButtonSchema } from '@/components/ui/shimmer-button';
 import { BentoCard, BentoGrid, BentoCardSchema, BentoGridSchema } from '@/components/ui/bento-grid';
 import { Modal, ModalTrigger, ModalBody, ModalContent, ModalFooter, ModalSchema, ModalTriggerSchema, ModalBodySchema, ModalContentSchema, ModalFooterSchema } from '@/components/ui/animated-modal';
+import { AnimatedIcon, AnimatedIconSchema } from '@/components/animate-ui/icons/AnimatedIcon';
+import { SvgIcon, SvgIconSchema } from '@/components/ui/svgs/SvgIcon';
+import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -99,6 +101,7 @@ const ButtonSchema = z.object({
 })
 
 export const complexComponentDefinitions: ComponentRegistry = {
+  ...framerMotionComponentDefinitions,
   Button: {
     component: Button,
     schema: ButtonSchema,
@@ -202,10 +205,10 @@ export const complexComponentDefinitions: ComponentRegistry = {
   Markdown: {
     component: Markdown,
     schema: z.object({
-      className: z.string().optional(),
       children: z.any().optional(),
     }),
     from: "@/components/ui/ui-builder/markdown",
+    defaultChildren: "Hello World from Markdown!",
     fieldOverrides: {
       className: (layer) => classNameFieldOverrides(layer),
       children: (layer) => childrenAsTipTapFieldOverrides(layer)
@@ -1342,15 +1345,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
       className: (layer) => classNameFieldOverrides(layer),
       children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: [
-      {
-        id: "animated-gradient-text-content",
-        type: "span",
-        name: "span",
-        props: {},
-        children: "Animated Gradient Text Effect",
-      } satisfies ComponentLayer,
-    ],
+    defaultChildren: "Animated Gradient Text Effect",
   },
   CardBody: {
     component: CardBody,
@@ -1551,7 +1546,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
   AnimatedList: {
     component: AnimatedList,
     schema: AnimatedListSchema,
-    from: '@/components/ui/animated-list',
+    from: '@/components/ui/animated-list/animated-list',
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [
       {
@@ -1604,7 +1599,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
   AnimatedListItem: {
     component: AnimatedListItem,
     schema: AnimatedListItemSchema,
-    from: '@/components/ui/animated-list',
+    from: '@/components/ui/animated-list/animated-list',
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [
       {
@@ -1856,10 +1851,16 @@ export const complexComponentDefinitions: ComponentRegistry = {
   AnimatedIcon: {
     component: AnimatedIcon,
     schema: AnimatedIconSchema,
-    from: '@/components/ui/svgs/animated-icon',
-    fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer),
-    },
+    from: "@/components/animate-ui/icons/AnimatedIcon",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+  },
+
+  SvgIcon: {
+    component: SvgIcon,
+    schema: SvgIconSchema,
+    from: "@/components/ui/svgs/SvgIcon",
+    fieldOverrides: commonFieldOverrides(),
     defaultChildren: [],
   },
 

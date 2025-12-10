@@ -1,17 +1,16 @@
 "use client";
 
-import React, { FC, memo, useMemo } from "react";
-import ReactMarkdown, { Components, Options } from "react-markdown";
+import React, { type FC, memo, useMemo } from "react";
+import ReactMarkdown, { type Components, type Options } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { CodeBlock } from "@/components/ui/ui-builder/components/codeblock";
 import { cn } from "@/lib/utils";
 
 interface MarkdownProps {
-  className?: string;
   children: string;
 }
-export function Markdown({ children, className }: MarkdownProps) {
+export function Markdown({ children }: MarkdownProps) {
   const components = useMemo(() => {
     return {
       a({
@@ -76,10 +75,9 @@ export function Markdown({ children, className }: MarkdownProps) {
 
   return (
     <MemoizedReactMarkdown
-      className={cn(
-        "prose break-words prose-headings:text-secondary-foreground prose-blockquote:text-secondary-foreground prose-strong:text-secondary-foreground prose-p:leading-relaxed prose-pre:p-0 prose-pre:m-1 prose-p:text-base prose-p:font-normal prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:py-0 prose-li:my-0 max-w-none text-secondary-foreground prose-code:prose-headings:bg-secondary",
-        className
-      )}
+      // className={cn(
+      //   "prose break-words prose-headings:text-secondary-foreground prose-blockquote:text-secondary-foreground prose-strong:text-secondary-foreground prose-p:leading-relaxed prose-pre:p-0 prose-pre:m-1 prose-p:text-base prose-p:font-normal prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:py-0 prose-li:my-0 max-w-none text-secondary-foreground prose-code:prose-headings:bg-secondary",
+      // )}
       remarkPlugins={remarkPlugins}
       components={components as Components}
     >
@@ -91,6 +89,6 @@ export function Markdown({ children, className }: MarkdownProps) {
 const MemoizedReactMarkdown: FC<Options> = memo(
   ReactMarkdown,
   (prevProps, nextProps) =>
-    prevProps.children === nextProps.children &&
-    prevProps.className === nextProps.className
+    prevProps.children === nextProps.children
+  // && prevProps.className === nextProps.className
 );

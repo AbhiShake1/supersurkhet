@@ -1,4 +1,4 @@
-import React, { ReactNode, useCallback, useMemo, memo, Suspense, useState, useEffect, useRef } from "react";
+import React, { type ReactNode, useCallback, useMemo, memo, Suspense, useState, useEffect, useRef } from "react";
 
 import {
   Command,
@@ -67,7 +67,7 @@ export function AddComponentsPopover({
       (acc, option) => {
         const fromRoot = option.from?.split("/").slice(0, -1).join("/"); // removes file name from path
 
-        const group = fromRoot || "other";
+        const group = fromRoot || "primitives";
         if (!acc[group]) {
           acc[group] = [];
         }
