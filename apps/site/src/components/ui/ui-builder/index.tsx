@@ -26,6 +26,7 @@ import { ConfigPanel } from "@/components/ui/ui-builder/internal/config-panel";
 import { VariablesPanel } from "@/components/ui/ui-builder/internal/variables-panel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 /**
  * TabsContentConfig defines the structure for the content of the page config panel tabs.
@@ -120,11 +121,13 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
     allowVariableEditing,
   ]);
 
+  const contextData = useContextData();
+
   // Effect 2: Conditionally initialize Layer Store *after* Editor Store is initialized
   useEffect(() => {
     if (layerStore && editorStore) {
       if (initialLayers?.length && !layerStoreInitialized) {
-        layerStore.initialize(initialLayers, undefined, undefined, initialVariables);
+        layerStore.initialize(initialLayers, undefined, undefined, contextData?.context, initialVariables);
         setLayerStoreInitialized(true);
         const { clear } = useLayerStore.temporal.getState();
         clear();

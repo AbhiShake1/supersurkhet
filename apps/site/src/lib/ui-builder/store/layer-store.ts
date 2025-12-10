@@ -1,4 +1,4 @@
-import { create, StateCreator } from 'zustand';
+import { create, type StateCreator } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware'
 import { produce } from 'immer';
 import { temporal } from 'zundo';
@@ -16,17 +16,18 @@ const DEFAULT_PAGE_PROPS = {
 export interface LayerStore {
   pages: ComponentLayer[];
   selectedLayerId: string | null;
+  selectedLayerContext: Record<string, any> | null;
   selectedPageId: string;
   variables: Variable[];
   immutableBindings: Record<string, Record<string, boolean>>; // layerId -> propName -> isImmutable
-  initialize: (pages: ComponentLayer[], selectedPageId?: string, selectedLayerId?: string, variables?: Variable[]) => void;
+  initialize: (pages: ComponentLayer[], selectedPageId?: string, selectedLayerId?: string, selectedLayerContext?: Record<string, any>, variables?: Variable[]) => void;
   addComponentLayer: (layerType: string, parentId: string, parentPosition?: number) => void;
   addPageLayer: (pageId: string) => void;
   duplicateLayer: (layerId: string, parentId?: string) => void;
   removeLayer: (layerId: string) => void;
   updateLayer: (layerId: string, newProps: Record<string, PropValue>, layerRest?: Partial<Omit<ComponentLayer, 'props'>>) => void;
   moveLayer: (sourceLayerId: string, targetParentId: string, targetPosition: number) => void;
-  selectLayer: (layerId: string) => void;
+  selectLayer: (layerId: string, context?: Record<string, any>) => void;
   selectPage: (pageId: string) => void;
   findLayerById: (layerId: string | null) => ComponentLayer | undefined;
   findLayersForPageId: (pageId: string) => ComponentLayer[];
@@ -59,13 +60,15 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
     // Track immutable bindings: layerId -> propName -> isImmutable
     immutableBindings: {},
     selectedLayerId: null,
+    selectedLayerContext: null,
     selectedPageId: '1',
-    initialize: (pages: ComponentLayer[], selectedPageId?: string, selectedLayerId?: string, variables?: Variable[]) => {
+    initialize: (pages: ComponentLayer[], selectedPageId?: string, selectedLayerId?: string, selectedLayerContext?: Record<string, any>, variables?: Variable[]) => {
       set(produce((state: LayerStore) => {
         // Set the basic state
         state.pages = pages;
-        state.selectedPageId = selectedPageId || pages[0].id;
+        state.selectedLayerContext = selectedLayerContext || null;
         state.selectedLayerId = selectedLayerId || null;
+        state.selectedPageId = selectedPageId || pages[0].id;
         state.variables = variables || [];
 
         // Initialize immutable bindings for existing layers
@@ -309,19 +312,21 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
     ),
 
 
-    selectLayer: (layerId: string) => set(produce((state: LayerStore) => {
+    selectLayer: (layerId: string, context?: Record<string, any>) => set(produce((state: LayerStore) => {
       const { selectedPageId, findLayersForPageId } = get();
       const layers = findLayersForPageId(selectedPageId);
       if (selectedPageId === layerId) {
         return {
-          selectedLayerId: layerId
+          selectedLayerId: layerId,
+          selectedLayerContext: context
         };
       }
       if (!layers) return state;
       const layer = findLayerRecursive(layers, layerId);
       if (layer) {
         return {
-          selectedLayerId: layer.id
+          selectedLayerId: layer.id,
+          selectedLayerContext: context
         };
       }
       return {};

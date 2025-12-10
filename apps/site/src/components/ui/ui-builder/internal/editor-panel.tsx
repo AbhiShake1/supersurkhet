@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button";
 import { ResizableWrapper } from "@/components/ui/ui-builder/internal/canvas/resizable-wrapper";
 import AutoFrame from "@/components/ui/ui-builder/internal/canvas/auto-frame";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 // Static style objects to prevent recreation on every render
 const WRAPPER_STYLE = {
@@ -149,6 +150,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ className }) => {
   const componentRegistry = useEditorStore((state) => state.registry);
   const selectedLayer = findLayerById(selectedLayerId) as ComponentLayer;
   const selectedPage = findLayerById(selectedPageId) as ComponentLayer;
+  const contextData = useContextData();
   const isLayerAPage = useLayerStore((state) =>
     state.isLayerAPage(selectedLayerId || "")
   );
@@ -161,9 +163,9 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ className }) => {
 
   const onSelectElement = useCallback(
     (layerId: string) => {
-      selectLayer(layerId);
+      selectLayer(layerId, contextData?.context);
     },
-    [selectLayer]
+    [selectLayer, contextData]
   );
 
   const handleDeleteLayer = useCallback(() => {

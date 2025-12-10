@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useContext } from "react";
+import React, { useCallback, useMemo } from "react";
 import { z } from "zod";
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
@@ -13,7 +13,7 @@ import { addDefaultValues } from "@/lib/ui-builder/store/schema-utils";
 import { getBaseType } from "@/components/ui/auto-form/utils";
 import { isVariableReference } from "@/lib/ui-builder/utils/variable-resolver";
 import { resolveVariableReferences } from "@/lib/ui-builder/utils/variable-resolver";
-import { ContextDataStore, useContextData } from "@/lib/ui-builder/context/context-data-store";
+import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 interface PropsPanelProps {
   className?: string;

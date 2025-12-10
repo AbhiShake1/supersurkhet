@@ -14,7 +14,7 @@ import {
   hasLayerChildren,
 } from "@/lib/ui-builder/store/layer-utils";
 import { Plus } from "lucide-react";
-import { useHeTree, Id } from "he-tree-react";
+import { useHeTree, type Id } from "he-tree-react";
 import {
   TreeRowNode,
   TreeRowPlaceholder,
@@ -76,7 +76,7 @@ interface LayersTreeProps {
     newProps: Record<string, any>,
     layerRest?: Partial<Omit<ComponentLayer, "props">>
   ) => void;
-  selectLayer: (layerId: string) => void;
+  selectLayer: (layerId: string, context?: Record<string, any>) => void;
   removeLayer: (layerId: string) => void;
   duplicateLayer: (layerId: string) => void;
 }

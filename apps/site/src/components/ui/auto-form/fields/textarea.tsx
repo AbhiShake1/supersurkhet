@@ -3,8 +3,7 @@ import { MentionInputTextarea } from "@/components/ui/mention-input-textarea";
 import AutoFormLabel from "../common/label";
 import AutoFormTooltip from "../common/tooltip";
 import type { AutoFormInputComponentProps } from "../types";
-import { useContext } from "react";
-import { ContextDataStoreContext } from "@/lib/ui-builder/context/context-data-store";
+import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 
 export default function AutoFormTextarea({
   label,
@@ -15,8 +14,7 @@ export default function AutoFormTextarea({
   const { showLabel: _showLabel, ...fieldPropsWithoutShowLabel } = fieldProps;
   const showLabel = _showLabel === undefined ? true : _showLabel;
 
-  // Try to get context data from the context store
-  const contextData = useContext(ContextDataStoreContext);
+  const contextData = useLayerStore((state) => state.selectedLayerContext);
 
   return (
     <FormItem>
@@ -27,13 +25,15 @@ export default function AutoFormTextarea({
         />
       )}
       <FormControl>
-          <MentionInputTextarea
-            value={fieldPropsWithoutShowLabel.value as string}
-            onChange={fieldPropsWithoutShowLabel.onChange}
-            placeholder={fieldPropsWithoutShowLabel.placeholder}
-            contextData={contextData}
-            className={fieldPropsWithoutShowLabel.className}
-          />
+        <MentionInputTextarea
+          value={fieldPropsWithoutShowLabel.value as string}
+          onChange={fieldPropsWithoutShowLabel.onChange}
+          placeholder={fieldPropsWithoutShowLabel.placeholder}
+          contextData={{
+            context: contextData,
+          }}
+          className={fieldPropsWithoutShowLabel.className}
+        />
       </FormControl>
       <AutoFormTooltip fieldConfigItem={fieldConfigItem} />
       <FormMessage />
