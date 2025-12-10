@@ -12,7 +12,6 @@ interface ContextDataStoreProps {
 
 interface ContextDataReturn {
   context: ContextData;
-  useAddContextData: (context: ContextData) => void;
 }
 
 export function flattenObject(
@@ -38,35 +37,31 @@ export function flattenObject(
   return result;
 }
 
+function omitNonSerializables(obj: Record<string, any>): Record<string, any> {
+  return _.omitBy(obj, (value) => {
+    return (
+      value === null ||
+      typeof value === "undefined" ||
+      typeof value === "function"
+    );
+  });
+}
+
 export const ContextDataStoreContext = createContext<ContextDataReturn | undefined>(undefined);
 
 export const ContextDataStore: React.FC<ContextDataStoreProps> = ({
   children,
-  contextData: __contextData,
+  contextData,
 }) => {
-  const [_contextData, setContextData] = React.useState(__contextData)
+  const parentContext = useContext(ContextDataStoreContext)?.context;
 
-  function useAddContextData(context: ContextData) {
-    useEffect(() => {
-      const prevContext = _contextData
-      setContextData(prevContext => {
-        return _.merge({}, prevContext, context)
-      })
+  const merged = useMemo(() => ({ ...parentContext, ...contextData }), [parentContext, contextData]);
 
-      return () => {
-        setContextData(prevContext)
-      }
-    }, [__contextData])
-  }
-
-  const contextData = useMemo(() => {
-    return flattenObject(_contextData)
-  }, [_contextData])
+  const serializable = useMemo(() => omitNonSerializables(merged), [merged]);
 
   return (
     <ContextDataStoreContext.Provider value={{
-      context: contextData,
-      useAddContextData,
+      context: serializable,
     }}>
       {children}
     </ContextDataStoreContext.Provider>
@@ -76,6 +71,5 @@ export const ContextDataStore: React.FC<ContextDataStoreProps> = ({
 export const useContextData = (): ContextDataReturn => {
   return useContext(ContextDataStoreContext) ?? {
     context: {},
-    useAddContextData: () => { },
   };
 };

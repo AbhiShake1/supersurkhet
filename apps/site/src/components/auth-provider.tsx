@@ -8,6 +8,7 @@ import { v4 as uuid } from "uuid"
 import { createAvatar } from "@dicebear/core";
 import { pixelArt } from "@dicebear/collection";
 import type { IGunChain } from "gun/types";
+import _ from "lodash";
 
 interface AuthContextType {
   user: User | undefined;
@@ -58,6 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let ref: IGunChain<any>;
     auth.getCurrentUser().then((_authUser) => {
+      console.log("Auth user", _authUser);
       setAuthUser(_authUser);
 
       // If we have an authenticated user, use that
@@ -151,7 +153,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <AuthContext.Provider
       value={{
-        user,
+        user: user ? {
+          ...user,
+          _: _.pick(user._, ["soul", "id", "ing", "get", "rad"])
+        } : user,
         setUser,
         logout,
         isAuthenticated,
