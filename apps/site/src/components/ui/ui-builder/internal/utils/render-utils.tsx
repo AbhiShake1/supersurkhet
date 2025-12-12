@@ -1,4 +1,4 @@
-import React, { memo, Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import React, { memo, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import isDeepEqual from "fast-deep-equal";
 
 import { ElementSelector } from "@/components/ui/ui-builder/internal/components/element-selector";
@@ -28,15 +28,17 @@ const useSafeDndContext = () => {
 const Wrapper = React.forwardRef<any, {
   props: any,
   element: any
-  wrappedRefs: React.MutableRefObject<Record<string, any>>
+  // wrappedRefs: React.MutableRefObject<Record<string, any>>
   _layerId?: string
 }>(
-  ({ props, wrappedRefs, _layerId, element: Element }, ref) => {
+  ({ props, /*wrappedRefs,*/ _layerId, element: Element }, ref) => {
     const contextData = useContextData()?.context
-    useEffect(() => {
-      if (_layerId)
-        wrappedRefs.current[_layerId] = contextData;
-    }, [contextData, _layerId])
+    // useEffect(() => {
+    //   if (_layerId)
+    //     wrappedRefs.current[_layerId] = contextData;
+    // }, [contextData, _layerId])
+    window.contextDatas = window.contextDatas || {};
+    window.contextDatas[_layerId] = { context: contextData };
     React.useImperativeHandle(ref, () => ({
       contextdata: contextData,
     }))
@@ -94,15 +96,17 @@ export const RenderLayer: React.FC<{
       [layer.props, effectiveVariables, variableValues]
     );
 
-    // Also resolve contextual mentions in layer children if it's a string
-    const resolvedChildren = useMemo(() => {
-      // mark here
+    const [resolvedChildren, setResolvedChildren] = useState<string | ComponentLayer[] | undefined>(undefined);
+
+    useLayoutEffect(() => {
       if (typeof layer.children === 'string') {
+        const contextData = window.contextDatas?.[layer.id]
         // Process string children for contextual mentions
-        return resolveContextualMentions(layer.children, {});
+        setResolvedChildren(resolveContextualMentions(layer.children, contextData));
+      } else {
+        setResolvedChildren(layer.children);
       }
-      return layer.children;
-    }, [layer.children]);
+    }, [layer.children])
 
     const childProps: Record<string, PropValue> = useMemo(() => ({
       ...resolvedProps,
@@ -231,18 +235,18 @@ export const RenderLayer: React.FC<{
       );
     }
 
-    const addContextsForLayers = useLayerStore((state) => state.addContextsForLayers);
+    // const addContextsForLayers = useLayerStore((state) => state.addContextsForLayers);
 
-    const wrappedRefs = useRef<Record<string, Record<string, any>>>({});
+    // const wrappedRefs = useRef<Record<string, Record<string, any>>>({});
 
-    const WrappedComponent = <Wrapper _layerId={layer.id} wrappedRefs={wrappedRefs} props={componentChildProps} element={WrappedComponentChild} ref={ref} />;
+    const WrappedComponent = <Wrapper _layerId={layer.id} /*wrappedRefs={wrappedRefs}*/ props={componentChildProps} element={WrappedComponentChild} ref={ref} />;
 
     // after all wrapped components are created, add them to the store at once
-    useEffect(() => {
-      if (layer.children.length > 0) {
-        addContextsForLayers(wrappedRefs.current);
-      }
-    }, [layer.children, addContextsForLayers]);
+    // useEffect(() => {
+    //   if (layer.children.length > 0) {
+    //     addContextsForLayers(wrappedRefs.current);
+    //   }
+    // }, [layer.children, addContextsForLayers]);
 
     if (!editorConfig) {
       return WrappedComponent;
