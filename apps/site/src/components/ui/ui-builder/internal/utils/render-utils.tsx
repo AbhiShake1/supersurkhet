@@ -30,21 +30,34 @@ const Wrapper = React.forwardRef<any, {
   element: any
   // wrappedRefs: React.MutableRefObject<Record<string, any>>
   _layerId?: string
+  layerChildren?: string | ComponentLayer[]
 }>(
-  ({ props, /*wrappedRefs,*/ _layerId, element: Element }, ref) => {
-    const contextData = useContextData()?.context
+  ({ props, /*wrappedRefs,*/ _layerId, element: Element, layerChildren }, ref) => {
+    const contextData = useContextData()
+
+    if (Object.hasOwn(props, 'contextData')) {
+      props.contextData = contextData;
+    }
+
+    // Process string children for contextual mentions with the correct context
+    let processedChildren = props.children;
+    if (typeof layerChildren === 'string') {
+      processedChildren = resolveContextualMentions(layerChildren, contextData);
+      props.children = processedChildren;
+    }
+
     // useEffect(() => {
     //   if (_layerId)
     //     wrappedRefs.current[_layerId] = contextData;
     // }, [contextData, _layerId])
     window.contextDatas = window.contextDatas || {};
-    window.contextDatas[_layerId] = { context: contextData };
+    window.contextDatas[_layerId] = contextData;
     React.useImperativeHandle(ref, () => ({
-      contextdata: contextData,
+      contextdata: contextData?.context,
     }))
 
     return <div className="wrapper">
-      <Element {...props} ref={ref} />
+      <Element {...props} ref={ref} children={processedChildren} />
     </div>;
   }
 );
@@ -96,23 +109,9 @@ export const RenderLayer: React.FC<{
       [layer.props, effectiveVariables, variableValues]
     );
 
-    const [resolvedChildren, setResolvedChildren] = useState<string | ComponentLayer[] | undefined>(undefined);
-
-    useLayoutEffect(() => {
-      if (typeof layer.children === 'string') {
-        const contextData = window.contextDatas?.[layer.id]
-        // Process string children for contextual mentions
-        setResolvedChildren(resolveContextualMentions(layer.children, contextData));
-      } else {
-        setResolvedChildren(layer.children);
-      }
-    }, [layer.children])
-
     const childProps: Record<string, PropValue> = useMemo(() => ({
       ...resolvedProps,
-      // Update children if it was a string that got processed
-      ...(typeof layer.children === 'string' ? { children: resolvedChildren } : {})
-    }), [resolvedProps, resolvedChildren]);
+    }), [resolvedProps]);
 
     // Memoize child editor config to avoid creating objects in JSX
     const childEditorConfig = useMemo(() => {
@@ -193,8 +192,8 @@ export const RenderLayer: React.FC<{
 
       childProps.children = childElements;
     } else if (typeof layer.children === "string") {
-      // Use the resolved children we processed earlier
-      childProps.children = resolvedChildren;
+      // String children will be processed by the Wrapper component
+      childProps.children = layer.children;
     } else if (showDropZones && hasLayerChildren(layer)) {
       // Show drop zone for empty containers
       childProps.children = (
@@ -239,7 +238,7 @@ export const RenderLayer: React.FC<{
 
     // const wrappedRefs = useRef<Record<string, Record<string, any>>>({});
 
-    const WrappedComponent = <Wrapper _layerId={layer.id} /*wrappedRefs={wrappedRefs}*/ props={componentChildProps} element={WrappedComponentChild} ref={ref} />;
+    const WrappedComponent = <Wrapper _layerId={layer.id} /*wrappedRefs={wrappedRefs}*/ props={componentChildProps} layerChildren={layer.children} element={WrappedComponentChild} ref={ref} />;
 
     // after all wrapped components are created, add them to the store at once
     // useEffect(() => {
