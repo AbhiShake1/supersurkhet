@@ -83,6 +83,8 @@ import { AnimatedIcon, AnimatedIconSchema } from '@/components/animate-ui/icons/
 import { SvgIcon, SvgIconSchema } from '@/components/ui/svgs/SvgIcon';
 import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
 import { RatingInteraction, RatingInteractionSchema } from '@/components/ui/emoji-rating';
+import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, NavigationMenuContent } from '@/components/ui/navigation-menu';
+import type { ReactNode } from '@tanstack/react-router';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -574,6 +576,371 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: "@/components/ui/accordion",
     fieldOverrides: commonFieldOverrides()
   },
+
+  // Navigation Menu
+  NavigationMenu: {
+    component: NavigationMenu,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.custom<ReactNode>()
+    }),
+    from: '@/components/ui/navigation-menu',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "nav-list-1",
+        type: "NavigationMenuList",
+        name: "NavigationMenuList",
+        props: {
+          className: "flex justify-start gap-4 flex-row"
+        },
+        children: [
+          {
+            id: "nav-item-1",
+            type: "NavigationMenuItem",
+            name: "NavigationMenuItem",
+            props: {},
+            children: [
+              {
+                id: "nav-Link-1",
+                type: "NavigationMenuLink",
+                name: "NavigationMenuLink",
+                props: {},
+                children: [
+                  {
+                    id: "nav-button-1",
+                    type: "Button",
+                    name: "Button",
+                    props: { variant: 'ghost' },
+                    children: 'Menu Item'
+                  }
+                ]
+              },
+              {
+                id: 'nav-trigger-1',
+                type: "NavigationMenuTrigger",
+                name: "NavigationMenuTrigger",
+                props: {
+                },
+                children: [
+                  {
+                    id: "trigger-text",
+                    type: "span",
+                    name: "span",
+                    props: {
+                      className: "font-medium text-sm"
+                    },
+                    children: 'Dropdown Title'
+                  }
+                ]
+              },
+              {
+                id: 'nav-content-1',
+                type: "NavigationMenuContent",
+                name: "NavigationMenuContent",
+                props: {
+                  className: "!w-[450px] p-4"
+                },
+                children: [
+                  {
+                    id: "content-link-nav-1",
+                    type: "NavigationMenuLink",
+                    name: "NavigationMenuLink",
+                    props: {
+                      href: "#",
+                    },
+                    children: "link1",
+                  },
+
+                  {
+                    id: "content-container",
+                    type: "div",
+                    name: "div",
+                    props: {
+                      className: "!w-[450px] p-4 flex flex-col lg:grid grid-cols-2 gap-4"
+                    },
+                    children: [
+                      // Left Panel 
+                      {
+                        id: "left-panel",
+                        type: "div",
+                        name: "div",
+                        props: {
+                          className: "flex flex-col h-full justify-between"
+                        },
+                        children: [
+                          {
+                            id: "description-container",
+                            type: "div",
+                            name: "div",
+                            props: {
+                              className: "flex flex-col"
+                            },
+                            children: [
+                              {
+                                id: "title-p",
+                                type: "p",
+                                name: "p",
+                                props: {
+                                  className: "text-base"
+                                },
+                                children: 'Section Title'
+                              },
+                              {
+                                id: "desc-p",
+                                type: "p",
+                                name: "p",
+                                props: {
+                                  className: "text-muted-foreground text-sm"
+                                },
+                                children: 'A short description of the section.'
+                              },
+                            ]
+                          },
+                          {
+                            id: "cta-button",
+                            type: "Button",
+                            name: "Button",
+                            props: { size: 'sm', className: "mt-10" },
+                            children: 'Book a call today'
+                          },
+                        ]
+                      },
+                      // Right Panel (Sub-links)
+                      {
+                        id: "right-panel",
+                        type: "div",
+                        name: "div",
+                        props: {
+                          className: "flex flex-col text-sm h-full justify-end"
+                        },
+                        children: [
+                          {
+                            id: "sub-link-1",
+                            type: "NavigationMenuLink",
+                            name: "NavigationMenuLink",
+                            props: {
+                              href: "#",
+                              className: "flex flex-row justify-between items-center hover:bg-muted py-2 px-4 rounded"
+                            },
+                            children: [
+                              {
+                                id: "span-text-1",
+                                type: "span",
+                                name: "span",
+                                props: {},
+                                children: 'Sub-Link 1'
+                              },
+                            ]
+                          },
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+          },
+        ]
+      }
+    ]
+  },
+
+  // NavigationMenuList 
+  NavigationMenuList: {
+    component: NavigationMenuList,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.custom<ReactNode>()
+    }),
+    from: '@/components/ui/navigation-menu',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "nav-item-1",
+        type: "NavigationMenuItem",
+        name: "NavigationMenuItem",
+        props: {},
+        children: [],
+      }
+    ]
+  },
+
+  // NavigationMenuItem 
+  NavigationMenuItem: {
+    component: NavigationMenuItem,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.custom<ReactNode>()
+    }),
+    from: '@/components/ui/navigation-menu',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "nav-Link-1",
+        type: "NavigationMenuLink",
+        name: "NavigationMenuLink",
+        props: {
+          href: "#",
+          children: "link1"
+        },
+        children: [
+          {
+            id: "nav-button-1",
+            type: "Button",
+            name: "Button",
+            props: { variant: 'ghost' },
+            children: 'Menu Item'
+          }
+        ]
+      },
+    ]
+  },
+
+  // NavigationMenuLink 
+  NavigationMenuLink: {
+    component: NavigationMenuLink,
+    schema: z.object({
+      href: z.string(),
+      className: z.string().optional(),
+      asChild: z.boolean().default(false),
+      children: z.custom<ReactNode>()
+    }),
+    from: '@/components/ui/navigation-menu',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "nav-button-1",
+        type: "Button",
+        name: "Button",
+        props: { variant: 'ghost' },
+        children: 'Link'
+      },
+    ]
+  },
+
+  //  NavigationMenuTrigger 
+  NavigationMenuTrigger: {
+    component: NavigationMenuTrigger,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.custom<ReactNode>(),
+      asChild: z.boolean().default(false),
+    }),
+    from: "@/components/ui/navigation-menu",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "trigger-text",
+        type: "span",
+        name: "span",
+        props: {
+          className: "font-medium text-sm"
+        },
+        children: 'Dropdown Title'
+      }
+    ]
+  },
+
+  //  NavigationMenuContent (Default) 
+  NavigationMenuContent: {
+    component: NavigationMenuContent,
+    schema: z.object({
+      className: z.string().optional(),
+      children: z.custom<ReactNode>()
+    }),
+    from: "@/components/ui/navigation-menu",
+    fieldOverrides: commonFieldOverrides(),
+    // Defaulting to  complex 
+    defaultChildren: [
+      {
+        id: "content-container",
+        type: "div",
+        name: "div",
+        props: {
+          className: "!w-[450px] p-4 flex flex-col lg:grid grid-cols-2 gap-4"
+        },
+        children: [
+          // Left Panel 
+          {
+            id: "left-panel",
+            type: "div",
+            name: "div",
+            props: {
+              className: "flex flex-col h-full justify-between"
+            },
+            children: [
+              {
+                id: "description-container",
+                type: "div",
+                name: "div",
+                props: {
+                  className: "flex flex-col"
+                },
+                children: [
+                  {
+                    id: "title-p",
+                    type: "p",
+                    name: "p",
+                    props: {
+                      className: "text-base"
+                    },
+                    children: 'Section Title'
+                  },
+                  {
+                    id: "desc-p",
+                    type: "p",
+                    name: "p",
+                    props: {
+                      className: "text-muted-foreground text-sm"
+                    },
+                    children: 'A short description of the section.'
+                  },
+                ]
+              },
+              {
+                id: "cta-button",
+                type: "Button",
+                name: "Button",
+                props: { size: 'sm', className: "mt-10" },
+                children: 'Book a call today'
+              },
+            ]
+          },
+          // Right Panel (Sub-links)
+          {
+            id: "right-panel",
+            type: "div",
+            name: "div",
+            props: {
+              className: "flex flex-col text-sm h-full justify-end"
+            },
+            children: [
+              {
+                id: "sub-link-1",
+                type: "NavigationMenuLink",
+                name: "NavigationMenuLink",
+                props: {
+                  href: "#",
+                  className: "flex flex-row justify-between items-center hover:bg-muted py-2 px-4 rounded"
+                },
+                children: [
+                  {
+                    id: "span-text-1",
+                    type: "span",
+                    name: "span",
+                    props: {},
+                    children: 'Sub-Link 1'
+                  },
+                ]
+              },
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
 
   //Card
   Card: {
