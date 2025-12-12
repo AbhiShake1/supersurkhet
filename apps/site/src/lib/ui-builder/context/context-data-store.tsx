@@ -14,44 +14,6 @@ interface ContextDataReturn {
   context: ContextData;
 }
 
-export function flattenObject(
-  obj: Record<string, any>,
-  prefix = ""
-): Record<string, any> {
-  const result: Record<string, any> = {};
-
-  for (const [key, value] of Object.entries(obj)) {
-    const path = prefix ? `${prefix}_${key}` : key;
-
-    if (
-      value !== null &&
-      typeof value === "object" &&
-      !Array.isArray(value)
-    ) {
-      Object.assign(result, flattenObject(value, path));
-    } else {
-      result[path] = value;
-    }
-  }
-
-  return result;
-}
-
-type Serializable = Record<string, any>;
-
-// export function makeSerializable(obj: any): Serializable {
-//   const seen = new WeakSet();
-//
-//   return _.cloneDeepWith(obj, (value) => {
-//     if (value && typeof value === "object") {
-//       if (seen.has(value)) {
-//         return
-//       }
-//       // seen.add(value);
-//     }
-//   });
-// }
-
 export function makeSerializable(
   obj: Record<string, any>,
   maxDepth = 3
@@ -90,16 +52,6 @@ export function makeSerializable(
   return clean(obj, 1) as Record<string, any>;
 }
 
-// function makeSerializable(obj: Record<string, any>): Record<string, any> {
-//   return _.omitBy(obj, (value) => {
-//     return (
-//       value === null ||
-//       typeof value === "undefined" ||
-//       typeof value === "function"
-//     );
-//   });
-// }
-
 export const ContextDataStoreContext = createContext<ContextDataReturn | undefined>(undefined);
 
 export const ContextDataStore: React.FC<ContextDataStoreProps> = ({
@@ -110,7 +62,10 @@ export const ContextDataStore: React.FC<ContextDataStoreProps> = ({
 
   const merged = useMemo(() => ({ ...parentContext, ...contextData }), [parentContext, contextData]);
 
-  const serializable = useMemo(() => makeSerializable(merged), [merged]);
+  const serializable = useMemo(() => _.omit(makeSerializable(merged), [
+    "window",
+    "scriptLoadedSuccessfully",
+  ]), [merged]);
 
   return (
     <ContextDataStoreContext.Provider value={{
