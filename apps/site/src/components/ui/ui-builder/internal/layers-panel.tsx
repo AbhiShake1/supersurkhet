@@ -76,7 +76,7 @@ interface LayersTreeProps {
     newProps: Record<string, any>,
     layerRest?: Partial<Omit<ComponentLayer, "props">>
   ) => void;
-  selectLayer: (layerId: string, context?: Record<string, any>) => void;
+  selectLayer: (layerId: string) => void;
   removeLayer: (layerId: string) => void;
   duplicateLayer: (layerId: string) => void;
 }

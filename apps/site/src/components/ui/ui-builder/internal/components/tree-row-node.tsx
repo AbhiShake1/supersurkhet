@@ -22,7 +22,6 @@ import { AddComponentsPopover } from "@/components/ui/ui-builder/internal/compon
 import { NameEdit } from "@/components/ui/ui-builder/internal/components/name-edit";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
 import { hasAnyChildrenField, hasChildrenFieldOfTypeString } from "@/lib/ui-builder/store/schema-utils";
-import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 interface TreeRowNodeProps {
   node: ComponentLayer;
@@ -33,7 +32,7 @@ interface TreeRowNodeProps {
   onToggle: (id: number | string, open: boolean) => void;
   nodeAttributes: NodeAttrs;
   selectedLayerId: string | null;
-  selectLayer: (id: string, context?: Record<string, any>) => void;
+  selectLayer: (id: string) => void;
   removeLayer: (id: string) => void;
   duplicateLayer: (id: string) => void;
   updateLayer: (
@@ -60,7 +59,6 @@ export const TreeRowNode: React.FC<TreeRowNodeProps> = memo(({
   duplicateLayer,
   updateLayer,
 }) => {
-  const contextData = useContextData();
   const componentRegistry = useEditorStore((state) => state.registry);
 
   const [isRenaming, setIsRenaming] = useState(false);
@@ -79,8 +77,8 @@ export const TreeRowNode: React.FC<TreeRowNodeProps> = memo(({
   }, [id, open, onToggle]);
 
   const handleSelect = useCallback(() => {
-    selectLayer(node.id, contextData?.context);
-  }, [node.id, selectLayer, contextData]);
+    selectLayer(node.id);
+  }, [node.id, selectLayer]);
 
   const handleRemove = useCallback(() => {
     removeLayer(node.id);
