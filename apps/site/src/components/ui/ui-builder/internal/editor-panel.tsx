@@ -8,7 +8,7 @@ import React, {
 } from "react";
 import { Plus, Crosshair, ZoomIn, ZoomOut, MousePointer } from "lucide-react";
 import { countLayers, useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import { ComponentLayer } from "@/components/ui/ui-builder/types";
+import type { ComponentLayer } from "@/components/ui/ui-builder/types";
 import {
   TransformWrapper,
   TransformComponent,
@@ -24,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { ResizableWrapper } from "@/components/ui/ui-builder/internal/canvas/resizable-wrapper";
 import AutoFrame from "@/components/ui/ui-builder/internal/canvas/auto-frame";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 // Static style objects to prevent recreation on every render
 const WRAPPER_STYLE = {
@@ -150,7 +149,6 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ className }) => {
   const componentRegistry = useEditorStore((state) => state.registry);
   const selectedLayer = findLayerById(selectedLayerId) as ComponentLayer;
   const selectedPage = findLayerById(selectedPageId) as ComponentLayer;
-  const contextData = useContextData();
   const isLayerAPage = useLayerStore((state) =>
     state.isLayerAPage(selectedLayerId || "")
   );
@@ -162,12 +160,10 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ className }) => {
   );
 
   const onSelectElement = useCallback(
-    (layerId: string, additionalContext?: Record<string, any>) => {
-      // Prioritize context from the selected component if available, otherwise use global context
-      const contextToUse = additionalContext || contextData?.context;
-      selectLayer(layerId, contextToUse);
+    (layerId: string) => {
+      selectLayer(layerId);
     },
-    [selectLayer, contextData]
+    [selectLayer]
   );
 
   const handleDeleteLayer = useCallback(() => {
@@ -239,7 +235,6 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   handleDeleteLayer,
   handleDuplicateLayer
 }) => {
-  const contextData = useContextData();
   const { isDragging: isComponentDragging } = useComponentDragContext();
   const [resizing, setResizing] = useState(false);
   const [frameSize, setFrameSize] = useState<{ width: number; height: number }>({
@@ -276,7 +271,6 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
         ? handleDuplicateLayer
         : undefined,
       handleDeleteLayer: allowPagesDeletion ? handleDeleteLayer : undefined,
-      contextData: contextData?.context,
     }),
     [
       totalLayers,
@@ -286,7 +280,6 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
       handleDeleteLayer,
       allowPagesCreation,
       allowPagesDeletion,
-      contextData?.context,
     ]
   );
 

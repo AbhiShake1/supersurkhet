@@ -59,39 +59,8 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
       return window.contextDatas?.[get().selectedLayerId] || null;
     },
 
-    // getSelectedContext() {
-    //   function _get() {
-    //     const selectedLayerId = get().selectedLayerId;
-    //     return selectedLayerId && get().contexts[selectedLayerId] || null;
-    //   }
-    //   const context = _get();
-    //   if (!context) return null;
-    //   return { context };
-    // },
-
     // Variables available for binding
     variables: [],
-    // contexts: {},
-    // addContextsForLayers: (context: Record<string, Record<string, any>>) => {
-    //   set(produce((state: LayerStore) => {
-    //     return {
-    //       ...state,
-    //       contexts: {
-    //         ...state.contexts,
-    //         ...context
-    //       }
-    //     }
-    //   }));
-    //   console.log("contexts", get().contexts)
-    // },
-    // addContextForLayer: (layerId: string, context: Record<string, any>) => {
-    //   set(produce((state: LayerStore) => {
-    //     state.contexts = {
-    //       ...state.contexts,
-    //       [layerId]: context
-    //     };
-    //   }));
-    // },
     // Track immutable bindings: layerId -> propName -> isImmutable
     immutableBindings: {},
     selectedLayerId: null,

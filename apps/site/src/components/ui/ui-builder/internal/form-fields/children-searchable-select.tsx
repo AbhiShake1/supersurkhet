@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AddComponentsPopover } from "@/components/ui/ui-builder/internal/components/add-component-popover";
 import { hasLayerChildren } from "@/lib/ui-builder/store/layer-utils";
-import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 interface ChildrenSearchableSelectProps {
   layer: ComponentLayer;
@@ -50,12 +49,10 @@ export function ChildrenSearchableSelect({ layer, onChange }: ChildrenSearchable
   );
 }
 
-function ChildLayerBadge({ child, selectLayer, removeLayer }: { child: ComponentLayer, selectLayer: (id: string, context?: Record<string, any>) => void, removeLayer: (id: string) => void }) {
-  const contextData = useContextData()
-
+function ChildLayerBadge({ child, selectLayer, removeLayer }: { child: ComponentLayer, selectLayer: (id: string) => void, removeLayer: (id: string) => void }) {
   const handleSelect = useCallback(() => {
-    selectLayer(child.id, contextData?.context);
-  }, [selectLayer, child.id, contextData]);
+    selectLayer(child.id);
+  }, [selectLayer, child.id]);
 
   const handleRemove = useCallback(() => {
     removeLayer(child.id);
