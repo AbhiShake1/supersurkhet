@@ -32,12 +32,8 @@ const Wrapper = React.forwardRef<any, {
   _layerId?: string
   layerChildren?: string | ComponentLayer[]
 }>(
-  ({ props, /*wrappedRefs,*/ _layerId, element: Element, layerChildren }, ref) => {
+  ({ props, _layerId, element: Element, layerChildren }, ref) => {
     const contextData = useContextData()
-
-    if (Object.hasOwn(props, 'contextData')) {
-      props.contextData = contextData;
-    }
 
     // Process string children for contextual mentions with the correct context
     let processedChildren = props.children;
@@ -46,10 +42,6 @@ const Wrapper = React.forwardRef<any, {
       props.children = processedChildren;
     }
 
-    // useEffect(() => {
-    //   if (_layerId)
-    //     wrappedRefs.current[_layerId] = contextData;
-    // }, [contextData, _layerId])
     window.contextDatas = window.contextDatas || {};
     window.contextDatas[_layerId] = contextData;
     React.useImperativeHandle(ref, () => ({
@@ -209,43 +201,21 @@ export const RenderLayer: React.FC<{
 
     const ref = React.useRef<any>(null);
 
-    const componentChildProps = useMemo(() => {
-      // If contextData is not already provided via props, inject it from editorConfig
-      if (!childProps.contextData) {
-        return {
-          ...childProps,
-          contextData: editorConfig?.contextData
-        };
-      }
-      return childProps;
-    }, [childProps, editorConfig?.contextData, layer.type]);
-
     function WrappedComponentChild() {
       return isPrimitive ? (
         // @ts-expect-error
-        <Component ref={ref} id={layer.id} data-testid={layer.id} data-layer-id={layer.id} {...componentChildProps} />
+        <Component ref={ref} id={layer.id} data-testid={layer.id} data-layer-id={layer.id} {...childProps} />
       ) : (
         <ErrorSuspenseWrapper key={layer.id} id={layer.id}>
           {
             // @ts-expect-error
-            <Component ref={ref} data-testid={layer.id} data-layer-id={layer.id} {...componentChildProps} />
+            <Component ref={ref} data-testid={layer.id} data-layer-id={layer.id} {...childProps} />
           }
         </ErrorSuspenseWrapper>
       );
     }
 
-    // const addContextsForLayers = useLayerStore((state) => state.addContextsForLayers);
-
-    // const wrappedRefs = useRef<Record<string, Record<string, any>>>({});
-
-    const WrappedComponent = <Wrapper _layerId={layer.id} /*wrappedRefs={wrappedRefs}*/ props={componentChildProps} layerChildren={layer.children} element={WrappedComponentChild} ref={ref} />;
-
-    // after all wrapped components are created, add them to the store at once
-    // useEffect(() => {
-    //   if (layer.children.length > 0) {
-    //     addContextsForLayers(wrappedRefs.current);
-    //   }
-    // }, [layer.children, addContextsForLayers]);
+    const WrappedComponent = <Wrapper _layerId={layer.id} props={childProps} layerChildren={layer.children} element={WrappedComponentChild} ref={ref} />;
 
     if (!editorConfig) {
       return WrappedComponent;
