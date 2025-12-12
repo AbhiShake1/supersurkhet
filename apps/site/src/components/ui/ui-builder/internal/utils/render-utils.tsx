@@ -1,4 +1,4 @@
-import React, { memo, Suspense, useMemo, useRef } from "react";
+import React, { memo, Suspense, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import isDeepEqual from "fast-deep-equal";
 
 import { ElementSelector } from "@/components/ui/ui-builder/internal/components/element-selector";
@@ -14,6 +14,7 @@ import type { ComponentRegistry, ComponentLayer, Variable, PropValue } from '@/c
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
 import { resolveVariableReferences, resolveContextualMentions } from "@/lib/ui-builder/utils/variable-resolver";
+import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 // Custom hook to safely use DND context
 const useSafeDndContext = () => {
@@ -24,6 +25,29 @@ const useSafeDndContext = () => {
   }
 };
 
+const Wrapper = React.forwardRef<any, {
+  props: any,
+  element: any
+  wrappedRefs: React.MutableRefObject<Record<string, any>>
+  _layerId?: string
+}>(
+  ({ props, wrappedRefs, _layerId, element: Element }, ref) => {
+    const contextData = useContextData()?.context
+    useEffect(() => {
+      if (_layerId)
+        wrappedRefs.current[_layerId] = contextData;
+    }, [contextData, _layerId])
+    React.useImperativeHandle(ref, () => ({
+      contextdata: contextData,
+    }))
+
+    return <div className="wrapper">
+      <Element {...props} ref={ref} />
+    </div>;
+  }
+);
+
+
 export interface EditorConfig {
   zIndex: number;
   totalLayers: number;
@@ -32,9 +56,8 @@ export interface EditorConfig {
   onSelectElement: (layerId: string) => void;
   handleDuplicateLayer?: () => void;
   handleDeleteLayer?: () => void;
+  contextData?: Record<string, any>;
 }
-
-
 
 export const RenderLayer: React.FC<{
   layer: ComponentLayer;
@@ -42,9 +65,8 @@ export const RenderLayer: React.FC<{
   editorConfig?: EditorConfig;
   variables?: Variable[];
   variableValues?: Record<string, PropValue>;
-  contextData?: Record<string, any>;
 }> = memo(
-  ({ layer, componentRegistry, editorConfig, variables, variableValues, contextData }) => {
+  ({ layer, componentRegistry, editorConfig, variables, variableValues }) => {
     const storeVariables = useLayerStore((state) => state.variables);
     const isLayerAPage = useLayerStore((state) => state.isLayerAPage(layer.id));
     const registry = useEditorStore((state) => state.registry);
@@ -67,18 +89,20 @@ export const RenderLayer: React.FC<{
 
     // Resolve variable references in pops with proper memoization
     const resolvedProps = useMemo(() =>
-      resolveVariableReferences(layer.props, effectiveVariables, variableValues, contextData),
-      [layer.props, effectiveVariables, variableValues, contextData]
+      // mark here
+      resolveVariableReferences(layer.props, effectiveVariables, variableValues, {}),
+      [layer.props, effectiveVariables, variableValues]
     );
 
     // Also resolve contextual mentions in layer children if it's a string
     const resolvedChildren = useMemo(() => {
-      if (typeof layer.children === 'string' && contextData) {
+      // mark here
+      if (typeof layer.children === 'string') {
         // Process string children for contextual mentions
-        return resolveContextualMentions(layer.children, contextData);
+        return resolveContextualMentions(layer.children, {});
       }
       return layer.children;
-    }, [layer.children, contextData]);
+    }, [layer.children]);
 
     const childProps: Record<string, PropValue> = useMemo(() => ({
       ...resolvedProps,
@@ -129,7 +153,6 @@ export const RenderLayer: React.FC<{
             variables={variables}
             variableValues={variableValues}
             editorConfig={childEditorConfig}
-            contextData={contextData}
           />
         );
 
@@ -181,15 +204,45 @@ export const RenderLayer: React.FC<{
       );
     }
 
-    const WrappedComponent = isPrimitive ? (
-      <Component id={layer.id} data-testid={layer.id} data-layer-id={layer.id} {...childProps} />
-    ) : (
-      <ErrorSuspenseWrapper key={layer.id} id={layer.id}>
-        <Component data-testid={layer.id} data-layer-id={layer.id} {...childProps} />
-      </ErrorSuspenseWrapper>
-    );
+    const ref = React.useRef<any>(null);
 
-    // No wrapper needed - drop zones are now absolute positioned
+    const componentChildProps = useMemo(() => {
+      // If contextData is not already provided via props, inject it from editorConfig
+      if (!childProps.contextData) {
+        return {
+          ...childProps,
+          contextData: editorConfig?.contextData
+        };
+      }
+      return childProps;
+    }, [childProps, editorConfig?.contextData, layer.type]);
+
+    function WrappedComponentChild() {
+      return isPrimitive ? (
+        // @ts-expect-error
+        <Component ref={ref} id={layer.id} data-testid={layer.id} data-layer-id={layer.id} {...componentChildProps} />
+      ) : (
+        <ErrorSuspenseWrapper key={layer.id} id={layer.id}>
+          {
+            // @ts-expect-error
+            <Component ref={ref} data-testid={layer.id} data-layer-id={layer.id} {...componentChildProps} />
+          }
+        </ErrorSuspenseWrapper>
+      );
+    }
+
+    const addContextsForLayers = useLayerStore((state) => state.addContextsForLayers);
+
+    const wrappedRefs = useRef<Record<string, Record<string, any>>>({});
+
+    const WrappedComponent = <Wrapper _layerId={layer.id} wrappedRefs={wrappedRefs} props={componentChildProps} element={WrappedComponentChild} ref={ref} />;
+
+    // after all wrapped components are created, add them to the store at once
+    useEffect(() => {
+      if (layer.children.length > 0) {
+        addContextsForLayers(wrappedRefs.current);
+      }
+    }, [layer.children, addContextsForLayers]);
 
     if (!editorConfig) {
       return WrappedComponent;

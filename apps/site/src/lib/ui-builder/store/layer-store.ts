@@ -40,6 +40,10 @@ export interface LayerStore {
   unbindPropFromVariable: (layerId: string, propName: string) => void;
   isBindingImmutable: (layerId: string, propName: string) => boolean;
   setImmutableBinding: (layerId: string, propName: string, isImmutable: boolean) => void; // Test helper
+  contexts: Record<string, Record<string, any>>;
+  getSelectedContext: () => Record<string, any> | null;
+  addContextsForLayers: (context: Record<string, Record<string, any>>) => void;
+  addContextForLayer: (layerId: string, context: Record<string, any>) => void;
 }
 
 const store: StateCreator<LayerStore, [], []> = (set, get) => (
@@ -55,8 +59,33 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
       }
     ],
 
+    getSelectedContext() {
+      const selectedLayerId = get().selectedLayerId;
+      return selectedLayerId && get().contexts[selectedLayerId] || null;
+    },
+
     // Variables available for binding
     variables: [],
+    contexts: {},
+    addContextsForLayers: (context: Record<string, Record<string, any>>) => {
+      set(produce((state: LayerStore) => {
+        return {
+          ...state,
+          contexts: {
+            ...state.contexts,
+            ...context
+          }
+        }
+      }));
+    },
+    addContextForLayer: (layerId: string, context: Record<string, any>) => {
+      set(produce((state: LayerStore) => {
+        state.contexts = {
+          ...state.contexts,
+          [layerId]: context
+        };
+      }));
+    },
     // Track immutable bindings: layerId -> propName -> isImmutable
     immutableBindings: {},
     selectedLayerId: null,

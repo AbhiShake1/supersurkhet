@@ -15,7 +15,7 @@ export default function AutoFormInput({
   const showLabel = _showLabel === undefined ? true : _showLabel;
 
   // Try to get context data from the context store
-  const selectedLayerContext = useLayerStore((state) => state.selectedLayerContext);
+  const selectedLayerContext = useLayerStore((state) => state.getSelectedContext());
 
   return (
     <div className="flex flex-row  items-center space-x-2">

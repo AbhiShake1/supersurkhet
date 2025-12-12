@@ -14,7 +14,7 @@ export default function AutoFormTextarea({
   const { showLabel: _showLabel, ...fieldPropsWithoutShowLabel } = fieldProps;
   const showLabel = _showLabel === undefined ? true : _showLabel;
 
-  const contextData = useLayerStore((state) => state.selectedLayerContext);
+  const contextData = useLayerStore((state) => state.getSelectedContext());
 
   return (
     <FormItem>

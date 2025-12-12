@@ -1,22 +1,36 @@
 import { useContextData } from '@/lib/ui-builder/context/context-data-store'
 import { createFileRoute } from '@tanstack/react-router'
-import React from 'react'
+import React, { useImperativeHandle, useLayoutEffect } from 'react'
 
 export const Route = createFileRoute('/testroute')({
   component: RouteComponent,
 })
 
 function RouteComponent() {
-  const contextData = useContextData()
-  return <>
-    ----- level 1 ----
-    <p>contextData: {tryStringify(contextData?.context ?? {}, "lev1")}</p>
-    <Provider1>
-      <Child1 />
-    </Provider1>
-    ---- level 1 end ----
-  </>
+  const ref = React.useRef<any>(null)
+  useLayoutEffect(() => {
+    console.log("ref", ref.current.provider1())
+  }, [])
+  return <CompWithRef ref={ref} />
+  // const contextData = useContextData()
+  // return <>
+  //   ----- level 1 ----
+  //   <p>contextData: {tryStringify(contextData?.context ?? {}, "lev1")}</p>
+  //   <Provider1>
+  //     <Child1 />
+  //   </Provider1>
+  //   ---- level 1 end ----
+  // </>
 }
+
+const CompWithRef = React.forwardRef((props, ref) => {
+  useImperativeHandle(ref, () => ({
+    provider1: () => 'value-from-ref',
+  }))
+  return <div>
+    <p>hello</p>
+  </div>
+})
 
 function Child1() {
   const contextData = useContextData()

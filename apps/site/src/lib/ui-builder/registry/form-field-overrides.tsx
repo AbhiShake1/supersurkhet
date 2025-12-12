@@ -122,7 +122,7 @@ export const childrenAsTextareaFieldOverrides: FieldConfigFunction = (
       fieldProps,
     }: AutoFormInputComponentProps) => {
       // Try to get context data from the context store
-      const contextData = useContext(ContextDataStoreContext);
+      const contextData = useLayerStore((state) => state.getSelectedContext());
 
       return (
         <FormFieldWrapper
@@ -226,7 +226,7 @@ export const textInputFieldOverrides = (
       fieldProps,
     }: AutoFormInputComponentProps) => {
       // Try to get context data from the context store
-      const contextData = useContext(ContextDataStoreContext);
+      const contextData = useLayerStore((state) => state.getSelectedContext());
 
       return (
         <FormFieldWrapper

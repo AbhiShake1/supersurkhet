@@ -162,8 +162,10 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ className }) => {
   );
 
   const onSelectElement = useCallback(
-    (layerId: string) => {
-      selectLayer(layerId, contextData?.context);
+    (layerId: string, additionalContext?: Record<string, any>) => {
+      // Prioritize context from the selected component if available, otherwise use global context
+      const contextToUse = additionalContext || contextData?.context;
+      selectLayer(layerId, contextToUse);
     },
     [selectLayer, contextData]
   );
@@ -237,6 +239,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   handleDeleteLayer,
   handleDuplicateLayer
 }) => {
+  const contextData = useContextData();
   const { isDragging: isComponentDragging } = useComponentDragContext();
   const [resizing, setResizing] = useState(false);
   const [frameSize, setFrameSize] = useState<{ width: number; height: number }>({
@@ -273,6 +276,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
         ? handleDuplicateLayer
         : undefined,
       handleDeleteLayer: allowPagesDeletion ? handleDeleteLayer : undefined,
+      contextData: contextData?.context,
     }),
     [
       totalLayers,
@@ -282,6 +286,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
       handleDeleteLayer,
       allowPagesCreation,
       allowPagesDeletion,
+      contextData?.context,
     ]
   );
 

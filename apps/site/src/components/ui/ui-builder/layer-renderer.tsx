@@ -4,7 +4,6 @@ import { type EditorConfig, RenderLayer } from "@/components/ui/ui-builder/inter
 import { DevProfiler } from "@/components/ui/ui-builder/internal/components/dev-profiler";
 
 import type { Variable, ComponentLayer, ComponentRegistry, PropValue } from '@/components/ui/ui-builder/types';
-import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 interface LayerRendererProps<TRegistry extends ComponentRegistry = ComponentRegistry> {
   className?: string;
@@ -25,7 +24,6 @@ const LayerRenderer = React.memo<LayerRendererProps>(function LayerRenderer({
   variables,
   variableValues,
 }) {
-  const contextData = useContextData()
   return (
     <DevProfiler id="LayerRenderer" threshold={30}>
       <div className={className} >
@@ -35,7 +33,6 @@ const LayerRenderer = React.memo<LayerRendererProps>(function LayerRenderer({
           componentRegistry={componentRegistry}
           variables={variables}
           variableValues={variableValues}
-          contextData={contextData}
         />
       </div>
     </DevProfiler>

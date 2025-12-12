@@ -12,7 +12,6 @@ import type { Business } from "@/lib/schema";
 import { useProfile } from "@/hooks/use-profile";
 import { useAuth } from "./auth-provider";
 import { useSearch } from "@tanstack/react-router";
-import { useContextData as useContextDataStore } from "@/lib/ui-builder/context/context-data-store";
 
 const LayerRenderer = lazy(() => import('@/components/ui/ui-builder/layer-renderer'))
 
