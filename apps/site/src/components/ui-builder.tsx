@@ -3,7 +3,7 @@ import { primitiveComponentDefinitions } from "@/lib/ui-builder/registry/primiti
 import { complexComponentDefinitions } from "@/lib/ui-builder/registry/complex-component-definitions";
 import { api } from "@/lib/api";
 import { lazy, memo, useMemo } from "react";
-import type { LayerChangeHandler, VariableChangeHandler } from "./ui/ui-builder/types";
+import type { LayerChangeHandler } from "./ui/ui-builder/types";
 import _ from "lodash";
 import { Spinner } from "./ui/spinner";
 import { NotFound } from "./ui/not-found";
@@ -20,7 +20,6 @@ const UIBuilder = memo(_UIBuilder, (prevProps, nextProps) => {
     && prevProps.isLoading === nextProps.isLoading
     && prevProps.createNew === nextProps.createNew
   //   && _.isEqual(prevProps.initialLayers, nextProps.initialLayers)
-  // && _.isEqual(prevProps.initialVariables, nextProps.initialVariables)
 })
 
 const componentRegistry = {
@@ -81,12 +80,6 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
   const data = omitMeta(_data?.[0])
 
   const currentLayers = data?.uiBuilder?.layers
-  const currentVariables = data?.uiBuilder?.variables
-
-  const handleVariablesChange: VariableChangeHandler = (variables) => {
-    if (isLoading) return
-    upsert({ id: slug, uiBuilder: { variables: JSON.stringify(variables) } })
-  }
 
   const handleLayersChange: LayerChangeHandler = (newLayers) => {
     if (isLoading) return
@@ -107,8 +100,6 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
         isLoading={isLoading}
         persistLayerStore={false}
         onChange={handleLayersChange}
-        onVariablesChange={handleVariablesChange}
-        initialVariables={currentVariables ? JSON.parse(currentVariables) : undefined}
         initialLayers={currentLayers ? JSON.parse(currentLayers) : undefined}
         createNew={createNew}
       />
@@ -138,12 +129,11 @@ export function CustomUiRendererPage({ slug }: { slug: string }) {
 
   if (isLoading || _isLoading) return <Spinner />
 
-  if (!business?.uiBuilder?.layers || !business.uiBuilder?.variables) return <NotFound />
+  if (!business?.uiBuilder?.layers) return <NotFound />
 
   return <ContextDataStore contextData={contextData}>
     <LayerRenderer
       componentRegistry={componentRegistry}
-      variables={JSON.parse(business.uiBuilder?.variables)}
       page={getPage()}
     />
   </ContextDataStore>

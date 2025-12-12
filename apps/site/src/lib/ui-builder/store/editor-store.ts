@@ -8,7 +8,7 @@ export interface EditorStore {
 
   registry: ComponentRegistry;
 
-  initialize: (registry: ComponentRegistry, persistLayerStoreConfig: boolean, allowPagesCreation: boolean, allowPagesDeletion: boolean, allowVariableEditing: boolean) => void;
+  initialize: (registry: ComponentRegistry, persistLayerStoreConfig: boolean, allowPagesCreation: boolean, allowPagesDeletion: boolean) => void;
   getComponentDefinition: (type: string) => RegistryEntry<ReactComponentType<any>> | undefined;
 
   persistLayerStoreConfig: boolean;
@@ -22,8 +22,6 @@ export interface EditorStore {
   setAllowPagesCreation: (allow: boolean) => void;
   allowPagesDeletion: boolean;
   setAllowPagesDeletion: (allow: boolean) => void;
-  allowVariableEditing: boolean;
-  setAllowVariableEditing: (allow: boolean) => void;
 
   // Panel visibility state
   showLeftPanel: boolean;
@@ -38,8 +36,8 @@ const store: StateCreator<EditorStore, [], []> = (set, get) => ({
 
   registry: {},
 
-  initialize: (registry, persistLayerStoreConfig, allowPagesCreation, allowPagesDeletion, allowVariableEditing) => {
-    set(state => ({ ...state, registry, persistLayerStoreConfig, allowPagesCreation, allowPagesDeletion, allowVariableEditing }));
+  initialize: (registry, persistLayerStoreConfig, allowPagesCreation, allowPagesDeletion) => {
+    set(state => ({ ...state, registry, persistLayerStoreConfig, allowPagesCreation, allowPagesDeletion }));
   },
   getComponentDefinition: (type: string) => {
     const { registry } = get();
@@ -60,8 +58,6 @@ const store: StateCreator<EditorStore, [], []> = (set, get) => ({
   setAllowPagesCreation: (allow) => set({ allowPagesCreation: allow }),
   allowPagesDeletion: true,
   setAllowPagesDeletion: (allow) => set({ allowPagesDeletion: allow }),
-  allowVariableEditing: true,
-  setAllowVariableEditing: (allow) => set({ allowVariableEditing: allow }),
 
   // Panel visibility state
   showLeftPanel: true,

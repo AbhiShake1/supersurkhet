@@ -1,4 +1,4 @@
-import React, { memo, Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, { memo, Suspense, useMemo, useRef } from "react";
 import isDeepEqual from "fast-deep-equal";
 
 import { ElementSelector } from "@/components/ui/ui-builder/internal/components/element-selector";
@@ -10,10 +10,10 @@ import { ErrorFallback } from "@/components/ui/ui-builder/internal/components/er
 import { isPrimitiveComponent } from "@/lib/ui-builder/store/editor-utils";
 import { hasLayerChildren, canLayerAcceptChildren } from "@/lib/ui-builder/store/layer-utils";
 import { DevProfiler } from "@/components/ui/ui-builder/internal/components/dev-profiler";
-import type { ComponentRegistry, ComponentLayer, Variable, PropValue } from '@/components/ui/ui-builder/types';
+import type { ComponentRegistry, ComponentLayer, PropValue } from '@/components/ui/ui-builder/types';
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
-import { resolveVariableReferences, resolveContextualMentions } from "@/lib/ui-builder/utils/variable-resolver";
+import { resolveContextualMentions } from "@/lib/ui-builder/utils/variable-resolver";
 import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 // Custom hook to safely use DND context
@@ -70,17 +70,12 @@ export const RenderLayer: React.FC<{
   layer: ComponentLayer;
   componentRegistry: ComponentRegistry;
   editorConfig?: EditorConfig;
-  variables?: Variable[];
-  variableValues?: Record<string, PropValue>;
 }> = memo(
-  ({ layer, componentRegistry, editorConfig, variables, variableValues }) => {
-    const storeVariables = useLayerStore((state) => state.variables);
+  ({ layer, componentRegistry, editorConfig }) => {
     const isLayerAPage = useLayerStore((state) => state.isLayerAPage(layer.id));
     const registry = useEditorStore((state) => state.registry);
     const dndContext = useSafeDndContext();
 
-    // Use provided variables or fall back to store variables
-    const effectiveVariables = variables || storeVariables;
     const componentDefinition =
       componentRegistry[layer.type as keyof typeof componentRegistry];
 
@@ -94,12 +89,7 @@ export const RenderLayer: React.FC<{
       layer: layer
     }), [layer, componentRegistry]);
 
-    // Resolve variable references in pops with proper memoization
-    const resolvedProps = useMemo(() =>
-      // mark here
-      resolveVariableReferences(layer.props, effectiveVariables, variableValues, {}),
-      [layer.props, effectiveVariables, variableValues]
-    );
+    const resolvedProps = layer.props;
 
     const childProps: Record<string, PropValue> = useMemo(() => ({
       ...resolvedProps,
@@ -145,8 +135,6 @@ export const RenderLayer: React.FC<{
             key={child.id}
             componentRegistry={componentRegistry}
             layer={child}
-            variables={variables}
-            variableValues={variableValues}
             editorConfig={childEditorConfig}
           />
         );
