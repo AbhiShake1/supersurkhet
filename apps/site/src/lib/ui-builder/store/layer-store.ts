@@ -16,18 +16,17 @@ const DEFAULT_PAGE_PROPS = {
 export interface LayerStore {
   pages: ComponentLayer[];
   selectedLayerId: string | null;
-  selectedLayerContext: Record<string, any> | null;
   selectedPageId: string;
   variables: Variable[];
   immutableBindings: Record<string, Record<string, boolean>>; // layerId -> propName -> isImmutable
-  initialize: (pages: ComponentLayer[], selectedPageId?: string, selectedLayerId?: string, selectedLayerContext?: Record<string, any>, variables?: Variable[]) => void;
+  initialize: (pages: ComponentLayer[], selectedPageId?: string, selectedLayerId?: string, variables?: Variable[]) => void;
   addComponentLayer: (layerType: string, parentId: string, parentPosition?: number) => void;
   addPageLayer: (pageId: string) => void;
   duplicateLayer: (layerId: string, parentId?: string) => void;
   removeLayer: (layerId: string) => void;
   updateLayer: (layerId: string, newProps: Record<string, PropValue>, layerRest?: Partial<Omit<ComponentLayer, 'props'>>) => void;
   moveLayer: (sourceLayerId: string, targetParentId: string, targetPosition: number) => void;
-  selectLayer: (layerId: string, context?: Record<string, any>) => void;
+  selectLayer: (layerId: string) => void;
   selectPage: (pageId: string) => void;
   findLayerById: (layerId: string | null) => ComponentLayer | undefined;
   findLayersForPageId: (pageId: string) => ComponentLayer[];
@@ -40,10 +39,7 @@ export interface LayerStore {
   unbindPropFromVariable: (layerId: string, propName: string) => void;
   isBindingImmutable: (layerId: string, propName: string) => boolean;
   setImmutableBinding: (layerId: string, propName: string, isImmutable: boolean) => void; // Test helper
-  // contexts: Record<string, Record<string, any>>;
   getSelectedContext: () => Record<string, any> | null;
-  // addContextsForLayers: (context: Record<string, Record<string, any>>) => void;
-  // addContextForLayer: (layerId: string, context: Record<string, any>) => void;
 }
 
 const store: StateCreator<LayerStore, [], []> = (set, get) => (
@@ -99,13 +95,11 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
     // Track immutable bindings: layerId -> propName -> isImmutable
     immutableBindings: {},
     selectedLayerId: null,
-    selectedLayerContext: null,
     selectedPageId: '1',
-    initialize: (pages: ComponentLayer[], selectedPageId?: string, selectedLayerId?: string, selectedLayerContext?: Record<string, any>, variables?: Variable[]) => {
+    initialize: (pages: ComponentLayer[], selectedPageId?: string, selectedLayerId?: string, variables?: Variable[]) => {
       set(produce((state: LayerStore) => {
         // Set the basic state
         state.pages = pages;
-        state.selectedLayerContext = selectedLayerContext || null;
         state.selectedLayerId = selectedLayerId || null;
         state.selectedPageId = selectedPageId || pages[0].id;
         state.variables = variables || [];
@@ -351,13 +345,12 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
     ),
 
 
-    selectLayer: (layerId: string, context?: Record<string, any>) => set(produce((state: LayerStore) => {
+    selectLayer: (layerId: string) => set(produce((state: LayerStore) => {
       const { selectedPageId, findLayersForPageId } = get();
       const layers = findLayersForPageId(selectedPageId);
       if (selectedPageId === layerId) {
         return {
           selectedLayerId: layerId,
-          selectedLayerContext: context
         };
       }
       if (!layers) return state;
@@ -365,7 +358,6 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
       if (layer) {
         return {
           selectedLayerId: layer.id,
-          selectedLayerContext: context
         };
       }
       return {};
