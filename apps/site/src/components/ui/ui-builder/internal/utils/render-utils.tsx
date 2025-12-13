@@ -67,6 +67,12 @@ function resolveStringsDeep(
   return value;
 }
 
+declare global {
+  interface Window {
+    contextDatas?: Record<string, Record<string, any>>;
+  }
+}
+
 const Wrapper = React.forwardRef<any, {
   props: any;
   element: React.ComponentType<any>;
@@ -87,8 +93,9 @@ const Wrapper = React.forwardRef<any, {
     }));
 
     // Optional debug hook
-    (window as any).contextDatas ||= {};
-    (window as any).contextDatas[_layerId] = contextData;
+    window.contextDatas ||= {};
+    if (_layerId)
+      window.contextDatas[_layerId] = contextData;
 
     return (
       <div className="wrapper">
