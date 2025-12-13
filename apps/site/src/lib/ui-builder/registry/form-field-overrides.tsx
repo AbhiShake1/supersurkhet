@@ -17,6 +17,9 @@ import { useLayerStore } from "../store/layer-store";
 import BreakpointClassNameControl from "@/components/ui/ui-builder/internal/form-fields/classname-control";
 import { MentionInput } from "@/components/ui/mention-input";
 import { MentionInputTextarea } from "@/components/ui/mention-input-textarea";
+import { Combobox } from "@/components/ui/combobox";
+import { useBusiness } from "@/contexts/business-context";
+import { getBusinessConfig } from "@/config/business-config";
 
 export const classNameFieldOverrides: FieldConfigFunction = () => {
   return {
@@ -228,3 +231,53 @@ export function FormFieldWrapper({
     </FormItem>
   );
 }
+
+export const tablePickerFieldOverrides = (layer: ComponentLayer) => {
+  return {
+    fieldType: ({
+      label,
+      isRequired,
+      field,
+      fieldConfigItem,
+      zodItem,
+      fieldProps,
+    }: AutoFormInputComponentProps) => {
+      const { business } = useBusiness();
+      const businessType = business?.businessType;
+
+      // Use basePath as the slug, fallback to id if basePath is not available
+      const slug = business?.basePath || business?.id;
+
+      // Get the business config for the current business
+      const config = businessType && slug ? getBusinessConfig({ slug })[businessType] : [];
+
+      // Extract schema names from the business config for options
+      const options = config?.map((configItem) => ({
+        value: configItem.schema,
+        label: configItem.title,
+      })) || [];
+
+      return (
+        <FormItem>
+          <FormLabel>
+            {fieldConfigItem?.label || label}
+            {isRequired && <span className="text-destructive"> *</span>}
+          </FormLabel>
+          <FormControl>
+            <Combobox
+              options={options}
+              value={field.value?.toString()}
+              onValueChange={(value) => field.onChange(value)}
+              placeholder={fieldConfigItem?.inputProps?.placeholder || "Select a table..."}
+              className={fieldProps.className}
+              disabled={fieldProps.disabled}
+            />
+          </FormControl>
+          {fieldConfigItem?.description && (
+            <FormDescription>{fieldConfigItem.description}</FormDescription>
+          )}
+        </FormItem>
+      );
+    },
+  };
+};

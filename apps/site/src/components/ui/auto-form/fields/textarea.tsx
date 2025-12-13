@@ -16,6 +16,16 @@ export default function AutoFormTextarea({
 
   const contextData = useLayerStore((state) => state.getSelectedContext());
 
+  function formatedContext() {
+    if (!contextData) return {}
+    if ("context" in contextData) {
+      return contextData
+    }
+    return {
+      context: contextData,
+    }
+  }
+
   return (
     <FormItem>
       {showLabel && (
@@ -29,9 +39,7 @@ export default function AutoFormTextarea({
           value={fieldPropsWithoutShowLabel.value as string}
           onChange={fieldPropsWithoutShowLabel.onChange}
           placeholder={fieldPropsWithoutShowLabel.placeholder}
-          contextData={{
-            context: contextData,
-          }}
+          contextData={formatedContext()}
           className={fieldPropsWithoutShowLabel.className}
         />
       </FormControl>

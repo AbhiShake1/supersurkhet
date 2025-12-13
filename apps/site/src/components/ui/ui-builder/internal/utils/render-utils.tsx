@@ -25,35 +25,78 @@ const useSafeDndContext = () => {
   }
 };
 
-const Wrapper = React.forwardRef<any, {
-  props: any,
-  element: any
-  // wrappedRefs: React.MutableRefObject<Record<string, any>>
-  _layerId?: string
-  layerChildren?: string | ComponentLayer[]
-}>(
-  ({ props, _layerId, element: Element, layerChildren }, ref) => {
-    const contextData = useContextData()
+function resolveStringsDeep(
+  value: any,
+  contextData: any
+): any {
+  // Resolve strings
+  if (typeof value === "string") {
+    return resolveContextualMentions(value, contextData);
+  }
 
-    // Process string children for contextual mentions with the correct context
-    let processedChildren = props.children;
-    if (typeof layerChildren === 'string') {
-      processedChildren = resolveContextualMentions(layerChildren, contextData);
-      props.children = processedChildren;
+  // Primitives / non-resolvable
+  if (
+    value == null ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "function" ||
+    typeof value === "symbol"
+  ) {
+    return value;
+  }
+
+  // Never touch React elements
+  if (React.isValidElement(value)) {
+    return value;
+  }
+
+  // Arrays
+  if (Array.isArray(value)) {
+    return value.map(v => resolveStringsDeep(v, contextData));
+  }
+
+  // Plain objects
+  if (typeof value === "object") {
+    const out: Record<string, any> = {};
+    for (const key in value) {
+      out[key] = resolveStringsDeep(value[key], contextData);
     }
+    return out;
+  }
 
-    window.contextDatas = window.contextDatas || {};
-    window.contextDatas[_layerId] = contextData;
+  return value;
+}
+
+const Wrapper = React.forwardRef<any, {
+  props: any;
+  element: React.ComponentType<any>;
+  _layerId?: string;
+}>(
+  ({ props, element: Element, _layerId }, ref) => {
+    const contextData = useContextData();
+
+    // Resolve all strings in props (deeply)
+    const resolvedProps = React.useMemo(
+      () => resolveStringsDeep(props, contextData),
+      [props, contextData]
+    );
+
+    // Expose context imperatively if needed by the engine
     React.useImperativeHandle(ref, () => ({
       contextdata: contextData?.context,
-    }))
+    }));
 
-    return <div className="wrapper">
-      <Element {...props} ref={ref} children={processedChildren} />
-    </div>;
+    // Optional debug hook
+    (window as any).contextDatas ||= {};
+    (window as any).contextDatas[_layerId] = contextData;
+
+    return (
+      <div className="wrapper">
+        <Element {...resolvedProps} ref={ref} />
+      </div>
+    );
   }
 );
-
 
 export interface EditorConfig {
   zIndex: number;
@@ -189,21 +232,41 @@ export const RenderLayer: React.FC<{
 
     const ref = React.useRef<any>(null);
 
-    function WrappedComponentChild() {
+    function WrappedComponentChild(props: any) {
       return isPrimitive ? (
         // @ts-expect-error
-        <Component ref={ref} id={layer.id} data-testid={layer.id} data-layer-id={layer.id} {...childProps} />
+        <Component
+          ref={ref}
+          id={layer.id}
+          data-testid={layer.id}
+          data-layer-id={layer.id}
+          {...childProps}
+          {...props}
+        />
       ) : (
         <ErrorSuspenseWrapper key={layer.id} id={layer.id}>
           {
             // @ts-expect-error
-            <Component ref={ref} data-testid={layer.id} data-layer-id={layer.id} {...childProps} />
+            <Component
+              ref={ref}
+              data-testid={layer.id}
+              data-layer-id={layer.id}
+              {...childProps}
+              {...props}
+            />
           }
         </ErrorSuspenseWrapper>
       );
     }
 
-    const WrappedComponent = <Wrapper _layerId={layer.id} props={childProps} layerChildren={layer.children} element={WrappedComponentChild} ref={ref} />;
+    const WrappedComponent = (
+      <Wrapper
+        _layerId={layer.id}
+        props={childProps}
+        element={WrappedComponentChild}
+        ref={ref}
+      />
+    );
 
     if (!editorConfig) {
       return WrappedComponent;

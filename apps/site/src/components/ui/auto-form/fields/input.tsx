@@ -17,6 +17,16 @@ export default function AutoFormInput({
   // Try to get context data from the context store
   const selectedLayerContext = useLayerStore((state) => state.getSelectedContext());
 
+  function formatedContext() {
+    if (!selectedLayerContext) return {}
+    if ("context" in selectedLayerContext) {
+      return selectedLayerContext
+    }
+    return {
+      context: selectedLayerContext,
+    }
+  }
+
   return (
     <div className="flex flex-row  items-center space-x-2">
       <FormItem className="flex w-full flex-col justify-start">
@@ -31,9 +41,7 @@ export default function AutoFormInput({
             value={fieldPropsWithoutShowLabel.value as string}
             onChange={fieldPropsWithoutShowLabel.onChange}
             placeholder={fieldPropsWithoutShowLabel.placeholder}
-            contextData={{
-              context: selectedLayerContext,
-            }}
+            contextData={formatedContext()}
             className={fieldPropsWithoutShowLabel.className}
           />
         </FormControl>
