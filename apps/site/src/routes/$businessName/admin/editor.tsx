@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { useState, useRef, useCallback, useLayoutEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
 import { MoonIcon, SunIcon, Smartphone, Tablet, Monitor, Maximize, X, Search, Terminal, Eye, EyeOff, MessageSquare, MessageSquareX, Code } from 'lucide-react';
@@ -20,6 +20,7 @@ import { Gemini } from '@/components/ui/svgs';
 import { DeepSeek } from '@/components/ui/svgs';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/spinner';
+import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
 
 
 const componentRegistry = {
@@ -41,13 +42,33 @@ function EditorComponent() {
   const _business = business?.[0]
   const code = _business?.uiBuilder?.layers ?? ''
   const { mutate: update } = api.business.useUpdate()
+  function hasSyntaxErrors(): boolean {
+    if (!monacoInstance || !editorRef.current) return true;
+
+    const model = editorRef.current.getModel();
+    if (!model) return true;
+
+    const markers = monacoInstance.editor.getModelMarkers({
+      resource: model.uri,
+    });
+
+    return markers.some(
+      (m: any) => m.severity === monacoInstance.MarkerSeverity.Error
+    );
+  }
   function setCode(newCode: string) {
-    update({
-      id: businessName,
-      uiBuilder: {
-        layers: newCode ?? ""
-      }
-    })
+    try {
+      // pre-save validations so there is no bad commit
+      const parsed = JSON.parse(newCode)
+      uiBuilderLayerSchema.array().parse(parsed)
+
+      update({
+        id: businessName,
+        uiBuilder: {
+          layers: newCode ?? ""
+        }
+      })
+    } catch { }
   }
   const { layout, previewMode } = Route.useSearch();
   const { setTheme } = useTheme();
@@ -264,7 +285,12 @@ function EditorComponent() {
   if (isLoading) return <Spinner />
 
   const currentLayers = _business?.uiBuilder?.layers
-  const currentPage = currentLayers ? JSON.parse(currentLayers)?.[0] : undefined;
+  function tryParse(str: string) {
+    try {
+      return JSON.parse(str)
+    } catch { }
+  }
+  const currentPage = currentLayers ? tryParse(currentLayers)?.[0] : undefined;
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -441,11 +467,14 @@ function EditorComponent() {
                   </div>
 
                   <div className={`flex-1 overflow-auto ${selectedPreviewMode === 'mobile' ? 'max-w-xs mx-auto border' : selectedPreviewMode === 'tablet' ? 'max-w-md mx-auto border' : ''}`}>
-                    <LayerRenderer
-                      className="w-full h-full"
-                      page={currentPage}
-                      componentRegistry={componentRegistry}
-                    />
+                    {
+                      currentPage ?
+                        <LayerRenderer
+                          className="w-full h-full"
+                          page={currentPage}
+                          componentRegistry={componentRegistry}
+                        /> : "Something went wrong"
+                    }
                   </div>
                 </div>
               </ResizablePanel>
