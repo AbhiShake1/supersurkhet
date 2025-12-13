@@ -1,9 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useLayoutEffect } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
-import { MoonIcon, SunIcon, Smartphone, Tablet, Monitor, Maximize, X, Search, Save, Terminal, Eye, EyeOff, MessageSquare, MessageSquareX, Code } from 'lucide-react';
+import { MoonIcon, SunIcon, Smartphone, Tablet, Monitor, Maximize, X, Search, Terminal, Eye, EyeOff, MessageSquare, MessageSquareX, Code } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
 import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
@@ -37,18 +37,28 @@ export const Route = createFileRoute('/$businessName/admin/editor')({
 
 function EditorComponent() {
   const { businessName } = Route.useParams();
+  const { data: business, isLoading } = api.business.useGet({ keys: [businessName], single: true })
+  const _business = business?.[0]
+  const code = _business?.uiBuilder?.layers ?? ''
+  const { mutate: update } = api.business.useUpdate()
+  function setCode(newCode: string) {
+    update({
+      id: businessName,
+      uiBuilder: {
+        layers: newCode ?? ""
+      }
+    })
+  }
   const { layout, previewMode } = Route.useSearch();
   const { setTheme } = useTheme();
   const [isPreviewVisible, setIsPreviewVisible] = useState(true);
   const [isAIChatVisible, setIsAIChatVisible] = useState(false);
-  const [code, setCode] = useState<string>('');
   const [selectedPreviewMode, setSelectedPreviewMode] = useState<'mobile' | 'tablet' | 'desktop' | 'responsive'>(
     previewMode
   );
   const [selectedAIService, setSelectedAIService] = useState<string>('chatgpt');
   const [showContextPanel, setShowContextPanel] = useState(true);
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { data: business, isLoading } = api.business.useGet({ keys: [businessName], single: true })
 
   const aiServices = [
     { id: 'chatgpt', name: <OpenAI className="size-4" />, url: 'https://chat.openai.com' },
@@ -253,12 +263,8 @@ function EditorComponent() {
 
   if (isLoading) return <Spinner />
 
-  const _business = business?.[0]
   const currentLayers = _business?.uiBuilder?.layers
   const currentPage = currentLayers ? JSON.parse(currentLayers)?.[0] : undefined;
-
-  const handleSave = () => {
-  };
 
   return (
     <div className="flex flex-col h-screen bg-background">
@@ -336,17 +342,6 @@ function EditorComponent() {
               {isAIChatVisible ? "Hide AI Chat" : "Show AI Chat"}
             </TooltipContent>
           </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button onClick={handleSave} className="ml-2">
-                <Save className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              Save Changes
-            </TooltipContent>
-          </Tooltip>
         </div>
       </div>
 
@@ -396,21 +391,6 @@ function EditorComponent() {
                         </TooltipTrigger>
                         <TooltipContent>
                           {vimMode ? "Disable Vim Mode" : "Enable Vim Mode"}
-                        </TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setShowContextPanel(!showContextPanel)}
-                          >
-                            {showContextPanel ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          {showContextPanel ? "Hide Context Panel" : "Show Context Panel"}
                         </TooltipContent>
                       </Tooltip>
                     </div>
@@ -464,7 +444,6 @@ function EditorComponent() {
                     <LayerRenderer
                       className="w-full h-full"
                       page={currentPage}
-                      // onChange={handleLayersChange}
                       componentRegistry={componentRegistry}
                     />
                   </div>
@@ -579,21 +558,6 @@ function EditorComponent() {
                     {vimMode ? "Disable Vim Mode" : "Enable Vim Mode"}
                   </TooltipContent>
                 </Tooltip>
-
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowContextPanel(!showContextPanel)}
-                    >
-                      {showContextPanel ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {showContextPanel ? "Hide Context Panel" : "Show Context Panel"}
-                  </TooltipContent>
-                </Tooltip>
               </div>
               <div className="flex-1 overflow-hidden flex">
                 <div className="flex-1 overflow-hidden min-h-[200px]">
@@ -629,49 +593,6 @@ function EditorComponent() {
                       snippetSuggestions: 'top',
                     }}
                   />
-                </div>
-
-                {/* Context Data Panel - Collapsible */}
-                <div className={`bg-muted border-l p-4 w-64 flex flex-col transition-all duration-300 ${showContextPanel ? 'block' : 'hidden'}`}>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold">Context Data</h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowContextPanel(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto">
-                    <div className="mb-4">
-                      <h4 className="font-medium text-sm mb-2">Business</h4>
-                      <div className="text-xs bg-background p-2 rounded mb-1 cursor-pointer hover:bg-accent" onClick={() => insertTextAtCursor('@business.name')}>
-                        @business.name
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <h4 className="font-medium text-sm mb-2">Current Page</h4>
-                      <div className="text-xs bg-background p-2 rounded mb-1 cursor-pointer hover:bg-accent" onClick={() => insertTextAtCursor('@currentPage.id')}>
-                        @currentPage.id
-                      </div>
-                      <div className="text-xs bg-background p-2 rounded mb-1 cursor-pointer hover:bg-accent" onClick={() => insertTextAtCursor('@currentPage.name')}>
-                        @currentPage.name
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <h4 className="font-medium text-sm mb-2">User</h4>
-                      <div className="text-xs bg-background p-2 rounded mb-1 cursor-pointer hover:bg-accent" onClick={() => insertTextAtCursor('@user.id')}>
-                        @user.id
-                      </div>
-                      <div className="text-xs bg-background p-2 rounded mb-1 cursor-pointer hover:bg-accent" onClick={() => insertTextAtCursor('@user.name')}>
-                        @user.name
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

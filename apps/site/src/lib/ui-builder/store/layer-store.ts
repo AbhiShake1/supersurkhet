@@ -4,7 +4,7 @@ import { produce } from 'immer';
 import { temporal } from 'zundo';
 import isDeepEqual from 'fast-deep-equal';
 
-import { visitLayer, addLayer, hasLayerChildren, findLayerRecursive, createId, countLayers, duplicateWithNewIdsAndName, findAllParentLayersRecursive, migrateV1ToV2, migrateV2ToV3, createComponentLayer, moveLayer } from '@/lib/ui-builder/store/layer-utils';
+import { visitLayer, addLayer, hasLayerChildren, findLayerRecursive, createId, countLayers, duplicateWithNewIdsAndName, findAllParentLayersRecursive, createComponentLayer, moveLayer } from '@/lib/ui-builder/store/layer-utils';
 import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
 import { type ComponentLayer, type PropValue } from '@/components/ui/ui-builder/types';
 
@@ -32,18 +32,20 @@ export interface LayerStore {
   getSelectedContext: () => Record<string, any> | null;
 }
 
+export const defaultLayers = [
+  {
+    id: '1',
+    type: 'div',
+    name: 'Page 1',
+    props: DEFAULT_PAGE_PROPS,
+    children: [],
+  }
+]
+
 const store: StateCreator<LayerStore, [], []> = (set, get) => (
   {
     // Default to a single empty page
-    pages: [
-      {
-        id: '1',
-        type: 'div',
-        name: 'Page 1',
-        props: DEFAULT_PAGE_PROPS,
-        children: [],
-      }
-    ],
+    pages: defaultLayers,
 
     getSelectedContext() {
       const selectedLayerId = get().selectedLayerId
@@ -327,20 +329,6 @@ const useLayerStore = create(persist(temporal<LayerStore>(store,
   name: "layer-store",
   version: 5,
   storage: createJSONStorage(() => conditionalLocalStorage),
-  migrate: (persistedState: unknown, version: number) => {
-    /* istanbul ignore if*/
-    if (version === 1) {
-      return migrateV1ToV2(persistedState as LayerStore);
-    } else if (version === 2) {
-      return migrateV2ToV3(persistedState as LayerStore);
-    } else if (version === 3) {
-      // New variable support: ensure variables array exists
-      return { ...(persistedState as LayerStore) } as LayerStore;
-    } else if (version === 4) {
-      return { ...(persistedState as LayerStore) } as LayerStore;
-    }
-    return persistedState;
-  }
 }))
 
 export { useLayerStore, countLayers, findAllParentLayersRecursive };
