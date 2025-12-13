@@ -21,6 +21,7 @@ import { DeepSeek } from '@/components/ui/svgs';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/spinner';
 import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 
 const componentRegistry = {
@@ -42,20 +43,6 @@ function EditorComponent() {
   const _business = business?.[0]
   const code = _business?.uiBuilder?.layers ?? ''
   const { mutate: update } = api.business.useUpdate()
-  function hasSyntaxErrors(): boolean {
-    if (!monacoInstance || !editorRef.current) return true;
-
-    const model = editorRef.current.getModel();
-    if (!model) return true;
-
-    const markers = monacoInstance.editor.getModelMarkers({
-      resource: model.uri,
-    });
-
-    return markers.some(
-      (m: any) => m.severity === monacoInstance.MarkerSeverity.Error
-    );
-  }
   function setCode(newCode: string) {
     try {
       // pre-save validations so there is no bad commit
@@ -71,7 +58,6 @@ function EditorComponent() {
     } catch { }
   }
   const { layout, previewMode } = Route.useSearch();
-  const { setTheme } = useTheme();
   const [isPreviewVisible, setIsPreviewVisible] = useState(true);
   const [isAIChatVisible, setIsAIChatVisible] = useState(false);
   const [selectedPreviewMode, setSelectedPreviewMode] = useState<'mobile' | 'tablet' | 'desktop' | 'responsive'>(
@@ -298,12 +284,7 @@ function EditorComponent() {
       <div className="p-4 border-b bg-background flex items-center justify-between" style={{ zIndex: 10 }}>
         <h1 className="text-xl font-bold">UI Builder Editor - {businessName}</h1>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setTheme('light')}>
-            <SunIcon className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={() => setTheme('dark')}>
-            <MoonIcon className="h-4 w-4" />
-          </Button>
+          <ThemeToggle />
 
           {/* Preview Mode Selector */}
           <div className="flex items-center border rounded-md ml-2">
