@@ -10,7 +10,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
 
-export const Route = createFileRoute("/$businessName/admin")({
+export const Route = createFileRoute("/$businessName/admin/")({
   component: () => {
     const { businessName } = Route.useParams();
     const { data: allBusinesses = [], isLoading } = api.business.useGet();

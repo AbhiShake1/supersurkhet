@@ -46,7 +46,9 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => (
     ],
 
     getSelectedContext() {
-      return window.contextDatas?.[get().selectedLayerId] || null;
+      const selectedLayerId = get().selectedLayerId
+      if (!selectedLayerId) return null
+      return window.contextDatas?.[selectedLayerId] || null;
     },
 
     selectedLayerId: null,

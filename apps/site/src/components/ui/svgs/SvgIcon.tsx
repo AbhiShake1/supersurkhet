@@ -29,6 +29,10 @@ import {
   VercelWordmark,
   VercelWordmarkDark,
   Vue,
+  DeepSeek,
+  OpenAI,
+  ClaudeAI,
+  Gemini,
 } from ".";
 
 const icons = {
@@ -60,6 +64,10 @@ const icons = {
   vercelWordmark: VercelWordmark,
   vercelWordmarkDark: VercelWordmarkDark,
   vue: Vue,
+  openai: OpenAI,
+  deepseek: DeepSeek,
+  claude: ClaudeAI,
+  gemini: Gemini,
 } as const;
 
 type IconName = keyof typeof icons;
