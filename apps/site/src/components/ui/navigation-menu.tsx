@@ -30,7 +30,7 @@ const NavigationMenuList = React.forwardRef<
   <NavigationMenuPrimitive.List
     ref={ref}
     className={cn(
-      "flex justify-satrt gap-4 flex-row",
+      "flex justify-start gap-4 flex-row",
       className
     )}
     {...props}
