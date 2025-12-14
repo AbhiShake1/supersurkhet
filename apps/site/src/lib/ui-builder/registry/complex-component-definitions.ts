@@ -246,7 +246,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
           "background",
           "foreground",
         ])
-        .optional(),
+        .default("foreground"),
       rotate: z.enum(["none", "90", "180", "270"]).default("none"),
     }),
     from: "@/components/ui/ui-builder/icon",
@@ -1695,7 +1695,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: '@/components/ui/bento-grid',
     fieldOverrides: {
       className: (layer) => classNameFieldOverrides(layer),
-      background: (layer) => childrenFieldOverrides(layer),
+      children: (layer) => childrenFieldOverrides(layer),
       Icon: (layer) => iconNameFieldOverrides(layer), // For icon field
     },
     defaultChildren: [
