@@ -67,6 +67,7 @@ import {
   ReasoningTrigger,
 } from '@/components/ai-elements/reasoning';
 import { Loader } from '@/components/ai-elements/loader';
+import { DefaultChatTransport } from 'ai';
 
 
 const componentRegistry = {
@@ -396,17 +397,24 @@ Provide the complete UI configuration in JSON format as your response. Do not in
 
   const [webSearch, setWebSearch] = useState(false);
   const { messages, sendMessage, status, regenerate } = useChat({
-    api: '/api/chat',
-    body: {
-      businessName,
-      businessType: _business?.businessType || '',
-      businessDescription: _business?.description || '',
-    },
-    initialMessages: [
+    transport: new DefaultChatTransport({
+      api: "/api/builderchat",
+      body: {
+        businessName,
+        businessType: _business?.businessType || '',
+        businessDescription: _business?.description || '',
+      },
+    }),
+    messages: [
       {
         id: 'initial-prompt',
         role: 'system',
-        content: generateSystemPrompt(),
+        parts: [
+          {
+            type: 'text',
+            text: generateSystemPrompt(),
+          }
+        ],
       }
     ],
     onError: (error) => {
