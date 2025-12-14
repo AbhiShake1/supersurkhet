@@ -93,6 +93,7 @@ import { AnimatedIcon, AnimatedIconSchema } from '@/components/animate-ui/icons/
 import { SvgIcon, SvgIconSchema } from '@/components/ui/svgs/SvgIcon';
 import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
 import { RatingInteraction, RatingInteractionSchema } from '@/components/ui/emoji-rating';
+import { OfferCard, OfferCardSchema, OfferCarousel, OfferCarouselSchema } from '@/components/ui/offer-carousel';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -1945,5 +1946,23 @@ export const complexComponentDefinitions: ComponentRegistry = {
       } satisfies ComponentLayer,
     ],
   },
+
+  OfferCarousel: {
+    component: OfferCarousel,
+    schema: OfferCarouselSchema,
+    from: '@/components/ui/offer-carousel',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: []
+  },
+
+  OfferCard: {
+    component: OfferCard,
+    schema: OfferCardSchema,
+    from: '@/components/ui/offer-carousel',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+  },
+
+
 };
 
