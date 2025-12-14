@@ -7,8 +7,8 @@ import React, {
   useEffect,
 } from "react";
 import { Plus, Crosshair, ZoomIn, ZoomOut, MousePointer } from "lucide-react";
-import { countLayers, useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import { ComponentLayer } from "@/components/ui/ui-builder/types";
+import { countLayers, defaultLayers, useLayerStore } from "@/lib/ui-builder/store/layer-store";
+import type { ComponentLayer } from "@/components/ui/ui-builder/types";
 import {
   TransformWrapper,
   TransformComponent,
@@ -256,7 +256,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
     setPointerEventsEnabled(enabled);
   }, []);
 
-  const layers = selectedPage.children;
+  const layers = selectedPage?.children ?? defaultLayers;
 
   // Memoize totalLayers calculation separately to avoid recalculating on every render
   const totalLayers = useMemo(() => countLayers(layers), [layers]);

@@ -10,10 +10,11 @@ import { ErrorFallback } from "@/components/ui/ui-builder/internal/components/er
 import { isPrimitiveComponent } from "@/lib/ui-builder/store/editor-utils";
 import { hasLayerChildren, canLayerAcceptChildren } from "@/lib/ui-builder/store/layer-utils";
 import { DevProfiler } from "@/components/ui/ui-builder/internal/components/dev-profiler";
-import type { ComponentRegistry, ComponentLayer, Variable, PropValue } from '@/components/ui/ui-builder/types';
+import type { ComponentRegistry, ComponentLayer, PropValue } from '@/components/ui/ui-builder/types';
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
-import { resolveVariableReferences, resolveContextualMentions } from "@/lib/ui-builder/utils/variable-resolver";
+import { resolveContextualMentions } from "@/lib/ui-builder/utils/variable-resolver";
+import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 // Custom hook to safely use DND context
 const useSafeDndContext = () => {
@@ -24,6 +25,86 @@ const useSafeDndContext = () => {
   }
 };
 
+function resolveStringsDeep(
+  value: any,
+  contextData: any
+): any {
+  // Resolve strings
+  if (typeof value === "string") {
+    return resolveContextualMentions(value, contextData);
+  }
+
+  // Primitives / non-resolvable
+  if (
+    value == null ||
+    typeof value === "number" ||
+    typeof value === "boolean" ||
+    typeof value === "function" ||
+    typeof value === "symbol"
+  ) {
+    return value;
+  }
+
+  // Never touch React elements
+  if (React.isValidElement(value)) {
+    return value;
+  }
+
+  // Arrays
+  if (Array.isArray(value)) {
+    return value.map(v => resolveStringsDeep(v, contextData));
+  }
+
+  // Plain objects
+  if (typeof value === "object") {
+    const out: Record<string, any> = {};
+    for (const key in value) {
+      out[key] = resolveStringsDeep(value[key], contextData);
+    }
+    return out;
+  }
+
+  return value;
+}
+
+declare global {
+  interface Window {
+    contextDatas?: Record<string, Record<string, any>>;
+  }
+}
+
+const Wrapper = React.forwardRef<any, {
+  props: any;
+  element: React.ComponentType<any>;
+  _layerId?: string;
+}>(
+  ({ props, element: Element, _layerId }, ref) => {
+    const contextData = useContextData();
+
+    // Resolve all strings in props (deeply)
+    const resolvedProps = React.useMemo(
+      () => resolveStringsDeep(props, contextData),
+      [props, contextData]
+    );
+
+    // Expose context imperatively if needed by the engine
+    React.useImperativeHandle(ref, () => ({
+      contextdata: contextData?.context,
+    }));
+
+    // Optional debug hook
+    window.contextDatas ||= {};
+    if (_layerId)
+      window.contextDatas[_layerId] = contextData;
+
+    return (
+      <div className="wrapper">
+        <Element {...resolvedProps} ref={ref} />
+      </div>
+    );
+  }
+);
+
 export interface EditorConfig {
   zIndex: number;
   totalLayers: number;
@@ -32,26 +113,19 @@ export interface EditorConfig {
   onSelectElement: (layerId: string) => void;
   handleDuplicateLayer?: () => void;
   handleDeleteLayer?: () => void;
+  contextData?: Record<string, any>;
 }
-
-
 
 export const RenderLayer: React.FC<{
   layer: ComponentLayer;
   componentRegistry: ComponentRegistry;
   editorConfig?: EditorConfig;
-  variables?: Variable[];
-  variableValues?: Record<string, PropValue>;
-  contextData?: Record<string, any>;
 }> = memo(
-  ({ layer, componentRegistry, editorConfig, variables, variableValues, contextData }) => {
-    const storeVariables = useLayerStore((state) => state.variables);
+  ({ layer, componentRegistry, editorConfig }) => {
     const isLayerAPage = useLayerStore((state) => state.isLayerAPage(layer.id));
     const registry = useEditorStore((state) => state.registry);
     const dndContext = useSafeDndContext();
 
-    // Use provided variables or fall back to store variables
-    const effectiveVariables = variables || storeVariables;
     const componentDefinition =
       componentRegistry[layer.type as keyof typeof componentRegistry];
 
@@ -65,26 +139,11 @@ export const RenderLayer: React.FC<{
       layer: layer
     }), [layer, componentRegistry]);
 
-    // Resolve variable references in pops with proper memoization
-    const resolvedProps = useMemo(() =>
-      resolveVariableReferences(layer.props, effectiveVariables, variableValues, contextData),
-      [layer.props, effectiveVariables, variableValues, contextData]
-    );
-
-    // Also resolve contextual mentions in layer children if it's a string
-    const resolvedChildren = useMemo(() => {
-      if (typeof layer.children === 'string' && contextData) {
-        // Process string children for contextual mentions
-        return resolveContextualMentions(layer.children, contextData);
-      }
-      return layer.children;
-    }, [layer.children, contextData]);
+    const resolvedProps = layer.props;
 
     const childProps: Record<string, PropValue> = useMemo(() => ({
       ...resolvedProps,
-      // Update children if it was a string that got processed
-      ...(typeof layer.children === 'string' ? { children: resolvedChildren } : {})
-    }), [resolvedProps, resolvedChildren]);
+    }), [resolvedProps]);
 
     // Memoize child editor config to avoid creating objects in JSX
     const childEditorConfig = useMemo(() => {
@@ -126,10 +185,7 @@ export const RenderLayer: React.FC<{
             key={child.id}
             componentRegistry={componentRegistry}
             layer={child}
-            variables={variables}
-            variableValues={variableValues}
             editorConfig={childEditorConfig}
-            contextData={contextData}
           />
         );
 
@@ -166,8 +222,8 @@ export const RenderLayer: React.FC<{
 
       childProps.children = childElements;
     } else if (typeof layer.children === "string") {
-      // Use the resolved children we processed earlier
-      childProps.children = resolvedChildren;
+      // String children will be processed by the Wrapper component
+      childProps.children = layer.children;
     } else if (showDropZones && hasLayerChildren(layer)) {
       // Show drop zone for empty containers
       childProps.children = (
@@ -181,15 +237,43 @@ export const RenderLayer: React.FC<{
       );
     }
 
-    const WrappedComponent = isPrimitive ? (
-      <Component id={layer.id} data-testid={layer.id} data-layer-id={layer.id} {...childProps} />
-    ) : (
-      <ErrorSuspenseWrapper key={layer.id} id={layer.id}>
-        <Component data-testid={layer.id} data-layer-id={layer.id} {...childProps} />
-      </ErrorSuspenseWrapper>
-    );
+    const ref = React.useRef<any>(null);
 
-    // No wrapper needed - drop zones are now absolute positioned
+    function WrappedComponentChild(props: any) {
+      return isPrimitive ? (
+        // @ts-expect-error
+        <Component
+          ref={ref}
+          id={layer.id}
+          data-testid={layer.id}
+          data-layer-id={layer.id}
+          {...childProps}
+          {...props}
+        />
+      ) : (
+        <ErrorSuspenseWrapper key={layer.id} id={layer.id}>
+          {
+            // @ts-expect-error
+            <Component
+              ref={ref}
+              data-testid={layer.id}
+              data-layer-id={layer.id}
+              {...childProps}
+              {...props}
+            />
+          }
+        </ErrorSuspenseWrapper>
+      );
+    }
+
+    const WrappedComponent = (
+      <Wrapper
+        _layerId={layer.id}
+        props={childProps}
+        element={WrappedComponentChild}
+        ref={ref}
+      />
+    );
 
     if (!editorConfig) {
       return WrappedComponent;

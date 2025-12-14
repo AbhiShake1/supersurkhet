@@ -50,7 +50,6 @@ export function ChildrenSearchableSelect({ layer, onChange }: ChildrenSearchable
 }
 
 function ChildLayerBadge({ child, selectLayer, removeLayer }: { child: ComponentLayer, selectLayer: (id: string) => void, removeLayer: (id: string) => void }) {
-
   const handleSelect = useCallback(() => {
     selectLayer(child.id);
   }, [selectLayer, child.id]);

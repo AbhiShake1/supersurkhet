@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useContext } from "react";
+import React, { useCallback, useMemo } from "react";
 import { z } from "zod";
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
@@ -11,9 +11,6 @@ import AutoForm from "@/components/ui/auto-form";
 import { generateFieldOverrides } from "@/lib/ui-builder/store/editor-utils";
 import { addDefaultValues } from "@/lib/ui-builder/store/schema-utils";
 import { getBaseType } from "@/components/ui/auto-form/utils";
-import { isVariableReference } from "@/lib/ui-builder/utils/variable-resolver";
-import { resolveVariableReferences } from "@/lib/ui-builder/utils/variable-resolver";
-import { ContextDataStore, useContextData } from "@/lib/ui-builder/context/context-data-store";
 
 interface PropsPanelProps {
   className?: string;
@@ -143,9 +140,6 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
     (state) => state.allowPagesDeletion
   );
 
-  // Get context data for contextual field overrides
-  const contextData = useContextData();
-
   // Retrieve the appropriate schema from componentRegistry
   const { schema } = useMemo(() => {
     if (
@@ -183,26 +177,20 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
 
         // Then update only the props that came from the form, preserving variable references
         for (const key of Object.keys(dataProps as Record<string, any>)) {
-          const originalValue = selectedLayer.props[key];
           const newValue = (dataProps as Record<string, any>)[key];
           const fieldDef = ('shape' in schema && schema.shape) ? schema.shape[key] : undefined;
           const baseType = fieldDef
             ? getBaseType(fieldDef as z.ZodAny)
             : undefined;
           // If the original value was a variable reference, preserve it
-          if (isVariableReference(originalValue)) {
-            // Keep the variable reference - the form should not override variable bindings
-            preservedProps[key] = originalValue;
+          // Handle date serialization
+          if (
+            baseType === z.ZodFirstPartyTypeKind.ZodDate &&
+            newValue instanceof Date
+          ) {
+            preservedProps[key] = newValue.toISOString();
           } else {
-            // Handle date serialization
-            if (
-              baseType === z.ZodFirstPartyTypeKind.ZodDate &&
-              newValue instanceof Date
-            ) {
-              preservedProps[key] = newValue.toISOString();
-            } else {
-              preservedProps[key] = newValue;
-            }
+            preservedProps[key] = newValue;
           }
         };
       }
@@ -225,20 +213,12 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
     [updateLayer, selectedLayerId, selectedLayer, addComponentLayer, schema]
   );
 
-  // Memoize variables to avoid accessing store state on every render
-  const variables = useLayerStore((state) => state.variables);
-
   // Prepare values for AutoForm, converting enum values to strings as select elements only accept string values
   const formValues = useMemo(() => {
     if (!selectedLayer) return EMPTY_FORM_VALUES;
 
     // First resolve variable references to get display values
-    const resolvedProps = resolveVariableReferences(
-      selectedLayer.props,
-      variables,
-      undefined,
-      contextData
-    );
+    const resolvedProps = selectedLayer.props;
 
     const transformedProps: Record<string, any> = {};
     const schemaShape = ('shape' in schema && schema.shape) ? schema.shape as z.ZodRawShape : undefined; // Get shape from the memoized schema
@@ -276,7 +256,7 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
 
     return { ...transformedProps, children: selectedLayer.children };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedLayer, schema, revisionCounter, contextData]); // Include revisionCounter to detect undo/redo changes and contextData
+  }, [selectedLayer, schema, revisionCounter]); // Include revisionCounter to detect undo/redo changes 
 
   const autoFormSchema = useMemo(() => {
     // Only pass ZodObject schemas to addDefaultValues, otherwise return the original schema
@@ -294,9 +274,9 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
   const autoFormFieldConfig = useMemo(() => {
     if (!selectedLayer) return undefined; // Or a default config if appropriate
     // Pass context data to field overrides to enable contextual mentions
-    return generateFieldOverrides(componentRegistry, selectedLayer, contextData);
+    return generateFieldOverrides(componentRegistry, selectedLayer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentRegistry, selectedLayer, selectedLayer?.props, contextData]);
+  }, [componentRegistry, selectedLayer, selectedLayer?.props]);
 
   // Create a unique key that changes when we need to force re-render the form
   // This includes selectedLayerId and revisionCounter to handle both layer changes and undo/redo

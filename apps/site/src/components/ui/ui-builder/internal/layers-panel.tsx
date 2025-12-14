@@ -14,7 +14,7 @@ import {
   hasLayerChildren,
 } from "@/lib/ui-builder/store/layer-utils";
 import { Plus } from "lucide-react";
-import { useHeTree, Id } from "he-tree-react";
+import { useHeTree, type Id } from "he-tree-react";
 import {
   TreeRowNode,
   TreeRowPlaceholder,

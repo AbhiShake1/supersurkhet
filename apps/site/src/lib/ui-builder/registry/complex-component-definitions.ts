@@ -11,7 +11,7 @@ import { Icon, iconNames } from "@/components/ui/ui-builder/components/icon";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Input, InputSchema } from "@/components/ui/input";
-import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides, childrenAsTextareaFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
+import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides, childrenAsTextareaFieldOverrides, tablePickerFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
 
 import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
@@ -69,6 +69,16 @@ import { ProductOnboardingCard } from '@/components/onboarding/product-definitio
 import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
 import { Slider, sliderSchema } from '@/components/ui/slider-1';
 import EstimatedDateBadge, { EstimatedDateBadgeSchema } from '@/components/ui/estimated-arrival';
+
+// Data components from supersurkhet
+import {
+  DataList,
+  DataListSchema,
+  SingleData,
+  DataSchema,
+  DataDetail,
+  DataDetailSchema,
+} from '@/components/supersurkhet/data';
 
 // New components with schemas added
 import Features, { FeaturesSchema } from '@/components/features-1';
@@ -1871,6 +1881,69 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: '@/components/ui/emoji-rating',
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [],
+  },
+
+  // SuperSurkhet Data Components
+  DataList: {
+    component: DataList,
+    schema: DataListSchema,
+    from: '@/components/supersurkhet/data',
+    fieldOverrides: {
+      className: (layer) => classNameFieldOverrides(layer),
+      children: (layer) => childrenFieldOverrides(layer),
+      table: (layer) => tablePickerFieldOverrides(layer),
+    },
+    defaultChildren: [
+      {
+        id: "data-item-1",
+        type: "SingleData",
+        name: "SingleData",
+        props: {},
+        children: [
+          {
+            id: "data-content-1",
+            type: "div",
+            name: "div",
+            props: { className: "p-4" },
+            children: "Data Item Content",
+          } satisfies ComponentLayer,
+        ],
+      },
+    ],
+  },
+  SingleData: {
+    component: SingleData,
+    schema: DataSchema,
+    from: '@/components/supersurkhet/data',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "single-data-content",
+        type: "div",
+        name: "div",
+        props: { className: "p-4" },
+        children: "Single Data Content",
+      } satisfies ComponentLayer,
+    ],
+  },
+  DataDetail: {
+    component: DataDetail,
+    schema: DataDetailSchema,
+    from: '@/components/supersurkhet/data',
+    fieldOverrides: {
+      className: (layer) => classNameFieldOverrides(layer),
+      children: (layer) => childrenFieldOverrides(layer),
+      table: (layer) => tablePickerFieldOverrides(layer),
+    },
+    defaultChildren: [
+      {
+        id: "data-detail-content",
+        type: "div",
+        name: "div",
+        props: { className: "p-4" },
+        children: "Data Detail Content",
+      } satisfies ComponentLayer,
+    ],
   },
 };
 

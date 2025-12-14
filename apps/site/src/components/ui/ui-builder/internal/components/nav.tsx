@@ -370,6 +370,26 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
           </CommandShortcut>
         </TooltipContent>
       </Tooltip>
+
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            onClick={() => window.open(window.location.pathname + '/editor', '_blank')}
+            variant="secondary"
+            size="icon"
+            className="flex flex-col justify-center"
+          >
+            <span className="sr-only">Open Editor</span>
+            <Maximize className="w-4 h-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="flex items-center gap-2">
+          Open Full Editor
+          <CommandShortcut className="ml-0 text-sm leading-3">
+            ⌘+⇧+D
+          </CommandShortcut>
+        </TooltipContent>
+      </Tooltip>
     </>
   );
 };
@@ -433,6 +453,14 @@ const ResponsiveDropdown: React.FC<ResponsiveDropdownProps> = ({
           <FileUp className="w-4 h-4" />
           Export
           <span className="ml-auto text-xs text-muted-foreground">⌘+⇧+E</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="gap-2"
+          onClick={() => window.open(window.location.pathname + '/editor', '_blank')}
+        >
+          <Maximize className="w-4 h-4" />
+          Open Editor
+          <span className="ml-auto text-xs text-muted-foreground">⌘+⇧+D</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

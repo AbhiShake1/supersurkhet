@@ -3,7 +3,6 @@ import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/lib/api";
 import type { Product } from "@/lib/schemas/listings";
-import { useContextData } from "@/lib/ui-builder/context/context-data-store";
 import { NotFound } from "@/components/ui/not-found";
 import { useBusiness } from "@/contexts/business-context";
 import { z } from "zod";
@@ -40,8 +39,6 @@ const ProductDetail = React.forwardRef<HTMLDivElement, ProductDetailProps>(
     const { business } = useBusiness()
     const { data: _product = [], isLoading } = api.product.useGet({ keys: [business?.id ?? "", productId], single: true })
     const product = _product?.[0]
-    const { useAddContextData } = useContextData()
-    useAddContextData({ product })
 
     if (isLoading) {
       return (
@@ -83,8 +80,6 @@ const ProductList = React.forwardRef<HTMLDivElement, ProductListProps>(
   ({ className, children, ...props }, ref) => {
     const { business } = useBusiness()
     const { data: products = [], isLoading } = api.product.useGet({ keys: [business?.id ?? ""] })
-    const { useAddContextData } = useContextData()
-    useAddContextData({ products })
 
     if (isLoading) {
       return (
@@ -116,8 +111,6 @@ interface ProductProviderProps {
 }
 
 const ProductProvider: React.FC<ProductProviderProps> = ({ product, children }) => {
-  const { useAddContextData } = useContextData()
-  useAddContextData({ product })
   return (
     <ProductContext.Provider value={{ product }}>
       {children}

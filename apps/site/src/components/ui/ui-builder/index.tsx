@@ -17,13 +17,10 @@ import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
 import type {
   ComponentRegistry,
   ComponentLayer,
-  Variable,
   LayerChangeHandler,
-  VariableChangeHandler
 } from "@/components/ui/ui-builder/types";
 import { TailwindThemePanel } from "@/components/ui/ui-builder/internal/tailwind-theme-panel";
 import { ConfigPanel } from "@/components/ui/ui-builder/internal/config-panel";
-import { VariablesPanel } from "@/components/ui/ui-builder/internal/variables-panel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -33,7 +30,6 @@ import { cn } from "@/lib/utils";
 export interface TabsContentConfig {
   layers: { title: string; content: React.ReactNode };
   appearance?: { title: string; content: React.ReactNode };
-  data?: { title: string; content: React.ReactNode };
 }
 
 /**
@@ -53,12 +49,9 @@ interface PanelConfig {
 export interface UIBuilderProps<TRegistry extends ComponentRegistry = ComponentRegistry> {
   initialLayers?: ComponentLayer[];
   onChange?: LayerChangeHandler<TRegistry>;
-  initialVariables?: Variable[];
-  onVariablesChange?: VariableChangeHandler;
   componentRegistry: TRegistry;
   panelConfig?: PanelConfig;
   persistLayerStore?: boolean;
-  allowVariableEditing?: boolean;
   allowPagesCreation?: boolean;
   allowPagesDeletion?: boolean;
   isLoading?: boolean;
@@ -74,12 +67,9 @@ export interface UIBuilderProps<TRegistry extends ComponentRegistry = ComponentR
 const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   initialLayers,
   onChange,
-  initialVariables,
-  onVariablesChange,
   componentRegistry,
   panelConfig: userPanelConfig,
   persistLayerStore = true,
-  allowVariableEditing = true,
   allowPagesCreation = true,
   allowPagesDeletion = true,
   createNew = true,
@@ -107,7 +97,7 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   // Effect 1: Initialize Editor Store with registry and page form props
   useEffect(() => {
     if (editorStore && componentRegistry && !editorStoreInitialized) {
-      editorStore.initialize(componentRegistry, persistLayerStore, allowPagesCreation, allowPagesDeletion, allowVariableEditing);
+      editorStore.initialize(componentRegistry, persistLayerStore, allowPagesCreation, allowPagesDeletion);
       setEditorStoreInitialized(true);
     }
   }, [
@@ -117,14 +107,13 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
     persistLayerStore,
     allowPagesCreation,
     allowPagesDeletion,
-    allowVariableEditing,
   ]);
 
   // Effect 2: Conditionally initialize Layer Store *after* Editor Store is initialized
   useEffect(() => {
     if (layerStore && editorStore) {
       if (initialLayers?.length && !layerStoreInitialized) {
-        layerStore.initialize(initialLayers, undefined, undefined, initialVariables);
+        layerStore.initialize(initialLayers, undefined, undefined);
         setLayerStoreInitialized(true);
         const { clear } = useLayerStore.temporal.getState();
         clear();
@@ -137,7 +126,6 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
     editorStore,
     componentRegistry,
     initialLayers,
-    initialVariables,
     layerStoreInitialized,
     createNew,
   ]);
@@ -148,13 +136,6 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
       onChange(layerStore.pages);
     }
   }, [layerStore?.pages, onChange, layerStoreInitialized]);
-
-  // Effect 4: Handle onVariablesChange callback when variables change
-  useEffect(() => {
-    if (onVariablesChange && layerStore?.variables && layerStoreInitialized) {
-      onVariablesChange(layerStore.variables);
-    }
-  }, [layerStore?.variables, onVariablesChange, layerStoreInitialized]);
 
   const isLoading = !layerStoreInitialized || !editorStoreInitialized;
   const layout = isLoading ? (
@@ -297,7 +278,7 @@ export function PageConfigPanel({
   className: string;
   tabsContent: TabsContentConfig;
 }) {
-  const { layers, appearance, data } = tabsContent;
+  const { layers, appearance } = tabsContent;
 
   return (
     <Tabs
@@ -308,7 +289,6 @@ export function PageConfigPanel({
       <TabsList className="w-full">
         <TabsTrigger value="layers">{layers.title}</TabsTrigger>
         {appearance && <TabsTrigger value="appearance">{appearance.title}</TabsTrigger>}
-        {data && <TabsTrigger value="variables">{data.title}</TabsTrigger>}
       </TabsList>
       <TabsContent value="layers">
         {layers.content}
@@ -316,11 +296,6 @@ export function PageConfigPanel({
       {appearance && (
         <TabsContent value="appearance">
           {appearance.content}
-        </TabsContent>
-      )}
-      {data && (
-        <TabsContent value="variables">
-          {data.content}
         </TabsContent>
       )}
     </Tabs>
@@ -344,7 +319,6 @@ export function defaultConfigTabsContent() {
         </div>
       ),
     },
-    data: { title: "Data", content: <VariablesPanel /> }
   }
 }
 

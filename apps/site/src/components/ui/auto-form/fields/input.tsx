@@ -3,8 +3,7 @@ import { MentionInput } from "@/components/ui/mention-input";
 import AutoFormLabel from "../common/label";
 import AutoFormTooltip from "../common/tooltip";
 import type { AutoFormInputComponentProps } from "../types";
-import { useContext } from "react";
-import { ContextDataStoreContext } from "@/lib/ui-builder/context/context-data-store";
+import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 
 export default function AutoFormInput({
   label,
@@ -16,7 +15,17 @@ export default function AutoFormInput({
   const showLabel = _showLabel === undefined ? true : _showLabel;
 
   // Try to get context data from the context store
-  const contextData = useContext(ContextDataStoreContext);
+  const selectedLayerContext = useLayerStore((state) => state.getSelectedContext());
+
+  function formatedContext() {
+    if (!selectedLayerContext) return {}
+    if ("context" in selectedLayerContext) {
+      return selectedLayerContext
+    }
+    return {
+      context: selectedLayerContext,
+    }
+  }
 
   return (
     <div className="flex flex-row  items-center space-x-2">
@@ -32,7 +41,7 @@ export default function AutoFormInput({
             value={fieldPropsWithoutShowLabel.value as string}
             onChange={fieldPropsWithoutShowLabel.onChange}
             placeholder={fieldPropsWithoutShowLabel.placeholder}
-            contextData={contextData}
+            contextData={formatedContext()}
             className={fieldPropsWithoutShowLabel.className}
           />
         </FormControl>

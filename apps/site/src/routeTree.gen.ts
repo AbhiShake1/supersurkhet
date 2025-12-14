@@ -22,7 +22,8 @@ import { Route as BusinessNameIndexImport } from './routes/$businessName/index'
 import { Route as BusinessChatImport } from './routes/_business/chat'
 import { Route as AuthSettingsImport } from './routes/_auth/settings'
 import { Route as AuthAuthImport } from './routes/_auth/auth'
-import { Route as BusinessNameAdminImport } from './routes/$businessName/admin'
+import { Route as BusinessNameAdminIndexImport } from './routes/$businessName/admin/index'
+import { Route as BusinessNameAdminEditorImport } from './routes/$businessName/admin/editor'
 
 // Create/Update Routes
 
@@ -91,9 +92,15 @@ const AuthAuthRoute = AuthAuthImport.update({
   getParentRoute: () => AuthRoute,
 } as any)
 
-const BusinessNameAdminRoute = BusinessNameAdminImport.update({
-  id: '/admin',
-  path: '/admin',
+const BusinessNameAdminIndexRoute = BusinessNameAdminIndexImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => BusinessNameRoute,
+} as any)
+
+const BusinessNameAdminEditorRoute = BusinessNameAdminEditorImport.update({
+  id: '/admin/editor',
+  path: '/admin/editor',
   getParentRoute: () => BusinessNameRoute,
 } as any)
 
@@ -143,13 +150,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof S3testImport
       parentRoute: typeof rootRoute
     }
-    '/$businessName/admin': {
-      id: '/$businessName/admin'
-      path: '/admin'
-      fullPath: '/$businessName/admin'
-      preLoaderRoute: typeof BusinessNameAdminImport
-      parentRoute: typeof BusinessNameImport
-    }
     '/_auth/auth': {
       id: '/_auth/auth'
       path: '/auth'
@@ -185,19 +185,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppsIndexImport
       parentRoute: typeof rootRoute
     }
+    '/$businessName/admin/editor': {
+      id: '/$businessName/admin/editor'
+      path: '/admin/editor'
+      fullPath: '/$businessName/admin/editor'
+      preLoaderRoute: typeof BusinessNameAdminEditorImport
+      parentRoute: typeof BusinessNameImport
+    }
+    '/$businessName/admin/': {
+      id: '/$businessName/admin/'
+      path: '/admin'
+      fullPath: '/$businessName/admin'
+      preLoaderRoute: typeof BusinessNameAdminIndexImport
+      parentRoute: typeof BusinessNameImport
+    }
   }
 }
 
 // Create and export the route tree
 
 interface BusinessNameRouteChildren {
-  BusinessNameAdminRoute: typeof BusinessNameAdminRoute
   BusinessNameIndexRoute: typeof BusinessNameIndexRoute
+  BusinessNameAdminEditorRoute: typeof BusinessNameAdminEditorRoute
+  BusinessNameAdminIndexRoute: typeof BusinessNameAdminIndexRoute
 }
 
 const BusinessNameRouteChildren: BusinessNameRouteChildren = {
-  BusinessNameAdminRoute: BusinessNameAdminRoute,
   BusinessNameIndexRoute: BusinessNameIndexRoute,
+  BusinessNameAdminEditorRoute: BusinessNameAdminEditorRoute,
+  BusinessNameAdminIndexRoute: BusinessNameAdminIndexRoute,
 }
 
 const BusinessNameRouteWithChildren = BusinessNameRoute._addFileChildren(
@@ -223,12 +239,13 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
-  '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
   '/$businessName/': typeof BusinessNameIndexRoute
   '/apps': typeof AppsIndexRoute
+  '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
+  '/$businessName/admin': typeof BusinessNameAdminIndexRoute
 }
 
 export interface FileRoutesByTo {
@@ -237,12 +254,13 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
-  '/$businessName/admin': typeof BusinessNameAdminRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
   '/$businessName': typeof BusinessNameIndexRoute
   '/apps': typeof AppsIndexRoute
+  '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
+  '/$businessName/admin': typeof BusinessNameAdminIndexRoute
 }
 
 export interface FileRoutesById {
@@ -253,12 +271,13 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
-  '/$businessName/admin': typeof BusinessNameAdminRoute
   '/_auth/auth': typeof AuthAuthRoute
   '/_auth/settings': typeof AuthSettingsRoute
   '/_business/chat': typeof BusinessChatRoute
   '/$businessName/': typeof BusinessNameIndexRoute
   '/apps/': typeof AppsIndexRoute
+  '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
+  '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
 }
 
 export interface FileRouteTypes {
@@ -270,12 +289,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/privacy'
     | '/s3test'
-    | '/$businessName/admin'
     | '/auth'
     | '/settings'
     | '/chat'
     | '/$businessName/'
     | '/apps'
+    | '/$businessName/admin/editor'
+    | '/$businessName/admin'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -283,12 +303,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/privacy'
     | '/s3test'
-    | '/$businessName/admin'
     | '/auth'
     | '/settings'
     | '/chat'
     | '/$businessName'
     | '/apps'
+    | '/$businessName/admin/editor'
+    | '/$businessName/admin'
   id:
     | '__root__'
     | '/'
@@ -297,12 +318,13 @@ export interface FileRouteTypes {
     | '/admin'
     | '/privacy'
     | '/s3test'
-    | '/$businessName/admin'
     | '/_auth/auth'
     | '/_auth/settings'
     | '/_business/chat'
     | '/$businessName/'
     | '/apps/'
+    | '/$businessName/admin/editor'
+    | '/$businessName/admin/'
   fileRoutesById: FileRoutesById
 }
 
@@ -354,8 +376,9 @@ export const routeTree = rootRoute
     "/$businessName": {
       "filePath": "$businessName.tsx",
       "children": [
-        "/$businessName/admin",
-        "/$businessName/"
+        "/$businessName/",
+        "/$businessName/admin/editor",
+        "/$businessName/admin/"
       ]
     },
     "/_auth": {
@@ -374,10 +397,6 @@ export const routeTree = rootRoute
     "/s3test": {
       "filePath": "s3test.tsx"
     },
-    "/$businessName/admin": {
-      "filePath": "$businessName/admin.tsx",
-      "parent": "/$businessName"
-    },
     "/_auth/auth": {
       "filePath": "_auth/auth.tsx",
       "parent": "/_auth"
@@ -395,6 +414,14 @@ export const routeTree = rootRoute
     },
     "/apps/": {
       "filePath": "apps/index.tsx"
+    },
+    "/$businessName/admin/editor": {
+      "filePath": "$businessName/admin/editor.tsx",
+      "parent": "/$businessName"
+    },
+    "/$businessName/admin/": {
+      "filePath": "$businessName/admin/index.tsx",
+      "parent": "/$businessName"
     }
   }
 }

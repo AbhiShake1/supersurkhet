@@ -26,3 +26,7 @@ export { VercelDark } from "./vercelDark";
 export { VercelWordmark } from "./vercelWordmark";
 export { VercelWordmarkDark } from "./vercelWordmarkDark";
 export { Vue } from "./vue";
+export { DeepSeek } from "./deepseek";
+export { OpenAI } from "./openai";
+export { ClaudeAI } from "./claude";
+export { Gemini } from "./gemini";

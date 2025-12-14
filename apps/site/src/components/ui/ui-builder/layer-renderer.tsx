@@ -3,18 +3,13 @@ import React from "react";
 import { type EditorConfig, RenderLayer } from "@/components/ui/ui-builder/internal/utils/render-utils";
 import { DevProfiler } from "@/components/ui/ui-builder/internal/components/dev-profiler";
 
-import type { Variable, ComponentLayer, ComponentRegistry, PropValue } from '@/components/ui/ui-builder/types';
-import { useContextData } from "@/lib/ui-builder/context/context-data-store";
+import type { ComponentLayer, ComponentRegistry } from '@/components/ui/ui-builder/types';
 
 interface LayerRendererProps<TRegistry extends ComponentRegistry = ComponentRegistry> {
   className?: string;
   page: ComponentLayer;
   editorConfig?: EditorConfig;
   componentRegistry: TRegistry;
-  /** Optional variable definitions */
-  variables?: Variable[];
-  /** Optional variable values to override defaults */
-  variableValues?: Record<string, PropValue>;
 }
 
 const LayerRenderer = React.memo<LayerRendererProps>(function LayerRenderer({
@@ -22,10 +17,7 @@ const LayerRenderer = React.memo<LayerRendererProps>(function LayerRenderer({
   page,
   editorConfig,
   componentRegistry,
-  variables,
-  variableValues,
 }) {
-  const contextData = useContextData()
   return (
     <DevProfiler id="LayerRenderer" threshold={30}>
       <div className={className} >
@@ -33,9 +25,6 @@ const LayerRenderer = React.memo<LayerRendererProps>(function LayerRenderer({
           layer={page}
           editorConfig={editorConfig}
           componentRegistry={componentRegistry}
-          variables={variables}
-          variableValues={variableValues}
-          contextData={contextData}
         />
       </div>
     </DevProfiler>

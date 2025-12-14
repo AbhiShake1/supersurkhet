@@ -1,3 +1,4 @@
+import "@/lib/monkey-patches";
 import {
   HeadContent,
   Outlet,

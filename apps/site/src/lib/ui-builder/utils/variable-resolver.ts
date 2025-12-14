@@ -1,58 +1,3 @@
-import React from 'react';
-import { type Variable, type PropValue, isVariableReference } from '@/components/ui/ui-builder/types';
-
-/**
- * Resolves variable references in props using provided variable values
- * @param props - The props object that may contain variable references
- * @param variables - Array of available variables
- * @param variableValues - Object mapping variable IDs to their resolved values
- * @param contextData - Contextual data like user info, business info, etc.
- * @returns Props with variable references resolved
- */
-export function resolveVariableReferences(
-  props: Record<string, PropValue>,
-  variables: Variable[],
-  variableValues?: Record<string, PropValue>,
-  contextData?: Record<string, any>
-): Record<string, PropValue> {
-  const resolved: Record<string, PropValue> = {};
-
-  for (const [key, value] of Object.entries(props)) {
-    if (isVariableReference(value)) {
-      const variable = variables.find(v => v.id === value.__variableRef);
-      if (variable) {
-        // Use provided value or fall back to default value
-        resolved[key] = variableValues?.[variable.id] ?? variable.defaultValue;
-      } else {
-        // Variable not found, use default value or undefined
-        resolved[key] = undefined;
-      }
-    } else if (typeof value === 'string' && contextData) {
-      // Handle contextual mentions in strings (e.g., @user.name, @business.name)
-      resolved[key] = resolveContextualMentions(value as string, contextData);
-    } else if (Array.isArray(value) && contextData) {
-      // Process arrays, looking for strings that might contain mentions
-      resolved[key] = value.map(item => {
-        if (typeof item === 'string') {
-          return resolveContextualMentions(item, contextData);
-        } else if (typeof item === 'object' && item !== null && !React.isValidElement(item)) {
-          // Recursively resolve nested objects within arrays
-          return resolveVariableReferences(item as Record<string, PropValue>, variables, variableValues, contextData);
-        }
-        return item;
-      });
-    } else if (typeof value === 'object' && value !== null && !Array.isArray(value) && !React.isValidElement(value)) {
-      // Recursively resolve nested objects (but not React elements or arrays)
-      resolved[key] = resolveVariableReferences(value as Record<string, PropValue>, variables, variableValues, contextData);
-    } else {
-      // Regular value, keep as is
-      resolved[key] = value;
-    }
-  }
-
-  return resolved;
-}
-
 /**
  * Resolves contextual mentions in a string (e.g., @user.name, @business.name)
  * @param value - The string value that may contain contextual mentions
@@ -99,5 +44,3 @@ export function resolveContextualMentions(value: string, contextData: Record<str
   });
 }
 
-// Export the isVariableReference function for backward compatibility
-export { isVariableReference };
