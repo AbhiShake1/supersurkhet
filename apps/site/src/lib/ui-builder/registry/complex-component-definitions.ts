@@ -84,7 +84,7 @@ import { SvgIcon, SvgIconSchema } from '@/components/ui/svgs/SvgIcon';
 import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
 import { RatingInteraction, RatingInteractionSchema } from '@/components/ui/emoji-rating';
 import { NavigationMenu, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, NavigationMenuContent } from '@/components/ui/navigation-menu';
-import type { ReactNode } from '@tanstack/react-router';
+import type { ReactNode } from 'react';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
