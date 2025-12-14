@@ -1947,7 +1947,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
     ],
   },
 
-  OfferCaousel: {
+  OfferCarousel: {
     component: OfferCarousel,
     schema: OfferCarouselSchema,
     from: '@/components/ui/offer-carousel',
