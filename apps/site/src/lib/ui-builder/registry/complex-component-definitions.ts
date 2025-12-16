@@ -94,6 +94,7 @@ import { SvgIcon, SvgIconSchema } from '@/components/ui/svgs/SvgIcon';
 import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
 import { RatingInteraction, RatingInteractionSchema } from '@/components/ui/emoji-rating';
 import { OfferCard, OfferCardSchema, OfferCarousel, OfferCarouselSchema } from '@/components/ui/offer-carousel';
+import { CarouselIndicator, CarouselIndicatorSchema, CarouselItem, CarouselNavigation, CarouselNavigationSchema, Carouzel, CarouzelContent, CarouzelContentSchema, CarouzelSchema } from '@/components/ui/carouzel';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -1963,6 +1964,139 @@ export const complexComponentDefinitions: ComponentRegistry = {
     defaultChildren: [],
   },
 
+  //Carouzel
 
-};
+  Carouzel: {
+    component: Carouzel,
+    schema: CarouzelSchema,
+    from: '@/components/ui/carouzel',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: 'car-content-1',
+        type: "CarouzelContent",
+        name: 'CarouzelContent',
+        props: {
+          className: '-ml-4',
+        },
+        children: [
+          {
+            id: 'car-item-1',
+            type: 'CarouselItem',
+            name: 'CarouselItem',
+            props: {
+              className: 'basis-1/3 pl-4',
+            },
+            children: [
+              {
+                id: 'car-div-1',
+                type: 'div',
+                name: 'div',
+                props: {
+                  className: 'flex w-full aspect-square items-center justify-center border border-zinc-200 dark:border-zinc-800'
+                },
+                children: 'slider-1'
+
+              }],
+          },
+          {
+            id: 'car-item-2',
+            type: 'CarouselItem',
+            name: 'CarouselItem',
+            props: {
+              className: 'basis-1/3 pl-4',
+            },
+            children: 'Slide 2',
+          },
+          {
+            id: 'car-item-3',
+            type: 'CarouselItem',
+            name: 'CarouselItem',
+            props: {
+              className: 'basis-1/3 pl-4',
+            },
+            children: 'Slide 3',
+          },],
+      },
+
+      {
+        id: 'car-nav-1',
+        type: 'CarouselNavigation',
+        name: 'CarouselNavigation',
+        props: {
+          className: 'absolute -bottom-20 left-auto top-auto w-full justify-end gap-2',
+          classNameButton: 'bg-zinc-800 *:stroke-zinc-50 dark:bg-zinc-200 dark:*:stroke-zinc-800',
+          alwaysShow: true,
+        },
+        children: [],
+      },
+
+    ],
+  },
+
+  //  Content Container Component
+  CarouzelContent: {
+    component: CarouzelContent,
+    schema: CarouzelContentSchema,
+    from: '@/components/ui/carouzel',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: 'car-item-1',
+        type: 'CarouselItem',
+        name: 'CarouselItem',
+        props: {
+          className: 'basis-1/3 pl-4',
+        },
+        children: 'Slide 1',
+      },
+      {
+        id: 'car-item-2',
+        type: 'CarouselItem',
+        name: 'CarouselItem',
+        props: {
+          className: 'basis-1/3 pl-4',
+        },
+        children: 'Slide 2',
+      },
+      {
+        id: 'car-item-3',
+        type: 'CarouselItem',
+        name: 'CarouselItem',
+        props: {
+          className: 'basis-1/3 pl-4',
+        },
+        children: 'Slide 3',
+      },
+    ],
+  },
+
+  // Individual Slide Component
+  CarouselItem: {
+    component: CarouselItem,
+    schema: CarouselItemSchema,
+    from: '@/components/ui/carouzel',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+  },
+
+  //  Navigation Controls 
+  CarouselNavigation: {
+    component: CarouselNavigation,
+    schema: CarouselNavigationSchema,
+    from: '@/components/ui/carouzel',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+  },
+
+  //  Indicator Dots 
+  CarouselIndicator: {
+    component: CarouselIndicator,
+    schema: CarouselIndicatorSchema,
+    from: '@/components/ui/carouzel',
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+  },
+}
+
 
