@@ -12,41 +12,49 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import z from 'zod';
 import type { ReactNode } from '@tanstack/react-router';
 
-export type CarouselContextType = {
-  index: number;
-  setIndex: (newIndex: number) => void;
-  itemsCount: number;
-  setItemsCount: (newItemsCount: number) => void;
-  disableDrag: boolean;
-};
+export const CarouzelContextSchema = z.object({
+  index: z.number(),
+  setIndex: z.function()
+    .args(z.number())
+    .returns(z.void()),
 
-const CarouselContext = createContext<CarouselContextType | undefined>(
+  itemsCount: z.number(),
+  setItemsCount: z.function()
+    .args(z.number())
+    .returns(z.void()),
+
+  disableDrag: z.boolean(),
+});
+
+export type CarouzelContextType = z.infer<typeof CarouzelContextSchema>;
+
+const CarouzelContext = createContext<CarouzelContextType | undefined>(
   undefined
 );
 
-function useCarousel() {
-  const context = useContext(CarouselContext);
+function useCarouzel() {
+  const context = useContext(CarouzelContext);
   if (!context) {
-    throw new Error('useCarousel must be used within an CarouselProvider');
+    throw new Error('useCarouzel must be used within an CarouselProvider');
   }
   return context;
 }
 
-export const CarouselProviderSchema = z.object({
+export const CarouzelProviderSchema = z.object({
   children: z.custom<ReactNode>(),
   initialIndex: z.number().optional(),
   onIndexChange: z.function().args(z.number()).returns(z.void()).optional(),
   disableDrag: z.boolean().optional(),
 });
 
-export type CarouselProviderProps = z.infer<typeof CarouselProviderSchema>
+export type CarouzelProviderProps = z.infer<typeof CarouzelProviderSchema>
 
-function CarouselProvider({
+function CarouzelProvider({
   children,
   initialIndex = 0,
   onIndexChange,
   disableDrag = false,
-}: CarouselProviderProps) {
+}: CarouzelProviderProps) {
   const [index, setIndex] = useState<number>(initialIndex);
   const [itemsCount, setItemsCount] = useState<number>(0);
 
@@ -60,7 +68,7 @@ function CarouselProvider({
   }, [initialIndex]);
 
   return (
-    <CarouselContext.Provider
+    <CarouzelContext.Provider
       value={{
         index,
         setIndex: handleSetIndex,
@@ -70,7 +78,7 @@ function CarouselProvider({
       }}
     >
       {children}
-    </CarouselContext.Provider>
+    </CarouzelContext.Provider>
   );
 }
 
@@ -105,37 +113,37 @@ function Carouzel({
   };
 
   return (
-    <CarouselProvider
+    <CarouzelProvider
       initialIndex={currentIndex}
       onIndexChange={handleIndexChange}
       disableDrag={disableDrag}
     >
-      <div className={cn('group/hover relative', className)}>
+      <div className={cn('group/hover relative w-min min-w-0 max-w-full', className)}>
         <div className='overflow-hidden'>{children}</div>
       </div>
-    </CarouselProvider>
+    </CarouzelProvider>
   );
 }
 
-export const CarouselNavigationSchema = z.object({
+export const CarouzelNavigationSchema = z.object({
   className: z.string().optional(),
   classNameButton: z.string().optional(),
   alwaysShow: z.boolean().optional(),
 });
 
-export type CarouselNavigationProps = z.infer<typeof CarouselNavigationSchema>
+export type CarouzelNavigationProps = z.infer<typeof CarouzelNavigationSchema>
 
-function CarouselNavigation({
+function CarouzelNavigation({
   className,
   classNameButton,
   alwaysShow,
-}: CarouselNavigationProps) {
-  const { index, setIndex, itemsCount } = useCarousel();
+}: CarouzelNavigationProps) {
+  const { index, setIndex, itemsCount } = useCarouzel();
 
   return (
     <div
       className={cn(
-        'pointer-events-none absolute left-[-12.5%] top-1/2 flex w-[125%] -translate-y-1/2 justify-between px-2',
+        'pointer-events-none absolute top-1/2 flex -translate-y-1/2 justify-between px-2',
         className
       )}
     >
@@ -188,23 +196,21 @@ function CarouselNavigation({
           className='stroke-zinc-600 dark:stroke-zinc-50'
           size={16}
         />
-      </button>
-    </div>
-  );
+      </button>    </div>);
 }
 
-export const CarouselIndicatorSchema = z.object({
+export const CarouzelIndicatorSchema = z.object({
   className: z.string().optional(),
   classNameButton: z.string().optional(),
 });
 
-export type CarouselIndicatorProps = z.infer<typeof CarouselIndicatorSchema>
+export type CarouzelIndicatorProps = z.infer<typeof CarouzelIndicatorSchema>
 
-function CarouselIndicator({
+function CarouzelIndicator({
   className,
   classNameButton,
-}: CarouselIndicatorProps) {
-  const { index, itemsCount, setIndex } = useCarousel();
+}: CarouzelIndicatorProps) {
+  const { index, itemsCount, setIndex } = useCarouzel();
 
   return (
     <div
@@ -229,8 +235,7 @@ function CarouselIndicator({
             )}
           />
         ))}
-      </div>
-    </div>
+      </div>    </div>
   )
 }
 
@@ -240,14 +245,14 @@ export const CarouzelContentSchema = z.object({
   transition: z.custom<Transition>().optional(),
 });
 
-export type CarouselContentProps = z.infer<typeof CarouzelContentSchema>
+export type CarouzelContentProps = z.infer<typeof CarouzelContentSchema>
 
 function CarouzelContent({
   children,
   className,
   transition,
-}: CarouselContentProps) {
-  const { index, setIndex, setItemsCount, disableDrag } = useCarousel();
+}: CarouzelContentProps) {
+  const { index, setIndex, setItemsCount, disableDrag } = useCarouzel();
   const [visibleItemsCount, setVisibleItemsCount] = useState(1);
   const dragX = useMotionValue(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -322,7 +327,7 @@ function CarouzelContent({
         }
       }
       className={cn(
-        'flex items-center',
+        'flex items-center gap-4 pt-4',
         !disableDrag && 'cursor-grab active:cursor-grabbing',
         className
       )}
@@ -333,18 +338,19 @@ function CarouzelContent({
   );
 }
 
-export const CarouselItemShema = z.object({
+export const CarouzelItemShema = z.object({
   children: z.custom<ReactNode>(),
   className: z.string().optional(),
+  innerClassName: z.string().optional(),
 });
 
-export type CarouselItemProps = z.infer<typeof CarouselItemShema>
+export type CarouzelItemProps = z.infer<typeof CarouzelItemShema>
 
-function CarouselItem({ children, className }: CarouselItemProps) {
+function CarouzelItem({ children, className }: CarouzelItemProps) {
   return (
     <motion.div
       className={cn(
-        'w-full min-w-0 shrink-0 grow-0 overflow-hidden',
+        'w-full flex border border-zinc-200 dark:border-gray-500',
         className
       )}
     >
@@ -356,8 +362,9 @@ function CarouselItem({ children, className }: CarouselItemProps) {
 export {
   Carouzel,
   CarouzelContent,
-  CarouselNavigation,
-  CarouselIndicator,
-  CarouselItem,
-  useCarousel,
+  CarouzelNavigation,
+  CarouzelIndicator,
+  CarouzelItem,
+  useCarouzel,
+  CarouzelProvider
 };

@@ -94,7 +94,16 @@ import { SvgIcon, SvgIconSchema } from '@/components/ui/svgs/SvgIcon';
 import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
 import { RatingInteraction, RatingInteractionSchema } from '@/components/ui/emoji-rating';
 import { OfferCard, OfferCardSchema, OfferCarousel, OfferCarouselSchema } from '@/components/ui/offer-carousel';
-import { CarouselIndicator, CarouselIndicatorSchema, CarouselItem, CarouselNavigation, CarouselNavigationSchema, Carouzel, CarouzelContent, CarouzelContentSchema, CarouzelSchema } from '@/components/ui/carouzel';
+import {
+  Carouzel,
+  CarouzelContent,
+  CarouzelSchema,
+  CarouzelContentSchema,
+  CarouzelNavigationSchema,
+  CarouzelNavigation,
+  CarouzelItem,
+  CarouzelItemShema,
+} from '@/components/ui/carouzel';
 
 const ButtonSchema = z.object({
   className: z.string().optional(),
@@ -1964,8 +1973,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
     defaultChildren: [],
   },
 
-  //Carouzel
-
+  // Carousel components
   Carouzel: {
     component: Carouzel,
     schema: CarouzelSchema,
@@ -1973,130 +1981,84 @@ export const complexComponentDefinitions: ComponentRegistry = {
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [
       {
-        id: 'car-content-1',
+        id: "carouzel-content",
         type: "CarouzelContent",
-        name: 'CarouzelContent',
+        name: "CarouzelContent",
         props: {
-          className: '-ml-4',
+          className: "mb-2"
         },
         children: [
           {
-            id: 'car-item-1',
-            type: 'CarouselItem',
-            name: 'CarouselItem',
-            props: {
-              className: 'basis-1/3 pl-4',
-            },
+            id: "carouzel-item-1",
+            type: "CarouzelItem",
+            name: "CarouzelItem",
+            props: {},
             children: [
               {
-                id: 'car-div-1',
-                type: 'div',
-                name: 'div',
-                props: {
-                  className: 'flex w-full aspect-square items-center justify-center border border-zinc-200 dark:border-zinc-800'
-                },
-                children: 'slider-1'
-
-              }],
+                id: "carouzel-item-content-1",
+                type: "div",
+                name: "div",
+                props: { className: "flex items-center justify-center p-6" },
+                children: "Slide 1",
+              } satisfies ComponentLayer,
+            ],
           },
           {
-            id: 'car-item-2',
-            type: 'CarouselItem',
-            name: 'CarouselItem',
-            props: {
-              className: 'basis-1/3 pl-4',
-            },
-            children: 'Slide 2',
+            id: "carousel-item-2",
+            type: "CarouzelItem",
+            name: "CarouzelItem",
+            props: {},
+            children: [
+              {
+                id: "carousel-item-content-2",
+                type: "div",
+                name: "div",
+                props: { className: "flex items-center justify-center p-6" },
+                children: "Slide 2",
+              } satisfies ComponentLayer,
+            ],
           },
-          {
-            id: 'car-item-3',
-            type: 'CarouselItem',
-            name: 'CarouselItem',
-            props: {
-              className: 'basis-1/3 pl-4',
-            },
-            children: 'Slide 3',
-          },],
+        ],
       },
-
       {
-        id: 'car-nav-1',
-        type: 'CarouselNavigation',
-        name: 'CarouselNavigation',
+        id: "carouzel-navigation",
+        type: "CarouzelNavigation",
+        name: "CarouzelNavigation",
         props: {
-          className: 'absolute -bottom-20 left-auto top-auto w-full justify-end gap-2',
-          classNameButton: 'bg-zinc-800 *:stroke-zinc-50 dark:bg-zinc-200 dark:*:stroke-zinc-800',
           alwaysShow: true,
+          className: "absolute -bottom-12 right-0 left-auto top-auto w-fit justify-end gap-2",
+          classNameButton: "bg-zinc-800 *:stroke-zinc-50 dark:bg-zinc-200 dark:*:stroke-zinc-800"
         },
         children: [],
       },
 
     ],
   },
-
-  //  Content Container Component
   CarouzelContent: {
     component: CarouzelContent,
     schema: CarouzelContentSchema,
     from: '@/components/ui/carouzel',
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [
-      {
-        id: 'car-item-1',
-        type: 'CarouselItem',
-        name: 'CarouselItem',
-        props: {
-          className: 'basis-1/3 pl-4',
-        },
-        children: 'Slide 1',
-      },
-      {
-        id: 'car-item-2',
-        type: 'CarouselItem',
-        name: 'CarouselItem',
-        props: {
-          className: 'basis-1/3 pl-4',
-        },
-        children: 'Slide 2',
-      },
-      {
-        id: 'car-item-3',
-        type: 'CarouselItem',
-        name: 'CarouselItem',
-        props: {
-          className: 'basis-1/3 pl-4',
-        },
-        children: 'Slide 3',
-      },
-    ],
-  },
 
-  // Individual Slide Component
-  CarouselItem: {
-    component: CarouselItem,
-    schema: CarouselItemSchema,
+    ]
+  },
+  CarouzelNavigation: {
+    component: CarouzelNavigation,
+    schema: CarouzelNavigationSchema,
+    from: '@/components/ui/carouzel',
+    fieldOverrides: {
+      ...commonFieldOverrides(),
+      classNameButton: classNameFieldOverrides,
+    }
+  },
+  CarouzelItem: {
+    component: CarouzelItem,
+    schema: CarouzelItemShema,
     from: '@/components/ui/carouzel',
     fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [],
   },
 
-  //  Navigation Controls 
-  CarouselNavigation: {
-    component: CarouselNavigation,
-    schema: CarouselNavigationSchema,
-    from: '@/components/ui/carouzel',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [],
-  },
-
-  //  Indicator Dots 
-  CarouselIndicator: {
-    component: CarouselIndicator,
-    schema: CarouselIndicatorSchema,
-    from: '@/components/ui/carouzel',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [],
-  },
 }
 
 
