@@ -1,8 +1,8 @@
-import React, { PropsWithChildren, useRef } from "react"
+import React, { type PropsWithChildren, useRef } from "react"
 import { cva, type VariantProps } from "class-variance-authority"
 import {
   motion,
-  MotionValue,
+  type MotionValue,
   useMotionValue,
   useSpring,
   useTransform,
@@ -44,7 +44,7 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
     },
     ref
   ) => {
-    const mouseX = useMotionValue(Infinity)
+    const mouseX = useMotionValue(Number.POSITIVE_INFINITY)
 
     const renderChildren = () => {
       return React.Children.map(children, (child) => {
@@ -69,7 +69,7 @@ const Dock = React.forwardRef<HTMLDivElement, DockProps>(
       <motion.div
         ref={ref}
         onMouseMove={(e) => mouseX.set(e.pageX)}
-        onMouseLeave={() => mouseX.set(Infinity)}
+        onMouseLeave={() => mouseX.set(Number.POSITIVE_INFINITY)}
         {...props}
         className={cn(dockVariants({ className }), {
           "items-start": direction === "top",
@@ -109,7 +109,7 @@ const DockIcon = ({
 }: DockIconProps) => {
   const ref = useRef<HTMLDivElement>(null)
   const padding = Math.max(6, size * 0.2)
-  const defaultMouseX = useMotionValue(Infinity)
+  const defaultMouseX = useMotionValue(Number.POSITIVE_INFINITY)
 
   const distanceCalc = useTransform(mouseX ?? defaultMouseX, (val: number) => {
     const bounds = ref.current?.getBoundingClientRect() ?? { x: 0, width: 0 }

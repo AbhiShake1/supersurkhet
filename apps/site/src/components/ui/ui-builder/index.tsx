@@ -207,7 +207,7 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
   }, [mainPanels, selectedPanel.title]);
 
   const handlePanelClickById = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const panelIndex = parseInt(e.currentTarget.dataset.panelIndex || "0");
+    const panelIndex = Number.parseInt(e.currentTarget.dataset.panelIndex || "0");
     setSelectedPanel(mainPanels[panelIndex]);
   }, [mainPanels]);
 

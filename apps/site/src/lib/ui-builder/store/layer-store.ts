@@ -6,7 +6,7 @@ import isDeepEqual from 'fast-deep-equal';
 
 import { visitLayer, addLayer, hasLayerChildren, findLayerRecursive, createId, countLayers, duplicateWithNewIdsAndName, findAllParentLayersRecursive, createComponentLayer, moveLayer } from '@/lib/ui-builder/store/layer-utils';
 import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
-import { type ComponentLayer, type PropValue } from '@/components/ui/ui-builder/types';
+import type { ComponentLayer, PropValue } from '@/components/ui/ui-builder/types';
 
 const DEFAULT_PAGE_PROPS = {
   className: "h-screen p-4 flex flex-col gap-2 bg-background overflow-y-scroll",

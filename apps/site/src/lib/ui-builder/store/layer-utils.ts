@@ -1,5 +1,4 @@
-import { LayerStore } from "@/lib/ui-builder/store/layer-store";
-import { ComponentLayer, ComponentRegistry } from '@/components/ui/ui-builder/types';
+import type { ComponentLayer, ComponentRegistry } from '@/components/ui/ui-builder/types';
 import { getDefaultProps } from '@/lib/ui-builder/store/schema-utils';
 
 /**
@@ -124,7 +123,7 @@ export const findLayerRecursive = (layers: ComponentLayer[], layerId: string): C
   return undefined;
 };
 
-export const duplicateWithNewIdsAndName = (layer: ComponentLayer, addCopySuffix: boolean = true): ComponentLayer => {
+export const duplicateWithNewIdsAndName = (layer: ComponentLayer, addCopySuffix = true): ComponentLayer => {
   const newLayer: ComponentLayer = { ...layer, id: createId() };
   if (layer.name) {
     newLayer.name = `${layer.name}${addCopySuffix ? ' (Copy)' : ''}`;
@@ -225,7 +224,7 @@ export const moveLayer = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let sourceParentId: string | null = null;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let sourcePosition: number = -1;
+  let sourcePosition = -1;
 
   // Find the layer to move and its current parent
   const findLayerAndParent = (layers: ComponentLayer[], parentId: string | null = null): boolean => {

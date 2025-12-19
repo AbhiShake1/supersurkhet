@@ -6,7 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Plus, Trash } from "lucide-react";
-import { useFieldArray, useForm } from "react-hook-form";
+import { useFieldArray, type useForm } from "react-hook-form";
 import * as z from "zod";
 import { beautifyObjectName } from "../utils";
 import AutoFormObject from "./object";

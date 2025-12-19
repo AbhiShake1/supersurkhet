@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import * as lucideReact from "lucide-react";
+import { Activity, ArrowRight, Award, BookOpen, Building, Calendar, CalendarDays, CheckCircle, Clock, FileText, Heart, Leaf, Mail, MapPin, Microscope, Minus, MinusCircle, Phone, Pill, Plus, PlusCircle, ShoppingCart, Star, Stethoscope, Syringe, Thermometer, Trash2, User, Users, Wind } from "lucide-react";
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import { createContext, useContext, useEffect, useState, useRef } from "react";
 import { Spinner } from "@/components/ui/spinner";
@@ -195,7 +195,7 @@ function ServiceCard({ service, index, isServicesInView }: ServiceCardProps) {
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="flex items-center gap-2 text-2xl">
-                <lucideReact.Stethoscope className="w-6 h-6 text-primary" />
+                <Stethoscope className="w-6 h-6 text-primary" />
                 {service.name}
               </CardTitle>
               <CardDescription className="mt-1">
@@ -214,13 +214,13 @@ function ServiceCard({ service, index, isServicesInView }: ServiceCardProps) {
             {service.description}
           </p>
           <div className="flex items-center text-sm mb-3">
-            <lucideReact.Clock className="w-4 h-4 mr-1 text-primary" />
+            <Clock className="w-4 h-4 mr-1 text-primary" />
             <span>{service.duration}</span>
           </div>
           <ul className="space-y-2 mb-4">
             {service.features.map((feature, idx) => (
               <li key={idx} className="flex items-start">
-                <lucideReact.CheckCircle className="w-4 h-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                <CheckCircle className="w-4 h-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
                 <span className="text-sm">{feature}</span>
               </li>
             ))}
@@ -234,7 +234,7 @@ function ServiceCard({ service, index, isServicesInView }: ServiceCardProps) {
               className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
               onClick={decrementQuantity}
             >
-              <lucideReact.Minus className="h-4 w-4" />
+              <Minus className="h-4 w-4" />
             </Button>
             <span className="w-8 text-center font-medium">{quantity}</span>
             <Button
@@ -243,7 +243,7 @@ function ServiceCard({ service, index, isServicesInView }: ServiceCardProps) {
               className="h-8 w-8 rounded-full border-primary/50 hover:bg-primary/10 transition-all duration-300"
               onClick={incrementQuantity}
             >
-              <lucideReact.Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
             </Button>
           </div>
           <Button
@@ -262,7 +262,7 @@ function ServiceCard({ service, index, isServicesInView }: ServiceCardProps) {
               </>
             ) : (
               <>
-                <lucideReact.Calendar className="h-4 w-4 mr-2" />
+                <Calendar className="h-4 w-4 mr-2" />
                 Add to Booking
               </>
             )}
@@ -533,23 +533,23 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
   ];
 
   const facilities = [
-    { icon: lucideReact.Heart, name: "ICU & CCU" },
-    { icon: lucideReact.Stethoscope, name: "Emergency Services" },
-    { icon: lucideReact.Building, name: "Modern Infrastructure" },
-    { icon: lucideReact.Award, name: "Certified Professionals" },
-    { icon: lucideReact.Microscope, name: "Advanced Laboratory" },
-    { icon: lucideReact.Activity, name: "24/7 Monitoring" },
-    { icon: lucideReact.Pill, name: "Pharmacy" },
-    { icon: lucideReact.Syringe, name: "Vaccination Center" },
+    { icon: Heart, name: "ICU & CCU" },
+    { icon: Stethoscope, name: "Emergency Services" },
+    { icon: Building, name: "Modern Infrastructure" },
+    { icon: Award, name: "Certified Professionals" },
+    { icon: Microscope, name: "Advanced Laboratory" },
+    { icon: Activity, name: "24/7 Monitoring" },
+    { icon: Pill, name: "Pharmacy" },
+    { icon: Syringe, name: "Vaccination Center" },
   ];
 
   const healthResources = [
-    { icon: lucideReact.BookOpen, name: "Health Articles" },
-    { icon: lucideReact.CalendarDays, name: "Health Calendar" },
-    { icon: lucideReact.Award, name: "Health Programs" },
-    { icon: lucideReact.Users, name: "Support Groups" },
-    { icon: lucideReact.Thermometer, name: "Health Tracker" },
-    { icon: lucideReact.Wind, name: "Wellness Tips" },
+    { icon: BookOpen, name: "Health Articles" },
+    { icon: CalendarDays, name: "Health Calendar" },
+    { icon: Award, name: "Health Programs" },
+    { icon: Users, name: "Support Groups" },
+    { icon: Thermometer, name: "Health Tracker" },
+    { icon: Wind, name: "Wellness Tips" },
   ];
 
   const insurancePartners = [
@@ -641,7 +641,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
               <Credenza>
                 <CredenzaTrigger asChild>
                   <Button className="h-14 w-14 rounded-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-105">
-                    <lucideReact.ShoppingCart className="h-6 w-6" />
+                    <ShoppingCart className="h-6 w-6" />
                     <span className="absolute -top-2 -right-2 bg-white dark:bg-black text-primary rounded-full h-6 w-6 flex items-center justify-center text-sm font-bold">
                       {itemCount}
                     </span>
@@ -659,7 +659,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                             onClick={clearCart}
                             className="text-red-500 hover:text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-all duration-300"
                           >
-                            <lucideReact.Trash2 className="h-4 w-4 mr-1" />
+                            <Trash2 className="h-4 w-4 mr-1" />
                             Clear All
                           </Button>
                         )}
@@ -676,7 +676,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                     <ScrollArea>
                       {items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center flex-grow py-8 text-center">
-                          <lucideReact.ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
+                          <ShoppingCart className="h-16 w-16 text-muted-foreground mb-4" />
                           <h3 className="text-xl font-medium mb-2">
                             Your cart is empty
                           </h3>
@@ -704,7 +704,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                                 >
                                   <div className="flex items-center gap-3 py-3">
                                     <div className="relative h-16 w-16 rounded-md overflow-hidden flex-shrink-0">
-                                      <lucideReact.Stethoscope className="w-10 h-10 text-primary m-3" />
+                                      <Stethoscope className="w-10 h-10 text-primary m-3" />
                                     </div>
                                     <div className="flex-grow">
                                       <h4 className="font-medium">
@@ -723,7 +723,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                                               )
                                             }
                                           >
-                                            <lucideReact.MinusCircle className="h-4 w-4" />
+                                            <MinusCircle className="h-4 w-4" />
                                           </Button>
                                           <span className="w-6 text-center">
                                             {item.quantity}
@@ -739,7 +739,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                                               )
                                             }
                                           >
-                                            <lucideReact.PlusCircle className="h-4 w-4" />
+                                            <PlusCircle className="h-4 w-4" />
                                           </Button>
                                         </div>
                                         <div className="flex items-center gap-2">
@@ -758,7 +758,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                                               removeItem(item.id)
                                             }
                                           >
-                                            <lucideReact.Trash2 className="h-4 w-4" />
+                                            <Trash2 className="h-4 w-4" />
                                           </Button>
                                         </div>
                                       </div>
@@ -827,7 +827,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
           >
             <div className="flex">
               {[...Array(5)].map((_, i) => (
-                <lucideReact.Star
+                <Star
                   key={`healthcare-rating-star-${i}`}
                   className={`w-6 h-6 ${i < Math.floor(healthcareInfo.rating)
                     ? "fill-yellow-400 text-yellow-400"
@@ -903,7 +903,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                     <Card className="overflow-hidden h-full border border-border rounded-2xl hover:shadow-lg transition-all duration-300">
                       <CardHeader className="pb-5">
                         <div className="flex items-center gap-3">
-                          <lucideReact.Building className="w-6 h-6 text-primary" />
+                          <Building className="w-6 h-6 text-primary" />
                           <CardTitle>{department.name}</CardTitle>
                         </div>
                       </CardHeader>
@@ -913,11 +913,11 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                         </CardDescription>
                         <div className="space-y-3">
                           <div className="flex items-center text-sm">
-                            <lucideReact.User className="w-4 h-4 mr-2 text-primary" />
+                            <User className="w-4 h-4 mr-2 text-primary" />
                             <span>{department.doctorCount} specialists</span>
                           </div>
                           <div className="flex items-center text-sm">
-                            <lucideReact.Stethoscope className="w-4 h-4 mr-2 text-primary" />
+                            <Stethoscope className="w-4 h-4 mr-2 text-primary" />
                             <span>Head: {department.head}</span>
                           </div>
                           <div className="flex flex-wrap gap-2 mt-3">
@@ -985,7 +985,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                         <div className="flex justify-between items-start">
                           <div>
                             <CardTitle className="flex items-center gap-2 text-2xl">
-                              <lucideReact.Stethoscope className="w-6 h-6 text-primary" />
+                              <Stethoscope className="w-6 h-6 text-primary" />
                               {service.name}
                             </CardTitle>
                             <CardDescription className="mt-1">
@@ -1004,13 +1004,13 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                           {service.description}
                         </p>
                         <div className="flex items-center text-sm mb-3">
-                          <lucideReact.Clock className="w-4 h-4 mr-1 text-primary" />
+                          <Clock className="w-4 h-4 mr-1 text-primary" />
                           <span>{service.duration}</span>
                         </div>
                         <ul className="space-y-2 mb-4">
                           {service.features.map((feature, idx) => (
                             <li key={idx} className="flex items-start">
-                              <lucideReact.CheckCircle className="w-4 h-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
+                              <CheckCircle className="w-4 h-4 text-primary mr-2 mt-0.5 flex-shrink-0" />
                               <span className="text-sm">{feature}</span>
                             </li>
                           ))}
@@ -1069,7 +1069,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                       <CardContent>
                         <div className="flex items-center justify-center gap-1 mb-3">
                           {[...Array(5)].map((_, i) => (
-                            <lucideReact.Star
+                            <Star
                               key={`doctor-rating-star-${doctor.id}-${i}`}
                               className={`w-4 h-4 ${i < Math.floor(doctor.rating)
                                 ? "fill-yellow-400 text-yellow-400"
@@ -1175,7 +1175,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                       >
                         <div className="flex justify-between items-center">
                           <CardTitle className="text-lg">{faq.question}</CardTitle>
-                          <lucideReact.ArrowRight
+                          <ArrowRight
                             className={`w-5 h-5 transition-transform duration-300 ${activeFAQ === faq.id ? "rotate-90" : ""
                               }`}
                           />
@@ -1274,25 +1274,25 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
               <Card className="border border-border rounded-2xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl">
-                    <lucideReact.Building className="w-7 h-7 text-primary" />
+                    <Building className="w-7 h-7 text-primary" />
                     Facility Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <div className="flex items-start">
-                    <lucideReact.MapPin className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
+                    <MapPin className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
                     <span className="text-lg">{healthcareInfo.address}</span>
                   </div>
                   <div className="flex items-start">
-                    <lucideReact.Phone className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
+                    <Phone className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
                     <span className="text-lg">{healthcareInfo.phone}</span>
                   </div>
                   <div className="flex items-start">
-                    <lucideReact.Mail className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
+                    <Mail className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
                     <span className="text-lg">{healthcareInfo.email}</span>
                   </div>
                   <div className="flex items-start">
-                    <lucideReact.Clock className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
+                    <Clock className="w-6 h-6 mr-4 mt-1 text-primary flex-shrink-0" />
                     <span className="text-lg">{healthcareInfo.hours}</span>
                   </div>
                 </CardContent>
@@ -1308,14 +1308,14 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
               <Card className="border border-border rounded-2xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl">
-                    <lucideReact.Heart className="w-7 h-7 text-primary" />
+                    <Heart className="w-7 h-7 text-primary" />
                     Emergency Services
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
                     <div className="flex items-center gap-2 mb-2">
-                      <lucideReact.Heart className="w-5 h-5 text-red-600 dark:text-red-400" />
+                      <Heart className="w-5 h-5 text-red-600 dark:text-red-400" />
                       <span className="font-medium text-red-800 dark:text-red-200">
                         24/7 Emergency
                       </span>
@@ -1324,7 +1324,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                       Call immediately for life-threatening emergencies
                     </p>
                     <Button className="w-full mt-3 bg-red-600 hover:bg-red-700 text-white">
-                      <lucideReact.Phone className="w-4 h-4 mr-2" />
+                      <Phone className="w-4 h-4 mr-2" />
                       Call Emergency
                     </Button>
                   </div>
@@ -1352,7 +1352,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
               <Card className="border border-border rounded-2xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl">
-                    <lucideReact.Stethoscope className="w-7 h-7 text-primary" />
+                    <Stethoscope className="w-7 h-7 text-primary" />
                     Our Facilities
                   </CardTitle>
                 </CardHeader>
@@ -1385,13 +1385,13 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
               <Card className="border border-border rounded-2xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl">
-                    <lucideReact.Calendar className="w-7 h-7 text-primary" />
+                    <Calendar className="w-7 h-7 text-primary" />
                     Book an Appointment
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center gap-4 p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-all duration-300">
-                    <lucideReact.CalendarDays className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
+                    <CalendarDays className="w-6 h-6 text-primary mt-1 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-base">Schedule a Visit</p>
                       <p className="text-sm text-muted-foreground">
@@ -1400,7 +1400,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                     </div>
                   </div>
                   <Button className="w-full py-6 text-base rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground transition-all duration-300 transform hover:scale-[1.02]">
-                    <lucideReact.Calendar className="w-5 h-5 mr-2" />
+                    <Calendar className="w-5 h-5 mr-2" />
                     Book Now
                   </Button>
                 </CardContent>
@@ -1416,7 +1416,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
               <Card className="border border-border rounded-2xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl">
-                    <lucideReact.FileText className="w-7 h-7 text-primary" />
+                    <FileText className="w-7 h-7 text-primary" />
                     Insurance Partners
                   </CardTitle>
                 </CardHeader>
@@ -1459,7 +1459,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
               <Card className="border border-border rounded-2xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl">
-                    <lucideReact.Users className="w-7 h-7 text-primary" />
+                    <Users className="w-7 h-7 text-primary" />
                     Connect With Us
                   </CardTitle>
                 </CardHeader>
@@ -1527,13 +1527,13 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
               <Card className="border border-border rounded-2xl shadow-lg">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3 text-2xl">
-                    <lucideReact.Heart className="w-7 h-7 text-primary" />
+                    <Heart className="w-7 h-7 text-primary" />
                     Health Tips
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-start gap-3 p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-all duration-300">
-                    <lucideReact.Heart className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <Heart className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-sm">Stay Hydrated</p>
                       <p className="text-xs text-muted-foreground">
@@ -1542,7 +1542,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-all duration-300">
-                    <lucideReact.Activity className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <Activity className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-sm">Regular Exercise</p>
                       <p className="text-xs text-muted-foreground">
@@ -1551,7 +1551,7 @@ function HealthcareClientPagePresenter({ slug }: HealthcareClientPageProps) {
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-all duration-300">
-                    <lucideReact.Leaf className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                    <Leaf className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <div>
                       <p className="font-medium text-sm">Balanced Diet</p>
                       <p className="text-xs text-muted-foreground">

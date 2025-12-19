@@ -11,6 +11,7 @@ import "gun/lib/rindexed";
 import "gun/lib/webrtc";
 import "gun/sea";
 import "gun/lib/not"
+import type { IGunInstance } from "gun/types";
 
 export const gun = GUN({
   localStorage: false,
@@ -22,7 +23,12 @@ export const gun = GUN({
   ],
 });
 
-if (import.meta.env.DEV && typeof window !== "undefined") {
-  // @ts-expect-error
+if (import.meta.env.DEV && !isServer) {
   window.gun = gun;
+}
+
+declare global {
+  interface Window {
+    gun: IGunInstance;
+  }
 }

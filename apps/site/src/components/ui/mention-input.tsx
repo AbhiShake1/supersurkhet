@@ -40,7 +40,7 @@ export function MentionInput({
     // Set to keep track of visited objects to prevent circular reference issues
     const visited = new Set();
 
-    const flatten = (obj: Record<string, any>, prefix: string = "", depth: number = 0) => {
+    const flatten = (obj: Record<string, any>, prefix = "", depth = 0) => {
       // Prevent infinite recursion with deeply nested objects
       if (depth > 10) return; // Limit nesting depth to prevent performance issues
 

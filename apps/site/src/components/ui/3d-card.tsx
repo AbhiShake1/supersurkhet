@@ -3,7 +3,8 @@
 import { cn } from "@/lib/utils";
 import { z } from 'zod';
 
-import React, {
+import type React from "react";
+import {
   createContext,
   useState,
   useContext,

@@ -25,7 +25,7 @@ const animations = {
         transition: {
           duration: 1.5,
           ease: 'linear',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
         },
       },
     },
@@ -40,7 +40,7 @@ const animations = {
         transition: {
           duration: 1.5,
           ease: 'linear',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
         },
       },
     },
@@ -55,7 +55,7 @@ const animations = {
         transition: {
           duration: 1.5,
           ease: 'linear',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
         },
       },
     },
@@ -70,7 +70,7 @@ const animations = {
         transition: {
           duration: 1.5,
           ease: 'linear',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
         },
       },
     },
@@ -85,7 +85,7 @@ const animations = {
         transition: {
           duration: 1.5,
           ease: 'linear',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
         },
       },
     },
@@ -100,7 +100,7 @@ const animations = {
         transition: {
           duration: 1.5,
           ease: 'linear',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
         },
       },
     },

@@ -1,4 +1,4 @@
-import { ZodObject, ZodSchema } from "zod";
+import type { ZodObject, ZodSchema } from "zod";
 import type { ComponentType as ReactComponentType, ReactNode } from 'react';
 import type {
   FieldConfigItem,

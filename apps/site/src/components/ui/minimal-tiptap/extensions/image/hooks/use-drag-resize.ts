@@ -30,7 +30,7 @@ export function useDragResize({
     width: Math.max(initialWidth ?? minWidth, minWidth),
     height: Math.max(initialHeight ?? minHeight, minHeight),
   })
-  const [boundaryWidth, setBoundaryWidth] = useState(Infinity)
+  const [boundaryWidth, setBoundaryWidth] = useState(Number.POSITIVE_INFINITY)
   const [resizeOrigin, setResizeOrigin] = useState(0)
   const [initialDimensions, setInitialDimensions] = useState(dimensions)
   const [resizeDirection, setResizeDirection] = useState<

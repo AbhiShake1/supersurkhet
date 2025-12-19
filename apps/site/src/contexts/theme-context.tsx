@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { defaultPresets, type ThemeStyles } from "@/lib/theme";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
