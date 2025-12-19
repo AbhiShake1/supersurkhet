@@ -40,7 +40,7 @@ export interface RegistryEntry<T extends ReactComponentType<any>> {
 }
 
 // Improved field config function type
-export type FieldConfigFunction = (layer: ComponentLayer) => FieldConfigItem;
+export type FieldConfigFunction<P = {}> = (layer: ComponentLayer, rest?: P) => FieldConfigItem;
 
 // Enhanced ComponentRegistry with better typing
 export type ComponentRegistry = Record<string, RegistryEntry<ReactComponentType<any>>>;

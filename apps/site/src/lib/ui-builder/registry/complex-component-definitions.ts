@@ -272,10 +272,8 @@ export const complexComponentDefinitions: ComponentRegistry = {
     from: "@/components/ui/input",
     fieldOverrides: {
       ...commonFieldOverrides(),
-      leadingIcon: iconNameFieldOverrides,
-      trailingIcon: iconNameFieldOverrides,
-      leadingIconClassName: classNameFieldOverrides,
-      trailingIconClassName: classNameFieldOverrides,
+      leadingIcon: (l) => childrenFieldOverrides(l, { optionsFilter: (k) => k.toLowerCase().includes("icon") }),
+      trailingIcon: (l) => childrenFieldOverrides(l, { optionsFilter: (k) => k.toLowerCase().includes("icon") }),
     }
   },
 

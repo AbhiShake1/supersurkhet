@@ -13,16 +13,18 @@ import { hasLayerChildren } from "@/lib/ui-builder/store/layer-utils";
 interface ChildrenSearchableSelectProps {
   layer: ComponentLayer;
   onChange: ({ layerType, parentLayerId, addPosition }: { layerType: string, parentLayerId: string, addPosition?: number }) => void;
+  optionsFilter?: (k: string) => boolean;
+  fieldName?: string;
 }
 
-export function ChildrenSearchableSelect({ layer, onChange }: ChildrenSearchableSelectProps) {
+export function ChildrenSearchableSelect({ layer, optionsFilter, fieldName, onChange }: ChildrenSearchableSelectProps) {
   const { selectLayer, removeLayer, selectedLayerId, findLayerById } = useLayerStore();
 
   const selectedLayer = findLayerById(selectedLayerId);
 
   return (
     <div className="w-full space-y-4">
-      <AddComponentsPopover parentLayerId={layer.id} onChange={onChange}>
+      <AddComponentsPopover fieldName={fieldName} parentLayerId={layer.id} onChange={onChange} optionsFilter={optionsFilter}>
         <Button
           variant="outline"
           role="combobox"
@@ -35,7 +37,7 @@ export function ChildrenSearchableSelect({ layer, onChange }: ChildrenSearchable
 
       {hasLayerChildren(layer) && (
         <div className="w-full flex gap-2 flex-wrap">
-          {selectedLayer && hasLayerChildren(selectedLayer) && selectedLayer.children.map((child) => (
+          {selectedLayer && hasLayerChildren(selectedLayer) && layer.children.map((child) => (
             <ChildLayerBadge
               key={child.id}
               child={child}
@@ -57,10 +59,12 @@ function ChildLayerBadge({ child, selectLayer, removeLayer }: { child: Component
   const handleRemove = useCallback(() => {
     removeLayer(child.id);
   }, [removeLayer, child.id]);
+  const layerName = nameForLayer(child);
+  if (!layerName) return null;
   return (
     <Badge key={child.id} className="flex items-center space-x-2 pl-2 pr-0 py-0" variant="secondary">
       <Button className="p-0 h-5" variant="link" size="sm" onClick={handleSelect}>
-        {nameForLayer(child)}
+        {layerName}
       </Button>
       <Button className="p-0 size-6 rounded-full" variant="ghost" size="icon" onClick={handleRemove}>
         <XIcon className="w-4 h-4" />
@@ -70,5 +74,5 @@ function ChildLayerBadge({ child, selectLayer, removeLayer }: { child: Component
 }
 
 const nameForLayer = (layer: ComponentLayer) => {
-  return layer.name || layer.type.replaceAll("_", "");
+  return layer.name || layer.type?.replaceAll("_", "");
 };

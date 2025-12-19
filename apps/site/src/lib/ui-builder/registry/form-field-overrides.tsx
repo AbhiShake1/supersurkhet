@@ -43,9 +43,9 @@ export const classNameFieldOverrides: FieldConfigFunction = () => {
   };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const childrenFieldOverrides: FieldConfigFunction = (
+export const childrenFieldOverrides: FieldConfigFunction<{ optionsFilter?: (k: string) => boolean }> = (
   layer,
+  options
 ) => {
   return {
     fieldType: ({
@@ -64,6 +64,8 @@ export const childrenFieldOverrides: FieldConfigFunction = (
           layer={layer}
           onChange={field.onChange}
           {...fieldProps}
+          optionsFilter={options?.optionsFilter}
+          fieldName={field.name}
         />
       </FormFieldWrapper>
     ),

@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import * as React from "react";
 import { z } from "zod";
-import { Icon } from "./ui-builder/components/icon";
 
 const InputSchema = z.object({
   placeholder: z.string().default("Write something..."),
@@ -11,11 +10,9 @@ const InputSchema = z.object({
     "radio", "range", "reset", "search", "submit", "tel",
     "text", "time", "url", "week"
   ]).default("text"),
-  leadingIcon: z.string().optional(),
-  trailingIcon: z.string().optional(),
+  leadingIcon: z.custom<React.ReactNode>().optional(),
+  trailingIcon: z.custom<React.ReactNode>().optional(),
   className: z.string().optional(),
-  leadingIconClassName: z.string().optional(),
-  trailingIconClassName: z.string().optional(),
   disabled: z.boolean().optional(),
   value: z.union([z.string(), z.number()]).optional(),
   name: z.string().optional(),
@@ -41,7 +38,7 @@ const InputSchema = z.object({
 type InputProps = z.infer<typeof InputSchema>;
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, leadingIcon, trailingIcon, leadingIconClassName, trailingIconClassName, ...props }, ref) => {
+  ({ className, type, leadingIcon, trailingIcon, ...props }, ref) => {
     const hasLeading = Boolean(leadingIcon)
     const hasTrailing = Boolean(trailingIcon)
 
@@ -72,13 +69,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
         {hasLeading && (
           <div className="pointer-events-none absolute inset-y-0 left-0 flex w-9 items-center justify-center text-muted-foreground/80">
-            <Icon iconName={leadingIcon} className={leadingIconClassName} />
+            {leadingIcon}
           </div>
         )}
 
         {hasTrailing && (
           <div className="pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground/80">
-            <Icon iconName={trailingIcon} className={trailingIconClassName} />
+            {trailingIcon}
           </div>
         )}
       </div>

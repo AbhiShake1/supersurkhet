@@ -19,8 +19,6 @@ export const ConfigPanel = () => {
     pages,
   } = useLayerStore();
 
-  
-
   const selectedLayer = findLayerById(selectedPageId) as ComponentLayer;
 
   const handleDeleteLayer = useCallback(
@@ -87,7 +85,7 @@ const PageLayerForm: React.FC<PageLayerFormProps> = ({
       const { name } = data;
 
       // Merge the changed fields into the existing layer
-      const mergedValues = { ...selectedLayer, name, props: { } };
+      const mergedValues = { ...selectedLayer, name, props: {} };
       const { props, ...rest } = mergedValues;
 
       updateLayerProps(selectedLayer.id, props, rest);
