@@ -270,7 +270,13 @@ export const complexComponentDefinitions: ComponentRegistry = {
     component: Input,
     schema: InputSchema,
     from: "@/components/ui/input",
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: {
+      ...commonFieldOverrides(),
+      leadingIcon: iconNameFieldOverrides,
+      trailingIcon: iconNameFieldOverrides,
+      leadingIconClassName: classNameFieldOverrides,
+      trailingIconClassName: classNameFieldOverrides,
+    }
   },
 
   // Dialog

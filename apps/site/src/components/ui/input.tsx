@@ -14,6 +14,8 @@ const InputSchema = z.object({
   leadingIcon: z.string().optional(),
   trailingIcon: z.string().optional(),
   className: z.string().optional(),
+  leadingIconClassName: z.string().optional(),
+  trailingIconClassName: z.string().optional(),
   disabled: z.boolean().optional(),
   value: z.union([z.string(), z.number()]).optional(),
   name: z.string().optional(),
@@ -39,7 +41,7 @@ const InputSchema = z.object({
 type InputProps = z.infer<typeof InputSchema>;
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, leadingIcon, trailingIcon, ...props }, ref) => {
+  ({ className, type, leadingIcon, trailingIcon, leadingIconClassName, trailingIconClassName, ...props }, ref) => {
     const hasLeading = Boolean(leadingIcon)
     const hasTrailing = Boolean(trailingIcon)
 
@@ -70,13 +72,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
         {hasLeading && (
           <div className="pointer-events-none absolute inset-y-0 left-0 flex w-9 items-center justify-center text-muted-foreground/80">
-            <Icon iconName={leadingIcon} />
+            <Icon iconName={leadingIcon} className={leadingIconClassName} />
           </div>
         )}
 
         {hasTrailing && (
           <div className="pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground/80">
-            <Icon iconName={trailingIcon} />
+            <Icon iconName={trailingIcon} className={trailingIconClassName} />
           </div>
         )}
       </div>
