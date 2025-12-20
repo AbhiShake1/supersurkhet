@@ -37,10 +37,20 @@ const InputSchema = z.object({
 
 type InputProps = z.infer<typeof InputSchema>;
 
+function checkNonNullish(value: any) {
+  if (!value) return false;
+  if (Array.isArray(value)) {
+    if (value.length === 0) return false;
+    return value.filter(Boolean);
+  }
+  return true;
+}
+
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, leadingIcon, trailingIcon, ...props }, ref) => {
-    const hasLeading = Boolean(leadingIcon)
-    const hasTrailing = Boolean(trailingIcon)
+    const hasLeading = checkNonNullish(leadingIcon)
+    const hasTrailing = checkNonNullish(trailingIcon)
+    console.log({ hasLeading, hasTrailing, leadingIcon, trailingIcon })
 
     return (
       <div className="relative flex w-full">

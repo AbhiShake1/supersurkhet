@@ -38,6 +38,7 @@ type AddComponentsPopoverProps = {
     parentLayerId: string;
     addPosition?: number;
     propType: "children" | "props";
+    fieldName?: string; // The specific field name (e.g., "leadingIcon", "trailingIcon")
   }) => void;
   optionsFilter?: (k: string) => boolean;
   fieldName?: string;
@@ -91,7 +92,13 @@ export function AddComponentsPopover({
   const handleSelect = React.useCallback(
     (currentValue: string) => {
       if (onChange) {
-        onChange({ layerType: currentValue, parentLayerId, addPosition, propType: "children" });
+        onChange({
+          layerType: currentValue,
+          parentLayerId,
+          addPosition,
+          propType: "children",
+          fieldName  // Pass the field name so the parent knows which prop to add to
+        });
       } else if (
         componentRegistry[currentValue as keyof typeof componentRegistry]
       ) {
@@ -112,6 +119,7 @@ export function AddComponentsPopover({
       setOpen,
       onOpenChange,
       onChange,
+      fieldName,
     ]
   );
 

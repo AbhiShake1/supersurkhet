@@ -276,7 +276,7 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
     // Pass context data to field overrides to enable contextual mentions
     return generateFieldOverrides(componentRegistry, selectedLayer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [componentRegistry, selectedLayer, selectedLayer?.props]);
+  }, [componentRegistry, selectedLayer]);
 
   // Create a unique key that changes when we need to force re-render the form
   // This includes selectedLayerId and revisionCounter to handle both layer changes and undo/redo
