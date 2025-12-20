@@ -1,4 +1,5 @@
-import React, { useMemo, useState } from "react";
+import type React from "react";
+import { useMemo, useState } from "react";
 import { Plus, Trash, Copy } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { useLayerStore } from "@/lib/ui-builder/store/layer-store";

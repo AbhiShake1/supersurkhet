@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from "react"
+import type React from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Check, X as XIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"

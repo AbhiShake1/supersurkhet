@@ -20,7 +20,7 @@ const rainAnimation: Variants = {
     opacity: [1, 0.4, 1],
     transition: {
       duration: 0.8,
-      repeat: Infinity,
+      repeat: Number.POSITIVE_INFINITY,
       ease: 'easeInOut',
     },
   },

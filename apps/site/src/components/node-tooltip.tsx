@@ -2,7 +2,8 @@
 
 import { cn } from "@/lib/utils";
 import { NodeToolbar, type NodeToolbarProps } from "@xyflow/react";
-import React, {
+import type React from "react";
+import {
   createContext,
   forwardRef,
   useCallback,

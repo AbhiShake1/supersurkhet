@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTheme } from "@/contexts/theme-context";
-import { type ThemeStyleProps } from "@/lib/theme";
+import type { ThemeStyleProps } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 interface ThemeEditorProps extends React.ComponentProps<"div"> {

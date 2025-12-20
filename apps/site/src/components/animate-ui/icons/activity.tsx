@@ -65,7 +65,7 @@ const animations = {
         transition: {
           duration: 3,
           ease: 'easeInOut',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           repeatType: 'loop',
           opacity: { duration: 0.01 },
         },

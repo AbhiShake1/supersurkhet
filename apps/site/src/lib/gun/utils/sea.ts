@@ -1,5 +1,5 @@
 import { applyTransformerRequestParsers, applyTransformerResponseParsers } from "./parser";
-import { z } from "zod";
+import type { z } from "zod";
 
 // const secret = "#supersekret";
 

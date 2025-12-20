@@ -6,7 +6,7 @@ import {
   useForm,
   type UseFormReturn,
 } from "react-hook-form";
-import { z } from "zod";
+import type { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";

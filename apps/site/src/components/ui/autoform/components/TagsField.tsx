@@ -66,7 +66,7 @@ export function TagsField({
       .filter(tag => tag && !tags.includes(tag));
 
     if (newTags.length > 0) {
-      const availableSlots = maxTags ? maxTags - tags.length : Infinity;
+      const availableSlots = maxTags ? maxTags - tags.length : Number.POSITIVE_INFINITY;
       const tagsToAdd = newTags.slice(0, availableSlots);
       setTags([...tags, ...tagsToAdd]);
     }

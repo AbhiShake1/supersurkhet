@@ -15,6 +15,7 @@ import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
 import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
 import { resolveContextualMentions } from "@/lib/ui-builder/utils/variable-resolver";
 import { useContextData } from "@/lib/ui-builder/context/context-data-store";
+import { isComponentLayer } from "@/lib/ui-builder/store/layer-utils";
 
 // Custom hook to safely use DND context
 const useSafeDndContext = () => {
@@ -235,6 +236,34 @@ export const RenderLayer: React.FC<{
           />
         </div>
       );
+    }
+
+    // Handle ReactNode props that contain component layers
+    const layerProps = layer.props || {};
+    for (const [propName, propValue] of Object.entries(layerProps)) {
+      if (isComponentLayer(propValue)) {
+        // Single component layer in a prop
+        childProps[propName] = (
+          <RenderLayer
+            componentRegistry={componentRegistry}
+            layer={propValue}
+            editorConfig={childEditorConfig}
+          />
+        );
+      } else if (Array.isArray(propValue)) {
+        // Array of component layers in a prop
+        const componentLayers = propValue.filter(isComponentLayer);
+        if (componentLayers.length > 0) {
+          childProps[propName] = componentLayers.map((componentLayer, index) => (
+            <RenderLayer
+              key={componentLayer.id}
+              componentRegistry={componentRegistry}
+              layer={componentLayer}
+              editorConfig={childEditorConfig}
+            />
+          ));
+        }
+      }
     }
 
     const ref = React.useRef<any>(null);

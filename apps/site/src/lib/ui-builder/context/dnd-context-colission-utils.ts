@@ -1,5 +1,5 @@
 import {
-    CollisionDetection,
+    type CollisionDetection,
     pointerWithin,
     rectIntersection,
 } from '@dnd-kit/core';
@@ -292,7 +292,7 @@ const getTransformState = (): TransformState => {
         if (transform && transform !== 'none') {
             const matrixMatch = transform.match(/matrix\(([^)]*)\)/);
             if (matrixMatch) {
-                const values = matrixMatch[1].split(',').map(v => parseFloat(v.trim()));
+                const values = matrixMatch[1].split(',').map(v => Number.parseFloat(v.trim()));
                 if (values.length >= 6) {
                     transformState = {
                         scale: values[0], // scaleX

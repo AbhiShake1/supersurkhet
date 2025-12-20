@@ -117,7 +117,7 @@ const animations = {
         transition: {
           duration: 0.8,
           delay: 0.4,
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           repeatType: 'mirror',
           ease: 'easeInOut',
         },
@@ -132,7 +132,7 @@ const animations = {
         transition: {
           duration: 0.8,
           delay: 0.2,
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           repeatType: 'mirror',
           ease: 'easeInOut',
         },
@@ -146,7 +146,7 @@ const animations = {
         y: [-0.75, 0.75],
         transition: {
           duration: 0.8,
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           repeatType: 'mirror',
           ease: 'easeInOut',
         },

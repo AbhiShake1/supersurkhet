@@ -1,4 +1,4 @@
-import * as React from "react"
+import type * as React from "react"
 import type { Editor } from "@tiptap/react"
 import type { FormatAction } from "../../types"
 import type { toggleVariants } from "@/components/ui/toggle"

@@ -14,12 +14,12 @@ type CloudDrizzleProps = IconProps<keyof typeof animations>;
 
 const drizzleAnimation: Variants = {
   initial: { opacity: 1 },
-  animate: (i: number = 0) => ({
+  animate: (i = 0) => ({
     opacity: [1, 0.4, 1],
     transition: {
       duration: 1.2,
       ease: 'easeInOut',
-      repeat: Infinity,
+      repeat: Number.POSITIVE_INFINITY,
       delay: i * 0.2,
     },
   }),

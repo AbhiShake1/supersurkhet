@@ -1,4 +1,5 @@
-import React, { useCallback, useMemo } from "react";
+import type React from "react";
+import { useCallback, useMemo } from "react";
 import { z } from "zod";
 import {
   useLayerStore,
@@ -6,7 +7,7 @@ import {
 import { Button } from "@/components/ui/button";
 import AutoForm from "@/components/ui/auto-form";
 import { addDefaultValues } from "@/lib/ui-builder/store/schema-utils";
-import { ComponentLayer } from "@/components/ui/ui-builder/types";
+import type { ComponentLayer } from "@/components/ui/ui-builder/types";
 
 export const ConfigPanel = () => {
   const {
@@ -17,8 +18,6 @@ export const ConfigPanel = () => {
     updateLayer,
     pages,
   } = useLayerStore();
-
-  
 
   const selectedLayer = findLayerById(selectedPageId) as ComponentLayer;
 
@@ -86,7 +85,7 @@ const PageLayerForm: React.FC<PageLayerFormProps> = ({
       const { name } = data;
 
       // Merge the changed fields into the existing layer
-      const mergedValues = { ...selectedLayer, name, props: { } };
+      const mergedValues = { ...selectedLayer, name, props: {} };
       const { props, ...rest } = mergedValues;
 
       updateLayerProps(selectedLayer.id, props, rest);
