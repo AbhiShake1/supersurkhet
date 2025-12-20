@@ -50,7 +50,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, leadingIcon, trailingIcon, ...props }, ref) => {
     const hasLeading = checkNonNullish(leadingIcon)
     const hasTrailing = checkNonNullish(trailingIcon)
-    console.log({ hasLeading, hasTrailing, leadingIcon, trailingIcon })
 
     return (
       <div className="relative flex w-full">
