@@ -68,6 +68,7 @@ import {
 } from '@/components/ai-elements/reasoning';
 import { Loader } from '@/components/ai-elements/loader';
 import { DefaultChatTransport } from 'ai';
+import { createServerFn } from '@tanstack/react-start';
 
 
 const componentRegistry = {
@@ -396,9 +397,10 @@ Provide the complete UI configuration in JSON format as your response. Do not in
   };
 
   const [webSearch, setWebSearch] = useState(false);
+
   const { messages, sendMessage, status, regenerate } = useChat({
     transport: new DefaultChatTransport({
-      api: "/api/builderchat",
+      api: getBuilderChat.url,
       body: {
         businessName,
         businessType: _business?.businessType || '',

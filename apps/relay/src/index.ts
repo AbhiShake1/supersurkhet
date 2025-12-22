@@ -25,13 +25,13 @@ export class GunRelay extends DurableObject {
       localStorage: false,
       // file: 'data/gun',
       // file: "./data/gun",
-      // s3: {
-      //   bucket: env.S3_BUCKET,
-      //   key: env.S3_KEY,
-      //   secret: env.S3_SECRET,
-      //   region: env.S3_REGION,
-      //   // fakes3: env.S3_ENDPOINT,
-      // },
+      s3: {
+        bucket: env.S3_BUCKET,
+        key: env.S3_KEY,
+        secret: env.S3_SECRET,
+        region: env.S3_REGION || "auto",
+        fakes3: env.S3_ENDPOINT,
+      },
       peers: env.GUN_PEERS ? env.GUN_PEERS.split(',') : [],
       web: this.server,
     });

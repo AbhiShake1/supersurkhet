@@ -35,7 +35,7 @@ const InputSchema = z.object({
   defaultValue: z.union([z.string(), z.number()]).optional(),
 });
 
-type InputProps = z.infer<typeof InputSchema>;
+type InputProps = z.infer<typeof InputSchema> & React.ComponentProps<"input">;
 
 function checkNonNullish(value: any) {
   if (!value) return false;
