@@ -220,7 +220,7 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
               {open && (
                 <div className={`transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}>
                   <div className="flex flex-col">
-                    <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <span className="block max-w-[8ch] truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {user?.name || user?.email || "User"}
                     </span>
                     {businessName && (
