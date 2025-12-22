@@ -62,17 +62,8 @@ export function get<const T extends SchemaKeys>(
   return new Promise<NestedSchemaType<T>[]>((resolve) => {
     const node = getGunRef(keys);
 
-    const timeout = setTimeout(() => {
-      resolve([])
-    }, 3000)
-
     node
-      .not(() => {
-        clearTimeout(timeout)
-        resolve([])
-      })
       .load(async (data) => {
-        clearTimeout(timeout)
         if (!data || typeof data !== "object") return;
 
         if (isSingle) {

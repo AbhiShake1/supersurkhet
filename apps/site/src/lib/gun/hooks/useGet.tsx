@@ -21,23 +21,11 @@ export const useGet = createGunHook((messenger) => {
       }),
     ...restKeys: string[]
   ) => {
-    // function getMapper() {
-    //   if (typeof key !== "string" && key.filter) {
-    //     return (data: NestedSchemaType<T>) => {
-    //       if (key.filter?.(data)) {
-    //         return data;
-    //       }
-    //       return undefined
-    //     };
-    //   }
-    //   return undefined
-    // }
     const queryClient = useQueryClient();
     const isSingle = typeof key !== "string" && key.single || false
     const k = typeof key === "string" ? key : key.key;
     const queryKey = ["get", key, ...restKeys];
     const schema = getNestedZodShape(k, messenger._options.schema)
-    let timeout: NodeJS.Timeout
     return useQuery({
       queryKey,
       queryFn: async () => {
@@ -54,8 +42,6 @@ export const useGet = createGunHook((messenger) => {
 
         node.open(async (fullData) => {
           if (!fullData || typeof fullData !== "object") return;
-
-          if (timeout) clearTimeout(timeout)
 
           const entries = Object.entries(fullData) as [string, any][];
           const newList: NestedSchemaType<T>[] = [];
@@ -84,17 +70,7 @@ export const useGet = createGunHook((messenger) => {
           }
 
           queryClient.setQueryData(queryKey, newList.filter(Boolean));
-        });
-
-        return new Promise<NestedSchemaType<T>[]>((res) => {
-          timeout = setTimeout(() => {
-            res([])
-          }, 3000)
-          node.not(() => {
-            res([]);
-            clearTimeout(timeout)
-          })
-        });
+        }).then();
       },
     });
   };

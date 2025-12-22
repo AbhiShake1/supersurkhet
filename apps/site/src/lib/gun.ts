@@ -13,6 +13,7 @@ import "gun/lib/rindexed";
 import "gun/lib/webrtc";
 import "gun/sea";
 import "gun/lib/not"
+import "gun/lib/then"
 import type { IGunInstance } from "gun/types";
 
 export const gun = GUN({
