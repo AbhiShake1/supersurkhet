@@ -40,7 +40,7 @@ export const useGet = createGunHook((messenger) => {
 
         const node = getGunRef(keys);
 
-        node.open(async (fullData) => {
+        async function transform(fullData: any) {
           if (!fullData || typeof fullData !== "object") return;
 
           const entries = Object.entries(fullData) as [string, any][];
@@ -69,8 +69,17 @@ export const useGet = createGunHook((messenger) => {
             }
           }
 
-          queryClient.setQueryData(queryKey, newList.filter(Boolean));
-        }).then();
+          return newList.filter(Boolean);
+        }
+
+        const firstData = await node.open(async (fullData) => {
+          const newList = await transform(fullData);
+          queryClient.setQueryData(queryKey, newList);
+        }).then()
+
+        const transformed = await transform(firstData) as NestedSchemaType<T>[] | undefined;
+
+        return transformed;
       },
     });
   };

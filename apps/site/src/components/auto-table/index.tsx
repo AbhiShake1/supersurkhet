@@ -593,7 +593,11 @@ export function AddDataSuggestions({ schemaName, slug, onSelected }: AddDataSugg
     return uniqueData
   }
 
-  return <BadgeMarquee items={getTeansformedData()} onSelected={onSelected} />
+  const transformedData = getTeansformedData()
+
+  if (!transformedData?.length) return null
+
+  return <BadgeMarquee items={transformedData} onSelected={onSelected} />
 }
 
 // Helper function to determine filter variant based on field type

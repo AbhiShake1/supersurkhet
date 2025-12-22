@@ -117,11 +117,18 @@ export interface EditorConfig {
   contextData?: Record<string, any>;
 }
 
-export const RenderLayer: React.FC<{
+export interface RenderLayerProps {
   layer: ComponentLayer;
   componentRegistry: ComponentRegistry;
   editorConfig?: EditorConfig;
-}> = memo(
+}
+
+export const RenderLayer: React.FC<RenderLayerProps> = (props) => {
+  if (!props?.layer) return null;
+  return <_RenderLayer {...props} />
+}
+
+const _RenderLayer: React.FC<RenderLayerProps> = memo(
   ({ layer, componentRegistry, editorConfig }) => {
     const isLayerAPage = useLayerStore((state) => state.isLayerAPage(layer.id));
     const registry = useEditorStore((state) => state.registry);

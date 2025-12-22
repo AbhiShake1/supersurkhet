@@ -14,7 +14,20 @@ import "gun/lib/webrtc";
 import "gun/sea";
 import "gun/lib/not"
 import "gun/lib/then"
+import "gun/lib/unset"
 import type { IGunInstance } from "gun/types";
+
+GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
+  var gun = this;
+  var p = (new Promise((res, rej) => {
+    gun
+      .not(() => res([]))
+      .once(function (data, key) {
+        res(data, key); //call resolve when data is returned
+      })
+  }))
+  return cb ? p.then(cb) : p;
+};
 
 export const gun = GUN({
   localStorage: false,
