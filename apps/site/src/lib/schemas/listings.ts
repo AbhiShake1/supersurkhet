@@ -43,7 +43,7 @@ export const baseListingSchema = z
       .describe("Price of the item/service"),
     // currency: z.string().length(3).default("NPR"),
     category: z.string().default("Others").optional(),
-    tags: z.record(z.string(), z.boolean()).optional(),
+    // tags: z.record(z.string(), z.boolean()).optional(),
     imageUrl: z
       .string()
       .url()
@@ -63,8 +63,8 @@ export const productSchema = baseListingSchema.extend({
     .url()
     .superRefine(fieldConfig({ fieldType: "image" }))
     .optional(),
-  isFeatured: z.boolean().optional(),
-  isActive: z.boolean().default(true),
+  isFeatured: z.boolean({ coerce: true }).optional(),
+  isActive: z.boolean({ coerce: true }).default(true),
   price: z
     .number({ coerce: true })
     .positive()
