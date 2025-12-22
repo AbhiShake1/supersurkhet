@@ -86,11 +86,12 @@ export const DataListSchema = z.object({
 interface DataListProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   table: SchemaKeys;
+  asChild?: boolean;
 }
 
 // DataList component - the main container
 const DataList = React.forwardRef<HTMLDivElement, DataListProps>(
-  ({ className, table = "product", children, ...props }, ref) => {
+  ({ className, asChild, table = "product", children, ...props }, ref) => {
     const { business } = useBusiness()
     const { data, isLoading } = api[table].useGet({ keys: [business?.id ?? ""] })
 

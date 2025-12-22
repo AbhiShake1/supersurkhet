@@ -35,7 +35,7 @@ const InputSchema = z.object({
   defaultValue: z.union([z.string(), z.number()]).optional(),
 });
 
-type InputProps = z.infer<typeof InputSchema>;
+type InputProps = z.infer<typeof InputSchema> & React.ComponentProps<"input">;
 
 function checkNonNullish(value: any) {
   if (!value) return false;
@@ -50,7 +50,6 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, leadingIcon, trailingIcon, ...props }, ref) => {
     const hasLeading = checkNonNullish(leadingIcon)
     const hasTrailing = checkNonNullish(trailingIcon)
-    console.log({ hasLeading, hasTrailing, leadingIcon, trailingIcon })
 
     return (
       <div className="relative flex w-full">

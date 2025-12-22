@@ -69,6 +69,8 @@ import { z } from "zod";
 import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
 import { DataTableColumnHeader } from "../data-table/data-table-column-header";
 import { AutoPreview } from "../auto-preview";
+import { api } from "@/lib/api";
+import { BadgeMarquee } from "../ui/badge-marquee";
 
 type AggregationType =
   | 'sum'
@@ -124,6 +126,7 @@ export function AutoTable<T extends SchemaKeys>({
   defaultPageSize = 10,
   ...props
 }: AutoTableProps<T>) {
+  const [formValues, setFormValues] = React.useState<Record<string, any>>({});
   const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const { data: __data = [], isLoading } = useGet(schemaName, slug);
@@ -198,7 +201,7 @@ export function AutoTable<T extends SchemaKeys>({
         updateMutation.mutate({ id: rowId, ...data });
       }
     },
-    getRowId: (originalRow) => originalRow._?.soul ?? originalRow["#"]?.split("/").slice(2).join("/") ?? "", shallow: false, nttclearOnDefault: true,
+    getRowId: (originalRow) => originalRow?._?.soul ?? originalRow["#"]?.split("/").slice(2).join("/") ?? "", shallow: false, nttclearOnDefault: true,
   });
 
   if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
@@ -213,13 +216,17 @@ export function AutoTable<T extends SchemaKeys>({
           </Button>
         </CredenzaTrigger>
         <CredenzaContent>
-          <CredenzaHeader>
-            <CredenzaTitle>Add</CredenzaTitle>
-            <CredenzaDescription>Add new</CredenzaDescription>
+          <CredenzaHeader className="min-w-0">
+            <CredenzaTitle className="capitalize">Add new {schemaName}</CredenzaTitle>
+            <CredenzaDescription asChild>
+              <AddDataSuggestions schemaName={schemaName} slug={slug} onSelected={setFormValues} />
+            </CredenzaDescription>
           </CredenzaHeader>
           <CredenzaBody asChild>
             <ScrollArea className="h-[50vh]">
               <AutoForm
+                values={formValues}
+
                 schema={schema}
                 onSubmit={(b) => createMutation.mutate(b)}
                 formProps={{ id: "auto-table-add-form" }}
@@ -460,6 +467,42 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   });
 
   return columns;
+}
+
+
+function useAllData(tableName: SchemaKeys) {
+  const { data: allItems, ...rest } = api[tableName].useGet();
+
+  const data = allItems?.flatMap(d => {
+    const business = d._?.soul;
+    return Object.values(d).map(d =>
+      !d || typeof d !== "object" ? null : ({ ...d, business })
+    );
+  }).filter(d => !!d && typeof d === "object" && !("soul" in d))
+
+  return { data, ...rest };
+}
+
+export interface AddDataSuggestionsProps {
+  slug: string;
+  schemaName: SchemaKeys;
+  onSelected: (item: any) => void;
+}
+
+export function AddDataSuggestions({ schemaName, slug, onSelected }: AddDataSuggestionsProps) {
+  const { data, isLoading } = useAllData(schemaName);
+
+  if (isLoading) return "loading suggestions..."
+
+  function getTeansformedData() {
+    if (!data?.length) return []
+    const othersData = data.filter(d => d?.business !== slug)
+
+    const uniqueData = Object.values(Object.fromEntries(othersData.map(d => [d?.title || d?.name || d?.label || d?.text || d?.displayName || d?.heading || "", d])))
+    return uniqueData
+  }
+
+  return <BadgeMarquee items={getTeansformedData()} onSelected={onSelected} />
 }
 
 // Helper function to determine filter variant based on field type
