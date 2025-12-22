@@ -1,5 +1,5 @@
 import {
-  type Children,
+  Children,
   createContext,
   useContext,
   useEffect,

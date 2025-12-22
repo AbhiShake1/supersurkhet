@@ -6,7 +6,7 @@ import { table } from "./listings";
 export const uiBuilderLayerSchema: z.ZodType<ComponentLayer> = z.lazy(() =>
   z.object({
     id: z.string(),
-    name: z.string().optional(),
+    name: z.string(),
     type: z.string(),
     props: z.record(z.string(), z.any()),
     children: z.union([

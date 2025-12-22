@@ -117,6 +117,10 @@ function isMobile() {
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   loader: async () => {
+    // const { api } = await import("@/lib/api");
+    // setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
+    // const bGet = await api.business.get({ keys: ["anjal-store"], single: true })
+    // console.log({ bGet })
     const savedThemeName = await getAppTheme();
     const savedDarkMode = await getAppDarkMode();
     const _savedTheme = await getAppThemeData();
@@ -147,7 +151,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       criticalThemeCSS
     };
   },
-  head: (ctx) => ({
+  head: () => ({
     meta: [
       {
         charSet: "utf-8",
@@ -261,13 +265,19 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     ],
   }),
   validateSearch: z.object({
-    p: z.string().nullish().default(null).catch(null),
+    p: z.string().optional().catch(undefined),
   }).optional(),
   context: () => ({ auth, gun }),
   notFoundComponent: () => <NotFound />,
   errorComponent: () => <ErrorComponent />,
   component: () => {
     const loaderData = Route.useLoaderData()
+    // console.log({ loaderData })
+
+    // import("@/lib/api").then(({ api }) => {
+    //   setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
+    //   api.business.get().then(business => console.log({ business }))
+    // })
     return <RootDocument>
       <style>
         {loaderData.criticalThemeCSS}

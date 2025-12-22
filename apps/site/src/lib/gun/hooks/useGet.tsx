@@ -7,44 +7,10 @@ import type { NestedSchemaType, SchemaKeys } from "..";
 import { getGunRef, getNestedZodShape, mergeKeys } from "../utils";
 import { decrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
+import { appSchema, transformSchema } from "@/lib/schema";
+import { attachSouls, type GetBuilder as UseGetBuilder } from "../ssr/get";
 
-function attachSouls(value: any, currentPath: string): any {
-  // primitives stay untouched
-  if (typeof value !== "object" || value === null) return value;
-
-  // ------------------------------------------------------------
-  // CASE: ARRAY
-  // ------------------------------------------------------------
-  if (Array.isArray(value)) {
-    const result = value.map((item, index) =>
-      attachSouls(item, `${currentPath}/${index}`)
-    );
-
-    // give the array itself a soul too
-    return Object.assign([...result], { "#": currentPath });
-  }
-
-  // ------------------------------------------------------------
-  // CASE: OBJECT
-  // ------------------------------------------------------------
-  const result: Record<string, any> = { "#": currentPath };
-
-  for (const [key, val] of Object.entries(value)) {
-    if (typeof val === "object" && val !== null) {
-      result[key] = attachSouls(val, `${currentPath}/${key}`);
-    } else {
-      result[key] = val;
-    }
-  }
-
-  return result;
-}
-
-export type UseGetBuilder<T extends SchemaKeys> = {
-  separator?: string;
-  filter?: (item: NestedSchemaType<T>) => boolean;
-  single?: boolean;
-};
+export type { UseGetBuilder }
 
 export const useGet = createGunHook((messenger) => {
   return <const T extends SchemaKeys>(
@@ -55,19 +21,19 @@ export const useGet = createGunHook((messenger) => {
       }),
     ...restKeys: string[]
   ) => {
-    function getMapper() {
-      if (typeof key !== "string" && key.filter) {
-        return (data: NestedSchemaType<T>) => {
-          if (key.filter?.(data)) {
-            return data;
-          }
-          return undefined
-        };
-      }
-      return undefined
-    }
-    const isSingle = typeof key !== "string" && key.single || false
+    // function getMapper() {
+    //   if (typeof key !== "string" && key.filter) {
+    //     return (data: NestedSchemaType<T>) => {
+    //       if (key.filter?.(data)) {
+    //         return data;
+    //       }
+    //       return undefined
+    //     };
+    //   }
+    //   return undefined
+    // }
     const queryClient = useQueryClient();
+    const isSingle = typeof key !== "string" && key.single || false
     const k = typeof key === "string" ? key : key.key;
     const queryKey = ["get", key, ...restKeys];
     const schema = getNestedZodShape(k, messenger._options.schema)

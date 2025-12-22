@@ -34,7 +34,7 @@ export function FileUploadField({
     if (file) {
       setFileName(file.name);
       setFileType(file.type);
-      
+
       // Create preview for images
       if (file.type.startsWith("image/")) {
         const reader = new FileReader();
@@ -45,7 +45,7 @@ export function FileUploadField({
       } else {
         setFilePreview(null);
       }
-      
+
       field.onChange(file);
     } else {
       setFileName(null);
@@ -82,10 +82,10 @@ export function FileUploadField({
           {label}
         </Label>
       )}
-      
+
       <div className="space-y-3">
         {/* File input area */}
-        <div 
+        <div
           className={cn(
             "flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input bg-background px-6 py-8 transition-colors hover:border-accent",
             error && "border-destructive"
@@ -102,7 +102,7 @@ export function FileUploadField({
             onChange={handleFileChange}
             {...props}
           />
-          
+
           <div className="flex flex-col items-center text-center">
             <Upload className="h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-sm font-medium text-foreground mb-1">
@@ -113,7 +113,7 @@ export function FileUploadField({
             </p>
           </div>
         </div>
-        
+
         {/* File preview */}
         {fileName && (
           <div className="flex items-center justify-between rounded-lg border border-input bg-background p-3">
@@ -126,10 +126,10 @@ export function FileUploadField({
                   {fileName}
                 </p>
                 {filePreview && fileType?.startsWith("image/") && (
-                  <img 
-                    src={filePreview} 
-                    alt="Preview" 
-                    className="h-8 w-8 rounded object-cover mt-1" 
+                  <img
+                    src={filePreview}
+                    alt="Preview"
+                    className="h-8 w-8 rounded object-cover mt-1"
                   />
                 )}
               </div>
@@ -146,7 +146,7 @@ export function FileUploadField({
           </div>
         )}
       </div>
-      
+
       {description && <p className="text-sm text-muted-foreground">{description}</p>}
       {error && <p className="text-sm font-medium text-destructive">{error.message}</p>}
     </div>
