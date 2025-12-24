@@ -65,6 +65,7 @@ export function BusinessList(props: BusinessListProps) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredBusinesses.map((business: Business) => (
+              business?.basePath &&
               <Card key={business._?.soul} className="relative flex flex-col">
                 <CardHeader className="pb-2">
                   <CardTitle>{business.name}</CardTitle>

@@ -155,38 +155,25 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       <CollapsibleSidebar data={data} businessName={business?.name} />
       <SidebarInset className="min-w-0">
         <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-lg">{currentItem.title}</h1>
-              {business && (
-                <Badge variant="secondary" className="rounded-md px-2 py-1 text-xs">
-                  {business.name}
-                </Badge>
-              )}
-            </div>
-          </div>
+          <h1 className="font-bold text-lg px-4">{currentItem.title}</h1>
 
           {/* Search and Action Bar */}
           <div className="ml-auto flex items-center gap-2 px-4">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 bg-background pl-8 md:w-[200px] lg:w-[300px]"
-              />
-            </div>
+            <Input
+              type="search"
+              placeholder="Search..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-64 bg-background pl-8 md:w-[200px] lg:w-[300px]"
+              leadingIcon={<Search className="h-4 w-4" />}
+            />
 
-            <Button variant="outline" size="icon" className="h-8 w-8 relative">
+            <Button variant="outline" size="icon" className="relative">
               <Bell className="h-4 w-4" />
               <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 text-xs flex items-center justify-center text-white">3</span>
             </Button>
 
-            <Button variant="outline" size="icon" className="h-8 w-8">
+            <Button variant="outline" size="icon" className="">
               <Settings className="h-4 w-4" />
             </Button>
 
