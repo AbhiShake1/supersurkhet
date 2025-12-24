@@ -59,7 +59,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let ref: IGunChain<any>;
     auth.getCurrentUser().then((_authUser) => {
-      console.log("Auth user", _authUser);
       setAuthUser(_authUser);
 
       // If we have an authenticated user, use that
@@ -97,6 +96,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const isAuthenticated = useMemo(() => !!authUser, [authUser]);
 
   async function linkAnonymousUser(authenticatedUser: User) {
+    function saveUser(anonymousData: any, onSaved?: () => void) {
+      const mergedData = {
+        ...authenticatedUser,
+        ...anonymousData,
+      };
+
+      gun
+        .get("user")
+        .get(authenticatedUser.pub)
+        .put(mergedData)
+
+      setUser(mergedData);
+
+      // Clear the anonymous user ID from localStorage
+      localStorage.removeItem(ANONYMOUS_USER_KEY);
+
+      // Update the anonymousUserId state
+      setAnonymousUserId(null);
+
+      onSaved?.()
+    }
     return new Promise<void>((resolve) => {
       if (!anonymousUserId) {
         // If there's no anonymous user, just set the authenticated user
@@ -109,37 +129,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       gun
         .get("user")
         .get(anonymousUserId)
+        .not(() => {
+          saveUser({}, resolve)
+          resolve()
+        })
         .once((anonymousData) => {
-          // Get the authenticated user's profile data from the user node
-          gun
-            .get("user")
-            .get(authenticatedUser.pub)
-            .once((authenticatedProfile) => {
-              // Merge anonymous data with authenticated user data
-              // Prioritize authenticated user's core identity data
-              const mergedData = {
-                ...authenticatedUser, // GunDB user object (pub, epub, etc.)
-                ...authenticatedProfile, // User profile data (email, name, avatar, etc.)
-                ...anonymousData, // Anonymous user data
-                // Ensure authenticated user's identity is preserved
-                pub: authenticatedUser.pub,
-                epub: authenticatedUser.epub,
-              };
-
-              // Save merged data to the authenticated user node
-              gun.get("user").get(authenticatedUser.pub).put(mergedData);
-
-              // Update the local state
-              setUser(mergedData);
-
-              // Clear the anonymous user ID from localStorage
-              localStorage.removeItem(ANONYMOUS_USER_KEY);
-
-              // Update the anonymousUserId state
-              setAnonymousUserId(null);
-
-              resolve();
-            });
+          saveUser(anonymousData, resolve)
         });
     });
   }

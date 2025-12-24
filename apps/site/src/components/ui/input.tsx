@@ -9,7 +9,7 @@ const InputSchema = z.object({
     "file", "hidden", "image", "month", "number", "password",
     "radio", "range", "reset", "search", "submit", "tel",
     "text", "time", "url", "week"
-  ]).default("text"),
+  ]).default("text").optional(),
   leadingIcon: z.custom<React.ReactNode>().optional(),
   trailingIcon: z.custom<React.ReactNode>().optional(),
   className: z.string().optional(),

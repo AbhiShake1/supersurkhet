@@ -122,8 +122,6 @@ export function AuthForm({
 
   const { linkAnonymousUser } = useAuth();
 
-
-
   const signupMutation = useMutation({
     mutationFn: async ({ email, password }: z.infer<typeof signupSchema>) => {
       // Check rate limit
@@ -141,7 +139,7 @@ export function AuthForm({
         throw new Error("This email is already registered");
       }
 
-      const otp = await createOTP({ data: { userId: alias } });
+      const otp = createOTP({ data: { userId: alias } });
 
       // Send verification email
       await sendMail({
@@ -206,11 +204,11 @@ export function AuthForm({
 
   const googleLoginMutation = useMutation({
     mutationFn: googleLogin,
-    onSuccess: async (user) => {
+    onSuccess: async (user, variables) => {
       // Link anonymous user data to the Google account if exists
       if (user) {
         // The user object from googleLogin will be passed to linkAnonymousUser
-        await linkAnonymousUser(user);
+        await linkAnonymousUser({ ...variables, ...user });
       }
       refreshUser();
       onAuthSuccess?.(user);
@@ -248,7 +246,7 @@ export function AuthForm({
       }
 
       const alias = email.toLowerCase();
-      const otp = await createOTP({ data: { userId: alias } });
+      const otp = createOTP({ data: { userId: alias } });
 
       // Send verification email
       await sendMail({

@@ -1,7 +1,12 @@
+import { useAuth } from "@/components/auth-provider";
 import { AutoAdmin } from "@/components/auto-admin";
+import { useLoginPrompt } from "@/components/login-prompt-provider";
+import { Unauthorized } from "@/components/ui/unauthorized";
+import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { LucideBriefcaseBusiness, Settings } from "lucide-react";
+import { useEffect } from "react";
 import { z } from "zod";
 
 export const Route = createFileRoute("/admin")({
@@ -9,6 +14,22 @@ export const Route = createFileRoute("/admin")({
 });
 
 function RouteComponent() {
+  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
+  const { isAuthenticated, user } = useAuth();
+  const { isLoading } = api.business.useGet();
+
+  useEffect(() => {
+    if (!isAuthenticated && !isLoading)
+      promptLogin({ dismissible: false, showBackgroundContent: false });
+    else closeLoginPrompt();
+  }, [isAuthenticated, isLoading]);
+
+  if (isAuthenticated && user?.role !== "admin") {
+    // return <Unauthorized />
+  }
+
+  // return JSON.stringify(user ?? isAuthenticated)
+
   return (
     <AutoAdmin
       // @ts-expect-error

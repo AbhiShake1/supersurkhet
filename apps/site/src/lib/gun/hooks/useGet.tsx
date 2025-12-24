@@ -7,7 +7,6 @@ import type { NestedSchemaType, SchemaKeys } from "..";
 import { getGunRef, getNestedZodShape, mergeKeys } from "../utils";
 import { decrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
-import { appSchema, transformSchema } from "@/lib/schema";
 import { attachSouls, type GetBuilder as UseGetBuilder } from "../ssr/get";
 
 export type { UseGetBuilder }
@@ -79,7 +78,7 @@ export const useGet = createGunHook((messenger) => {
 
         const transformed = await transform(firstData) as NestedSchemaType<T>[] | undefined;
 
-        return transformed;
+        // return transformed;
       },
     });
   };
