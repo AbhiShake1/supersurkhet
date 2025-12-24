@@ -24,11 +24,9 @@ function RouteComponent() {
     else closeLoginPrompt();
   }, [isAuthenticated, isLoading]);
 
-  if (isAuthenticated && user?.role !== "admin") {
-    // return <Unauthorized />
+  if (!isLoading && isAuthenticated && user && user?.role !== "admin") {
+    return <Unauthorized />
   }
-
-  // return JSON.stringify(user ?? isAuthenticated)
 
   return (
     <AutoAdmin
@@ -47,12 +45,14 @@ function RouteComponent() {
               if (d.length === 0) return []
               const firstData = d[0]
               if ("timestamp" in firstData) return d
-              return d.flatMap(d => {
+              const result = d.flatMap(d => {
                 const business = d._?.soul;
                 return Object.values(d).map(d => !d || typeof d !== "object" ? null : ({ ...d, business }));
               }).filter(d => !!d && typeof d === "object" && !("soul" in d))
+              if (!result.length) return d
+              return result
             },
-            extender: d => d.extend({ business: z.string() }),
+            extender: d => d.extend({ business: z.string().optional() }),
           };
         })}
     />

@@ -28,9 +28,6 @@ export const useGet = createGunHook((messenger) => {
     return useQuery({
       queryKey,
       queryFn: async () => {
-        // await new Promise(r => {
-        //   setTimeout(r, 1000)
-        // })
         const _keys = mergeKeys(k, ...restKeys) as T;
         const keys =
           typeof key !== "string" && key.separator?.length
@@ -76,9 +73,7 @@ export const useGet = createGunHook((messenger) => {
           queryClient.setQueryData(queryKey, newList);
         }).then()
 
-        const transformed = await transform(firstData) as NestedSchemaType<T>[] | undefined;
-
-        // return transformed;
+        return (queryClient.getQueryData(queryKey) ?? await transform(firstData)) as NestedSchemaType<T>[] | undefined;
       },
     });
   };

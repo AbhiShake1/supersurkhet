@@ -82,7 +82,7 @@ export const userSchema = z
       .default(true)
       .describe("Whether the user account is active")
       .optional(),
-    role: z.string().default("user").optional(),
+    role: z.enum(["user", "internal-staff", "admin"]).default("user").optional(),
     // isVerified: z.boolean().default(false).optional(),
   })
   .extend(table);
