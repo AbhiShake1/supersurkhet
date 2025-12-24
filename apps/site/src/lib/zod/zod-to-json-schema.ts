@@ -1,4 +1,4 @@
-import { z, ZodTypeAny, ZodString, ZodNumber, ZodBoolean, ZodEnum, ZodArray, ZodObject, ZodOptional, ZodNullable, ZodUnion, ZodLiteral, ZodEffects, ZodDefault, ZodNativeEnum } from 'zod';
+import { z, type ZodTypeAny, ZodEnum, ZodArray, ZodObject, ZodOptional, ZodNullable, ZodUnion, ZodLiteral, ZodEffects, ZodDefault, ZodNativeEnum } from 'zod';
 
 interface JsonSchemaType {
   type?: string | string[];
@@ -96,7 +96,7 @@ export function zodToJsonSchema(schema: ZodTypeAny, options: { definitions?: Rec
     for (const [key, value] of Object.entries(shape)) {
       const zodValue = value as ZodTypeAny;
       properties[key] = zodToJsonSchema(zodValue, { definitions });
-      
+
       // Check if field is required (not optional)
       if (!(zodValue._def.typeName === 'ZodOptional')) {
         required.push(key);

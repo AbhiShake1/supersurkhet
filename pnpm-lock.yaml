@@ -499,6 +499,9 @@ importers:
       '@types/object-hash':
         specifier: ^3.0.6
         version: 3.0.6
+      '@types/papaparse':
+        specifier: ^5.5.2
+        version: 5.5.2
       '@types/qrcode':
         specifier: ^1.5.5
         version: 1.5.5
@@ -5938,6 +5941,9 @@ packages:
 
   '@types/object-hash@3.0.6':
     resolution: {integrity: sha512-fOBV8C1FIu2ELinoILQ+ApxcUKz4ngq+IWUYrxSGjXzzjUALijilampwkMgEtJ+h2njAW3pi853QpzNVCHB73w==}
+
+  '@types/papaparse@5.5.2':
+    resolution: {integrity: sha512-gFnFp/JMzLHCwRf7tQHrNnfhN4eYBVYYI897CGX4MY1tzY9l2aLkVyx2IlKZ/SAqDbB3I1AOZW5gTMGGsqWliA==}
 
   '@types/pg-pool@2.0.6':
     resolution: {integrity: sha512-TaAUE5rq2VQYxab5Ts7WZhKNmuN78Q6PiFonTDdpbx8a1H0M1vhy3rhiMjl+e2iHmogyMw7jZF4FrE6eJUy5HQ==}
@@ -19694,6 +19700,10 @@ snapshots:
   '@types/normalize-package-data@2.4.4': {}
 
   '@types/object-hash@3.0.6': {}
+
+  '@types/papaparse@5.5.2':
+    dependencies:
+      '@types/node': 20.17.47
 
   '@types/pg-pool@2.0.6':
     dependencies:
