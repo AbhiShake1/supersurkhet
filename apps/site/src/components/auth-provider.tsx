@@ -2,12 +2,12 @@ import type React from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useRouteContext } from "@tanstack/react-router";
 import type { User } from "@/lib/schema";
-import { gun } from "@/lib/gun";
 import { googleLogout } from "@react-oauth/google";
 import { v4 as uuid } from "uuid"
 import { createAvatar } from "@dicebear/core";
 import { pixelArt } from "@dicebear/collection";
 import type { IGunChain } from "gun/types";
+import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 import _ from "lodash";
 
 interface AuthContextType {
@@ -63,8 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       // If we have an authenticated user, use that
       if (_authUser) {
-        ref = gun
-          .get("user")
+        ref = getGunRef(mergeKeys("user"))
           .get(_authUser.pub)
           .open((data) => {
             setUser({ ..._authUser, ...data });
@@ -72,8 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // If no authenticated user but we have an anonymous user ID
         if (anonymousUserId) {
-          ref = gun
-            .get("user")
+          ref = getGunRef(mergeKeys("user"))
             .get(anonymousUserId)
             .open((data) => {
               setUser({
@@ -102,8 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         ...anonymousData,
       };
 
-      gun
-        .get("user")
+      getGunRef(mergeKeys("user"))
         .get(authenticatedUser.pub)
         .put(mergedData)
 
@@ -126,8 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Get data from the anonymous user node
-      gun
-        .get("user")
+      getGunRef(mergeKeys("user"))
         .get(anonymousUserId)
         .not(() => {
           saveUser({}, resolve)

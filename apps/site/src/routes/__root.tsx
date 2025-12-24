@@ -39,6 +39,7 @@ import { defaultPresets } from "@/lib/theme";
 import { getUser, removeUser } from "@/server-functions/user";
 import type { IGunUserInstance } from "gun/types";
 import z from "zod";
+import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -58,7 +59,7 @@ async function getUserProfile() {
   const user = await getCurrentUser();
   if (!user) return null;
   return await new Promise<UserProfile>((resolve) => {
-    gun.get("user").get(user.pub).once(resolve);
+    getGunRef(mergeKeys("user")).get(user.pub).once(resolve);
   });
 }
 

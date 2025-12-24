@@ -315,7 +315,7 @@ export function AuthForm({
             phone: "",
             permissions: {},
           };
-          gun.get("user").get(ack.pub).put(userProfile);
+          getGunRef(mergeKeys("user")).get(ack.pub).put(userProfile);
           resolve(ack);
         });
       });
