@@ -73,7 +73,7 @@ export const useGet = createGunHook((messenger) => {
           queryClient.setQueryData(queryKey, newList);
         }).then()
 
-        return (queryClient.getQueryData(queryKey) ?? await transform(firstData)) as NestedSchemaType<T>[] | undefined;
+        return (queryClient.getQueryData(queryKey) ?? await transform(firstData) ?? []) as NestedSchemaType<T>[] | undefined;
       },
     });
   };

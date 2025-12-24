@@ -102,15 +102,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
             placeholder="Filter items..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="text-xs pl-8"
-            leadingIcon={<Search className="h-4 w-4" />}
+            className="text-xs pl-8 mb-2"
+            leadingIcon={<Search className="h-4 w-4 mb-2" />}
           />
         )}
       </div>
 
       {/* Navigation items */}
       <div className="flex-grow overflow-y-auto pb-16">
-        <div className="space-y-1 mb-4">
+        <div className="space-y-1">
           {ungroupedItems.map((item, index) => (
             <Option
               key={index}
@@ -126,7 +126,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
 
         {/* Grouped navigation items */}
         {Object.entries(groupedItems).map(([groupName, items]) => (
-          <div key={groupName} className="mb-4">
+          <div key={groupName} className="">
             {open && (
               <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 {groupName}
@@ -204,7 +204,7 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
   if (!isAuthenticated) return null;
 
   return (
-    <div className="mb-4 border-b border-gray-200 dark:border-gray-800 pb-4">
+    <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">

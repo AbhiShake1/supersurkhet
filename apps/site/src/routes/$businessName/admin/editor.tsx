@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
 import { Smartphone, Tablet, Monitor, Maximize, X, Search, Terminal, Eye, EyeOff, MessageSquare, MessageSquareX, Code, CopyIcon, GlobeIcon, RefreshCcwIcon, Sparkles } from 'lucide-react';
@@ -69,6 +69,9 @@ import {
 import { Loader } from '@/components/ai-elements/loader';
 import { DefaultChatTransport } from 'ai';
 import { createServerFn } from '@tanstack/react-start';
+import { getBuilderChat } from '@/server-functions/ai';
+import { useLoginPrompt } from '@/components/login-prompt-provider';
+import { useAuth } from '@/components/auth-provider';
 
 
 const componentRegistry = {
@@ -87,6 +90,7 @@ export const Route = createFileRoute('/$businessName/admin/editor')({
 function EditorComponent() {
   const { businessName } = Route.useParams();
   const { data: business, isLoading } = api.business.useGet({ keys: [businessName], single: true })
+
   const _business = business?.[0]
   const code = _business?.uiBuilder?.layers ?? ''
   const { mutate: update } = api.business.useUpdate()
@@ -484,57 +488,6 @@ Provide the complete UI configuration in JSON format as your response. Do not in
     }
   }, []);
 
-  // Get selected text
-
-  // Grab code from chat (this is a simulation since we can't directly access iframe content due to CORS)
-  const grabCodeFromChat = useCallback(() => {
-    // In a real implementation, we would need to set up message communication with the iframe
-    // For now, we'll just show a notification to demonstrate the functionality
-    alert('In a real implementation, this would grab the latest code block from the AI chat');
-
-    // This is where we would implement the postMessage communication with the iframe
-    // to extract code blocks from the AI response
-  }, []);
-
-  // Send selected text from iframe to editor
-  const sendSelectedToEditor = useCallback(() => {
-    // Since we can't directly access iframe content due to CORS,
-    // we'll use a workaround: prompt the user to copy the text first
-    const selectedText = prompt('Please copy the text from the AI chat and paste it here:');
-    if (selectedText) {
-      if (editorRef.current && monacoInstance) {
-        // Get the current position of the cursor
-        const currentPosition = editorRef.current.getPosition();
-
-        // Create a model edit operation to insert the text
-        const model = editorRef.current.getModel();
-        if (model && currentPosition) {
-          // Insert at current cursor position
-          model.pushEditOperations(
-            [], // Don't push to undo stack for now
-            [{
-              range: new monacoInstance.Range(
-                currentPosition.lineNumber,
-                currentPosition.column,
-                currentPosition.lineNumber,
-                currentPosition.column
-              ),
-              text: selectedText,
-              forceMoveMarkers: true
-            }],
-            () => null // Don't return a selection
-          );
-
-          // Show a confirmation
-          console.log('Text inserted into editor:', selectedText);
-        }
-      }
-    }
-
-    // In a real implementation, we would use postMessage to communicate with the iframe
-    // and get the selected text directly from there
-  }, [monacoInstance]);
-
   // Toggle vim mode
   const toggleVimMode = useCallback(() => {
     setVimMode(prev => {
@@ -553,9 +506,18 @@ Provide the complete UI configuration in JSON format as your response. Do not in
     });
   }, [monacoInstance]);
 
-  // Insert text at cursor position in editor
+  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
+  const { isAuthenticated, user } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated && !isLoading)
+      promptLogin({ dismissible: false, showBackgroundContent: false });
+    else closeLoginPrompt();
+  }, [isAuthenticated, isLoading]);
 
   if (isLoading) return <Spinner />
+
+  if (!user) return null;
 
   const currentLayers = _business?.uiBuilder?.layers
   function tryParse(str: string) {

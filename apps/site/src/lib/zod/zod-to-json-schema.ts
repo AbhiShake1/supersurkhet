@@ -1,4 +1,4 @@
-import { z, type ZodTypeAny, ZodEnum, ZodArray, ZodObject, ZodOptional, ZodNullable, ZodUnion, ZodLiteral, ZodEffects, ZodDefault, ZodNativeEnum } from 'zod';
+import { type ZodTypeAny, ZodEnum, ZodArray, ZodObject, ZodOptional, ZodNullable, ZodUnion, ZodLiteral, ZodEffects, ZodDefault, ZodNativeEnum } from 'zod';
 
 interface JsonSchemaType {
   type?: string | string[];

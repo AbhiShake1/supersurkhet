@@ -14,7 +14,7 @@ export const Route = createFileRoute("/$businessName/admin/")({
     const { businessName } = Route.useParams();
     const { data: allBusinesses = [], isLoading } = api.business.useGet({ keys: [businessName], single: true });
     const { promptLogin, closeLoginPrompt } = useLoginPrompt();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     useEffect(() => {
       if (!isAuthenticated && !isLoading)
@@ -33,6 +33,8 @@ export const Route = createFileRoute("/$businessName/admin/")({
         </div>
       );
     }
+
+    if (!user) return null;
 
     const business = allBusinesses?.[0];
 

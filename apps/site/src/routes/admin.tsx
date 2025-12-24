@@ -5,7 +5,7 @@ import { Unauthorized } from "@/components/ui/unauthorized";
 import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
-import { LucideBriefcaseBusiness, Settings } from "lucide-react";
+import { LucideBriefcaseBusiness } from "lucide-react";
 import { useEffect } from "react";
 import { z } from "zod";
 
@@ -27,6 +27,8 @@ function RouteComponent() {
   if (!isLoading && isAuthenticated && user && user?.role !== "admin") {
     return <Unauthorized />
   }
+
+  if (!user) return null;
 
   return (
     <AutoAdmin
