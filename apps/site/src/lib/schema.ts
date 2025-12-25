@@ -137,6 +137,7 @@ export const businessSchema = z
       .base64()
       .describe("Business icon")
       .optional(),
+    members: z.record(z.string(), userSchema).optional(),
     uiBuilder: uiBuilderSchema.optional(),
   })
   .extend(table);

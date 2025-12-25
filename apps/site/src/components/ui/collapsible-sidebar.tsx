@@ -248,20 +248,24 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <Dialog>
-              <DialogTrigger asChild>
-                <DropdownMenuItem className="gap-2" onSelect={e => e.preventDefault()}>
-                  <Settings className="size-4" />
-                  Manage Business
-                </DropdownMenuItem>
-              </DialogTrigger>
-              <DialogContent>
-                <ManageOrganization />
-              </DialogContent>
-            </Dialog>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
+          {
+            businessName && <>
+              <DropdownMenuGroup>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem className="gap-2" onSelect={e => e.preventDefault()}>
+                      <Settings className="size-4" />
+                      Manage Business
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[70%] p-0 overflow-clip" hideClose>
+                    <ManageOrganization />
+                  </DialogContent>
+                </Dialog>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+            </>
+          }
           <DropdownMenuItem className="gap-2" onClick={() => logout()}>
             <LogOut className="size-4" />
             Log out

@@ -1,28 +1,14 @@
 import { z } from "zod";
-import Papa from "papaparse";
+import { csvParse } from "d3-dsv";
 import * as XLSX from "xlsx";
 
 /**
  * Parse CSV file and convert to JSON
  */
-export function parseCSVFile(file: File): Promise<any[]> {
-  return new Promise((resolve, reject) => {
-    Papa.parse(file, {
-      worker: false,
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        if (results.errors.length > 0) {
-          reject(new Error(`CSV parsing errors: ${results.errors.map(e => e.message).join(", ")}`));
-        } else {
-          resolve(results.data as any[]);
-        }
-      },
-      error: (error) => {
-        reject(error);
-      },
-    });
-  });
+export async function parseCSVFile(file: File): Promise<any[]> {
+  const text = await file.text();
+  const parsed = csvParse(text);
+  return parsed;
 }
 
 /**
