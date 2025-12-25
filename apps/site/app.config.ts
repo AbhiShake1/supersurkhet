@@ -9,9 +9,22 @@ export default defineConfig({
   tsr: {
     appDirectory: "src",
   },
+  react: {},
   vite: {
     build: {
-      minify: "terser"
+      minify: "terser",
+      rollupOptions: {
+        onwarn(warning, defaultHandler) {
+          if (
+            warning.code === 'MODULE_LEVEL_DIRECTIVE' &&
+            warning.message.includes('use client')
+          ) {
+            return
+          }
+
+          defaultHandler(warning)
+        },
+      },
     },
     plugins: [
       // basicSsl(),
