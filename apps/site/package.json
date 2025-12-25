@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vinxi dev --host",
-    "build": "vinxi build",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' vinxi build",
     "start": "vinxi start",
     "format": "biome format",
     "lint": "biome lint",
@@ -16,9 +16,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@ai-sdk/google": "^2.0.46",
-    "@ai-sdk/react": "^2.0.115",
-    "@ai-sdk/rsc": "^1.0.118",
     "@ark-ui/react": "^5.29.1",
     "@autoform/core": "2.1.0",
     "@autoform/react": "3.0.0",

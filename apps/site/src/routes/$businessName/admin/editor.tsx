@@ -727,8 +727,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                   <div className="p-2 border-b flex items-center justify-between" style={{ zIndex: 5 }}>
                     <h3 className="font-semibold flex gap-1 flex-row items-center">
                       <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
-                      Builder Agent
-                    </h3>
+                      Builder Agent </h3>
                     <Button
                       variant="ghost"
                       size="sm"

@@ -1,11 +1,7 @@
 import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import { z } from 'zod';
 import { childrenAsTextareaFieldOverrides, classNameFieldOverrides, commonFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
-
-export const DivSchema = z.object({
-  className: z.string().optional(),
-  children: z.any().optional(),
-})
+import { divComponentDefinitions } from './div-component-definitions';
 
 export const primitiveComponentDefinitions: ComponentRegistry = {
   'a': {
@@ -32,10 +28,7 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       className: (layer) => classNameFieldOverrides(layer)
     }
   },
-  'div': {
-    schema: DivSchema,
-    fieldOverrides: commonFieldOverrides()
-  },
+  ...divComponentDefinitions,
   'iframe': {
     schema: z.object({
       className: z.string().optional(),
