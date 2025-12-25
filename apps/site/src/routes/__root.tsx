@@ -105,53 +105,11 @@ async function isAuthenticated() {
   return !!gun.user().is;
 }
 
-const auth = {
-  getCurrentUser,
-  logout,
-  isAuthenticated,
-  getUserProfile,
-};
-
 function isMobile() {
   return /Android|webOS|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  loader: async () => {
-    // const { api } = await import("@/lib/api");
-    // setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
-    // const bGet = await api.business.get({ keys: ["anjal-store"], single: true })
-    // console.log({ bGet })
-    const savedThemeName = await getAppTheme();
-    const savedDarkMode = await getAppDarkMode();
-    const _savedTheme = await getAppThemeData();
-    const savedTheme = _savedTheme ?? defaultPresets["tangerine"].styles
-
-    // Generate critical CSS for the current theme to prevent FOUC
-    let criticalThemeCSS = '';
-    if (savedTheme) {
-      const themeToUse = savedDarkMode === 'true' ? savedTheme.dark : savedTheme.light;
-      const themeNotToUse = savedDarkMode === 'true' ? savedTheme.light : savedTheme.dark;
-      if (themeToUse) {
-        const variables = Object.entries({ ...themeNotToUse, ...themeToUse })
-          .filter(([_, value]) => value !== undefined)
-          .map(([key, value]) => `--${key}: ${value}`)
-          .join('; ');
-
-        criticalThemeCSS = savedDarkMode === 'true'
-          ? `:root { ${variables}; } .dark { ${variables}; }`
-          : `:root { ${variables}; }`;
-      }
-
-    }
-
-    return {
-      savedThemeName,
-      savedDarkMode,
-      savedTheme,
-      criticalThemeCSS
-    };
-  },
   head: () => ({
     meta: [
       {
@@ -268,7 +226,51 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   validateSearch: z.object({
     p: z.string().optional().catch(undefined),
   }).optional(),
-  context: () => ({ auth, gun }),
+  loader: async ({ context }) => {
+    // const { api } = await import("@/lib/api");
+    // setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
+    // const bGet = await api.business.get({ keys: ["anjal-store"], single: true })
+    // console.log({ bGet })
+    const savedThemeName = await getAppTheme();
+    const savedDarkMode = await getAppDarkMode();
+    const _savedTheme = await getAppThemeData();
+    const savedTheme = _savedTheme ?? defaultPresets["tangerine"].styles
+
+    // Generate critical CSS for the current theme to prevent FOUC
+    let criticalThemeCSS = '';
+    if (savedTheme) {
+      const themeToUse = savedDarkMode === 'true' ? savedTheme.dark : savedTheme.light;
+      const themeNotToUse = savedDarkMode === 'true' ? savedTheme.light : savedTheme.dark;
+      if (themeToUse) {
+        const variables = Object.entries({ ...themeNotToUse, ...themeToUse })
+          .filter(([_, value]) => value !== undefined)
+          .map(([key, value]) => `--${key}: ${value}`)
+          .join('; ');
+
+        criticalThemeCSS = savedDarkMode === 'true'
+          ? `:root { ${variables}; } .dark { ${variables}; }`
+          : `:root { ${variables}; }`;
+      }
+
+    }
+
+    return {
+      savedThemeName,
+      savedDarkMode,
+      savedTheme,
+      criticalThemeCSS
+    };
+  },
+  context: () => ({
+    auth: {
+      getCurrentUser,
+      logout,
+      isAuthenticated,
+      getUserProfile,
+    },
+    gun
+  }),
+
   notFoundComponent: () => <NotFound />,
   errorComponent: () => <ErrorComponent />,
   component: () => {

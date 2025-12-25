@@ -2,6 +2,7 @@ import {
   useQuery,
   useQueryClient,
   type UseQueryOptions,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 import type { NestedSchemaType, SchemaKeys } from "..";
 import { getGunRef, getNestedZodShape, mergeKeys } from "../utils";
@@ -19,13 +20,14 @@ export const useGet = createGunHook((messenger) => {
         key: T;
       }),
     ...restKeys: string[]
-  ) => {
+  ): UseQueryResult<NestedSchemaType<T>[] | undefined, Error> => {
     const queryClient = useQueryClient();
     const isSingle = typeof key !== "string" && key.single || false
     const k = typeof key === "string" ? key : key.key;
     const queryKey = ["get", key, ...restKeys];
     const schema = getNestedZodShape(k, messenger._options.schema)
     return useQuery({
+      ...(typeof key !== "string" && key.queryOptions),
       queryKey,
       queryFn: async () => {
         const _keys = mergeKeys(k, ...restKeys) as T;

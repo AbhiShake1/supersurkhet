@@ -6,27 +6,30 @@ import viteTsConfigPaths from "vite-tsconfig-paths";
 // import react from "@vitejs/plugin-react"
 
 export default defineConfig({
-	tsr: {
-		appDirectory: "src",
-	},
-	vite: {
-		plugins: [
-			// basicSsl(),
-			viteTsConfigPaths({
-				projects: ["./tsconfig.json"],
-			}),
-			// react({
-			//   babel: {
-			//     plugins: [
-			//       ["babel-plugin-react-compiler", {}]
-			//     ]
-			//   }
-			// }),
-			tailwindcss(),
-		],
-	},
-	server: {
-		preset: "cloudflare-pages",
-		unenv: cloudflare,
-	},
+  tsr: {
+    appDirectory: "src",
+  },
+  vite: {
+    build: {
+      minify: "terser"
+    },
+    plugins: [
+      // basicSsl(),
+      viteTsConfigPaths({
+        projects: ["./tsconfig.json"],
+      }),
+      // react({
+      //   babel: {
+      //     plugins: [
+      //       ["babel-plugin-react-compiler", {}]
+      //     ]
+      //   }
+      // }),
+      tailwindcss(),
+    ],
+  },
+  server: {
+    preset: "cloudflare-pages",
+    unenv: cloudflare,
+  },
 });

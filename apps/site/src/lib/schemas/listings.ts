@@ -46,7 +46,8 @@ export const baseListingSchema = z
     // tags: z.record(z.string(), z.boolean()).optional(),
     imageUrl: z
       .string()
-      .url()
+      .describe("Image")
+      // .url()
       .superRefine(fieldConfig({ fieldType: "image" }))
       .optional(),
     isFeatured: z.boolean().optional(),
@@ -60,7 +61,8 @@ export const productSchema = baseListingSchema.extend({
   // unitOfMeasure: z.string().optional().describe("e.g., 'piece', 'kg'"),
   imageUrl: z
     .string()
-    .url()
+    .describe("Product Image")
+    // .url()
     .superRefine(fieldConfig({ fieldType: "image" }))
     .optional(),
   isFeatured: z.boolean({ coerce: true }).optional(),

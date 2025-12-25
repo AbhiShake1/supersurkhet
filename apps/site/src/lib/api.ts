@@ -12,6 +12,7 @@ import {
   type UseUpdateOptionsShort,
 } from "@gta/react-hooks";
 import { appSchema, transformSchema } from "./schema";
+import type { QueryOptions } from "@tanstack/react-query";
 
 const schema = transformSchema(appSchema);
 
@@ -23,7 +24,7 @@ function createApi<const TSchema extends z.ZodObject<any>>(schema: TSchema) {
         [key]: {
           get: (opts?: UseGetBuilder<typeof key> & { keys?: string[] }) =>
             get({ key, ...opts }, ...(opts?.keys ?? [])),
-          useGet: (opts?: UseGetBuilder<typeof key> & { keys?: string[] }) =>
+          useGet: (opts?: UseGetBuilder<typeof key> & { keys?: string[], queryOptions?: QueryOptions }) =>
             useGet({ key, ...opts }, ...(opts?.keys ?? [])),
           useUpdate: (opts?: UseUpdateOptionsShort) =>
             useUpdate({ ...opts, keys: [key, ...(opts?.keys ?? [])] }),
@@ -38,7 +39,7 @@ function createApi<const TSchema extends z.ZodObject<any>>(schema: TSchema) {
       [K in SchemaKeys]: {
         get: (opts?: UseGetBuilder<K> & { keys?: string[] }) => ReturnType<typeof get<K>>;
         useGet: (
-          opts?: UseGetBuilder<K> & { keys?: string[] },
+          opts?: UseGetBuilder<K> & { keys?: string[], queryOptions?: QueryOptions },
         ) => ReturnType<typeof useGet<K>>;
         useUpdate: (
           opts?: UseUpdateOptionsShort,

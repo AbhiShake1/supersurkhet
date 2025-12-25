@@ -25,6 +25,7 @@ import {
 import { useProfile } from "@/hooks/use-profile";
 import { Dialog, DialogTrigger, DialogContent } from "./dialog";
 import { ManageOrganization } from "./organizations/manage-organization";
+import { ThemeToggle } from "../theme/theme-toggle";
 
 export interface SidebarItems {
   items: {
@@ -232,14 +233,14 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+          className="min-w-56 rounded-lg"
           side={"bottom"}
         >
           <DropdownMenuLabel className="p-0 font-normal">
             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">{user?.name?.substring(0, 1)?.toUpperCase() ?? "U"}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user?.name}</span>
@@ -247,6 +248,9 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
               </div>
             </div>
           </DropdownMenuLabel>
+          <DropdownMenuItem className="mb-4" onSelect={e => e.preventDefault()} asChild>
+            <ThemeToggle />
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           {
             businessName && <>
@@ -258,7 +262,7 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
                       Manage Business
                     </DropdownMenuItem>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[70%] p-0 overflow-clip" hideClose>
+                  <DialogContent className="sm:max-w-[70%] h-[80%] p-0 overflow-clip" hideClose>
                     <ManageOrganization />
                   </DialogContent>
                 </Dialog>

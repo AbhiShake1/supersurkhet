@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { AutoForm } from "../autoform";
 import { z } from "zod";
+import { api } from "@/lib/api";
+import type { BusinessMember } from "@/lib/schema";
+import { Avatar, AvatarImage, AvatarFallback } from "../avatar";
 
 // Define the schema for member invitations
 const inviteMemberSchema = z.object({
@@ -25,50 +28,7 @@ const memberPermissionsSchema = z.object({
 });
 
 // Types for our data
-type Member = {
-  id: string;
-  name: string;
-  email: string;
-  permissions: string[];
-  joinedDate: string;
-  role: string;
-};
-
-// Dummy data for members
-const dummyMembers: Member[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    permissions: ["read", "write"],
-    joinedDate: "2023-05-15",
-    role: "Owner"
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane@example.com",
-    permissions: ["read"],
-    joinedDate: "2023-06-20",
-    role: "Admin"
-  },
-  {
-    id: "3",
-    name: "Bob Johnson",
-    email: "bob@example.com",
-    permissions: ["read", "write", "delete"],
-    joinedDate: "2023-07-10",
-    role: "Editor"
-  },
-  {
-    id: "4",
-    name: "Alice Williams",
-    email: "alice@example.com",
-    permissions: ["read"],
-    joinedDate: "2023-08-05",
-    role: "Viewer"
-  }
-];
+type Member = BusinessMember;
 
 // Permissions options for the form
 const permissionOptions = [
@@ -86,13 +46,14 @@ interface ManageOrganizationProps {
 export function ManageOrganization({ }: ManageOrganizationProps) {
   const [activeTab, setActiveTab] = useState("members");
   const [searchTerm, setSearchTerm] = useState("");
-  const [members, setMembers] = useState<Member[]>(dummyMembers);
+  const members = useOrgMembers()
   const [showInviteForm, setShowInviteForm] = useState(false);
 
   // Filter members based on search term
   const filteredMembers = members.filter(member =>
-    member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.email.toLowerCase().includes(searchTerm.toLowerCase())
+    true
+    // member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    // member.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Handle inviting a new member
@@ -127,11 +88,11 @@ export function ManageOrganization({ }: ManageOrganizationProps) {
   ];
 
   return (
-    <div className="flex min-w-0">
+    <div className="flex flex-col min-w-0">
       {/* Sidebar */}
-      <div className={`w-64 bg-card border-r transition-all duration-300 flex flex-col`}>
+      <div className={`w-full bg-card border-r transition-all duration-300 flex flex-row`}>
         <nav className="flex-1 p-2">
-          <ul className="space-y-1">
+          <ul className="space-x-1 flex flex-row justify-center">
             {navigationItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -178,6 +139,12 @@ export function ManageOrganization({ }: ManageOrganizationProps) {
 
 const BillingTab = () => {
   return "Coming Soon!"
+}
+
+function useOrgMembers() {
+  const { data } = api.business.useGet({ keys: ["orgstore"], single: true })
+  if (!data?.[0]?.members) return []
+  return Object.values(data?.[0]?.members).filter(m => typeof m === "object" && !!m.userId)
 }
 
 // Members Tab Component
@@ -254,15 +221,12 @@ const MembersTab = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Joined
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Actions
-              </th>
             </tr>
           </thead>
           <tbody className="bg-card divide-y divide-gray-200">
             {members.map((member) => (
               <MemberRow
-                key={member.id}
+                key={member.userId}
                 member={member}
                 onUpdatePermissions={onUpdatePermissions}
                 onRemoveMember={onRemoveMember}
@@ -277,7 +241,7 @@ const MembersTab = ({
 
 // Member Row Component
 const MemberRow = ({
-  member,
+  member: { userId, role, permissions, joinedAt },
   onUpdatePermissions,
   onRemoveMember
 }: {
@@ -286,80 +250,45 @@ const MemberRow = ({
   onRemoveMember: (id: string) => void;
 }) => {
   const [editingPermissions, setEditingPermissions] = useState(false);
+  const { data } = api.user.useGet({ keys: [userId?.substring(1)], single: true })
+  const member = data?.[0]
+
+  if (!member) return null
 
   return (
     <tr>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex items-center">
           <div className="flex-shrink-0 h-10 w-10">
-            <div className="bg-card border-2 border-dashed rounded-xl w-10 h-10" />
+            <Avatar className="bg-card border-2 border-dashed rounded-xl w-10 h-10">
+              <AvatarImage src={member?.avatar} alt={member?.name} />
+              <AvatarFallback>
+                <span>{member?.name?.substring(0, 1)?.toUpperCase() ?? "U"}</span>
+              </AvatarFallback>
+            </Avatar>
           </div>
           <div className="ml-4">
-            <div className="text-sm font-medium text-foreground">{member.name}</div>
-            <div className="text-sm text-muted-foreground">{member.email}</div>
+            <div className="text-sm font-medium text-foreground">{member?.name}</div>
+            <div className="text-sm text-muted-foreground">{member?.email}</div>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-foreground">{member.role}</div>
+        <div className="text-sm text-foreground">{role}</div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        {editingPermissions ? (
-          <AutoForm
-            schema={memberPermissionsSchema}
-            onSubmit={(data) => {
-              onUpdatePermissions(member.id, data.permissions);
-              setEditingPermissions(false);
-            }}
-            values={{ permissions: member.permissions }}
-            fieldConfig={{
-              permissions: {
-                label: "Permissions",
-                fieldType: "select",
-                options: permissionOptions
-              }
-            }}
-          />
-        ) : (
+        {
           <div className="flex flex-wrap gap-1">
-            {member.permissions.map((perm, idx) => (
-              <Badge key={idx} variant="secondary" className="mr-1 mb-1">
-                {perm}
-              </Badge>
-            ))}
+            {
+              role === "owner" ?
+                "*"
+                : permissions && `${Object.keys(permissions).length} Permissions`
+            }
           </div>
-        )}
+        }
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-        {member.joinedDate}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-        <div className="flex space-x-2">
-          {editingPermissions ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditingPermissions(false)}
-            >
-              Cancel
-            </Button>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEditingPermissions(true)}
-            >
-              Edit
-            </Button>
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onRemoveMember(member.id)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
+        {joinedAt && new Date(joinedAt).toLocaleString()}
       </td>
     </tr>
   );
