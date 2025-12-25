@@ -12,9 +12,6 @@ import { Input, InputSchema } from "@/components/ui/input";
 import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides, childrenAsTextareaFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
 
 import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
-import { Confetti } from '@/components/magicui/confetti';
-import { RainbowButton } from '@/components/magicui/rainbow-button';
-import { PixelImage, PixelImageSchema } from '@/components/magicui/pixel-image';
 import { SignedInOnly, SignedInOnlySchema } from '@/components/security/signed-in-only';
 import { SignedOutOnly, SignedOutOnlySchema } from '@/components/security/signed-out-only';
 import { Link, LinkSchema } from '@/components/ui/navigation/link';
@@ -27,8 +24,6 @@ import {
 import { CarouselItem as CarouselItemSchema } from '@/components/imgcarousel/imgcarousel';
 
 import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx';
-import { ProductOnboardingCard } from '@/components/onboarding/product-definition';
-import { ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
 import { Slider, sliderSchema } from '@/components/ui/slider-1';
 import EstimatedDateBadge, { EstimatedDateBadgeSchema } from '@/components/ui/estimated-arrival';
 
@@ -36,7 +31,6 @@ import EstimatedDateBadge, { EstimatedDateBadgeSchema } from '@/components/ui/es
 import Features, { FeaturesSchema } from '@/components/features-1';
 import CardBottomImage, { CardBottomImageSchema } from '@/components/shadcn-studio/card/card-04';
 import { AnimatedGradientText, AnimatedGradientTextSchema } from '@/components/ui/animated-gradient-text';
-import { CardContainer, CardBody, CardItem, CardContainerSchema, CardBodySchema, CardItemSchema } from '@/components/ui/3d-card';
 import { AnimatedList, AnimatedListItem, AnimatedListSchema, AnimatedListItemSchema } from '@/components/ui/animated-list/animated-list';
 import { ShimmerButton, ShimmerButtonSchema } from '@/components/ui/shimmer-button';
 import { BentoCard, BentoGrid, BentoCardSchema, BentoGridSchema } from '@/components/ui/bento-grid';
@@ -54,6 +48,8 @@ import { carouzelComponentDefinitions } from './carouzel-component-definitions';
 import { svgsComponentDefinitions } from '@/components/ui/svgs/component-definition';
 import { modalComponentDefinitions } from './modal-component-definitions';
 import { magicuiComponentDefinitions } from '@/components/magicui/component-definitions';
+import { productOnboardingComponentDefinitions } from './product-onboarding-card-definitions';
+import { threeDCardComponentDefinitions } from './3d-card-component-definitions';
 
 export const complexComponentDefinitions: ComponentRegistry = {
   ...framerMotionComponentDefinitions,
@@ -259,108 +255,9 @@ export const complexComponentDefinitions: ComponentRegistry = {
 
   ...supersurkhetComponentDefinitions,
 
-  ProductOnboardingCard: {
-    component: ProductOnboardingCard,
-    schema: ProductOnboardingCardSchema,
-    from: "@/components/onboarding/product-definition",
-    fieldOverrides: commonFieldOverrides(),
-    // props: {
-    //   mainIcon: {
-    //     iconName: "Sparkles",
-    //     size: "large",
-    //     className: "text-white",
-    //   },
-    // },
-    defaultChildren: [
-      {
-        id: "onboarding-main-icon",
-        type: "Icon",
-        name: "Icon",
-        props: {
-          iconName: "Sparkles",
-          size: "large",
-          className: "text-white",
-        },
-        children: [],
-      },
-      {
-        id: "onboarding-title",
-        type: "span",
-        name: "span",
-        props: { className: "text-3xl font-bold" },
-        children: "Welcome to Our Product",
-      },
-      {
-        id: "onboarding-description",
-        type: "span",
-        name: "span",
-        props: { className: "text-muted-foreground" },
-        children: "Get started with our amazing features",
-      },
-      {
-        id: "onboarding-card-content",
-        type: "Card",
-        name: "Card",
-        props: {},
-        children: [
-          {
-            id: "onboarding-card-header",
-            type: "CardHeader",
-            name: "CardHeader",
-            props: {},
-            children: [
-              {
-                id: "card-icon",
-                type: "Icon",
-                name: "Icon",
-                props: { iconName: "CheckCircle", size: "medium" },
-                children: [],
-              },
-              {
-                id: "card-header-label",
-                type: "span",
-                name: "span",
-                props: {
-                  className:
-                    "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
-                },
-                children: "FEATURE",
-              },
-            ],
-          },
-          {
-            id: "onboarding-card-body",
-            type: "CardContent",
-            name: "CardContent",
-            props: {},
-            children: [
-              {
-                id: "card-title",
-                type: "CardTitle",
-                name: "CardTitle",
-                props: {},
-                children: "First Steps",
-              },
-              {
-                id: "card-description",
-                type: "CardDescription",
-                name: "CardDescription",
-                props: {},
-                children: "Complete these initial tasks to get started",
-              },
-            ],
-          },
-        ],
-      },
-      {
-        id: "onboarding-button",
-        type: "Button",
-        name: "Button",
-        props: { className: "w-full max-w-xs", variant: "default" },
-        children: "Get Started",
-      },
-    ] satisfies ComponentLayer[],
-  },
+  ...productOnboardingComponentDefinitions,
+
+  ...threeDCardComponentDefinitions,
 
   Rating: {
     component: Rating,
@@ -547,202 +444,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
     },
     defaultChildren: "Animated Gradient Text Effect",
   },
-  CardBody: {
-    component: CardBody,
-    schema: CardBodySchema,
-    from: '@/components/ui/3d-card',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "example-card-body-standalone",
-        type: "CardBody",
-        name: "CardBody",
-        props: {
-          className: "bg-gray-50 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[25rem] h-auto rounded-xl p-6 border"
-        },
-        children: [
-          {
-            id: "standalone-card-title",
-            type: "CardItem",
-            name: "CardItem",
-            props: {
-              translateZ: "50",
-              className: "text-xl font-bold text-neutral-600 dark:text-white"
-            },
-            children: "3D Card Component"
-          },
-          {
-            id: "standalone-card-description",
-            type: "CardItem",
-            name: "CardItem",
-            props: {
-              as: "p",
-              translateZ: "60",
-              className: "text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300"
-            },
-            children: "This is a standalone 3D card body with interactive effects"
-          },
-          {
-            id: "standalone-card-image",
-            type: "CardItem",
-            name: "CardItem",
-            props: {
-              translateZ: "100",
-              className: "w-full mt-4"
-            },
-            children: [
-              {
-                id: "standalone-image",
-                type: "img",
-                name: "img",
-                props: {
-                  src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=600&q=80",
-                  width: "1000",
-                  height: "1000",
-                  className: "h-40 w-full object-cover rounded-xl group-hover/card:shadow-xl",
-                  alt: "Portrait"
-                },
-                children: []
-              }
-            ]
-          },
-          {
-            id: "standalone-card-button",
-            type: "CardItem",
-            name: "CardItem",
-            props: {
-              translateZ: "20",
-              as: "button",
-              className: "px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold mt-4"
-            },
-            children: "View Details"
-          }
-        ],
-      } satisfies ComponentLayer,
-    ],
-  },
-  CardItem: {
-    component: CardItem,
-    schema: CardItemSchema,
-    from: '@/components/ui/3d-card',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "default-card-item-interactive",
-        type: "CardItem",
-        name: "CardItem",
-        props: {
-          translateZ: "60",
-          className: "text-lg font-medium text-gray-700 dark:text-gray-200"
-        },
-        children: [
-          {
-            id: "card-item-content",
-            type: "span",
-            name: "span",
-            props: {},
-            children: "Hover-interactive element",
-          } satisfies ComponentLayer,
-        ],
-      },
-    ],
-  },
-  CardContainer: {
-    component: CardContainer,
-    schema: CardContainerSchema,
-    from: '@/components/ui/3d-card',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "example-card-body",
-        type: "CardBody",
-        name: "CardBody",
-        props: {
-          className: "bg-gray-50 relative group/card dark:hover:shadow-2xl dark:hover:shadow-emerald-500/[0.1] dark:bg-black dark:border-white/[0.2] border-black/[0.1] w-auto sm:w-[30rem] h-auto rounded-xl p-6 border"
-        },
-        children: [
-          {
-            id: "card-title-item",
-            type: "CardItem",
-            name: "CardItem",
-            props: {
-              translateZ: "50",
-              className: "text-xl font-bold text-neutral-600 dark:text-white"
-            },
-            children: "Interactive 3D Card"
-          },
-          {
-            id: "card-description-item",
-            type: "CardItem",
-            name: "CardItem",
-            props: {
-              as: "p",
-              translateZ: "60",
-              className: "text-neutral-500 text-sm max-w-sm mt-2 dark:text-neutral-300"
-            },
-            children: "Hover over this card to see the 3D effect in action"
-          },
-          {
-            id: "card-image-item",
-            type: "CardItem",
-            name: "CardItem",
-            props: {
-              translateZ: "100",
-              className: "w-full mt-4"
-            },
-            children: [
-              {
-                id: "card-image",
-                type: "img",
-                name: "img",
-                props: {
-                  src: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80",
-                  width: "1000",
-                  height: "1000",
-                  className: "h-60 w-full object-cover rounded-xl group-hover/card:shadow-xl",
-                  alt: "Nature scene"
-                },
-                children: []
-              }
-            ]
-          },
-          {
-            id: "card-actions-container",
-            type: "div",
-            name: "div",
-            props: {
-              className: "flex justify-between items-center mt-6"
-            },
-            children: [
-              {
-                id: "card-link-item",
-                type: "CardItem",
-                name: "CardItem",
-                props: {
-                  translateZ: "20",
-                  as: "a",
-                  href: "#",
-                  className: "px-4 py-2 rounded-xl text-xs font-normal dark:text-white"
-                },
-                children: "Learn more →"
-              },
-              {
-                id: "card-button-item",
-                type: "CardItem",
-                name: "CardItem",
-                props: {
-                  translateZ: "20",
-                  as: "button",
-                  className: "px-4 py-2 rounded-xl bg-black dark:bg-white dark:text-black text-white text-xs font-bold"
-                },
-                children: "Get Started"
-              }
-            ]
-          }
-        ],
-      } satisfies ComponentLayer,
-    ],
-  },
+
   AnimatedList: {
     component: AnimatedList,
     schema: AnimatedListSchema,

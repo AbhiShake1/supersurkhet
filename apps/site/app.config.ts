@@ -13,6 +13,19 @@ export default defineConfig({
   vite: {
     build: {
       minify: "terser",
+      sourcemap: false,
+      terserOptions: {
+        compress: true,
+        mangle: true,
+        sourceMap: false,
+      },
+      cssMinify: "lightningcss",
+      dynamicImportVarsOptions: {
+        warnOnError: false,
+      },
+      reportCompressedSize: false,
+      // TODO: set to true when gun+tanstackquery preloading is complete
+      ssr: false,
       rollupOptions: {
         onwarn(warning, defaultHandler) {
           if (
