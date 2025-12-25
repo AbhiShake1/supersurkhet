@@ -44,16 +44,19 @@ export default defineConfig({
       {
         name: 'strip-use-client',
         enforce: 'pre',
-        transform(code) {
-          if (
-            code.startsWith('"use client"') ||
-            code.startsWith("'use client'")
-          ) {
+        transform(code, id) {
+          if (!id.includes('node_modules')) return
+
+          // remove any top-level "use client" directive
+          // even if comments or other directives exist before it
+          const stripped = code.replace(
+            /^[\s\S]*?(['"])use client\1;?\s*/m,
+            (match) => match.replace(/(['"])use client\1;?\s*/, '')
+          )
+
+          if (stripped !== code) {
             return {
-              code: code.replace(
-                /^(['"])use client\1;?\s*/,
-                ''
-              ),
+              code: stripped,
               map: null,
             }
           }
