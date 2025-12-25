@@ -20,7 +20,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { useContextData } from '@/lib/ui-builder/context/context-data-store';
-import { useChat } from '@ai-sdk/react';
+// import { useChat } from '@ai-sdk/react';
 import {
   Conversation,
   ConversationContent,
@@ -402,31 +402,31 @@ Provide the complete UI configuration in JSON format as your response. Do not in
 
   const [webSearch, setWebSearch] = useState(false);
 
-  const { messages, sendMessage, status, regenerate } = useChat({
-    transport: new DefaultChatTransport({
-      api: getBuilderChat.url,
-      body: {
-        businessName,
-        businessType: _business?.businessType || '',
-        businessDescription: _business?.description || '',
-      },
-    }),
-    messages: [
-      {
-        id: 'initial-prompt',
-        role: 'system',
-        parts: [
-          {
-            type: 'text',
-            text: generateSystemPrompt(),
-          }
-        ],
-      }
-    ],
-    onError: (error) => {
-      console.error('Chat error:', error);
-    },
-  });
+  // const { messages, sendMessage, status, regenerate } = useChat({
+  //   transport: new DefaultChatTransport({
+  //     api: getBuilderChat.url,
+  //     body: {
+  //       businessName,
+  //       businessType: _business?.businessType || '',
+  //       businessDescription: _business?.description || '',
+  //     },
+  //   }),
+  //   messages: [
+  //     {
+  //       id: 'initial-prompt',
+  //       role: 'system',
+  //       parts: [
+  //         {
+  //           type: 'text',
+  //           text: generateSystemPrompt(),
+  //         }
+  //       ],
+  //     }
+  //   ],
+  //   onError: (error) => {
+  //     console.error('Chat error:', error);
+  //   },
+  // });
 
   // Available models
   const models = [
@@ -746,110 +746,112 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                         <div className="flex flex-col flex-1">
                           <Conversation className="h-full">
                             <ConversationContent>
-                              {messages.map((message) => (
-                                <div key={message.id} className="mb-4">
-                                  {message.role === 'assistant' && message.content && message.content.length > 0 && (
-                                    <Sources>
-                                      <SourcesTrigger
-                                        count={
-                                          Array.isArray(message.content)
-                                            ? message.content.filter(
-                                              (part: any) => part.type === 'source-url'
-                                            ).length
-                                            : 0
-                                        }
-                                      />
-                                      {Array.isArray(message.content) &&
-                                        message.content
-                                          .filter((part: any) => part.type === 'source-url')
-                                          .map((part: any, i: number) => (
-                                            <SourcesContent key={`${message.id}-${i}`}>
-                                              <Source
-                                                key={`${message.id}-${i}`}
-                                                href={part.url}
-                                                title={part.url}
-                                              />
-                                            </SourcesContent>
-                                          ))}
-                                    </Sources>
-                                  )}
-                                  {message.content && (
-                                    typeof message.content === 'string' ? (
-                                      <Message from={message.role}>
-                                        <MessageContent>
-                                          <MessageResponse>
-                                            {message.content}
-                                          </MessageResponse>
-                                        </MessageContent>
-                                        {message.role === 'assistant' && (
-                                          <MessageActions>
-                                            <MessageAction
-                                              onClick={() => regenerate()}
-                                              label="Retry"
-                                            >
-                                              <RefreshCcwIcon className="size-3" />
-                                            </MessageAction>
-                                            <MessageAction
-                                              onClick={() =>
-                                                navigator.clipboard.writeText(message.content)
-                                              }
-                                              label="Copy"
-                                            >
-                                              <CopyIcon className="size-3" />
-                                            </MessageAction>
-                                          </MessageActions>
-                                        )}
-                                      </Message>
-                                    ) : Array.isArray(message.content) ? (
-                                      message.content.map((part: any, i: number) => {
-                                        switch (part.type) {
-                                          case 'text':
-                                            return (
-                                              <Message key={`${message.id}-${i}`} from={message.role}>
-                                                <MessageContent>
-                                                  <MessageResponse>
-                                                    {part.text}
-                                                  </MessageResponse>
-                                                </MessageContent>
-                                                {message.role === 'assistant' && (
-                                                  <MessageActions>
-                                                    <MessageAction
-                                                      onClick={() => regenerate()}
-                                                      label="Retry"
-                                                    >
-                                                      <RefreshCcwIcon className="size-3" />
-                                                    </MessageAction>
-                                                    <MessageAction
-                                                      onClick={() =>
-                                                        navigator.clipboard.writeText(part.text)
-                                                      }
-                                                      label="Copy"
-                                                    >
-                                                      <CopyIcon className="size-3" />
-                                                    </MessageAction>
-                                                  </MessageActions>
-                                                )}
-                                              </Message>
-                                            );
-                                          case 'reasoning':
-                                            return (
-                                              <Reasoning
-                                                key={`${message.id}-${i}`}
-                                                className="w-full"
-                                                isStreaming={status === 'streaming' && i === message.content.length - 1 && message.id === messages.at(-1)?.id}
-                                              >
-                                                <ReasoningTrigger />
-                                                <ReasoningContent>{part.text}</ReasoningContent>
-                                              </Reasoning>
-                                            );
-                                          default:
-                                            return null;
-                                        }
-                                      })
-                                    ) : null
-                                  )}
-                                </div>
-                              ))}
+                              {
+                                //   messages.map((message) => (
+                                //   <div key={message.id} className="mb-4">
+                                //     {message.role === 'assistant' && message.content && message.content.length > 0 && (
+                                //       <Sources>
+                                //         <SourcesTrigger
+                                //           count={
+                                //             Array.isArray(message.content)
+                                //               ? message.content.filter(
+                                //                 (part: any) => part.type === 'source-url'
+                                //               ).length
+                                //               : 0
+                                //           }
+                                //         />
+                                //         {Array.isArray(message.content) &&
+                                //           message.content
+                                //             .filter((part: any) => part.type === 'source-url')
+                                //             .map((part: any, i: number) => (
+                                //               <SourcesContent key={`${message.id}-${i}`}>
+                                //                 <Source
+                                //                   key={`${message.id}-${i}`}
+                                //                   href={part.url}
+                                //                   title={part.url}
+                                //                 />
+                                //               </SourcesContent>
+                                //             ))}
+                                //       </Sources>
+                                //     )}
+                                //     {message.content && (
+                                //       typeof message.content === 'string' ? (
+                                //         <Message from={message.role}>
+                                //           <MessageContent>
+                                //             <MessageResponse>
+                                //               {message.content}
+                                //             </MessageResponse>
+                                //           </MessageContent>
+                                //           {message.role === 'assistant' && (
+                                //             <MessageActions>
+                                //               <MessageAction
+                                //                 onClick={() => regenerate()}
+                                //                 label="Retry"
+                                //               >
+                                //                 <RefreshCcwIcon className="size-3" />
+                                //               </MessageAction>
+                                //               <MessageAction
+                                //                 onClick={() =>
+                                //                   navigator.clipboard.writeText(message.content)
+                                //                 }
+                                //                 label="Copy"
+                                //               >
+                                //                 <CopyIcon className="size-3" />
+                                //               </MessageAction>
+                                //             </MessageActions>
+                                //           )}
+                                //         </Message>
+                                //       ) : Array.isArray(message.content) ? (
+                                //         message.content.map((part: any, i: number) => {
+                                //           switch (part.type) {
+                                //             case 'text':
+                                //               return (
+                                //                 <Message key={`${message.id}-${i}`} from={message.role}>
+                                //                   <MessageContent>
+                                //                     <MessageResponse>
+                                //                       {part.text}
+                                //                     </MessageResponse>
+                                //                   </MessageContent>
+                                //                   {message.role === 'assistant' && (
+                                //                     <MessageActions>
+                                //                       <MessageAction
+                                //                         onClick={() => regenerate()}
+                                //                         label="Retry"
+                                //                       >
+                                //                         <RefreshCcwIcon className="size-3" />
+                                //                       </MessageAction>
+                                //                       <MessageAction
+                                //                         onClick={() =>
+                                //                           navigator.clipboard.writeText(part.text)
+                                //                         }
+                                //                         label="Copy"
+                                //                       >
+                                //                         <CopyIcon className="size-3" />
+                                //                       </MessageAction>
+                                //                     </MessageActions>
+                                //                   )}
+                                //                 </Message>
+                                //               );
+                                //             case 'reasoning':
+                                //               return (
+                                //                 <Reasoning
+                                //                   key={`${message.id}-${i}`}
+                                //                   className="w-full"
+                                //                   isStreaming={status === 'streaming' && i === message.content.length - 1 && message.id === messages.at(-1)?.id}
+                                //                 >
+                                //                   <ReasoningTrigger />
+                                //                   <ReasoningContent>{part.text}</ReasoningContent>
+                                //                 </Reasoning>
+                                //               );
+                                //             default:
+                                //               return null;
+                                //           }
+                                //         })
+                                //       ) : null
+                                //     )}
+                                //   </div>
+                                // ))
+                              }
                               {status === 'streaming' && <Loader />}
                             </ConversationContent>
                             <ConversationScrollButton />
