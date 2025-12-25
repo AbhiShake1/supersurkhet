@@ -11,6 +11,7 @@ export default defineConfig({
   },
   react: {},
   vite: {
+    resolve: {},
     build: {
       minify: "terser",
       sourcemap: false,
@@ -23,9 +24,9 @@ export default defineConfig({
       dynamicImportVarsOptions: {
         warnOnError: false,
       },
-      reportCompressedSize: false,
+      // reportCompressedSize: false,
       // TODO: set to true when gun+tanstackquery preloading is complete
-      ssr: false,
+      // ssr: false,
       rollupOptions: {
         onwarn(warning, defaultHandler) {
           if (
@@ -40,6 +41,24 @@ export default defineConfig({
       },
     },
     plugins: [
+      {
+        name: 'strip-use-client',
+        enforce: 'pre',
+        transform(code) {
+          if (
+            code.startsWith('"use client"') ||
+            code.startsWith("'use client'")
+          ) {
+            return {
+              code: code.replace(
+                /^(['"])use client\1;?\s*/,
+                ''
+              ),
+              map: null,
+            }
+          }
+        },
+      },
       // basicSsl(),
       viteTsConfigPaths({
         projects: ["./tsconfig.json"],
