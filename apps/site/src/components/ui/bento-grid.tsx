@@ -1,9 +1,10 @@
-import type { ComponentPropsWithoutRef, ReactNode } from "react"
+import type { ComponentPropsWithoutRef } from "react"
 import { ArrowRightIcon } from "@radix-ui/react-icons"
 import { z } from 'zod';
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import React from "react";
 
 export const BentoGridSchema = z.object({
   children: z.any(),
@@ -13,7 +14,7 @@ export const BentoGridSchema = z.object({
 export const BentoCardSchema = z.object({
   name: z.string(),
   className: z.string(),
-  background: z.any(),
+  children: z.any(),
   Icon: z.string(),
   description: z.string(),
   href: z.string().url(),
@@ -45,7 +46,7 @@ const iconMap: Record<string, React.ElementType> = {
 const BentoCard = ({
   name,
   className,
-  background,
+  children,
   Icon,
   description,
   href,
@@ -64,7 +65,7 @@ const BentoCard = ({
     )}
     {...props}
   >
-    <div>{background}</div>
+    <div>{children}</div>
     <div className="p-4">
       <div className="pointer-events-none z-10 flex transform-gpu flex-col gap-1 transition-all duration-300 lg:group-hover:-translate-y-10">
         {React.createElement(iconMap[Icon as keyof typeof iconMap] || 'div', {

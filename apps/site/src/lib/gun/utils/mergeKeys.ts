@@ -1,9 +1,10 @@
 import { gun } from "@/lib/gun";
 
 export function mergeKeys<T extends string>(key: T, ...restKeys: string[]) {
+  const env = process.env.NODE_ENV;
   const initialKeys = key?.length ? key.split("/") : [];
   const nonNamespacedKey = initialKeys.concat(restKeys).filter(Boolean).join("/");
-  return `root/${nonNamespacedKey}`;
+  return `root/${env}/${nonNamespacedKey}`;
 }
 
 export function getGunRef(key: string) {

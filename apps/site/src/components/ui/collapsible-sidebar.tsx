@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from "react";
+import type React from "react";
+import { useState, useEffect } from "react";
 import {
-  ChevronDown,
   ChevronsRight,
   Search,
   Menu,
-  BadgeCheck,
-  Bell,
   ChevronsUpDown,
-  CreditCard,
   LogOut,
+  Settings,
 } from "lucide-react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Input } from "./input";
@@ -24,8 +22,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./dropdown-menu";
-import { useSidebar } from "./sidebar";
 import { useProfile } from "@/hooks/use-profile";
+import { Dialog, DialogTrigger, DialogContent } from "./dialog";
+import { ManageOrganization } from "./organizations/manage-organization";
+import { ThemeToggle } from "../theme/theme-toggle";
 
 export interface SidebarItems {
   items: {
@@ -47,7 +47,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
   const [searchQuery, setSearchQuery] = useState("");
 
   const { search } = useLocation();
-  const currentTab = (search.tab as string) ?? (data.items.length > 0 ? data.items[0].title : "");
+  const currentTab = (search?.tab as string) ?? (data.items.length > 0 ? data.items[0].title : "");
 
   // Set initial selected tab based on URL or first item
   useEffect(() => {
@@ -97,21 +97,19 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
 
         {/* Search bar */}
         {open && (
-          <div className="px-2 py-1 mb-2 relative">
-            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500 dark:text-gray-400" />
-            <Input
-              placeholder="Filter items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-xs pl-8"
-            />
-          </div>
+          <Input
+            placeholder="Filter items..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="text-xs pl-8 mb-2"
+            leadingIcon={<Search className="h-4 w-4 mb-2" />}
+          />
         )}
       </div>
 
       {/* Navigation items */}
       <div className="flex-grow overflow-y-auto pb-16">
-        <div className="space-y-1 mb-4">
+        <div className="space-y-1">
           {ungroupedItems.map((item, index) => (
             <Option
               key={index}
@@ -127,7 +125,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
 
         {/* Grouped navigation items */}
         {Object.entries(groupedItems).map(([groupName, items]) => (
-          <div key={groupName} className="mb-4">
+          <div key={groupName} className="">
             {open && (
               <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 {groupName}
@@ -205,7 +203,7 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
   if (!isAuthenticated) return null;
 
   return (
-    <div className="mb-4 border-b border-gray-200 dark:border-gray-800 pb-4">
+    <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -219,7 +217,7 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
               {open && (
                 <div className={`transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}>
                   <div className="flex flex-col">
-                    <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <span className="block max-w-[8ch] truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {user?.name || user?.email || "User"}
                     </span>
                     {businessName && (
@@ -235,14 +233,14 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent
-          className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+          className="min-w-56 rounded-lg"
           side={"bottom"}
         >
           <DropdownMenuLabel className="p-0 font-normal">
             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">{user?.name?.substring(0, 1)?.toUpperCase() ?? "U"}</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user?.name}</span>
@@ -250,46 +248,34 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
               </div>
             </div>
           </DropdownMenuLabel>
+          <DropdownMenuItem className="mb-4" onSelect={e => e.preventDefault()} asChild>
+            <ThemeToggle />
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            <DropdownMenuItem className="gap-2">
-              <BadgeCheck className="size-4" />
-              Account
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2">
-              <CreditCard className="size-4" />
-              Billing
-            </DropdownMenuItem>
-            <DropdownMenuItem className="gap-2">
-              <Bell className="size-4" />
-              Notifications
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
+          {
+            businessName && <>
+              <DropdownMenuGroup>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <DropdownMenuItem className="gap-2" onSelect={e => e.preventDefault()}>
+                      <Settings className="size-4" />
+                      Manage Business
+                    </DropdownMenuItem>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[70%] h-[80%] p-0 overflow-clip" hideClose>
+                    <ManageOrganization />
+                  </DialogContent>
+                </Dialog>
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+            </>
+          }
           <DropdownMenuItem className="gap-2" onClick={() => logout()}>
             <LogOut className="size-4" />
             Log out
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    </div>
-  );
-};
-
-const Logo: React.FC = () => {
-  return (
-    <div className="grid size-10 shrink-0 place-content-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-sm">
-      <svg
-        width="20"
-        height="auto"
-        viewBox="0 0 50 39"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        className="fill-white"
-      >
-        <path d="M16.4992 2H37.5808L22.0816 24.9729H1L16.4992 2Z" />
-        <path d="M17.4224 27.102L11.4192 36H33.5008L49 13.0271H32.7024L23.2064 27.102H17.4224Z" />
-      </svg>
     </div>
   );
 };

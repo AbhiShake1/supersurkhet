@@ -2,12 +2,12 @@ import type React from "react";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { useRouteContext } from "@tanstack/react-router";
 import type { User } from "@/lib/schema";
-import { gun } from "@/lib/gun";
 import { googleLogout } from "@react-oauth/google";
 import { v4 as uuid } from "uuid"
 import { createAvatar } from "@dicebear/core";
 import { pixelArt } from "@dicebear/collection";
 import type { IGunChain } from "gun/types";
+import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 import _ from "lodash";
 
 interface AuthContextType {
@@ -59,13 +59,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     let ref: IGunChain<any>;
     auth.getCurrentUser().then((_authUser) => {
-      console.log("Auth user", _authUser);
       setAuthUser(_authUser);
 
       // If we have an authenticated user, use that
       if (_authUser) {
-        ref = gun
-          .get("user")
+        ref = getGunRef(mergeKeys("user"))
           .get(_authUser.pub)
           .open((data) => {
             setUser({ ..._authUser, ...data });
@@ -73,8 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // If no authenticated user but we have an anonymous user ID
         if (anonymousUserId) {
-          ref = gun
-            .get("user")
+          ref = getGunRef(mergeKeys("user"))
             .get(anonymousUserId)
             .open((data) => {
               setUser({
@@ -97,6 +94,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const isAuthenticated = useMemo(() => !!authUser, [authUser]);
 
   async function linkAnonymousUser(authenticatedUser: User) {
+    function saveUser(anonymousData: any, onSaved?: () => void) {
+      const mergedData = {
+        ...authenticatedUser,
+        ...anonymousData,
+      };
+
+      getGunRef(mergeKeys("user"))
+        .get(authenticatedUser.pub)
+        .put(mergedData)
+
+      setUser(mergedData);
+
+      // Clear the anonymous user ID from localStorage
+      localStorage.removeItem(ANONYMOUS_USER_KEY);
+
+      // Update the anonymousUserId state
+      setAnonymousUserId(null);
+
+      onSaved?.()
+    }
     return new Promise<void>((resolve) => {
       if (!anonymousUserId) {
         // If there's no anonymous user, just set the authenticated user
@@ -106,40 +123,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Get data from the anonymous user node
-      gun
-        .get("user")
+      getGunRef(mergeKeys("user"))
         .get(anonymousUserId)
+        .not(() => {
+          saveUser({}, resolve)
+          resolve()
+        })
         .once((anonymousData) => {
-          // Get the authenticated user's profile data from the user node
-          gun
-            .get("user")
-            .get(authenticatedUser.pub)
-            .once((authenticatedProfile) => {
-              // Merge anonymous data with authenticated user data
-              // Prioritize authenticated user's core identity data
-              const mergedData = {
-                ...authenticatedUser, // GunDB user object (pub, epub, etc.)
-                ...authenticatedProfile, // User profile data (email, name, avatar, etc.)
-                ...anonymousData, // Anonymous user data
-                // Ensure authenticated user's identity is preserved
-                pub: authenticatedUser.pub,
-                epub: authenticatedUser.epub,
-              };
-
-              // Save merged data to the authenticated user node
-              gun.get("user").get(authenticatedUser.pub).put(mergedData);
-
-              // Update the local state
-              setUser(mergedData);
-
-              // Clear the anonymous user ID from localStorage
-              localStorage.removeItem(ANONYMOUS_USER_KEY);
-
-              // Update the anonymousUserId state
-              setAnonymousUserId(null);
-
-              resolve();
-            });
+          saveUser(anonymousData, resolve)
         });
     });
   }

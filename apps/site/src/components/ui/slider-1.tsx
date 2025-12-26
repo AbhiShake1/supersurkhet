@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { z } from "zod"
 
 // Helper for numeric fields that might come as strings from forms
-const numericField = (defaultValue: number = 0) =>
+const numericField = (defaultValue = 0) =>
   z.preprocess(
     (val) => {
       if (val === undefined || val === null) return defaultValue

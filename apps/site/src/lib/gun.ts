@@ -6,11 +6,28 @@ import "gun/lib/open";
 import "gun/lib/load"
 import "gun/lib/radix";
 import "gun/lib/radisk";
-import "gun/lib/store";
+if (!isServer) {
+  import("gun/lib/store");
+}
 import "gun/lib/rindexed";
 import "gun/lib/webrtc";
 import "gun/sea";
 import "gun/lib/not"
+import "gun/lib/then"
+import "gun/lib/unset"
+import type { IGunInstance } from "gun/types";
+
+GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
+  var gun = this;
+  var p = (new Promise((res, rej) => {
+    gun
+      .not(() => res([]))
+      .once(function (data, key) {
+        res(data, key); //call resolve when data is returned
+      })
+  }))
+  return cb ? p.then(cb) : p;
+};
 
 export const gun = GUN({
   localStorage: false,
@@ -22,7 +39,12 @@ export const gun = GUN({
   ],
 });
 
-if (import.meta.env.DEV && typeof window !== "undefined") {
-  // @ts-expect-error
+if (import.meta.env.DEV && !isServer) {
   window.gun = gun;
+}
+
+declare global {
+  interface Window {
+    gun: IGunInstance;
+  }
 }

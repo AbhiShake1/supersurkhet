@@ -60,7 +60,7 @@ export function CurrencyField({
     
     // Format for display
     if (cleanedValue) {
-      const numberValue = parseFloat(cleanedValue);
+      const numberValue = Number.parseFloat(cleanedValue);
       if (!isNaN(numberValue)) {
         const formatted = new Intl.NumberFormat(locale, {
           style: "currency",
@@ -81,7 +81,7 @@ export function CurrencyField({
   const handleBlur = () => {
     // Format the final value when losing focus
     if (rawValue) {
-      const numberValue = parseFloat(rawValue);
+      const numberValue = Number.parseFloat(rawValue);
       if (!isNaN(numberValue)) {
         const formatted = new Intl.NumberFormat(locale, {
           style: "currency",

@@ -15,7 +15,7 @@ export const useCreate = createGunHook((messenger) => {
       const encrypted = await encrypt(value, schema)
       return new Promise<GunMessagePut>((resolve, reject) => {
         getGunRef(keys)
-          .get(encrypted?.id ?? /*keys + "/" + */Date.now().toString())
+          .get(encrypted?.id ?? (keys + "/" + Date.now().toString()))
           .put(
             encrypted,
             (ack) => {

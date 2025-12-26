@@ -1,5 +1,6 @@
 "use client";
-import React, {
+import type React from "react";
+import {
   useCallback,
   useMemo,
   useState,

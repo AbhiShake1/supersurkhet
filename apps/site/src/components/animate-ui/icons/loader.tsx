@@ -33,7 +33,7 @@ const animations = {
           transition: {
             duration: DURATION,
             ease: 'linear',
-            repeat: Infinity,
+            repeat: Number.POSITIVE_INFINITY,
             repeatType: 'loop',
             delay,
           },
@@ -51,7 +51,7 @@ const animations = {
         transition: {
           duration: 1.5,
           ease: 'linear',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           repeatType: 'loop',
         },
       },

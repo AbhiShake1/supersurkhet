@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
+import type React from 'react';
+import { createContext, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import _ from 'lodash';
 
 interface ContextData {

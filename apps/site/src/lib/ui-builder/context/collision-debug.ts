@@ -1,5 +1,5 @@
-import { Collision, UniqueIdentifier } from "@dnd-kit/core";
-import { Coordinates } from "@dnd-kit/utilities";
+import type { Collision, UniqueIdentifier } from "@dnd-kit/core";
+import type { Coordinates } from "@dnd-kit/utilities";
 import { getIframeElements } from '@/lib/ui-builder/context/dnd-utils';
 
 // Enable/disable debug visualization
@@ -276,7 +276,7 @@ function createCircle(x: number, y: number, radius: number, color: string, title
 
 function createLine(
   x1: number, y1: number, x2: number, y2: number,
-  color: string, width: number = 2, dashArray?: string
+  color: string, width = 2, dashArray?: string
 ): SVGLineElement {
   const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
   line.setAttribute("x1", x1.toString());
@@ -295,7 +295,7 @@ function createLine(
 
 function createRect(
   x: number, y: number, width: number, height: number,
-  color: string, opacity: string = "0.2"
+  color: string, opacity = "0.2"
 ): SVGRectElement {
   const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
   rect.setAttribute("x", x.toString());
@@ -311,8 +311,8 @@ function createRect(
 }
 
 function createText(
-  x: number, y: number, text: string, color: string = "black",
-  fontSize: string = "12px", fontWeight: string = "normal"
+  x: number, y: number, text: string, color = "black",
+  fontSize = "12px", fontWeight = "normal"
 ): SVGTextElement {
   const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
   textElement.setAttribute("x", x.toString());

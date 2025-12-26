@@ -5,7 +5,7 @@ import {
   getBezierPath,
   getSmoothStepPath,
   getStraightPath,
-  Position,
+  type Position,
   useStore,
   type Edge,
   type EdgeProps,

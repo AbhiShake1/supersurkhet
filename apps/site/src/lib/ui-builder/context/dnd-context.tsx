@@ -1,4 +1,5 @@
-import React, { useState, type ReactNode, useMemo, useEffect } from 'react';
+import type React from 'react';
+import { useState, type ReactNode, useMemo, useEffect } from 'react';
 import { DndContext } from '@dnd-kit/core';
 import { createTransformAwareCollisionDetection } from '@/lib/ui-builder/context/dnd-context-colission-utils';
 import { getIframeElements } from '@/lib/ui-builder/context/dnd-utils';

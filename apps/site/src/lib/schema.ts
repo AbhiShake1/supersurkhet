@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
-import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, Folder, QrCode, Package, Square } from "lucide-react";
+import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, Folder, QrCode, Package } from "lucide-react";
 import type { AdminComponent } from "@/components/ui/admin";
 import { educationSchema } from "./schemas/education-schema";
 import { healthcareSchema } from "./schemas/healthcare-schema";
@@ -28,12 +28,12 @@ import { qrFlowConfigSchema } from "./schemas/qr-flow-config-schema";
 import type { ReactNode } from "@tanstack/react-router";
 import { uiBuilderSchema } from "./schemas/ui-builder-schema";
 
-// #region Permissions & Roles
-export const permissions = {
-  // ... (permissions remain the same)
-} as const;
-export type Permission = keyof typeof permissions;
-const permissionEnum = z.nativeEnum(permissions);
+function getPermissions() {
+  return ["product"] as readonly [string, ...string[]];
+}
+
+export type Permission = keyof ReturnType<typeof getPermissions>;
+const permissionEnum = z.lazy(() => z.enum(getPermissions()));
 
 export interface GTAAppConfig {
   schema: {
@@ -52,13 +52,15 @@ export interface GTAAppConfig {
   };
 }
 
+export const permissionSchema = withLabel(
+  z.record(permissionEnum, z.boolean()),
+  "Permissions",
+).describe("Record of permissions enabled for this role")
+
 export const roleSchema = z
   .object({
     name: withLabel(z.string(), "Role Name"),
-    permissions: withLabel(
-      z.record(permissionEnum, z.boolean()),
-      "Permissions",
-    ).describe("Record of permissions enabled for this role"),
+    permissions: permissionSchema,
   })
   .extend(table);
 // #endregion
@@ -82,7 +84,7 @@ export const userSchema = z
       .default(true)
       .describe("Whether the user account is active")
       .optional(),
-    role: z.string().default("user").optional(),
+    role: z.enum(["user", "internal-staff", "admin"]).default("user").optional(),
     // isVerified: z.boolean().default(false).optional(),
   })
   .extend(table);
@@ -92,6 +94,13 @@ export const otpSchema = z.object({
 }).extend(table)
 
 export type OTP = z.infer<typeof otpSchema>
+
+export const businessMemberSchema = z.object({
+  role: z.enum(["owner", "staff"]),
+  permissions: permissionSchema.optional(),
+  userId: z.string(),
+  joinedAt: z.number().optional()
+})
 
 export const businessSchema = z
   .object({
@@ -137,11 +146,13 @@ export const businessSchema = z
       .base64()
       .describe("Business icon")
       .optional(),
+    members: z.record(z.string(), businessMemberSchema).optional(),
     uiBuilder: uiBuilderSchema.optional(),
   })
   .extend(table);
 
 export type BusinessType = z.infer<typeof businessSchema>["businessType"];
+export type BusinessMember = z.infer<typeof businessMemberSchema>;
 
 export const membershipSchema = z
   .object({

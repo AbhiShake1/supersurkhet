@@ -60,7 +60,6 @@ import {
   Youtube,
   Minus,
   Plus,
-  ShoppingCartIcon,
   ShoppingCart,
   PlusCircle,
   MinusCircle,
@@ -1223,6 +1222,7 @@ function EducationClientPagePresenter({ slug }: EducationClientPageProps) {
                         <div className="space-y-2">
                           <Label htmlFor="name" className="text-lg">Name</Label>
                           <Input
+                            placeholder="Your name"
                             id="name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
@@ -1233,6 +1233,7 @@ function EducationClientPagePresenter({ slug }: EducationClientPageProps) {
                         <div className="space-y-2">
                           <Label htmlFor="email" className="text-lg">Email</Label>
                           <Input
+                            placeholder="Your email"
                             id="email"
                             type="email"
                             value={email}
@@ -1245,6 +1246,7 @@ function EducationClientPagePresenter({ slug }: EducationClientPageProps) {
                       <div className="space-y-2">
                         <Label htmlFor="message" className="text-lg">Message</Label>
                         <Input
+                          placeholder="Your message"
                           id="message"
                           value={message}
                           onChange={(e) => setMessage(e.target.value)}

@@ -2,49 +2,15 @@ import {
   useQuery,
   useQueryClient,
   type UseQueryOptions,
+  type UseQueryResult,
 } from "@tanstack/react-query";
 import type { NestedSchemaType, SchemaKeys } from "..";
 import { getGunRef, getNestedZodShape, mergeKeys } from "../utils";
 import { decrypt } from "../utils/sea";
 import { createGunHook } from "./useGunHook";
+import { attachSouls, type GetBuilder as UseGetBuilder } from "../ssr/get";
 
-function attachSouls(value: any, currentPath: string): any {
-  // primitives stay untouched
-  if (typeof value !== "object" || value === null) return value;
-
-  // ------------------------------------------------------------
-  // CASE: ARRAY
-  // ------------------------------------------------------------
-  if (Array.isArray(value)) {
-    const result = value.map((item, index) =>
-      attachSouls(item, `${currentPath}/${index}`)
-    );
-
-    // give the array itself a soul too
-    return Object.assign([...result], { "#": currentPath });
-  }
-
-  // ------------------------------------------------------------
-  // CASE: OBJECT
-  // ------------------------------------------------------------
-  const result: Record<string, any> = { "#": currentPath };
-
-  for (const [key, val] of Object.entries(value)) {
-    if (typeof val === "object" && val !== null) {
-      result[key] = attachSouls(val, `${currentPath}/${key}`);
-    } else {
-      result[key] = val;
-    }
-  }
-
-  return result;
-}
-
-export type UseGetBuilder<T extends SchemaKeys> = {
-  separator?: string;
-  filter?: (item: NestedSchemaType<T>) => boolean;
-  single?: boolean;
-};
+export type { UseGetBuilder }
 
 export const useGet = createGunHook((messenger) => {
   return <const T extends SchemaKeys>(
@@ -54,30 +20,16 @@ export const useGet = createGunHook((messenger) => {
         key: T;
       }),
     ...restKeys: string[]
-  ) => {
-    function getMapper() {
-      if (typeof key !== "string" && key.filter) {
-        return (data: NestedSchemaType<T>) => {
-          if (key.filter?.(data)) {
-            return data;
-          }
-          return undefined
-        };
-      }
-      return undefined
-    }
-    const isSingle = typeof key !== "string" && key.single || false
+  ): UseQueryResult<NestedSchemaType<T>[] | undefined, Error> => {
     const queryClient = useQueryClient();
+    const isSingle = typeof key !== "string" && key.single || false
     const k = typeof key === "string" ? key : key.key;
     const queryKey = ["get", key, ...restKeys];
     const schema = getNestedZodShape(k, messenger._options.schema)
-    let timeout: NodeJS.Timeout
     return useQuery({
+      ...(typeof key !== "string" && key.queryOptions),
       queryKey,
       queryFn: async () => {
-        // await new Promise(r => {
-        //   setTimeout(r, 1000)
-        // })
         const _keys = mergeKeys(k, ...restKeys) as T;
         const keys =
           typeof key !== "string" && key.separator?.length
@@ -86,10 +38,8 @@ export const useGet = createGunHook((messenger) => {
 
         const node = getGunRef(keys);
 
-        node.open(async (fullData) => {
+        async function transform(fullData: any) {
           if (!fullData || typeof fullData !== "object") return;
-
-          if (timeout) clearTimeout(timeout)
 
           const entries = Object.entries(fullData) as [string, any][];
           const newList: NestedSchemaType<T>[] = [];
@@ -117,18 +67,15 @@ export const useGet = createGunHook((messenger) => {
             }
           }
 
-          queryClient.setQueryData(queryKey, newList.filter(Boolean));
-        });
+          return newList.filter(Boolean);
+        }
 
-        return new Promise<NestedSchemaType<T>[]>((res) => {
-          timeout = setTimeout(() => {
-            res([])
-          }, 3000)
-          node.not(() => {
-            res([]);
-            clearTimeout(timeout)
-          })
-        });
+        const firstData = await node.open(async (fullData) => {
+          const newList = await transform(fullData);
+          queryClient.setQueryData(queryKey, newList);
+        }).then()
+
+        return (queryClient.getQueryData(queryKey) ?? await transform(firstData) ?? []) as NestedSchemaType<T>[] | undefined;
       },
     });
   };

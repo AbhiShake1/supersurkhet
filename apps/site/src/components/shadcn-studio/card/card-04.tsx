@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from '@/components/ui/card'
 import { z } from 'zod';
 
-export const CardBottomImageDemoSchema = z.object({
+export const CardBottomImageSchema = z.object({
   title: z.string().default("Fluid Gradient Flow"),
   description: z.string().default("A vibrant and abstract background with smooth gradient curves."),
   imageUrl: z.string().url().default('https://cdn.shadcnstudio.com/ss-assets/components/card/image-1.png?height=280&format=auto'),
@@ -9,9 +9,9 @@ export const CardBottomImageDemoSchema = z.object({
   className: z.string().optional(),
 });
 
-export type CardBottomImageDemoProps = z.infer<typeof CardBottomImageDemoSchema>;
+export type CardBottomImageDemoProps = z.infer<typeof CardBottomImageSchema>;
 
-const CardBottomImageDemo = ({
+const CardBottomImage = ({
   title = "Fluid Gradient Flow",
   description = "A vibrant and abstract background with smooth gradient curves.",
   imageUrl = 'https://cdn.shadcnstudio.com/ss-assets/components/card/image-1.png?height=280&format=auto',
@@ -35,4 +35,4 @@ const CardBottomImageDemo = ({
   )
 }
 
-export default CardBottomImageDemo
+export default CardBottomImage

@@ -134,6 +134,9 @@ export function CreateBusiness({ children, ...props }: { children: React.ReactNo
         })
       })
     }
+    if (!user) {
+      return toast.error("You must be logged in to create a business.")
+    }
     await createBusiness({
       ...businessData,
       basePath,
@@ -141,6 +144,13 @@ export function CreateBusiness({ children, ...props }: { children: React.ReactNo
       created_by: user?._?.soul ?? "anon",
       id: basePath,
       timestamp: Date.now() / 1000,
+      members: {
+        [user?._?.soul ?? "anon"]: {
+          role: "owner",
+          userId: user?._?.soul ?? "",
+          joinedAt: Date.now(),
+        }
+      }
     });
   };
 

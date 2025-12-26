@@ -33,7 +33,7 @@ export const Route = createFileRoute("/$businessName/")({
       single: true,
     });
 
-    if (isLoading) {
+    if (isLoading || allBusinesses.length === 0) {
       return (
         <div className="items-center justify-center w-screen h-screen flex">
           <Loader2

@@ -4,6 +4,7 @@ import type { IGunUserInstance } from "gun/types";
 import { z } from "zod";
 import { gun } from "./gun";
 import { setUser } from "@/server-functions/user";
+import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 
 export const googleLoginSchema = z.object({
   email: z.string().email(),
@@ -48,7 +49,7 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
             phone: "",
             permissions: {},
           };
-          gun.get("user").get(ack.pub).put(userProfile);
+          getGunRef(mergeKeys("user")).get(ack.pub).put(userProfile);
           gun
             .user()
             .auth(alias, import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR, (ack) => {

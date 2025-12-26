@@ -36,7 +36,7 @@ export function UserAvatarDropdown(props: UserAvatarDropdownProps) {
             >
               {
                 props.children || <Avatar>
-                  <AvatarImage src={user?.avatar} alt={user?.email} />
+                  <AvatarImage src={user?.avatar} alt={""} />
                   <AvatarFallback className="capitalize">
                     {user?.email?.[0]}
                   </AvatarFallback>
@@ -50,7 +50,7 @@ export function UserAvatarDropdown(props: UserAvatarDropdownProps) {
           >
             <div className="flex flex-col items-center gap-2 p-4 border-b">
               <Avatar>
-                <AvatarImage src={user?.avatar} alt={user?.email} />
+                <AvatarImage src={user?.avatar} alt={""} />
                 <AvatarFallback className="capitalize">
                   {user?.email?.[0]}
                 </AvatarFallback>

@@ -5,7 +5,6 @@ import { NotFound } from "@/components/ui/not-found";
 import { getBusinessConfig } from "@/config/business-config";
 import { BusinessProvider } from "@/contexts/business-context";
 import { api } from "@/lib/api";
-import type { Business } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
@@ -13,9 +12,9 @@ import { useEffect } from "react";
 export const Route = createFileRoute("/$businessName/admin/")({
   component: () => {
     const { businessName } = Route.useParams();
-    const { data: allBusinesses = [], isLoading } = api.business.useGet();
+    const { data: allBusinesses = [], isLoading } = api.business.useGet({ keys: [businessName], single: true });
     const { promptLogin, closeLoginPrompt } = useLoginPrompt();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, user } = useAuth();
 
     useEffect(() => {
       if (!isAuthenticated && !isLoading)
@@ -35,9 +34,9 @@ export const Route = createFileRoute("/$businessName/admin/")({
       );
     }
 
-    const business = allBusinesses.find(
-      (b: Business) => b.basePath === businessName,
-    );
+    if (!user) return null;
+
+    const business = allBusinesses?.[0];
 
     if (!business?.basePath) {
       return <NotFound />

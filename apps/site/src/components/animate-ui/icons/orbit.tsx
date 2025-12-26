@@ -21,7 +21,7 @@ const animations = {
         transition: {
           duration: 2,
           ease: 'linear',
-          repeat: Infinity,
+          repeat: Number.POSITIVE_INFINITY,
           repeatType: 'loop',
         },
       },

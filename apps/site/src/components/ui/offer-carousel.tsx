@@ -5,102 +5,110 @@ import { cn } from "@/lib/utils"; // Your utility for merging Tailwind classes
 import z from "zod";
 
 export const OfferCardSchema = z.object({
-  imageSrc: z.string(),
-  imageAlt: z.string(),
-  tag: z.string(),
-  title: z.string(),
-  description: z.string(),
-  brandLogoSrc: z.string(),
-  brandName: z.string(),
+  className: z.string().optional(),
+  imageClassName: z.string().optional(),
+  imageSrc: z.string().optional(),
+  imageAlt: z.string().optional(),
+  tag: z.string().optional(),
+  title: z.string().optional(),
+  description: z.string().optional(),
+  brandLogoSrc: z.string().optional(),
+  brandName: z.string().optional(),
   promoCode: z.string().optional(),
-  href: z.string(),
-}).optional()
+  href: z.string().optional(),
+})
 
 export type Offer = z.infer<typeof OfferCardSchema>
 
 // Props for the OfferCard component
-interface OfferCardProps {
-  offer: Offer;
-}
+type OfferCardProps = Offer
 
 // The individual card component with hover animation
-const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(({ offer = {
-  imageSrc: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1998&auto=format&fit=crop",
-  imageAlt: "A delicious looking burger",
-  tag: "Discount",
-  title: "Snack more. Save more.",
-  description: "Get ₹75 OFF on purchases of ₹299 or more.",
-  brandLogoSrc: "https://static.twidpay.com/co/mobile_app_images/brand_logos/square/mcdonaldssquare.png?size=40",
-  brandName: "McD",
-  promoCode: "TWID75",
-  href: "#",
-} }, ref) => (
-  <motion.a
-    ref={ref}
-    href={offer.href}
-    className="relative flex-shrink-0 w-[300px] h-[360px] rounded-2xl overflow-hidden group snap-start bg-card shadow-lg hover:shadow-xl border border-gray-100/50 transition-all duration-300"
-    whileHover={{ y: -6, boxShadow: "0 12px 28px rgba(0, 0, 0, 0.1)" }}
-    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(({
+  imageSrc = "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1998&auto=format&fit=crop",
+  imageAlt = "A delicious looking burger",
+  tag = "Discount",
+  title = "Snack more. Save more.",
+  description = "Get ₹75 OFF on purchases of ₹299 or more.",
+  brandLogoSrc = "https://static.twidpay.com/co/mobile_app_images/brand_logos/square/mcdonaldssquare.png?size=40",
+  brandName = "McD",
+  promoCode = "TWID75",
+  href = "#",
+  className,
+  imageClassName,
+}, ref) => (
+  <div
+    className={cn("flex flex-shrink-0", className)}
   >
-    <div className="relative h-40 overflow-hidden">
-      <img
-        src={offer.imageSrc}
-        alt={offer.imageAlt}
-        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-black/10"></div>
+    <motion.a
+      ref={ref}
+      href={href}
+      className={cn("relative flex-shrink-0 rounded-2xl overflow-hidden group snap-start bg-card shadow-lg hover:shadow-xl border border-gray-100/50 transition-all duration-300")}
+      whileHover={{ y: -6, boxShadow: "0 12px 28px rgba(0, 0, 0, 0.1)" }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+    >
+      <div className={cn("relative h-40 overflow-hidden", imageClassName)}>
+        <img
+          src={imageSrc}
+          alt={imageAlt}
+          className={cn("w-full h-full object-cover transition-transform duration-700 group-hover:scale-110", imageClassName)}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-black/10"></div>
 
-      <div className="absolute top-3 left-3 flex items-center text-xs font-semibold text-primary-foreground bg-primary/90 px-3 py-1 rounded-full w-fit shadow-md">
-        <Tag className="w-3 h-3 mr-1" />
-        <span>{offer.tag}</span>
-      </div>
-    </div>
-
-    {/* Card Content */}
-    <div className="p-5 flex flex-col justify-between h-[calc(100%-10rem)]"> {/* Calculated remaining height */}
-      <div className="space-y-2">
-
-        <h3 className={cn(
-          "text-xl font-extrabold text-foreground leading-snug",
-          "whitespace-normal"
-        )}>
-          {offer.title}
-        </h3>
-
-        <p className="text-sm text-muted-foreground line-clamp-2">{offer.description}</p>
+        <div className="absolute top-3 left-3 flex items-center text-xs font-semibold text-primary-foreground bg-primary/90 px-3 py-1 rounded-full w-fit shadow-md">
+          <Tag className="w-3 h-3 mr-1" />
+          <span>{tag}</span>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-border/70 mt-auto">
-        <div className="flex items-center gap-3">
-          {/* Brand Logo */}
-          <img
-            src={offer.brandLogoSrc}
-            alt={`${offer.brandName} logo`}
-            className="w-9 h-9 rounded-full bg-muted object-contain border border-gray-100"
-          />
-          <div>
-            <p className="text-sm font-semibold text-foreground">{offer.brandName}</p>
-            {offer.promoCode && (
-              <p className="text-xs text-primary font-mono bg-primary/10 px-1.5 py-0.5 rounded-md mt-0.5 w-fit select-all tracking-wider">{offer.promoCode}</p>
-            )}
+      {/* Card Content */}
+      <div className="p-5 flex flex-col justify-between h-[calc(100%-10rem)]"> {/* Calculated remaining height */}
+        <div className="space-y-2">
+
+          <h3 className={cn(
+            "text-xl font-extrabold text-foreground leading-snug",
+            "whitespace-normal"
+          )}>
+            {title}
+          </h3>
+
+          <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-4 border-t border-border/70 mt-auto">
+          <div className="flex items-center gap-3">
+            {/* Brand Logo */}
+            <img
+              src={brandLogoSrc}
+              alt={`${brandName} logo`}
+              className="w-9 h-9 rounded-full bg-muted object-contain border border-gray-100"
+            />
+            <div>
+              <p className="text-sm font-semibold text-foreground">{brandName}</p>
+              {promoCode && (
+                <p className="text-xs text-primary font-mono bg-primary/10 px-1.5 py-0.5 rounded-md mt-0.5 w-fit select-all tracking-wider">{promoCode}</p>
+              )}
+            </div>
+          </div>
+
+          {/* CTA Arrow Button (Enhanced UE) */}
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-all duration-300 transform group-hover:scale-110 group-active:scale-95 shadow-md">
+            <ArrowRight
+              className="w-5 h-5 transition-transform duration-300 ease-out group-hover:translate-x-1"
+            />
           </div>
         </div>
-
-        {/* CTA Arrow Button (Enhanced UE) */}
-        <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-primary-foreground transition-all duration-300 transform group-hover:scale-110 group-active:scale-95 shadow-md">
-          <ArrowRight
-            className="w-5 h-5 transition-transform duration-300 ease-out group-hover:translate-x-1"
-          />
-        </div>
       </div>
-    </div>
-  </motion.a>
+    </motion.a>
+  </div>
 ));
 OfferCard.displayName = "OfferCard";
 
 export const OfferCarouselSchema = z.object({
   offers: OfferCardSchema.array().optional(),
+  className: z.string().optional(),
+  imageClassName: z.string().optional(),
 })
 
 // Props for the OfferCarousel component
@@ -166,7 +174,8 @@ const defaultOffers: Offer[] = [
 
 // The main carousel component with scroll functionality
 const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
-  ({ offers = defaultOffers, className, ...props }, ref) => {
+  ({ offers, className, imageClassName, ...props }, ref) => {
+    if (!offers?.length) offers = defaultOffers
     const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
     const scroll = (direction: "left" | "right") => {
@@ -197,7 +206,7 @@ const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
           className="flex space-x-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory"
         >
           {offers.map((offer) => (
-            <OfferCard key={offer?.title} offer={offer} />
+            <OfferCard key={offer?.title} {...offer} className={cn(offer.className, className)} imageClassName={cn(offer.imageClassName, imageClassName)} />
           ))}
         </div>
 

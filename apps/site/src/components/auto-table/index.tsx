@@ -9,10 +9,12 @@ import { useDataTable } from "@/hooks/use-data-table";
 import { AutoForm, AutoFormWithoutLabel } from "@/components/ui/autoform";
 import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
@@ -47,7 +49,14 @@ import {
   DatabaseZap,
   Download,
   Upload,
-  Columns
+  Columns,
+  MoreHorizontal,
+  FileSpreadsheet,
+  FileText,
+  FileJson,
+  File,
+  ArrowBigUpDash,
+  Sheet,
 } from "lucide-react";
 import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
@@ -69,6 +78,9 @@ import { z } from "zod";
 import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
 import { DataTableColumnHeader } from "../data-table/data-table-column-header";
 import { AutoPreview } from "../auto-preview";
+import { api } from "@/lib/api";
+import { BadgeMarquee } from "../ui/badge-marquee";
+import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
 
 type AggregationType =
   | 'sum'
@@ -124,6 +136,7 @@ export function AutoTable<T extends SchemaKeys>({
   defaultPageSize = 10,
   ...props
 }: AutoTableProps<T>) {
+  const [formValues, setFormValues] = React.useState<Record<string, any>>({});
   const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const { data: __data = [], isLoading } = useGet(schemaName, slug);
@@ -198,54 +211,139 @@ export function AutoTable<T extends SchemaKeys>({
         updateMutation.mutate({ id: rowId, ...data });
       }
     },
-    getRowId: (originalRow) => originalRow._?.soul ?? originalRow["#"]?.split("/").slice(2).join("/") ?? "", shallow: false, nttclearOnDefault: true,
+    getRowId: (originalRow) => originalRow?._?.soul ?? originalRow["#"]?.split("/").slice(2).join("/") ?? "", shallow: false, nttclearOnDefault: true,
   });
+
+  const [file, setFile] = React.useState<File | null>(null);
+  const [isImportPending, setIsImportPending] = React.useState(false);
 
   if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
 
+  const handleFileUpload = async (e: Event, format: 'csv' | 'excel' | 'json') => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    setFile(selectedFile);
+    setIsImportPending(true);
+
+    try {
+      let parsedData: any[] = [];
+
+      if (format === 'csv') {
+        parsedData = await parseCSVFile(selectedFile);
+      } else if (format === 'excel') {
+        parsedData = await parseExcelFile(selectedFile);
+      } else if (format === 'json') {
+        parsedData = await parseJSONFile(selectedFile);
+      }
+
+      // Validate the parsed data against the schema
+      const { validData, errors } = validateDataAgainstSchema(parsedData, schema as z.ZodObject<any>);
+
+      if (errors.length > 0) {
+        // Show validation errors to user
+        console.error("Validation errors:", errors);
+        alert(`Validation errors found in ${errors.length} records. Please check console for details.`);
+        return;
+      }
+
+      // Create all records
+      for (const record of validData) {
+        createMutation.mutate(record);
+      }
+
+      // Reset file input
+      if (e.target) {
+        e.target.value = '';
+      }
+    } catch (error) {
+      console.error(`Error parsing ${format} file:`, error);
+      alert(`Error parsing ${format} file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsImportPending(false);
+    }
+  };
+
+  function handleFileImport(acceptedFormats: string, fileType: 'csv' | 'excel' | 'json') {
+    const input = document.createElement("input")
+    input.type = "file"
+    input.accept = acceptedFormats
+    input.onchange = e => {
+      handleFileUpload(e, fileType)
+    }
+    input.click()
+  }
+
   return (
     <div className="py-6 space-y-4 flex flex-col items-end">
-      <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
-        <CredenzaTrigger asChild>
-          <Button className="gap-2">
-            <Plus className="size-4" />
-            Add New
-          </Button>
-        </CredenzaTrigger>
-        <CredenzaContent>
-          <CredenzaHeader>
-            <CredenzaTitle>Add</CredenzaTitle>
-            <CredenzaDescription>Add new</CredenzaDescription>
-          </CredenzaHeader>
-          <CredenzaBody asChild>
-            <ScrollArea className="h-[50vh]">
-              <AutoForm
-                schema={schema}
-                onSubmit={(b) => createMutation.mutate(b)}
-                formProps={{ id: "auto-table-add-form" }}
-              />
-            </ScrollArea>
-          </CredenzaBody>
-          <CredenzaFooter className="flex gap-4 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => setDialogOpen(false)}
-            >
-              Cancel
+      <ButtonGroup>
+        <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
+          <CredenzaTrigger asChild>
+            <Button className="gap-2 rounded-r-none border-r">
+              <Plus className="size-4" />
+              Add New
             </Button>
-            <SubmitButton
-              form="auto-table-add-form"
-              className="gap-2 w-full"
-              loading={updateMutation.isPending || createMutation.isPending}
-            >
-              <Save className="size-4" />
-              Save
-            </SubmitButton>
-          </CredenzaFooter>
-        </CredenzaContent>
-      </Credenza>
+          </CredenzaTrigger>
+          <CredenzaContent>
+            <CredenzaHeader className="min-w-0">
+              <CredenzaTitle className="capitalize">Add new {schemaName}</CredenzaTitle>
+              <CredenzaDescription asChild>
+                <AddDataSuggestions schemaName={schemaName} slug={slug} onSelected={setFormValues} />
+              </CredenzaDescription>
+            </CredenzaHeader>
+            <CredenzaBody asChild>
+              <ScrollArea className="h-[50vh]">
+                <AutoForm
+                  values={formValues}
+
+                  schema={schema}
+                  onSubmit={(b) => createMutation.mutate(b)}
+                  formProps={{ id: "auto-table-add-form" }}
+                />
+              </ScrollArea>
+            </CredenzaBody>
+            <CredenzaFooter className="flex gap-4 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <SubmitButton
+                form="auto-table-add-form"
+                className="gap-2 w-full"
+                loading={updateMutation.isPending || createMutation.isPending}
+              >
+                <Save className="size-4" />
+                Save
+              </SubmitButton>
+            </CredenzaFooter>
+          </CredenzaContent>
+        </Credenza>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" size="icon" aria-label="Import Options" className="rounded-l-none border-l-0" disabled={isImportPending}>
+              <ArrowBigUpDash className="size-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem onClick={() => handleFileImport(".csv", "csv")} className="gap-2">
+              <FileText className="h-4 w-4" />
+              Import from CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleFileImport(".json", "json")} className="gap-2">
+              <FileJson className="h-4 w-4" />
+              Import from JSON
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleFileImport(".xlsx,.xls", "excel")} className="gap-2">
+              <Sheet className="h-4 w-4" />
+              Import from Excel
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </ButtonGroup>
       <DataTable
         table={table}
         actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
@@ -460,6 +558,46 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   });
 
   return columns;
+}
+
+
+function useAllData(tableName: SchemaKeys) {
+  const { data: allItems, ...rest } = api[tableName].useGet();
+
+  const data = allItems?.flatMap(d => {
+    const business = d._?.soul;
+    return Object.values(d).map(d =>
+      !d || typeof d !== "object" ? null : ({ ...d, business })
+    );
+  }).filter(d => !!d && typeof d === "object" && !("soul" in d))
+
+  return { data, ...rest };
+}
+
+export interface AddDataSuggestionsProps {
+  slug: string;
+  schemaName: SchemaKeys;
+  onSelected: (item: any) => void;
+}
+
+export function AddDataSuggestions({ schemaName, slug, onSelected }: AddDataSuggestionsProps) {
+  const { data, isLoading } = useAllData(schemaName);
+
+  if (isLoading) return "loading suggestions..."
+
+  function getTeansformedData() {
+    if (!data?.length) return []
+    const othersData = data.filter(d => d?.business !== slug)
+
+    const uniqueData = Object.values(Object.fromEntries(othersData.map(d => [d?.title || d?.name || d?.label || d?.text || d?.displayName || d?.heading || "", d])))
+    return uniqueData
+  }
+
+  const transformedData = getTeansformedData()
+
+  if (!transformedData?.length) return null
+
+  return <BadgeMarquee items={transformedData} onSelected={onSelected} />
 }
 
 // Helper function to determine filter variant based on field type

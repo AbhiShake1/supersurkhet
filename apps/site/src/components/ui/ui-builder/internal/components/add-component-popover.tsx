@@ -33,15 +33,15 @@ type AddComponentsPopoverProps = {
   addPosition?: number;
   parentLayerId: string;
   onOpenChange?: (open: boolean) => void;
-  onChange?: ({
-    layerType,
-    parentLayerId,
-    addPosition,
-  }: {
+  onChange?: (props: {
     layerType: string;
     parentLayerId: string;
     addPosition?: number;
+    propType: "children" | "props";
+    fieldName?: string; // The specific field name (e.g., "leadingIcon", "trailingIcon")
   }) => void;
+  optionsFilter?: (k: string) => boolean;
+  fieldName?: string;
 };
 
 export function AddComponentsPopover({
@@ -51,18 +51,22 @@ export function AddComponentsPopover({
   parentLayerId,
   onOpenChange,
   onChange,
+  optionsFilter,
+  fieldName,
 }: AddComponentsPopoverProps) {
   const [open, setOpen] = React.useState(false);
 
   const componentRegistry = useEditorStore((state) => state.registry);
 
   const groupedOptions = useMemo(() => {
-    const componentOptions = Object.keys(componentRegistry).map((name) => ({
-      value: name,
-      label: name,
-      type: "component",
-      from: componentRegistry[name as keyof typeof componentRegistry].from,
-    }));
+    const keys = Object.keys(componentRegistry)
+    const componentOptions = (optionsFilter ? keys.filter(optionsFilter) : keys)
+      .map((name) => ({
+        value: name,
+        label: name,
+        type: "component",
+        from: componentRegistry[name as keyof typeof componentRegistry].from,
+      }));
     return componentOptions.reduce(
       (acc, option) => {
         const fromRoot = option.from?.split("/").slice(0, -1).join("/"); // removes file name from path
@@ -76,7 +80,7 @@ export function AddComponentsPopover({
       },
       {} as Record<string, typeof componentOptions>
     );
-  }, [componentRegistry]);
+  }, [componentRegistry, optionsFilter]);
 
   // Get categories for tabs
   const categories = useMemo(() => {
@@ -88,7 +92,13 @@ export function AddComponentsPopover({
   const handleSelect = React.useCallback(
     (currentValue: string) => {
       if (onChange) {
-        onChange({ layerType: currentValue, parentLayerId, addPosition });
+        onChange({
+          layerType: currentValue,
+          parentLayerId,
+          addPosition,
+          propType: "children",
+          fieldName  // Pass the field name so the parent knows which prop to add to
+        });
       } else if (
         componentRegistry[currentValue as keyof typeof componentRegistry]
       ) {
@@ -109,6 +119,7 @@ export function AddComponentsPopover({
       setOpen,
       onOpenChange,
       onChange,
+      fieldName,
     ]
   );
 

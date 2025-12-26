@@ -2,14 +2,15 @@
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { z } from 'zod';
-import React, {
+import type React from "react";
+import {type 
   ReactNode,
   createContext,
   useContext,
   useEffect,
   useRef,
   useState,
-} from "react";
+} from "react"
 
 interface ModalContextType {
   open: boolean;
