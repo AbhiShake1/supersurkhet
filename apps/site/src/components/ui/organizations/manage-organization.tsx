@@ -2,10 +2,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Users,
-  Settings,
   CreditCard,
   Search, Trash2,
   UserPlus
@@ -16,21 +14,13 @@ import { api } from "@/lib/api";
 import type { BusinessMember } from "@/lib/schema";
 import { Avatar, AvatarImage, AvatarFallback } from "../avatar";
 
-// Define the schema for member invitations
 const inviteMemberSchema = z.object({
   email: z.string().email("Invalid email address"),
   permissions: z.array(z.string()).min(1, "At least one permission is required"),
 });
 
-// Define the schema for member permissions
-const memberPermissionsSchema = z.object({
-  permissions: z.array(z.string()).min(1, "At least one permission is required"),
-});
-
-// Types for our data
 type Member = BusinessMember;
 
-// Permissions options for the form
 const permissionOptions = [
   { label: "Read", value: "read" },
   { label: "Write", value: "write" },
@@ -41,12 +31,13 @@ const permissionOptions = [
 ];
 
 interface ManageOrganizationProps {
+  slug: string
 }
 
-export function ManageOrganization({ }: ManageOrganizationProps) {
+export function ManageOrganization({ slug }: ManageOrganizationProps) {
   const [activeTab, setActiveTab] = useState("members");
   const [searchTerm, setSearchTerm] = useState("");
-  const members = useOrgMembers()
+  const members = useOrgMembers(slug)
   const [showInviteForm, setShowInviteForm] = useState(false);
 
   // Filter members based on search term
@@ -65,25 +56,24 @@ export function ManageOrganization({ }: ManageOrganizationProps) {
 
   // Handle updating member permissions
   const handleUpdatePermissions = (memberId: string, permissions: string[]) => {
-    console.log(`Updating permissions for member ${memberId}:`, permissions);
-    // In a real app, this would make an API call
-    setMembers(prevMembers =>
-      prevMembers.map(member =>
-        member.id === memberId ? { ...member, permissions } : member
-      )
-    );
+    // console.log(`Updating permissions for member ${memberId}:`, permissions);
+    // // In a real app, this would make an API call
+    // setMembers(prevMembers =>
+    //   prevMembers.map(member =>
+    //     member.id === memberId ? { ...member, permissions } : member
+    //   )
+    // );
   };
 
   // Handle removing a member
   const handleRemoveMember = (memberId: string) => {
-    console.log(`Removing member with ID: ${memberId}`);
-    // In a real app, this would make an API call
-    setMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
+    // console.log(`Removing member with ID: ${memberId}`);
+    // // In a real app, this would make an API call
+    // setMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
   };
 
   const navigationItems = [
     { id: "members", label: "Members", icon: Users },
-    { id: "settings", label: "Settings", icon: Settings },
     { id: "billing", label: "Billing", icon: CreditCard },
   ];
 
@@ -126,9 +116,6 @@ export function ManageOrganization({ }: ManageOrganizationProps) {
             onRemoveMember={handleRemoveMember}
           />
         )}
-        {activeTab === "settings" && (
-          <SettingsTab />
-        )}
         {activeTab === "billing" && (
           <BillingTab />
         )}
@@ -141,8 +128,8 @@ const BillingTab = () => {
   return "Coming Soon!"
 }
 
-function useOrgMembers() {
-  const { data } = api.business.useGet({ keys: ["orgstore"], single: true })
+function useOrgMembers(slug: string) {
+  const { data } = api.business.useGet({ keys: [slug], single: true })
   if (!data?.[0]?.members) return []
   return Object.values(data?.[0]?.members).filter(m => typeof m === "object" && !!m.userId)
 }
@@ -172,14 +159,15 @@ const MembersTab = ({
       <div className="flex justify-between items-center">
         <Input
           placeholder="Search members..."
-          // value={searchTerm}
-          // onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-8 w-[30%]"
+          type="search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-[30%]"
           leadingIcon={<Search className="h-4 w-4" />}
         />
-        <Button onClick={() => setShowInviteForm(!showInviteForm)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Invite Member
+        <Button onClick={() => setShowInviteForm(!showInviteForm)} className="gap-2">
+          <UserPlus className="h-4 w-4" />
+          Invite
         </Button>
       </div>
 
@@ -219,7 +207,7 @@ const MembersTab = ({
                 Permissions
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Joined
+                Joined On
               </th>
             </tr>
           </thead>
@@ -261,8 +249,8 @@ const MemberRow = ({
         <div className="flex items-center">
           <div className="flex-shrink-0 h-10 w-10">
             <Avatar className="bg-card border-2 border-dashed rounded-xl w-10 h-10">
-              <AvatarImage src={member?.avatar} alt={member?.name} />
-              <AvatarFallback>
+              <AvatarImage src={member?.avatar} alt={member?.name} className="rounded-xl" />
+              <AvatarFallback className="rounded-xl">
                 <span>{member?.name?.substring(0, 1)?.toUpperCase() ?? "U"}</span>
               </AvatarFallback>
             </Avatar>
@@ -274,7 +262,7 @@ const MemberRow = ({
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm text-foreground">{role}</div>
+        <Badge variant="secondary" className="rounded-xl">{role}</Badge>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         {
@@ -291,36 +279,6 @@ const MemberRow = ({
         {joinedAt && new Date(joinedAt).toLocaleString()}
       </td>
     </tr>
-  );
-};
-
-// Settings Tab Component
-const SettingsTab = () => {
-  return (
-    <div className="space-y-6">
-      <div className="border rounded-lg p-6">
-        <h3 className="text-lg font-medium mb-4">Business Information</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="businessName">Business Name</Label>
-            <Input id="businessName" defaultValue="SuperSurkhet" />
-          </div>
-          <div>
-            <Label htmlFor="businessEmail">Business Email</Label>
-            <Input id="businessEmail" type="email" defaultValue="contact@supersurkhet.com" />
-          </div>
-          <div>
-            <Label htmlFor="businessPhone">Business Phone</Label>
-            <Input id="businessPhone" defaultValue="+977-1234567890" />
-          </div>
-          <div>
-            <Label htmlFor="businessAddress">Business Address</Label>
-            <Input id="businessAddress" defaultValue="Surkhet, Nepal" />
-          </div>
-        </div>
-        <Button className="mt-4">Save Changes</Button>
-      </div>
-    </div>
   );
 };
 

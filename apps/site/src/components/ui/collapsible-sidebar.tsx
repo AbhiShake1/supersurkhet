@@ -39,9 +39,10 @@ export interface SidebarItems {
 export interface CollapsibleSidebarProps {
   data: SidebarItems;
   businessName?: string;
+  slug?: string;
 }
 
-const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessName }) => {
+const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessName, slug }) => {
   const [open, setOpen] = useState(true);
   const [selected, setSelected] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,7 +94,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
     >
       {/* User profile section at the top */}
       <div className="flex-shrink-0">
-        <TitleSection open={open} businessName={businessName} />
+        <TitleSection open={open} businessName={businessName} slug={slug} />
 
         {/* Search bar */}
         {open && (
@@ -196,7 +197,7 @@ const Option: React.FC<{
   );
 };
 
-const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open, businessName }) => {
+const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: string }> = ({ open, businessName, slug }) => {
   const { logout, isAuthenticated } = useAuth();
   const user = useProfile();
 
@@ -204,7 +205,7 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
 
   return (
     <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <div className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
             <div className="flex items-center gap-3">
@@ -253,7 +254,7 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {
-            businessName && <>
+            slug && <>
               <DropdownMenuGroup>
                 <Dialog>
                   <DialogTrigger asChild>
@@ -263,7 +264,7 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string }> = ({ open
                     </DropdownMenuItem>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[70%] h-[80%] p-0 overflow-clip" hideClose>
-                    <ManageOrganization />
+                    <ManageOrganization slug={slug} />
                   </DialogContent>
                 </Dialog>
               </DropdownMenuGroup>

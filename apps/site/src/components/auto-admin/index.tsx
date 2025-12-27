@@ -152,7 +152,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
   return (
     <SidebarProvider>
-      <CollapsibleSidebar data={data} businessName={business?.name} />
+      <CollapsibleSidebar data={data} businessName={business?.name} slug={business?.basePath} />
       <SidebarInset className="min-w-0">
         <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
           <h1 className="font-bold text-lg px-4">{currentItem.title}</h1>
