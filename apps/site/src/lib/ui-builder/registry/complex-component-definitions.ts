@@ -16,28 +16,16 @@ import { SignedInOnly, SignedInOnlySchema } from '@/components/security/signed-i
 import { SignedOutOnly, SignedOutOnlySchema } from '@/components/security/signed-out-only';
 import { Link, LinkSchema } from '@/components/ui/navigation/link';
 
-import {
-  CarouselCard,
-  EnhancedCarousel,
-  mockCarouselItems
-} from '@/components/imgcarousel/imgcarousel';
-import { CarouselItem as CarouselItemSchema } from '@/components/imgcarousel/imgcarousel';
-
-import Rating, { RatingSchema } from '@/components/ui/rating-group.tsx';
 import { Slider, sliderSchema } from '@/components/ui/slider-1';
 import EstimatedDateBadge, { EstimatedDateBadgeSchema } from '@/components/ui/estimated-arrival';
 
-// New components with schemas added
 import Features, { FeaturesSchema } from '@/components/features-1';
 import CardBottomImage, { CardBottomImageSchema } from '@/components/shadcn-studio/card/card-04';
 import { AnimatedGradientText, AnimatedGradientTextSchema } from '@/components/ui/animated-gradient-text';
-import { AnimatedList, AnimatedListItem, AnimatedListSchema, AnimatedListItemSchema } from '@/components/ui/animated-list/animated-list';
 import { ShimmerButton, ShimmerButtonSchema } from '@/components/ui/shimmer-button';
-import { BentoCard, BentoGrid, BentoCardSchema, BentoGridSchema } from '@/components/ui/bento-grid';
 import { AnimatedIcon, AnimatedIconSchema } from '@/components/animate-ui/icons/AnimatedIcon';
 import { framerMotionComponentDefinitions } from './framer-motion-component-definitions';
 import { RatingInteraction, RatingInteractionSchema } from '@/components/ui/emoji-rating';
-import { OfferCard, OfferCardSchema, OfferCarousel, OfferCarouselSchema } from '@/components/ui/offer-carousel';
 import { dialogComponentDefinitions } from './dialog-component-definitions';
 import { credenzaComponentDefinitions } from './credenza-component-definitions';
 import { accordionComponentDefinitions } from './accordion-component-definitions';
@@ -50,6 +38,11 @@ import { modalComponentDefinitions } from './modal-component-definitions';
 import { magicuiComponentDefinitions } from '@/components/magicui/component-definitions';
 import { productOnboardingComponentDefinitions } from './product-onboarding-card-definitions';
 import { threeDCardComponentDefinitions } from './3d-card-component-definitions';
+import { ratingComponentDefinitions } from './rating-component-definitions';
+import { imgCarouselComponentDefinitions } from '@/components/imgcarousel/component-definitions';
+import { offerComponentDefinitions } from './offer-component-definitions';
+import { bentoComponentDefinitions } from './bento-component-definitions';
+import { animatedListComponentDefinitions } from '@/components/ui/animated-list/component-definitions';
 
 export const complexComponentDefinitions: ComponentRegistry = {
   ...framerMotionComponentDefinitions,
@@ -259,56 +252,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
 
   ...threeDCardComponentDefinitions,
 
-  Rating: {
-    component: Rating,
-    schema: RatingSchema,
-    from: "@/components/ui/rating",
-    defaultChildren: [
-      {
-        id: "rating-header",
-        type: "span",
-        name: "span",
-        props: {
-          className: "text-lg font-semibold text-gray-900 dark:text-white",
-        },
-        children: "Product Rating",
-      },
-      {
-        id: "rating-description",
-        type: "span",
-        name: "span",
-        props: {
-          className: "text-sm text-gray-600 dark:text-gray-400",
-        },
-        children: "How would you rate this product?",
-      },
-      {
-        id: "rating-stars",
-        type: "RatingGroup",
-        name: "RatingGroup",
-        props: {
-          maxStars: 5,
-          value: 0,
-          allowHalf: true,
-          filledColor: "text-yellow-400",
-          emptyColor: "text-gray-300 dark:text-gray-600",
-          hoverScale: 1.1,
-          starSize: 24,
-        },
-        children: [],
-      },
-      {
-        id: "rating-feedback",
-        type: "span",
-        name: "span",
-        props: {
-          className: "text-sm font-medium text-gray-900 dark:text-white mt-2",
-        },
-        children: "You rated this 0 stars",
-      },
-    ],
-    fieldOverrides: commonFieldOverrides(),
-  },
+  ...ratingComponentDefinitions,
 
   Slider: {
     component: Slider,
@@ -339,50 +283,6 @@ export const complexComponentDefinitions: ComponentRegistry = {
       },
     ],
     fieldOverrides: commonFieldOverrides()
-  },
-
-  Carousel: {
-    component: EnhancedCarousel,
-    schema: z.object({
-      showProgress: z.boolean().default(true),
-      autoPlay: z.boolean().default(false),
-      variant: z.enum(["default", "compact", "expanded"]).default("default"),
-      title: z.string().default("Featured Items"),
-      subtitle: z.string().default("Discover amazing content"),
-      showNavigation: z.boolean().default(true),
-      showFilters: z.boolean().default(false),
-    }),
-    from: '@/components/imgcarousel/imgcarousel',
-    // defaultProps: {
-    //   showProgress: true,
-    //   autoPlay: false,
-    //   variant: "default",
-    //   title: "Featured Items",
-    //   subtitle: "Discover amazing content",
-    //   showNavigation: true,
-    //   showFilters: false,
-    // },
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: mockCarouselItems.map((item) => ({
-      id: item.id,
-      type: "CarouselCard",
-      name: "CarouselCard",
-      props: {
-        item,
-        variant: "default",
-      },
-      children: [],
-    })) as ComponentLayer[],
-  },
-  CarouselCard: {
-    component: CarouselCard,
-    schema: z.object({
-      item: CarouselItemSchema,
-      variant: z.enum(["default", "compact", "expanded"]).default("default"),
-    }),
-    from: '@/components/imgcarousel/imgcarousel',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [],
   },
 
   EstimatedArrival: {
@@ -445,74 +345,6 @@ export const complexComponentDefinitions: ComponentRegistry = {
     defaultChildren: "Animated Gradient Text Effect",
   },
 
-  AnimatedList: {
-    component: AnimatedList,
-    schema: AnimatedListSchema,
-    from: '@/components/ui/animated-list/animated-list',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "animated-list-item-1",
-        type: "AnimatedListItem",
-        name: "AnimatedListItem",
-        props: {},
-        children: [
-          {
-            id: "list-item-content-1",
-            type: "div",
-            name: "div",
-            props: { className: "p-4 bg-blue-100 rounded mb-2" },
-            children: "First item",
-          } satisfies ComponentLayer,
-        ],
-      },
-      {
-        id: "animated-list-item-2",
-        type: "AnimatedListItem",
-        name: "AnimatedListItem",
-        props: {},
-        children: [
-          {
-            id: "list-item-content-2",
-            type: "div",
-            name: "div",
-            props: { className: "p-4 bg-green-100 rounded mb-2" },
-            children: "Second item",
-          } satisfies ComponentLayer,
-        ],
-      },
-      {
-        id: "animated-list-item-3",
-        type: "AnimatedListItem",
-        name: "AnimatedListItem",
-        props: {},
-        children: [
-          {
-            id: "list-item-content-3",
-            type: "div",
-            name: "div",
-            props: { className: "p-4 bg-purple-100 rounded mb-2" },
-            children: "Third item",
-          } satisfies ComponentLayer,
-        ],
-      } satisfies ComponentLayer,
-    ],
-  },
-  AnimatedListItem: {
-    component: AnimatedListItem,
-    schema: AnimatedListItemSchema,
-    from: '@/components/ui/animated-list/animated-list',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "default-animated-list-item",
-        type: "div",
-        name: "div",
-        props: { className: "p-3 bg-gray-100 rounded" },
-        children: "List item",
-      } satisfies ComponentLayer,
-    ],
-  },
   ShimmerButton: {
     component: ShimmerButton,
     schema: ShimmerButtonSchema,
@@ -528,77 +360,12 @@ export const complexComponentDefinitions: ComponentRegistry = {
       } satisfies ComponentLayer,
     ],
   },
-  BentoGrid: {
-    component: BentoGrid,
-    schema: BentoGridSchema,
-    from: '@/components/ui/bento-grid',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [
-      {
-        id: "bento-card-1",
-        type: "BentoCard",
-        name: "BentoCard",
-        props: {
-          name: "Dashboard Analytics",
-          className: "md:col-span-2",
-          description: "Comprehensive analytics for your business metrics",
-          href: "/dashboard",
-          cta: "View Dashboard",
-          Icon: "BarChart3"
-        },
-        children: [
-          {
-            id: "analytics-content",
-            type: "div",
-            name: "div",
-            props: { className: "text-2xl font-bold" },
-            children: "35% Growth"
-          }
-        ],
-      } satisfies ComponentLayer,
-      {
-        id: "bento-card-2",
-        type: "BentoCard",
-        name: "BentoCard",
-        props: {
-          name: "Performance Metrics",
-          className: "md:col-span-1",
-          description: "Track and optimize your performance",
-          href: "/metrics",
-          cta: "View Metrics",
-          Icon: "Activity"
-        },
-        children: [
-          {
-            id: "metrics-content",
-            type: "div",
-            name: "div",
-            props: { className: "text-xl font-semibold" },
-            children: "Real-time"
-          }
-        ],
-      } satisfies ComponentLayer,
-    ],
-  },
-  BentoCard: {
-    component: BentoCard,
-    schema: BentoCardSchema,
-    from: '@/components/ui/bento-grid',
-    fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer),
-      children: (layer) => childrenFieldOverrides(layer),
-      Icon: (layer) => iconNameFieldOverrides(layer), // For icon field
-    },
-    defaultChildren: [
-      {
-        id: "bento-card-content",
-        type: "div",
-        name: "div",
-        props: { className: "text-xl font-bold" },
-        children: "Card Content",
-      } satisfies ComponentLayer,
-    ],
-  },
+
+  ...imgCarouselComponentDefinitions,
+
+  ...animatedListComponentDefinitions,
+
+  ...bentoComponentDefinitions,
 
   ...modalComponentDefinitions,
 
@@ -620,21 +387,7 @@ export const complexComponentDefinitions: ComponentRegistry = {
     defaultChildren: [],
   },
 
-  OfferCarousel: {
-    component: OfferCarousel,
-    schema: OfferCarouselSchema,
-    from: '@/components/ui/offer-carousel',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: []
-  },
-
-  OfferCard: {
-    component: OfferCard,
-    schema: OfferCardSchema,
-    from: '@/components/ui/offer-carousel',
-    fieldOverrides: commonFieldOverrides(),
-    defaultChildren: [],
-  },
+  ...offerComponentDefinitions,
 
   // Carousel components
   ...carouzelComponentDefinitions,

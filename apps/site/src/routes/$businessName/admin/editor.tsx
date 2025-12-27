@@ -21,55 +21,55 @@ import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
 import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { useContextData } from '@/lib/ui-builder/context/context-data-store';
 // import { useChat } from '@ai-sdk/react';
-import {
-  Conversation,
-  ConversationContent,
-  ConversationScrollButton,
-} from '@/components/ai-elements/conversation';
-import {
-  Message,
-  MessageContent,
-  MessageResponse,
-  MessageActions,
-  MessageAction,
-} from '@/components/ai-elements/message';
-import {
-  PromptInput,
-  PromptInputActionAddAttachments,
-  PromptInputActionMenu,
-  PromptInputActionMenuContent,
-  PromptInputActionMenuTrigger,
-  PromptInputAttachment,
-  PromptInputAttachments,
-  PromptInputBody,
-  PromptInputButton,
-  PromptInputHeader,
-  type PromptInputMessage,
-  PromptInputSelect,
-  PromptInputSelectContent,
-  PromptInputSelectItem,
-  PromptInputSelectTrigger,
-  PromptInputSelectValue,
-  PromptInputSubmit,
-  PromptInputTextarea,
-  PromptInputFooter,
-  PromptInputTools,
-} from '@/components/ai-elements/prompt-input';
-import {
-  Source,
-  Sources,
-  SourcesContent,
-  SourcesTrigger,
-} from '@/components/ai-elements/sources';
-import {
-  Reasoning,
-  ReasoningContent,
-  ReasoningTrigger,
-} from '@/components/ai-elements/reasoning';
-import { Loader } from '@/components/ai-elements/loader';
-import { DefaultChatTransport } from 'ai';
-import { createServerFn } from '@tanstack/react-start';
-import { getBuilderChat } from '@/server-functions/ai';
+// import {
+//   Conversation,
+//   ConversationContent,
+//   ConversationScrollButton,
+// } from '@/components/ai-elements/conversation';
+// import {
+//   Message,
+//   MessageContent,
+//   MessageResponse,
+//   MessageActions,
+//   MessageAction,
+// } from '@/components/ai-elements/message';
+// import {
+//   PromptInput,
+//   PromptInputActionAddAttachments,
+//   PromptInputActionMenu,
+//   PromptInputActionMenuContent,
+//   PromptInputActionMenuTrigger,
+//   PromptInputAttachment,
+//   PromptInputAttachments,
+//   PromptInputBody,
+//   PromptInputButton,
+//   PromptInputHeader,
+//   type PromptInputMessage,
+//   PromptInputSelect,
+//   PromptInputSelectContent,
+//   PromptInputSelectItem,
+//   PromptInputSelectTrigger,
+//   PromptInputSelectValue,
+//   PromptInputSubmit,
+//   PromptInputTextarea,
+//   PromptInputFooter,
+//   PromptInputTools,
+// } from '@/components/ai-elements/prompt-input';
+// import {
+//   Source,
+//   Sources,
+//   SourcesContent,
+//   SourcesTrigger,
+// } from '@/components/ai-elements/sources';
+// import {
+//   Reasoning,
+//   ReasoningContent,
+//   ReasoningTrigger,
+// } from '@/components/ai-elements/reasoning';
+// import { Loader } from '@/components/ai-elements/loader';
+// import { DefaultChatTransport } from 'ai';
+// import { createServerFn } from '@tanstack/react-start';
+// import { getBuilderChat } from '@/server-functions/ai';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import { useAuth } from '@/components/auth-provider';
 
@@ -719,259 +719,260 @@ Provide the complete UI configuration in JSON format as your response. Do not in
           </ResizablePanel>
 
           {isAIChatVisible && (
-            <>
-              <ResizableHandle withHandle />
-              {/* AI Chat Area */}
-              <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-                <div className="h-full w-full border-l bg-background flex flex-col">
-                  <div className="p-2 border-b flex items-center justify-between" style={{ zIndex: 5 }}>
-                    <h3 className="font-semibold flex gap-1 flex-row items-center">
-                      <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
-                      Builder Agent </h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsAIChatVisible(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-
-                  {/* Gemini AI Chat */}
-                  <div className="flex-1 overflow-hidden flex flex-col">
-                    <div className="flex-1 flex flex-col">
-                      {/* AI Chat Interface */}
-                      <div className="max-w-full mx-auto p-2 relative flex-1 flex flex-col">
-                        <div className="flex flex-col flex-1">
-                          <Conversation className="h-full">
-                            <ConversationContent>
-                              {
-                                //   messages.map((message) => (
-                                //   <div key={message.id} className="mb-4">
-                                //     {message.role === 'assistant' && message.content && message.content.length > 0 && (
-                                //       <Sources>
-                                //         <SourcesTrigger
-                                //           count={
-                                //             Array.isArray(message.content)
-                                //               ? message.content.filter(
-                                //                 (part: any) => part.type === 'source-url'
-                                //               ).length
-                                //               : 0
-                                //           }
-                                //         />
-                                //         {Array.isArray(message.content) &&
-                                //           message.content
-                                //             .filter((part: any) => part.type === 'source-url')
-                                //             .map((part: any, i: number) => (
-                                //               <SourcesContent key={`${message.id}-${i}`}>
-                                //                 <Source
-                                //                   key={`${message.id}-${i}`}
-                                //                   href={part.url}
-                                //                   title={part.url}
-                                //                 />
-                                //               </SourcesContent>
-                                //             ))}
-                                //       </Sources>
-                                //     )}
-                                //     {message.content && (
-                                //       typeof message.content === 'string' ? (
-                                //         <Message from={message.role}>
-                                //           <MessageContent>
-                                //             <MessageResponse>
-                                //               {message.content}
-                                //             </MessageResponse>
-                                //           </MessageContent>
-                                //           {message.role === 'assistant' && (
-                                //             <MessageActions>
-                                //               <MessageAction
-                                //                 onClick={() => regenerate()}
-                                //                 label="Retry"
-                                //               >
-                                //                 <RefreshCcwIcon className="size-3" />
-                                //               </MessageAction>
-                                //               <MessageAction
-                                //                 onClick={() =>
-                                //                   navigator.clipboard.writeText(message.content)
-                                //                 }
-                                //                 label="Copy"
-                                //               >
-                                //                 <CopyIcon className="size-3" />
-                                //               </MessageAction>
-                                //             </MessageActions>
-                                //           )}
-                                //         </Message>
-                                //       ) : Array.isArray(message.content) ? (
-                                //         message.content.map((part: any, i: number) => {
-                                //           switch (part.type) {
-                                //             case 'text':
-                                //               return (
-                                //                 <Message key={`${message.id}-${i}`} from={message.role}>
-                                //                   <MessageContent>
-                                //                     <MessageResponse>
-                                //                       {part.text}
-                                //                     </MessageResponse>
-                                //                   </MessageContent>
-                                //                   {message.role === 'assistant' && (
-                                //                     <MessageActions>
-                                //                       <MessageAction
-                                //                         onClick={() => regenerate()}
-                                //                         label="Retry"
-                                //                       >
-                                //                         <RefreshCcwIcon className="size-3" />
-                                //                       </MessageAction>
-                                //                       <MessageAction
-                                //                         onClick={() =>
-                                //                           navigator.clipboard.writeText(part.text)
-                                //                         }
-                                //                         label="Copy"
-                                //                       >
-                                //                         <CopyIcon className="size-3" />
-                                //                       </MessageAction>
-                                //                     </MessageActions>
-                                //                   )}
-                                //                 </Message>
-                                //               );
-                                //             case 'reasoning':
-                                //               return (
-                                //                 <Reasoning
-                                //                   key={`${message.id}-${i}`}
-                                //                   className="w-full"
-                                //                   isStreaming={status === 'streaming' && i === message.content.length - 1 && message.id === messages.at(-1)?.id}
-                                //                 >
-                                //                   <ReasoningTrigger />
-                                //                   <ReasoningContent>{part.text}</ReasoningContent>
-                                //                 </Reasoning>
-                                //               );
-                                //             default:
-                                //               return null;
-                                //           }
-                                //         })
-                                //       ) : null
-                                //     )}
-                                //   </div>
-                                // ))
-                              }
-                              {status === 'streaming' && <Loader />}
-                            </ConversationContent>
-                            <ConversationScrollButton />
-                          </Conversation>
-                        </div>
-
-                        <PromptInput
-                          onSubmit={(message: PromptInputMessage) => {
-                            const hasText = Boolean(message.text);
-                            const hasAttachments = Boolean(message.files?.length);
-                            if (!(hasText || hasAttachments)) {
-                              return;
-                            }
-                            sendMessage(
-                              {
-                                text: message.text || 'Sent with attachments',
-                                files: message.files
-                              },
-                              {
-                                body: {
-                                  model: model,
-                                  webSearch: webSearch,
-                                },
-                              },
-                            );
-                            setInput('');
-                          }}
-                          className="mt-4"
-                          globalDrop
-                          multiple
-                        >
-                          <PromptInputHeader>
-                            <PromptInputAttachments>
-                              {(attachment: any) => <PromptInputAttachment data={attachment} />}
-                            </PromptInputAttachments>
-                          </PromptInputHeader>
-                          <PromptInputBody>
-                            <PromptInputTextarea
-                              onChange={(e) => setInput(e.target.value)}
-                              value={input}
-                            />
-                          </PromptInputBody>
-                          <PromptInputFooter>
-                            <PromptInputTools>
-                              <PromptInputActionMenu>
-                                <PromptInputActionMenuTrigger />
-                                <PromptInputActionMenuContent>
-                                  <PromptInputActionAddAttachments />
-                                </PromptInputActionMenuContent>
-                              </PromptInputActionMenu>
-                              <PromptInputButton
-                                variant={webSearch ? 'default' : 'ghost'}
-                                onClick={() => setWebSearch(!webSearch)}
-                              >
-                                <GlobeIcon size={16} />
-                                <span>Search</span>
-                              </PromptInputButton>
-                              <PromptInputSelect
-                                onValueChange={(value) => {
-                                  setModel(value);
-                                }}
-                                value={model}
-                              >
-                                <PromptInputSelectTrigger>
-                                  <PromptInputSelectValue />
-                                </PromptInputSelectTrigger>
-                                <PromptInputSelectContent>
-                                  {models.map((model) => (
-                                    <PromptInputSelectItem key={model.value} value={model.value}>
-                                      {model.name}
-                                    </PromptInputSelectItem>
-                                  ))}
-                                </PromptInputSelectContent>
-                              </PromptInputSelect>
-                            </PromptInputTools>
-                            <PromptInputSubmit disabled={!input && !status} status={status} />
-                          </PromptInputFooter>
-                        </PromptInput>
-                      </div>
-
-                      {/* Code interaction buttons (replacing iframe buttons) */}
-                      <div className="p-2 border-t flex gap-2">
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => {
-                            // Logic to insert generated code into editor
-                            if (messages.length > 0) {
-                              const lastMessage = messages[messages.length - 1];
-                              if (lastMessage.role === 'assistant' && lastMessage.content) {
-                                const content = typeof lastMessage.content === 'string'
-                                  ? lastMessage.content
-                                  : lastMessage.content.find((part: any) => part.type === 'text')?.text || '';
-
-                                // Attempt to parse the content as JSON to see if it's valid UI config
-                                try {
-                                  const parsed = JSON.parse(content);
-                                  // If it's valid JSON, update the code
-                                  setCode(JSON.stringify(parsed, null, 2));
-                                } catch {
-                                  // If it's not valid JSON, show as text in the editor
-                                  if (editorRef.current) {
-                                    const model = editorRef.current.getModel();
-                                    if (model) {
-                                      model.setValue(content);
-                                    }
-                                  }
-                                }
-                              }
-                            }
-                          }}
-                        >
-                          Insert Code
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </ResizablePanel>
-            </>
+            "AI Chat is temporarily disabled"
+            // <>
+            //   <ResizableHandle withHandle />
+            //   {/* AI Chat Area */}
+            //   <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+            //     <div className="h-full w-full border-l bg-background flex flex-col">
+            //       <div className="p-2 border-b flex items-center justify-between" style={{ zIndex: 5 }}>
+            //         <h3 className="font-semibold flex gap-1 flex-row items-center">
+            //           <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
+            //           Builder Agent </h3>
+            //         <Button
+            //           variant="ghost"
+            //           size="sm"
+            //           onClick={() => setIsAIChatVisible(false)}
+            //         >
+            //           <X className="h-4 w-4" />
+            //         </Button>
+            //       </div>
+            //
+            //       {/* Gemini AI Chat */}
+            //       <div className="flex-1 overflow-hidden flex flex-col">
+            //         <div className="flex-1 flex flex-col">
+            //           {/* AI Chat Interface */}
+            //           <div className="max-w-full mx-auto p-2 relative flex-1 flex flex-col">
+            //             <div className="flex flex-col flex-1">
+            //               <Conversation className="h-full">
+            //                 <ConversationContent>
+            //                   {
+            //                     //   messages.map((message) => (
+            //                     //   <div key={message.id} className="mb-4">
+            //                     //     {message.role === 'assistant' && message.content && message.content.length > 0 && (
+            //                     //       <Sources>
+            //                     //         <SourcesTrigger
+            //                     //           count={
+            //                     //             Array.isArray(message.content)
+            //                     //               ? message.content.filter(
+            //                     //                 (part: any) => part.type === 'source-url'
+            //                     //               ).length
+            //                     //               : 0
+            //                     //           }
+            //                     //         />
+            //                     //         {Array.isArray(message.content) &&
+            //                     //           message.content
+            //                     //             .filter((part: any) => part.type === 'source-url')
+            //                     //             .map((part: any, i: number) => (
+            //                     //               <SourcesContent key={`${message.id}-${i}`}>
+            //                     //                 <Source
+            //                     //                   key={`${message.id}-${i}`}
+            //                     //                   href={part.url}
+            //                     //                   title={part.url}
+            //                     //                 />
+            //                     //               </SourcesContent>
+            //                     //             ))}
+            //                     //       </Sources>
+            //                     //     )}
+            //                     //     {message.content && (
+            //                     //       typeof message.content === 'string' ? (
+            //                     //         <Message from={message.role}>
+            //                     //           <MessageContent>
+            //                     //             <MessageResponse>
+            //                     //               {message.content}
+            //                     //             </MessageResponse>
+            //                     //           </MessageContent>
+            //                     //           {message.role === 'assistant' && (
+            //                     //             <MessageActions>
+            //                     //               <MessageAction
+            //                     //                 onClick={() => regenerate()}
+            //                     //                 label="Retry"
+            //                     //               >
+            //                     //                 <RefreshCcwIcon className="size-3" />
+            //                     //               </MessageAction>
+            //                     //               <MessageAction
+            //                     //                 onClick={() =>
+            //                     //                   navigator.clipboard.writeText(message.content)
+            //                     //                 }
+            //                     //                 label="Copy"
+            //                     //               >
+            //                     //                 <CopyIcon className="size-3" />
+            //                     //               </MessageAction>
+            //                     //             </MessageActions>
+            //                     //           )}
+            //                     //         </Message>
+            //                     //       ) : Array.isArray(message.content) ? (
+            //                     //         message.content.map((part: any, i: number) => {
+            //                     //           switch (part.type) {
+            //                     //             case 'text':
+            //                     //               return (
+            //                     //                 <Message key={`${message.id}-${i}`} from={message.role}>
+            //                     //                   <MessageContent>
+            //                     //                     <MessageResponse>
+            //                     //                       {part.text}
+            //                     //                     </MessageResponse>
+            //                     //                   </MessageContent>
+            //                     //                   {message.role === 'assistant' && (
+            //                     //                     <MessageActions>
+            //                     //                       <MessageAction
+            //                     //                         onClick={() => regenerate()}
+            //                     //                         label="Retry"
+            //                     //                       >
+            //                     //                         <RefreshCcwIcon className="size-3" />
+            //                     //                       </MessageAction>
+            //                     //                       <MessageAction
+            //                     //                         onClick={() =>
+            //                     //                           navigator.clipboard.writeText(part.text)
+            //                     //                         }
+            //                     //                         label="Copy"
+            //                     //                       >
+            //                     //                         <CopyIcon className="size-3" />
+            //                     //                       </MessageAction>
+            //                     //                     </MessageActions>
+            //                     //                   )}
+            //                     //                 </Message>
+            //                     //               );
+            //                     //             case 'reasoning':
+            //                     //               return (
+            //                     //                 <Reasoning
+            //                     //                   key={`${message.id}-${i}`}
+            //                     //                   className="w-full"
+            //                     //                   isStreaming={status === 'streaming' && i === message.content.length - 1 && message.id === messages.at(-1)?.id}
+            //                     //                 >
+            //                     //                   <ReasoningTrigger />
+            //                     //                   <ReasoningContent>{part.text}</ReasoningContent>
+            //                     //                 </Reasoning>
+            //                     //               );
+            //                     //             default:
+            //                     //               return null;
+            //                     //           }
+            //                     //         })
+            //                     //       ) : null
+            //                     //     )}
+            //                     //   </div>
+            //                     // ))
+            //                   }
+            //                   {status === 'streaming' && <Loader />}
+            //                 </ConversationContent>
+            //                 <ConversationScrollButton />
+            //               </Conversation>
+            //             </div>
+            //
+            //             <PromptInput
+            //               onSubmit={(message: PromptInputMessage) => {
+            //                 const hasText = Boolean(message.text);
+            //                 const hasAttachments = Boolean(message.files?.length);
+            //                 if (!(hasText || hasAttachments)) {
+            //                   return;
+            //                 }
+            //                 sendMessage(
+            //                   {
+            //                     text: message.text || 'Sent with attachments',
+            //                     files: message.files
+            //                   },
+            //                   {
+            //                     body: {
+            //                       model: model,
+            //                       webSearch: webSearch,
+            //                     },
+            //                   },
+            //                 );
+            //                 setInput('');
+            //               }}
+            //               className="mt-4"
+            //               globalDrop
+            //               multiple
+            //             >
+            //               <PromptInputHeader>
+            //                 <PromptInputAttachments>
+            //                   {(attachment: any) => <PromptInputAttachment data={attachment} />}
+            //                 </PromptInputAttachments>
+            //               </PromptInputHeader>
+            //               <PromptInputBody>
+            //                 <PromptInputTextarea
+            //                   onChange={(e) => setInput(e.target.value)}
+            //                   value={input}
+            //                 />
+            //               </PromptInputBody>
+            //               <PromptInputFooter>
+            //                 <PromptInputTools>
+            //                   <PromptInputActionMenu>
+            //                     <PromptInputActionMenuTrigger />
+            //                     <PromptInputActionMenuContent>
+            //                       <PromptInputActionAddAttachments />
+            //                     </PromptInputActionMenuContent>
+            //                   </PromptInputActionMenu>
+            //                   <PromptInputButton
+            //                     variant={webSearch ? 'default' : 'ghost'}
+            //                     onClick={() => setWebSearch(!webSearch)}
+            //                   >
+            //                     <GlobeIcon size={16} />
+            //                     <span>Search</span>
+            //                   </PromptInputButton>
+            //                   <PromptInputSelect
+            //                     onValueChange={(value) => {
+            //                       setModel(value);
+            //                     }}
+            //                     value={model}
+            //                   >
+            //                     <PromptInputSelectTrigger>
+            //                       <PromptInputSelectValue />
+            //                     </PromptInputSelectTrigger>
+            //                     <PromptInputSelectContent>
+            //                       {models.map((model) => (
+            //                         <PromptInputSelectItem key={model.value} value={model.value}>
+            //                           {model.name}
+            //                         </PromptInputSelectItem>
+            //                       ))}
+            //                     </PromptInputSelectContent>
+            //                   </PromptInputSelect>
+            //                 </PromptInputTools>
+            //                 <PromptInputSubmit disabled={!input && !status} status={status} />
+            //               </PromptInputFooter>
+            //             </PromptInput>
+            //           </div>
+            //
+            //           {/* Code interaction buttons (replacing iframe buttons) */}
+            //           <div className="p-2 border-t flex gap-2">
+            //             <Button
+            //               variant="secondary"
+            //               size="sm"
+            //               className="flex-1"
+            //               onClick={() => {
+            //                 // Logic to insert generated code into editor
+            //                 if (messages.length > 0) {
+            //                   const lastMessage = messages[messages.length - 1];
+            //                   if (lastMessage.role === 'assistant' && lastMessage.content) {
+            //                     const content = typeof lastMessage.content === 'string'
+            //                       ? lastMessage.content
+            //                       : lastMessage.content.find((part: any) => part.type === 'text')?.text || '';
+            //
+            //                     // Attempt to parse the content as JSON to see if it's valid UI config
+            //                     try {
+            //                       const parsed = JSON.parse(content);
+            //                       // If it's valid JSON, update the code
+            //                       setCode(JSON.stringify(parsed, null, 2));
+            //                     } catch {
+            //                       // If it's not valid JSON, show as text in the editor
+            //                       if (editorRef.current) {
+            //                         const model = editorRef.current.getModel();
+            //                         if (model) {
+            //                           model.setValue(content);
+            //                         }
+            //                       }
+            //                     }
+            //                   }
+            //                 }
+            //               }}
+            //             >
+            //               Insert Code
+            //             </Button>
+            //           </div>
+            //         </div>
+            //       </div>
+            //     </div>
+            //   </ResizablePanel>
+            // </>
           )}
         </ResizablePanelGroup>
       ) : (
