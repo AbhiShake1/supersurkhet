@@ -74,8 +74,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
-  // Enhanced navigation structure with icons
-  const tabsWithHome = [
+  const _tabsWithHome = [
     {
       title: "Dashboard",
       icon: BarChart3,
@@ -88,18 +87,22 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       children: <QRCodePage slug={basePath} />,
     },
     {
-      title: "Users & Permissions",
-      icon: Users,
-      children: <RolesAndPermissionsPage slug={basePath} tabs={tabs} />,
-      group: "User Management",
-    },
-    {
       title: "Website UI",
       icon: Sigma,
       children: <CustomUiBuilderPage slug={basePath} />,
       group: "System Configuration"
     }
   ];
+
+  const tabsWithHome = [
+    ..._tabsWithHome,
+    {
+      title: "Users & Permissions",
+      icon: Users,
+      children: <RolesAndPermissionsPage slug={basePath} tabs={_tabsWithHome} />,
+      group: "User Management",
+    },
+  ]
 
   const data: SidebarItems = {
     items: tabsWithHome.map(tab => ({

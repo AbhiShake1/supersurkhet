@@ -23,6 +23,7 @@ import { Route as BusinessChatImport } from './routes/_business/chat'
 import { Route as AuthSettingsImport } from './routes/_auth/settings'
 import { Route as AuthAuthImport } from './routes/_auth/auth'
 import { Route as BusinessNameAdminIndexImport } from './routes/$businessName/admin/index'
+import { Route as BusinessNameAdminInvitationImport } from './routes/$businessName/admin/invitation'
 import { Route as BusinessNameAdminEditorImport } from './routes/$businessName/admin/editor'
 
 // Create/Update Routes
@@ -97,6 +98,13 @@ const BusinessNameAdminIndexRoute = BusinessNameAdminIndexImport.update({
   path: '/admin/',
   getParentRoute: () => BusinessNameRoute,
 } as any)
+
+const BusinessNameAdminInvitationRoute =
+  BusinessNameAdminInvitationImport.update({
+    id: '/admin/invitation',
+    path: '/admin/invitation',
+    getParentRoute: () => BusinessNameRoute,
+  } as any)
 
 const BusinessNameAdminEditorRoute = BusinessNameAdminEditorImport.update({
   id: '/admin/editor',
@@ -192,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessNameAdminEditorImport
       parentRoute: typeof BusinessNameImport
     }
+    '/$businessName/admin/invitation': {
+      id: '/$businessName/admin/invitation'
+      path: '/admin/invitation'
+      fullPath: '/$businessName/admin/invitation'
+      preLoaderRoute: typeof BusinessNameAdminInvitationImport
+      parentRoute: typeof BusinessNameImport
+    }
     '/$businessName/admin/': {
       id: '/$businessName/admin/'
       path: '/admin'
@@ -207,12 +222,14 @@ declare module '@tanstack/react-router' {
 interface BusinessNameRouteChildren {
   BusinessNameIndexRoute: typeof BusinessNameIndexRoute
   BusinessNameAdminEditorRoute: typeof BusinessNameAdminEditorRoute
+  BusinessNameAdminInvitationRoute: typeof BusinessNameAdminInvitationRoute
   BusinessNameAdminIndexRoute: typeof BusinessNameAdminIndexRoute
 }
 
 const BusinessNameRouteChildren: BusinessNameRouteChildren = {
   BusinessNameIndexRoute: BusinessNameIndexRoute,
   BusinessNameAdminEditorRoute: BusinessNameAdminEditorRoute,
+  BusinessNameAdminInvitationRoute: BusinessNameAdminInvitationRoute,
   BusinessNameAdminIndexRoute: BusinessNameAdminIndexRoute,
 }
 
@@ -245,6 +262,7 @@ export interface FileRoutesByFullPath {
   '/$businessName/': typeof BusinessNameIndexRoute
   '/apps': typeof AppsIndexRoute
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
+  '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin': typeof BusinessNameAdminIndexRoute
 }
 
@@ -260,6 +278,7 @@ export interface FileRoutesByTo {
   '/$businessName': typeof BusinessNameIndexRoute
   '/apps': typeof AppsIndexRoute
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
+  '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin': typeof BusinessNameAdminIndexRoute
 }
 
@@ -277,6 +296,7 @@ export interface FileRoutesById {
   '/$businessName/': typeof BusinessNameIndexRoute
   '/apps/': typeof AppsIndexRoute
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
+  '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
 }
 
@@ -295,6 +315,7 @@ export interface FileRouteTypes {
     | '/$businessName/'
     | '/apps'
     | '/$businessName/admin/editor'
+    | '/$businessName/admin/invitation'
     | '/$businessName/admin'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -309,6 +330,7 @@ export interface FileRouteTypes {
     | '/$businessName'
     | '/apps'
     | '/$businessName/admin/editor'
+    | '/$businessName/admin/invitation'
     | '/$businessName/admin'
   id:
     | '__root__'
@@ -324,6 +346,7 @@ export interface FileRouteTypes {
     | '/$businessName/'
     | '/apps/'
     | '/$businessName/admin/editor'
+    | '/$businessName/admin/invitation'
     | '/$businessName/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -378,6 +401,7 @@ export const routeTree = rootRoute
       "children": [
         "/$businessName/",
         "/$businessName/admin/editor",
+        "/$businessName/admin/invitation",
         "/$businessName/admin/"
       ]
     },
@@ -417,6 +441,10 @@ export const routeTree = rootRoute
     },
     "/$businessName/admin/editor": {
       "filePath": "$businessName/admin/editor.tsx",
+      "parent": "/$businessName"
+    },
+    "/$businessName/admin/invitation": {
+      "filePath": "$businessName/admin/invitation.tsx",
       "parent": "/$businessName"
     },
     "/$businessName/admin/": {

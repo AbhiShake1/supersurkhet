@@ -40,13 +40,6 @@ export function ManageOrganization({ slug }: ManageOrganizationProps) {
   const members = useOrgMembers(slug)
   const [showInviteForm, setShowInviteForm] = useState(false);
 
-  // Filter members based on search term
-  const filteredMembers = members.filter(member =>
-    true
-    // member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    // member.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   // Handle inviting a new member
   const handleInviteMember = (data: any) => {
     console.log("Inviting member:", data);
@@ -106,7 +99,7 @@ export function ManageOrganization({ slug }: ManageOrganizationProps) {
       <div className="flex-1 p-6">
         {activeTab === "members" && (
           <MembersTab
-            members={filteredMembers}
+            members={members}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             showInviteForm={showInviteForm}
@@ -218,6 +211,7 @@ const MembersTab = ({
                 member={member}
                 onUpdatePermissions={onUpdatePermissions}
                 onRemoveMember={onRemoveMember}
+                searchTerm={searchTerm}
               />
             ))}
           </tbody>
@@ -231,17 +225,21 @@ const MembersTab = ({
 const MemberRow = ({
   member: { userId, role, permissions, joinedAt },
   onUpdatePermissions,
-  onRemoveMember
+  onRemoveMember,
+  searchTerm,
 }: {
   member: Member;
   onUpdatePermissions: (id: string, permissions: string[]) => void;
   onRemoveMember: (id: string) => void;
+  searchTerm: string;
 }) => {
   const [editingPermissions, setEditingPermissions] = useState(false);
   const { data } = api.user.useGet({ keys: [userId?.substring(1)], single: true })
   const member = data?.[0]
 
   if (!member) return null
+
+  if (!!searchTerm && !member.name.toLowerCase().includes(searchTerm.toLowerCase())) return null
 
   return (
     <tr>

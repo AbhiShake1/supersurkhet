@@ -102,6 +102,13 @@ export const businessMemberSchema = z.object({
   joinedAt: z.number().optional()
 })
 
+export const businessInvitationSchema = z.object({
+  role: z.enum(["owner", "staff"]),
+  permissions: permissionSchema.optional(),
+  email: z.string(),
+  invitedAt: z.number().optional()
+})
+
 export const businessSchema = z
   .object({
     name: z.string().describe("Official name of the business"),
@@ -147,6 +154,7 @@ export const businessSchema = z
       .describe("Business icon")
       .optional(),
     members: z.record(z.string(), businessMemberSchema).optional(),
+    invitations: z.record(z.string(), businessInvitationSchema).optional(),
     uiBuilder: uiBuilderSchema.optional(),
   })
   .extend(table);
