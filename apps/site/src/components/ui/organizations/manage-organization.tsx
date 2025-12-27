@@ -6,13 +6,19 @@ import {
   Users,
   CreditCard,
   Search, Trash2,
-  UserPlus
+  UserPlus,
+  Mail
 } from "lucide-react";
 import { AutoForm } from "../autoform";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import type { BusinessMember } from "@/lib/schema";
 import { Avatar, AvatarImage, AvatarFallback } from "../avatar";
+import { sendMail } from "@/emails/send-mail";
+import InvitationEmail from "@/emails/invitation-template";
+import { useAuth } from "@/components/auth-provider";
+import { toast } from "sonner";
+import { render } from "@react-email/render";
 
 const inviteMemberSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -39,12 +45,63 @@ export function ManageOrganization({ slug }: ManageOrganizationProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const members = useOrgMembers(slug)
   const [showInviteForm, setShowInviteForm] = useState(false);
+  const { user } = useAuth();
+  const { data: businesses } = api.business.useGet({ keys: [slug], single: true });
+  const business = businesses?.[0];
+  const updateBusinessMutation = api.business.useUpdate();
 
   // Handle inviting a new member
-  const handleInviteMember = (data: any) => {
-    console.log("Inviting member:", data);
-    // In a real app, this would make an API call
-    setShowInviteForm(false);
+  const handleInviteMember = async (data: any) => {
+    try {
+      if (!business) {
+        toast.error("Business not found");
+      }
+
+      // Generate a unique token for the invitation
+      const invitationToken = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Create the invitation link with the token
+      const invitationUrl = `${window.location.origin}/${slug}/admin/invitation?token=${invitationToken}`;
+
+      // Send the invitation email
+      await sendMail({
+        data: {
+          from: "SuperSurkhet <onboarding@surkhet.app>",
+          to: data.email,
+          subject: `Invitation to join ${business!.name}`,
+          html: await render(
+            <InvitationEmail
+              inviterName={user?.name || user?.email || "A user"}
+              businessName={business!.name}
+              inviteeEmail={data.email}
+              role="staff" // Default role, can be changed based on requirements
+              invitationUrl={invitationUrl}
+            />
+          ),
+        },
+      });
+
+      await updateBusinessMutation.mutateAsync({
+        id: business!.id,
+        invitations: {
+          [invitationToken]: {
+            email: data.email,
+            role: "staff", // Default role
+            permissions: data.permissions.reduce((acc: any, perm: string) => {
+              acc[perm] = true;
+              return acc;
+            }, {}),
+            invitedAt: Date.now(),
+            token: invitationToken,
+          }
+        }
+      });
+
+      setShowInviteForm(false);
+    } catch (error) {
+      console.error("Error sending invitation:", error);
+      alert("Failed to send invitation. Please try again.");
+    }
   };
 
   // Handle updating member permissions
@@ -67,6 +124,7 @@ export function ManageOrganization({ slug }: ManageOrganizationProps) {
 
   const navigationItems = [
     { id: "members", label: "Members", icon: Users },
+    { id: "invitations", label: "Invitations", icon: Mail },
     { id: "billing", label: "Billing", icon: CreditCard },
   ];
 
@@ -107,6 +165,13 @@ export function ManageOrganization({ slug }: ManageOrganizationProps) {
             onInviteMember={handleInviteMember}
             onUpdatePermissions={handleUpdatePermissions}
             onRemoveMember={handleRemoveMember}
+          />
+        )}
+        {activeTab === "invitations" && (
+          <InvitationsTab
+            slug={slug}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
           />
         )}
         {activeTab === "billing" && (
@@ -285,4 +350,108 @@ const MemberRow = ({
     </tr>
   );
 };
+
+// Invitations Tab Component
+const InvitationsTab = ({
+  slug,
+  searchTerm,
+  setSearchTerm
+}: {
+  slug: string;
+  searchTerm: string;
+  setSearchTerm: (term: string) => void;
+}) => {
+  const invitations = useOrgInvitations(slug);
+  const filteredInvitations = invitations.filter(invitation =>
+    !searchTerm ||
+    invitation.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <Input
+          placeholder="Search invitations..."
+          type="search"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-[30%]"
+          leadingIcon={<Search className="h-4 w-4" />}
+        />
+      </div>
+
+      <div className="border rounded-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-card">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Email
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Role
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Permissions
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Invited On
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-card divide-y divide-gray-200">
+            {filteredInvitations.map((invitation) => (
+              <InvitationRow
+                key={invitation.email}
+                invitation={invitation}
+                searchTerm={searchTerm}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+// Invitation Row Component
+const InvitationRow = ({
+  invitation: { email, role, permissions, invitedAt },
+  searchTerm,
+}: {
+  invitation: any; // TODO: Define proper type
+  searchTerm: string;
+}) => {
+  if (
+    !!searchTerm &&
+    !email?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) return null;
+
+  return (
+    <tr>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="text-sm font-medium text-foreground">{email}</div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <Badge variant="secondary" className="rounded-xl">{role}</Badge>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="flex flex-wrap gap-1">
+          {role === "owner"
+            ? "*"
+            : permissions && `${Object.keys(permissions).length} Permissions`}
+        </div>
+      </td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+        {invitedAt && new Date(invitedAt).toLocaleString()}
+      </td>
+    </tr>
+  );
+};
+
+// Hook to get organization invitations
+function useOrgInvitations(slug: string) {
+  const { data } = api.business.useGet({ keys: [slug], single: true });
+  if (!data?.[0]?.invitations) return [];
+  return Object.values(data?.[0]?.invitations).filter(inv => typeof inv === "object" && !!inv.email);
+}
 

@@ -106,7 +106,9 @@ export const businessInvitationSchema = z.object({
   role: z.enum(["owner", "staff"]),
   permissions: permissionSchema.optional(),
   email: z.string(),
-  invitedAt: z.number().optional()
+  invitedAt: z.number().optional(),
+  token: z.string(),
+  expiresAt: z.number().optional()
 })
 
 export const businessSchema = z
