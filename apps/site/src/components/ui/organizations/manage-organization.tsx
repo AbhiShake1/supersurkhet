@@ -239,7 +239,13 @@ const MemberRow = ({
 
   if (!member) return null
 
-  if (!!searchTerm && !member.name.toLowerCase().includes(searchTerm.toLowerCase())) return null
+  if (
+    !!searchTerm &&
+    (
+      !member.name?.toLowerCase().includes(searchTerm.toLowerCase())
+      || !member.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  ) return null
 
   return (
     <tr>
