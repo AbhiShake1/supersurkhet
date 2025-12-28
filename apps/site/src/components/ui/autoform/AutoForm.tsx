@@ -66,6 +66,7 @@ export const ShadcnAutoFormFieldComponents = {
   phone: PhoneField,
   url: UrlField,
   permissions: PermissionsField,
+  timestamp: () => null,
 } as const;
 export type FieldTypes = keyof typeof ShadcnAutoFormFieldComponents;
 

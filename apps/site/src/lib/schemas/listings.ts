@@ -21,11 +21,12 @@ export const withLabel = <T extends z.ZodTypeAny>(
 
 // #region Base Schema
 export const table = {
-  created_by: z.string().describe("User ID of the creator").optional(),
   timestamp: z
     .number({ coerce: true })
-    .describe("Unix timestamp of the last update")
+    .describe("Created at")
+    .superRefine(fieldConfig({ fieldType: "timestamp" }))
     .optional(),
+  created_by: z.string().describe("Created by").optional(),
   _: z.object({ soul: z.string().optional() }).optional(),
 };
 // #endregion

@@ -14,236 +14,237 @@ import { CredenzaBody } from "../ui/credenza";
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]["fieldType"]>;
 
 export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
-	value: T;
-	schema: S;
+  value: T;
+  schema: S;
 }>;
 
 export function AutoPreview<T>({
-	field,
-	value,
-	baseSchema: schema,
+  field,
+  value,
+  baseSchema: schema,
 }: {
-	field: ParsedField;
-	value: T;
-	baseSchema: ZodObjectOrWrapped;
+  field: ParsedField;
+  value: T;
+  baseSchema: ZodObjectOrWrapped;
 }): ReactNode {
-	const Comp =
-		// @ts-expect-error
-		autoPreviewComponents[field.type] ?? autoPreviewComponents.fallback;
+  const Comp =
+    // @ts-expect-error
+    autoPreviewComponents[field.type] ?? autoPreviewComponents.fallback;
 
-	return <Comp value={value} schema={schema} />;
+  return <Comp value={value} schema={schema} />;
 }
 
 const DatePreview: AutoPreviewComponent<Date> = ({ value }) => {
-	if (!value) return <span className="text-muted-foreground">-</span>;
+  if (!value) return <span className="text-muted-foreground">-</span>;
 
-	// If value is a string, try to parse it
-	const date = typeof value === 'string' ? new Date(value) : value;
+  // If value is a string, try to parse it
+  const date = typeof value === 'string' ? new Date(value) : typeof value === 'number' ? new Date(value) : value;
 
-	if (Number.isNaN(date.getTime())) {
-		return <span className="text-muted-foreground">Invalid Date</span>;
-	}
+  if (Number.isNaN(date.getTime())) {
+    return <span className="text-muted-foreground">Invalid Date</span>;
+  }
 
-	return (
-		<span className="font-mono text-sm">
-			{date.toLocaleDateString('en-US', {
-				year: 'numeric',
-				month: 'short',
-				day: 'numeric',
-				hour: '2-digit',
-				minute: '2-digit'
-			})}
-		</span>
-	);
+  return (
+    <span className="font-mono text-sm">
+      {date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })}
+    </span>
+  );
 };
 
 const ImagePreview: AutoPreviewComponent<string> = ({ value }) => {
-	return (
-		<Dialog>
-			<DialogTrigger asChild>
-				<Button variant="ghost" className="h-auto p-0">
-					<img
-						src={value}
-						alt="preview"
-						className="max-h-[100px] w-auto object-contain"
-					/>
-				</Button>
-			</DialogTrigger>
-			<DialogContent className="max-h-[90vh] max-w-[90vw]">
-				<img
-					src={value}
-					alt="preview"
-					className="h-full w-full object-contain"
-				/>
-			</DialogContent>
-		</Dialog>
-	);
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" className="h-auto p-0">
+          <img
+            src={value}
+            alt="preview"
+            className="max-h-[100px] w-auto object-contain"
+          />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] max-w-[90vw]">
+        <img
+          src={value}
+          alt="preview"
+          className="h-full w-full object-contain"
+        />
+      </DialogContent>
+    </Dialog>
+  );
 };
 const NumberPreview: AutoPreviewComponent<number> = ({ value }) => <>{value}</>;
 const SelectPreview: AutoPreviewComponent<string> = ({ value }) => value;
 const StringPreview: AutoPreviewComponent<string> = ({ value }) => <>{value}</>;
 const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
-	if (!value) return null;
-	if (!("#" in value)) return null;
-	if (typeof value["#"] !== "string") return null;
-	const isEffect = schema instanceof z.ZodEffects;
-	if (!isEffect) return null;
-	const fullKey = value["#"];
-	const parsedSchema = schema.innerType()._def.valueType;
-	return (
-		<Drawer>
-			<DrawerTrigger asChild>
-				<button type="button">Click to expand</button>
-			</DrawerTrigger>
-			<DrawerContent className="overflow-scroll">
-				<CredenzaBody>
-					<AutoTable slug={fullKey} parsedSchema={parsedSchema} />
-				</CredenzaBody>
-			</DrawerContent>
-		</Drawer>
-	);
+  if (!value) return null;
+  if (!("#" in value)) return null;
+  if (typeof value["#"] !== "string") return null;
+  const isEffect = schema instanceof z.ZodEffects;
+  if (!isEffect) return null;
+  const fullKey = value["#"];
+  const parsedSchema = schema.innerType()._def.valueType;
+  return (
+    <Drawer>
+      <DrawerTrigger asChild>
+        <button type="button">Click to expand</button>
+      </DrawerTrigger>
+      <DrawerContent className="overflow-scroll">
+        <CredenzaBody>
+          <AutoTable slug={fullKey} parsedSchema={parsedSchema} />
+        </CredenzaBody>
+      </DrawerContent>
+    </Drawer>
+  );
 };
 
 const PhonePreview: AutoPreviewComponent<string> = ({ value }) => {
-	return <>{value ? value.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3") : "-"}</>;
+  return <>{value ? value.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3") : "-"}</>;
 };
 
 const UrlPreview: AutoPreviewComponent<string> = ({ value }) => {
-	if (!value) return <span className="text-muted-foreground">-</span>;
+  if (!value) return <span className="text-muted-foreground">-</span>;
 
-	try {
-		const url = new URL(value);
-		return (
-			<a
-				href={value}
-				target="_blank"
-				rel="noopener noreferrer"
-				className="text-primary hover:underline flex items-center gap-1"
-			>
-				{url.hostname}
-				<ExternalLink className="h-3 w-3" />
-			</a>
-		);
-	} catch {
-		return <span className="text-muted-foreground">{value}</span>;
-	}
+  try {
+    const url = new URL(value);
+    return (
+      <a
+        href={value}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary hover:underline flex items-center gap-1"
+      >
+        {url.hostname}
+        <ExternalLink className="h-3 w-3" />
+      </a>
+    );
+  } catch {
+    return <span className="text-muted-foreground">{value}</span>;
+  }
 };
 
 const ColorPreview: AutoPreviewComponent<string> = ({ value }) => {
-	if (!value) return <span className="text-muted-foreground">-</span>;
+  if (!value) return <span className="text-muted-foreground">-</span>;
 
-	return (
-		<div className="flex items-center gap-2">
-			<div
-				className="h-4 w-4 rounded border border-muted-foreground/30"
-				style={{ backgroundColor: value }}
-			/>
-			<span className="font-mono text-sm">{value.toUpperCase()}</span>
-		</div>
-	);
+  return (
+    <div className="flex items-center gap-2">
+      <div
+        className="h-4 w-4 rounded border border-muted-foreground/30"
+        style={{ backgroundColor: value }}
+      />
+      <span className="font-mono text-sm">{value.toUpperCase()}</span>
+    </div>
+  );
 };
 
 const FilePreview: AutoPreviewComponent<string> = ({ value }) => {
-	if (!value) return <span className="text-muted-foreground">-</span>;
+  if (!value) return <span className="text-muted-foreground">-</span>;
 
-	// Extract filename from path
-	const fileName = value.split("/").pop() || value;
+  // Extract filename from path
+  const fileName = value.split("/").pop() || value;
 
-	return (
-		<div className="flex items-center gap-2">
-			<FileText className="h-4 w-4 text-muted-foreground" />
-			<span className="text-sm truncate max-w-[150px]">{fileName}</span>
-		</div>
-	);
+  return (
+    <div className="flex items-center gap-2">
+      <FileText className="h-4 w-4 text-muted-foreground" />
+      <span className="text-sm truncate max-w-[150px]">{fileName}</span>
+    </div>
+  );
 };
 
 const RatingPreview: AutoPreviewComponent<number> = ({ value }) => {
-	if (!value) return <span className="text-muted-foreground">-</span>;
+  if (!value) return <span className="text-muted-foreground">-</span>;
 
-	return (
-		<div className="flex items-center gap-1">
-			<div className="flex">
-				{Array.from({ length: 5 }).map((_, i) => (
-					<Star
-						key={i}
-						className={`h-4 w-4 ${i < Math.floor(value)
-							? "fill-yellow-400 text-yellow-400"
-							: "text-gray-300"
-							}`}
-					/>
-				))}
-			</div>
-			<span className="text-sm font-medium">{value.toFixed(1)}</span>
-		</div>
-	);
+  return (
+    <div className="flex items-center gap-1">
+      <div className="flex">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Star
+            key={i}
+            className={`h-4 w-4 ${i < Math.floor(value)
+              ? "fill-yellow-400 text-yellow-400"
+              : "text-gray-300"
+              }`}
+          />
+        ))}
+      </div>
+      <span className="text-sm font-medium">{value.toFixed(1)}</span>
+    </div>
+  );
 };
 
 const TagsPreview: AutoPreviewComponent<string[]> = ({ value }) => {
-	if (!value || !Array.isArray(value) || value.length === 0) {
-		return <span className="text-muted-foreground">-</span>;
-	}
+  if (!value || !Array.isArray(value) || value.length === 0) {
+    return <span className="text-muted-foreground">-</span>;
+  }
 
-	return (
-		<div className="flex flex-wrap gap-1">
-			{value.slice(0, 3).map((tag, i) => (
-				<Badge key={i} variant="secondary" className="text-xs px-1.5 py-0.5">
-					{tag}
-				</Badge>
-			))}
-			{value.length > 3 && (
-				<Badge variant="secondary" className="text-xs px-1.5 py-0.5">
-					+{value.length - 3}
-				</Badge>
-			)}
-		</div>
-	);
+  return (
+    <div className="flex flex-wrap gap-1">
+      {value.slice(0, 3).map((tag, i) => (
+        <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0.5">
+          {tag}
+        </Badge>
+      ))}
+      {value.length > 3 && (
+        <Badge variant="secondary" className="text-xs px-1.5 py-0.5">
+          +{value.length - 3}
+        </Badge>
+      )}
+    </div>
+  );
 };
 
 const CurrencyPreview: AutoPreviewComponent<number> = ({ value }) => {
-	if (value === undefined || value === null) {
-		return <span className="text-muted-foreground">-</span>;
-	}
+  if (value === undefined || value === null) {
+    return <span className="text-muted-foreground">-</span>;
+  }
 
-	return (
-		<span className="font-medium">
-			{new Intl.NumberFormat("en-US", {
-				style: "currency",
-				currency: "USD",
-			}).format(value)}
-		</span>
-	);
+  return (
+    <span className="font-medium">
+      {new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(value)}
+    </span>
+  );
 };
 
 const BooleanPreview: AutoPreviewComponent<boolean> = ({ value }) => {
-	return value ? (
-		<CheckCircle2 className="text-green-500 size-4 w-full" />
-	) : (
-		<XCircle className="text-destructive w-full size-4" />
-	);
+  return value ? (
+    <CheckCircle2 className="text-green-500 size-4 w-full" />
+  ) : (
+    <XCircle className="text-destructive w-full size-4" />
+  );
 };
 
 const autoPreviewComponents: Record<
-	FieldType | "fallback",
-	AutoPreviewComponent<any>
+  FieldType | "fallback",
+  AutoPreviewComponent<any>
 > = {
-	boolean: BooleanPreview,
-	date: DatePreview,
-	datetime: DatePreview,
-	image: ImagePreview,
-	number: NumberPreview,
-	select: SelectPreview,
-	string: StringPreview,
-	record: RecordPreview,
-	password: () => "********",
-	richText: StringPreview,
-	editor: StringPreview,
-	color: ColorPreview,
-	file: FilePreview,
-	rating: RatingPreview,
-	slider: NumberPreview,
-	tags: TagsPreview,
-	currency: CurrencyPreview,
-	phone: PhonePreview,
-	url: UrlPreview,
-	fallback: () => "-",
+  boolean: BooleanPreview,
+  date: DatePreview,
+  datetime: DatePreview,
+  image: ImagePreview,
+  number: NumberPreview,
+  select: SelectPreview,
+  string: StringPreview,
+  record: RecordPreview,
+  password: () => "********",
+  richText: StringPreview,
+  editor: StringPreview,
+  color: ColorPreview,
+  file: FilePreview,
+  rating: RatingPreview,
+  slider: NumberPreview,
+  tags: TagsPreview,
+  currency: CurrencyPreview,
+  phone: PhonePreview,
+  url: UrlPreview,
+  timestamp: DatePreview,
+  fallback: () => "-",
 };

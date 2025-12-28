@@ -3,6 +3,8 @@ import type { DataTableRowAction, FilterVariant } from "@/types/data-table";
 import * as React from "react";
 import { useMemo } from "react";
 
+import { useAuth } from "@/components/auth-provider";
+
 import { DataTable } from "@/components/data-table";
 import { useDataTable } from "@/hooks/use-data-table";
 
@@ -29,6 +31,8 @@ import {
   type NestedSchemaType,
   type SchemaKeys,
   getNestedZodShape,
+  getSchema,
+  getShape,
   useCreate,
   useDelete,
   useGet,
@@ -142,6 +146,7 @@ export function AutoTable<T extends SchemaKeys>({
   const { data: __data = [], isLoading } = useGet(schemaName, slug);
   const _data = props.transformer?.(__data) ?? __data;
   const search = useSearch({ from: "__root__" });
+  const { user } = useAuth()
   const data = useMemo(() => {
     // @ts-expect-error
     const filters = search.filters;
@@ -249,7 +254,11 @@ export function AutoTable<T extends SchemaKeys>({
 
       // Create all records
       for (const record of validData) {
-        createMutation.mutate(record);
+        createMutation.mutate({
+          ...record,
+          // created_by: user?._?.soul ?? "anon",
+          timestamp: Date.now(),
+        });
       }
 
       // Reset file input
@@ -297,7 +306,7 @@ export function AutoTable<T extends SchemaKeys>({
                   values={formValues}
 
                   schema={schema}
-                  onSubmit={(b) => createMutation.mutate(b)}
+                  onSubmit={(b) => createMutation.mutate({ ...b, created_by: user?._?.soul ?? "anon", timestamp: Date.now() })}
                   formProps={{ id: "auto-table-add-form" }}
                 />
               </ScrollArea>
@@ -441,11 +450,11 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
     },
   ];
 
-  const parsedSchema = parseSchema(schema);
+  const parsedSchema = parseSchema(getSchema(schema));
 
   for (const field of parsedSchema.fields) {
     const { key, description } = field;
-    const childSchema = z.object({ [key]: schema.shape[key] });
+    const childSchema = z.object({ [key]: getShape(schema)[key] });
     if (["_"].includes(key)) continue;
 
     const column: ColumnDef<NestedSchemaType<T>> = {

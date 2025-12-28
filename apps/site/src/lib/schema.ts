@@ -28,6 +28,7 @@ import { qrFlowConfigSchema } from "./schemas/qr-flow-config-schema";
 import type { ReactNode } from "@tanstack/react-router";
 import { uiBuilderSchema } from "./schemas/ui-builder-schema";
 import { IconMoneybag } from "@tabler/icons-react";
+import NepaliDate from "nepali-datetime";
 
 function getPermissions() {
   return ["product"] as readonly [string, ...string[]];
@@ -40,7 +41,7 @@ const permissionEnum = z.string()
 export interface GTAAppConfig {
   schema: {
     [table: string]: {
-      schema: NonNullable<z.ZodObject<any>>;
+      schema: NonNullable<z.ZodObject<any> | z.ZodEffects<any>>;
       icon?: ReactNode,
       group?: string,
       components?: () => Promise<
@@ -167,7 +168,6 @@ export type BusinessType = z.infer<typeof businessSchema>["businessType"];
 export type BusinessMember = z.infer<typeof businessMemberSchema>;
 
 export const partySchema = z.object({
-  id: z.string().min(1),
   name: z.string().min(1),
   type: z.enum(["supplier", "customer", "both"]),
   phone: z.string().optional(),
@@ -178,10 +178,8 @@ export const partySchema = z.object({
 export type Party = z.infer<typeof partySchema>
 
 export const invoiceSchema = z.object({
-  id: z.string().min(1),
   invoiceNumber: z.string().min(1),
   type: z.enum(["purchase", "sale"]),
-  fiscalYear: z.string().min(4),
 
   partyId: z.string().min(1),
   issuedAt: z.string().datetime(),
@@ -189,18 +187,25 @@ export const invoiceSchema = z.object({
   items: z.record(
     z.string(),
     z.object({
-      productId: z.string().min(1),
-      quantity: z.number().positive(),
-      rate: z.number().int().nonnegative(), // paisa
-      total: z.number().int().nonnegative(),
+      product: productSchema,
+      quantity: z.number({ coerce: true }).positive(),
+      rate: z.number({ coerce: true }).int().nonnegative(), // paisa
+      total: z.number({ coerce: true }).int().nonnegative(),
     })
   ),
 
-  subTotal: z.number().int().nonnegative(),
-  tax: z.number().int().nonnegative().default(0),
-  total: z.number().int().nonnegative(),
+  subTotal: z.number({ coerce: true }).int().nonnegative(),
+  tax: z.number({ coerce: true }).int().nonnegative().default(0),
 })
   .extend(table)
+  .transform(invoice => ({
+    ...invoice,
+    total: invoice.subTotal + invoice.tax,
+    fiscalYear: (() => {
+      const year = new NepaliDate().getYear()
+      return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
+    })()
+  }))
 // .superRefine((invoice, ctx) => {
 //   const computedSubTotal = Object.values(invoice.items).reduce(
 //     (sum, item) => sum + item.total,
@@ -227,24 +232,21 @@ export const invoiceSchema = z.object({
 export type Invoice = z.infer<typeof invoiceSchema>
 
 export const transactionSchema = z.object({
-  id: z.string().min(1),
-  partyId: z.string().min(1),
-  invoiceId: z.string().min(1).optional(),
+  // party: partySchema,
+  // invoice: invoiceSchema,
 
-  type: z.enum(["payment", "receipt", "deposit"]),
-  amount: z.number().int().positive(),
-  date: z.string().datetime(),
+  type: z.enum(["payment", "receipt", "deposit"]).default("payment"),
+  amount: z.number({ coerce: true }).int().positive(),
 }).extend(table)
 
 export type Transaction = z.infer<typeof transactionSchema>
 
 export const inventoryLedgerSchema = z.object({
-  id: z.string().min(1),
-  productId: z.string().min(1),
-  invoiceId: z.string().min(1),
+  product: productSchema,
+  invoice: invoiceSchema,
 
-  quantityIn: z.number().nonnegative(),
-  quantityOut: z.number().nonnegative(),
+  quantityIn: z.number({ coerce: true }).nonnegative(),
+  quantityOut: z.number({ coerce: true }).nonnegative(),
   date: z.string().datetime(),
 })
   .extend(table)
@@ -394,8 +396,7 @@ export const chatMessageSchema = z
     sender_name: z.string().describe("Name of the sender"),
     timestamp: z
       .number({ coerce: true })
-      .int()
-      .describe("Unix timestamp of the message"),
+      .int(),
     delivered: z.boolean().default(false),
     read: z.boolean().default(false),
   })
@@ -406,7 +407,7 @@ export const recentlyUsedAppSchema = z
     appId: withLabel(z.string(), "App ID"),
     timestamp: z
       .number({ coerce: true })
-      .describe("Unix timestamp of when the app was used")
+      .describe("Created at")
       .default(() => Math.floor(Date.now() / 1000)),
     usageCount: z
       .number({ coerce: true })
@@ -538,65 +539,65 @@ export const featureSchema = createSchema({
     schema: partySchema,
     icon: Users,
     group: "Financial",
-    // components: async () => {
-    //   const { PartyManagement } = await import(
-    //     "@/components/ui/admin/party-management"
-    //   );
-    //   return [
-    //     {
-    //       name: "Suppliers & Customers",
-    //       component: PartyManagement,
-    //     },
-    //   ];
-    // },
+    components: async () => {
+      const { PartyManagement } = await import(
+        "@/components/ui/admin/party-management"
+      );
+      return [
+        {
+          name: "Suppliers & Customers",
+          component: PartyManagement,
+        },
+      ];
+    },
   },
   invoice: {
     schema: invoiceSchema,
     icon: IconMoneybag,
     group: "Financial",
-    // components: async () => {
-    //   const { InvoiceManagement } = await import(
-    //     "@/components/ui/admin/invoice-management"
-    //   );
-    //   return [
-    //     {
-    //       name: "Invoices",
-    //       component: InvoiceManagement,
-    //     },
-    //   ];
-    // },
+    components: async () => {
+      const { InvoiceManagement } = await import(
+        "@/components/ui/admin/invoice-management"
+      );
+      return [
+        {
+          name: "Invoices",
+          component: InvoiceManagement,
+        },
+      ];
+    },
   },
   transaction: {
     schema: transactionSchema,
     icon: IconMoneybag,
     group: "Financial",
-    // components: async () => {
-    //   const { TransactionManagement } = await import(
-    //     "@/components/ui/admin/transaction-management"
-    //   );
-    //   return [
-    //     {
-    //       name: "Transactions",
-    //       component: TransactionManagement,
-    //     },
-    //   ];
-    // },
+    components: async () => {
+      const { TransactionManagement } = await import(
+        "@/components/ui/admin/transaction-management"
+      );
+      return [
+        {
+          name: "Transactions",
+          component: TransactionManagement,
+        },
+      ];
+    },
   },
   inventoryLedger: {
     schema: inventoryLedgerSchema,
     icon: IconMoneybag,
     group: "Financial",
-    // components: async () => {
-    //   const { InventoryLedgerManagement } = await import(
-    //     "@/components/ui/admin/inventory-ledger-management"
-    //   );
-    //   return [
-    //     {
-    //       name: "Inventory Ledger",
-    //       component: InventoryLedgerManagement,
-    //     },
-    //   ];
-    // },
+    components: async () => {
+      const { InventoryLedgerManagement } = await import(
+        "@/components/ui/admin/inventory-ledger-management"
+      );
+      return [
+        {
+          name: "Inventory Ledger",
+          component: InventoryLedgerManagement,
+        },
+      ];
+    },
   },
   menuItem: {
     schema: menuItemSchema,

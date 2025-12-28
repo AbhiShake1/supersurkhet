@@ -5,7 +5,7 @@ import _ from "lodash";
 
 export type ParseOptions = {
   key: SchemaKeys;
-  shape: z.ZodObject<any>;
+  shape: z.ZodObject<any> | z.ZodEffects<any>;
   obj: Record<any, any>;
 };
 
@@ -19,7 +19,7 @@ function _parse<P extends ParseOptions>(
 
   const [head, ...tail] = keys;
 
-  const innerSchema = schema.shape[head as keyof P["shape"]];
+  const innerSchema = getShape(schema)[head as keyof P["shape"]];
 
   if (!head?.length || !innerSchema) return parser(schema, obj);
 
@@ -31,7 +31,16 @@ export function parseNestedZodShape<P extends ParseOptions>(
   obj: P["obj"],
   baseSchema: P["shape"],
 ) {
-  return _parse(key, obj, baseSchema, (shape, o) => shape.parse(o));
+  return _parse(key, obj, baseSchema, (shape, o) => getShape(shape).parse(o));
+}
+
+export function getShape<S extends ParseOptions["shape"]>(schema: S) {
+  return getSchema(schema).shape
+}
+
+export function getSchema<S extends ParseOptions["shape"]>(schema: S) {
+  if (schema instanceof z.ZodObject) return schema
+  return schema._def.schema
 }
 
 export function parseNestedZodType<P extends ParseOptions>(
@@ -46,7 +55,7 @@ export function parseNestedZodType<P extends ParseOptions>(
   // schema.shape.business.shape.restaurant.shape.menu._def.innerType.parse([])
   // return _parse(key, obj, (shape, o) => shape._def.innerType.parse(o))
   return _parse(key, obj, baseSchema, (shape, o) =>
-    (isPartial ? shape.partial() : shape).parse(o),
+    (isPartial ? getShape(shape).partial() : getShape(shape)).parse(o),
   );
 }
 
@@ -57,7 +66,8 @@ export function getNestedZodShape<P extends ParseOptions>(
   const keys = key.split("/");
   const [head, ...tail] = keys;
 
-  const innerSchema = schema.shape[head as keyof P["shape"]];
+  const shape = getShape(schema)
+  const innerSchema = shape[head as keyof P["shape"]];
 
   if (!head?.length || !innerSchema) return schema;
 

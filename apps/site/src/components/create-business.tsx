@@ -143,7 +143,7 @@ export function CreateBusiness({ children, ...props }: { children: React.ReactNo
       isActive: true,
       created_by: user?._?.soul ?? "anon",
       id: basePath,
-      timestamp: Date.now() / 1000,
+      timestamp: Date.now(),
       members: {
         [user?._?.soul ?? "anon"]: {
           role: "owner",

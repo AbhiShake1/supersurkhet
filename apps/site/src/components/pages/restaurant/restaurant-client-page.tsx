@@ -517,6 +517,7 @@ const _checkout = createServerFn({ method: "POST" })
   });
 
 export function CartButton({ slug }: { slug: string }) {
+  const { user } = useAuth();
   const { itemCount, items, clearCart, removeItem, updateQuantity, subtotal, notes, setNotes } =
     useCart();
   const createOrderMutation = api.order.useCreate({
@@ -547,6 +548,8 @@ export function CartButton({ slug }: { slug: string }) {
       orderStatus: "pending",
       paymentMethod: "cash",
       paymentStatus: "paid",
+      created_by: user?._?.soul ?? "anon",
+      timestamp: Date.now(),
     });
   };
 
