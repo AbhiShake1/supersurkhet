@@ -1,6 +1,7 @@
 import {
   Bed,
   Briefcase,
+  Banknote,
   Calendar,
   Car,
   Dumbbell,
@@ -13,9 +14,12 @@ import {
   MapIcon,
   Menu,
   MenuSquare,
+  Receipt,
   ShoppingBag,
   Users,
-  Wrench
+  Wrench,
+  Logs,
+  ListTodo,
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
@@ -217,10 +221,34 @@ export function getBusinessConfig({ slug }: { slug: string }): {
         icon: ShoppingBag,
       },
       {
+        schema: "party",
+        title: "Suppliers & Customers",
+        slug: slug,
+        icon: Users,
+      },
+      {
+        schema: "invoice",
+        title: "Invoices",
+        slug: slug,
+        icon: Receipt,
+      },
+      {
+        schema: "transaction",
+        title: "Transactions",
+        slug: slug,
+        icon: Banknote,
+      },
+      {
+        schema: "inventoryLedger",
+        title: "Inventory Ledger",
+        slug: slug,
+        icon: Logs,
+      },
+      {
         schema: "order",
         title: "Orders",
         slug: slug,
-        icon: Menu,
+        icon: ListTodo,
       },
     ],
   }

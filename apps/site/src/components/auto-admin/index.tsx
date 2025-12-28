@@ -1,15 +1,15 @@
 import * as Kanban from "@/components/ui/kanban";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import CollapsibleSidebar, { type SidebarItems } from "@/components/ui/collapsible-sidebar";
 import { api } from "@/lib/api";
-import { appSchema, type Business } from "@/lib/schema";
+import { appSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
 import type { NestedSchemaType, SchemaKeys } from "@gta/react-hooks";
 import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import _ from "lodash";
-import { GripVertical, QrCodeIcon, Settings, Search, Users, BarChart3, Bell, type LucideIcon, X, Sigma } from "lucide-react";
+import { GripVertical, QrCodeIcon, Settings, Search, BarChart3, Bell, type LucideIcon, X, Sigma } from "lucide-react";
 import type { ReactNode } from "react";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
@@ -18,9 +18,7 @@ import { Skeleton } from "../ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { AdminDashboard } from "../admin-dashboard";
 import { QRCodePage } from "../qr-code-page";
-import { RolesAndPermissionsPage } from "../roles-and-permissions-page";
 import { Input } from "../ui/input";
-import { Separator } from "../ui/separator";
 import Card from "../ui/minimal-card";
 import { useState, useEffect } from "react";
 import type { z } from "zod";
@@ -74,7 +72,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
-  const _tabsWithHome = [
+  const tabsWithHome = [
     {
       title: "Dashboard",
       icon: BarChart3,
@@ -93,16 +91,6 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       group: "System Configuration"
     }
   ];
-
-  const tabsWithHome = [
-    ..._tabsWithHome,
-    {
-      title: "Users & Permissions",
-      icon: Users,
-      children: <RolesAndPermissionsPage slug={basePath} tabs={_tabsWithHome} />,
-      group: "User Management",
-    },
-  ]
 
   const data: SidebarItems = {
     items: tabsWithHome.map(tab => ({
@@ -155,7 +143,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
   return (
     <SidebarProvider>
-      <CollapsibleSidebar data={data} businessName={business?.name} slug={business?.basePath} />
+      <CollapsibleSidebar tabs={tabsWithHome} data={data} businessName={business?.name} slug={business?.basePath} />
       <SidebarInset className="min-w-0">
         <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
           <h1 className="font-bold text-lg px-4">{currentItem.title}</h1>

@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import {
   Users,
   CreditCard,
-  Search, Trash2,
+  Search,
   UserPlus,
   Mail
 } from "lucide-react";
-import { AutoForm } from "../autoform";
+import { AutoForm, fieldConfig } from "../autoform";
 import { z } from "zod";
 import { api } from "@/lib/api";
 import type { BusinessMember } from "@/lib/schema";
@@ -19,28 +19,16 @@ import InvitationEmail from "@/emails/invitation-template";
 import { useAuth } from "@/components/auth-provider";
 import { toast } from "sonner";
 import { render } from "@react-email/render";
-
-const inviteMemberSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  permissions: z.array(z.string()).min(1, "At least one permission is required"),
-});
+import type { PossibleTabConfig } from "@/components/auto-admin";
 
 type Member = BusinessMember;
 
-const permissionOptions = [
-  { label: "Read", value: "read" },
-  { label: "Write", value: "write" },
-  { label: "Delete", value: "delete" },
-  { label: "Manage Members", value: "manage_members" },
-  { label: "Billing", value: "billing" },
-  { label: "Admin", value: "admin" }
-];
-
 interface ManageOrganizationProps {
   slug: string
+  tabs: PossibleTabConfig[]
 }
 
-export function ManageOrganization({ slug }: ManageOrganizationProps) {
+export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
   const [activeTab, setActiveTab] = useState("members");
   const [searchTerm, setSearchTerm] = useState("");
   const members = useOrgMembers(slug)
@@ -63,8 +51,8 @@ export function ManageOrganization({ slug }: ManageOrganizationProps) {
       // Create the invitation link with the token
       const invitationUrl = `${window.location.origin}/${slug}/admin/invitation?token=${invitationToken}`;
 
-      // Send the invitation email
-      await sendMail({
+      // Send the invitation email. dont wait
+      sendMail({
         data: {
           from: "SuperSurkhet <onboarding@surkhet.app>",
           to: data.email,
@@ -86,7 +74,7 @@ export function ManageOrganization({ slug }: ManageOrganizationProps) {
         invitations: {
           [invitationToken]: {
             email: data.email,
-            role: "staff", // Default role
+            role: "staff",
             permissions: data.permissions.reduce((acc: any, perm: string) => {
               acc[perm] = true;
               return acc;
@@ -100,7 +88,7 @@ export function ManageOrganization({ slug }: ManageOrganizationProps) {
       setShowInviteForm(false);
     } catch (error) {
       console.error("Error sending invitation:", error);
-      alert("Failed to send invitation. Please try again.");
+      toast.error("Failed to send invitation. Please try again.");
     }
   };
 
@@ -165,6 +153,8 @@ export function ManageOrganization({ slug }: ManageOrganizationProps) {
             onInviteMember={handleInviteMember}
             onUpdatePermissions={handleUpdatePermissions}
             onRemoveMember={handleRemoveMember}
+            tabs={tabs}
+            slug={slug}
           />
         )}
         {activeTab === "invitations" && (
@@ -201,7 +191,9 @@ const MembersTab = ({
   setShowInviteForm,
   onInviteMember,
   onUpdatePermissions,
-  onRemoveMember
+  onRemoveMember,
+  tabs,
+  slug,
 }: {
   members: Member[];
   searchTerm: string;
@@ -211,6 +203,8 @@ const MembersTab = ({
   onInviteMember: (data: any) => void;
   onUpdatePermissions: (id: string, permissions: string[]) => void;
   onRemoveMember: (id: string) => void;
+  tabs: PossibleTabConfig[]
+  slug: string
 }) => {
   return (
     <div className="space-y-6">
@@ -233,20 +227,11 @@ const MembersTab = ({
         <div className="border rounded-lg p-4 bg-card">
           <h3 className="text-lg font-medium mb-4">Invite New Member</h3>
           <AutoForm
-            schema={inviteMemberSchema}
+            schema={z.object({
+              email: z.string().email("Invalid email address"),
+              permissions: z.record(z.string(), z.boolean()).superRefine(fieldConfig({ fieldType: "permissions", customData: { tabs, slug } })),
+            })}
             onSubmit={onInviteMember}
-            fieldConfig={{
-              email: {
-                label: "Email Address",
-                placeholder: "Enter member's email"
-              },
-              permissions: {
-                label: "Permissions",
-                description: "Select the permissions to grant to this member",
-                fieldType: "select",
-                options: permissionOptions
-              }
-            }}
           />
         </div>
       )}
@@ -298,7 +283,6 @@ const MemberRow = ({
   onRemoveMember: (id: string) => void;
   searchTerm: string;
 }) => {
-  const [editingPermissions, setEditingPermissions] = useState(false);
   const { data } = api.user.useGet({ keys: [userId?.substring(1)], single: true })
   const member = data?.[0]
 

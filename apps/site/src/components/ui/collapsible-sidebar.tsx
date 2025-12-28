@@ -26,6 +26,7 @@ import { useProfile } from "@/hooks/use-profile";
 import { Dialog, DialogTrigger, DialogContent } from "./dialog";
 import { ManageOrganization } from "./organizations/manage-organization";
 import { ThemeToggle } from "../theme/theme-toggle";
+import type { PossibleTabConfig } from "../auto-admin";
 
 export interface SidebarItems {
   items: {
@@ -40,9 +41,10 @@ export interface CollapsibleSidebarProps {
   data: SidebarItems;
   businessName?: string;
   slug?: string;
+  tabs: PossibleTabConfig[]
 }
 
-const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessName, slug }) => {
+const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessName, slug, tabs }) => {
   const [open, setOpen] = useState(true);
   const [selected, setSelected] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,7 +96,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
     >
       {/* User profile section at the top */}
       <div className="flex-shrink-0">
-        <TitleSection open={open} businessName={businessName} slug={slug} />
+        <TitleSection open={open} businessName={businessName} slug={slug} tabs={tabs} />
 
         {/* Search bar */}
         {open && (
@@ -102,8 +104,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
             placeholder="Filter items..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="text-xs pl-8 mb-2"
-            leadingIcon={<Search className="h-4 w-4 mb-2" />}
+            className="text-xs pl-8 my-2"
+            leadingIcon={<Search className="h-4 w-4 my-2" />}
           />
         )}
       </div>
@@ -197,7 +199,7 @@ const Option: React.FC<{
   );
 };
 
-const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: string }> = ({ open, businessName, slug }) => {
+const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: string, tabs: PossibleTabConfig[] }> = ({ open, businessName, slug, tabs }) => {
   const { logout, isAuthenticated } = useAuth();
   const user = useProfile();
 
@@ -264,7 +266,7 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: stri
                     </DropdownMenuItem>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[70%] h-[80%] p-0 overflow-clip" hideClose>
-                    <ManageOrganization slug={slug} />
+                    <ManageOrganization slug={slug} tabs={tabs} />
                   </DialogContent>
                 </Dialog>
               </DropdownMenuGroup>

@@ -27,13 +27,15 @@ import { folderSchema } from "./schemas/folder-schema";
 import { qrFlowConfigSchema } from "./schemas/qr-flow-config-schema";
 import type { ReactNode } from "@tanstack/react-router";
 import { uiBuilderSchema } from "./schemas/ui-builder-schema";
+import { IconMoneybag } from "@tabler/icons-react";
 
 function getPermissions() {
   return ["product"] as readonly [string, ...string[]];
 }
 
 export type Permission = keyof ReturnType<typeof getPermissions>;
-const permissionEnum = z.lazy(() => z.enum(getPermissions()));
+const permissionEnum = z.string()
+// const permissionEnum = z.lazy(() => z.enum(getPermissions()));
 
 export interface GTAAppConfig {
   schema: {
@@ -163,6 +165,109 @@ export const businessSchema = z
 
 export type BusinessType = z.infer<typeof businessSchema>["businessType"];
 export type BusinessMember = z.infer<typeof businessMemberSchema>;
+
+export const partySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  type: z.enum(["supplier", "customer", "both"]),
+  phone: z.string().optional(),
+  panNumber: z.string().optional(),
+  createdAt: z.string().datetime(),
+}).extend(table);
+
+export type Party = z.infer<typeof partySchema>
+
+export const invoiceSchema = z.object({
+  id: z.string().min(1),
+  invoiceNumber: z.string().min(1),
+  type: z.enum(["purchase", "sale"]),
+  fiscalYear: z.string().min(4),
+
+  partyId: z.string().min(1),
+  issuedAt: z.string().datetime(),
+
+  items: z.record(
+    z.string(),
+    z.object({
+      productId: z.string().min(1),
+      quantity: z.number().positive(),
+      rate: z.number().int().nonnegative(), // paisa
+      total: z.number().int().nonnegative(),
+    })
+  ),
+
+  subTotal: z.number().int().nonnegative(),
+  tax: z.number().int().nonnegative().default(0),
+  total: z.number().int().nonnegative(),
+})
+  .extend(table)
+// .superRefine((invoice, ctx) => {
+//   const computedSubTotal = Object.values(invoice.items).reduce(
+//     (sum, item) => sum + item.total,
+//     0
+//   );
+//
+//   if (computedSubTotal !== invoice.subTotal) {
+//     ctx.addIssue({
+//       code: z.ZodIssueCode.custom,
+//       message: "Invoice subTotal must equal sum of item totals",
+//       path: ["subTotal"],
+//     });
+//   }
+//
+//   if (invoice.subTotal + invoice.tax !== invoice.total) {
+//     ctx.addIssue({
+//       code: z.ZodIssueCode.custom,
+//       message: "Invoice total must equal subTotal + tax",
+//       path: ["total"],
+//     });
+//   }
+// });
+
+export type Invoice = z.infer<typeof invoiceSchema>
+
+export const transactionSchema = z.object({
+  id: z.string().min(1),
+  partyId: z.string().min(1),
+  invoiceId: z.string().min(1).optional(),
+
+  type: z.enum(["payment", "receipt", "deposit"]),
+  amount: z.number().int().positive(),
+  date: z.string().datetime(),
+}).extend(table)
+
+export type Transaction = z.infer<typeof transactionSchema>
+
+export const inventoryLedgerSchema = z.object({
+  id: z.string().min(1),
+  productId: z.string().min(1),
+  invoiceId: z.string().min(1),
+
+  quantityIn: z.number().nonnegative(),
+  quantityOut: z.number().nonnegative(),
+  date: z.string().datetime(),
+})
+  .extend(table)
+// .superRefine((entry, ctx) => {
+//   const inQty = entry.quantityIn;
+//   const outQty = entry.quantityOut;
+//
+//   if (inQty === 0 && outQty === 0) {
+//     ctx.addIssue({
+//       code: z.ZodIssueCode.custom,
+//       message: "Either quantityIn or quantityOut must be greater than zero",
+//     });
+//   }
+//
+//   if (inQty > 0 && outQty > 0) {
+//     ctx.addIssue({
+//       code: z.ZodIssueCode.custom,
+//       message: "Only one of quantityIn or quantityOut can be greater than zero",
+//     });
+//   }
+// })
+
+export type InventoryLedger = z.infer<typeof inventoryLedgerSchema>
 
 export const membershipSchema = z
   .object({
@@ -428,6 +533,70 @@ export const featureSchema = createSchema({
         },
       ];
     },
+  },
+  party: {
+    schema: partySchema,
+    icon: Users,
+    group: "Financial",
+    // components: async () => {
+    //   const { PartyManagement } = await import(
+    //     "@/components/ui/admin/party-management"
+    //   );
+    //   return [
+    //     {
+    //       name: "Suppliers & Customers",
+    //       component: PartyManagement,
+    //     },
+    //   ];
+    // },
+  },
+  invoice: {
+    schema: invoiceSchema,
+    icon: IconMoneybag,
+    group: "Financial",
+    // components: async () => {
+    //   const { InvoiceManagement } = await import(
+    //     "@/components/ui/admin/invoice-management"
+    //   );
+    //   return [
+    //     {
+    //       name: "Invoices",
+    //       component: InvoiceManagement,
+    //     },
+    //   ];
+    // },
+  },
+  transaction: {
+    schema: transactionSchema,
+    icon: IconMoneybag,
+    group: "Financial",
+    // components: async () => {
+    //   const { TransactionManagement } = await import(
+    //     "@/components/ui/admin/transaction-management"
+    //   );
+    //   return [
+    //     {
+    //       name: "Transactions",
+    //       component: TransactionManagement,
+    //     },
+    //   ];
+    // },
+  },
+  inventoryLedger: {
+    schema: inventoryLedgerSchema,
+    icon: IconMoneybag,
+    group: "Financial",
+    // components: async () => {
+    //   const { InventoryLedgerManagement } = await import(
+    //     "@/components/ui/admin/inventory-ledger-management"
+    //   );
+    //   return [
+    //     {
+    //       name: "Inventory Ledger",
+    //       component: InventoryLedgerManagement,
+    //     },
+    //   ];
+    // },
   },
   menuItem: {
     schema: menuItemSchema,

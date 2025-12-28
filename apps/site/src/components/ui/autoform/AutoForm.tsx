@@ -34,6 +34,7 @@ import { CurrencyField } from "./components/CurrencyField";
 import { PhoneField } from "./components/PhoneField";
 import { UrlField } from "./components/UrlField";
 import { PasswordField } from "./components/PasswordField";
+import { PermissionsField } from "./components/PermissionsField";
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, "FieldWrapper"> = {
   Form,
@@ -64,6 +65,7 @@ export const ShadcnAutoFormFieldComponents = {
   currency: CurrencyField,
   phone: PhoneField,
   url: UrlField,
+  permissions: PermissionsField,
 } as const;
 export type FieldTypes = keyof typeof ShadcnAutoFormFieldComponents;
 

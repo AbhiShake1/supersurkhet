@@ -1,13 +1,12 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ChevronDown,
   ChevronRight
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
 import type { PossibleTabConfig } from "./auto-admin";
 import { generatePermissions } from "@/lib/permissions/generate-permissions";
 
@@ -22,19 +21,15 @@ export function RolesAndPermissionsPage({ slug, tabs }: RolesMatrixProps) {
   }, [tabs]);
 
   return (
-    <TooltipProvider>
-      <Card className="w-full max-w-4xl mx-auto">
-        <CardContent className="p-6 space-y-6">
-          <ScrollArea className="h-[500px] pr-4">
-            <div className="space-y-2">
-              {Object.entries(groupedPermissions).map(([feature, actions]) => (
-                <PermissionGroup key={feature} feature={feature} actions={actions} />
-              ))}
-            </div>
-          </ScrollArea>
-        </CardContent>
-      </Card>
-    </TooltipProvider>
+    <Card className="w-64 items-center justify-center">
+      <CardContent className="p-0 space-y-6">
+        <div className="space-y-2">
+          {Object.entries(groupedPermissions).map(([feature, actions]) => (
+            <PermissionGroup key={feature} feature={feature} actions={actions} />
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
