@@ -35,43 +35,30 @@ export const table = {
 
 export const baseListingSchema = z
   .object({
-    // businessId: z.string().describe("The business this listing belongs to"),
-    title: z.string().min(1).describe("Title or name of the listing"),
-    description: z.string().optional().describe("Detailed description"),
-    price: z
-      .number({ coerce: true })
-      .positive()
-      .describe("Price of the item/service"),
-    // currency: z.string().length(3).default("NPR"),
+    sku: z.string().describe("Stock Keeping Unit"),
+    barcode: z.string().optional().describe("Barcode"),
+    title: z.string().min(1).describe("Product Name"),
+    description: z.string().optional().describe("Product Description"),
     category: z.string().default("Others").optional(),
-    // tags: z.record(z.string(), z.boolean()).optional(),
+    costPrice: z.number({ coerce: true }).positive().describe("Cost Price"),
+    sellingPrice: z.number({ coerce: true }).positive().describe("Selling Price"),
+    stockQuantity: z.number({ coerce: true }).int().positive().describe("Quantity in Stock"),
+    reorderLevel: z.number({ coerce: true }).int().positive().describe("Reorder Level").superRefine(fieldConfig({
+      inputProps: {
+        placeholder: "You will be reminded to reorder this product when only this many is available in stock"
+      }
+    })),
     imageUrl: z
       .string()
       .describe("Image")
-      // .url()
       .superRefine(fieldConfig({ fieldType: "image" }))
       .optional(),
-    isFeatured: z.boolean().optional(),
-    isActive: z.boolean().default(true),
+    isFeatured: z.boolean({ coerce: true }).optional(),
+    isActive: z.boolean({ coerce: true }).default(true),
   })
   .extend(table);
 
 export const productSchema = baseListingSchema.extend({
-  sku: z.string().optional().describe("Stock Keeping Unit"),
-  // quantityAvailable: z.number({ coerce: true }).int().nonnegative().describe("Current quantity in stock"),
-  // unitOfMeasure: z.string().optional().describe("e.g., 'piece', 'kg'"),
-  imageUrl: z
-    .string()
-    .describe("Product Image")
-    // .url()
-    .superRefine(fieldConfig({ fieldType: "image" }))
-    .optional(),
-  isFeatured: z.boolean({ coerce: true }).optional(),
-  isActive: z.boolean({ coerce: true }).default(true),
-  price: z
-    .number({ coerce: true })
-    .positive()
-    .describe("Price of the item/service"),
 });
 
 export type Product = z.infer<typeof productSchema>;
