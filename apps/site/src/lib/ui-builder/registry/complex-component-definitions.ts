@@ -9,6 +9,7 @@ import { CodePanel } from '@/components/ui/ui-builder/components/code-panel';
 import { Markdown } from "@/components/ui/ui-builder/components/markdown";
 import { Icon, iconNames } from "@/components/ui/ui-builder/components/icon";
 import { Input, InputSchema } from "@/components/ui/input";
+import { InputGroup, InputGroupSchema, InputGroupAddon, InputGroupAddonSchema, InputGroupButton, InputGroupButtonSchema, InputGroupText, InputGroupTextSchema, InputGroupInput, InputGroupInputSchema, InputGroupTextarea, InputGroupTextareaSchema } from "@/components/ui/input-group";
 import { classNameFieldOverrides, childrenFieldOverrides, iconNameFieldOverrides, commonFieldOverrides, childrenAsTipTapFieldOverrides, childrenAsTextareaFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
 
 import { UserAvatarDropdown } from '@/components/user/user-avatar-dropdown';
@@ -197,6 +198,103 @@ export const complexComponentDefinitions: ComponentRegistry = {
       leadingIcon: (l) => childrenFieldOverrides(l, { optionsFilter: (k) => k.toLowerCase().includes("icon") }),
       trailingIcon: (l) => childrenFieldOverrides(l, { optionsFilter: (k) => k.toLowerCase().includes("icon") }),
     }
+  },
+
+  // input Group
+
+  InputGroup: {
+    component: InputGroup,
+    schema: InputGroupSchema,
+    from: "@/components/ui/input-group",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [
+      {
+        id: "input-group-input-1",
+        type: "InputGroupInput",
+        name: "InputGroupInput",
+        props: {
+          placeholder: "Search...",
+        },
+        children: []
+      },
+      {
+        id: "input-group-addon-1",
+        type: "InputGroupAddon",
+        name: "InputGroupAddon",
+        props: {
+          align: "inline-end",
+          className: "ml-auto",
+        }, children: [
+          {
+            id: "results-text",
+            type: "InputGroupText",
+            name: "InputGroupText",
+            props: {},
+            children: "12 results",
+          },
+
+        ],
+      },
+      // {
+      //   id: "input-group-addon-2",
+      //   type: "InputGroupAddon",
+      //   name: "InputGroupAddon",
+      //   props: {
+      //     props: {
+      //       align: "inline-end",
+      //       className: "ml-auto",
+      //     },
+      //   },
+      //   children: [
+      //     {
+      //       id: "results-text",
+      //       type: "InputGroupText",
+      //       name: "InputGroupText",
+      //       props: {},
+      //       children: "12 results",
+      //     },
+      //   ],
+      // },
+    ],
+  },
+  InputGroupAddon: {
+    component: InputGroupAddon,
+    schema: InputGroupAddonSchema,
+    from: "@/components/ui/input-group",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+  },
+  InputGroupButton: {
+    component: InputGroupButton,
+    schema: InputGroupButtonSchema,
+    from: "@/components/ui/input-group",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+
+  },
+  InputGroupText: {
+    component: InputGroupText,
+    schema: InputGroupTextSchema,
+    from: "@/components/ui/input-group",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+
+  },
+  InputGroupInput: {
+    component: InputGroupInput,
+    schema: InputGroupInputSchema,
+    from: "@/components/ui/input-group",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+
+  },
+  InputGroupTextarea: {
+    component: InputGroupTextarea,
+    schema: InputGroupTextareaSchema,
+    from: "@/components/ui/input-group",
+    fieldOverrides: commonFieldOverrides(),
+    defaultChildren: [],
+
   },
 
   ...dialogComponentDefinitions,
