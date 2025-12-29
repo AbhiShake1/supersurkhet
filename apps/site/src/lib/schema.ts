@@ -29,6 +29,7 @@ import type { ReactNode } from "@tanstack/react-router";
 import { uiBuilderSchema } from "./schemas/ui-builder-schema";
 import { IconMoneybag } from "@tabler/icons-react";
 import NepaliDate from "nepali-datetime";
+import { saleSchema } from "./schemas/sales";
 
 function getPermissions() {
   return ["product"] as readonly [string, ...string[]];
@@ -569,6 +570,11 @@ export const featureSchema = createSchema({
         },
       ];
     },
+  },
+  sale: {
+    schema: saleSchema,
+    icon: DollarSign,
+    group: "Financial",
   },
   transaction: {
     schema: transactionSchema,

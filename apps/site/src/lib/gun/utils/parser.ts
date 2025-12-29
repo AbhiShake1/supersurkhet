@@ -34,13 +34,30 @@ export function parseNestedZodShape<P extends ParseOptions>(
   return _parse(key, obj, baseSchema, (shape, o) => getShape(shape).parse(o));
 }
 
-export function getShape<S extends ParseOptions["shape"]>(schema: S) {
-  return getSchema(schema).shape
+type UnwrapObject<S> =
+  S extends z.ZodEffects<
+    z.ZodObject<infer Shape, infer UK, infer Catchall, infer Out, infer In>
+  >
+  ? z.ZodObject<Shape, UK, Catchall, Out, In>
+  : S extends z.ZodObject<infer Shape, infer UK, infer Catchall, infer Out, infer In>
+  ? z.ZodObject<Shape, UK, Catchall, Out, In>
+  : never;
+
+type ObjectLike =
+  | z.ZodObject<any>
+  | z.ZodEffects<z.ZodObject<any>>;
+
+export function getSchema<S extends ObjectLike>(
+  schema: S
+): UnwrapObject<S> {
+  if (schema instanceof z.ZodEffects) {
+    return schema._def.schema as UnwrapObject<S>;
+  }
+  return schema as unknown as UnwrapObject<S>;
 }
 
-export function getSchema<S extends ParseOptions["shape"]>(schema: S) {
-  if (schema instanceof z.ZodObject) return schema
-  return schema._def.schema
+export function getShape<S extends ObjectLike>(schema: S) {
+  return getSchema(schema).shape;
 }
 
 export function parseNestedZodType<P extends ParseOptions>(

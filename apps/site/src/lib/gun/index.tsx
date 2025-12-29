@@ -14,18 +14,29 @@ type ExtractFromShape<T extends z.ZodObject<any>> = {
   : "";
 }[keyof z.infer<T>];
 
-type FindNestedShape<
+type UnwrapEffects<T> =
+  T extends z.ZodEffects<infer Inner>
+  ? UnwrapEffects<Inner>
+  : T;
+
+type FindNestedShapeInternal<
   T extends z.ZodObject<any>,
   K extends string,
-> = K extends `${infer Head}.${infer Tail}`
+> =
+  K extends `${infer Head}.${infer Tail}`
   ? Head extends keyof T["shape"]
-  ? T["shape"][Head] extends z.ZodObject<any>
-  ? FindNestedShape<z.ZodObject<T["shape"][Head]["shape"]>, Tail>
+  ? UnwrapEffects<T["shape"][Head]> extends z.ZodObject<infer Shape>
+  ? FindNestedShapeInternal<z.ZodObject<Shape>, Tail>
   : never
   : never
   : K extends keyof T["shape"]
-  ? T["shape"][K]
+  ? UnwrapEffects<T["shape"][K]>
   : never;
+
+type FindNestedShape<
+  T extends GTAAppConfig["schema"],
+  K extends string,
+> = FindNestedShapeInternal<T, K>;
 
 export type SchemaKeys = ExtractFromShape<GTAAppConfig["schema"]>;
 export type NestedSchema<K extends SchemaKeys> = FindNestedShape<

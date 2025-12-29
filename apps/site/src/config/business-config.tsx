@@ -1,7 +1,6 @@
 import {
   Bed,
   Briefcase,
-  Banknote,
   Calendar,
   Car,
   Dumbbell,
@@ -18,20 +17,81 @@ import {
   ShoppingBag,
   Users,
   Wrench,
-  Logs,
   ListTodo,
   ShoppingCart,
-  ChartLine,
+  DollarSign,
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
 import type { AutoTableTab } from "@/components/auto-admin";
 import { StockImportsPage } from "@/components/pages/retail/stock-imports-page";
-import { SalesPage } from "@/components/pages/retail/sales-page";
+import { salesItemSchema } from "@/lib/schemas/sales";
+import z from "zod";
+import { fieldConfig } from "@/components/ui/autoform";
+import { api } from "@/lib/api";
+import { useMemo } from "react";
 
-export function getBusinessConfig({ slug }: { slug: string }): {
+export type BusinessConfigReturn = {
   [B in BusinessType]?: AutoTableTab<any>[];
-} {
+}
+
+export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale"> {
+  const { data: products = [] } = api.product.useGet({
+    keys: [slug],
+  })
+  const productsBySoul = useMemo(() => new Map(
+    products
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [products])
+  return {
+    schema: "sale",
+    title: "Sales",
+    icon: DollarSign,
+    slug,
+    fieldOverrides: {
+      items: salesItemSchema
+        .extend({
+          product: z.string().describe("Product")
+            .superRefine(fieldConfig({
+              fieldType: "select",
+              customData: {
+                options: products.filter(p => !!p?._?.soul)
+                  .map(p => [p._!.soul!, p.title])
+              },
+            })),
+          quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),
+        })
+        .array()
+        .min(1, { message: "Please add at least one item." })
+        .superRefine((items, ctx) => {
+          items.forEach((item, index) => {
+            const product = productsBySoul.get(item.product)
+
+            if (!product) return
+
+            if (item.quantity > product.stockQuantity) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Only ${product.stockQuantity} items available in stock`,
+                path: [index, "quantity"],
+              })
+            }
+          })
+        })
+        .describe("Items Sold"),
+    },
+    onCreate(...args) {
+      console.log("onCreate", args)
+    },
+    onUpdate(...args) {
+      console.log("onUpdate", args)
+    },
+  }
+}
+
+export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigReturn {
+  const salesConfig = useSalesConfig({ slug });
   return {
     food: [
       {
@@ -236,12 +296,13 @@ export function getBusinessConfig({ slug }: { slug: string }): {
         slug,
         children: <StockImportsPage slug={slug} />,
       },
-      {
-        title: "Sales",
-        icon: ChartLine,
-        slug,
-        children: <SalesPage slug={slug} />,
-      },
+      salesConfig,
+      // {
+      //   title: "Sales",
+      //   icon: ChartLine,
+      //   slug,
+      //   children: <SalesPage slug={slug} />,
+      // },
       {
         schema: "invoice",
         title: "Invoices",

@@ -198,6 +198,9 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
               slug={currentItem.slug ?? basePath}
               transformer={currentItem.transformer}
               extender={currentItem.extender}
+              fieldOverrides={currentItem.fieldOverrides}
+              onCreate={currentItem.onCreate}
+              onUpdate={currentItem.onUpdate}
             />
           ) : !components?.length ? (
             <AutoTable
@@ -205,6 +208,9 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
               slug={currentItem.slug ?? basePath}
               transformer={currentItem.transformer}
               extender={currentItem.extender}
+              fieldOverrides={currentItem.fieldOverrides}
+              onCreate={currentItem.onCreate}
+              onUpdate={currentItem.onUpdate}
             />
           ) : (
             <Tabs
@@ -235,10 +241,13 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 <Card className="border rounded-lg shadow-sm">
                   <div className="p-4">
                     <AutoTable
+                      fieldOverrides={currentItem.fieldOverrides}
                       schema={currentItem.schema}
                       slug={currentItem.slug ?? basePath}
                       transformer={currentItem.transformer}
                       extender={currentItem.extender}
+                      onCreate={currentItem.onCreate}
+                      onUpdate={currentItem.onUpdate}
                     />
                   </div>
                 </Card>

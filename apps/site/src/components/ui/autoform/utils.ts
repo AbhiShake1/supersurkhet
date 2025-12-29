@@ -5,6 +5,7 @@ import type { PossibleTabConfig } from "@/components/auto-admin";
 type FieldConfigCustomData = {
   tabs?: PossibleTabConfig[];
   slug?: string;
+  options?: [string, string][];
 }
 
 export const fieldConfig = buildZodFieldConfig<

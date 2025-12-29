@@ -19,7 +19,7 @@ import { MentionInput } from "@/components/ui/mention-input";
 import { MentionInputTextarea } from "@/components/ui/mention-input-textarea";
 import { Combobox } from "@/components/ui/combobox";
 import { useBusiness } from "@/contexts/business-context";
-import { getBusinessConfig } from "@/config/business-config";
+import { useBusinessConfig } from "@/config/business-config";
 
 export const classNameFieldOverrides: FieldConfigFunction = () => {
   return {
@@ -250,8 +250,10 @@ export const tablePickerFieldOverrides = (layer: ComponentLayer) => {
       // Use basePath as the slug, fallback to id if basePath is not available
       const slug = business?.basePath || business?.id;
 
+      const businessConfig = useBusinessConfig({ slug })
+
       // Get the business config for the current business
-      const config = businessType && slug ? getBusinessConfig({ slug })[businessType] : [];
+      const config = businessType && slug ? businessConfig[businessType] : [];
 
       // Extract schema names from the business config for options
       const options = config?.map((configItem) => ({

@@ -28,6 +28,7 @@ import { appSchema } from "@/lib/schema";
 import { applySorting } from "@/lib/sort";
 import { parseSchema } from "@autoform/zod";
 import {
+  type NestedSchema,
   type NestedSchemaType,
   type SchemaKeys,
   getNestedZodShape,
@@ -85,6 +86,7 @@ import { AutoPreview } from "../auto-preview";
 import { api } from "@/lib/api";
 import { BadgeMarquee } from "../ui/badge-marquee";
 import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
+import type { FieldConfigFunction } from "../ui/ui-builder/types";
 
 type AggregationType =
   | 'sum'
@@ -118,14 +120,15 @@ export type AutoTableProps<T extends SchemaKeys> = {
   enableGlobalFiltering?: boolean;
   enablePagination?: boolean;
   defaultPageSize?: number;
-} & (
-    {
-      schema: T;
-    }
-    | {
-      parsedSchema: z.ZodObject<any>;
-    }
-  );
+  fieldOverrides?: Partial<Record<keyof NestedSchema<T>["shape"], z.ZodTypeAny>>;
+  onCreate?: (data: GunMessagePut, variables: UpdaterParams<SchemaKeys>, context: unknown) => unknown
+  onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
+} & ({
+  schema: T;
+}
+  | {
+    parsedSchema: z.ZodObject<any>;
+  });
 
 export function AutoTable<T extends SchemaKeys>({
   className,
@@ -168,22 +171,35 @@ export function AutoTable<T extends SchemaKeys>({
   }, [_data, search]);
 
   const createMutation = useCreate({
-    keys: [schemaName, slug], onSuccess() {
+    keys: [schemaName, slug],
+    onSuccess(...args) {
       setDialogOpen(false)
+      props?.onCreate?.(...args)
     }
   });
   const updateMutation = useUpdate({
     keys: [schemaName, slug],
-    onSuccess() {
+    onSuccess(...args) {
       setDialogOpen(false)
+      props?.onUpdate?.(...args)
     }
   });
-  const { mutate: onDelete } = useDelete({ keys: [schemaName, slug] });
-  const _schema =
-    "parsedSchema" in props
-      ? props.parsedSchema
-      : getNestedZodShape(schemaName, appSchema.schemaShape);
-  const schema = props.extender?.(_schema) ?? _schema;
+  const { mutate: onDelete } = useDelete({
+    keys: [schemaName, slug],
+    onSuccess(...args) {
+
+    },
+  });
+  const _schema = (() => {
+    if ("parsedSchema" in props) {
+      return props.parsedSchema;
+    }
+
+    const zodShape = getNestedZodShape(schemaName, appSchema.schemaShape);
+
+    return getSchema(zodShape);
+  })()
+  const schema = props.extender?.(_schema) ?? _schema.extend(props.fieldOverrides ?? {});
   const [rowAction, setRowAction] = React.useState<DataTableRowAction<
     NestedSchemaType<T>
   > | null>(null);

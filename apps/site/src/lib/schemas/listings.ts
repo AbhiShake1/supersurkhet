@@ -43,7 +43,7 @@ export const baseListingSchema = z
     costPrice: z.number({ coerce: true }).positive().describe("Cost Price"),
     sellingPrice: z.number({ coerce: true }).positive().describe("Selling Price"),
     stockQuantity: z.number({ coerce: true }).int().positive().describe("Quantity in Stock"),
-    reorderLevel: z.number({ coerce: true }).int().positive().describe("Reorder Level").superRefine(fieldConfig({
+    reorderLevel: z.number({ coerce: true }).int().positive().optional().describe("Reorder Level").superRefine(fieldConfig({
       inputProps: {
         placeholder: "You will be reminded to reorder this product when only this many is available in stock"
       }

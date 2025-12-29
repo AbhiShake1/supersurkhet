@@ -2,7 +2,7 @@ import { useAuth } from "@/components/auth-provider";
 import { AutoAdmin } from "@/components/auto-admin";
 import { useLoginPrompt } from "@/components/login-prompt-provider";
 import { NotFound } from "@/components/ui/not-found";
-import { getBusinessConfig } from "@/config/business-config";
+import { useBusinessConfig } from "@/config/business-config";
 import { BusinessProvider } from "@/contexts/business-context";
 import { api } from "@/lib/api";
 import { createFileRoute } from "@tanstack/react-router";
@@ -42,8 +42,8 @@ export const Route = createFileRoute("/$businessName/admin/")({
       return <NotFound />
     }
 
-    function getChild() {
-      const config = getBusinessConfig({ slug: businessName })[business!.businessType!];
+    function Child() {
+      const config = useBusinessConfig({ slug: businessName })[business!.businessType!];
       if (!config?.length) return (
         <div className="p-2">
           <h3>{businessName} Admin Dashboard</h3>
@@ -56,7 +56,9 @@ export const Route = createFileRoute("/$businessName/admin/")({
       return <AutoAdmin tabs={config ?? []} />
     }
 
-    return <BusinessProvider business={business}>{getChild()}</BusinessProvider>
+    return <BusinessProvider business={business}>
+      <Child />
+    </BusinessProvider>
   },
 });
 
