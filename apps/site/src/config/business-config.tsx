@@ -39,6 +39,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
   const { data: products = [] } = api.product.useGet({
     keys: [slug],
   })
+  const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
@@ -57,7 +58,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
               fieldType: "select",
               customData: {
                 options: products.filter(p => !!p?._?.soul)
-                  .map(p => [p._!.soul!, p.title])
+                  .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`])
               },
             })),
           quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),
@@ -73,7 +74,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
             if (item.quantity > product.stockQuantity) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: `Only ${product.stockQuantity} items available in stock`,
+                message: `Only ${product.stockQuantity} items of ${product.title} available in stock`,
                 path: [index, "quantity"],
               })
             }
@@ -81,11 +82,21 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
         })
         .describe("Items Sold"),
     },
-    onCreate(...args) {
-      console.log("onCreate", args)
+    onCreate(_, variables) {
+      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+      Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+        const product = productsBySoul.get(productId)
+        if (!product?._?.soul) return
+        updateProduct({ id: product?._?.soul, stockQuantity: product?.stockQuantity - quantity })
+      })
     },
-    onUpdate(...args) {
-      console.log("onUpdate", args)
+    onUpdate(_, variables) {
+      // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+      // Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+      //   const product = productsBySoul.get(productId)
+      //   if (!product?._?.soul) return
+      //   updateProduct({ id: product?._?.soul, stockQuantity: product?.stockQuantity + quantity })
+      // })
     },
   }
 }

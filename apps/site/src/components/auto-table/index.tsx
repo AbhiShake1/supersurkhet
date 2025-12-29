@@ -31,6 +31,7 @@ import {
   type NestedSchema,
   type NestedSchemaType,
   type SchemaKeys,
+  type UpdaterParams,
   getNestedZodShape,
   getSchema,
   getShape,
@@ -87,6 +88,7 @@ import { api } from "@/lib/api";
 import { BadgeMarquee } from "../ui/badge-marquee";
 import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
 import type { FieldConfigFunction } from "../ui/ui-builder/types";
+import type { GunMessagePut } from "gun";
 
 type AggregationType =
   | 'sum'
@@ -121,7 +123,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
   enablePagination?: boolean;
   defaultPageSize?: number;
   fieldOverrides?: Partial<Record<keyof NestedSchema<T>["shape"], z.ZodTypeAny>>;
-  onCreate?: (data: GunMessagePut, variables: UpdaterParams<SchemaKeys>, context: unknown) => unknown
+  onCreate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
   onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
 } & ({
   schema: T;
