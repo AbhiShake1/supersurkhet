@@ -20,10 +20,12 @@ import {
   Wrench,
   Logs,
   ListTodo,
+  ShoppingCart,
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
 import type { AutoTableTab } from "@/components/auto-admin";
+import { StockImportsPage } from "@/components/pages/retail/stock-imports-page";
 
 export function getBusinessConfig({ slug }: { slug: string }): {
   [B in BusinessType]?: AutoTableTab<any>[];
@@ -215,16 +217,22 @@ export function getBusinessConfig({ slug }: { slug: string }): {
 
     retail: [
       {
+        schema: "party",
+        title: "Parties",
+        slug: slug,
+        icon: Users,
+      },
+      {
         schema: "product",
         title: "Products",
         slug: slug,
         icon: ShoppingBag,
       },
       {
-        schema: "party",
-        title: "Suppliers & Customers",
+        title: "Stock Imports",
+        icon: ShoppingCart,
         slug: slug,
-        icon: Users,
+        children: <StockImportsPage />,
       },
       {
         schema: "invoice",
