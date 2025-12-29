@@ -234,13 +234,13 @@ export function getBusinessConfig({ slug }: { slug: string }): {
         title: "Stock Imports",
         icon: ShoppingCart,
         slug,
-        children: <StockImportsPage />,
+        children: <StockImportsPage slug={slug} />,
       },
       {
         title: "Sales",
         icon: ChartLine,
         slug,
-        children: <SalesPage />,
+        children: <SalesPage slug={slug} />,
       },
       {
         schema: "invoice",
@@ -248,18 +248,18 @@ export function getBusinessConfig({ slug }: { slug: string }): {
         slug: slug,
         icon: Receipt,
       },
-      {
-        schema: "transaction",
-        title: "Transactions",
-        slug: slug,
-        icon: Banknote,
-      },
-      {
-        schema: "inventoryLedger",
-        title: "Inventory Ledger",
-        slug: slug,
-        icon: Logs,
-      },
+      // {
+      //   schema: "transaction",
+      //   title: "Transactions",
+      //   slug: slug,
+      //   icon: Banknote,
+      // },
+      // {
+      //   schema: "inventoryLedger",
+      //   title: "Inventory Ledger",
+      //   slug: slug,
+      //   icon: Logs,
+      // },
       {
         schema: "order",
         title: "Orders",
