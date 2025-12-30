@@ -58,7 +58,13 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
               fieldType: "select",
               customData: {
                 options: products.filter(p => !!p?._?.soul)
-                  .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`])
+                  .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+                onValueChange: (val, path, form) => {
+                  const product = productsBySoul.get(val)
+                  if (!product) return
+                  const [itemsKey, index] = path
+                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+                }
               },
             })),
           quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),
