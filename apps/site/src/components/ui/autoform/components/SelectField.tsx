@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/select";
 import type { AutoFormFieldProps } from "@autoform/react";
 import type React from "react";
+import { useFormContext } from "react-hook-form";
 
 export const SelectField: React.FC<AutoFormFieldProps> = ({
   field,
@@ -18,11 +19,13 @@ export const SelectField: React.FC<AutoFormFieldProps> = ({
 }) => {
   const { key, ...props } = inputProps;
   const options = (field.fieldConfig?.customData?.options || field.options) as typeof field.options
+  const form = useFormContext()
 
   return (
     <Select
       {...props}
       onValueChange={(value) => {
+        field.fieldConfig?.customData?.onValueChange?.(value, path, form)
         const syntheticEvent = {
           target: {
             value,

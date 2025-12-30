@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
-import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, Folder, QrCode, Package } from "lucide-react";
+import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, ShoppingCart, Folder, QrCode, Package } from "lucide-react";
 import type { AdminComponent } from "@/components/ui/admin";
 import { educationSchema } from "./schemas/education-schema";
 import { healthcareSchema } from "./schemas/healthcare-schema";
@@ -29,7 +29,7 @@ import type { ReactNode } from "@tanstack/react-router";
 import { uiBuilderSchema } from "./schemas/ui-builder-schema";
 import { IconMoneybag } from "@tabler/icons-react";
 import NepaliDate from "nepali-datetime";
-import { saleSchema } from "./schemas/sales";
+import { saleSchema, stockImportSchema } from "./schemas/sales";
 
 function getPermissions() {
   return ["product"] as readonly [string, ...string[]];
@@ -576,6 +576,11 @@ export const featureSchema = createSchema({
   sale: {
     schema: saleSchema,
     icon: DollarSign,
+    group: "Financial",
+  },
+  stockImport: {
+    schema: stockImportSchema,
+    icon: ShoppingCart,
     group: "Financial",
   },
   transaction: {
