@@ -201,6 +201,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
               fieldOverrides={currentItem.fieldOverrides}
               onCreate={currentItem.onCreate}
               onUpdate={currentItem.onUpdate}
+              previewOverrides={currentItem.previewOverrides}
             />
           ) : !components?.length ? (
             <AutoTable
@@ -211,6 +212,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
               fieldOverrides={currentItem.fieldOverrides}
               onCreate={currentItem.onCreate}
               onUpdate={currentItem.onUpdate}
+              previewOverrides={currentItem.previewOverrides}
             />
           ) : (
             <Tabs
@@ -248,6 +250,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                       extender={currentItem.extender}
                       onCreate={currentItem.onCreate}
                       onUpdate={currentItem.onUpdate}
+                      previewOverrides={currentItem.previewOverrides}
                     />
                   </div>
                 </Card>

@@ -24,7 +24,6 @@ import {
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
 import type { AutoTableTab } from "@/components/auto-admin";
-import { StockImportsPage } from "@/components/pages/retail/stock-imports-page";
 import { salesItemSchema } from "@/lib/schemas/sales";
 import z from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
@@ -33,6 +32,77 @@ import { useMemo } from "react";
 
 export type BusinessConfigReturn = {
   [B in BusinessType]?: AutoTableTab<any>[];
+}
+
+export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<"stockImport"> {
+  const { data: parties = [] } = api.party.useGet({ keys: [slug] })
+  const { data: products = [] } = api.product.useGet({ keys: [slug] })
+  const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
+  const productsBySoul = useMemo(() => new Map(
+    products
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [products])
+
+  const partiesBySoul = useMemo(() => new Map(
+    parties
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [parties])
+
+  return {
+    schema: "stockImport",
+    title: "Stock Imports",
+    icon: ShoppingBag,
+    slug,
+    previewOverrides: {
+      party: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
+    },
+    fieldOverrides: {
+      party: z.string().describe("Party").superRefine(fieldConfig({
+        fieldType: "select",
+        customData: {
+          options: parties.map(p => [p._!.soul!, p.name]),
+        },
+      })),
+      items: salesItemSchema
+        .extend({
+          product: z.string().describe("Product")
+            .superRefine(fieldConfig({
+              fieldType: "select",
+              customData: {
+                options: products.filter(p => !!p?._?.soul)
+                  .map(p => [p._!.soul!, p.title]),
+                onValueChange: (val, path, form) => {
+                  const product = productsBySoul.get(val)
+                  if (!product) return
+                  const [itemsKey, index] = path
+                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
+                }
+              },
+            })),
+          quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),
+        })
+        .array()
+        .min(1, { message: "Please add at least one item." })
+        .describe("Items Sold"),
+    },
+    onCreate(_, variables) {
+      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+      Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+        const product = productsBySoul.get(productId)
+        if (!product?._?.soul) return
+        updateProduct({ id: product?._?.soul, stockQuantity: product?.stockQuantity + quantity })
+      })
+    },
+    onUpdate(_, variables) {
+      // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+      // Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+      //   const product = productsBySoul.get(productId)
+      //   if (!product?._?.soul) return
+      //   updateProduct({ id: product?._
+    }
+  }
 }
 
 export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale"> {
@@ -109,6 +179,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
 
 export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigReturn {
   const salesConfig = useSalesConfig({ slug });
+  const stockImportsConfig = useStockImportsConfig({ slug });
   return {
     food: [
       {
@@ -307,12 +378,7 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
         slug,
         icon: ShoppingBag,
       },
-      {
-        title: "Stock Imports",
-        icon: ShoppingCart,
-        slug,
-        children: <StockImportsPage slug={slug} />,
-      },
+      stockImportsConfig,
       salesConfig,
       // {
       //   title: "Sales",

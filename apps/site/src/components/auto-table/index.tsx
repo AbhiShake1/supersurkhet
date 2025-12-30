@@ -16,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
@@ -49,20 +48,9 @@ import {
   Ellipsis,
   Plus,
   Save,
-  Text,
-  Filter,
-  SortAsc,
-  DatabaseZap,
-  Download,
-  Upload,
-  Columns,
-  MoreHorizontal,
-  FileSpreadsheet,
-  FileText,
-  FileJson,
-  File,
-  ArrowBigUpDash,
-  Sheet,
+  Text, DatabaseZap, FileText,
+  FileJson, ArrowBigUpDash,
+  Sheet
 } from "lucide-react";
 import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
@@ -87,7 +75,6 @@ import { AutoPreview } from "../auto-preview";
 import { api } from "@/lib/api";
 import { BadgeMarquee } from "../ui/badge-marquee";
 import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
-import type { FieldConfigFunction } from "../ui/ui-builder/types";
 import type { GunMessagePut } from "gun";
 
 type AggregationType =
@@ -100,13 +87,15 @@ type AggregationType =
   | 'regex'
   | 'group';
 
-// Enhanced column definition with aggregation capabilities
+type PreviewOverrides<T extends SchemaKeys> = Partial<Record<keyof NestedSchema<T>["shape"], (v: any) => any>>;
+
 type EnhancedColumnDef<TData> = ColumnDef<TData> & {
   aggregations?: AggregationType[];
   searchable?: boolean;
   filterable?: boolean;
   sortable?: boolean;
   exportable?: boolean;
+  previewOverrides?: PreviewOverrides<T>;
 }
 
 export type AutoTableProps<T extends SchemaKeys> = {
@@ -123,6 +112,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
   enablePagination?: boolean;
   defaultPageSize?: number;
   fieldOverrides?: Partial<Record<keyof NestedSchema<T>["shape"], z.ZodTypeAny>>;
+  previewOverrides?: PreviewOverrides<T>;
   onCreate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
   onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
 } & ({
@@ -209,6 +199,7 @@ export function AutoTable<T extends SchemaKeys>({
   const columns = getAutoTableColumns({
     schema,
     setRowAction,
+    previewOverrides: props.previewOverrides,
   });
 
   // @ts-expect-error
@@ -405,7 +396,6 @@ export function AutoTable<T extends SchemaKeys>({
         data={rowAction?.row.original ? [rowAction?.row.original] : []}
         showTrigger={false}
         onConfirm={() => {
-          console.log("confirne");
           setRowAction(null);
           onDelete(rowAction?.row.id ?? "");
           rowAction?.row.toggleSelected(false);
@@ -439,6 +429,7 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
 function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   setRowAction,
   schema,
+  previewOverrides,
 }: GetAutoTableColumnsProps<T, S>): EnhancedColumnDef<NestedSchemaType<T>>[] {
   const columns: EnhancedColumnDef<NestedSchemaType<T>>[] = [
     {
@@ -508,7 +499,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
                 <AutoPreview
                   field={field}
                   key={field.key}
-                  value={value}
+                  value={previewOverrides?.[field.key]?.(value) ?? value}
                   baseSchema={schema.shape[field.key]}
                 />
               </Editable.Preview>

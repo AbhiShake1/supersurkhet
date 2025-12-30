@@ -246,5 +246,6 @@ const autoPreviewComponents: Record<
   phone: PhonePreview,
   url: UrlPreview,
   timestamp: DatePreview,
+  permissions: ({ value }) => `${value?.length ?? Object.keys(value).length} Permissions`,
   fallback: () => "-",
 };
