@@ -115,6 +115,8 @@ export const businessInvitationSchema = z.object({
   expiresAt: z.number().optional()
 })
 
+export type BusinessInvitation = z.infer<typeof businessInvitationSchema>;
+
 export const businessSchema = z
   .object({
     name: z.string().describe("Official name of the business"),
