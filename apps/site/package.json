@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vinxi dev --host",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' vinxi build",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' vinxi build",
     "start": "vinxi start",
     "format": "biome format",
     "lint": "biome lint",
