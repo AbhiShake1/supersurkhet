@@ -17,10 +17,8 @@ import {
   ShoppingBag,
   Users,
   Wrench,
-  ListTodo,
-  ShoppingCart,
-  DollarSign,
-  BarChart3,
+  ListTodo, DollarSign,
+  BarChart3
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
@@ -29,10 +27,19 @@ import { salesItemSchema } from "@/lib/schemas/sales";
 import z from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { api } from "@/lib/api";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ReportsPage } from "@/components/reports-page";
 import NepaliDate from "nepali-datetime";
 import type { UseFormReturn } from "react-hook-form";
+import {
+  DropdownMenuItem
+} from "@/components/ui/dropdown-menu";
+import {
+  Credenza,
+  CredenzaTrigger,
+  CredenzaContent
+} from "@/components/ui/credenza";
+import { ReceiptWrapper } from "@/components/ui/receipt-wrapper";
 
 export type BusinessConfigReturn = {
   [B in BusinessType]?: AutoTableTab<any>[];
@@ -312,7 +319,13 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
 }
 
 export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"invoice"> {
+  const { data: products = [] } = api.product.useGet({ keys: [slug] })
   const { data: parties = [] } = api.party.useGet({ keys: [slug] })
+  const productsBySoul = useMemo(() => new Map(
+    products
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [products])
   const partiesBySoul = useMemo(() => new Map(
     parties
       .filter(p => p?._?.soul)
@@ -325,6 +338,28 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
     readOnly: true,
     slug,
     icon: Receipt,
+    actions: ({ row }) => {
+      const partyId = row.original.partyId
+      if (!partyId) return null
+      const party = partiesBySoul.get(partyId)
+      if (!party) return null
+      return (
+        <DropdownMenuItem onSelect={e => e.preventDefault()}>
+          <Credenza>
+            <CredenzaTrigger >
+              View Receipt
+            </CredenzaTrigger>
+            <CredenzaContent>
+              <ReceiptWrapper
+                invoice={row.original}
+                party={party}
+                productsById={productsBySoul}
+              />
+            </CredenzaContent>
+          </Credenza>
+        </DropdownMenuItem>
+      );
+    },
     previewOverrides: {
       partyId: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
     }

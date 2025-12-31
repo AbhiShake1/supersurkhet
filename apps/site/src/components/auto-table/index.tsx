@@ -40,7 +40,7 @@ import {
   useUpdate,
 } from "@gta/react-hooks";
 import { useSearch } from "@tanstack/react-router";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
   CalendarIcon,
@@ -118,6 +118,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
   onCreate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
   onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
   readOnly?: boolean;
+  actions?: (ctx: CellContext<NestedSchemaType<T>, unknown>) => React.ReactNode;
 } & ({
   schema: T;
 }
@@ -204,6 +205,7 @@ export function AutoTable<T extends SchemaKeys>({
     setRowAction,
     previewOverrides: props.previewOverrides,
     readOnly: props.readOnly,
+    actions: props.actions,
   });
 
   // @ts-expect-error
@@ -320,7 +322,6 @@ export function AutoTable<T extends SchemaKeys>({
                 <ScrollArea className="h-[50vh]">
                   <AutoForm
                     values={formValues}
-
                     schema={formSchema}
                     onSubmit={(b) => createMutation.mutate({ ...b, created_by: user?._?.soul ?? "anon", timestamp: Date.now() })}
                     formProps={{ id: "auto-table-add-form" }}
@@ -436,13 +437,16 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
     React.SetStateAction<DataTableRowAction<NestedSchemaType<T>> | null>
   >;
   schema: S;
+  actions?: (ctx: CellContext<NestedSchemaType<T>, unknown>) => React.ReactNode;
   readOnly?: boolean;
+  previewOverrides?: PreviewOverrides<T>;
 }
 
 function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   setRowAction,
   schema,
   previewOverrides,
+  actions,
   readOnly,
 }: GetAutoTableColumnsProps<T, S>): EnhancedColumnDef<NestedSchemaType<T>>[] {
   const columns: EnhancedColumnDef<NestedSchemaType<T>>[] = [
@@ -555,10 +559,11 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
     columns.push(column);
   }
 
-  if (!readOnly)
+  if (!readOnly || actions)
     columns.push({
       id: "actions",
-      cell: function Cell({ row }) {
+      cell: function Cell(props) {
+        const { row } = props;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -571,18 +576,25 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem
-                onSelect={() => setRowAction({ row, variant: "update" })}
-              >
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onSelect={() => setRowAction({ row, variant: "delete" })}
-              >
-                Delete
-                <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
-              </DropdownMenuItem>
+              {
+                !readOnly && <>
+                  <DropdownMenuItem
+                    onSelect={() => setRowAction({ row, variant: "update" })}
+                  >
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              }
+              {
+                !readOnly && <DropdownMenuItem
+                  onSelect={() => setRowAction({ row, variant: "delete" })}
+                >
+                  Delete
+                  <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+                </DropdownMenuItem>
+              }
+              {actions?.(props)}
             </DropdownMenuContent>
           </DropdownMenu>
         );

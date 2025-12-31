@@ -36,9 +36,9 @@ export type Sale = z.infer<typeof saleSchema>;
 export const stockImportSchema = z.object({
   party: z.string().describe("Party"),
   importDate: z.string().datetime().default(() => new Date().toISOString()).describe("Import Date").superRefine(fieldConfig({ fieldType: "datetime" })),
-  paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
   items: salesItemSchema.array().min(1, { message: "Please add at least one item." }).describe("Items"),
-  paymentStatus: z.enum(["pending", "partial", "paid"]).optional().describe("Payment Status"),
+  paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
+  paymentStatus: z.enum(["pending", "partial", "paid"]).default("paid").describe("Payment Status"),
   notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
 })
 
