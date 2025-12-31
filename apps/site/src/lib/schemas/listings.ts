@@ -35,14 +35,14 @@ export const table = {
 
 export const baseListingSchema = z
   .object({
-    sku: z.string().describe("Stock Keeping Unit"),
-    barcode: z.string().optional().describe("Barcode"),
     title: z.string().min(1).describe("Product Name"),
-    description: z.string().optional().describe("Product Description"),
-    category: z.string().default("Others").optional(),
     costPrice: z.number({ coerce: true }).positive().describe("Cost Price"),
     sellingPrice: z.number({ coerce: true }).positive().describe("Selling Price"),
     stockQuantity: z.number({ coerce: true }).int().positive().describe("Quantity in Stock"),
+    description: z.string().optional().describe("Product Description"),
+    category: z.string().default("Others").optional(),
+    sku: z.string().optional().describe("Stock Keeping Unit"),
+    barcode: z.string().optional().describe("Barcode"),
     reorderLevel: z.number({ coerce: true }).int().positive().optional().describe("Reorder Level").superRefine(fieldConfig({
       inputProps: {
         placeholder: "You will be reminded to reorder this product when only this many is available in stock"
