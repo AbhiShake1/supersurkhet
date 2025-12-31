@@ -95,7 +95,7 @@ type EnhancedColumnDef<TData> = ColumnDef<TData> & {
   filterable?: boolean;
   sortable?: boolean;
   exportable?: boolean;
-  previewOverrides?: PreviewOverrides<T>;
+  previewOverrides?: PreviewOverrides<TData>;
 }
 
 export type AutoTableProps<T extends SchemaKeys> = {
@@ -112,6 +112,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
   enablePagination?: boolean;
   defaultPageSize?: number;
   fieldOverrides?: Partial<Record<keyof NestedSchema<T>["shape"], z.ZodTypeAny>>;
+  formSchemaTransformer?: (schema: NestedSchema<T>) => z.ZodTypeAny;
   previewOverrides?: PreviewOverrides<T>;
   onCreate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
   onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
@@ -292,6 +293,8 @@ export function AutoTable<T extends SchemaKeys>({
     input.click()
   }
 
+  const formSchema = props.formSchemaTransformer?.(schema) ?? schema
+
   return (
     <div className="py-6 space-y-4 flex flex-col items-end">
       <ButtonGroup>
@@ -314,7 +317,7 @@ export function AutoTable<T extends SchemaKeys>({
                 <AutoForm
                   values={formValues}
 
-                  schema={schema}
+                  schema={formSchema}
                   onSubmit={(b) => createMutation.mutate({ ...b, created_by: user?._?.soul ?? "anon", timestamp: Date.now() })}
                   formProps={{ id: "auto-table-add-form" }}
                 />
@@ -405,7 +408,7 @@ export function AutoTable<T extends SchemaKeys>({
         open={rowAction?.variant === "update"}
         onOpenChange={() => setRowAction(null)}
         data={rowAction?.row.original}
-        schema={schema}
+        schema={formSchema}
         onSubmit={(data) => {
           setRowAction(null);
           if (data) {

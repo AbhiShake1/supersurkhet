@@ -32,6 +32,7 @@ import { api } from "@/lib/api";
 import { useMemo } from "react";
 import { ReportsPage } from "@/components/reports-page";
 import NepaliDate from "nepali-datetime";
+import type { UseFormReturn } from "react-hook-form";
 
 export type BusinessConfigReturn = {
   [B in BusinessType]?: AutoTableTab<any>[];
@@ -40,6 +41,16 @@ export type BusinessConfigReturn = {
 function calculateFiscalYear() {
   const year = new NepaliDate().getYear()
   return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
+}
+
+function calculateTotalCost(form: UseFormReturn) {
+  const formValues = form.getValues()
+  if (!formValues?.items?.length) return
+  return formValues.items.reduce((sum: number, item: any) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
+}
+
+function refreshPaidAmount(form: UseFormReturn) {
+  form.setValue("paidAmount", calculateTotalCost(form))
 }
 
 export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<"stockImport"> {
@@ -64,6 +75,15 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     title: "Stock Imports",
     icon: ShoppingBag,
     slug,
+    formSchemaTransformer: (schema) => schema.superRefine((stockImport, ctx) => {
+      if (!stockImport.paidAmount) return
+      const totalCost = stockImport.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
+      if (stockImport.paidAmount > totalCost) ctx.addIssue({
+        code: "custom",
+        message: `Paid amount cannot be greater than total cost (${totalCost})`,
+        path: ["paidAmount"],
+      })
+    }),
     previewOverrides: {
       party: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
     },
@@ -73,6 +93,21 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         customData: {
           options: parties.map(p => [p._!.soul!, p.name]),
         },
+      })),
+      paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
+        fieldType: "number",
+        customData: {
+          onValueChange: (_, __, form) => {
+            const totalCost = calculateTotalCost(form)
+            const paidAmount = form.getValues().paidAmount
+            function getPaymentStatus() {
+              if (paidAmount === totalCost) return "paid"
+              if (paidAmount > totalCost) return "partial"
+              return "unpaid"
+            }
+            form.setValue("paymentStatus", getPaymentStatus())
+          },
+        }
       })),
       items: salesItemSchema
         .extend({
@@ -87,10 +122,26 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
                   if (!product) return
                   const [itemsKey, index] = path
                   form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
+                  refreshPaidAmount(form)
                 }
               },
             })),
-          quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),
+          quantity: z.number({ coerce: true }).int().positive().describe("Quantity").superRefine(fieldConfig({
+            fieldType: "number",
+            customData: {
+              onValueChange: (_, __, form) => {
+                refreshPaidAmount(form)
+              },
+            }
+          })),
+          unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
+            fieldType: "number",
+            customData: {
+              onValueChange: (_, __, form) => {
+                refreshPaidAmount(form)
+              },
+            }
+          })),
         })
         .array()
         .min(1, { message: "Please add at least one item." })
