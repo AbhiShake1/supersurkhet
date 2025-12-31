@@ -317,6 +317,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
     schema: "invoice",
     title: "Invoices",
     group: "Financial",
+    readOnly: true,
     slug,
     icon: Receipt,
     previewOverrides: {

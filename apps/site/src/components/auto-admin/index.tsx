@@ -194,27 +194,13 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
             currentItem.children
           ) : "parsedSchema" in currentItem ? (
             <AutoTable
-              parsedSchema={currentItem.parsedSchema}
+              {...currentItem}
               slug={currentItem.slug ?? basePath}
-              transformer={currentItem.transformer}
-              extender={currentItem.extender}
-              fieldOverrides={currentItem.fieldOverrides}
-              onCreate={currentItem.onCreate}
-              onUpdate={currentItem.onUpdate}
-              previewOverrides={currentItem.previewOverrides}
-              formSchemaTransformer={currentItem.formSchemaTransformer}
             />
           ) : !components?.length ? (
             <AutoTable
-              schema={currentItem.schema}
+              {...currentItem}
               slug={currentItem.slug ?? basePath}
-              transformer={currentItem.transformer}
-              extender={currentItem.extender}
-              fieldOverrides={currentItem.fieldOverrides}
-              onCreate={currentItem.onCreate}
-              onUpdate={currentItem.onUpdate}
-              previewOverrides={currentItem.previewOverrides}
-              formSchemaTransformer={currentItem.formSchemaTransformer}
             />
           ) : (
             <Tabs
@@ -245,15 +231,8 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 <Card className="border rounded-lg shadow-sm">
                   <div className="p-4">
                     <AutoTable
-                      fieldOverrides={currentItem.fieldOverrides}
-                      schema={currentItem.schema}
+                      {...currentItem}
                       slug={currentItem.slug ?? basePath}
-                      transformer={currentItem.transformer}
-                      extender={currentItem.extender}
-                      onCreate={currentItem.onCreate}
-                      onUpdate={currentItem.onUpdate}
-                      previewOverrides={currentItem.previewOverrides}
-                      formSchemaTransformer={currentItem.formSchemaTransformer}
                     />
                   </div>
                 </Card>
