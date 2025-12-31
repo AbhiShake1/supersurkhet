@@ -38,8 +38,14 @@ export const stockImportSchema = z.object({
   importDate: z.string().datetime().default(() => new Date().toISOString()).describe("Import Date").superRefine(fieldConfig({ fieldType: "datetime" })),
   items: salesItemSchema.array().min(1, { message: "Please add at least one item." }).describe("Items"),
   paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
-  paymentStatus: z.enum(["pending", "partial", "paid"]).default("paid").describe("Payment Status"),
+  paymentStatus: z.string().default("pending").describe("Payment Status")
+    .superRefine(fieldConfig({
+      inputProps: {
+        className: "border-none",
+        disabled: true,
+      }
+    })),
   notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
-})
+}).describe("Stock Import");
 
 export type StockImport = z.infer<typeof stockImportSchema>;

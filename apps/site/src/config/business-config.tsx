@@ -40,6 +40,7 @@ import {
   CredenzaContent
 } from "@/components/ui/credenza";
 import { ReceiptWrapper } from "@/components/ui/receipt-wrapper";
+import { formatCurrency } from "@/lib/intl";
 
 export type BusinessConfigReturn = {
   [B in BusinessType]?: AutoTableTab<any>[];
@@ -56,8 +57,19 @@ function calculateTotalCost(form: UseFormReturn) {
   return formValues.items.reduce((sum: number, item: any) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
 }
 
+function getPaymentStatus(paidAmount: number, totalCost: number) {
+  if (paidAmount === totalCost) return "paid"
+  if (paidAmount === 0) return "pending"
+  if (paidAmount > totalCost) return "overpaid (invalid)"
+  return `partial (${formatCurrency(totalCost - paidAmount)} to pay)`
+}
+
 function refreshPaidAmount(form: UseFormReturn) {
-  form.setValue("paidAmount", calculateTotalCost(form))
+  const totalCost = calculateTotalCost(form)
+  form.setValue("paidAmount", totalCost)
+  const paidAmount = form.getValues().paidAmount
+  const paymentStatus = getPaymentStatus(paidAmount, totalCost)
+  form.setValue("paymentStatus", paymentStatus)
 }
 
 export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<"stockImport"> {
@@ -108,15 +120,10 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
       paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
         fieldType: "number",
         customData: {
-          onValueChange: (_, __, form) => {
+          onValueChange: (_paidAmount, __, form) => {
+            const paidAmount = Number(_paidAmount)
             const totalCost = calculateTotalCost(form)
-            const paidAmount = form.getValues().paidAmount
-            function getPaymentStatus() {
-              if (paidAmount === totalCost) return "paid"
-              if (paidAmount > totalCost) return "partial"
-              return "unpaid"
-            }
-            form.setValue("paymentStatus", getPaymentStatus())
+            form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
           },
         }
       })),

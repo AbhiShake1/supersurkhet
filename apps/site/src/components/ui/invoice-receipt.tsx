@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 import type { Invoice, Party } from "@/lib/schema"
 import type { Product } from "../supersurkhet/products"
+import { formatCurrency } from "@/lib/intl"
 
 interface ReceiptProps {
   invoice: Invoice
@@ -23,14 +24,6 @@ export function InvoiceReceipt({
 }: ReceiptProps) {
   const totalAmount = invoice.subTotal + invoice.tax
   const outstandingAmount = totalAmount - invoice.paidAmount
-
-  const formatCurrency = (paisa: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      minimumFractionDigits: 2,
-    }).format(paisa / 100)
-  }
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "N/A"
@@ -186,7 +179,7 @@ export function InvoiceReceipt({
                     )}
                   </span>
                   <span className={`font-bold text-sm ${outstandingAmount > 0 ? "text-destructive" : "text-success"}`}>
-                    {formatCurrency(outstandingAmount)}
+                    {formatCurrency(outstandingAmount)} {outstandingAmount <= 0 && <sub className="text-xs text-muted-foreground">To Pay</sub>}
                   </span>
                 </div>
               </div>
