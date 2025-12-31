@@ -29,7 +29,7 @@ import { salesItemSchema } from "@/lib/schemas/sales";
 import z from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { api } from "@/lib/api";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { ReportsPage } from "@/components/reports-page";
 import NepaliDate from "nepali-datetime";
 import type { UseFormReturn } from "react-hook-form";
@@ -69,6 +69,10 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   ), [parties])
+
+  function getQuantityDescription() {
+    return "Quantity"
+  }
 
   return {
     schema: "stockImport",
@@ -121,12 +125,13 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
                   const product = productsBySoul.get(val)
                   if (!product) return
                   const [itemsKey, index] = path
+                  form.setValue([itemsKey, index, "unit"].join("."), product.unit)
                   form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
                   refreshPaidAmount(form)
                 }
               },
             })),
-          quantity: z.number({ coerce: true }).int().positive().describe("Quantity").superRefine(fieldConfig({
+          quantity: z.number({ coerce: true }).int().positive().describe(getQuantityDescription()).superRefine(fieldConfig({
             fieldType: "number",
             customData: {
               onValueChange: (_, __, form) => {
@@ -296,7 +301,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       });
     },
     onUpdate(_, variables) {
-      // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+      // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, uantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
       // Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
       //   const product = productsBySoul.get(productId)
       //   if (!product?._?.soul) return

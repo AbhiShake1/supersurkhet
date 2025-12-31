@@ -36,6 +36,7 @@ export const table = {
 export const baseListingSchema = z
   .object({
     title: z.string().min(1).describe("Product Name"),
+    unit: z.enum(["piece", "cartoon", "dozen", "litre", "kg"]).optional().describe("Unit"),
     costPrice: z.number({ coerce: true }).positive().describe("Cost Price"),
     sellingPrice: z.number({ coerce: true }).positive().describe("Selling Price"),
     stockQuantity: z.number({ coerce: true }).int().positive().describe("Quantity in Stock"),
