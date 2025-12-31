@@ -151,7 +151,7 @@ export const PermissionsField: React.FC<AutoFormFieldProps> = ({ value, field, i
   }, [tabs]);
 
   return (
-    <Popover>
+    <Popover modal>
       <PopoverTrigger asChild>
         <Button variant="outline" className="flex items-center gap-2 w-full">
           <span className="text-sm font-medium">Permissions</span>

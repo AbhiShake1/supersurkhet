@@ -20,6 +20,7 @@ import {
   ListTodo,
   ShoppingCart,
   DollarSign,
+  BarChart3,
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
@@ -29,15 +30,23 @@ import z from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { api } from "@/lib/api";
 import { useMemo } from "react";
+import { ReportsPage } from "@/components/reports-page";
+import NepaliDate from "nepali-datetime";
 
 export type BusinessConfigReturn = {
   [B in BusinessType]?: AutoTableTab<any>[];
+}
+
+function calculateFiscalYear() {
+  const year = new NepaliDate().getYear()
+  return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
 }
 
 export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<"stockImport"> {
   const { data: parties = [] } = api.party.useGet({ keys: [slug] })
   const { data: products = [] } = api.product.useGet({ keys: [slug] })
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
+  const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
@@ -85,7 +94,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         })
         .array()
         .min(1, { message: "Please add at least one item." })
-        .describe("Items Sold"),
+        .describe("Items to Import"),
     },
     onCreate(_, variables) {
       const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
@@ -94,6 +103,33 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         if (!product?._?.soul) return
         updateProduct({ id: product?._?.soul, stockQuantity: product?.stockQuantity + quantity })
       })
+
+      // Create corresponding invoice
+      const invoiceItems = Object.fromEntries(
+        variables.items?.map((item, index) => [
+          `itm_${index}`,
+          {
+            product: item.product,
+            quantity: item.quantity,
+            rate: item.unitPrice,
+            total: item.quantity * item.unitPrice
+          }
+        ]) ?? []
+      );
+
+      const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
+
+      createInvoice({
+        type: "purchase",
+        partyId: variables.party,
+        issuedAt: variables.importDate,
+        items: invoiceItems,
+        subTotal: totalAmount,
+        tax: 0,
+        paidAmount: variables.paidAmount || 0,
+        paymentStatus: variables.paymentStatus || "pending",
+        fiscalYear: calculateFiscalYear()
+      });
     },
     onUpdate(_, variables) {
       // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
@@ -109,16 +145,26 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
   const { data: products = [] } = api.product.useGet({
     keys: [slug],
   })
+  const { data: parties = [] } = api.party.useGet({ keys: [slug] });
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
+  const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   ), [products])
+
+  const partiesBySoul = useMemo(() => new Map(
+    parties
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [parties])
+
   return {
     schema: "sale",
     title: "Sales",
     icon: DollarSign,
+    group: "Financial",
     slug,
     fieldOverrides: {
       items: salesItemSchema
@@ -157,14 +203,46 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
           })
         })
         .describe("Items Sold"),
+      customerName: z.string().optional().describe("Customer Name")
+        .superRefine(fieldConfig({
+          fieldType: "select",
+          customData: {
+            options: parties.map(p => [p._!.soul!, p.name]),
+          },
+        })),
     },
     onCreate(_, variables) {
-      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+      // Stock update logic
+      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) =>
+        ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>);
+
       Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
-        const product = productsBySoul.get(productId)
-        if (!product?._?.soul) return
-        updateProduct({ id: product?._?.soul, stockQuantity: product?.stockQuantity - quantity })
-      })
+        const product = productsBySoul.get(productId);
+        if (!product?._?.soul) return;
+        updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - quantity });
+      });
+
+      // Create corresponding invoice
+      const invoiceItems = variables.items?.map((item) => ({
+        product: item.product,
+        quantity: item.quantity,
+        rate: item.unitPrice,
+        total: item.quantity * item.unitPrice
+      })) ?? []
+
+      const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
+
+      createInvoice({
+        type: "sale",
+        partyId: variables.customerName, // Using customerName as partyId
+        issuedAt: variables.saleDate,
+        items: invoiceItems,
+        subTotal: totalAmount,
+        tax: 0,
+        paidAmount: variables.paidAmount || 0,
+        paymentStatus: variables.paymentStatus || "pending",
+        fiscalYear: calculateFiscalYear()
+      });
     },
     onUpdate(_, variables) {
       // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
@@ -177,9 +255,29 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
   }
 }
 
+export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"invoice"> {
+  const { data: parties = [] } = api.party.useGet({ keys: [slug] })
+  const partiesBySoul = useMemo(() => new Map(
+    parties
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [parties])
+  return {
+    schema: "invoice",
+    title: "Invoices",
+    group: "Financial",
+    slug,
+    icon: Receipt,
+    previewOverrides: {
+      partyId: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
+    }
+  }
+}
+
 export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigReturn {
   const salesConfig = useSalesConfig({ slug });
   const stockImportsConfig = useStockImportsConfig({ slug });
+  const invoicesConfig = useInvoicesConfig({ slug });
   return {
     food: [
       {
@@ -380,30 +478,14 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
       },
       stockImportsConfig,
       salesConfig,
-      // {
-      //   title: "Sales",
-      //   icon: ChartLine,
-      //   slug,
-      //   children: <SalesPage slug={slug} />,
-      // },
+      invoicesConfig,
       {
-        schema: "invoice",
-        title: "Invoices",
-        slug: slug,
-        icon: Receipt,
+        title: "Reports",
+        slug,
+        icon: BarChart3,
+        children: <ReportsPage slug={slug} />,
+        group: "Financial",
       },
-      // {
-      //   schema: "transaction",
-      //   title: "Transactions",
-      //   slug: slug,
-      //   icon: Banknote,
-      // },
-      // {
-      //   schema: "inventoryLedger",
-      //   title: "Inventory Ledger",
-      //   slug: slug,
-      //   icon: Logs,
-      // },
       {
         schema: "order",
         title: "Orders",

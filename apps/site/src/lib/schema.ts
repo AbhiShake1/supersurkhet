@@ -28,7 +28,6 @@ import { qrFlowConfigSchema } from "./schemas/qr-flow-config-schema";
 import type { ReactNode } from "@tanstack/react-router";
 import { uiBuilderSchema } from "./schemas/ui-builder-schema";
 import { IconMoneybag } from "@tabler/icons-react";
-import NepaliDate from "nepali-datetime";
 import { saleSchema, stockImportSchema } from "./schemas/sales";
 
 function getPermissions() {
@@ -182,16 +181,15 @@ export const partySchema = z.object({
 export type Party = z.infer<typeof partySchema>
 
 export const invoiceSchema = z.object({
-  invoiceNumber: z.string().min(1),
   type: z.enum(["purchase", "sale"]),
 
-  partyId: z.string().min(1),
-  issuedAt: z.string().datetime(),
+  partyId: z.string().describe("Party").optional(),
+  issuedAt: z.string().datetime().describe("Issued At").optional(),
+  dueDate: z.string().datetime().describe("Due Date").optional(),
 
-  items: z.record(
-    z.string(),
+  items: z.array(
     z.object({
-      product: productSchema,
+      product: z.string().describe("Product"),
       quantity: z.number({ coerce: true }).positive(),
       rate: z.number({ coerce: true }).int().nonnegative(), // paisa
       total: z.number({ coerce: true }).int().nonnegative(),
@@ -200,16 +198,21 @@ export const invoiceSchema = z.object({
 
   subTotal: z.number({ coerce: true }).int().nonnegative(),
   tax: z.number({ coerce: true }).int().nonnegative().default(0),
+  paidAmount: z.number({ coerce: true }).nonnegative().default(0).describe("Amount Paid"),
+  paymentStatus: z.enum(["pending", "partial", "paid"]).default("pending").describe("Payment Status"),
+  fiscalYear: z.string().describe("Fiscal Year"),
 })
   .extend(table)
-  .transform(invoice => ({
-    ...invoice,
-    total: invoice.subTotal + invoice.tax,
-    fiscalYear: (() => {
-      const year = new NepaliDate().getYear()
-      return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
-    })()
-  }))
+// .transform(invoice => ({
+//   ...invoice,
+//   total: invoice.subTotal + invoice.tax,
+//   balance: (invoice.subTotal + invoice.tax) - (invoice.paidAmount || 0),
+//   fiscalYear: (() => {
+//     const year = new NepaliDate().getYear()
+//     return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
+//   })()
+// }))
+//
 // .superRefine((invoice, ctx) => {
 //   const computedSubTotal = Object.values(invoice.items).reduce(
 //     (sum, item) => sum + item.total,
