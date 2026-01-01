@@ -3,13 +3,13 @@ import type { AutoFormFieldProps } from "@autoform/react";
 import type React from "react";
 
 export const StringField: React.FC<AutoFormFieldProps> = ({
-	inputProps,
-	error,
-	id,
+  inputProps,
+  error,
+  id,
 }) => {
-	const { key, ...props } = inputProps;
+  const { key, ...props } = inputProps;
 
-	return (
-		<Input id={id} className={error ? "border-destructive" : ""} {...props} />
-	);
+  return (
+    <Input id={id} className={error ? "border-destructive" : ""} {...props} />
+  );
 };

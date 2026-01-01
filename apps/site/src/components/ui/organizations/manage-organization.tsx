@@ -7,7 +7,8 @@ import {
   CreditCard,
   Search,
   UserPlus,
-  Mail
+  Mail,
+  PartyPopper
 } from "lucide-react";
 import { AutoForm, fieldConfig } from "../autoform";
 import { z } from "zod";
@@ -20,6 +21,8 @@ import { useAuth } from "@/components/auth-provider";
 import { toast } from "sonner";
 import { render } from "@react-email/render";
 import type { PossibleTabConfig } from "@/components/auto-admin";
+import { AutoFormSubmit } from "../auto-form";
+import { ConfettiButton } from "@/components/magicui/confetti";
 
 type Member = BusinessMember;
 
@@ -232,7 +235,14 @@ const MembersTab = ({
               permissions: z.record(z.string(), z.boolean()).superRefine(fieldConfig({ fieldType: "permissions", customData: { tabs, slug } })),
             })}
             onSubmit={onInviteMember}
-          />
+          >
+            <AutoFormSubmit asChild>
+              <ConfettiButton className="gap-2">
+                <PartyPopper className="h-4 w-4" />
+                Send Invitation
+              </ConfettiButton>
+            </AutoFormSubmit>
+          </AutoForm>
         </div>
       )}
 
