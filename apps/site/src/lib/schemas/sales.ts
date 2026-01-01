@@ -19,12 +19,18 @@ export const saleSchema = z.object({
   saleDate: z.string().datetime()
     .default(() => new Date().toISOString()).describe("Sale Date")
     .superRefine(fieldConfig({ fieldType: "datetime" })),
-  paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
   items: salesItemSchema.array()
     .min(1, { message: "Please add at least one item." })
     .describe("Items Sold"),
+  paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
+  paymentStatus: z.string().default("pending").describe("Payment Status")
+    .superRefine(fieldConfig({
+      inputProps: {
+        className: "border-none",
+        disabled: true,
+      }
+    })),
   paymentMethod: z.enum(["cash", "card", "bankTransfer", "credit"]).optional().describe("Payment Method"),
-  paymentStatus: z.enum(["pending", "partial", "paid"]).optional().describe("Payment Status"),
   customerName: z.string().optional().describe("Customer Name"),
   customerEmail: z.string().email().optional().describe("Customer Email"),
   phone: z.string().optional().describe("Customer Phone"),

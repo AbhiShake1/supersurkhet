@@ -197,7 +197,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         subTotal: totalAmount,
         tax: 0,
         paidAmount: variables.paidAmount || 0,
-        paymentStatus: variables.paymentStatus || "pending",
+        paymentStatus: variables.paymentStatus || "pending" as any,
         fiscalYear: calculateFiscalYear()
       });
     },
@@ -236,7 +236,26 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
     icon: DollarSign,
     group: "Financial",
     slug,
+    formSchemaTransformer: (schema) => schema.superRefine((sale, ctx) => {
+      if (!sale.paidAmount) return
+      const totalCost = sale.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
+      if (sale.paidAmount > totalCost) ctx.addIssue({
+        code: "custom",
+        message: `Paid amount cannot be greater than total cost (${totalCost})`,
+        path: ["paidAmount"],
+      })
+    }),
     fieldOverrides: {
+      paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
+        fieldType: "number",
+        customData: {
+          onValueChange: (_paidAmount, __, form) => {
+            const paidAmount = Number(_paidAmount)
+            const totalCost = calculateTotalCost(form)
+            form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
+          },
+        }
+      })),
       items: salesItemSchema
         .extend({
           product: z.string().describe("Product")
@@ -249,11 +268,30 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
                   const product = productsBySoul.get(val)
                   if (!product) return
                   const [itemsKey, index] = path
+                  form.setValue([itemsKey, index, "unit"].join("."), product.unit)
                   form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+                  refreshPaidAmount(form)
                 }
               },
             })),
-          quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),
+          quantity: z.number({ coerce: true }).int().positive()
+            .describe("Quantity")
+            .superRefine(fieldConfig({
+              fieldType: "number",
+              customData: {
+                onValueChange: (_, __, form) => {
+                  refreshPaidAmount(form)
+                },
+              }
+            })),
+          unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
+            fieldType: "number",
+            customData: {
+              onValueChange: (_, __, form) => {
+                refreshPaidAmount(form)
+              },
+            }
+          })),
         })
         .array()
         .min(1, { message: "Please add at least one item." })
@@ -273,13 +311,13 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
           })
         })
         .describe("Items Sold"),
-      customerName: z.string().optional().describe("Customer Name")
-        .superRefine(fieldConfig({
-          fieldType: "select",
-          customData: {
-            options: parties.map(p => [p._!.soul!, p.name]),
-          },
-        })),
+      // customerName: z.string().optional().describe("Customer Name")
+      //   .superRefine(fieldConfig({
+      //     fieldType: "select",
+      //     customData: {
+      //       options: parties.map(p => [p._!.soul!, p.name]),
+      //     },
+      //   })),
     },
     onCreate(_, variables) {
       // Stock update logic
@@ -310,7 +348,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
         subTotal: totalAmount,
         tax: 0,
         paidAmount: variables.paidAmount || 0,
-        paymentStatus: variables.paymentStatus || "pending",
+        paymentStatus: variables.paymentStatus || "pending" as any,
         fiscalYear: calculateFiscalYear()
       });
     },

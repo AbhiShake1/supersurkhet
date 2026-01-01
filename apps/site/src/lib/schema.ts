@@ -199,7 +199,13 @@ export const invoiceSchema = z.object({
   subTotal: z.number({ coerce: true }).int().nonnegative(),
   tax: z.number({ coerce: true }).int().nonnegative().default(0),
   paidAmount: z.number({ coerce: true }).nonnegative().default(0).describe("Amount Paid"),
-  paymentStatus: z.enum(["pending", "partial", "paid"]).default("pending").describe("Payment Status"),
+  paymentStatus: z.string().default("pending").describe("Payment Status")
+    .superRefine(fieldConfig({
+      inputProps: {
+        className: "border-none",
+        disabled: true,
+      }
+    })),
   fiscalYear: z.string().describe("Fiscal Year"),
 })
   .extend(table)
