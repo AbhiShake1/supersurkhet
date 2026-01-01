@@ -12,6 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  HoverablePopover,
+  HoverablePopoverContent,
+  HoverablePopoverTrigger,
+} from "@/components/ui/hoverable-popover";
+import { Info } from "lucide-react";
 import { useBusinessAnalytics } from "@/hooks/use-business-analytics";
 import { api } from "@/lib/api";
 import {
@@ -438,11 +449,159 @@ function AccountsSection({
     }).format(amount);
   };
 
+  // Helper function to render detailed breakdown table
+  const renderReceivableBreakdown = () => {
+    if (!data.accountsReceivableBreakdown || data.accountsReceivableBreakdown.length === 0) {
+      return <p className="text-muted-foreground text-sm">No outstanding receivables</p>;
+    }
+
+    return (
+      <div className="space-y-4">
+        <h4 className="font-semibold text-lg text-amber-600">Outstanding Customer Payments</h4>
+        <div className="space-y-3">
+          {data.accountsReceivableBreakdown.map((item, index) => (
+            <div key={item.id || index} className="border rounded-lg p-3 bg-card shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+                <div className="font-medium text-foreground">
+                  <span className="font-semibold">Customer:</span> {item.customer}
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-amber-600">{formatCurrency(item.dueAmount)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(item.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-xs mb-2 pt-2 border-t border-border">
+                <div>
+                  <span className="text-muted-foreground">Total:</span><br />
+                  <span className="font-medium">{formatCurrency(item.totalAmount)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Paid:</span><br />
+                  <span className="font-medium">{formatCurrency(item.paidAmount)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Due:</span><br />
+                  <span className="font-bold text-amber-600">{formatCurrency(item.dueAmount)}</span>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <div className="font-medium text-sm mb-1 flex items-center">
+                  <span className="mr-2">🛒</span> Products Purchased
+                </div>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {item.items.map((product, idx) => (
+                    <div key={idx} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
+                      <div className="flex-1 truncate pr-2" title={product.product}>
+                        {product.product}
+                      </div>
+                      <div className="text-right">
+                        <div>{product.quantity} × {formatCurrency(product.unitPrice)}</div>
+                        <div className="text-xs text-muted-foreground">= {formatCurrency(product.total)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Helper function to render payable breakdown table
+  const renderPayableBreakdown = () => {
+    if (!data.accountsPayableBreakdown || data.accountsPayableBreakdown.length === 0) {
+      return <p className="text-muted-foreground text-sm">No outstanding payables</p>;
+    }
+
+    return (
+      <div className="space-y-4">
+        <h4 className="font-semibold text-lg text-red-600">Outstanding Supplier Payments</h4>
+        <div className="space-y-3">
+          {data.accountsPayableBreakdown.map((item, index) => (
+            <div key={item.id || index} className="border rounded-lg p-3 bg-card shadow-sm">
+              <div className="flex justify-between items-start mb-2">
+                <div className="font-medium text-foreground">
+                  <span className="font-semibold">Supplier:</span> {item.supplier}
+                </div>
+                <div className="text-right">
+                  <div className="text-lg font-bold text-red-600">{formatCurrency(item.dueAmount)}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(item.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2 text-xs mb-2 pt-2 border-t border-border">
+                <div>
+                  <span className="text-muted-foreground">Total:</span><br />
+                  <span className="font-medium">{formatCurrency(item.totalAmount)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Paid:</span><br />
+                  <span className="font-medium">{formatCurrency(item.paidAmount)}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Due:</span><br />
+                  <span className="font-bold text-red-600">{formatCurrency(item.dueAmount)}</span>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <div className="font-medium text-sm mb-1 flex items-center">
+                  <span className="mr-2">📦</span> Products Received
+                </div>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {item.items.map((product, idx) => (
+                    <div key={idx} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
+                      <div className="flex-1 truncate pr-2" title={product.product}>
+                        {product.product}
+                      </div>
+                      <div className="text-right">
+                        <div>{product.quantity} × {formatCurrency(product.unitPrice)}</div>
+                        <div className="text-xs text-muted-foreground">= {formatCurrency(product.total)}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>Accounts Receivable</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Accounts Receivable</CardTitle>
+            <HoverablePopover>
+              <HoverablePopoverTrigger asChild>
+                <button className="text-muted-foreground hover:text-foreground">
+                  <Info className="h-4 w-4" />
+                </button>
+              </HoverablePopoverTrigger>
+              <HoverablePopoverContent className="w-96 max-w-[90vw] max-h-[80vh] overflow-y-auto p-4">
+                {renderReceivableBreakdown()}
+              </HoverablePopoverContent>
+            </HoverablePopover>
+          </div>
           <CardDescription>
             Amount to be received from customers
           </CardDescription>
@@ -460,7 +619,19 @@ function AccountsSection({
 
       <Card>
         <CardHeader>
-          <CardTitle>Accounts Payable</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Accounts Payable</CardTitle>
+            <HoverablePopover>
+              <HoverablePopoverTrigger asChild>
+                <button className="text-muted-foreground hover:text-foreground">
+                  <Info className="h-4 w-4" />
+                </button>
+              </HoverablePopoverTrigger>
+              <HoverablePopoverContent className="w-96 max-w-[90vw] max-h-[80vh] overflow-y-auto p-4">
+                {renderPayableBreakdown()}
+              </HoverablePopoverContent>
+            </HoverablePopover>
+          </div>
           <CardDescription>Amount owed to suppliers</CardDescription>
         </CardHeader>
         <CardContent>

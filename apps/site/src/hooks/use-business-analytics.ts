@@ -10,6 +10,36 @@ const importTotal = (imp: StockImport) =>
   imp.items?.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0) ?? 0
 
 export function useBusinessAnalytics(slug: string, period: string = 'all') {
+  // Define types for the breakdowns
+  type ReceivableBreakdown = {
+    id: string;
+    customer: string;
+    totalAmount: number;
+    paidAmount: number;
+    dueAmount: number;
+    date: string;
+    items: {
+      product: string;
+      quantity: number;
+      unitPrice: number;
+      total: number;
+    }[];
+  };
+
+  type PayableBreakdown = {
+    id: string;
+    supplier: string;
+    totalAmount: number;
+    paidAmount: number;
+    dueAmount: number;
+    date: string;
+    items: {
+      product: string;
+      quantity: number;
+      unitPrice: number;
+      total: number;
+    }[];
+  };
   const { data: sales = [] } = api.sale.useGet({ keys: [slug] });
   const { data: stockImports = [] } = api.stockImport.useGet({ keys: [slug] });
   const { data: parties = [] } = api.party.useGet({ keys: [slug] });
@@ -69,6 +99,63 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       }, 0),
     [filteredStockImports]
   );
+
+  // Detailed breakdowns for Accounts Receivable
+  const accountsReceivableBreakdown = useMemo(() => {
+    return filteredSales
+      .filter((sale: any) => {
+        const total = saleTotal(sale);
+        const due = total - (sale.paidAmount ?? 0);
+        return due > 0;
+      })
+      .map((sale: any) => {
+        const total = saleTotal(sale);
+        const due = total - (sale.paidAmount ?? 0);
+        return {
+          id: sale._?.soul || '',
+          customer: sale.customerName || 'Walk-in Customer',
+          totalAmount: total,
+          paidAmount: sale.paidAmount ?? 0,
+          dueAmount: due,
+          date: sale.saleDate || (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
+          items: sale.items?.map((item: any) => ({
+            product: productsBySoul.get(item.product)?.title || item.product,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            total: item.quantity * item.unitPrice
+          })) || []
+        };
+      });
+  }, [filteredSales, productsBySoul]);
+
+  // Detailed breakdowns for Accounts Payable
+  const accountsPayableBreakdown = useMemo(() => {
+    return filteredStockImports
+      .filter((imp: any) => {
+        const total = importTotal(imp);
+        const due = total - (imp.paidAmount ?? 0);
+        return due > 0;
+      })
+      .map((imp: any) => {
+        const total = importTotal(imp);
+        const due = total - (imp.paidAmount ?? 0);
+        const party = partiesBySoul.get(imp.party);
+        return {
+          id: imp._?.soul || '',
+          supplier: party?.name || imp.party,
+          totalAmount: total,
+          paidAmount: imp.paidAmount ?? 0,
+          dueAmount: due,
+          date: imp.importDate || (imp.timestamp ? new Date(imp.timestamp).toISOString() : ''),
+          items: imp.items?.map((item: any) => ({
+            product: productsBySoul.get(item.product)?.title || item.product,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            total: item.quantity * item.unitPrice
+          })) || []
+        };
+      });
+  }, [filteredStockImports, partiesBySoul, productsBySoul]);
 
   // Top Suppliers
   const supplierTotals = useMemo(() => {
@@ -223,6 +310,8 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     netProfit,
     accountsReceivable,
     accountsPayable,
+    accountsReceivableBreakdown,
+    accountsPayableBreakdown,
     topSuppliers: supplierTotals,
     topProducts: productRevenue,
     salesTrends,
