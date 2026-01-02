@@ -76,7 +76,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
     {
       title: "Dashboard",
       icon: BarChart3,
-      children: <AdminDashboard slug={basePath} />,
+      children: <AdminDashboard slug={basePath} businessType={business.businessType} />,
     },
     ...tabs,
     {

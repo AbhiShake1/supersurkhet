@@ -18,7 +18,6 @@ import {
   Users,
   Wrench,
   ListTodo, DollarSign,
-  BarChart3
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
@@ -28,7 +27,6 @@ import z from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { api } from "@/lib/api";
 import { useMemo } from "react";
-import { ReportsPage } from "@/components/reports-page";
 import NepaliDate from "nepali-datetime";
 import type { UseFormReturn } from "react-hook-form";
 import {
@@ -616,13 +614,6 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
       stockImportsConfig,
       salesConfig,
       invoicesConfig,
-      {
-        title: "Reports",
-        slug,
-        icon: BarChart3,
-        children: <ReportsPage slug={slug} />,
-        group: "Financial",
-      },
       {
         schema: "order",
         title: "Orders",
