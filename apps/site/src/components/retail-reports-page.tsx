@@ -13,11 +13,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   HoverablePopover,
   HoverablePopoverContent,
   HoverablePopoverTrigger,
@@ -57,7 +52,7 @@ interface ReportsPageProps {
   slug: string;
 }
 
-export function ReportsPage({ slug }: ReportsPageProps) {
+export function RetailReportsPage({ slug }: ReportsPageProps) {
   const [period, setPeriod] = useState("all");
   const analytics = useBusinessAnalytics(slug, period);
 

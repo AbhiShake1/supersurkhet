@@ -16,7 +16,6 @@ import {
   Search,
   FileText,
   Calendar,
-  Currency,
   ArrowUpDown,
   Plus,
   DollarSign,
@@ -28,7 +27,7 @@ import { api } from "@/lib/api";
 import _ from "lodash";
 import { format } from "date-fns";
 import { AutoTable } from "@/components/auto-table";
-import type { Invoice, Party } from "@/lib/schema";
+import type { Invoice } from "@/lib/schema";
 
 interface InvoiceManagementProps {
   slug: string;
@@ -72,7 +71,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
   const filteredInvoices = invoices.filter((invoice) => {
     const party = parties.find((p) => p._?.soul === invoice.partyId);
     const matchesSearch =
-      invoice.invoiceNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      invoice._?.soul?.includes(searchQuery.toLowerCase()) ||
       party?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       invoice.fiscalYear?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSearch;
@@ -100,7 +99,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm">#{invoice.invoiceNumber}</h3>
+              <h3 className="font-semibold text-sm">#{invoice._?.soul?.split("/").at(-1)}</h3>
               <Badge
                 variant={getInvoiceTypeBadgeVariant(invoice.type)}
                 className="mt-1 text-xs"
@@ -110,9 +109,9 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
             </div>
           </div>
           <div className="text-right">
-            <div className="font-bold text-sm">Rs. {invoice.total?.toFixed(2)}</div>
+            <div className="font-bold text-sm">Rs. {invoice.subTotal?.toFixed(2)}</div>
             <div className="text-xs text-gray-500">
-              {format(new Date(invoice.issuedAt), "MMM dd, yyyy")}
+              {invoice.issuedAt && format(new Date(invoice.issuedAt), "MMM dd, yyyy")}
             </div>
           </div>
         </div>
@@ -126,7 +125,10 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
           )}
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
-            <span>{format(new Date(invoice.issuedAt), "MMM dd, yyyy")}</span>
+            {
+              invoice.issuedAt &&
+              <span>{format(new Date(invoice.issuedAt), "MMM dd, yyyy")}</span>
+            }
           </div>
           <div className="flex justify-between text-sm">
             <span>Subtotal:</span>
@@ -138,7 +140,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
           </div>
           <div className="flex justify-between text-sm font-semibold">
             <span>Total:</span>
-            <span>Rs. {invoice.total?.toFixed(2)}</span>
+            <span>Rs. {invoice.subTotal?.toFixed(2)}</span>
           </div>
         </div>
       </div>
@@ -226,7 +228,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                   Total Amount
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
-                  Rs. {invoices.reduce((sum, inv) => sum + (inv.total || 0), 0).toFixed(2)}
+                  Rs. {invoices.reduce((sum, inv) => sum + (inv.subTotal || 0), 0).toFixed(2)}
                 </p>
               </div>
               <DollarSign className="w-8 h-8 text-purple-500" />
@@ -314,7 +316,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                       <span className="font-medium">
                         Rs. {invoices
                           .filter((i) => i.type === "sale")
-                          .reduce((sum, inv) => sum + (inv.total || 0), 0)
+                          .reduce((sum, inv) => sum + (inv.subTotal || 0), 0)
                           .toFixed(2)}
                       </span>
                     </div>
@@ -323,7 +325,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                       <span className="font-medium">
                         Rs. {invoices
                           .filter((i) => i.type === "purchase")
-                          .reduce((sum, inv) => sum + (inv.total || 0), 0)
+                          .reduce((sum, inv) => sum + (inv.subTotal || 0), 0)
                           .toFixed(2)}
                       </span>
                     </div>
@@ -333,10 +335,10 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                         Rs. {(
                           invoices
                             .filter((i) => i.type === "sale")
-                            .reduce((sum, inv) => sum + (inv.total || 0), 0) -
+                            .reduce((sum, inv) => sum + (inv.subTotal || 0), 0) -
                           invoices
                             .filter((i) => i.type === "purchase")
-                            .reduce((sum, inv) => sum + (inv.total || 0), 0)
+                            .reduce((sum, inv) => sum + (inv.subTotal || 0), 0)
                         ).toFixed(2)}
                       </span>
                     </div>
