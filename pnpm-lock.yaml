@@ -8,6 +8,9 @@ importers:
 
   .:
     devDependencies:
+      '@qwen-code/qwen-code':
+        specifier: ^0.6.0
+        version: 0.6.0
       prettier:
         specifier: ^3.2.5
         version: 3.5.3
@@ -2928,6 +2931,39 @@ packages:
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
 
+  '@lydell/node-pty-darwin-arm64@1.1.0':
+    resolution: {integrity: sha512-7kFD+owAA61qmhJCtoMbqj3Uvff3YHDiU+4on5F2vQdcMI3MuwGi7dM6MkFG/yuzpw8LF2xULpL71tOPUfxs0w==}
+    cpu: [arm64]
+    os: [darwin]
+
+  '@lydell/node-pty-darwin-x64@1.1.0':
+    resolution: {integrity: sha512-XZdvqj5FjAMjH8bdp0YfaZjur5DrCIDD1VYiE9EkkYVMDQqRUPHYV3U8BVEQVT9hYfjmpr7dNaELF2KyISWSNA==}
+    cpu: [x64]
+    os: [darwin]
+
+  '@lydell/node-pty-linux-arm64@1.1.0':
+    resolution: {integrity: sha512-yyDBmalCfHpLiQMT2zyLcqL2Fay4Xy7rIs8GH4dqKLnEviMvPGOK7LADVkKAsbsyXBSISL3Lt1m1MtxhPH6ckg==}
+    cpu: [arm64]
+    os: [linux]
+
+  '@lydell/node-pty-linux-x64@1.1.0':
+    resolution: {integrity: sha512-NcNqRTD14QT+vXcEuqSSvmWY+0+WUBn2uRE8EN0zKtDpIEr9d+YiFj16Uqds6QfcLCHfZmC+Ls7YzwTaqDnanA==}
+    cpu: [x64]
+    os: [linux]
+
+  '@lydell/node-pty-win32-arm64@1.1.0':
+    resolution: {integrity: sha512-JOMbCou+0fA7d/m97faIIfIU0jOv8sn2OR7tI45u3AmldKoKoLP8zHY6SAvDDnI3fccO1R2HeR1doVjpS7HM0w==}
+    cpu: [arm64]
+    os: [win32]
+
+  '@lydell/node-pty-win32-x64@1.1.0':
+    resolution: {integrity: sha512-3N56BZ+WDFnUMYRtsrr7Ky2mhWGl9xXcyqR6cexfuCqcz9RNWL+KoXRv/nZylY5dYaXkft4JaR1uVu+roiZDAw==}
+    cpu: [x64]
+    os: [win32]
+
+  '@lydell/node-pty@1.1.0':
+    resolution: {integrity: sha512-VDD8LtlMTOrPKWMXUAcB9+LTktzuunqrMwkYR1DMRBkS6LQrCt+0/Ws1o2rMml/n3guePpS7cxhHF7Nm5K4iMw==}
+
   '@mapbox/node-pre-gyp@1.0.11':
     resolution: {integrity: sha512-Yhlar6v9WQgUp/He7BdgzOz8lqMQ8sU+jkCq7Wx8Myc5YFJLbEe7lgui/V7G1qB1DJykHSGwreceSaD60Y0PUQ==}
     hasBin: true
@@ -3403,6 +3439,11 @@ packages:
     resolution: {integrity: sha512-Po/Hry5bAeunRDq0yAQueKookW3glpP+qjjvvyOfm6dI2KG5/Y6Bgg3ahyWd7B0u2E+Wf9xRk2rtdda7ySgK1A==}
     peerDependencies:
       '@opentelemetry/api': ^1.8
+
+  '@qwen-code/qwen-code@0.6.0':
+    resolution: {integrity: sha512-k5bBZat9+fFMyTDZMfvbQLo4wAChoNmQW9qjVdX3j2hJssKjSPw5yXStUSH+hlFUYegqMqULRNKpyWVsic6GHg==}
+    engines: {node: '>=20.0.0'}
+    hasBin: true
 
   '@radix-ui/number@1.1.1':
     resolution: {integrity: sha512-MkKCwxlXTgz6CFoJx3pCwn07GKp36+aZyu/u2Ln2VrA5DcdyCZkASEDBTd8x5whTQQL5CiYf4prXKLcgQdv29g==}
@@ -10526,6 +10567,9 @@ packages:
   node-mock-http@1.0.0:
     resolution: {integrity: sha512-0uGYQ1WQL1M5kKvGRXWQ3uZCHtLTO8hln3oBjIusM75WoesZ909uQJs/Hb946i2SS+Gsrhkaa6iAO17jRIv6DQ==}
 
+  node-pty@1.1.0:
+    resolution: {integrity: sha512-20JqtutY6JPXTUnL0ij1uad7Qe1baT46lyolh2sSENDd4sTzKZ4nmAFkeAARDKwmlLjPx6XKRlwRUxwjOy+lUg==}
+
   node-releases@2.0.19:
     resolution: {integrity: sha512-xxOWJsBKtzAq7DY0J+DTzuz58K8e7sJbdgwkbMWQe8UYB6ekmsQ45q0M/tJDsGaZmbC+l7n57UV8Hl5tHxO9uw==}
 
@@ -12448,6 +12492,9 @@ packages:
 
   tiktok-video-element@0.1.1:
     resolution: {integrity: sha512-BaiVzvNz2UXDKTdSrXzrNf4q6Ecc+/utYUh7zdEu2jzYcJVDoqYbVfUl0bCfMoOeeAqg28vD/yN63Y3E9jOrlA==}
+
+  tiktoken@1.0.22:
+    resolution: {integrity: sha512-PKvy1rVF1RibfF3JlXBSP0Jrcw2uq3yXdgcEXtKTYn3QJ/cBRBHDnrJ5jHky+MENZ6DIPwNUGWpkVx+7joCpNA==}
 
   tiny-case@1.0.3:
     resolution: {integrity: sha512-Eet/eeMhkO6TX8mnUteS9zgPbUMQa4I6Kkp5ORiBD5476/m+PIRiumP5tmh5ioJpH7k51Kehawy2UDfsnxxY8Q==}
@@ -15939,6 +15986,34 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
+  '@lydell/node-pty-darwin-arm64@1.1.0':
+    optional: true
+
+  '@lydell/node-pty-darwin-x64@1.1.0':
+    optional: true
+
+  '@lydell/node-pty-linux-arm64@1.1.0':
+    optional: true
+
+  '@lydell/node-pty-linux-x64@1.1.0':
+    optional: true
+
+  '@lydell/node-pty-win32-arm64@1.1.0':
+    optional: true
+
+  '@lydell/node-pty-win32-x64@1.1.0':
+    optional: true
+
+  '@lydell/node-pty@1.1.0':
+    optionalDependencies:
+      '@lydell/node-pty-darwin-arm64': 1.1.0
+      '@lydell/node-pty-darwin-x64': 1.1.0
+      '@lydell/node-pty-linux-arm64': 1.1.0
+      '@lydell/node-pty-linux-x64': 1.1.0
+      '@lydell/node-pty-win32-arm64': 1.1.0
+      '@lydell/node-pty-win32-x64': 1.1.0
+    optional: true
+
   '@mapbox/node-pre-gyp@1.0.11':
     dependencies:
       detect-libc: 2.0.4
@@ -16581,6 +16656,18 @@ snapshots:
       '@opentelemetry/instrumentation': 0.57.2(@opentelemetry/api@1.9.0)
     transitivePeerDependencies:
       - supports-color
+
+  '@qwen-code/qwen-code@0.6.0':
+    dependencies:
+      tiktoken: 1.0.22
+    optionalDependencies:
+      '@lydell/node-pty': 1.1.0
+      '@lydell/node-pty-darwin-arm64': 1.1.0
+      '@lydell/node-pty-darwin-x64': 1.1.0
+      '@lydell/node-pty-linux-x64': 1.1.0
+      '@lydell/node-pty-win32-arm64': 1.1.0
+      '@lydell/node-pty-win32-x64': 1.1.0
+      node-pty: 1.1.0
 
   '@radix-ui/number@1.1.1': {}
 
@@ -25678,6 +25765,11 @@ snapshots:
 
   node-mock-http@1.0.0: {}
 
+  node-pty@1.1.0:
+    dependencies:
+      node-addon-api: 7.1.1
+    optional: true
+
   node-releases@2.0.19: {}
 
   node-releases@2.0.23: {}
@@ -28016,6 +28108,8 @@ snapshots:
   throat@5.0.0: {}
 
   tiktok-video-element@0.1.1: {}
+
+  tiktoken@1.0.22: {}
 
   tiny-case@1.0.3: {}
 

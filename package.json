@@ -4,9 +4,11 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "start": "turbo start"
+    "start": "turbo start",
+    "ai": "node scripts/copy-chat.js && qwen --resume default-chat -y"
   },
   "devDependencies": {
+    "@qwen-code/qwen-code": "^0.6.0",
     "prettier": "^3.2.5",
     "turbo": "^2.3.3",
     "typescript": "5.7.2"
@@ -15,9 +17,6 @@
   "engines": {
     "node": ">=18"
   },
-  "pnpm": {
-  },
-  "version": "1.0.0",
-  "dependencies": {
-  }
+  "pnpm": {},
+  "version": "1.0.0"
 }
