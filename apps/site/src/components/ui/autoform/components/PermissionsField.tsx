@@ -38,8 +38,6 @@ function PermissionGroup({
 }: PermissionGroupProps) {
   const [expanded, setExpanded] = useState(true);
 
-  console.log(`PermissionGroup - ${feature} - Current value:`, value);
-
   const permissionKeys = useMemo(
     () => actions.map(action => `${feature}:${action}`),
     [feature, actions]
@@ -57,14 +55,12 @@ function PermissionGroup({
     for (const key of permissionKeys) {
       next[key] = checked;
     }
-    console.log(`PermissionGroup - ${feature} - toggleFeature called, new value:`, next);
     onChange(next);
   };
 
   const toggleAction = (action: string, checked: boolean) => {
     const key = `${feature}:${action}`;
     const next = { ...value, [key]: checked };
-    console.log(`PermissionGroup - ${feature} - toggleAction for ${key}, new value:`, next);
     onChange(next);
   };
 
@@ -155,12 +151,12 @@ interface PermissionsFieldProps extends AutoFormFieldProps {
 }
 
 export const PermissionsField: React.FC<PermissionsFieldProps> = ({ path, field, id, inputProps, value: _value }) => {
-  
+
   const name = path.join(".");
   const tabs = field.fieldConfig?.customData?.tabs;
 
   // Update local state when prop changes
-  const [localValue, setLocalValue] = useState(() => _value || field.default || {});  
+  const [localValue, setLocalValue] = useState(() => _value || field.default || {});
   useEffect(() => {
     setLocalValue(_value || field.default || {});
   }, [_value, field.default]);
@@ -169,8 +165,6 @@ export const PermissionsField: React.FC<PermissionsFieldProps> = ({ path, field,
     () => generatePermissions(tabs || []),
     [tabs]
   );
-
-  console.log("PermissionsField - Current value:", localValue);
 
   return (
     <Popover modal>
@@ -194,16 +188,12 @@ export const PermissionsField: React.FC<PermissionsFieldProps> = ({ path, field,
                 value={localValue}
                 onChange={(permissions) => {
 
-                  console.log("PermissionsField - onChange called with:", permissions);
-                  // Create a new object that includes all existing permissions plus the new ones
-
                   const updatedPermissions = { ...localValue };
                   Object.keys(permissions).forEach(key => {
                     updatedPermissions[key] = permissions[key];
                   });
-                  console.log("PermissionsField - updatedPermissions:", updatedPermissions);
                   setLocalValue(updatedPermissions);
-                  
+
                   inputProps.onChange({
                     target: {
                       value: updatedPermissions,
