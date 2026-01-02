@@ -78,10 +78,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
           [invitationToken]: {
             email: data.email,
             role: "staff",
-            permissions: data.permissions.reduce((acc: any, perm: string) => {
-              acc[perm] = true;
-              return acc;
-            }, {}),
+            permissions: data.permissions,
             invitedAt: Date.now(),
             token: invitationToken,
           }
