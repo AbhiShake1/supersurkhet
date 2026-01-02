@@ -503,7 +503,7 @@ function AccountsSection({
                         {product.product}
                       </div>
                       <div className="text-right">
-                        <div>{product.quantity} × {formatCurrency(product.unitPrice)}</div>
+                        <div>{product.quantity} {product.unit && <sub className="text-muted-foreground">${product.unit}</sub>} × {formatCurrency(product.unitPrice)}</div>
                         <div className="text-xs text-muted-foreground">= {formatCurrency(product.total)}</div>
                       </div>
                     </div>
@@ -571,7 +571,7 @@ function AccountsSection({
                         {product.product}
                       </div>
                       <div className="text-right">
-                        <div>{product.quantity} × {formatCurrency(product.unitPrice)}</div>
+                        <div>{product.quantity} {product.unit && <sub className="text-muted-foreground">{product.unit}</sub>} × {formatCurrency(product.unitPrice)}</div>
                         <div className="text-xs text-muted-foreground">= {formatCurrency(product.total)}</div>
                       </div>
                     </div>

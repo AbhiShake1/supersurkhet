@@ -131,12 +131,12 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   // Detailed breakdowns for Accounts Payable
   const accountsPayableBreakdown = useMemo(() => {
     return filteredStockImports
-      .filter((imp: any) => {
+      .filter((imp) => {
         const total = importTotal(imp);
         const due = total - (imp.paidAmount ?? 0);
         return due > 0;
       })
-      .map((imp: any) => {
+      .map((imp) => {
         const total = importTotal(imp);
         const due = total - (imp.paidAmount ?? 0);
         const party = partiesBySoul.get(imp.party);
@@ -147,7 +147,8 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
           paidAmount: imp.paidAmount ?? 0,
           dueAmount: due,
           date: imp.importDate || (imp.timestamp ? new Date(imp.timestamp).toISOString() : ''),
-          items: imp.items?.map((item: any) => ({
+          items: imp.items?.map((item) => ({
+            ...item,
             product: productsBySoul.get(item.product)?.title || item.product,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
