@@ -60,20 +60,28 @@ function PermissionGroup({
 
   const toggleAction = (action: string, checked: boolean) => {
     const key = `${feature}:${action}`;
-    onChange({ ...value, [key]: checked });
+    const next = { ...value, [key]: checked };
+    onChange(next);
   };
 
   return (
     <div className="space-y-1">
-      <div
+      {/* <div
         className="flex items-center space-x-2 cursor-pointer"
         onClick={() => setExpanded(v => !v)}
-      >
-        {expanded ? (
-          <ChevronDown className="h-4 w-4" />
-        ) : (
-          <ChevronRight className="h-4 w-4" />
-        )}
+      > */}
+      <div className="flex items-center space-x-2">
+        <button
+          type="button"
+          className="cursor-pointer"
+          onClick={() => setExpanded(v => !v)}
+        >
+          {expanded ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
 
         <Checkbox
           id={`feature-${feature}`}
@@ -92,7 +100,8 @@ function PermissionGroup({
 
         <Label
           htmlFor={`feature-${feature}`}
-          className="text-sm font-medium capitalize"
+          className="text-sm font-medium capitalize cursor-pointer"
+          onClick={() => setExpanded(v => !v)}
         >
           {feature.replaceAll("_", " ")}
         </Label>
@@ -142,9 +151,15 @@ interface PermissionsFieldProps extends AutoFormFieldProps {
 }
 
 export const PermissionsField: React.FC<PermissionsFieldProps> = ({ path, field, id, inputProps, value: _value }) => {
-  const value = _value || field.default || {};
+
   const name = path.join(".");
   const tabs = field.fieldConfig?.customData?.tabs;
+
+  // Update local state when prop changes
+  const [localValue, setLocalValue] = useState(() => _value || field.default || {});
+  useEffect(() => {
+    setLocalValue(_value || field.default || {});
+  }, [_value, field.default]);
 
   const groupedPermissions = useMemo(
     () => generatePermissions(tabs || []),
@@ -157,7 +172,7 @@ export const PermissionsField: React.FC<PermissionsFieldProps> = ({ path, field,
         <Button variant="outline" className="flex items-center gap-2 w-full">
           <span className="text-sm font-medium">Permissions</span>
           <span className="text-xs font-normal text-muted-foreground">
-            {Object.values(value).filter(Boolean).length} selected
+            {Object.values(localValue).filter(Boolean).length} selected
           </span>
         </Button>
       </PopoverTrigger>
@@ -170,15 +185,21 @@ export const PermissionsField: React.FC<PermissionsFieldProps> = ({ path, field,
                 key={feature}
                 feature={feature}
                 actions={actions}
-                value={value}
-                onChange={(_permissions) => {
-                  const permissions = { ...value, ..._permissions };
+                value={localValue}
+                onChange={(permissions) => {
+
+                  const updatedPermissions = { ...localValue };
+                  Object.keys(permissions).forEach(key => {
+                    updatedPermissions[key] = permissions[key];
+                  });
+                  setLocalValue(updatedPermissions);
+
                   inputProps.onChange({
                     target: {
-                      value: permissions,
+                      value: updatedPermissions,
                       name,
                     },
-                  })
+                  });
                 }}
               />
             ))}

@@ -20,23 +20,25 @@ declare global {
 // Posted by Gaurav, modified by community. See post 'Timeline' for change history
 // Retrieved 2025-12-31, License - CC BY-SA 3.0
 
-HTMLElement.prototype.print = print;
-function print() {
-  var myframe = document.createElement('IFRAME');
-  // @ts-expect-error
-  myframe.domain = document.domain;
-  myframe.style.position = "absolute";
-  myframe.style.top = "-10000px";
-  document.body.appendChild(myframe);
-  // @ts-expect-error
-  myframe.contentDocument.write(this.innerHTML);
-  setTimeout(function () {
-    myframe.focus();
+if (typeof window !== 'undefined') {
+  HTMLElement.prototype.print = print;
+  function print() {
+    var myframe = document.createElement('IFRAME');
     // @ts-expect-error
-    myframe.contentWindow.print();
-    myframe.parentNode?.removeChild(myframe);// remove frame
-  }, 3000); // wait for images to load inside iframe
-  window.focus();
+    myframe.domain = document.domain;
+    myframe.style.position = "absolute";
+    myframe.style.top = "-10000px";
+    document.body.appendChild(myframe);
+    // @ts-expect-error
+    myframe.contentDocument.write(this.innerHTML);
+    setTimeout(function () {
+      myframe.focus();
+      // @ts-expect-error
+      myframe.contentWindow.print();
+      myframe.parentNode?.removeChild(myframe);// remove frame
+    }, 3000); // wait for images to load inside iframe
+    window.focus();
+  }
 }
 
 interface ReceiptWrapperProps {
