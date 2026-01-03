@@ -23,11 +23,11 @@ import {
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
 import type { AutoTableTab } from "@/components/auto-admin";
-import { salesItemSchema } from "@/lib/schemas/sales";
+import { salesItemSchema, type Sale, type StockImport } from "@/lib/schemas/sales";
 import z from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
 import { api } from "@/lib/api";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import NepaliDate from "nepali-datetime";
 import type { UseFormReturn } from "react-hook-form";
 import {
@@ -53,9 +53,12 @@ function calculateFiscalYear() {
   return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
 }
 
-function calculateTotalCost(form: UseFormReturn) {
+export type TransactionForm = UseFormReturn<StockImport | Sale>
+
+function calculateTotalCost(form: TransactionForm) {
   const formValues = form.getValues()
-  if (!formValues?.items?.length) return
+  if (!formValues?.items?.length) return 0
+
   return formValues.items.reduce((sum: number, item: any) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
 }
 
@@ -66,10 +69,13 @@ function getPaymentStatus(paidAmount: number, totalCost: number) {
   return `partial (${formatCurrency(totalCost - paidAmount)} to pay)`
 }
 
-function refreshPaidAmount(form: UseFormReturn) {
+function refreshPaidAmount(form: TransactionForm) {
+  const formValues = form.getValues()
   const totalCost = calculateTotalCost(form)
+  // const [,a] = formValues
+  if (!totalCost) return
   form.setValue("paidAmount", totalCost)
-  const paidAmount = form.getValues().paidAmount
+  const paidAmount = formValues.paidAmount
   const paymentStatus = getPaymentStatus(paidAmount, totalCost)
   form.setValue("paymentStatus", paymentStatus)
 }
@@ -90,6 +96,22 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   ), [parties])
+
+  function getDefaultUnitField() {
+    return z.string().optional().describe("Unit").superRefine(fieldConfig({
+      inputProps: {
+        disabled: true,
+        placeholder: "Select product for unit",
+        className: "border-none"
+      }
+    }))
+  }
+
+  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
+
+  useEffect(() => {
+    return () => setUnitField(getDefaultUnitField())
+  }, [])
 
   function getQuantityDescription() {
     return "Quantity"
@@ -126,12 +148,14 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
           onValueChange: (_paidAmount, __, form) => {
             const paidAmount = Number(_paidAmount)
             const totalCost = calculateTotalCost(form)
+            if (!totalCost) return
             form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
           },
         }
       })),
       items: salesItemSchema
         .extend({
+          unit: unitField,
           product: z.string().describe("Product")
             .superRefine(fieldConfig({
               fieldType: "select",
@@ -143,22 +167,42 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
                   if (!product) return
                   const [itemsKey, index] = path
 
-                  // Handle unit selection based on product unit configuration
-                  let productUnit = product.unit;
-                  let unitDisplay = productUnit;
-                  let unitPrice = product.costPrice;
+                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
+                  if (product.unit) {
+                    const [unitType, piecesPerUnit] = product.unit.split(':');
+                    if (piecesPerUnit) {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType, "piece"],
+                          configDisabled: true,
+                          onValueChange(value, path, form) {
+                            const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
+                            const [, quantityPerUnit] = value?.split(':') ?? []
+                            const [itemsKey, index] = path
 
-                  // If the product unit has pieces info (e.g., "cartoon:10"), split it
-                  if (productUnit && productUnit.includes(':')) {
-                    const [unitType, piecesPerUnit] = productUnit.split(':');
-
-                    // For stock imports, we might want to allow importing in pieces or whole units
-                    // For now, default to the base unit type but make the unit field selectable
-                    unitDisplay = unitType;
+                            // if quantity exists in the unit, we dont want to use it as its the compound unit
+                            if (quantityPerUnit) {
+                              if (product.costPrice)
+                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
+                            } else {
+                              if (productQuantityPerUnit && product.costPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
+                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice / Number(productQuantityPerUnit))
+                              }
+                            }
+                          },
+                        },
+                      })))
+                    } else {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType],
+                        },
+                      })))
+                    }
+                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
                   }
-
-                  form.setValue([itemsKey, index, "unit"].join("."), unitDisplay)
-                  form.setValue([itemsKey, index, "unitPrice"].join("."), unitPrice)
                   refreshPaidAmount(form)
                 }
               },
@@ -251,13 +295,13 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         fiscalYear: calculateFiscalYear()
       });
     },
-    onUpdate(_, variables) {
-      // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
-      // Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
-      //   const product = productsBySoul.get(productId)
-      //   if (!product?._?.soul) return
-      //   updateProduct({ id: product?._
-    }
+    // onUpdate(_, variables) {
+    //   // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+    //   // Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+    //   //   const product = productsBySoul.get(productId)
+    //   //   if (!product?._?.soul) return
+    //   //   updateProduct({ id: product?._
+    // }
   }
 }
 
@@ -361,6 +405,18 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       .map(p => [p._!.soul!, p])
   ), [customers])
 
+  function getDefaultUnitField() {
+    return z.string().optional().describe("Unit").superRefine(fieldConfig({
+      inputProps: {
+        disabled: true,
+        placeholder: "Select product for unit",
+        className: "border-none"
+      }
+    }))
+  }
+
+  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
+
   return {
     schema: "sale",
     title: "Sales",
@@ -409,26 +465,34 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
                   if (!product) return
                   const [itemsKey, index] = path
 
-                  // Handle unit selection based on product unit configuration
-                  let productUnit = product.unit;
-                  let unitDisplay = productUnit;
-                  let unitPrice = product.sellingPrice;
+                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
 
-                  // If the product unit has pieces info (e.g., "cartoon:10"), split it
-                  if (productUnit && productUnit.includes(':')) {
-                    const [unitType, piecesPerUnit] = productUnit.split(':');
-
-                    // For sales, we might want to allow selling in pieces or whole units
-                    // For now, default to the base unit type but make the unit field selectable
-                    unitDisplay = unitType;
+                  if (product.unit) {
+                    const [unitType, piecesPerUnit] = product.unit.split(':');
+                    if (piecesPerUnit) {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType, "piece"],
+                          configDisabled: true
+                        },
+                      })))
+                    } else {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType],
+                        },
+                      })))
+                    }
+                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
                   }
 
-                  form.setValue([itemsKey, index, "unit"].join("."), unitDisplay)
-                  form.setValue([itemsKey, index, "unitPrice"].join("."), unitPrice)
                   refreshPaidAmount(form)
                 }
               },
             })),
+          unit: unitField,
           quantity: z.number({ coerce: true }).int().positive()
             .describe("Quantity")
             .superRefine(fieldConfig({

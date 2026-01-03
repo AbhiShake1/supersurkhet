@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -12,6 +11,12 @@ export interface UnitFieldProps extends AutoFormFieldProps {
   description?: string;
 }
 
+// Regular units that don't need additional configuration
+const REGULAR_UNITS = ["piece", "dozen", "litre", "kg"];
+
+// Special units that need additional configuration (pieces per unit)
+const SPECIAL_UNITS = ["cartoon"];
+
 export function UnitField({
   field,
   description,
@@ -21,25 +26,22 @@ export function UnitField({
   inputProps: {
     placeholder = "Select unit...",
     className,
-    ...inputProps
   },
-  ...props
 }: UnitFieldProps) {
-  const [selectedUnit, setSelectedUnit] = useState(value?.split(':')[0] || "");
-  const [piecesPerUnit, setPiecesPerUnit] = useState(value?.split(':')[1] || 1);
+  const onlyAllow = field.fieldConfig?.customData?.onlyAllow
+  const configDisabled = field.fieldConfig?.customData?.configDisabled as boolean
+
+  const [initialSelectedUnit, initialPiecesPerUnit] = value?.split(':') ?? []
+  const [selectedUnit, setSelectedUnit] = useState(initialSelectedUnit || "");
+  const [piecesPerUnit, setPiecesPerUnit] = useState(initialPiecesPerUnit || 1);
   const fieldName = path.join(".");
   const form = useFormContext();
 
-  // Regular units that don't need additional configuration
-  const REGULAR_UNITS = ["piece", "dozen", "litre", "kg", "gram", "meter", "yard", "pound"];
-
-  // Special units that need additional configuration (pieces per unit)
-  const SPECIAL_UNITS = ["cartoon", "box", "pack", "bundle", "set"];
-
-  const ALL_UNITS = [...REGULAR_UNITS, ...SPECIAL_UNITS];
+  const ALL_UNITS = onlyAllow ?? [...REGULAR_UNITS, ...SPECIAL_UNITS];
 
   // Update the form value when unit or piecesPerUnit changes
   useEffect(() => {
+    if (!selectedUnit) return
     let value;
     if (SPECIAL_UNITS.includes(selectedUnit)) {
       // For special units, store as "unit:piecesPerUnit"
@@ -49,16 +51,14 @@ export function UnitField({
       value = selectedUnit;
     }
 
+    field.fieldConfig?.customData?.onValueChange?.(value, path, form)
+
     // Update the form field with the new value
     form.setValue(fieldName, value);
-  }, [selectedUnit, piecesPerUnit, fieldName, form, SPECIAL_UNITS]);
+  }, [selectedUnit, piecesPerUnit, fieldName, form]);
 
   const handleUnitChange = (value: string) => {
     setSelectedUnit(value);
-    // Reset piecesPerUnit to 1 when switching from special to regular unit
-    if (!SPECIAL_UNITS.includes(value) && SPECIAL_UNITS.includes(selectedUnit)) {
-      setPiecesPerUnit(1);
-    }
   };
 
   const handlePiecesPerUnitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,6 +67,8 @@ export function UnitField({
       setPiecesPerUnit(value);
     }
   };
+
+  if (ALL_UNITS.length === 1) return <Input value={ALL_UNITS[0]} className="border-none" disabled />
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -92,6 +94,7 @@ export function UnitField({
         {SPECIAL_UNITS.includes(selectedUnit) && (
           <div className="w-24">
             <Input
+              disabled={configDisabled}
               type="number"
               min="1"
               value={piecesPerUnit}
