@@ -4,11 +4,10 @@ import { fieldConfig } from "@/components/ui/autoform";
 export const salesItemSchema = z.object({
   product: z.string().describe("Product"),
   unit: z.string().optional().describe("Unit").superRefine(fieldConfig({
-    fieldType: "string",
+    fieldType: "unit",
     inputProps: {
-      disabled: true,
-      className: "border-none",
-      placeholder: "Select product to view unit"
+      disabled: false,
+      placeholder: "Select unit for sale"
     }
   })),
   quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),

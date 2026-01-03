@@ -142,8 +142,23 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
                   const product = productsBySoul.get(val)
                   if (!product) return
                   const [itemsKey, index] = path
-                  form.setValue([itemsKey, index, "unit"].join("."), product.unit)
-                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
+
+                  // Handle unit selection based on product unit configuration
+                  let productUnit = product.unit;
+                  let unitDisplay = productUnit;
+                  let unitPrice = product.costPrice;
+
+                  // If the product unit has pieces info (e.g., "cartoon:10"), split it
+                  if (productUnit && productUnit.includes(':')) {
+                    const [unitType, piecesPerUnit] = productUnit.split(':');
+
+                    // For stock imports, we might want to allow importing in pieces or whole units
+                    // For now, default to the base unit type but make the unit field selectable
+                    unitDisplay = unitType;
+                  }
+
+                  form.setValue([itemsKey, index, "unit"].join("."), unitDisplay)
+                  form.setValue([itemsKey, index, "unitPrice"].join("."), unitPrice)
                   refreshPaidAmount(form)
                 }
               },
@@ -170,7 +185,26 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         .describe("Items to Import"),
     },
     onCreate(_, variables) {
-      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+      // Stock update logic with unit conversion
+      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity, unit }) => {
+        // Check if the product unit has pieces info (e.g., "cartoon:10")
+        const productInfo = productsBySoul.get(product);
+        if (!productInfo) return a;
+
+        let adjustedQuantity = quantity;
+        if (productInfo.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the import unit matches the product's base unit type, convert to pieces
+          if (unit === unitType) {
+            adjustedQuantity = quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        a[product] = (a[product] || 0) + adjustedQuantity;
+        return a;
+      }, {} as Record<string, number>);
+
       Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
         const product = productsBySoul.get(productId)
         if (!product?._?.soul) return
@@ -178,17 +212,30 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
       })
 
       // Create corresponding invoice
-      const invoiceItems = Object.fromEntries(
-        variables.items?.map((item, index) => [
+      const invoiceItems = variables.items?.map((item, index) => {
+        // Adjust quantity for invoice based on unit conversion
+        const productInfo = productsBySoul.get(item.product);
+        let adjustedQuantity = item.quantity;
+
+        if (productInfo?.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the import unit matches the product's base unit type, convert to pieces for inventory tracking
+          if (item.unit === unitType) {
+            adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        return [
           `itm_${index}`,
           {
             product: item.product,
-            quantity: item.quantity,
+            quantity: adjustedQuantity,
             rate: item.unitPrice,
             total: item.quantity * item.unitPrice
           }
-        ]) ?? []
-      );
+        ];
+      }) ?? [];
 
       const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
 
@@ -196,7 +243,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         type: "purchase",
         partyId: variables.party,
         issuedAt: variables.importDate,
-        items: invoiceItems,
+        items: Object.fromEntries(invoiceItems),
         subTotal: totalAmount,
         tax: 0,
         paidAmount: variables.paidAmount || 0,
@@ -278,7 +325,7 @@ export function usePartyConfig({ slug }: { slug: string }): AutoTableTab<"party"
     schema: "party",
     title: "Purchase Parties",
     slug,
-    icon: Users,
+    icon: Users2,
     group: "Party",
     onDelete(_, id) {
       if (!invoices.length) return
@@ -361,8 +408,23 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
                   const product = productsBySoul.get(val)
                   if (!product) return
                   const [itemsKey, index] = path
-                  form.setValue([itemsKey, index, "unit"].join("."), product.unit)
-                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+
+                  // Handle unit selection based on product unit configuration
+                  let productUnit = product.unit;
+                  let unitDisplay = productUnit;
+                  let unitPrice = product.sellingPrice;
+
+                  // If the product unit has pieces info (e.g., "cartoon:10"), split it
+                  if (productUnit && productUnit.includes(':')) {
+                    const [unitType, piecesPerUnit] = productUnit.split(':');
+
+                    // For sales, we might want to allow selling in pieces or whole units
+                    // For now, default to the base unit type but make the unit field selectable
+                    unitDisplay = unitType;
+                  }
+
+                  form.setValue([itemsKey, index, "unit"].join("."), unitDisplay)
+                  form.setValue([itemsKey, index, "unitPrice"].join("."), unitPrice)
                   refreshPaidAmount(form)
                 }
               },
@@ -394,10 +456,23 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
 
             if (!product) return
 
-            if (item.quantity > product.stockQuantity) {
+            // Handle stock checking based on unit configuration
+            let availableStock = product.stockQuantity;
+
+            // If product unit has pieces info (e.g., "cartoon:10"), adjust stock calculation
+            if (product.unit && product.unit.includes(':')) {
+              const [unitType, piecesPerUnit] = product.unit.split(':');
+
+              // If the sale unit matches the product's base unit type, convert stock to pieces for comparison
+              if (item.unit === unitType) {
+                availableStock = product.stockQuantity * parseInt(piecesPerUnit, 10);
+              }
+            }
+
+            if (item.quantity > availableStock) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: `Only ${product.stockQuantity} items of ${product.title} available in stock`,
+                message: `Only ${availableStock} items of ${product.title} available in stock`,
                 path: [index, "quantity"],
               })
             }
@@ -413,9 +488,25 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       //   })),
     },
     onCreate(_, variables) {
-      // Stock update logic
-      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) =>
-        ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>);
+      // Stock update logic with unit conversion
+      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity, unit }) => {
+        // Check if the product unit has pieces info (e.g., "cartoon:10")
+        const productInfo = productsBySoul.get(product);
+        if (!productInfo) return a;
+
+        let adjustedQuantity = quantity;
+        if (productInfo.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the sale unit matches the product's base unit type, convert to pieces
+          if (unit === unitType) {
+            adjustedQuantity = quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        a[product] = (a[product] || 0) + adjustedQuantity;
+        return a;
+      }, {} as Record<string, number>);
 
       Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
         const product = productsBySoul.get(productId);
@@ -424,12 +515,27 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       });
 
       // Create corresponding invoice
-      const invoiceItems = variables.items?.map((item) => ({
-        product: item.product,
-        quantity: item.quantity,
-        rate: item.unitPrice,
-        total: item.quantity * item.unitPrice
-      })) ?? []
+      const invoiceItems = variables.items?.map((item) => {
+        // Adjust quantity for invoice based on unit conversion
+        const productInfo = productsBySoul.get(item.product);
+        let adjustedQuantity = item.quantity;
+
+        if (productInfo?.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the sale unit matches the product's base unit type, convert to pieces for inventory tracking
+          if (item.unit === unitType) {
+            adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        return {
+          product: item.product,
+          quantity: adjustedQuantity,
+          rate: item.unitPrice,
+          total: item.quantity * item.unitPrice
+        };
+      }) ?? []
 
       const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
 

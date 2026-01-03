@@ -199,6 +199,23 @@ const TagsPreview: AutoPreviewComponent<string[]> = ({ value }) => {
   );
 };
 
+const UnitPreview: AutoPreviewComponent<string> = ({ value }) => {
+  if (!value) return <span className="text-muted-foreground">-</span>;
+
+  // Check if the value is in the format "unit:piecesPerUnit" (special units)
+  if (typeof value === 'string' && value.includes(':')) {
+    const [unit, piecesPerUnit] = value.split(':');
+    return (
+      <span>
+        {unit} ({piecesPerUnit} pieces per {unit})
+      </span>
+    );
+  }
+
+  // For regular units, just return the unit name
+  return <span>{String(value)}</span>;
+};
+
 const CurrencyPreview: AutoPreviewComponent<number> = ({ value }) => {
   if (value === undefined || value === null) {
     return <span className="text-muted-foreground">-</span>;
@@ -246,6 +263,7 @@ const autoPreviewComponents: Record<
   phone: PhonePreview,
   url: UrlPreview,
   timestamp: DatePreview,
+  unit: UnitPreview,
   permissions: ({ value }) => `${value?.length ?? Object.keys(value).length} Permissions`,
   fallback: () => "-",
 };
