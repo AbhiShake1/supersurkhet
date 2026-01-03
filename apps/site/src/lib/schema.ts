@@ -169,13 +169,12 @@ export type BusinessMember = z.infer<typeof businessMemberSchema>;
 
 export const partySchema = z.object({
   name: z.string().min(1).describe("Name of the party"),
-  contactPerson: z.string().optional().describe("Contact person for the party"),
-  email: z.string().email().optional().describe("Email address of the party"),
-  phone: z.string().optional().describe("Phone number of the party"),
   address: z.string().optional().describe("Address of the party"),
+  panNumber: z.string().optional().describe("PAN number of the party"),
+  phone: z.string().optional().describe("Phone number of the party"),
   creditLimit: z.number({ coerce: true }).int().positive().optional().describe("Credit limit of the party"),
   paymentTerms: z.string().optional().describe("Payment terms of the party"),
-  notes: z.string().optional().describe("Notes of the party"),
+  notes: z.string().optional().describe("Notes for the party").superRefine(fieldConfig({ fieldType: "richText" })),
 }).extend(table);
 
 export type Party = z.infer<typeof partySchema>
