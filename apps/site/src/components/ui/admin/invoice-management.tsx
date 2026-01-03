@@ -103,58 +103,62 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
     const party = parties.find((p) => p._?.soul === invoice.partyId);
 
     return (
-      <div className="rounded-md border bg-card p-4 shadow-xs flex flex-col gap-3">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3">
-            <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg">
-              <FileText className="w-5 h-5" />
+      <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-accent/50 hover:scale-[1.02]">
+        <CardHeader className="">
+          <div className="flex items-start justify-start gap-2 flex-col">
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 p-3 rounded-xl">
+                <FileText className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-base">#{invoice._?.soul?.split("/").at(-1)}</h3>
+                <Badge
+                  variant={getInvoiceTypeBadgeVariant(invoice.type)}
+                  className="mt-1 text-xs"
+                >
+                  {invoice.type}
+                </Badge>
+              </div>
             </div>
-            <div>
-              <h3 className="font-semibold text-sm">#{invoice._?.soul?.split("/").at(-1)}</h3>
-              <Badge
-                variant={getInvoiceTypeBadgeVariant(invoice.type)}
-                className="mt-1 text-xs"
-              >
-                {invoice.type}
-              </Badge>
+            <div className="">
+              <div className="font-bold text-lg text-primary">Rs. {invoice.subTotal?.toFixed(2)}</div>
+              <div className="text-xs text-muted-foreground">
+                {invoice.issuedAt && format(new Date(invoice.issuedAt), "MMM dd, yyyy")}
+              </div>
             </div>
           </div>
-          <div className="text-right">
-            <div className="font-bold text-sm">Rs. {invoice.subTotal?.toFixed(2)}</div>
-            <div className="text-xs text-gray-500">
-              {invoice.issuedAt && format(new Date(invoice.issuedAt), "MMM dd, yyyy")}
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {party && (
+              <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <Users className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">{party.name}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+              <Calendar className="w-4 h-4 text-gray-500" />
+              {invoice.issuedAt && (
+                <span>{format(new Date(invoice.issuedAt), "MMM dd, yyyy")}</span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2 pt-2">
+              <div className="p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Subtotal</span>
+                <div className="font-medium">Rs. {invoice.subTotal?.toFixed(2)}</div>
+              </div>
+              <div className="p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <span className="text-sm text-gray-500 dark:text-gray-400">Tax</span>
+                <div className="font-medium">Rs. {invoice.tax?.toFixed(2)}</div>
+              </div>
+            </div>
+            <div className="flex justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg mt-2 border-t border-gray-200 dark:border-gray-700">
+              <span className="font-semibold">Total:</span>
+              <span className="font-bold text-lg text-blue-600 dark:text-blue-400">Rs. {invoice.subTotal?.toFixed(2)}</span>
             </div>
           </div>
-        </div>
-
-        <div className="space-y-2 text-sm">
-          {party && (
-            <div className="flex items-center gap-2">
-              <span className="text-gray-500">Party:</span>
-              <span>{party.name}</span>
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-gray-500" />
-            {
-              invoice.issuedAt &&
-              <span>{format(new Date(invoice.issuedAt), "MMM dd, yyyy")}</span>
-            }
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Subtotal:</span>
-            <span>Rs. {invoice.subTotal?.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Tax:</span>
-            <span>Rs. {invoice.tax?.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between text-sm font-semibold">
-            <span>Total:</span>
-            <span>Rs. {invoice.subTotal?.toFixed(2)}</span>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   };
 
