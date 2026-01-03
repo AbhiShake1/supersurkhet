@@ -179,7 +179,7 @@ export const partySchema = z.object({
 
 export type Party = z.infer<typeof partySchema>
 
-export const customerSchema = z.object({}).merge(partySchema)
+export const customerSchema = partySchema.extend({})
 
 export type Customer = z.infer<typeof customerSchema>
 
