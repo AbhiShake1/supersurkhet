@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
-import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, ShoppingCart, Folder, QrCode, Package } from "lucide-react";
+import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, ShoppingCart, Folder, QrCode, Package, Users2 } from "lucide-react";
 import type { AdminComponent } from "@/components/ui/admin";
 import { educationSchema } from "./schemas/education-schema";
 import { healthcareSchema } from "./schemas/healthcare-schema";
@@ -178,6 +178,10 @@ export const partySchema = z.object({
 }).extend(table);
 
 export type Party = z.infer<typeof partySchema>
+
+export const customerSchema = z.object({}).merge(partySchema)
+
+export type Customer = z.infer<typeof customerSchema>
 
 export const invoiceSchema = z.object({
   type: z.enum(["purchase", "sale"]),
@@ -562,6 +566,22 @@ export const featureSchema = createSchema({
         },
       ];
     },
+  },
+  customer: {
+    schema: customerSchema,
+    icon: Users2,
+    group: "Financial",
+    // components: async () => {
+    //   const { CustomerManagement } = await import(
+    //     "@/components/ui/admin/customer-management"
+    //   );
+    //   return [
+    //     {
+    //       name: "Suppliers & Customers",
+    //       component: CustomerManagement,
+    //     },
+    //   ];
+    // },
   },
   invoice: {
     schema: invoiceSchema,

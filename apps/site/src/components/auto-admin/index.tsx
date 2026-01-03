@@ -84,6 +84,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       title: "QR Management",
       icon: QrCodeIcon,
       children: <QRCodePage slug={basePath} />,
+      group: "System Configuration"
     },
     {
       title: "Website UI",

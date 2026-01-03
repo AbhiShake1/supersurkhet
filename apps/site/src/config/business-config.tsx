@@ -18,6 +18,7 @@ import {
   Users,
   Wrench,
   ListTodo, DollarSign,
+  Users2,
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
@@ -39,9 +40,10 @@ import {
 } from "@/components/ui/credenza";
 import { ReceiptWrapper } from "@/components/ui/receipt-wrapper";
 import { formatCurrency } from "@/lib/intl";
+import type { SchemaKeys } from "@gta/react-hooks"
 
 export type BusinessConfigReturn = {
-  [B in BusinessType]?: AutoTableTab<any>[];
+  [B in BusinessType]?: AutoTableTab<SchemaKeys extends infer K ? K : never>[];
 }
 
 function calculateFiscalYear() {
@@ -96,6 +98,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     title: "Stock Imports",
     icon: ShoppingBag,
     slug,
+    group: "Inventory",
     formSchemaTransformer: (schema) => schema.superRefine((stockImport, ctx) => {
       if (!stockImport.paidAmount) return
       const totalCost = stockImport.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
@@ -232,7 +235,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
     schema: "sale",
     title: "Sales",
     icon: DollarSign,
-    group: "Financial",
+    group: "Inventory",
     slug,
     formSchemaTransformer: (schema) => schema.superRefine((sale, ctx) => {
       if (!sale.paidAmount) return
@@ -600,16 +603,25 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
 
     retail: [
       {
-        schema: "party",
-        title: "Parties",
-        slug,
-        icon: Users,
-      },
-      {
         schema: "product",
         title: "Products",
         slug,
         icon: ShoppingBag,
+        group: "Inventory"
+      },
+      {
+        schema: "party",
+        title: "Purchase Parties",
+        slug,
+        icon: Users,
+        group: "Party"
+      },
+      {
+        schema: "customer",
+        title: "Customers",
+        slug,
+        icon: Users2,
+        group: "Party"
       },
       stockImportsConfig,
       salesConfig,
@@ -619,6 +631,7 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
         title: "Orders",
         slug: slug,
         icon: ListTodo,
+        group: "Inventory"
       },
     ],
   }
