@@ -214,16 +214,65 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
   }
 }
 
-export function usePartyConfig({ slug }: { slug: string }): AutoTableTab<"party"> {
+export function useCustomerConfig({ slug }: { slug: string }): AutoTableTab<"customer"> {
   const { openDialog, closeDialog } = useDialog()
   const { data: invoices = [] } = api.invoice.useGet({ keys: [slug] });
   const { mutate: deleteInvoice } = api.invoice.useDelete({ keys: [slug] });
-  function deleteInvoiceByPartyId(id: string) {
+  const { data: sales = [] } = api.sale.useGet({ keys: [slug] });
+  const { mutate: deleteSale } = api.sale.useDelete({ keys: [slug] });
+
+  function deleteInvoiceByCustomerId(id: string) {
+    for (const sale of sales) {
+      if (sale.customerId === id && !!sale._?.soul) {
+        deleteSale(sale._.soul)
+      }
+    }
     for (const invoice of invoices) {
       if (invoice.partyId === id && !!invoice._?.soul) {
         deleteInvoice(invoice._.soul)
       }
     }
+    closeDialog()
+  }
+  return {
+    schema: "customer",
+    title: "Customers",
+    slug,
+    icon: Users,
+    group: "Party",
+    onDelete(_, id) {
+      if (!invoices.length) return
+      if (!invoices.some(invoice => invoice.partyId === id)) return
+      openDialog({
+        title: "Delete Invoices",
+        description: "The customer has been deleted. Do you want to delete all associated invoices?",
+        children: <div className="flex gap-2 items-center">
+          <Button variant="outline" size="sm" onClick={() => closeDialog()}>Cancel</Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteInvoiceByCustomerId(id)}>Delete</Button>
+        </div>
+      })
+    }
+  }
+}
+
+export function usePartyConfig({ slug }: { slug: string }): AutoTableTab<"party"> {
+  const { openDialog, closeDialog } = useDialog()
+  const { data: invoices = [] } = api.invoice.useGet({ keys: [slug] });
+  const { mutate: deleteInvoice } = api.invoice.useDelete({ keys: [slug] });
+  const { data: stockImports = [] } = api.stockImport.useGet({ keys: [slug] });
+  const { mutate: deleteStockImport } = api.stockImport.useDelete({ keys: [slug] });
+  function deleteInvoiceByPartyId(id: string) {
+    for (const stockImport of stockImports) {
+      if (stockImport.party === id && !!stockImport._?.soul) {
+        deleteStockImport(stockImport._.soul)
+      }
+    }
+    for (const invoice of invoices) {
+      if (invoice.partyId === id && !!invoice._?.soul) {
+        deleteInvoice(invoice._.soul)
+      }
+    }
+    closeDialog()
   }
   return {
     schema: "party",
@@ -233,6 +282,7 @@ export function usePartyConfig({ slug }: { slug: string }): AutoTableTab<"party"
     group: "Party",
     onDelete(_, id) {
       if (!invoices.length) return
+      if (!invoices.some(invoice => invoice.partyId === id)) return
       openDialog({
         title: "Delete Invoices",
         description: "The party has been deleted. Do you want to delete all associated invoices?",
@@ -241,7 +291,6 @@ export function usePartyConfig({ slug }: { slug: string }): AutoTableTab<"party"
           <Button variant="destructive" size="sm" onClick={() => deleteInvoiceByPartyId(id)}>Delete</Button>
         </div>
       })
-      deleteInvoiceByPartyId(id)
     }
   }
 }
@@ -386,7 +435,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
 
       createInvoice({
         type: "sale",
-        partyId: variables.customerId, // Using customerName as partyId
+        partyId: variables.customerId,
         issuedAt: variables.saleDate,
         items: invoiceItems,
         subTotal: totalAmount,
@@ -460,6 +509,7 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
   const stockImportsConfig = useStockImportsConfig({ slug });
   const invoicesConfig = useInvoicesConfig({ slug });
   const partyConfig = usePartyConfig({ slug });
+  const customerConfig = useCustomerConfig({ slug });
   return {
     food: [
       {
@@ -654,13 +704,7 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
         group: "Inventory"
       },
       partyConfig,
-      {
-        schema: "customer",
-        title: "Customers",
-        slug,
-        icon: Users2,
-        group: "Party"
-      },
+      customerConfig,
       stockImportsConfig,
       salesConfig,
       invoicesConfig,

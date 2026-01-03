@@ -5,30 +5,33 @@ import { createGunHook } from "./useGunHook";
 import type { GunMessagePut } from "gun/types";
 
 export const useDelete = createGunHook((messenger) => {
-	const fn = <T extends SchemaKeys>(key: T, ...restKeys: string[]) => {
-		const options = messenger._options;
-		return async (id: string) => {
-			const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
-			getGunRef(keys).get(id).put(null);
-		};
-	};
+  const fn = <T extends SchemaKeys>(key: T, ...restKeys: string[]) => {
+    // const options = messenger._options;
+    return async (id: string) => {
+      const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
+      getGunRef(keys).get(id).put(null);
 
-	return <const T extends SchemaKeys>(opts: UseDeleteOptions<T>) => {
-		const [key, ...keys] = opts.keys;
-		return useMutation({
-			mutationFn: fn(key, ...keys),
-		});
-	};
+      return { deleted: true, id }
+    };
+  };
+
+  return <const T extends SchemaKeys>(opts: UseDeleteOptions<T>) => {
+    const [key, ...keys] = opts.keys;
+    return useMutation({
+      ...opts,
+      mutationFn: fn(key, ...keys),
+    });
+  };
 });
 
 type Options = UseMutationOptions<GunMessagePut, Error, string, unknown>;
 
 export type UseDeleteOptions<T extends SchemaKeys> = Omit<
-	Options,
-	"mutationFn"
+  Options,
+  "mutationFn"
 > & { keys: [T, ...string[]] };
 
 export type UseDeleteOptionsShort = Omit<
-	UseDeleteOptions<SchemaKeys>,
-	"keys"
+  UseDeleteOptions<SchemaKeys>,
+  "keys"
 > & { keys?: string[] };

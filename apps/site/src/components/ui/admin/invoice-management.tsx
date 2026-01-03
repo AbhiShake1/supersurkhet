@@ -19,6 +19,8 @@ import {
   Loader2,
   AlertCircle,
   Users,
+  ShoppingCart,
+  Package,
 } from "lucide-react";
 import type { AdminComponent } from ".";
 import { api } from "@/lib/api";
@@ -42,6 +44,9 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
   const { data: parties = [] } = api.party.useGet({
     keys: [slug],
   });
+  const { data: customers = [] } = api.customer.useGet({
+    keys: [slug],
+  });
 
   if (isLoading) {
     return (
@@ -61,8 +66,15 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
     );
   }
 
-  // Group invoices by party
-  const groupedInvoices = _.groupBy(invoices, 'partyId');
+  // Separate invoices by type
+  const purchaseInvoices = invoices.filter(invoice => invoice.type === 'purchase');
+  const saleInvoices = invoices.filter(invoice => invoice.type === 'sale');
+
+  // Group purchase invoices by party
+  const groupedPurchaseInvoices = _.groupBy(purchaseInvoices, 'partyId');
+
+  // Group sale invoices by customer
+  const groupedSaleInvoices = _.groupBy(saleInvoices, 'partyId');
 
   // Filter parties based on search query
   const filteredParties = parties.filter(party => {
@@ -72,19 +84,38 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
       party.phone?.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // Calculate stats for each party
+  // Filter customers based on search query
+  const filteredCustomers = customers.filter(customer => {
+    if (!searchQuery) return true;
+    return customer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.phone?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  // Calculate stats for each party (only purchases)
   const partyStats = filteredParties.map(party => {
-    const partyInvoices = groupedInvoices[party._?.soul || ''] || [];
+    const partyInvoices = groupedPurchaseInvoices[party._?.soul || ''] || [];
     const totalAmount = partyInvoices.reduce((sum, inv) => sum + (inv.subTotal || 0), 0);
-    const salesCount = partyInvoices.filter(inv => inv.type === 'sale').length;
-    const purchaseCount = partyInvoices.filter(inv => inv.type === 'purchase').length;
+    const purchaseCount = partyInvoices.length;
 
     return {
       party,
       invoices: partyInvoices,
       totalAmount,
-      salesCount,
       purchaseCount,
+    };
+  });
+
+  // Calculate stats for each customer (only sales)
+  const customerStats = filteredCustomers.map(customer => {
+    const customerInvoices = groupedSaleInvoices[customer._?.soul || ''] || [];
+    const totalAmount = customerInvoices.reduce((sum, inv) => sum + (inv.subTotal || 0), 0);
+    const salesCount = customerInvoices.length;
+
+    return {
+      customer,
+      invoices: customerInvoices,
+      totalAmount,
+      salesCount,
     };
   });
 
@@ -100,7 +131,9 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
   };
 
   const InvoiceCard = ({ invoice }: { invoice: Invoice & { _?: { soul: string } } }) => {
+    // Determine if this is a party or customer invoice
     const party = parties.find((p) => p._?.soul === invoice.partyId);
+    const customer = customers.find((c) => c._?.soul === invoice.customerId);
 
     return (
       <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-accent/50 hover:scale-[1.02]">
@@ -132,8 +165,14 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
           <div className="space-y-3">
             {party && (
               <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <Users className="w-4 h-4 text-gray-500" />
+                <Package className="w-4 h-4 text-gray-500" />
                 <span className="font-medium">{party.name}</span>
+              </div>
+            )}
+            {customer && (
+              <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <Users className="w-4 h-4 text-gray-500" />
+                <span className="font-medium">{customer.name}</span>
               </div>
             )}
             <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
@@ -171,91 +210,94 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
             Invoice Management
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            View invoices grouped by parties
+            View invoices grouped by parties (purchases) and customers (sales)
           </p>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Parties
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {parties.length}
-                </p>
-              </div>
-              <Users className="w-8 h-8 text-gray-400" />
-            </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card className="relative overflow-hidden">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <Package className="absolute inset-0 w-full h-full opacity-5 flex items-center justify-center" />
+            <p className="text-sm text-gray-600 dark:text-gray-400 z-10">
+              Total Parties
+            </p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 z-10">
+              {parties.length}
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Invoices
-                </p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                  {invoices.length}
-                </p>
-              </div>
-              <FileText className="w-8 h-8 text-gray-400" />
-            </div>
+        <Card className="relative overflow-hidden">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <Users className="absolute inset-0 w-full h-full opacity-5 flex items-center justify-center" />
+            <p className="text-sm text-gray-600 dark:text-gray-400 z-10">
+              Total Customers
+            </p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 z-10">
+              {customers.length}
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Sales
-                </p>
-                <p className="text-2xl font-bold text-green-600">
-                  {invoices.filter((i) => i.type === "sale").length}
-                </p>
-              </div>
-              <ArrowUpDown className="w-8 h-8 text-green-500" />
-            </div>
+        <Card className="relative overflow-hidden">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <FileText className="absolute inset-0 w-full h-full opacity-5 flex items-center justify-center" />
+            <p className="text-sm text-gray-600 dark:text-gray-400 z-10">
+              Total Invoices
+            </p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 z-10">
+              {invoices.length}
+            </p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Amount
-                </p>
-                <p className="text-2xl font-bold text-purple-600">
-                  Rs. {invoices.reduce((sum, inv) => sum + (inv.subTotal || 0), 0).toFixed(2)}
-                </p>
-              </div>
-              <DollarSign className="w-8 h-8 text-purple-500" />
-            </div>
+        <Card className="relative overflow-hidden">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <ShoppingCart className="absolute inset-0 w-full h-full opacity-5 flex items-center justify-center" />
+            <p className="text-sm text-gray-600 dark:text-gray-400 z-10">
+              Sales
+            </p>
+            <p className="text-2xl font-bold text-green-600 z-10">
+              {saleInvoices.length}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <DollarSign className="absolute inset-0 w-full h-full opacity-5 flex items-center justify-center" />
+            <p className="text-sm text-gray-600 dark:text-gray-400 z-10">
+              Total Amount
+            </p>
+            <p className="text-2xl font-bold text-purple-600 z-10">
+              Rs. {invoices.reduce((sum, inv) => sum + (inv.subTotal || 0), 0).toFixed(2)}
+            </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Search */}
       <Input
-        placeholder="Search parties by name, phone, or PAN..."
+        placeholder="Search parties or customers by name, phone, or PAN..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         leadingIcon={<Search className="h-4 w-4" />}
       />
 
-      {/* Grouped Invoices by Party */}
+      {/* Purchase Invoices by Party */}
       <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Package className="w-5 h-5 text-gray-500" />
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            Purchase Invoices (Parties)
+          </h3>
+        </div>
+
         {partyStats.length === 0 ? (
           <div className="text-center py-12">
-            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
               No parties found
             </h3>
@@ -264,22 +306,23 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
             </p>
           </div>
         ) : (
-          partyStats.map(({ party, invoices, totalAmount, salesCount, purchaseCount }) => (
+          partyStats.map(({ party, invoices, totalAmount, purchaseCount }) => (
             <Card key={party._?.soul} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
+                      <Package className="w-5 h-5 text-gray-500" />
                       {party.name}
                     </CardTitle>
                     <CardDescription>
-                      {party.phone} • {party.panNumber}
+                      {[party.phone, party.panNumber].filter(Boolean).join(" • ")}
                     </CardDescription>
                   </div>
                   <div className="text-right">
                     <div className="font-bold text-lg">Rs. {totalAmount.toFixed(2)}</div>
                     <div className="text-sm text-gray-500">
-                      {salesCount} sales • {purchaseCount} purchases
+                      {purchaseCount} purchases
                     </div>
                   </div>
                 </div>
@@ -293,7 +336,66 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                   </div>
                 ) : (
                   <div className="text-center py-4 text-gray-500">
-                    No invoices for this party
+                    No purchase invoices for this party
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+
+      {/* Sale Invoices by Customer */}
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <ShoppingCart className="w-5 h-5 text-gray-500" />
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+            Sale Invoices (Customers)
+          </h3>
+        </div>
+
+        {customerStats.length === 0 ? (
+          <div className="text-center py-12">
+            <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              No customers found
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              Try adjusting your search
+            </p>
+          </div>
+        ) : (
+          customerStats.map(({ customer, invoices, totalAmount, salesCount }) => (
+            <Card key={customer._?.soul} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-gray-500" />
+                      {customer.name}
+                    </CardTitle>
+                    <CardDescription>
+                      {customer.phone}
+                    </CardDescription>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-lg">Rs. {totalAmount.toFixed(2)}</div>
+                    <div className="text-sm text-gray-500">
+                      {salesCount} sales
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {invoices.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {invoices.map((invoice) => (
+                      <InvoiceCard key={invoice._?.soul} invoice={invoice} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    No sale invoices for this customer
                   </div>
                 )}
               </CardContent>
