@@ -19,6 +19,7 @@ export const saleSchema = z.object({
   saleDate: z.string().datetime()
     .default(() => new Date().toISOString()).describe("Sale Date")
     .superRefine(fieldConfig({ fieldType: "datetime" })),
+  customerId: z.string().describe("Customer"),
   items: salesItemSchema.array()
     .min(1, { message: "Please add at least one item." })
     .describe("Items Sold"),
@@ -31,9 +32,6 @@ export const saleSchema = z.object({
       }
     })),
   paymentMethod: z.enum(["cash", "card", "bankTransfer", "credit"]).optional().describe("Payment Method"),
-  customerName: z.string().optional().describe("Customer Name"),
-  customerEmail: z.string().email().optional().describe("Customer Email"),
-  phone: z.string().optional().describe("Customer Phone"),
   notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
 })
 

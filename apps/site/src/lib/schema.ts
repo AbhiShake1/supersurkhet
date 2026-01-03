@@ -593,7 +593,7 @@ export const featureSchema = createSchema({
       );
       return [
         {
-          name: "Invoices",
+          name: "Invoices By Parties",
           component: InvoiceManagement,
         },
       ];

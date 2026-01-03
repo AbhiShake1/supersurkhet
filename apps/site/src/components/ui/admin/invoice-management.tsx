@@ -8,25 +8,22 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search,
   FileText,
   Calendar,
   ArrowUpDown,
-  Plus,
   DollarSign,
   Loader2,
   AlertCircle,
+  Users,
 } from "lucide-react";
 import type { AdminComponent } from ".";
 import { api } from "@/lib/api";
 import _ from "lodash";
 import { format } from "date-fns";
-import { AutoTable } from "@/components/auto-table";
 import type { Invoice } from "@/lib/schema";
 
 interface InvoiceManagementProps {
@@ -46,10 +43,6 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
     keys: [slug],
   });
 
-  const createMutation = api.invoice.useCreate();
-  const updateMutation = api.invoice.useUpdate();
-  const deleteMutation = api.invoice.useDelete();
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -68,13 +61,31 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
     );
   }
 
-  const filteredInvoices = invoices.filter((invoice) => {
-    const party = parties.find((p) => p._?.soul === invoice.partyId);
-    const matchesSearch =
-      invoice._?.soul?.includes(searchQuery.toLowerCase()) ||
-      party?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      invoice.fiscalYear?.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+  // Group invoices by party
+  const groupedInvoices = _.groupBy(invoices, 'partyId');
+
+  // Filter parties based on search query
+  const filteredParties = parties.filter(party => {
+    if (!searchQuery) return true;
+    return party.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      party.panNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      party.phone?.toLowerCase().includes(searchQuery.toLowerCase());
+  });
+
+  // Calculate stats for each party
+  const partyStats = filteredParties.map(party => {
+    const partyInvoices = groupedInvoices[party._?.soul || ''] || [];
+    const totalAmount = partyInvoices.reduce((sum, inv) => sum + (inv.subTotal || 0), 0);
+    const salesCount = partyInvoices.filter(inv => inv.type === 'sale').length;
+    const purchaseCount = partyInvoices.filter(inv => inv.type === 'purchase').length;
+
+    return {
+      party,
+      invoices: partyInvoices,
+      totalAmount,
+      salesCount,
+      purchaseCount,
+    };
   });
 
   const getInvoiceTypeBadgeVariant = (type: string) => {
@@ -156,22 +167,29 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
             Invoice Management
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Manage purchase and sales invoices
+            View invoices grouped by parties
           </p>
         </div>
-        <Button
-          className="w-full sm:w-auto"
-          onClick={() => {
-            // Create invoice functionality would go here
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Invoice
-        </Button>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Total Parties
+                </p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {parties.length}
+                </p>
+              </div>
+              <Users className="w-8 h-8 text-gray-400" />
+            </div>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -209,22 +227,6 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Purchases
-                </p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {invoices.filter((i) => i.type === "purchase").length}
-                </p>
-              </div>
-              <ArrowUpDown className="w-8 h-8 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
                   Total Amount
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
@@ -239,116 +241,62 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
 
       {/* Search */}
       <Input
-        placeholder="Search invoices by number, party, or fiscal year..."
+        placeholder="Search parties by name, phone, or PAN..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         leadingIcon={<Search className="h-4 w-4" />}
       />
 
-      {/* Views */}
-      <Tabs defaultValue="table" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="table">Table View</TabsTrigger>
-          <TabsTrigger value="cards">Cards View</TabsTrigger>
-          <TabsTrigger value="summary">Summary</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="table" className="space-y-4">
-          <AutoTable schema="invoice" slug={slug} />
-        </TabsContent>
-
-        <TabsContent value="cards" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredInvoices.map((invoice) => (
-              <InvoiceCard key={invoice._?.soul} invoice={invoice} />
-            ))}
+      {/* Grouped Invoices by Party */}
+      <div className="space-y-6">
+        {partyStats.length === 0 ? (
+          <div className="text-center py-12">
+            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+              No parties found
+            </h3>
+            <p className="text-gray-500 dark:text-gray-400">
+              Try adjusting your search
+            </p>
           </div>
-          {filteredInvoices.length === 0 && !isLoading && (
-            <div className="text-center py-12">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                No invoices found
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
-                Try adjusting your search or create a new invoice
-              </p>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                Create First Invoice
-              </Button>
-            </div>
-          )}
-        </TabsContent>
-
-        <TabsContent value="summary" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Invoice Summary</CardTitle>
-              <CardDescription>
-                Overview of invoices and financial metrics
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h3 className="font-semibold mb-3">Invoice Types</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Sales</span>
-                      <span className="font-medium">
-                        {invoices.filter((i) => i.type === "sale").length}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Purchases</span>
-                      <span className="font-medium">
-                        {invoices.filter((i) => i.type === "purchase").length}
-                      </span>
+        ) : (
+          partyStats.map(({ party, invoices, totalAmount, salesCount, purchaseCount }) => (
+            <Card key={party._?.soul} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {party.name}
+                    </CardTitle>
+                    <CardDescription>
+                      {party.phone} • {party.panNumber}
+                    </CardDescription>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-lg">Rs. {totalAmount.toFixed(2)}</div>
+                    <div className="text-sm text-gray-500">
+                      {salesCount} sales • {purchaseCount} purchases
                     </div>
                   </div>
                 </div>
-
-                <div>
-                  <h3 className="font-semibold mb-3">Financial Summary</h3>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>Total Sales</span>
-                      <span className="font-medium">
-                        Rs. {invoices
-                          .filter((i) => i.type === "sale")
-                          .reduce((sum, inv) => sum + (inv.subTotal || 0), 0)
-                          .toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Total Purchases</span>
-                      <span className="font-medium">
-                        Rs. {invoices
-                          .filter((i) => i.type === "purchase")
-                          .reduce((sum, inv) => sum + (inv.subTotal || 0), 0)
-                          .toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between font-semibold border-t pt-2">
-                      <span>Net</span>
-                      <span>
-                        Rs. {(
-                          invoices
-                            .filter((i) => i.type === "sale")
-                            .reduce((sum, inv) => sum + (inv.subTotal || 0), 0) -
-                          invoices
-                            .filter((i) => i.type === "purchase")
-                            .reduce((sum, inv) => sum + (inv.subTotal || 0), 0)
-                        ).toFixed(2)}
-                      </span>
-                    </div>
+              </CardHeader>
+              <CardContent>
+                {invoices.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {invoices.map((invoice) => (
+                      <InvoiceCard key={invoice._?.soul} invoice={invoice} />
+                    ))}
                   </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    No invoices for this party
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
     </div>
   );
 }

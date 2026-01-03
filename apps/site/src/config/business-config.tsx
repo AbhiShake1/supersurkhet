@@ -250,20 +250,20 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
   const { data: products = [] } = api.product.useGet({
     keys: [slug],
   })
-  const { data: parties = [] } = api.party.useGet({ keys: [slug] });
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
   const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
+  const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   ), [products])
 
-  const partiesBySoul = useMemo(() => new Map(
-    parties
+  const customersBySoul = useMemo(() => new Map(
+    customers
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [parties])
+  ), [customers])
 
   return {
     schema: "sale",
@@ -271,6 +271,9 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
     icon: DollarSign,
     group: "Inventory",
     slug,
+    previewOverrides: {
+      customerId: (customerId) => customersBySoul.get(customerId)?.name ?? "-",
+    },
     formSchemaTransformer: (schema) => schema.superRefine((sale, ctx) => {
       if (!sale.paidAmount) return
       const totalCost = sale.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
@@ -281,6 +284,12 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       })
     }),
     fieldOverrides: {
+      customerId: z.string().describe("Customer").superRefine(fieldConfig({
+        fieldType: "select",
+        customData: {
+          options: customers.map(c => [c._!.soul!, c.name]),
+        }
+      })),
       paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
         fieldType: "number",
         customData: {
@@ -377,7 +386,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
 
       createInvoice({
         type: "sale",
-        partyId: variables.customerName, // Using customerName as partyId
+        partyId: variables.customerId, // Using customerName as partyId
         issuedAt: variables.saleDate,
         items: invoiceItems,
         subTotal: totalAmount,
