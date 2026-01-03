@@ -38,7 +38,7 @@ export const baseListingSchema = z
     title: z.string().min(1).describe("Product Name"),
     unit: z.enum(["piece", "cartoon", "dozen", "litre", "kg"]).optional().describe("Unit"),
     costPrice: z.number({ coerce: true }).positive().describe("Cost Price"),
-    sellingPrice: z.number({ coerce: true }).positive().describe("Selling Price"),
+    sellingPrice: z.number({ coerce: true }).positive().optional().describe("Default Selling Price"),
     stockQuantity: z.number({ coerce: true }).int().positive().describe("Quantity in Stock"),
     barcode: z.string().optional().describe("Barcode"),
     reorderLevel: z.number({ coerce: true }).int().positive().optional().describe("Reorder Level").superRefine(fieldConfig({

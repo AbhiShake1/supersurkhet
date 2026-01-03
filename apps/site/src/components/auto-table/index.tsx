@@ -116,6 +116,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
   formSchemaTransformer?: (schema: NestedSchema<T>) => z.ZodTypeAny;
   previewOverrides?: PreviewOverrides<T>;
   onCreate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
+  onDelete?: (data: GunMessagePut, variables: string, context: unknown) => unknown
   onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
   readOnly?: boolean;
   actions?: (ctx: CellContext<NestedSchemaType<T>, unknown>) => React.ReactNode;
@@ -183,7 +184,7 @@ export function AutoTable<T extends SchemaKeys>({
   const { mutate: onDelete } = useDelete({
     keys: [schemaName, slug],
     onSuccess(...args) {
-
+      props?.onDelete?.(...args)
     },
   });
   const _schema = (() => {

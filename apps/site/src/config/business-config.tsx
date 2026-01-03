@@ -41,6 +41,8 @@ import {
 import { ReceiptWrapper } from "@/components/ui/receipt-wrapper";
 import { formatCurrency } from "@/lib/intl";
 import type { SchemaKeys } from "@gta/react-hooks"
+import { useDialog } from "@/contexts/dialog-context";
+import { Button } from "@/components/ui/button";
 
 export type BusinessConfigReturn = {
   [B in BusinessType]?: AutoTableTab<SchemaKeys extends infer K ? K : never>[];
@@ -208,6 +210,38 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
       //   const product = productsBySoul.get(productId)
       //   if (!product?._?.soul) return
       //   updateProduct({ id: product?._
+    }
+  }
+}
+
+export function usePartyConfig({ slug }: { slug: string }): AutoTableTab<"party"> {
+  const { openDialog, closeDialog } = useDialog()
+  const { data: invoices = [] } = api.invoice.useGet({ keys: [slug] });
+  const { mutate: deleteInvoice } = api.invoice.useDelete({ keys: [slug] });
+  function deleteInvoiceByPartyId(id: string) {
+    for (const invoice of invoices) {
+      if (invoice.partyId === id && !!invoice._?.soul) {
+        deleteInvoice(invoice._.soul)
+      }
+    }
+  }
+  return {
+    schema: "party",
+    title: "Purchase Parties",
+    slug,
+    icon: Users,
+    group: "Party",
+    onDelete(_, id) {
+      if (!invoices.length) return
+      openDialog({
+        title: "Delete Invoices",
+        description: "The party has been deleted. Do you want to delete all associated invoices?",
+        children: <div className="flex gap-2 items-center">
+          <Button variant="outline" size="sm" onClick={() => closeDialog()}>Cancel</Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteInvoiceByPartyId(id)}>Delete</Button>
+        </div>
+      })
+      deleteInvoiceByPartyId(id)
     }
   }
 }
@@ -416,6 +450,7 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
   const salesConfig = useSalesConfig({ slug });
   const stockImportsConfig = useStockImportsConfig({ slug });
   const invoicesConfig = useInvoicesConfig({ slug });
+  const partyConfig = usePartyConfig({ slug });
   return {
     food: [
       {
@@ -609,13 +644,7 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
         icon: ShoppingBag,
         group: "Inventory"
       },
-      {
-        schema: "party",
-        title: "Purchase Parties",
-        slug,
-        icon: Users,
-        group: "Party"
-      },
+      partyConfig,
       {
         schema: "customer",
         title: "Customers",

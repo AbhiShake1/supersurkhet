@@ -41,6 +41,7 @@ import type { IGunUserInstance } from "gun/types";
 import z from "zod";
 import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 import { I18nProvider } from "@/contexts/i18n-context";
+import { DialogProvider } from "@/contexts/dialog-context";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -440,20 +441,22 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <div data-vaul-drawer-wrapper="">
           <I18nProvider>
             <ThemeModeProvider savedDarkMode={loaderData.savedDarkMode} savedTheme={loaderData.savedTheme} savedThemeName={loaderData.savedThemeName}>
-              <GoogleLoginProvider>
-                <AuthProvider>
-                  <OneTapLoginProvider>
-                    <ConfettiProvider>
-                      <LoginPromptProvider>
-                        {children}
-                        {
-                          isMobile() && <QRScannerButton onActionDetected={handleActionDetected} />
-                        }
-                      </LoginPromptProvider>
-                    </ConfettiProvider>
-                  </OneTapLoginProvider>
-                </AuthProvider>
-              </GoogleLoginProvider>
+              <DialogProvider>
+                <GoogleLoginProvider>
+                  <AuthProvider>
+                    <OneTapLoginProvider>
+                      <ConfettiProvider>
+                        <LoginPromptProvider>
+                          {children}
+                          {
+                            isMobile() && <QRScannerButton onActionDetected={handleActionDetected} />
+                          }
+                        </LoginPromptProvider>
+                      </ConfettiProvider>
+                    </OneTapLoginProvider>
+                  </AuthProvider>
+                </GoogleLoginProvider>
+              </DialogProvider>
             </ThemeModeProvider>
           </I18nProvider>
           <Scripts />
