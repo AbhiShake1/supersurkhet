@@ -51,9 +51,12 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
       // Generate a unique token for the invitation
       const invitationToken = `inv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Create the invitation link with the token
+      // Create the invitation link with token
       const invitationUrl = `${window.location.origin}/${slug}/admin/invitation?token=${invitationToken}`;
 
+      // Invitation link expiration time (15 minutes from now)
+      const expiresAt = Date.now() + 15 * 60 * 1000;
+      
       // Send the invitation email. dont wait
       sendMail({
         data: {
@@ -80,6 +83,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
             role: "staff",
             permissions: data.permissions,
             invitedAt: Date.now(),
+            expiresAt: expiresAt,
             token: invitationToken,
           }
         }
@@ -406,7 +410,7 @@ const InvitationsTab = ({
 
 // Invitation Row Component
 const InvitationRow = ({
-  invitation: { email, role, permissions, invitedAt },
+  invitation: { email, role, permissions, invitedAt, expiresAt },
   searchTerm,
 }: {
   invitation: any; // TODO: Define proper type
@@ -417,10 +421,15 @@ const InvitationRow = ({
     !email?.toLowerCase().includes(searchTerm.toLowerCase())
   ) return null;
 
+  const isExpired = expiresAt && Date.now() > expiresAt;
+
   return (
-    <tr>
+    <tr className={isExpired ? "opacity-50" : ""}>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="text-sm font-medium text-foreground">{email}</div>
+        {isExpired && (
+          <div className="text-xs text-red-500 mt-1">Expired</div>
+        )}
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <Badge variant="secondary" className="rounded-xl">{role}</Badge>
@@ -434,6 +443,11 @@ const InvitationRow = ({
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
         {invitedAt && new Date(invitedAt).toLocaleString()}
+        {expiresAt && (
+          <div className="text-xs mt-1">
+            Exp: {new Date(expiresAt).toLocaleDateString()}
+          </div>
+        )}
       </td>
     </tr>
   );
@@ -441,8 +455,30 @@ const InvitationRow = ({
 
 // Hook to get organization invitations
 function useOrgInvitations(slug: string) {
-  const { data } = api.business.useGet({ keys: [slug], single: true });
-  if (!data?.[0]?.invitations) return [];
-  return Object.values(data?.[0]?.invitations).filter(inv => typeof inv === "object" && !!inv.email);
+  const { data, isLoading, error } = api.business.useGet({ keys: [slug], single: true });
+
+  if (error) {
+    console.error('Error fetching business data for invitations:', error);
+    return [];
+  }
+
+  if (isLoading || !data) {
+    return [];
+  }
+
+  const business = data[0];
+  if (!business || !business.invitations) {
+    return [];
+  }
+  
+  if (typeof business.invitations !== 'object') {
+    return [];
+  }
+
+  return Object.values(business.invitations).filter(inv =>
+    typeof inv === "object" &&
+    inv !== null &&
+    !!inv.email
+  );
 }
 
