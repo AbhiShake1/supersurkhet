@@ -14,6 +14,8 @@ export const salesItemSchema = z.object({
   unitPrice: z.number({ coerce: true }).positive().describe("Unit Price"),
 })
 
+export type SalesItem = z.infer<typeof salesItemSchema>;
+
 export const saleSchema = z.object({
   saleDate: z.string().datetime()
     .default(() => new Date().toISOString()).describe("Sale Date")

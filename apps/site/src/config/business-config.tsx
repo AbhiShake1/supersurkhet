@@ -25,13 +25,14 @@ import type { BusinessType } from "@/lib/schema";
 import type { AutoTableTab } from "@/components/auto-admin";
 import { salesItemSchema, type Sale, type StockImport } from "@/lib/schemas/sales";
 import z from "zod";
-import { fieldConfig } from "@/components/ui/autoform";
+import { AutoForm, fieldConfig } from "@/components/ui/autoform";
 import { api } from "@/lib/api";
 import { useEffect, useMemo, useState } from "react";
 import NepaliDate from "nepali-datetime";
 import type { UseFormReturn } from "react-hook-form";
 import {
-  DropdownMenuItem
+  DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Credenza,
@@ -674,12 +675,239 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
   }
 }
 
+export function useVehicleConfig({ slug }: { slug: string }): AutoTableTab<"vehicle"> {
+  return {
+    schema: "vehicle",
+    title: "Vehicles",
+    slug,
+    icon: Car,
+    group: "Logistics",
+  }
+}
+
+function useReturnProductsSchema({ slug }: { slug: string }) {
+  const { data: products = [] } = api.product.useGet({ keys: [slug] });
+  return salesItemSchema
+    .extend({
+      productId: z.string().describe("Product")
+        .superRefine(fieldConfig({
+          fieldType: "select",
+          customData: {
+            options: products.filter(p => !!p?._?.soul)
+              .map(p => [p._!.soul!, p.title]),
+          },
+        })),
+      quantity: z.number({ coerce: true }).int().nonnegative()
+        .describe("Quantity Returned")
+        .superRefine(fieldConfig({
+          fieldType: "number",
+        })),
+    })
+    .array()
+    .optional()
+    .describe("Products Returned from Trip")
+}
+
+export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> {
+  const { data: vehicles = [] } = api.vehicle.useGet({ keys: [slug] });
+  const { data: products = [] } = api.product.useGet({ keys: [slug] });
+  const { mutate: updateTrip } = api.trip.useUpdate({ keys: [slug] });
+  const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
+  const returnedProductsSchema = useReturnProductsSchema({ slug });
+
+  const vehiclesBySoul = useMemo(() => new Map(
+    vehicles
+      .filter(v => v?._?.soul)
+      .map(v => [v._!.soul!, v])
+  ), [vehicles]);
+
+  const productsBySoul = useMemo(() => new Map(
+    products
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [products]);
+
+  return {
+    schema: "trip",
+    title: "Trips",
+    slug,
+    icon: MapIcon,
+    group: "Logistics",
+    previewOverrides: {
+      vehicleId: (vehicleId) => vehiclesBySoul.get(vehicleId)?.name ?? "-",
+    },
+    fieldOverrides: {
+      vehicleId: z.string().describe("Vehicle").superRefine(fieldConfig({
+        fieldType: "select",
+        customData: {
+          options: vehicles.map(v => [v._!.soul!, `${v.name} (${v.licensePlate})`]),
+        },
+      })),
+      products: salesItemSchema
+        .extend({
+          product: z.string().describe("Product")
+            .superRefine(fieldConfig({
+              fieldType: "select",
+              customData: {
+                options: products.filter(p => !!p?._?.soul)
+                  .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+              },
+            })),
+          quantity: z.number({ coerce: true }).int().positive()
+            .describe("Quantity Sent")
+            .superRefine(fieldConfig({
+              fieldType: "number",
+            })),
+        })
+        .array()
+        .min(1, { message: "Please add at least one product." })
+        .superRefine((items, ctx) => {
+          items.forEach((item, index) => {
+            const product = productsBySoul.get(item.product);
+
+            if (!product) return;
+
+            if (item.quantity > product.stockQuantity) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Only ${product.stockQuantity} items of ${product.title} available in stock`,
+                path: [index, "quantity"],
+              })
+            }
+          })
+        })
+        .describe("Products Sent on Trip"),
+      returnedProducts: returnedProductsSchema,
+    },
+    actions: ({ row }) => {
+      // Only show the action button if the trip hasn't returned yet
+      if (row.original.returnTime) return null;
+
+      return (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={e => e.preventDefault()}>
+            <Credenza>
+              <CredenzaTrigger className="w-full text-start">
+                Mark Return
+              </CredenzaTrigger>
+              <CredenzaContent className="max-h-[80vh] overflow-y-auto">
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">Mark Return for Trip</h3>
+
+                  <div className="mb-6">
+                    <h4 className="font-medium mb-2">Products Dispatched:</h4>
+                    <div className="grid grid-cols-3 gap-2 text-sm font-medium mb-2">
+                      <div>Product</div>
+                      <div className="text-center">Sent</div>
+                      <div className="text-center">Returned</div>
+                    </div>
+                    {row.original.products?.map((product, idx: number) => {
+                      const prod = productsBySoul.get(product["#"]);
+                      return (
+                        <div key={idx} className="grid grid-cols-3 gap-2 text-sm">
+                          <div>{prod?.title || "Unknown Product"}</div>
+                          <div className="text-center">{product.quantity}</div>
+                          <div className="text-center">0</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <AutoForm
+                    values={{
+                      returnedProducts: row.original.products
+                    }}
+                    schema={z.object({
+                      returnedProducts: returnedProductsSchema
+                    })}
+                    onSubmit={(data) => {
+                      // Calculate sold products (dispatched - returned)
+                      const soldProducts = row.original.products.map((dispatchedProduct) => {
+                        const returnedProduct = data.returnedProducts?.find(
+                          (rp) => rp.product === dispatchedProduct.product
+                        );
+                        const returnedQty = returnedProduct ? returnedProduct.quantity : 0;
+                        const soldQty = dispatchedProduct.quantity - returnedQty;
+
+                        return {
+                          productId: dispatchedProduct.product,
+                          quantity: Math.max(0, soldQty), // Ensure non-negative
+                        };
+                      }).filter((sp: any) => sp.quantity > 0); // Only include products that were actually sold
+
+                      // Update the trip with return time and returned products
+                      updateTrip({
+                        id: row.original._.soul,
+                        returnTime: new Date().toISOString(),
+                        returnedProducts: data.returnedProducts,
+                      });
+
+                      // Create a sale record for the sold products
+                      if (soldProducts.length > 0) {
+                        // Create corresponding invoice for sold products
+                        const invoiceItems = soldProducts.map((item) => {
+                          const product = productsBySoul.get(item.productId);
+                          return {
+                            product: item.productId,
+                            quantity: item.quantity,
+                            rate: product?.sellingPrice || 0,
+                            total: item.quantity * (product?.sellingPrice || 0)
+                          } as const;
+                        }).reduce((acc, curr) => ({ ...acc, ...curr }), {});
+
+                        const totalAmount = soldProducts.reduce(
+                          (sum: number, item: any) => sum + (item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0)),
+                          0
+                        );
+
+                        createInvoice({
+                          type: "sale",
+                          partyId: "trip-sale", // Could be linked to a specific customer
+                          issuedAt: new Date().toISOString(),
+                          items: invoiceItems,
+                          subTotal: totalAmount,
+                          tax: 0,
+                          paidAmount: totalAmount,
+                          paymentStatus: "paid" as any,
+                          fiscalYear: calculateFiscalYear()
+                        });
+
+                        // Update product stock quantities
+                        soldProducts.forEach((soldProduct: any) => {
+                          const product = productsBySoul.get(soldProduct.productId);
+                          if (product && product._?.soul) {
+                            api.product.useUpdate({ keys: [slug] }).mutate({
+                              id: product._.soul,
+                              stockQuantity: product.stockQuantity - soldProduct.quantity
+                            });
+                          }
+                        });
+                      }
+
+                      // Close the dialog
+                      const closeBtn = document.querySelector('[data-state="open"] [data-dismiss]');
+                      if (closeBtn) (closeBtn as HTMLElement).click();
+                    }}
+                  />
+                </div>
+              </CredenzaContent>
+            </Credenza>
+          </DropdownMenuItem>
+        </>
+      );
+    },
+  }
+}
+
 export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigReturn {
   const salesConfig = useSalesConfig({ slug });
   const stockImportsConfig = useStockImportsConfig({ slug });
   const invoicesConfig = useInvoicesConfig({ slug });
   const partyConfig = usePartyConfig({ slug });
   const customerConfig = useCustomerConfig({ slug });
+  const vehicleConfig = useVehicleConfig({ slug });
+  const tripConfig = useTripConfig({ slug });
   return {
     food: [
       {
@@ -885,6 +1113,8 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
         icon: ListTodo,
         group: "Inventory"
       },
+      vehicleConfig,
+      tripConfig,
     ],
   }
 }

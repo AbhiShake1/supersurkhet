@@ -108,6 +108,7 @@
     "gun": "^0.2020.1240",
     "he-tree-react": "^1.2.0",
     "html2canvas-oklch": "1.5.0-alpha.0",
+    "i18next": "^25.7.3",
     "immer": "^11.0.0",
     "input-otp": "^1.4.2",
     "jspdf": "^3.0.4",

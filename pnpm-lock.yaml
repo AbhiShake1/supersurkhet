@@ -318,6 +318,9 @@ importers:
       html2canvas-oklch:
         specifier: 1.5.0-alpha.0
         version: 1.5.0-alpha.0
+      i18next:
+        specifier: ^25.7.3
+        version: 25.7.3(typescript@5.8.3)
       immer:
         specifier: ^11.0.0
         version: 11.0.0
@@ -25156,7 +25159,7 @@ snapshots:
 
   metro-runtime@0.82.5:
     dependencies:
-      '@babel/runtime': 7.28.3
+      '@babel/runtime': 7.28.4
       flow-enums-runtime: 0.0.6
 
   metro-source-map@0.82.5:
