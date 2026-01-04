@@ -36,19 +36,21 @@ export const table = {
 export const baseListingSchema = z
   .object({
     title: z.string().min(1).describe("Product Name"),
-    unit: z.enum(["piece", "cartoon", "dozen", "litre", "kg"]).optional().describe("Unit"),
+    hsCode: z.string().min(1).describe("HS Code"),
+    unit: z.string().optional().describe("Unit").superRefine(fieldConfig({ fieldType: "unit" })),
     costPrice: z.number({ coerce: true }).positive().describe("Cost Price"),
-    sellingPrice: z.number({ coerce: true }).positive().describe("Selling Price"),
-    stockQuantity: z.number({ coerce: true }).int().positive().describe("Quantity in Stock"),
-    description: z.string().optional().describe("Product Description"),
-    category: z.string().default("Others").optional(),
-    sku: z.string().optional().describe("Stock Keeping Unit"),
+    sellingPrice: z.number({ coerce: true }).positive().optional().describe("Default Selling Price").superRefine(fieldConfig({ label: "Default Selling Price" })),
+    stockQuantity: z.number({ coerce: true }).int().min(0).default(0).describe("Quantity in Stock").superRefine(fieldConfig({ label: "Opening Stock Quantity" })),
     barcode: z.string().optional().describe("Barcode"),
     reorderLevel: z.number({ coerce: true }).int().positive().optional().describe("Reorder Level").superRefine(fieldConfig({
       inputProps: {
         placeholder: "You will be reminded to reorder this product when only this many is available in stock"
       }
     })),
+    description: z.string().optional().describe("Product Description")
+      .superRefine(fieldConfig({ fieldType: "richText" })),
+    category: z.string().default("Others").optional(),
+    sku: z.string().optional().describe("Stock Keeping Unit"),
     imageUrl: z
       .string()
       .describe("Image")

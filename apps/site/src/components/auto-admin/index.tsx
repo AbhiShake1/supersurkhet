@@ -24,6 +24,7 @@ import { useState, useEffect } from "react";
 import type { z } from "zod";
 import { NotFound } from "../ui/not-found";
 import { CustomUiBuilderPage } from "../ui-builder";
+import { LanguageSelector } from "../language-selector";
 
 export interface AutoAdminProps {
   tabs: PossibleTabConfig[];
@@ -76,13 +77,14 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
     {
       title: "Dashboard",
       icon: BarChart3,
-      children: <AdminDashboard slug={basePath} />,
+      children: <AdminDashboard slug={basePath} businessType={business.businessType} />,
     },
     ...tabs,
     {
       title: "QR Management",
       icon: QrCodeIcon,
       children: <QRCodePage slug={basePath} />,
+      group: "System Configuration"
     },
     {
       title: "Website UI",
@@ -167,6 +169,11 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
             <Button variant="outline" size="icon" className="">
               <Settings className="h-4 w-4" />
             </Button>
+
+            {/* Language Selector */}
+            <div className="mr-2">
+              <LanguageSelector />
+            </div>
 
             {/* Keyboard shortcuts indicator */}
             <Button

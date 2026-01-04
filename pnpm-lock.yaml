@@ -273,6 +273,9 @@ importers:
       canvas-confetti:
         specifier: ^1.9.3
         version: 1.9.3
+      cbor2:
+        specifier: ^2.0.1
+        version: 2.0.1
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -315,6 +318,9 @@ importers:
       html2canvas-oklch:
         specifier: 1.5.0-alpha.0
         version: 1.5.0-alpha.0
+      i18next:
+        specifier: ^25.7.3
+        version: 25.7.3(typescript@5.8.3)
       immer:
         specifier: ^11.0.0
         version: 11.0.0
@@ -387,6 +393,9 @@ importers:
       react-hook-form:
         specifier: ^7.56.1
         version: 7.66.1(react@19.0.0)
+      react-i18next:
+        specifier: ^16.5.1
+        version: 16.5.1(i18next@25.7.3(typescript@5.8.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.8.3)
       react-leaflet:
         specifier: ^5.0.0
         version: 5.0.0(leaflet@1.9.4)(react-dom@19.0.0(react@19.0.0))(react@19.0.0)
@@ -1524,6 +1533,10 @@ packages:
   '@csstools/css-tokenizer@3.0.3':
     resolution: {integrity: sha512-UJnjoFsmxfKUdNYdWgOB0mWUypuLvAfQPH1+pyvRJs6euowbFkFC6P13w1l8mJyi3vxYMxc9kld5jZEGRQs6bw==}
     engines: {node: '>=18'}
+
+  '@cto.af/wtf8@0.0.2':
+    resolution: {integrity: sha512-ATm4UQiKrdm5GnU6BvIwUDN+LDEtt23zuzKFpnfDT59ULAd0aMYm/nSFzbSO02garLcXumRC13PzNfa7BsfvSg==}
+    engines: {node: '>=20'}
 
   '@dabh/diagnostics@2.0.3':
     resolution: {integrity: sha512-hrlQOIi7hAfzsMqlGSFyVucrx38O+j6wiGOf//H2ecvIEqYN4ADBSS2iLMh5UFyDunCNniUIPk/q3riFv45xRA==}
@@ -7055,6 +7068,10 @@ packages:
   castable-video@1.1.10:
     resolution: {integrity: sha512-/T1I0A4VG769wTEZ8gWuy1Crn9saAfRTd1UYTb8xbOPlN78+zOi/1nU2dD5koNkfE5VWvgabkIqrGKmyNXOjSQ==}
 
+  cbor2@2.0.1:
+    resolution: {integrity: sha512-9bE8+tueGxONyxpttNKkAKKcGVtAPeoSJ64AjVTTjEuBOuRaeeP76EN9BbmQqkz1ZeTP0QPvksNBKwvEutIUzQ==}
+    engines: {node: '>=20'}
+
   ccount@2.0.1:
     resolution: {integrity: sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==}
 
@@ -9054,6 +9071,9 @@ packages:
   html-entities@2.6.0:
     resolution: {integrity: sha512-kig+rMn/QOVRvr7c86gQ8lWXq+Hkv6CbAH1hLu+RG338StTpE8Z0b44SDVaqVu7HGKf27frdmUYEs9hTUX/cLQ==}
 
+  html-parse-stringify@3.0.1:
+    resolution: {integrity: sha512-KknJ50kTInJ7qIScF3jeaFRpMpE8/lfiTdzf/twXyPBLAGrLRTmkz3AdTnKeh40X8k9L2fdYwEp/42WGXIRGcg==}
+
   html-to-text@9.0.5:
     resolution: {integrity: sha512-qY60FjREgVZL03vJU6IfMV4GDjGBIoOyvuFdpBDIX9yTlDw0TjxVBQp+P8NvpdIXNJvfWBTNul7fsAQJq2FNpg==}
     engines: {node: '>=14'}
@@ -9120,6 +9140,14 @@ packages:
 
   hyphenate-style-name@1.1.0:
     resolution: {integrity: sha512-WDC/ui2VVRrz3jOVi+XtjqkDjiVjTtFaAGiW37k6b+ohyQ5wYDOGkvCZa8+H0nx3gyvv0+BST9xuOgIyGQ00gw==}
+
+  i18next@25.7.3:
+    resolution: {integrity: sha512-2XaT+HpYGuc2uTExq9TVRhLsso+Dxym6PWaKpn36wfBmTI779OQ7iP/XaZHzrnGyzU4SHpFrTYLKfVyBfAhVNA==}
+    peerDependencies:
+      typescript: ^5
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   iconv-lite@0.6.3:
     resolution: {integrity: sha512-4fCk79wshMdzMp2rH06qWrJE4iolqLhCUH+OiuIgU++RB0+94NlDL81atO7GX55uUKueo0txHNtvEyI6D7WdMw==}
@@ -11350,6 +11378,22 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17 || ^18 || ^19
 
+  react-i18next@16.5.1:
+    resolution: {integrity: sha512-Hks6UIRZWW4c+qDAnx1csVsCGYeIR4MoBGQgJ+NUoNnO6qLxXuf8zu0xdcinyXUORgGzCdRsexxO1Xzv3sTdnw==}
+    peerDependencies:
+      i18next: '>= 25.6.2'
+      react: '>= 16.8.0'
+      react-dom: '*'
+      react-native: '*'
+      typescript: ^5
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+      typescript:
+        optional: true
+
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
@@ -13028,6 +13072,11 @@ packages:
     peerDependencies:
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  use-sync-external-store@1.6.0:
+    resolution: {integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
 
@@ -13227,6 +13276,10 @@ packages:
 
   vlq@1.0.1:
     resolution: {integrity: sha512-gQpnTgkubC6hQgdIcRdYGDSDc+SaujOdyesZQMv6JlfQee/9Mp0Qhnys6WxDWvQnL5WZdT7o2Ul187aSt0Rq+w==}
+
+  void-elements@3.1.0:
+    resolution: {integrity: sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==}
+    engines: {node: '>=0.10.0'}
 
   vscode-jsonrpc@8.2.0:
     resolution: {integrity: sha512-C+r0eKJUIfiDIfwJhria30+TYWPtuHJXHtI7J0YlOmKAo7ogxP20T0zxB7HZQIFhIyvoBPwWskjxrvAtfjyZfA==}
@@ -14758,6 +14811,8 @@ snapshots:
       '@csstools/css-tokenizer': 3.0.3
 
   '@csstools/css-tokenizer@3.0.3': {}
+
+  '@cto.af/wtf8@0.0.2': {}
 
   '@dabh/diagnostics@2.0.3':
     dependencies:
@@ -21420,6 +21475,10 @@ snapshots:
     dependencies:
       custom-media-element: 1.4.5
 
+  cbor2@2.0.1:
+    dependencies:
+      '@cto.af/wtf8': 0.0.2
+
   ccount@2.0.1: {}
 
   ce-la-react@0.3.1(react@19.0.0):
@@ -23825,6 +23884,10 @@ snapshots:
 
   html-entities@2.6.0: {}
 
+  html-parse-stringify@3.0.1:
+    dependencies:
+      void-elements: 3.1.0
+
   html-to-text@9.0.5:
     dependencies:
       '@selderee/plugin-htmlparser2': 0.11.0
@@ -23905,6 +23968,12 @@ snapshots:
   human-signals@8.0.1: {}
 
   hyphenate-style-name@1.1.0: {}
+
+  i18next@25.7.3(typescript@5.8.3):
+    dependencies:
+      '@babel/runtime': 7.28.4
+    optionalDependencies:
+      typescript: 5.8.3
 
   iconv-lite@0.6.3:
     dependencies:
@@ -25090,7 +25159,7 @@ snapshots:
 
   metro-runtime@0.82.5:
     dependencies:
-      '@babel/runtime': 7.28.3
+      '@babel/runtime': 7.28.4
       flow-enums-runtime: 0.0.6
 
   metro-source-map@0.82.5:
@@ -26637,6 +26706,17 @@ snapshots:
   react-hook-form@7.66.1(react@19.0.0):
     dependencies:
       react: 19.0.0
+
+  react-i18next@16.5.1(i18next@25.7.3(typescript@5.8.3))(react-dom@19.0.0(react@19.0.0))(react@19.0.0)(typescript@5.8.3):
+    dependencies:
+      '@babel/runtime': 7.28.4
+      html-parse-stringify: 3.0.1
+      i18next: 25.7.3(typescript@5.8.3)
+      react: 19.0.0
+      use-sync-external-store: 1.6.0(react@19.0.0)
+    optionalDependencies:
+      react-dom: 19.0.0(react@19.0.0)
+      typescript: 5.8.3
 
   react-is@16.13.1: {}
 
@@ -28646,6 +28726,10 @@ snapshots:
     dependencies:
       react: 19.0.0
 
+  use-sync-external-store@1.6.0(react@19.0.0):
+    dependencies:
+      react: 19.0.0
+
   util-deprecate@1.0.2: {}
 
   util@0.12.5:
@@ -28988,6 +29072,8 @@ snapshots:
       - yaml
 
   vlq@1.0.1: {}
+
+  void-elements@3.1.0: {}
 
   vscode-jsonrpc@8.2.0: {}
 

@@ -18,21 +18,21 @@ import {
   Users,
   Wrench,
   ListTodo, DollarSign,
-  BarChart3
+  Users2,
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
 import type { AutoTableTab } from "@/components/auto-admin";
-import { salesItemSchema } from "@/lib/schemas/sales";
+import { salesItemSchema, type Sale, type StockImport } from "@/lib/schemas/sales";
 import z from "zod";
-import { fieldConfig } from "@/components/ui/autoform";
+import { AutoForm, fieldConfig } from "@/components/ui/autoform";
 import { api } from "@/lib/api";
-import { useMemo } from "react";
-import { ReportsPage } from "@/components/reports-page";
+import { useEffect, useMemo, useState } from "react";
 import NepaliDate from "nepali-datetime";
 import type { UseFormReturn } from "react-hook-form";
 import {
-  DropdownMenuItem
+  DropdownMenuItem,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Credenza,
@@ -41,9 +41,12 @@ import {
 } from "@/components/ui/credenza";
 import { ReceiptWrapper } from "@/components/ui/receipt-wrapper";
 import { formatCurrency } from "@/lib/intl";
+import type { SchemaKeys } from "@gta/react-hooks"
+import { useDialog } from "@/contexts/dialog-context";
+import { Button } from "@/components/ui/button";
 
 export type BusinessConfigReturn = {
-  [B in BusinessType]?: AutoTableTab<any>[];
+  [B in BusinessType]?: AutoTableTab<SchemaKeys extends infer K ? K : never>[];
 }
 
 function calculateFiscalYear() {
@@ -51,9 +54,12 @@ function calculateFiscalYear() {
   return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
 }
 
-function calculateTotalCost(form: UseFormReturn) {
+export type TransactionForm = UseFormReturn<StockImport | Sale>
+
+function calculateTotalCost(form: TransactionForm) {
   const formValues = form.getValues()
-  if (!formValues?.items?.length) return
+  if (!formValues?.items?.length) return 0
+
   return formValues.items.reduce((sum: number, item: any) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
 }
 
@@ -64,10 +70,13 @@ function getPaymentStatus(paidAmount: number, totalCost: number) {
   return `partial (${formatCurrency(totalCost - paidAmount)} to pay)`
 }
 
-function refreshPaidAmount(form: UseFormReturn) {
+function refreshPaidAmount(form: TransactionForm) {
+  const formValues = form.getValues()
   const totalCost = calculateTotalCost(form)
+  // const [,a] = formValues
+  if (!totalCost) return
   form.setValue("paidAmount", totalCost)
-  const paidAmount = form.getValues().paidAmount
+  const paidAmount = formValues.paidAmount
   const paymentStatus = getPaymentStatus(paidAmount, totalCost)
   form.setValue("paymentStatus", paymentStatus)
 }
@@ -89,6 +98,22 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
       .map(p => [p._!.soul!, p])
   ), [parties])
 
+  function getDefaultUnitField() {
+    return z.string().optional().describe("Unit").superRefine(fieldConfig({
+      inputProps: {
+        disabled: true,
+        placeholder: "Select product for unit",
+        className: "border-none"
+      }
+    }))
+  }
+
+  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
+
+  useEffect(() => {
+    return () => setUnitField(getDefaultUnitField())
+  }, [])
+
   function getQuantityDescription() {
     return "Quantity"
   }
@@ -98,6 +123,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     title: "Stock Imports",
     icon: ShoppingBag,
     slug,
+    group: "Inventory",
     formSchemaTransformer: (schema) => schema.superRefine((stockImport, ctx) => {
       if (!stockImport.paidAmount) return
       const totalCost = stockImport.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
@@ -123,12 +149,14 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
           onValueChange: (_paidAmount, __, form) => {
             const paidAmount = Number(_paidAmount)
             const totalCost = calculateTotalCost(form)
+            if (!totalCost) return
             form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
           },
         }
       })),
       items: salesItemSchema
         .extend({
+          unit: unitField,
           product: z.string().describe("Product")
             .superRefine(fieldConfig({
               fieldType: "select",
@@ -139,8 +167,43 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
                   const product = productsBySoul.get(val)
                   if (!product) return
                   const [itemsKey, index] = path
-                  form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+
                   form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
+                  if (product.unit) {
+                    const [unitType, piecesPerUnit] = product.unit.split(':');
+                    if (piecesPerUnit) {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType, "piece"],
+                          configDisabled: true,
+                          onValueChange(value, path, form) {
+                            const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
+                            const [, quantityPerUnit] = value?.split(':') ?? []
+                            const [itemsKey, index] = path
+
+                            // if quantity exists in the unit, we dont want to use it as its the compound unit
+                            if (quantityPerUnit) {
+                              if (product.costPrice)
+                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
+                            } else {
+                              if (productQuantityPerUnit && product.costPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
+                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice / Number(productQuantityPerUnit))
+                              }
+                            }
+                          },
+                        },
+                      })))
+                    } else {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType],
+                        },
+                      })))
+                    }
+                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+                  }
                   refreshPaidAmount(form)
                 }
               },
@@ -167,7 +230,26 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         .describe("Items to Import"),
     },
     onCreate(_, variables) {
-      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+      // Stock update logic with unit conversion
+      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity, unit }) => {
+        // Check if the product unit has pieces info (e.g., "cartoon:10")
+        const productInfo = productsBySoul.get(product);
+        if (!productInfo) return a;
+
+        let adjustedQuantity = quantity;
+        if (productInfo.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the import unit matches the product's base unit type, convert to pieces
+          if (unit === unitType) {
+            adjustedQuantity = quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        a[product] = (a[product] || 0) + adjustedQuantity;
+        return a;
+      }, {} as Record<string, number>);
+
       Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
         const product = productsBySoul.get(productId)
         if (!product?._?.soul) return
@@ -175,17 +257,30 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
       })
 
       // Create corresponding invoice
-      const invoiceItems = Object.fromEntries(
-        variables.items?.map((item, index) => [
+      const invoiceItems = variables.items?.map((item, index) => {
+        // Adjust quantity for invoice based on unit conversion
+        const productInfo = productsBySoul.get(item.product);
+        let adjustedQuantity = item.quantity;
+
+        if (productInfo?.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the import unit matches the product's base unit type, convert to pieces for inventory tracking
+          if (item.unit === unitType) {
+            adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        return [
           `itm_${index}`,
           {
             product: item.product,
-            quantity: item.quantity,
+            quantity: adjustedQuantity,
             rate: item.unitPrice,
             total: item.quantity * item.unitPrice
           }
-        ]) ?? []
-      );
+        ];
+      }) ?? [];
 
       const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
 
@@ -193,7 +288,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         type: "purchase",
         partyId: variables.party,
         issuedAt: variables.importDate,
-        items: invoiceItems,
+        items: Object.fromEntries(invoiceItems),
         subTotal: totalAmount,
         tax: 0,
         paidAmount: variables.paidAmount || 0,
@@ -201,12 +296,93 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         fiscalYear: calculateFiscalYear()
       });
     },
-    onUpdate(_, variables) {
-      // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
-      // Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
-      //   const product = productsBySoul.get(productId)
-      //   if (!product?._?.soul) return
-      //   updateProduct({ id: product?._
+    // onUpdate(_, variables) {
+    //   // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
+    //   // Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+    //   //   const product = productsBySoul.get(productId)
+    //   //   if (!product?._?.soul) return
+    //   //   updateProduct({ id: product?._
+    // }
+  }
+}
+
+export function useCustomerConfig({ slug }: { slug: string }): AutoTableTab<"customer"> {
+  const { openDialog, closeDialog } = useDialog()
+  const { data: invoices = [] } = api.invoice.useGet({ keys: [slug] });
+  const { mutate: deleteInvoice } = api.invoice.useDelete({ keys: [slug] });
+  const { data: sales = [] } = api.sale.useGet({ keys: [slug] });
+  const { mutate: deleteSale } = api.sale.useDelete({ keys: [slug] });
+
+  function deleteInvoiceByCustomerId(id: string) {
+    for (const sale of sales) {
+      if (sale.customerId === id && !!sale._?.soul) {
+        deleteSale(sale._.soul)
+      }
+    }
+    for (const invoice of invoices) {
+      if (invoice.partyId === id && !!invoice._?.soul) {
+        deleteInvoice(invoice._.soul)
+      }
+    }
+    closeDialog()
+  }
+  return {
+    schema: "customer",
+    title: "Customers",
+    slug,
+    icon: Users,
+    group: "Party",
+    onDelete(_, id) {
+      if (!invoices.length) return
+      if (!invoices.some(invoice => invoice.partyId === id)) return
+      openDialog({
+        title: "Delete Invoices",
+        description: "The customer has been deleted. Do you want to delete all associated invoices?",
+        children: <div className="flex gap-2 items-center">
+          <Button variant="outline" size="sm" onClick={() => closeDialog()}>Cancel</Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteInvoiceByCustomerId(id)}>Delete</Button>
+        </div>
+      })
+    }
+  }
+}
+
+export function usePartyConfig({ slug }: { slug: string }): AutoTableTab<"party"> {
+  const { openDialog, closeDialog } = useDialog()
+  const { data: invoices = [] } = api.invoice.useGet({ keys: [slug] });
+  const { mutate: deleteInvoice } = api.invoice.useDelete({ keys: [slug] });
+  const { data: stockImports = [] } = api.stockImport.useGet({ keys: [slug] });
+  const { mutate: deleteStockImport } = api.stockImport.useDelete({ keys: [slug] });
+  function deleteInvoiceByPartyId(id: string) {
+    for (const stockImport of stockImports) {
+      if (stockImport.party === id && !!stockImport._?.soul) {
+        deleteStockImport(stockImport._.soul)
+      }
+    }
+    for (const invoice of invoices) {
+      if (invoice.partyId === id && !!invoice._?.soul) {
+        deleteInvoice(invoice._.soul)
+      }
+    }
+    closeDialog()
+  }
+  return {
+    schema: "party",
+    title: "Purchase Parties",
+    slug,
+    icon: Users2,
+    group: "Party",
+    onDelete(_, id) {
+      if (!invoices.length) return
+      if (!invoices.some(invoice => invoice.partyId === id)) return
+      openDialog({
+        title: "Delete Invoices",
+        description: "The party has been deleted. Do you want to delete all associated invoices?",
+        children: <div className="flex gap-2 items-center">
+          <Button variant="outline" size="sm" onClick={() => closeDialog()}>Cancel</Button>
+          <Button variant="destructive" size="sm" onClick={() => deleteInvoiceByPartyId(id)}>Delete</Button>
+        </div>
+      })
     }
   }
 }
@@ -215,27 +391,42 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
   const { data: products = [] } = api.product.useGet({
     keys: [slug],
   })
-  const { data: parties = [] } = api.party.useGet({ keys: [slug] });
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
   const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
+  const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   ), [products])
 
-  const partiesBySoul = useMemo(() => new Map(
-    parties
+  const customersBySoul = useMemo(() => new Map(
+    customers
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [parties])
+  ), [customers])
+
+  function getDefaultUnitField() {
+    return z.string().optional().describe("Unit").superRefine(fieldConfig({
+      inputProps: {
+        disabled: true,
+        placeholder: "Select product for unit",
+        className: "border-none"
+      }
+    }))
+  }
+
+  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
 
   return {
     schema: "sale",
     title: "Sales",
     icon: DollarSign,
-    group: "Financial",
+    group: "Inventory",
     slug,
+    previewOverrides: {
+      customerId: (customerId) => customersBySoul.get(customerId)?.name ?? "-",
+    },
     formSchemaTransformer: (schema) => schema.superRefine((sale, ctx) => {
       if (!sale.paidAmount) return
       const totalCost = sale.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
@@ -246,6 +437,12 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       })
     }),
     fieldOverrides: {
+      customerId: z.string().describe("Customer").superRefine(fieldConfig({
+        fieldType: "select",
+        customData: {
+          options: customers.map(c => [c._!.soul!, c.name]),
+        }
+      })),
       paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
         fieldType: "number",
         customData: {
@@ -268,12 +465,35 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
                   const product = productsBySoul.get(val)
                   if (!product) return
                   const [itemsKey, index] = path
-                  form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+
                   form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+
+                  if (product.unit) {
+                    const [unitType, piecesPerUnit] = product.unit.split(':');
+                    if (piecesPerUnit) {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType, "piece"],
+                          configDisabled: true
+                        },
+                      })))
+                    } else {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType],
+                        },
+                      })))
+                    }
+                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+                  }
+
                   refreshPaidAmount(form)
                 }
               },
             })),
+          unit: unitField,
           quantity: z.number({ coerce: true }).int().positive()
             .describe("Quantity")
             .superRefine(fieldConfig({
@@ -301,10 +521,23 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
 
             if (!product) return
 
-            if (item.quantity > product.stockQuantity) {
+            // Handle stock checking based on unit configuration
+            let availableStock = product.stockQuantity;
+
+            // If product unit has pieces info (e.g., "cartoon:10"), adjust stock calculation
+            if (product.unit && product.unit.includes(':')) {
+              const [unitType, piecesPerUnit] = product.unit.split(':');
+
+              // If the sale unit matches the product's base unit type, convert stock to pieces for comparison
+              if (item.unit === unitType) {
+                availableStock = product.stockQuantity * parseInt(piecesPerUnit, 10);
+              }
+            }
+
+            if (item.quantity > availableStock) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: `Only ${product.stockQuantity} items of ${product.title} available in stock`,
+                message: `Only ${availableStock} items of ${product.title} available in stock`,
                 path: [index, "quantity"],
               })
             }
@@ -320,9 +553,25 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       //   })),
     },
     onCreate(_, variables) {
-      // Stock update logic
-      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity }) =>
-        ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>);
+      // Stock update logic with unit conversion
+      const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity, unit }) => {
+        // Check if the product unit has pieces info (e.g., "cartoon:10")
+        const productInfo = productsBySoul.get(product);
+        if (!productInfo) return a;
+
+        let adjustedQuantity = quantity;
+        if (productInfo.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the sale unit matches the product's base unit type, convert to pieces
+          if (unit === unitType) {
+            adjustedQuantity = quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        a[product] = (a[product] || 0) + adjustedQuantity;
+        return a;
+      }, {} as Record<string, number>);
 
       Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
         const product = productsBySoul.get(productId);
@@ -331,18 +580,33 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       });
 
       // Create corresponding invoice
-      const invoiceItems = variables.items?.map((item) => ({
-        product: item.product,
-        quantity: item.quantity,
-        rate: item.unitPrice,
-        total: item.quantity * item.unitPrice
-      })) ?? []
+      const invoiceItems = variables.items?.map((item) => {
+        // Adjust quantity for invoice based on unit conversion
+        const productInfo = productsBySoul.get(item.product);
+        let adjustedQuantity = item.quantity;
+
+        if (productInfo?.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the sale unit matches the product's base unit type, convert to pieces for inventory tracking
+          if (item.unit === unitType) {
+            adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        return {
+          product: item.product,
+          quantity: adjustedQuantity,
+          rate: item.unitPrice,
+          total: item.quantity * item.unitPrice
+        };
+      }) ?? []
 
       const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
 
       createInvoice({
         type: "sale",
-        partyId: variables.customerName, // Using customerName as partyId
+        partyId: variables.customerId,
         issuedAt: variables.saleDate,
         items: invoiceItems,
         subTotal: totalAmount,
@@ -411,10 +675,388 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
   }
 }
 
+export function useVehicleConfig({ slug }: { slug: string }): AutoTableTab<"vehicle"> {
+  return {
+    schema: "vehicle",
+    title: "Vehicles",
+    slug,
+    icon: Car,
+    group: "Logistics",
+  }
+}
+
+function useReturnProductsSchema({ slug }: { slug: string }) {
+  const { data: products = [] } = api.product.useGet({ keys: [slug] });
+  return salesItemSchema
+    .extend({
+      productId: z.string().describe("Product")
+        .superRefine(fieldConfig({
+          fieldType: "select",
+          customData: {
+            options: products.filter(p => !!p?._?.soul)
+              .map(p => [p._!.soul!, p.title]),
+          },
+        })),
+      quantity: z.number({ coerce: true }).int().nonnegative()
+        .describe("Quantity Returned")
+        .superRefine(fieldConfig({
+          fieldType: "number",
+        })),
+    })
+    .array()
+    .optional()
+    .describe("Products Returned from Trip")
+}
+
+export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> {
+  const { data: vehicles = [] } = api.vehicle.useGet({ keys: [slug] });
+  const { data: products = [] } = api.product.useGet({ keys: [slug] });
+  const { mutate: updateTrip } = api.trip.useUpdate({ keys: [slug] });
+  const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
+  const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] });
+  const returnedProductsSchema = useReturnProductsSchema({ slug });
+
+  const vehiclesBySoul = useMemo(() => new Map(
+    vehicles
+      .filter(v => v?._?.soul)
+      .map(v => [v._!.soul!, v])
+  ), [vehicles]);
+
+  const productsBySoul = useMemo(() => new Map(
+    products
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [products]);
+
+  function getDefaultUnitField() {
+    return z.string().optional().describe("Unit").superRefine(fieldConfig({
+      inputProps: {
+        disabled: true,
+        placeholder: "Select product for unit",
+        className: "border-none"
+      }
+    }))
+  }
+
+  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
+
+  useEffect(() => {
+    return () => setUnitField(getDefaultUnitField())
+  }, [])
+
+  return {
+    schema: "trip",
+    title: "Trips",
+    slug,
+    icon: MapIcon,
+    group: "Logistics",
+    previewOverrides: {
+      vehicleId: (vehicleId) => vehiclesBySoul.get(vehicleId)?.name ?? "-",
+    },
+    fieldOverrides: {
+      vehicleId: z.string().describe("Vehicle").superRefine(fieldConfig({
+        fieldType: "select",
+        customData: {
+          options: vehicles.map(v => [v._!.soul!, `${v.name} (${v.licensePlate})`]),
+        },
+      })),
+      products: salesItemSchema
+        .extend({
+          product: z.string().describe("Product")
+            .superRefine(fieldConfig({
+              fieldType: "select",
+              customData: {
+                options: products.filter(p => !!p?._?.soul)
+                  .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+                onValueChange: (val, path, form) => {
+                  const product = productsBySoul.get(val)
+                  if (!product) return
+                  const [itemsKey, index] = path
+
+                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+
+                  if (product.unit) {
+                    const [unitType, piecesPerUnit] = product.unit.split(':');
+                    if (piecesPerUnit) {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType, "piece"],
+                          configDisabled: true,
+                          onValueChange(value, path, form) {
+                            const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
+                            const [, quantityPerUnit] = value?.split(':') ?? []
+                            const [itemsKey, index] = path
+
+                            // if quantity exists in the unit, we dont want to use it as its the compound unit
+                            if (quantityPerUnit) {
+                              if (product.sellingPrice)
+                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+                            } else {
+                              if (productQuantityPerUnit && product.sellingPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
+                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice / Number(productQuantityPerUnit))
+                              }
+                            }
+                          },
+                        },
+                      })))
+                    } else {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType],
+                        },
+                      })))
+                    }
+                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+                  }
+                  refreshPaidAmount(form)
+                }
+              },
+            })),
+          unit: unitField,
+          quantity: z.number({ coerce: true }).int().positive()
+            .describe("Quantity Sent")
+            .superRefine(fieldConfig({
+              fieldType: "number",
+              customData: {
+                onValueChange: (_, __, form) => {
+                  refreshPaidAmount(form)
+                },
+              }
+            })),
+          unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
+            fieldType: "number",
+            customData: {
+              onValueChange: (_, __, form) => {
+                refreshPaidAmount(form)
+              },
+            }
+          })),
+        })
+        .array()
+        .min(1, { message: "Please add at least one product." })
+        .superRefine((items, ctx) => {
+          items.forEach((item, index) => {
+            const product = productsBySoul.get(item.product);
+
+            if (!product) return;
+
+            // Handle stock checking based on unit configuration
+            let availableStock = product.stockQuantity;
+
+            // If product unit has pieces info (e.g., "cartoon:10"), adjust stock calculation
+            if (product.unit && product.unit.includes(':')) {
+              const [unitType, piecesPerUnit] = product.unit.split(':');
+
+              // If the trip unit matches the product's base unit type, convert stock to pieces for comparison
+              if (item.unit === unitType) {
+                availableStock = product.stockQuantity * parseInt(piecesPerUnit, 10);
+              }
+            }
+
+            if (item.quantity > availableStock) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Only ${availableStock} items of ${product.title} available in stock`,
+                path: [index, "quantity"],
+              })
+            }
+          })
+        })
+        .describe("Products Sent on Trip"),
+      returnedProducts: returnedProductsSchema,
+    },
+    onCreate(_, variables) {
+      // Stock update logic with unit conversion for products sent on trip
+      const itemsByProductIdWithQuantity = variables.products?.reduce((a, { product, quantity, unit }) => {
+        // Check if the product unit has pieces info (e.g., "cartoon:10")
+        const productInfo = productsBySoul.get(product);
+        if (!productInfo) return a;
+
+        let adjustedQuantity = quantity;
+        if (productInfo.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the trip unit matches the product's base unit type, convert to pieces
+          if (unit === unitType) {
+            adjustedQuantity = quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        a[product] = (a[product] || 0) + adjustedQuantity;
+        return a;
+      }, {} as Record<string, number>);
+
+      Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+        const product = productsBySoul.get(productId);
+        if (!product?._?.soul) return;
+        updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - quantity });
+      });
+
+      // Create corresponding invoice for trip products
+      const invoiceItems = Object.fromEntries(
+        variables.products?.map((item, index) => [
+          `itm_${index}`,
+          {
+            product: item.product,
+            quantity: item.quantity,
+            rate: item.unitPrice,
+            total: item.quantity * item.unitPrice
+          }
+        ]) ?? []
+      );
+
+      const totalAmount = variables.products?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
+
+      createInvoice({
+        type: "trip-dispatch",
+        partyId: variables.customerId,
+        issuedAt: variables.startTime,
+        items: invoiceItems,
+        subTotal: totalAmount,
+        tax: 0,
+        paidAmount: totalAmount,
+        paymentStatus: "pending" as any,
+        fiscalYear: calculateFiscalYear()
+      });
+    },
+    onUpdate(_, variables) {
+      // Stock update logic for updates - we need to handle the difference between old and new quantities
+      // For now, we'll just log that this functionality would need to be implemented based on the specific use case
+      console.log("Trip update functionality would handle stock adjustments here");
+    },
+    actions: ({ row }) => {
+      // Only show the action button if the trip hasn't returned yet
+      if (row.original.returnTime) return null;
+
+      return (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={e => e.preventDefault()}>
+            <Credenza>
+              <CredenzaTrigger className="w-full text-start">
+                Mark Return
+              </CredenzaTrigger>
+              <CredenzaContent className="max-h-[80vh] overflow-y-auto">
+                <div className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">Mark Return for Trip</h3>
+
+                  <div className="mb-6">
+                    <h4 className="font-medium mb-2">Products Dispatched:</h4>
+                    <div className="grid grid-cols-3 gap-2 text-sm font-medium mb-2">
+                      <div>Product</div>
+                      <div className="text-center">Sent</div>
+                      <div className="text-center">Returned</div>
+                    </div>
+                    {row.original.products?.map((product, idx: number) => {
+                      const prod = productsBySoul.get(product["#"]);
+                      return (
+                        <div key={idx} className="grid grid-cols-3 gap-2 text-sm">
+                          <div>{prod?.title || "Unknown Product"}</div>
+                          <div className="text-center">{product.quantity}</div>
+                          <div className="text-center">0</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <AutoForm
+                    values={{
+                      returnedProducts: row.original.products
+                    }}
+                    schema={z.object({
+                      returnedProducts: returnedProductsSchema
+                    })}
+                    onSubmit={(data) => {
+                      // Calculate sold products (dispatched - returned)
+                      const soldProducts = row.original.products.map((dispatchedProduct) => {
+                        const returnedProduct = data.returnedProducts?.find(
+                          (rp) => rp.product === dispatchedProduct.product
+                        );
+                        const returnedQty = returnedProduct ? returnedProduct.quantity : 0;
+                        const soldQty = dispatchedProduct.quantity - returnedQty;
+
+                        return {
+                          productId: dispatchedProduct.product,
+                          quantity: Math.max(0, soldQty), // Ensure non-negative
+                        };
+                      }).filter((sp: any) => sp.quantity > 0); // Only include products that were actually sold
+
+                      // Update the trip with return time and returned products
+                      updateTrip({
+                        id: row.original._.soul,
+                        returnTime: new Date().toISOString(),
+                        returnedProducts: data.returnedProducts,
+                      });
+
+                      // Create a sale record for the sold products
+                      if (soldProducts.length > 0) {
+                        // Create corresponding invoice for sold products
+                        const invoiceItems = Object.fromEntries(
+                          soldProducts.map((item, index) => [
+                            `itm_${index}`,
+                            {
+                              product: item.productId,
+                              quantity: item.quantity,
+                              rate: productsBySoul.get(item.productId)?.sellingPrice || 0,
+                              total: item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0)
+                            }
+                          ])
+                        );
+
+                        const totalAmount = soldProducts.reduce(
+                          (sum: number, item: any) => sum + (item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0)),
+                          0
+                        );
+
+                        createInvoice({
+                          type: "sale",
+                          partyId: "trip-sale", // Could be linked to a specific customer
+                          issuedAt: new Date().toISOString(),
+                          items: invoiceItems,
+                          subTotal: totalAmount,
+                          tax: 0,
+                          paidAmount: totalAmount,
+                          paymentStatus: "paid" as any,
+                          fiscalYear: calculateFiscalYear()
+                        });
+
+                        // Update product stock quantities
+                        soldProducts.forEach((soldProduct: any) => {
+                          const product = productsBySoul.get(soldProduct.productId);
+                          if (product && product._?.soul) {
+                            api.product.useUpdate({ keys: [slug] }).mutate({
+                              id: product._.soul,
+                              stockQuantity: product.stockQuantity - soldProduct.quantity
+                            });
+                          }
+                        });
+                      }
+
+                      // Close the dialog
+                      const closeBtn = document.querySelector('[data-state="open"] [data-dismiss]');
+                      if (closeBtn) (closeBtn as HTMLElement).click();
+                    }}
+                  />
+                </div>
+              </CredenzaContent>
+            </Credenza>
+          </DropdownMenuItem>
+        </>
+      );
+    },
+  }
+}
+
 export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigReturn {
   const salesConfig = useSalesConfig({ slug });
   const stockImportsConfig = useStockImportsConfig({ slug });
   const invoicesConfig = useInvoicesConfig({ slug });
+  const partyConfig = usePartyConfig({ slug });
+  const customerConfig = useCustomerConfig({ slug });
+  const vehicleConfig = useVehicleConfig({ slug });
+  const tripConfig = useTripConfig({ slug });
   return {
     food: [
       {
@@ -602,33 +1244,26 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
 
     retail: [
       {
-        schema: "party",
-        title: "Parties",
-        slug,
-        icon: Users,
-      },
-      {
         schema: "product",
         title: "Products",
         slug,
         icon: ShoppingBag,
+        group: "Inventory"
       },
+      partyConfig,
+      customerConfig,
       stockImportsConfig,
       salesConfig,
       invoicesConfig,
-      {
-        title: "Reports",
-        slug,
-        icon: BarChart3,
-        children: <ReportsPage slug={slug} />,
-        group: "Financial",
-      },
       {
         schema: "order",
         title: "Orders",
         slug: slug,
         icon: ListTodo,
+        group: "Inventory"
       },
+      vehicleConfig,
+      tripConfig,
     ],
   }
 }

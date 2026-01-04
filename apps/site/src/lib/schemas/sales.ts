@@ -4,21 +4,23 @@ import { fieldConfig } from "@/components/ui/autoform";
 export const salesItemSchema = z.object({
   product: z.string().describe("Product"),
   unit: z.string().optional().describe("Unit").superRefine(fieldConfig({
-    fieldType: "string",
+    fieldType: "unit",
     inputProps: {
-      disabled: true,
-      className: "border-none",
-      placeholder: "Select product to view unit"
+      disabled: false,
+      placeholder: "Select unit for sale"
     }
   })),
   quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),
   unitPrice: z.number({ coerce: true }).positive().describe("Unit Price"),
 })
 
+export type SalesItem = z.infer<typeof salesItemSchema>;
+
 export const saleSchema = z.object({
   saleDate: z.string().datetime()
     .default(() => new Date().toISOString()).describe("Sale Date")
     .superRefine(fieldConfig({ fieldType: "datetime" })),
+  customerId: z.string().describe("Customer"),
   items: salesItemSchema.array()
     .min(1, { message: "Please add at least one item." })
     .describe("Items Sold"),
@@ -31,9 +33,6 @@ export const saleSchema = z.object({
       }
     })),
   paymentMethod: z.enum(["cash", "card", "bankTransfer", "credit"]).optional().describe("Payment Method"),
-  customerName: z.string().optional().describe("Customer Name"),
-  customerEmail: z.string().email().optional().describe("Customer Email"),
-  phone: z.string().optional().describe("Customer Phone"),
   notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
 })
 
