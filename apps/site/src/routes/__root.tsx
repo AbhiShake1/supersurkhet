@@ -288,11 +288,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         {loaderData.criticalThemeCSS}
       </style>
       <Toaster richColors />
-      <TooltipProvider>
-        <NuqsAdapter>
-          <Outlet />
-        </NuqsAdapter>
-      </TooltipProvider>
+      <NuqsAdapter>
+        <Outlet />
+      </NuqsAdapter>
       <TanStackRouterDevtools position="bottom-right" />
       <TanstackQueryLayout />
     </RootDocument>
@@ -443,18 +441,20 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             <ThemeModeProvider savedDarkMode={loaderData.savedDarkMode} savedTheme={loaderData.savedTheme} savedThemeName={loaderData.savedThemeName}>
               <GoogleLoginProvider>
                 <AuthProvider>
-                  <DialogProvider>
-                    <OneTapLoginProvider>
-                      <ConfettiProvider>
-                        <LoginPromptProvider>
-                          {children}
-                          {
-                            isMobile() && <QRScannerButton onActionDetected={handleActionDetected} />
-                          }
-                        </LoginPromptProvider>
-                      </ConfettiProvider>
-                    </OneTapLoginProvider>
-                  </DialogProvider>
+                  <TooltipProvider>
+                    <DialogProvider>
+                      <OneTapLoginProvider>
+                        <ConfettiProvider>
+                          <LoginPromptProvider>
+                            {children}
+                            {
+                              isMobile() && <QRScannerButton onActionDetected={handleActionDetected} />
+                            }
+                          </LoginPromptProvider>
+                        </ConfettiProvider>
+                      </OneTapLoginProvider>
+                    </DialogProvider>
+                  </TooltipProvider>
                 </AuthProvider>
               </GoogleLoginProvider>
             </ThemeModeProvider>

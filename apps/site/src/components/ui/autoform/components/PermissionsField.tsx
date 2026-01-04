@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { generatePermissions } from "@/lib/permissions/generate-permissions";
@@ -122,18 +122,20 @@ function PermissionGroup({
                   onClick={e => e.stopPropagation()}
                 />
 
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Label htmlFor={key} className="text-sm capitalize">
-                      {action.replaceAll("_", " ")}
-                    </Label>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      {`Can ${action.replaceAll("_", " ")} ${feature.replaceAll("_", " ")}`}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Label htmlFor={key} className="text-sm capitalize">
+                        {action.replaceAll("_", " ")}
+                      </Label>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {`Can ${action.replaceAll("_", " ")} ${feature.replaceAll("_", " ")}`}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             );
           })}
