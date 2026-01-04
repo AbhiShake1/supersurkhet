@@ -441,9 +441,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <div data-vaul-drawer-wrapper="">
           <I18nProvider>
             <ThemeModeProvider savedDarkMode={loaderData.savedDarkMode} savedTheme={loaderData.savedTheme} savedThemeName={loaderData.savedThemeName}>
-              <DialogProvider>
-                <GoogleLoginProvider>
-                  <AuthProvider>
+              <GoogleLoginProvider>
+                <AuthProvider>
+                  <DialogProvider>
                     <OneTapLoginProvider>
                       <ConfettiProvider>
                         <LoginPromptProvider>
@@ -454,9 +454,9 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                         </LoginPromptProvider>
                       </ConfettiProvider>
                     </OneTapLoginProvider>
-                  </AuthProvider>
-                </GoogleLoginProvider>
-              </DialogProvider>
+                  </DialogProvider>
+                </AuthProvider>
+              </GoogleLoginProvider>
             </ThemeModeProvider>
           </I18nProvider>
           <Scripts />

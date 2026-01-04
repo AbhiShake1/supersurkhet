@@ -27,6 +27,7 @@ import { Dialog, DialogTrigger, DialogContent } from "./dialog";
 import { ManageOrganization } from "./organizations/manage-organization";
 import { ThemeToggle } from "../theme/theme-toggle";
 import type { PossibleTabConfig } from "../auto-admin";
+import { useDialog } from "@/contexts/dialog-context";
 
 export interface SidebarItems {
   items: {
@@ -200,6 +201,7 @@ const Option: React.FC<{
 };
 
 const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: string, tabs: PossibleTabConfig[] }> = ({ open, businessName, slug, tabs }) => {
+  const { openDialog } = useDialog()
   const { logout, isAuthenticated } = useAuth();
   const user = useProfile();
 
@@ -257,19 +259,16 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: stri
           <DropdownMenuSeparator />
           {
             slug && <>
-              <DropdownMenuGroup>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <DropdownMenuItem className="gap-2" onSelect={e => e.preventDefault()}>
-                      <Settings className="size-4" />
-                      Manage Business
-                    </DropdownMenuItem>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[70%] h-[80%] p-0 overflow-clip" hideClose>
-                    <ManageOrganization slug={slug} tabs={tabs} />
-                  </DialogContent>
-                </Dialog>
-              </DropdownMenuGroup>
+              <DropdownMenuItem className="gap-2" onSelect={e => {
+                e.preventDefault()
+                openDialog({
+                  children: <ManageOrganization slug={slug} tabs={tabs} />,
+                  className: "sm:max-w-[70%] h-[80%] p-0 overflow-clip"
+                })
+              }}>
+                <Settings className="size-4" />
+                Manage Business
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
           }

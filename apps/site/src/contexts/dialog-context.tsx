@@ -6,6 +6,7 @@ type DialogContentProps = {
   description?: string;
   children: ReactNode;
   showCloseButton?: boolean; // Option to hide the close button
+  className?: string;
 };
 
 type DialogContextType = {
@@ -46,7 +47,7 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
       {children}
       {dialogContent && (
         <Dialog open={isOpen} onOpenChange={closeDialog}>
-          <DialogContent hideClose={!dialogContent.showCloseButton}>
+          <DialogContent hideClose={!dialogContent.showCloseButton} className={dialogContent.className}>
             {(dialogContent.title || dialogContent.description) && (
               <DialogHeader>
                 {dialogContent.title && <DialogTitle>{dialogContent.title}</DialogTitle>}
