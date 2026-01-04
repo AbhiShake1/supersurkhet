@@ -1,5 +1,11 @@
 import Gun, { type IGunInstance } from 'gun';
+import "gun/lib/radisk"
 import { DurableObject } from "cloudflare:workers";
+// import Rad from 'gun/lib/radisk';
+//
+// const rad = Rad({
+//
+// })
 
 interface Env {
   GUN_PEERS: string;

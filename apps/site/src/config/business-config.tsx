@@ -713,6 +713,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
   const { mutate: updateTrip } = api.trip.useUpdate({ keys: [slug] });
   const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
+  const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] });
   const returnedProductsSchema = useReturnProductsSchema({ slug });
 
   const vehiclesBySoul = useMemo(() => new Map(
@@ -726,6 +727,22 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   ), [products]);
+
+  function getDefaultUnitField() {
+    return z.string().optional().describe("Unit").superRefine(fieldConfig({
+      inputProps: {
+        disabled: true,
+        placeholder: "Select product for unit",
+        className: "border-none"
+      }
+    }))
+  }
+
+  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
+
+  useEffect(() => {
+    return () => setUnitField(getDefaultUnitField())
+  }, [])
 
   return {
     schema: "trip",
@@ -751,13 +768,71 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
               customData: {
                 options: products.filter(p => !!p?._?.soul)
                   .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+                onValueChange: (val, path, form) => {
+                  const product = productsBySoul.get(val)
+                  if (!product) return
+                  const [itemsKey, index] = path
+
+                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+
+                  if (product.unit) {
+                    const [unitType, piecesPerUnit] = product.unit.split(':');
+                    if (piecesPerUnit) {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType, "piece"],
+                          configDisabled: true,
+                          onValueChange(value, path, form) {
+                            const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
+                            const [, quantityPerUnit] = value?.split(':') ?? []
+                            const [itemsKey, index] = path
+
+                            // if quantity exists in the unit, we dont want to use it as its the compound unit
+                            if (quantityPerUnit) {
+                              if (product.sellingPrice)
+                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+                            } else {
+                              if (productQuantityPerUnit && product.sellingPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
+                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice / Number(productQuantityPerUnit))
+                              }
+                            }
+                          },
+                        },
+                      })))
+                    } else {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType],
+                        },
+                      })))
+                    }
+                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+                  }
+                  refreshPaidAmount(form)
+                }
               },
             })),
+          unit: unitField,
           quantity: z.number({ coerce: true }).int().positive()
             .describe("Quantity Sent")
             .superRefine(fieldConfig({
               fieldType: "number",
+              customData: {
+                onValueChange: (_, __, form) => {
+                  refreshPaidAmount(form)
+                },
+              }
             })),
+          unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
+            fieldType: "number",
+            customData: {
+              onValueChange: (_, __, form) => {
+                refreshPaidAmount(form)
+              },
+            }
+          })),
         })
         .array()
         .min(1, { message: "Please add at least one product." })
@@ -767,10 +842,23 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
 
             if (!product) return;
 
-            if (item.quantity > product.stockQuantity) {
+            // Handle stock checking based on unit configuration
+            let availableStock = product.stockQuantity;
+
+            // If product unit has pieces info (e.g., "cartoon:10"), adjust stock calculation
+            if (product.unit && product.unit.includes(':')) {
+              const [unitType, piecesPerUnit] = product.unit.split(':');
+
+              // If the trip unit matches the product's base unit type, convert stock to pieces for comparison
+              if (item.unit === unitType) {
+                availableStock = product.stockQuantity * parseInt(piecesPerUnit, 10);
+              }
+            }
+
+            if (item.quantity > availableStock) {
               ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: `Only ${product.stockQuantity} items of ${product.title} available in stock`,
+                message: `Only ${availableStock} items of ${product.title} available in stock`,
                 path: [index, "quantity"],
               })
             }
@@ -778,6 +866,65 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
         })
         .describe("Products Sent on Trip"),
       returnedProducts: returnedProductsSchema,
+    },
+    onCreate(_, variables) {
+      // Stock update logic with unit conversion for products sent on trip
+      const itemsByProductIdWithQuantity = variables.products?.reduce((a, { product, quantity, unit }) => {
+        // Check if the product unit has pieces info (e.g., "cartoon:10")
+        const productInfo = productsBySoul.get(product);
+        if (!productInfo) return a;
+
+        let adjustedQuantity = quantity;
+        if (productInfo.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the trip unit matches the product's base unit type, convert to pieces
+          if (unit === unitType) {
+            adjustedQuantity = quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        a[product] = (a[product] || 0) + adjustedQuantity;
+        return a;
+      }, {} as Record<string, number>);
+
+      Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+        const product = productsBySoul.get(productId);
+        if (!product?._?.soul) return;
+        updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - quantity });
+      });
+
+      // Create corresponding invoice for trip products
+      const invoiceItems = Object.fromEntries(
+        variables.products?.map((item, index) => [
+          `itm_${index}`,
+          {
+            product: item.product,
+            quantity: item.quantity,
+            rate: item.unitPrice,
+            total: item.quantity * item.unitPrice
+          }
+        ]) ?? []
+      );
+
+      const totalAmount = variables.products?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
+
+      createInvoice({
+        type: "trip-dispatch",
+        partyId: variables.customerId,
+        issuedAt: variables.startTime,
+        items: invoiceItems,
+        subTotal: totalAmount,
+        tax: 0,
+        paidAmount: totalAmount,
+        paymentStatus: "pending" as any,
+        fiscalYear: calculateFiscalYear()
+      });
+    },
+    onUpdate(_, variables) {
+      // Stock update logic for updates - we need to handle the difference between old and new quantities
+      // For now, we'll just log that this functionality would need to be implemented based on the specific use case
+      console.log("Trip update functionality would handle stock adjustments here");
     },
     actions: ({ row }) => {
       // Only show the action button if the trip hasn't returned yet
@@ -846,15 +993,17 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                       // Create a sale record for the sold products
                       if (soldProducts.length > 0) {
                         // Create corresponding invoice for sold products
-                        const invoiceItems = soldProducts.map((item) => {
-                          const product = productsBySoul.get(item.productId);
-                          return {
-                            product: item.productId,
-                            quantity: item.quantity,
-                            rate: product?.sellingPrice || 0,
-                            total: item.quantity * (product?.sellingPrice || 0)
-                          } as const;
-                        }).reduce((acc, curr) => ({ ...acc, ...curr }), {});
+                        const invoiceItems = Object.fromEntries(
+                          soldProducts.map((item, index) => [
+                            `itm_${index}`,
+                            {
+                              product: item.productId,
+                              quantity: item.quantity,
+                              rate: productsBySoul.get(item.productId)?.sellingPrice || 0,
+                              total: item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0)
+                            }
+                          ])
+                        );
 
                         const totalAmount = soldProducts.reduce(
                           (sum: number, item: any) => sum + (item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0)),
