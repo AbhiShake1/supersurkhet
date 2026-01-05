@@ -5,7 +5,7 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "start": "turbo start",
-    "ai": "node scripts/copy-chat.js && qwen --resume default-chat -y"
+    "ai": "node scripts/copy-chat.js && qwen --resume default-chat -y --experimental-skills"
   },
   "devDependencies": {
     "@qwen-code/qwen-code": "^0.6.0",
