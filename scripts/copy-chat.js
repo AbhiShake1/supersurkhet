@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import path from 'path';
 import * as os from 'os';
+import { execSync } from 'child_process';
 
 function getProjectHash(workingDir) {
   return workingDir.replaceAll(path.sep, "-")
@@ -8,6 +9,23 @@ function getProjectHash(workingDir) {
 
 function getRootQwenDir() {
   return path.join(os.homedir(), '.qwen');
+}
+
+function getCurrentGitBranch(workingDir) {
+  try {
+    // Change to the working directory and get the current git branch
+    const branch = execSync('git branch --show-current', { cwd: workingDir, stdio: 'pipe' }).toString().trim();
+    return branch || 'main'; // fallback to 'main' if no branch is returned
+  } catch (error) {
+    // If git command fails, try alternative method
+    try {
+      const branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: workingDir, stdio: 'pipe' }).toString().trim();
+      return branch || 'main';
+    } catch (error) {
+      console.warn('Could not determine git branch, defaulting to "main"');
+      return 'main';
+    }
+  }
 }
 
 function copyChat(workingDir) {
@@ -54,6 +72,19 @@ function copyChat(workingDir) {
       // Create a regex that handles both Unix and Windows path separators
       const regex = new RegExp(escapedOriginalPath.replace(/\\/g, '\\\\'), 'g');
       chatContent = chatContent.replace(regex, workingDir);
+    }
+
+    // Get the current git branch
+    const currentBranch = getCurrentGitBranch(workingDir);
+
+    // Find the original git branch from the chat content (look for "gitBranch" field)
+    const gitBranchMatch = chatContent.match(/"gitBranch":"([^"]*?)"/);
+    if (gitBranchMatch && gitBranchMatch[1]) {
+      const originalBranch = gitBranchMatch[1];
+      // Replace all occurrences of the original branch with the current branch
+      const escapedOriginalBranch = originalBranch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const branchRegex = new RegExp(escapedOriginalBranch, 'g');
+      chatContent = chatContent.replace(branchRegex, currentBranch);
     }
 
     // Write the updated content to the destination
