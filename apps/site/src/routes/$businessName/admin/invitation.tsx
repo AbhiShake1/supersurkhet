@@ -45,7 +45,7 @@ function RouteComponent() {
           }
         } else {
           // User object exists but email is not available yet, wait
-          
+
         }
       } else {
         // If business or invitation doesn't exist, show error
@@ -56,40 +56,44 @@ function RouteComponent() {
 
   const handleAccept = async () => {
     try {
-      if (business && user && invitation && user.email === invitation.email) {
-        // Check if invitation has expired
-        if (invitation.expiresAt && Date.now() > invitation.expiresAt) {
-          setStatus('error')
-          return
-        }
 
-        // Update the business to add the user as a member
-        const updatedMembers = {
-          ...business.members,
-          [user._?.soul ?? "anon"]: {
-            role: invitation.role || 'staff',
-            userId: user._?.soul ?? "",
-            joinedAt: Date.now(),
-            permissions: invitation.permissions || {}
-          }
-        }
+      if (!business || !user || !invitation) return;
 
+      if (invitation.expiresAt && Date.now() > invitation.expiresAt) {
         await updateBusinessMutation.mutateAsync({
           id: business.id,
-          members: updatedMembers,
           invitations: {
-            [token]: null
+            [token]: { ...invitation, expiresAt: Date.now() }
           }
-        })
-
-        setStatus('accepted')
-        fireConfetti()
-      } else if (user && invitation && user.email !== invitation.email) {
-        setStatus('emailMismatch') 
+        });
+        setStatus('error');
+        return;
       }
+
+      //Email mismatch
+      if (user.email !== invitation.email) {
+        setStatus('emailMismatch');
+        return;
+      }
+
+      // Update the business to add the user as a member
+      const updatedMembers = {
+        ...business.members,
+        [user._?.soul ?? "anon"]: {
+          role: invitation.role || 'staff',
+          userId: user._?.soul ?? "",
+          joinedAt: Date.now(),
+          permissions: invitation.permissions || {}
+        }
+      }
+
+      //Update UI + confetti
+      setStatus('accepted');
+      fireConfetti();
+
     } catch (error) {
-      console.error('Error accepting invitation:', error)
-      setStatus('error')
+      console.error('Error accepting invitation:', error);
+      setStatus('error');
     }
   }
 
@@ -152,12 +156,12 @@ function RouteComponent() {
                 if (window.confirm('Do you want to log out and use the correct email?')) {
                   logout();
                   navigate({
-                      to: "/auth",
-                      search: {
-                        m: "login",
-                        redirect: window.location.href,
-                      },
-                    })
+                    to: "/auth",
+                    search: {
+                      m: "login",
+                      redirect: window.location.href,
+                    },
+                  })
                 }
               }}
               className="w-full"
@@ -262,7 +266,7 @@ function RouteComponent() {
     )
   }
 
-  
+
   return (
     <div className="min-h-screen flex items-center justify-center">
       <Card className="w-full max-w-md">

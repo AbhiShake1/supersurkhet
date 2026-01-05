@@ -24,6 +24,30 @@ import type { PossibleTabConfig } from "@/components/auto-admin";
 import { AutoFormSubmit } from "../auto-form";
 import { ConfettiButton } from "@/components/magicui/confetti";
 
+import { MoreHorizontalIcon } from "lucide-react"
+
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Trash2 } from "@/components/animate-ui/icons";
+
 type Member = BusinessMember;
 
 interface ManageOrganizationProps {
@@ -56,7 +80,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
 
       // Invitation link expiration time (15 minutes from now)
       const expiresAt = Date.now() + 15 * 60 * 1000;
-      
+
       // Send the invitation email. dont wait
       sendMail({
         data: {
@@ -375,8 +399,8 @@ const InvitationsTab = ({
         />
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
+      <div className="border rounded-lg overflow-hidden overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200 ">
           <thead className="bg-card">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -390,6 +414,12 @@ const InvitationsTab = ({
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Invited On
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Action
               </th>
             </tr>
           </thead>
@@ -410,12 +440,18 @@ const InvitationsTab = ({
 
 // Invitation Row Component
 const InvitationRow = ({
-  invitation: { email, role, permissions, invitedAt, expiresAt },
+  invitation: { email, role, permissions, invitedAt, expiresAt, token },
   searchTerm,
+  businessId,
 }: {
   invitation: any; // TODO: Define proper type
   searchTerm: string;
+  businessId?: string;
+
 }) => {
+  const [showRevokeDialog, setShowRevokeDialog] = useState(false);
+  const updateBusinessMutation = api.business.useUpdate();
+
   if (
     !!searchTerm &&
     !email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -423,35 +459,108 @@ const InvitationRow = ({
 
   const isExpired = expiresAt && Date.now() > expiresAt;
 
+  const handleRevoke = async () => {
+    if (!businessId || !token) return;
+    try {
+      await updateBusinessMutation.mutateAsync({
+        id: businessId,
+        invitations: {
+          [token]: null, // Removes the invitation entry
+        }
+      });
+      toast.success("Invitation revoked");
+      setShowRevokeDialog(false);
+    } catch (error) {
+      toast.error("Failed to revoke invitation");
+    }
+  };
   return (
-    <tr className={isExpired ? "opacity-50" : ""}>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="text-sm font-medium text-foreground">{email}</div>
-        {isExpired && (
-          <div className="text-xs text-red-500 mt-1">Expired</div>
-        )}
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <Badge variant="secondary" className="rounded-xl">{role}</Badge>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="flex flex-wrap gap-1">
-          {role === "owner"
-            ? "*"
-            : permissions && `${Object.keys(permissions).length} Permissions`}
-        </div>
-      </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-        {invitedAt && new Date(invitedAt).toLocaleString()}
-        {expiresAt && (
-          <div className="text-xs mt-1">
-            Exp: {new Date(expiresAt).toLocaleDateString()}
+    <>
+      <tr className={isExpired ? "opacity-50" : ""}>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="text-sm font-medium text-foreground">{email}</div>
+
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <Badge variant="secondary" className="rounded-xl">{role}</Badge>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          <div className="flex flex-wrap gap-1">
+            {role === "owner"
+              ? "*"
+              : permissions && `${Object.keys(permissions).length} Permissions`}
           </div>
-        )}
-      </td>
-    </tr>
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+          {invitedAt && new Date(invitedAt).toLocaleString()}
+          {expiresAt && (
+            <div className="text-xs mt-1">
+              Exp: {new Date(expiresAt).toLocaleDateString()}
+            </div>
+          )}
+        </td>
+        <td className="px-6 py-4 whitespace-nowrap">
+          {isExpired ? (
+            <Badge variant="destructive">Expired</Badge>
+          ) : (
+            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
+              Pending
+            </Badge>
+          )}
+        </td>
+
+        <td className="px-6 py-4 whitespace-nowrap text-right">
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreHorizontalIcon className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  onSelect={() => setShowRevokeDialog(true)}
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Revoke Invite
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </td>
+
+      </tr>
+
+      {/*Revoke Confirmation Dialog*/}
+      <Dialog open={showRevokeDialog} onOpenChange={setShowRevokeDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Revoke Invitation</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to revoke the invitation for <strong>{email}</strong>?
+              They will no longer be able to join using their current link.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleRevoke}
+              disabled={updateBusinessMutation.isPending}
+            >
+              {updateBusinessMutation.isPending ? "Revoking..." : "Confirm Revoke"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
+
+
 
 // Hook to get organization invitations
 function useOrgInvitations(slug: string) {
@@ -470,7 +579,7 @@ function useOrgInvitations(slug: string) {
   if (!business || !business.invitations) {
     return [];
   }
-  
+
   if (typeof business.invitations !== 'object') {
     return [];
   }

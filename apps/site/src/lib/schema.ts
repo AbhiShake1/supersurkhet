@@ -111,7 +111,7 @@ export const businessInvitationSchema = z.object({
   email: z.string(),
   invitedAt: z.number().optional(),
   token: z.string(),
-  expiresAt: z.number().optional()
+  expiresAt: z.number().optional(),
 })
 
 export const businessSchema = z
