@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -380,6 +380,35 @@ const InvitationsTab = ({
   const businessId = data?.[0]?.id;
 
   const invitations = useOrgInvitations(slug);
+
+  const updateBusinessMutation = api.business.useUpdate();
+
+  useEffect(() => {
+    const now = Date.now();
+    const expiredInvites = invitations.filter(
+      (inv) => inv.expiresAt && now > inv.expiresAt && inv.token
+    );
+
+    if (expiredInvites.length > 0 && businessId && !updateBusinessMutation.isPending) {
+      const cleanup: Record<string, null> = {};
+      expiredInvites.forEach((inv) => {
+        cleanup[inv.token] = null;
+      });
+
+      updateBusinessMutation.mutate(
+        {
+          id: businessId,
+          invitations: cleanup,
+        },
+        {
+          onSuccess: () => {
+            // Show toast only once after successful cleanup
+            toast.info(`${expiredInvites.length} expired invitation(s) automatically removed.`);
+          },
+        }
+      );
+    }
+  }, [invitations, businessId]);
   const filteredInvitations = invitations.filter(invitation =>
     !searchTerm ||
     invitation.email.toLowerCase().includes(searchTerm.toLowerCase())

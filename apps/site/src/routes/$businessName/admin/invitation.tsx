@@ -6,7 +6,6 @@ import { api } from '@/lib/api'
 import { useConfetti } from '@/components/confetti-provider'
 import { useAuth } from '@/components/auth-provider'
 import z from 'zod'
-import { toast } from 'react-hot-toast'
 
 export const Route = createFileRoute('/$businessName/admin/invitation')({
   validateSearch: z.object({
@@ -29,10 +28,14 @@ function RouteComponent() {
 
   // Check if user is logged in and if their email matches the invitation
   useEffect(() => {
+
     // Wait for authentication state to be fully loaded
     if (status === 'loading') {
       if (business && invitation) {
-        if (!isAuthenticated) {
+        // handle expired specifically
+        if (invitation.expiresAt && Date.now() > invitation.expiresAt) {
+          setStatus('error');
+        } else if (!isAuthenticated) {
           // User is not authenticated, show login prompt
           setStatus('pending')
         } else if (user && user.email) {
@@ -194,8 +197,11 @@ function RouteComponent() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Error</CardTitle>
-            <CardDescription>There was an error processing your invitation.</CardDescription>
-          </CardHeader>
+            <CardDescription>
+              {business && !invitation
+                ? "This invitation link has been revoked or has already been used."
+                : "There was an error processing your invitation."}
+            </CardDescription>          </CardHeader>
           <CardFooter className="flex justify-between">
             <Button onClick={() => navigate({ to: "/" })}>Go To Home</Button>
             <Button variant="outline" onClick={() => window.close()} className="w-full">
