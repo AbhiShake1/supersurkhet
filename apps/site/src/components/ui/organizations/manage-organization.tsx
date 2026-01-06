@@ -40,12 +40,8 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Trash2 } from "@/components/animate-ui/icons";
 
 type Member = BusinessMember;
@@ -380,6 +376,9 @@ const InvitationsTab = ({
   searchTerm: string;
   setSearchTerm: (term: string) => void;
 }) => {
+  const { data } = api.business.useGet({ keys: [slug], single: true });
+  const businessId = data?.[0]?.id;
+
   const invitations = useOrgInvitations(slug);
   const filteredInvitations = invitations.filter(invitation =>
     !searchTerm ||
@@ -429,6 +428,7 @@ const InvitationsTab = ({
                 key={invitation.email}
                 invitation={invitation}
                 searchTerm={searchTerm}
+                businessId={businessId}
               />
             ))}
           </tbody>

@@ -133,6 +133,7 @@
     "react-dom": "19.0.0",
     "react-error-boundary": "^6.0.0",
     "react-hook-form": "^7.56.1",
+    "react-hot-toast": "^2.6.0",
     "react-i18next": "^16.5.1",
     "react-leaflet": "^5.0.0",
     "react-markdown": "^10.1.0",

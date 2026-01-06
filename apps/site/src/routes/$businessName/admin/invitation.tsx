@@ -6,6 +6,7 @@ import { api } from '@/lib/api'
 import { useConfetti } from '@/components/confetti-provider'
 import { useAuth } from '@/components/auth-provider'
 import z from 'zod'
+import { toast } from 'react-hot-toast'
 
 export const Route = createFileRoute('/$businessName/admin/invitation')({
   validateSearch: z.object({
@@ -87,6 +88,15 @@ function RouteComponent() {
         }
       }
 
+      // Revoke
+      await updateBusinessMutation.mutateAsync({
+        id: business.id,
+        members: updatedMembers,
+        invitations: {
+          [token]: null
+        }
+      });
+
       //Update UI + confetti
       setStatus('accepted');
       fireConfetti();
@@ -97,6 +107,7 @@ function RouteComponent() {
     }
   }
 
+  // Handle Reject
   const handleReject = () => {
     // In a real implementation, you would update the invitation status to 'rejected'
     setStatus('rejected')
