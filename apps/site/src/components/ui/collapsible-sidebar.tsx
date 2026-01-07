@@ -26,7 +26,7 @@ import { ThemeToggle } from "../theme/theme-toggle";
 import type { PossibleTabConfig } from "../auto-admin";
 import { useDialog } from "@/contexts/dialog-context";
 import { useIsMobile } from "@/hooks/use-mobile";
-import isDeepEqual from "fast-deep-equal";
+// import isDeepEqual from "fast-deep-equal";
 
 export interface CollapsibleSidebarProps {
   businessName?: string;
@@ -34,7 +34,7 @@ export interface CollapsibleSidebarProps {
   tabs: PossibleTabConfig[]
 }
 
-const _CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, slug, tabs }) => {
+const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, slug, tabs }) => {
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(!isMobile);
   const [selected, setSelected] = useState("");
@@ -190,7 +190,7 @@ const Option: React.FC<{
   );
 };
 
-const _TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: string, tabs: PossibleTabConfig[] }> = ({ open, businessName, slug, tabs }) => {
+const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: string, tabs: PossibleTabConfig[] }> = ({ open, businessName, slug, tabs }) => {
   const { openDialog } = useDialog()
   const { logout, isAuthenticated } = useAuth();
   const user = useProfile();
@@ -300,8 +300,8 @@ const ToggleClose: React.FC<{ open: boolean; setOpen: (open: boolean) => void }>
   );
 };
 
-const TitleSection = React.memo(_TitleSection, (oldProps, props) => props.open === oldProps.open && isDeepEqual(oldProps.tabs, props.tabs));
-
-const CollapsibleSidebar = React.memo(_CollapsibleSidebar, (oldProps, props) => isDeepEqual(oldProps.tabs, props.tabs));
+// const TitleSection = React.memo(_TitleSection, (oldProps, props) => props.open === oldProps.open && isDeepEqual(oldProps.tabs, props.tabs));
+//
+// const CollapsibleSidebar = React.memo(_CollapsibleSidebar, (oldProps, props) => isDeepEqual(oldProps.tabs, props.tabs));
 
 export default CollapsibleSidebar;
