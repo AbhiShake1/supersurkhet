@@ -16,10 +16,9 @@ import {
   Receipt,
   ShoppingBag,
   Users,
-  Wrench,
-  ListTodo, DollarSign,
+  Wrench, DollarSign,
   Users2,
-  ShoppingCart,
+  ShoppingCart
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
@@ -42,7 +41,7 @@ import {
 } from "@/components/ui/credenza";
 import { ReceiptWrapper } from "@/components/ui/receipt-wrapper";
 import { formatCurrency } from "@/lib/intl";
-import type { SchemaKeys } from "@gta/react-hooks"
+import type { SchemaKeys } from "@gta/react-hooks";
 import { useDialog } from "@/contexts/dialog-context";
 import { Button } from "@/components/ui/button";
 
@@ -76,11 +75,11 @@ function getPaymentStatus(paidAmount: number, totalCost: number) {
 }
 
 function refreshPaidAmount(form: TransactionForm) {
-  const formValues = form.getValues()
   const totalCost = calculateTotalCost(form)
   // const [,a] = formValues
   if (!totalCost) return
   form.setValue("paidAmount", totalCost)
+  const formValues = form.getValues()
   const paidAmount = formValues.paidAmount
   const paymentStatus = getPaymentStatus(paidAmount, totalCost)
   form.setValue("paymentStatus", paymentStatus)
