@@ -188,9 +188,6 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
               {components.map(({ component, name }) => (
                 <TabsContent value={name} key={name} className="flex-1 mt-1 sm:mt-4">
                   <Card className="border rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-1 sm:p-4 border-b">
-                      <h2 className="text-xs sm:text-xl font-semibold">{name}</h2>
-                    </div>
                     <div className="p-0.5 sm:p-4">
                       {component}
                     </div>

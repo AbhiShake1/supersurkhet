@@ -16,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
@@ -26,6 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { appSchema } from "@/lib/schema";
 import { applySorting } from "@/lib/sort";
 import { parseSchema } from "@autoform/zod";
+import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
 import {
   type NestedSchema,
   type NestedSchemaType,
@@ -76,6 +76,7 @@ import { api } from "@/lib/api";
 import { BadgeMarquee } from "../ui/badge-marquee";
 import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
 import type { GunMessagePut } from "gun";
+import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 
 type AggregationType =
   | 'sum'
@@ -304,75 +305,17 @@ export function AutoTable<T extends SchemaKeys>({
   return (
     <div className="py-6 space-y-4 flex flex-col items-end">
       {
-        !props.readOnly && <ButtonGroup>
-          <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
-            <CredenzaTrigger asChild>
-              <Button className="gap-2 rounded-r-none border-r">
-                <Plus className="size-4" />
-                <span className="hidden sm:inline">
-                  Add New
-                </span>
-              </Button>
-            </CredenzaTrigger>
-            <CredenzaContent>
-              <CredenzaHeader className="min-w-0">
-                <CredenzaTitle className="capitalize">Add new {schemaName}</CredenzaTitle>
-                <CredenzaDescription asChild>
-                  <AddDataSuggestions schemaName={schemaName} slug={slug} onSelected={setFormValues} />
-                </CredenzaDescription>
-              </CredenzaHeader>
-              <CredenzaBody asChild>
-                <ScrollArea className="h-[50vh] max-h-[60vh]">
-                  <AutoForm
-                    values={formValues}
-                    schema={formSchema}
-                    onSubmit={(b) => createMutation.mutate({ ...b, created_by: user?._?.soul ?? "anon", timestamp: Date.now() })}
-                    formProps={{ id: "auto-table-add-form" }}
-                  />
-                </ScrollArea>
-              </CredenzaBody>
-              <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <SubmitButton
-                  form="auto-table-add-form"
-                  className="gap-2 w-full"
-                  loading={updateMutation.isPending || createMutation.isPending}
-                >
-                  <Save className="size-4" />
-                  Save
-                </SubmitButton>
-              </CredenzaFooter>
-            </CredenzaContent>
-          </Credenza>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" aria-label="Import Options" className="rounded-l-none border-l-0" disabled={isImportPending}>
-                <ArrowBigUpDash className="size-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuItem onClick={() => handleFileImport(".csv", "csv")} className="gap-2">
-                <FileText className="h-4 w-4" />
-                Import from CSV
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleFileImport(".json", "json")} className="gap-2">
-                <FileJson className="h-4 w-4" />
-                Import from JSON
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleFileImport(".xlsx,.xls", "excel")} className="gap-2">
-                <Sheet className="h-4 w-4" />
-                Import from Excel
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </ButtonGroup>
+        !props.readOnly && (
+          <AddRowDialog
+            schema={schemaName}
+            slug={slug}
+            fieldOverrides={props.fieldOverrides}
+            extender={props.extender}
+            formSchemaTransformer={props.formSchemaTransformer}
+            onCreate={props.onCreate}
+            readOnly={props.readOnly}
+          />
+        )
       }
       <DataTable
         table={table}

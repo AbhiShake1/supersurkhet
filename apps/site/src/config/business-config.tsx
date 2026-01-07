@@ -19,6 +19,7 @@ import {
   Wrench,
   ListTodo, DollarSign,
   Users2,
+  ShoppingCart,
 } from "lucide-react";
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
@@ -665,7 +666,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
   return {
     schema: "order",
     title: "Orders",
-    icon: DollarSign,
+    icon: ShoppingCart,
     group: "Inventory",
     slug,
     previewOverrides: {
