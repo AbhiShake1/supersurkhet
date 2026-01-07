@@ -26,6 +26,7 @@ import { ThemeToggle } from "../theme/theme-toggle";
 import type { PossibleTabConfig } from "../auto-admin";
 import { useDialog } from "@/contexts/dialog-context";
 import { useIsMobile } from "@/hooks/use-mobile";
+import isDeepEqual from "fast-deep-equal";
 
 export interface CollapsibleSidebarProps {
   businessName?: string;
@@ -299,9 +300,8 @@ const ToggleClose: React.FC<{ open: boolean; setOpen: (open: boolean) => void }>
   );
 };
 
-const TitleSection = React.memo(_TitleSection, (oldProps, props) => props.open === oldProps.open && Object.is(oldProps.tabs, props.tabs));
+const TitleSection = React.memo(_TitleSection, (oldProps, props) => props.open === oldProps.open && isDeepEqual(oldProps.tabs, props.tabs));
 
-const CollapsibleSidebar = React.memo(_CollapsibleSidebar, (oldProps, props) => Object.is(oldProps.tabs, props.tabs));
-
+const CollapsibleSidebar = React.memo(_CollapsibleSidebar, (oldProps, props) => isDeepEqual(oldProps.tabs, props.tabs));
 
 export default CollapsibleSidebar;
