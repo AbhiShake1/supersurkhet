@@ -123,11 +123,11 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
     <SidebarProvider>
       <CollapsibleSidebar tabs={tabsWithHome} businessName={business?.name} slug={business?.basePath} />
       <SidebarInset className="min-w-0 flex flex-col">
-        <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
-          <h1 className="font-bold text-lg px-4">{currentItem.title}</h1>
+        <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-12 sm:h-16 shrink-0 items-center gap-0.5 sm:gap-2 border-b transition-[width,height] ease-linear px-0.5 sm:px-4">
+          <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">{currentItem.title}</h1>
 
           {/* Search and Action Bar */}
-          <div className="ml-auto flex items-center gap-2 px-4">
+          <div className="ml-auto flex items-center gap-0.5 sm:gap-2 px-2">
             {/* Language Selector */}
             <LanguageSelector />
           </div>
@@ -135,7 +135,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
         <section
           className={cn(
-            "flex-1 overflow-y-auto mx-6 items-start justify-center mt-6",
+            "flex-1 overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6",
           )}
         >
           {"children" in currentItem ? (
@@ -174,10 +174,10 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 ))}
               </TabsList>
               <TabsContent value="table" className={cn(
-                "flex-1 mt-4",
+                "flex-1 mt-1 sm:mt-4",
               )}>
-                <Card className="border rounded-lg shadow-sm">
-                  <div className="p-4">
+                <Card className="border rounded-lg shadow-sm overflow-hidden">
+                  <div className="p-0.5 sm:p-4">
                     <AutoTable
                       {...currentItem}
                       slug={currentItem.slug ?? basePath}
@@ -186,12 +186,12 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 </Card>
               </TabsContent>
               {components.map(({ component, name }) => (
-                <TabsContent value={name} key={name} className="flex-1 mt-4">
-                  <Card className="border rounded-lg shadow-sm">
-                    <div className="p-4 border-b">
-                      <h2 className="text-xl font-semibold">{name}</h2>
+                <TabsContent value={name} key={name} className="flex-1 mt-1 sm:mt-4">
+                  <Card className="border rounded-lg shadow-sm overflow-hidden">
+                    <div className="p-1 sm:p-4 border-b">
+                      <h2 className="text-xs sm:text-xl font-semibold">{name}</h2>
                     </div>
-                    <div className="p-4">
+                    <div className="p-0.5 sm:p-4">
                       {component}
                     </div>
                   </Card>

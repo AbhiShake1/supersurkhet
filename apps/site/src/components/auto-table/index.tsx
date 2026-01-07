@@ -309,7 +309,9 @@ export function AutoTable<T extends SchemaKeys>({
             <CredenzaTrigger asChild>
               <Button className="gap-2 rounded-r-none border-r">
                 <Plus className="size-4" />
-                Add New
+                <span className="hidden sm:inline">
+                  Add New
+                </span>
               </Button>
             </CredenzaTrigger>
             <CredenzaContent>
@@ -320,7 +322,7 @@ export function AutoTable<T extends SchemaKeys>({
                 </CredenzaDescription>
               </CredenzaHeader>
               <CredenzaBody asChild>
-                <ScrollArea className="h-[50vh]">
+                <ScrollArea className="h-[50vh] max-h-[60vh]">
                   <AutoForm
                     values={formValues}
                     schema={formSchema}
@@ -329,7 +331,7 @@ export function AutoTable<T extends SchemaKeys>({
                   />
                 </ScrollArea>
               </CredenzaBody>
-              <CredenzaFooter className="flex gap-4 pt-4">
+              <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
                 <Button
                   type="button"
                   variant="outline"

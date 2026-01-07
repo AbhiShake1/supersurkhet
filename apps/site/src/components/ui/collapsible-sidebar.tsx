@@ -81,8 +81,8 @@ const _CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, 
 
   return (
     <nav
-      className={`sticky top-0 h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? "w-64" : "w-16"
-        } border-gray-200 dark:border-gray-800 bg-card p-2 shadow-sm z-50 flex flex-col`}
+      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? "w-48 sm:w-64" : "w-10 sm:w-16"
+        } border-gray-200 dark:border-gray-800 bg-card p-0.5 sm:p-2 shadow-sm z-50 flex flex-col`}
     >
       {/* User profile section at the top */}
       <div className="flex-shrink-0">
@@ -173,7 +173,7 @@ const Option: React.FC<{
         : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
         }`}
     >
-      <div className="grid h-full w-12 place-content-center">
+      <div className="grid h-full w-10 sm:w-12 place-content-center">
         <Icon className="h-4 w-4" />
       </div>
 
@@ -197,25 +197,25 @@ const _TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: str
   if (!isAuthenticated) return null;
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-800 pb-4">
+    <div className="border-b border-gray-200 dark:border-gray-800 pb-1 sm:pb-4">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
-          <div className="flex cursor-pointer items-center justify-between rounded-md p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
-            <div className="flex items-center gap-3">
-              <Avatar>
+          <div className="flex cursor-pointer items-center justify-between rounded-md p-0.5 sm:p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+            <div className="flex items-center gap-1 sm:gap-3">
+              <Avatar className="h-5 w-5 sm:h-8 sm:w-8">
                 <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback className="capitalize">
+                <AvatarFallback className="capitalize text-[0.5rem] sm:text-sm">
                   {user?.email?.[0]}
                 </AvatarFallback>
               </Avatar>
               {open && (
                 <div className={`transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}>
                   <div className="flex flex-col">
-                    <span className="block max-w-[8ch] truncate text-sm font-semibold text-gray-900 dark:text-gray-100">
+                    <span className="block max-w-[4ch] sm:max-w-[8ch] truncate text-[0.6rem] sm:text-sm font-semibold text-gray-900 dark:text-gray-100">
                       {user?.name || user?.email || "User"}
                     </span>
                     {businessName && (
-                      <span className="block text-xs text-gray-500 dark:text-gray-400">
+                      <span className="block text-[0.5rem] sm:text-xs text-gray-500 dark:text-gray-400">
                         {businessName}
                       </span>
                     )}
@@ -223,7 +223,7 @@ const _TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: str
                 </div>
               )}
             </div>
-            {open && <ChevronsUpDown className="h-4 w-4 text-gray-400 dark:text-gray-500" />}
+            {open && <ChevronsUpDown className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 dark:text-gray-500" />}
           </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent
@@ -277,16 +277,16 @@ const ToggleClose: React.FC<{ open: boolean; setOpen: (open: boolean) => void }>
       onClick={() => setOpen(!open)}
       className="w-full border-t border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 backdrop-blur-2xl"
     >
-      <div className="flex items-center p-3">
-        <div className="grid size-10 place-content-center">
+      <div className="flex items-center p-1 sm:p-3">
+        <div className="grid size-6 sm:size-10 place-content-center">
           <ChevronsRight
-            className={`h-4 w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${open ? "rotate-180" : ""
+            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${open ? "rotate-180" : ""
               }`}
           />
         </div>
         {open && (
           <span
-            className={`text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
+            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
               }`}
           >
             Hide

@@ -98,7 +98,13 @@ const CredenzaContent = ({
   const CredenzaContent = isMobile ? DrawerContent : DialogContent;
 
   return (
-    <CredenzaContent className={className} {...props}>
+    <CredenzaContent
+      className={cn(
+        isMobile && "fixed inset-x-0 bottom-0 top-auto mt-auto rounded-t-xl border-t max-h-[90vh]",
+        className
+      )}
+      {...props}
+    >
       {children}
     </CredenzaContent>
   );
@@ -124,7 +130,13 @@ const CredenzaHeader = ({ className, children, ...props }: CredenzaProps) => {
   const CredenzaHeader = isMobile ? DrawerHeader : DialogHeader;
 
   return (
-    <CredenzaHeader className={className} {...props}>
+    <CredenzaHeader
+      className={cn(
+        isMobile && "pt-4 pb-2",
+        className
+      )}
+      {...props}
+    >
       {children}
     </CredenzaHeader>
   );
@@ -143,7 +155,13 @@ const CredenzaTitle = ({ className, children, ...props }: CredenzaProps) => {
 
 const CredenzaBody = ({ className, children, ...props }: CredenzaProps) => {
   return (
-    <div className={cn("px-4 md:px-0", className)} {...props}>
+    <div
+      className={cn(
+        "px-4 md:px-0",
+        className
+      )}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -154,7 +172,13 @@ const CredenzaFooter = ({ className, children, ...props }: CredenzaProps) => {
   const CredenzaFooter = isMobile ? DrawerFooter : DialogFooter;
 
   return (
-    <CredenzaFooter className={className} {...props}>
+    <CredenzaFooter
+      className={cn(
+        isMobile && "pb-4 pt-2",
+        className
+      )}
+      {...props}
+    >
       {children}
     </CredenzaFooter>
   );
