@@ -114,6 +114,28 @@ export const businessInvitationSchema = z.object({
   expiresAt: z.number().optional(),
 })
 
+export const businessTypeSchema = z
+  .enum([
+    "retail",
+    "food",
+    "service",
+    "education",
+    "healthcare",
+    "logistics",
+    "real_estate",
+    "cooperative",
+    "other",
+    "hotel",
+    "petrol_pump",
+    "gym",
+    "cinema",
+    "financial_firm",
+    "ride_sharing",
+  ])
+  .describe("The primary category of the business")
+
+export type BusinessType = z.infer<typeof businessTypeSchema>
+
 export const businessSchema = z
   .object({
     name: z.string().describe("Official name of the business"),
@@ -126,25 +148,7 @@ export const businessSchema = z
       .string()
       .describe("Unique URL path for the business (e.g., /my-shop)")
       .optional(),
-    businessType: z
-      .enum([
-        "retail",
-        "food",
-        "service",
-        "education",
-        "healthcare",
-        "logistics",
-        "real_estate",
-        "cooperative",
-        "other",
-        "hotel",
-        "petrol_pump",
-        "gym",
-        "cinema",
-        "financial_firm",
-        "ride_sharing",
-      ])
-      .describe("The primary category of the business"),
+    businessType: businessTypeSchema,
     features: z
       .record(z.string(), z.boolean())
       .optional()
@@ -163,9 +167,6 @@ export const businessSchema = z
     uiBuilder: uiBuilderSchema.optional(),
   })
   .extend(table);
-
-export type BusinessType = z.infer<typeof businessSchema>["businessType"];
-export type BusinessMember = z.infer<typeof businessMemberSchema>;
 
 export const partySchema = z.object({
   name: z.string().min(1).describe("Name of the party"),

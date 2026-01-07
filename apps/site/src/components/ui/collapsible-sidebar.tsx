@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { useState, useEffect } from "react";
 import {
   ChevronsRight,
@@ -15,56 +15,43 @@ import type { LucideIcon } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
 import {
   DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
+  DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "./dropdown-menu";
 import { useProfile } from "@/hooks/use-profile";
-import { Dialog, DialogTrigger, DialogContent } from "./dialog";
 import { ManageOrganization } from "./organizations/manage-organization";
 import { ThemeToggle } from "../theme/theme-toggle";
 import type { PossibleTabConfig } from "../auto-admin";
 import { useDialog } from "@/contexts/dialog-context";
 
-export interface SidebarItems {
-  items: {
-    title: string;
-    url: string;
-    icon?: LucideIcon;
-    group?: string;
-  }[];
-}
-
 export interface CollapsibleSidebarProps {
-  data: SidebarItems;
   businessName?: string;
   slug?: string;
   tabs: PossibleTabConfig[]
 }
 
-const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessName, slug, tabs }) => {
+const _CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, slug, tabs }) => {
   const [open, setOpen] = useState(true);
   const [selected, setSelected] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   const { search } = useLocation();
-  const currentTab = (search?.tab as string) ?? (data.items.length > 0 ? data.items[0].title : "");
+  const currentTab = (search?.tab as string) ?? (tabs.length > 0 ? tabs[0].title : "");
 
   // Set initial selected tab based on URL or first item
   useEffect(() => {
     if (currentTab) {
       setSelected(currentTab);
-    } else if (data.items.length > 0) {
-      setSelected(data.items[0].title);
+    } else if (tabs.length > 0) {
+      setSelected(tabs[0].title);
     }
-  }, [currentTab, data.items]);
+  }, [currentTab, tabs]);
 
   // Filter items based on search query
   const filteredItems = searchQuery
-    ? data.items.filter((item) => {
+    ? tabs.filter((item) => {
       try {
         const regex = new RegExp(searchQuery, "i"); // case-insensitive search
         return regex.test(item.title);
@@ -73,11 +60,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ data, businessN
         return item.title.toLowerCase().includes(searchQuery.toLowerCase());
       }
     })
-    : data.items;
+    : tabs;
 
   // Group items by group property if available
-  const groupedItems: { [key: string]: typeof data.items } = {};
-  const ungroupedItems: typeof data.items = [];
+  const groupedItems: { [key: string]: typeof tabs } = {};
+  const ungroupedItems: typeof tabs = [];
 
   filteredItems.forEach(item => {
     if (item.group) {
@@ -200,7 +187,7 @@ const Option: React.FC<{
   );
 };
 
-const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: string, tabs: PossibleTabConfig[] }> = ({ open, businessName, slug, tabs }) => {
+const _TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: string, tabs: PossibleTabConfig[] }> = ({ open, businessName, slug, tabs }) => {
   const { openDialog } = useDialog()
   const { logout, isAuthenticated } = useAuth();
   const user = useProfile();
@@ -307,5 +294,10 @@ const ToggleClose: React.FC<{ open: boolean; setOpen: (open: boolean) => void }>
     </button>
   );
 };
+
+const TitleSection = React.memo(_TitleSection, (oldProps, props) => props.open === oldProps.open && Object.is(oldProps.tabs, props.tabs));
+
+const CollapsibleSidebar = React.memo(_CollapsibleSidebar, (oldProps, props) => Object.is(oldProps.tabs, props.tabs));
+
 
 export default CollapsibleSidebar;
