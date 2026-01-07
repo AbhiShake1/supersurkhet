@@ -25,6 +25,7 @@ import { ManageOrganization } from "./organizations/manage-organization";
 import { ThemeToggle } from "../theme/theme-toggle";
 import type { PossibleTabConfig } from "../auto-admin";
 import { useDialog } from "@/contexts/dialog-context";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export interface CollapsibleSidebarProps {
   businessName?: string;
@@ -33,7 +34,8 @@ export interface CollapsibleSidebarProps {
 }
 
 const _CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, slug, tabs }) => {
-  const [open, setOpen] = useState(true);
+  const isMobile = useIsMobile()
+  const [open, setOpen] = useState(!isMobile);
   const [selected, setSelected] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 

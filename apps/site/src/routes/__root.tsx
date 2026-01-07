@@ -107,10 +107,6 @@ async function isAuthenticated() {
   return !!gun.user().is;
 }
 
-function isMobile() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
-}
-
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
@@ -448,7 +444,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                           <LoginPromptProvider>
                             {children}
                             {
-                              isMobile() && <QRScannerButton onActionDetected={handleActionDetected} />
+                              // isMobile && <QRScannerButton onActionDetected={handleActionDetected} />
                             }
                           </LoginPromptProvider>
                         </ConfettiProvider>
