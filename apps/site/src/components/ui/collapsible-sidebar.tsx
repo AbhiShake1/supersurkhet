@@ -200,14 +200,16 @@ const _TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: str
     <div className="border-b border-gray-200 dark:border-gray-800 pb-1 sm:pb-4">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
-          <div className="flex cursor-pointer items-center justify-between rounded-md p-0.5 sm:p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800">
+          <div className={`flex cursor-pointer items-center ${open ? 'justify-between' : 'justify-center'} rounded-md p-0.5 sm:p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800`}>
             <div className="flex items-center gap-1 sm:gap-3">
-              <Avatar className="h-5 w-5 sm:h-8 sm:w-8">
-                <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback className="capitalize text-[0.5rem] sm:text-sm">
-                  {user?.email?.[0]}
-                </AvatarFallback>
-              </Avatar>
+              <div className={`flex items-center justify-center ${open ? 'w-auto' : 'w-full'}`}>
+                <Avatar className="h-5 w-5 sm:h-8 sm:w-8">
+                  <AvatarImage src={user?.avatar} alt={user?.name} />
+                  <AvatarFallback className="capitalize text-[0.5rem] sm:text-sm">
+                    {user?.email?.[0]}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
               {open && (
                 <div className={`transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}>
                   <div className="flex flex-col">

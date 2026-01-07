@@ -13,6 +13,7 @@ import {
   CredenzaTitle,
 } from "../credenza";
 import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
+import { Plus } from "lucide-react";
 
 export const OrderKanban: AdminComponent = ({ slug }) => {
   return (
@@ -22,7 +23,7 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
           schema="order"
           slug={slug}
           buttonLabel="Add New Order"
-          buttonIcon={null}
+          buttonIcon={<Plus className="h-4 w-4" />}
         />
       </div>
       <AutoKanban
