@@ -20,7 +20,7 @@ import { AdminDashboard } from "../admin-dashboard";
 import { QRCodePage } from "../qr-code-page";
 import { Input } from "../ui/input";
 import Card from "../ui/minimal-card";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { z } from "zod";
 import { NotFound } from "../ui/not-found";
 import { CustomUiBuilderPage } from "../ui-builder";
@@ -73,7 +73,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
-  const tabsWithHome = [
+  const tabsWithHome = useMemo(() => [
     {
       title: "Dashboard",
       icon: BarChart3,
@@ -92,16 +92,8 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       children: <CustomUiBuilderPage slug={basePath} />,
       group: "System Configuration"
     }
-  ];
+  ], [tabs]);
 
-  const data: SidebarItems = {
-    items: tabsWithHome.map(tab => ({
-      title: tab.title,
-      url: `?tab=${tab.title}`,
-      icon: tab.icon,
-      group: tab.group,
-    })),
-  };
   // @ts-expect-error
   const tab = (search.tab as string) ?? tabsWithHome[0].title;
 
@@ -145,7 +137,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
   return (
     <SidebarProvider>
-      <CollapsibleSidebar tabs={tabsWithHome} data={data} businessName={business?.name} slug={business?.basePath} />
+      <CollapsibleSidebar tabs={tabsWithHome} businessName={business?.name} slug={business?.basePath} />
       <SidebarInset className="min-w-0">
         <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
           <h1 className="font-bold text-lg px-4">{currentItem.title}</h1>

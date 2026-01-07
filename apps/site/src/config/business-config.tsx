@@ -45,8 +45,12 @@ import type { SchemaKeys } from "@gta/react-hooks"
 import { useDialog } from "@/contexts/dialog-context";
 import { Button } from "@/components/ui/button";
 
+type AnyAutoTableTab = {
+  [K in SchemaKeys]: AutoTableTab<K>
+}[SchemaKeys];
+
 export type BusinessConfigReturn = {
-  [B in BusinessType]?: AutoTableTab<SchemaKeys extends infer K ? K : never>[];
+  [B in BusinessType]?: AnyAutoTableTab[];
 }
 
 function calculateFiscalYear() {
@@ -1049,7 +1053,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
   }
 }
 
-export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigReturn {
+export function useRetailConfig({ slug }: { slug: string }): BusinessConfigReturn["retail"] {
   const salesConfig = useSalesConfig({ slug });
   const stockImportsConfig = useStockImportsConfig({ slug });
   const invoicesConfig = useInvoicesConfig({ slug });
@@ -1057,6 +1061,34 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
   const customerConfig = useCustomerConfig({ slug });
   const vehicleConfig = useVehicleConfig({ slug });
   const tripConfig = useTripConfig({ slug });
+
+  return [
+    {
+      schema: "product",
+      title: "Products",
+      slug,
+      icon: ShoppingBag,
+      group: "Inventory"
+    },
+    partyConfig,
+    customerConfig,
+    stockImportsConfig,
+    salesConfig,
+    invoicesConfig,
+    {
+      schema: "order",
+      title: "Orders",
+      slug: slug,
+      icon: ListTodo,
+      group: "Inventory"
+    },
+    vehicleConfig,
+    tripConfig,
+  ]
+}
+
+export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigReturn {
+  const retail = useRetailConfig({ slug });
   return {
     food: [
       {
@@ -1242,28 +1274,6 @@ export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigRet
       },
     ],
 
-    retail: [
-      {
-        schema: "product",
-        title: "Products",
-        slug,
-        icon: ShoppingBag,
-        group: "Inventory"
-      },
-      partyConfig,
-      customerConfig,
-      stockImportsConfig,
-      salesConfig,
-      invoicesConfig,
-      {
-        schema: "order",
-        title: "Orders",
-        slug: slug,
-        icon: ListTodo,
-        group: "Inventory"
-      },
-      vehicleConfig,
-      tripConfig,
-    ],
+    retail,
   }
 }
