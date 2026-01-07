@@ -243,7 +243,7 @@ export function AutoKanban<K extends SchemaKeys>({
       getItemValue={(item) => item._?.soul ?? ""}
     >
       <Kanban.Board className="grid auto-rows-fr grid-cols-3">
-        {Object.keys(schema.shape[groupKey].Values).map((status) => (
+        {Object.keys(schema.shape[groupKey].Values ?? schema.shape[groupKey]._def.innerType.Values).map((status) => (
           <KanbanColumn
             key={status}
             value={status}

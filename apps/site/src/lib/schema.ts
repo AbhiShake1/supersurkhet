@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
-import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, ShoppingCart, Folder, QrCode, Package, Users2, MapIcon } from "lucide-react";
+import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, DollarSign, MessageCircle, Clock, ShoppingCart, Folder, QrCode, Package, Users2, MapIcon } from "lucide-react";
 import type { AdminComponent } from "@/components/ui/admin";
 import { educationSchema } from "./schemas/education-schema";
 import { healthcareSchema } from "./schemas/healthcare-schema";
@@ -331,39 +331,21 @@ export const coOpMemberProfileSchema = z
 
 export const orderSchema = z
   .object({
-    customerId: z
-      .string()
-      .optional()
-      .describe("ID of the customer who placed the order"),
-    items: z
-      .record(
-        z.string(),
-        z.object({
-          quantity: z.number({ coerce: true }).int().positive(),
-          unitPrice: z.number({ coerce: true }).positive(),
-          customizations: z.record(z.string(), z.boolean()).optional(),
-          specialInstructions: z.string().optional(),
-        }),
-      )
-      .describe("Ordered items with their details")
-      .superRefine(fieldConfig({ fieldType: "record" })),
-    subTotal: z.number({ coerce: true }).positive(),
-    taxes: z.number({ coerce: true }).nonnegative(),
-    deliveryFee: z.number({ coerce: true }).nonnegative(),
-    totalAmount: z.number({ coerce: true }).positive(),
-    orderStatus: z.enum([
-      "pending",
-      "confirmed",
-      "preparing",
-      "ready",
-      "served",
-      "cancelled",
-    ]),
-    paymentStatus: z.enum(["pending", "paid", "failed"]),
-    paymentMethod: z.enum(["cash", "card", "online"]).optional(),
-    estimatedDeliveryTime: z.number({ coerce: true }).optional(),
-    notes: z.string().optional().describe("Special notes or instructions"),
-    // listing: baseListingSchema.superRefine(fieldConfig({ fieldType: "record" })).optional(),
+    customerId: z.string().describe("Customer"),
+    items: salesItemSchema.array()
+      .min(1, { message: "Please add at least one item." })
+      .describe("Items Ordered"),
+    paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
+    paymentStatus: z.string().default("pending").describe("Payment Status")
+      .superRefine(fieldConfig({
+        inputProps: {
+          className: "border-none",
+          disabled: true,
+        }
+      })),
+    orderStatus: z.enum(["pending", "done", "cancelled"]).default("pending").describe("Order Status"),
+    paymentMethod: z.enum(["cash", "card", "bankTransfer", "credit"]).optional().describe("Payment Method"),
+    notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
   })
   .extend(table);
 

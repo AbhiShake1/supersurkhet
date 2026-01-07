@@ -631,6 +631,272 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
   }
 }
 
+export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"> {
+  const { data: products = [] } = api.product.useGet({
+    keys: [slug],
+  })
+  const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
+  const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
+  const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
+  const productsBySoul = useMemo(() => new Map(
+    products
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [products])
+
+  const customersBySoul = useMemo(() => new Map(
+    customers
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [customers])
+
+  function getDefaultUnitField() {
+    return z.string().optional().describe("Unit").superRefine(fieldConfig({
+      inputProps: {
+        disabled: true,
+        placeholder: "Select product for unit",
+        className: "border-none"
+      }
+    }))
+  }
+
+  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
+
+  return {
+    schema: "order",
+    title: "Orders",
+    icon: DollarSign,
+    group: "Inventory",
+    slug,
+    previewOverrides: {
+      customerId: (customerId) => customersBySoul.get(customerId)?.name ?? "-",
+    },
+    formSchemaTransformer: (schema) => schema.superRefine((order, ctx) => {
+      if (!order.paidAmount) return
+      const totalCost = order.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
+      if (order.paidAmount > totalCost) ctx.addIssue({
+        code: "custom",
+        message: `Paid amount cannot be greater than total cost (${totalCost})`,
+        path: ["paidAmount"],
+      })
+    }),
+    fieldOverrides: {
+      customerId: z.string().describe("Customer").superRefine(fieldConfig({
+        fieldType: "select",
+        customData: {
+          options: customers.map(c => [c._!.soul!, c.name]),
+        }
+      })),
+      paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
+        fieldType: "number",
+        customData: {
+          onValueChange: (_paidAmount, __, form) => {
+            const paidAmount = Number(_paidAmount)
+            const totalCost = calculateTotalCost(form)
+            form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
+          },
+        }
+      })),
+      items: salesItemSchema
+        .extend({
+          product: z.string().describe("Product")
+            .superRefine(fieldConfig({
+              fieldType: "select",
+              customData: {
+                options: products.filter(p => !!p?._?.soul)
+                  .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+                onValueChange: (val, path, form) => {
+                  const product = productsBySoul.get(val)
+                  if (!product) return
+                  const [itemsKey, index] = path
+
+                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+
+                  if (product.unit) {
+                    const [unitType, piecesPerUnit] = product.unit.split(':');
+                    if (piecesPerUnit) {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType, "piece"],
+                          configDisabled: true
+                        },
+                      })))
+                    } else {
+                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                        fieldType: "unit",
+                        customData: {
+                          onlyAllow: [unitType],
+                        },
+                      })))
+                    }
+                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+                  }
+
+                  refreshPaidAmount(form)
+                }
+              },
+            })),
+          unit: unitField,
+          quantity: z.number({ coerce: true }).int().positive()
+            .describe("Quantity")
+            .superRefine(fieldConfig({
+              fieldType: "number",
+              customData: {
+                onValueChange: (_, __, form) => {
+                  refreshPaidAmount(form)
+                },
+              }
+            })),
+          unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
+            fieldType: "number",
+            customData: {
+              onValueChange: (_, __, form) => {
+                refreshPaidAmount(form)
+              },
+            }
+          })),
+        })
+        .array()
+        .min(1, { message: "Please add at least one item." })
+        .superRefine((items, ctx) => {
+          items.forEach((item, index) => {
+            const product = productsBySoul.get(item.product)
+
+            if (!product) return
+
+            // Handle stock checking based on unit configuration
+            let availableStock = product.stockQuantity;
+
+            // If product unit has pieces info (e.g., "cartoon:10"), adjust stock calculation
+            if (product.unit && product.unit.includes(':')) {
+              const [unitType, piecesPerUnit] = product.unit.split(':');
+
+              // If the sale unit matches the product's base unit type, convert stock to pieces for comparison
+              if (item.unit === unitType) {
+                availableStock = product.stockQuantity * parseInt(piecesPerUnit, 10);
+              }
+            }
+
+            if (item.quantity > availableStock) {
+              ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: `Only ${availableStock} items of ${product.title} available in stock`,
+                path: [index, "quantity"],
+              })
+            }
+          })
+        })
+        .describe("Items Ordered"),
+      orderStatus: z.enum(["pending", "done", "cancelled"]).describe("Order Status").superRefine(fieldConfig({
+        fieldType: "select",
+        customData: {
+          options: [
+            ["pending", "Pending"],
+            ["done", "Done"],
+            ["cancelled", "Cancelled"],
+          ],
+          onValueChange: (newStatus, _, form) => {
+            // When order status changes to done, deduct from products
+            if (newStatus === "done") {
+              const order = form.getValues();
+              if (order.items) {
+                order.items.forEach((item: any) => {
+                  const product = productsBySoul.get(item.product);
+                  if (product && product._?.soul) {
+                    let adjustedQuantity = item.quantity;
+                    if (product.unit && product.unit.includes(':')) {
+                      const [unitType, piecesPerUnit] = product.unit.split(':');
+                      if (item.unit === unitType) {
+                        adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+                      }
+                    }
+                    updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
+                  }
+                });
+              }
+            }
+          }
+        }
+      })),
+    },
+    onCreate(_, variables) {
+      // Create corresponding invoice
+      const invoiceItems = variables.items?.map((item) => {
+        // Adjust quantity for invoice based on unit conversion
+        const productInfo = productsBySoul.get(item.product);
+        let adjustedQuantity = item.quantity;
+
+        if (productInfo?.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the order unit matches the product's base unit type, convert to pieces for inventory tracking
+          if (item.unit === unitType) {
+            adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        return {
+          product: item.product,
+          quantity: adjustedQuantity,
+          rate: item.unitPrice,
+          total: item.quantity * item.unitPrice
+        };
+      }) ?? []
+
+      const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
+
+      createInvoice({
+        type: "sale",
+        partyId: variables.customerId,
+        issuedAt: new Date().toISOString(), // Using current date for orders
+        items: invoiceItems,
+        subTotal: totalAmount,
+        tax: 0,
+        paidAmount: variables.paidAmount || 0,
+        paymentStatus: variables.paymentStatus || "pending" as any,
+        fiscalYear: calculateFiscalYear()
+      });
+    },
+    onUpdate(prevVariables, newVariables) {
+      // Handle status change from pending/cancelled to done - deduct products
+      if (prevVariables.orderStatus !== "done" && newVariables.orderStatus === "done") {
+        // Deduct products from stock when order status changes to done
+        newVariables.items?.forEach((item: any) => {
+          const product = productsBySoul.get(item.product);
+          if (product && product._?.soul) {
+            let adjustedQuantity = item.quantity;
+            if (product.unit && product.unit.includes(':')) {
+              const [unitType, piecesPerUnit] = product.unit.split(':');
+              if (item.unit === unitType) {
+                adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+              }
+            }
+            updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
+          }
+        });
+      }
+      // Handle status change from done to cancelled - add products back to stock
+      else if (prevVariables.orderStatus === "done" && newVariables.orderStatus === "cancelled") {
+        // Add products back to stock when order status changes from done to cancelled
+        prevVariables.items?.forEach((item: any) => {
+          const product = productsBySoul.get(item.product);
+          if (product && product._?.soul) {
+            let adjustedQuantity = item.quantity;
+            if (product.unit && product.unit.includes(':')) {
+              const [unitType, piecesPerUnit] = product.unit.split(':');
+              if (item.unit === unitType) {
+                adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+              }
+            }
+            updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity + adjustedQuantity });
+          }
+        });
+      }
+    },
+  }
+}
+
 export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"invoice"> {
   const { data: products = [] } = api.product.useGet({ keys: [slug] })
   const { data: parties = [] } = api.party.useGet({ keys: [slug] })
@@ -1059,6 +1325,7 @@ export function useRetailConfig({ slug }: { slug: string }): BusinessConfigRetur
   const invoicesConfig = useInvoicesConfig({ slug });
   const partyConfig = usePartyConfig({ slug });
   const customerConfig = useCustomerConfig({ slug });
+  const orderConfig = useOrderConfig({ slug });
   const vehicleConfig = useVehicleConfig({ slug });
   const tripConfig = useTripConfig({ slug });
 
@@ -1075,13 +1342,7 @@ export function useRetailConfig({ slug }: { slug: string }): BusinessConfigRetur
     stockImportsConfig,
     salesConfig,
     invoicesConfig,
-    {
-      schema: "order",
-      title: "Orders",
-      slug: slug,
-      icon: ListTodo,
-      group: "Inventory"
-    },
+    orderConfig,
     vehicleConfig,
     tripConfig,
   ]
