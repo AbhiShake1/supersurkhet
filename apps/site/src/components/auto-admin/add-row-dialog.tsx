@@ -40,7 +40,6 @@ import { BadgeMarquee } from "../ui/badge-marquee";
 import { api } from "@/lib/api";
 import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
 import type { GunMessagePut } from "gun";
-import type { DataTableRowAction } from "@/types/data-table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -222,11 +221,11 @@ function AddRowImportMenu({ onImport, isImportPending }: AddRowImportMenuProps) 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="secondary" 
-          size="icon" 
-          aria-label="Import Options" 
-          className="rounded-l-none border-l-0" 
+        <Button
+          variant="secondary"
+          size="icon"
+          aria-label="Import Options"
+          className="rounded-l-none border-l-0"
           disabled={isImportPending}
         >
           <ArrowBigUpDash className="size-4" />

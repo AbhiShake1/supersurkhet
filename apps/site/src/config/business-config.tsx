@@ -23,7 +23,7 @@ import {
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
 import type { AutoTableTab } from "@/components/auto-admin";
-import { salesItemSchema, type Sale, type StockImport } from "@/lib/schemas/sales";
+import { salesItemSchema, type Sale, type SalesItem, type StockImport } from "@/lib/schemas/sales";
 import z from "zod";
 import { AutoForm, fieldConfig } from "@/components/ui/autoform";
 import { api } from "@/lib/api";
@@ -60,7 +60,7 @@ function calculateFiscalYear() {
 
 export type TransactionForm = UseFormReturn<StockImport | Sale>
 
-function calculateTotalCost(form: TransactionForm) {
+function calculateTotalCost(form: UseFormReturn) {
   const formValues = form.getValues()
   if (!formValues?.items?.length) return 0
 
@@ -74,7 +74,7 @@ function getPaymentStatus(paidAmount: number, totalCost: number) {
   return `partial (${formatCurrency(totalCost - paidAmount)} to pay)`
 }
 
-function refreshPaidAmount(form: TransactionForm) {
+function refreshPaidAmount(form: UseFormReturn) {
   const totalCost = calculateTotalCost(form)
   // const [,a] = formValues
   if (!totalCost) return
@@ -139,6 +139,14 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     }),
     previewOverrides: {
       party: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
+      items: (items) => {
+        const mapped = items.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     },
     fieldOverrides: {
       party: z.string().describe("Party").superRefine(fieldConfig({
@@ -430,6 +438,14 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
     slug,
     previewOverrides: {
       customerId: (customerId) => customersBySoul.get(customerId)?.name ?? "-",
+      items: (items) => {
+        const mapped = items.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     },
     formSchemaTransformer: (schema) => schema.superRefine((sale, ctx) => {
       if (!sale.paidAmount) return
@@ -859,40 +875,40 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
       });
     },
     onUpdate(prevVariables, newVariables) {
-      // Handle status change from pending/cancelled to done - deduct products
-      if (prevVariables.orderStatus !== "done" && newVariables.orderStatus === "done") {
-        // Deduct products from stock when order status changes to done
-        newVariables.items?.forEach((item: any) => {
-          const product = productsBySoul.get(item.product);
-          if (product && product._?.soul) {
-            let adjustedQuantity = item.quantity;
-            if (product.unit && product.unit.includes(':')) {
-              const [unitType, piecesPerUnit] = product.unit.split(':');
-              if (item.unit === unitType) {
-                adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
-              }
-            }
-            updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
-          }
-        });
-      }
-      // Handle status change from done to cancelled - add products back to stock
-      else if (prevVariables.orderStatus === "done" && newVariables.orderStatus === "cancelled") {
-        // Add products back to stock when order status changes from done to cancelled
-        prevVariables.items?.forEach((item: any) => {
-          const product = productsBySoul.get(item.product);
-          if (product && product._?.soul) {
-            let adjustedQuantity = item.quantity;
-            if (product.unit && product.unit.includes(':')) {
-              const [unitType, piecesPerUnit] = product.unit.split(':');
-              if (item.unit === unitType) {
-                adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
-              }
-            }
-            updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity + adjustedQuantity });
-          }
-        });
-      }
+      // // Handle status change from pending/cancelled to done - deduct products
+      // if (prevVariables.orderStatus !== "done" && newVariables.orderStatus === "done") {
+      //   // Deduct products from stock when order status changes to done
+      //   newVariables.items?.forEach((item: any) => {
+      //     const product = productsBySoul.get(item.product);
+      //     if (product && product._?.soul) {
+      //       let adjustedQuantity = item.quantity;
+      //       if (product.unit && product.unit.includes(':')) {
+      //         const [unitType, piecesPerUnit] = product.unit.split(':');
+      //         if (item.unit === unitType) {
+      //           adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+      //         }
+      //       }
+      //       updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
+      //     }
+      //   });
+      // }
+      // // Handle status change from done to cancelled - add products back to stock
+      // else if (prevVariables.orderStatus === "done" && newVariables.orderStatus === "cancelled") {
+      //   // Add products back to stock when order status changes from done to cancelled
+      //   prevVariables.items?.forEach((item: any) => {
+      //     const product = productsBySoul.get(item.product);
+      //     if (product && product._?.soul) {
+      //       let adjustedQuantity = item.quantity;
+      //       if (product.unit && product.unit.includes(':')) {
+      //         const [unitType, piecesPerUnit] = product.unit.split(':');
+      //         if (item.unit === unitType) {
+      //           adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+      //         }
+      //       }
+      //       updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity + adjustedQuantity });
+      //     }
+      //   });
+      // }
     },
   }
 }
@@ -948,6 +964,14 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
     },
     previewOverrides: {
       partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || "-",
+      items: (items) => {
+        const mapped = items.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     }
   }
 }

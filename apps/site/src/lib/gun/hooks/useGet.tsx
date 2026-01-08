@@ -36,7 +36,9 @@ export const useGet = createGunHook((messenger) => {
             ? _keys.replaceAll("/", key.separator)
             : _keys;
 
-        const node = getGunRef(keys);
+        const node = typeof key !== "string" && key.treatSlugAsAbsolute ?
+          messenger._options.gun.get(keys) :
+          getGunRef(keys);
 
         async function transform(fullData: any) {
           if (!fullData || typeof fullData !== "object") return;

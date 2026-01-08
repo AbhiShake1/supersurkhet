@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Drawer, DrawerContent } from '@/components/ui/drawer';
+import { CredenzaBody } from '@/components/ui/credenza';
 
 type DialogContentProps = {
   title?: string;
@@ -60,4 +62,50 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
       )}
     </DialogContext.Provider>
   );
+};
+
+const drawerContext = React.createContext<DialogContextType | undefined>(undefined);
+
+export const DrawerProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [dialogContent, setDialogContent] = useState<DialogContentProps | null>(null);
+
+  const openDialog = (content: DialogContentProps) => {
+    setDialogContent(content);
+    setIsOpen(true);
+  };
+
+  const closeDialog = () => {
+    setIsOpen(false);
+    setDialogContent(null);
+  };
+
+  return (
+    <drawerContext.Provider value={{ openDialog, closeDialog }}>
+      {children}
+      {dialogContent && (
+        <Drawer open={isOpen} onOpenChange={closeDialog}>
+          <DrawerContent className={dialogContent.className}>
+            {(dialogContent.title || dialogContent.description) && (
+              <DialogHeader>
+                {dialogContent.title && <DialogTitle>{dialogContent.title}</DialogTitle>}
+                {dialogContent.description && <DialogDescription>{dialogContent.description}</DialogDescription>}
+              </DialogHeader>
+            )}
+            {dialogContent.children && (
+              <CredenzaBody className='mx-4'>{dialogContent.children}</CredenzaBody>
+            )}
+          </DrawerContent>
+        </Drawer>
+      )}
+    </drawerContext.Provider>
+  );
+};
+
+export const useDrawer = () => {
+  const context = useContext(drawerContext);
+  if (!context) {
+    throw new Error('useDrawer must be used within a DrawerProvider');
+  }
+  return context;
 };

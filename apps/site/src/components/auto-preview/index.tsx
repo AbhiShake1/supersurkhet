@@ -10,6 +10,8 @@ import { AutoTable } from "../auto-table";
 import type { fieldConfig } from "../ui/autoform";
 import { Drawer, DrawerContent, DrawerTrigger } from "../ui/drawer";
 import { CredenzaBody } from "../ui/credenza";
+import React from "react";
+import { useDrawer } from "@/contexts/dialog-context";
 
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]["fieldType"]>;
 
@@ -103,6 +105,24 @@ const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
     </Drawer>
   );
 };
+
+const _ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
+  if (!value) return null;
+  const fullKey = (value as any)?.["#"] as string;
+  if (!fullKey) return null;
+  const arraySchema: z.ZodArray<any> = schema instanceof z.ZodEffects ? schema.innerType() : schema;
+  const parsedSchema = arraySchema._def.type
+  const { openDialog } = useDrawer()
+
+  return <Button
+    variant="ghost"
+    className="h-auto w-full"
+    onClick={() => openDialog({ children: <AutoTable parsedSchema={parsedSchema} readOnly treatSlugAsAbsolute data={value} /> })}
+  >
+    Click to expand
+  </Button>
+}
+const ArrayPreview = React.memo(_ArrayPreview, (p, n) => Object.is(p.value, n.value))
 
 const PhonePreview: AutoPreviewComponent<string> = ({ value }) => {
   return <>{value ? value.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3") : "-"}</>;
@@ -265,5 +285,10 @@ const autoPreviewComponents: Record<
   timestamp: DatePreview,
   unit: UnitPreview,
   permissions: ({ value }) => `${value?.length ?? Object.keys(value).length} Permissions`,
-  fallback: () => "-",
+  fallback: (props) => {
+    if (typeof props.value === "object" && Array.isArray(props.value)) {
+      return <ArrayPreview value={props.value} schema={props.schema} />
+    }
+    return "-"
+  },
 };

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
+import { table } from "./listings";
 
 export const salesItemSchema = z.object({
   product: z.string().describe("Product"),
@@ -34,7 +35,7 @@ export const saleSchema = z.object({
     })),
   paymentMethod: z.enum(["cash", "card", "bankTransfer", "credit"]).optional().describe("Payment Method"),
   notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
-})
+}).extend(table)
 
 export type Sale = z.infer<typeof saleSchema>;
 
@@ -51,6 +52,6 @@ export const stockImportSchema = z.object({
       }
     })),
   notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
-}).describe("Stock Import");
+}).extend(table).describe("Stock Import");
 
 export type StockImport = z.infer<typeof stockImportSchema>;

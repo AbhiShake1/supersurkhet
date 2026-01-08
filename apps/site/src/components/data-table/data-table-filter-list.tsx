@@ -238,7 +238,7 @@ export function DataTableFilterList<TData>({
       onValueChange={setFilters}
       getItemValue={(item) => item.filterId}
     >
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover open={open} onOpenChange={setOpen} modal>
         <PopoverTrigger asChild>
           <Button
             variant="outline"

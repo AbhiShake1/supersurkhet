@@ -9,6 +9,7 @@ export type GetBuilder<T extends SchemaKeys> = {
   filter?: (item: NestedSchemaType<T>) => boolean;
   single?: boolean;
   queryOptions?: QueryOptions
+  treatSlugAsAbsolute?: boolean;
 };
 
 export function attachSouls(value: any, currentPath: string): any {
