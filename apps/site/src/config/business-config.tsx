@@ -900,6 +900,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
 export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"invoice"> {
   const { data: products = [] } = api.product.useGet({ keys: [slug] })
   const { data: parties = [] } = api.party.useGet({ keys: [slug] })
+  const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
@@ -910,6 +911,12 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   ), [parties])
+  const customersBySoul = useMemo(() => new Map(
+    customers
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [customers])
+
   return {
     schema: "invoice",
     title: "Invoices",
@@ -920,7 +927,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
     actions: ({ row }) => {
       const partyId = row.original.partyId
       if (!partyId) return null
-      const party = partiesBySoul.get(partyId)
+      const party = partiesBySoul.get(partyId) || customersBySoul.get(partyId);
       if (!party) return null
       return (
         <DropdownMenuItem onSelect={e => e.preventDefault()}>
@@ -940,7 +947,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
       );
     },
     previewOverrides: {
-      partyId: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
+      partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || "-",
     }
   }
 }
