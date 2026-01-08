@@ -50,8 +50,7 @@ export const Route = createFileRoute("/$businessName/admin/")({
 });
 
 function Child({ businessName, businessType }: { businessName: string, businessType: BusinessType }) {
-  const _config = useBusinessConfig({ slug: businessName })[businessType];
-  const config = useMemo(() => _config ?? [], [])
+  const config = useBusinessConfig({ slug: businessName })[businessType];
   if (!config?.length) return (
     <div className="p-2">
       <h3>{businessName} Admin Dashboard</h3>

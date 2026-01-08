@@ -39,7 +39,7 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
 					<CredenzaDescription>Edit details</CredenzaDescription>
 				</CredenzaHeader>
 				<CredenzaBody asChild>
-					<ScrollArea className="h-[50vh]">
+					<ScrollArea className="h-[50vh] max-h-[60vh]">
 						<AutoForm
 							formProps={{ id: "edit-row-form" }}
 							schema={schema}
@@ -51,7 +51,7 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
 						/>
 					</ScrollArea>
 				</CredenzaBody>
-				<CredenzaFooter className="flex gap-4 pt-4">
+				<CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
 					<Button
 						type="button"
 						variant="outline"

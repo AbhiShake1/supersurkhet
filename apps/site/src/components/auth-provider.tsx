@@ -18,6 +18,7 @@ interface AuthContextType {
   refreshUser: () => void;
   anonymousUserId: string | null;
   linkAnonymousUser: (authenticatedUser: User) => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -33,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [authUser, setAuthUser] =
     useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
   const [anonymousUserId, setAnonymousUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Initialize anonymous user ID
   useEffect(() => {
@@ -58,6 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Handle authentication state and user data
   useEffect(() => {
     let ref: IGunChain<any>;
+    setIsLoading(true);
+
     auth.getCurrentUser().then((_authUser) => {
       setAuthUser(_authUser);
 
@@ -67,6 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           .get(_authUser.pub)
           .open((data) => {
             setUser({ ..._authUser, ...data });
+            setIsLoading(false);
           });
 
         // If no authenticated user but we have an anonymous user ID
@@ -81,10 +86,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
                 avatar: createAvatar(pixelArt).toDataUri(),
                 ...data
               });
+              setIsLoading(false);
             });
+        } else {
+          setIsLoading(false);
+        }
+      } else {
+        // If no authenticated user but we have an anonymous user ID
+        if (anonymousUserId) {
+          ref = getGunRef(mergeKeys("user"))
+            .get(anonymousUserId)
+            .open((data) => {
+              setUser({
+                pub: anonymousUserId,
+                email: undefined,
+                name: "Anonymous User",
+                avatar: createAvatar(pixelArt).toDataUri(),
+                ...data
+              });
+              setIsLoading(false);
+            });
+        } else {
+          setIsLoading(false);
         }
       }
-    })
+    }).catch(() => {
+      setIsLoading(false);
+    });
 
     return () => {
       ref?.off();
@@ -153,7 +181,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         isAuthenticated,
         refreshUser,
         anonymousUserId,
-        linkAnonymousUser
+        linkAnonymousUser,
+        isLoading
       }}
     >
       {children}
