@@ -13,8 +13,8 @@ export function GoogleLoginProvider({ children }: React.PropsWithChildren) {
 }
 
 export function OneTapLoginProvider({ children }: React.PropsWithChildren) {
-  const { isAuthenticated } = useAuth();
-  if (isAuthenticated) return children;
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isAuthenticated || isLoading) return children;
   return <_OneTapLoginProvider>{children}</_OneTapLoginProvider>;
 }
 

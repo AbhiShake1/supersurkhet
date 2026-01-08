@@ -40,6 +40,8 @@ import { getUser, removeUser } from "@/server-functions/user";
 import type { IGunUserInstance } from "gun/types";
 import z from "zod";
 import { getGunRef, mergeKeys } from "@/lib/gun/utils";
+import { I18nProvider } from "@/contexts/i18n-context";
+import { DialogProvider } from "@/contexts/dialog-context";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -103,10 +105,6 @@ function logout() {
 async function isAuthenticated() {
   await recallUser()
   return !!gun.user().is;
-}
-
-function isMobile() {
-  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
@@ -286,11 +284,9 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         {loaderData.criticalThemeCSS}
       </style>
       <Toaster richColors />
-      <TooltipProvider>
-        <NuqsAdapter>
-          <Outlet />
-        </NuqsAdapter>
-      </TooltipProvider>
+      <NuqsAdapter>
+        <Outlet />
+      </NuqsAdapter>
       <TanStackRouterDevtools position="bottom-right" />
       <TanstackQueryLayout />
     </RootDocument>
@@ -437,22 +433,28 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <div data-vaul-drawer-wrapper="">
-          <ThemeModeProvider savedDarkMode={loaderData.savedDarkMode} savedTheme={loaderData.savedTheme} savedThemeName={loaderData.savedThemeName}>
-            <GoogleLoginProvider>
-              <AuthProvider>
-                <OneTapLoginProvider>
-                  <ConfettiProvider>
-                    <LoginPromptProvider>
-                      {children}
-                      {
-                        isMobile() && <QRScannerButton onActionDetected={handleActionDetected} />
-                      }
-                    </LoginPromptProvider>
-                  </ConfettiProvider>
-                </OneTapLoginProvider>
-              </AuthProvider>
-            </GoogleLoginProvider>
-          </ThemeModeProvider>
+          <I18nProvider>
+            <ThemeModeProvider savedDarkMode={loaderData.savedDarkMode} savedTheme={loaderData.savedTheme} savedThemeName={loaderData.savedThemeName}>
+              <GoogleLoginProvider>
+                <AuthProvider>
+                  <TooltipProvider>
+                    <DialogProvider>
+                      <OneTapLoginProvider>
+                        <ConfettiProvider>
+                          <LoginPromptProvider>
+                            {children}
+                            {
+                              // isMobile && <QRScannerButton onActionDetected={handleActionDetected} />
+                            }
+                          </LoginPromptProvider>
+                        </ConfettiProvider>
+                      </OneTapLoginProvider>
+                    </DialogProvider>
+                  </TooltipProvider>
+                </AuthProvider>
+              </GoogleLoginProvider>
+            </ThemeModeProvider>
+          </I18nProvider>
           <Scripts />
         </div>
       </body>

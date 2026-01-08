@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { fieldConfig } from "@/components/ui/autoform";
-import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, Car as CarIcon, DollarSign, MessageCircle, Clock, ShoppingCart, Folder, QrCode, Package } from "lucide-react";
+import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, DollarSign, MessageCircle, Clock, ShoppingCart, Folder, QrCode, Package, Users2, MapIcon } from "lucide-react";
 import type { AdminComponent } from "@/components/ui/admin";
 import { educationSchema } from "./schemas/education-schema";
 import { healthcareSchema } from "./schemas/healthcare-schema";
@@ -28,8 +28,7 @@ import { qrFlowConfigSchema } from "./schemas/qr-flow-config-schema";
 import type { ReactNode } from "@tanstack/react-router";
 import { uiBuilderSchema } from "./schemas/ui-builder-schema";
 import { IconMoneybag } from "@tabler/icons-react";
-import NepaliDate from "nepali-datetime";
-import { saleSchema, stockImportSchema } from "./schemas/sales";
+import { saleSchema, salesItemSchema, stockImportSchema } from "./schemas/sales";
 
 function getPermissions() {
   return ["product"] as readonly [string, ...string[]];
@@ -115,7 +114,30 @@ export const businessInvitationSchema = z.object({
   expiresAt: z.number().optional()
 })
 
+
 export type BusinessInvitation = z.infer<typeof businessInvitationSchema>;
+
+export const businessTypeSchema = z
+  .enum([
+    "retail",
+    "food",
+    "service",
+    "education",
+    "healthcare",
+    "logistics",
+    "real_estate",
+    "cooperative",
+    "other",
+    "hotel",
+    "petrol_pump",
+    "gym",
+    "cinema",
+    "financial_firm",
+    "ride_sharing",
+  ])
+  .describe("The primary category of the business")
+
+export type BusinessType = z.infer<typeof businessTypeSchema>
 
 export const businessSchema = z
   .object({
@@ -129,25 +151,7 @@ export const businessSchema = z
       .string()
       .describe("Unique URL path for the business (e.g., /my-shop)")
       .optional(),
-    businessType: z
-      .enum([
-        "retail",
-        "food",
-        "service",
-        "education",
-        "healthcare",
-        "logistics",
-        "real_estate",
-        "cooperative",
-        "other",
-        "hotel",
-        "petrol_pump",
-        "gym",
-        "cinema",
-        "financial_firm",
-        "ride_sharing",
-      ])
-      .describe("The primary category of the business"),
+    businessType: businessTypeSchema,
     features: z
       .record(z.string(), z.boolean())
       .optional()
@@ -167,33 +171,32 @@ export const businessSchema = z
   })
   .extend(table);
 
-export type BusinessType = z.infer<typeof businessSchema>["businessType"];
-export type BusinessMember = z.infer<typeof businessMemberSchema>;
-
 export const partySchema = z.object({
   name: z.string().min(1).describe("Name of the party"),
-  contactPerson: z.string().optional().describe("Contact person for the party"),
-  email: z.string().email().optional().describe("Email address of the party"),
-  phone: z.string().optional().describe("Phone number of the party"),
   address: z.string().optional().describe("Address of the party"),
+  panNumber: z.string().optional().describe("PAN number of the party"),
+  phone: z.string().optional().describe("Phone number of the party"),
   creditLimit: z.number({ coerce: true }).int().positive().optional().describe("Credit limit of the party"),
   paymentTerms: z.string().optional().describe("Payment terms of the party"),
-  notes: z.string().optional().describe("Notes of the party"),
+  notes: z.string().optional().describe("Notes for the party").superRefine(fieldConfig({ fieldType: "richText" })),
 }).extend(table);
 
 export type Party = z.infer<typeof partySchema>
 
+export const customerSchema = partySchema.extend({})
+
+export type Customer = z.infer<typeof customerSchema>
+
 export const invoiceSchema = z.object({
-  invoiceNumber: z.string().min(1),
   type: z.enum(["purchase", "sale"]),
 
-  partyId: z.string().min(1),
-  issuedAt: z.string().datetime(),
+  partyId: z.string().describe("Party").optional(),
+  issuedAt: z.string().datetime().describe("Issued At").optional(),
+  dueDate: z.string().datetime().describe("Due Date").optional(),
 
-  items: z.record(
-    z.string(),
+  items: z.array(
     z.object({
-      product: productSchema,
+      product: z.string().describe("Product"),
       quantity: z.number({ coerce: true }).positive(),
       rate: z.number({ coerce: true }).int().nonnegative(), // paisa
       total: z.number({ coerce: true }).int().nonnegative(),
@@ -202,16 +205,27 @@ export const invoiceSchema = z.object({
 
   subTotal: z.number({ coerce: true }).int().nonnegative(),
   tax: z.number({ coerce: true }).int().nonnegative().default(0),
+  paidAmount: z.number({ coerce: true }).nonnegative().default(0).describe("Amount Paid"),
+  paymentStatus: z.string().default("pending").describe("Payment Status")
+    .superRefine(fieldConfig({
+      inputProps: {
+        className: "border-none",
+        disabled: true,
+      }
+    })),
+  fiscalYear: z.string().describe("Fiscal Year"),
 })
   .extend(table)
-  .transform(invoice => ({
-    ...invoice,
-    total: invoice.subTotal + invoice.tax,
-    fiscalYear: (() => {
-      const year = new NepaliDate().getYear()
-      return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
-    })()
-  }))
+// .transform(invoice => ({
+//   ...invoice,
+//   total: invoice.subTotal + invoice.tax,
+//   balance: (invoice.subTotal + invoice.tax) - (invoice.paidAmount || 0),
+//   fiscalYear: (() => {
+//     const year = new NepaliDate().getYear()
+//     return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
+//   })()
+// }))
+//
 // .superRefine((invoice, ctx) => {
 //   const computedSubTotal = Object.values(invoice.items).reduce(
 //     (sum, item) => sum + item.total,
@@ -320,39 +334,21 @@ export const coOpMemberProfileSchema = z
 
 export const orderSchema = z
   .object({
-    customerId: z
-      .string()
-      .optional()
-      .describe("ID of the customer who placed the order"),
-    items: z
-      .record(
-        z.string(),
-        z.object({
-          quantity: z.number({ coerce: true }).int().positive(),
-          unitPrice: z.number({ coerce: true }).positive(),
-          customizations: z.record(z.string(), z.boolean()).optional(),
-          specialInstructions: z.string().optional(),
-        }),
-      )
-      .describe("Ordered items with their details")
-      .superRefine(fieldConfig({ fieldType: "record" })),
-    subTotal: z.number({ coerce: true }).positive(),
-    taxes: z.number({ coerce: true }).nonnegative(),
-    deliveryFee: z.number({ coerce: true }).nonnegative(),
-    totalAmount: z.number({ coerce: true }).positive(),
-    orderStatus: z.enum([
-      "pending",
-      "confirmed",
-      "preparing",
-      "ready",
-      "served",
-      "cancelled",
-    ]),
-    paymentStatus: z.enum(["pending", "paid", "failed"]),
-    paymentMethod: z.enum(["cash", "card", "online"]).optional(),
-    estimatedDeliveryTime: z.number({ coerce: true }).optional(),
-    notes: z.string().optional().describe("Special notes or instructions"),
-    // listing: baseListingSchema.superRefine(fieldConfig({ fieldType: "record" })).optional(),
+    customerId: z.string().describe("Customer"),
+    items: salesItemSchema.array()
+      .min(1, { message: "Please add at least one item." })
+      .describe("Items Ordered"),
+    paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
+    paymentStatus: z.string().default("pending").describe("Payment Status")
+      .superRefine(fieldConfig({
+        inputProps: {
+          className: "border-none",
+          disabled: true,
+        }
+      })),
+    orderStatus: z.enum(["pending", "done", "cancelled"]).default("pending").describe("Order Status"),
+    paymentMethod: z.enum(["cash", "card", "bankTransfer", "credit"]).optional().describe("Payment Method"),
+    notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
   })
   .extend(table);
 
@@ -557,6 +553,22 @@ export const featureSchema = createSchema({
       ];
     },
   },
+  customer: {
+    schema: customerSchema,
+    icon: Users2,
+    group: "Financial",
+    // components: async () => {
+    //   const { CustomerManagement } = await import(
+    //     "@/components/ui/admin/customer-management"
+    //   );
+    //   return [
+    //     {
+    //       name: "Suppliers & Customers",
+    //       component: CustomerManagement,
+    //     },
+    //   ];
+    // },
+  },
   invoice: {
     schema: invoiceSchema,
     icon: IconMoneybag,
@@ -567,7 +579,7 @@ export const featureSchema = createSchema({
       );
       return [
         {
-          name: "Invoices",
+          name: "Invoices By Parties",
           component: InvoiceManagement,
         },
       ];
@@ -691,11 +703,11 @@ export const featureSchema = createSchema({
     icon: Calendar,
     group: "Business Operations",
   },
-  trip: {
-    schema: tripSchema,
-    icon: CarIcon,
-    group: "Business Operations",
-  },
+  // trip: {
+  //   schema: tripSchema,
+  //   icon: CarIcon,
+  //   group: "Business Operations",
+  // },
   expense: {
     schema: expenseSchema,
     icon: DollarSign,
@@ -911,6 +923,51 @@ export const featureSchema = createSchema({
     schema: qrFlowConfigSchema,
     icon: QrCode,
     group: "System Configuration",
+  },
+
+  // Vehicle schema
+  vehicle: {
+    schema: z.object({
+      name: z.string().describe("Vehicle Name"),
+      licensePlate: z.string().describe("License Plate Number"),
+      description: z.string().optional().describe("Vehicle Description")
+        .superRefine(fieldConfig({ fieldType: "richText" })),
+    }),
+    icon: Car,
+    group: "Logistics",
+  },
+
+  // Trip schema
+  trip: {
+    schema: z.object({
+      vehicleId: z.string().describe("Vehicle ID"),
+      dispatchTime: z.string().datetime().describe("Dispatch Time")
+        .default(() => new Date().toISOString())
+        .superRefine(fieldConfig({ fieldType: "datetime" })),
+      returnTime: z.string().optional().describe("Return Time")
+        .superRefine(fieldConfig({ fieldType: "datetime" })),
+      destination: z.string().optional().describe("Destination"),
+      products: salesItemSchema
+        .array()
+        .describe("Products Sent on Trip"),
+      returnedProducts: salesItemSchema
+        .array()
+        .optional()
+        .describe("Products Returned from Trip"),
+    }),
+    icon: MapIcon,
+    group: "Logistics",
+    components: async () => {
+      const { TripManagement } = await import(
+        "@/components/ui/admin/trip-management"
+      );
+      return [
+        {
+          name: "Trip Tracking",
+          component: TripManagement,
+        },
+      ];
+    },
   },
 });
 

@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { LucideBriefcaseBusiness } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { z } from "zod";
 
 export const Route = createFileRoute("/admin")({
@@ -30,33 +30,35 @@ function RouteComponent() {
 
   if (!user) return null;
 
+  const tabs = useMemo(() => Object.keys(appSchema.rawShape)
+    .sort((a, b) => a.localeCompare(b))
+    .map((s) => {
+      const schemaConfig = appSchema.rawShape[s as keyof typeof appSchema.rawShape];
+      return {
+        schema: s,
+        title: s[0].toUpperCase() + s.slice(1),
+        icon: schemaConfig.icon || LucideBriefcaseBusiness,
+        group: schemaConfig.group, // Use group from schema definition
+        slug: "",
+        transformer: (d) => {
+          if (d.length === 0) return []
+          const firstData = d[0]
+          if ("timestamp" in firstData) return d
+          const result = d.flatMap(d => {
+            const business = d._?.soul;
+            return Object.values(d).map(d => !d || typeof d !== "object" ? null : ({ ...d, business }));
+          }).filter(d => !!d && typeof d === "object" && !("soul" in d))
+          if (!result.length) return d
+          return result
+        },
+        extender: d => d.extend({ business: z.string().optional() }),
+      };
+    }), [])
+
   return (
     <AutoAdmin
       // @ts-expect-error
-      tabs={Object.keys(appSchema.rawShape)
-        .sort((a, b) => a.localeCompare(b))
-        .map((s) => {
-          const schemaConfig = appSchema.rawShape[s as keyof typeof appSchema.rawShape];
-          return {
-            schema: s,
-            title: s[0].toUpperCase() + s.slice(1),
-            icon: schemaConfig.icon || LucideBriefcaseBusiness,
-            group: schemaConfig.group, // Use group from schema definition
-            slug: "",
-            transformer: (d) => {
-              if (d.length === 0) return []
-              const firstData = d[0]
-              if ("timestamp" in firstData) return d
-              const result = d.flatMap(d => {
-                const business = d._?.soul;
-                return Object.values(d).map(d => !d || typeof d !== "object" ? null : ({ ...d, business }));
-              }).filter(d => !!d && typeof d === "object" && !("soul" in d))
-              if (!result.length) return d
-              return result
-            },
-            extender: d => d.extend({ business: z.string().optional() }),
-          };
-        })}
+      tabs={tabs}
     />
   );
 }

@@ -5,9 +5,10 @@ import { NotFound } from "@/components/ui/not-found";
 import { useBusinessConfig } from "@/config/business-config";
 import { BusinessProvider } from "@/contexts/business-context";
 import { api } from "@/lib/api";
+import type { BusinessType } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 export const Route = createFileRoute("/$businessName/admin/")({
   component: () => {
@@ -42,23 +43,19 @@ export const Route = createFileRoute("/$businessName/admin/")({
       return <NotFound />
     }
 
-    function Child() {
-      const config = useBusinessConfig({ slug: businessName })[business!.businessType!];
-      if (!config?.length) return (
-        <div className="p-2">
-          <h3>{businessName} Admin Dashboard</h3>
-          <p>This is the admin panel for {businessName}.</p>
-          <pre className="bg-muted p-4 rounded-md overflow-auto text-sm">
-            <code>{JSON.stringify(business, null, 2)}</code>
-          </pre>
-        </div>
-      );
-      return <AutoAdmin tabs={config ?? []} />
-    }
-
     return <BusinessProvider business={business}>
-      <Child />
+      <Child businessName={businessName} businessType={business.businessType} />
     </BusinessProvider>
   },
 });
 
+function Child({ businessName, businessType }: { businessName: string, businessType: BusinessType }) {
+  const config = useBusinessConfig({ slug: businessName })[businessType];
+  if (!config?.length) return (
+    <div className="p-2">
+      <h3>{businessName} Admin Dashboard</h3>
+      <p>This is the admin panel for {businessName}.</p>
+    </div>
+  );
+  return <AutoAdmin tabs={config} />
+}

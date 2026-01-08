@@ -16,7 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
@@ -26,6 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { appSchema } from "@/lib/schema";
 import { applySorting } from "@/lib/sort";
 import { parseSchema } from "@autoform/zod";
+import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
 import {
   type NestedSchema,
   type NestedSchemaType,
@@ -40,7 +40,7 @@ import {
   useUpdate,
 } from "@gta/react-hooks";
 import { useSearch } from "@tanstack/react-router";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import {
   ArrowUpDown,
   CalendarIcon,
@@ -76,6 +76,7 @@ import { api } from "@/lib/api";
 import { BadgeMarquee } from "../ui/badge-marquee";
 import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
 import type { GunMessagePut } from "gun";
+import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 
 type AggregationType =
   | 'sum'
@@ -95,7 +96,8 @@ type EnhancedColumnDef<TData> = ColumnDef<TData> & {
   filterable?: boolean;
   sortable?: boolean;
   exportable?: boolean;
-  previewOverrides?: PreviewOverrides<T>;
+  previewOverrides?: PreviewOverrides<any>;
+  readOnly?: boolean;
 }
 
 export type AutoTableProps<T extends SchemaKeys> = {
@@ -112,9 +114,13 @@ export type AutoTableProps<T extends SchemaKeys> = {
   enablePagination?: boolean;
   defaultPageSize?: number;
   fieldOverrides?: Partial<Record<keyof NestedSchema<T>["shape"], z.ZodTypeAny>>;
+  formSchemaTransformer?: (schema: NestedSchema<T>) => z.ZodTypeAny;
   previewOverrides?: PreviewOverrides<T>;
   onCreate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
+  onDelete?: (data: GunMessagePut, variables: string, context: unknown) => unknown
   onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
+  readOnly?: boolean;
+  actions?: (ctx: CellContext<NestedSchemaType<T>, unknown>) => React.ReactNode;
 } & ({
   schema: T;
 }
@@ -179,7 +185,7 @@ export function AutoTable<T extends SchemaKeys>({
   const { mutate: onDelete } = useDelete({
     keys: [schemaName, slug],
     onSuccess(...args) {
-
+      props?.onDelete?.(...args)
     },
   });
   const _schema = (() => {
@@ -200,6 +206,8 @@ export function AutoTable<T extends SchemaKeys>({
     schema,
     setRowAction,
     previewOverrides: props.previewOverrides,
+    readOnly: props.readOnly,
+    actions: props.actions,
   });
 
   // @ts-expect-error
@@ -292,76 +300,23 @@ export function AutoTable<T extends SchemaKeys>({
     input.click()
   }
 
+  const formSchema = props.formSchemaTransformer?.(schema) ?? schema
+
   return (
     <div className="py-6 space-y-4 flex flex-col items-end">
-      <ButtonGroup>
-        <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
-          <CredenzaTrigger asChild>
-            <Button className="gap-2 rounded-r-none border-r">
-              <Plus className="size-4" />
-              Add New
-            </Button>
-          </CredenzaTrigger>
-          <CredenzaContent>
-            <CredenzaHeader className="min-w-0">
-              <CredenzaTitle className="capitalize">Add new {schemaName}</CredenzaTitle>
-              <CredenzaDescription asChild>
-                <AddDataSuggestions schemaName={schemaName} slug={slug} onSelected={setFormValues} />
-              </CredenzaDescription>
-            </CredenzaHeader>
-            <CredenzaBody asChild>
-              <ScrollArea className="h-[50vh]">
-                <AutoForm
-                  values={formValues}
-
-                  schema={schema}
-                  onSubmit={(b) => createMutation.mutate({ ...b, created_by: user?._?.soul ?? "anon", timestamp: Date.now() })}
-                  formProps={{ id: "auto-table-add-form" }}
-                />
-              </ScrollArea>
-            </CredenzaBody>
-            <CredenzaFooter className="flex gap-4 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => setDialogOpen(false)}
-              >
-                Cancel
-              </Button>
-              <SubmitButton
-                form="auto-table-add-form"
-                className="gap-2 w-full"
-                loading={updateMutation.isPending || createMutation.isPending}
-              >
-                <Save className="size-4" />
-                Save
-              </SubmitButton>
-            </CredenzaFooter>
-          </CredenzaContent>
-        </Credenza>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" aria-label="Import Options" className="rounded-l-none border-l-0" disabled={isImportPending}>
-              <ArrowBigUpDash className="size-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem onClick={() => handleFileImport(".csv", "csv")} className="gap-2">
-              <FileText className="h-4 w-4" />
-              Import from CSV
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleFileImport(".json", "json")} className="gap-2">
-              <FileJson className="h-4 w-4" />
-              Import from JSON
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleFileImport(".xlsx,.xls", "excel")} className="gap-2">
-              <Sheet className="h-4 w-4" />
-              Import from Excel
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </ButtonGroup>
+      {
+        !props.readOnly && (
+          <AddRowDialog
+            schema={schemaName}
+            slug={slug}
+            fieldOverrides={props.fieldOverrides}
+            extender={props.extender}
+            formSchemaTransformer={props.formSchemaTransformer}
+            onCreate={props.onCreate}
+            readOnly={props.readOnly}
+          />
+        )
+      }
       <DataTable
         table={table}
         actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
@@ -390,30 +345,34 @@ export function AutoTable<T extends SchemaKeys>({
              <DataTableSortList table={table} align="end" />
            </DataTableToolbar> */}
       </DataTable>
-      <DeleteRowDialog
-        open={rowAction?.variant === "delete"}
-        onOpenChange={() => setRowAction(null)}
-        data={rowAction?.row.original ? [rowAction?.row.original] : []}
-        showTrigger={false}
-        onConfirm={() => {
-          setRowAction(null);
-          onDelete(rowAction?.row.id ?? "");
-          rowAction?.row.toggleSelected(false);
-        }}
-      />
-      <EditRowDialog
-        open={rowAction?.variant === "update"}
-        onOpenChange={() => setRowAction(null)}
-        data={rowAction?.row.original}
-        schema={schema}
-        onSubmit={(data) => {
-          setRowAction(null);
-          if (data) {
-            updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data });
-          }
-        }}
-        showTrigger={false}
-      />
+      {
+        !props.readOnly && <DeleteRowDialog
+          open={rowAction?.variant === "delete"}
+          onOpenChange={() => setRowAction(null)}
+          data={rowAction?.row.original ? [rowAction?.row.original] : []}
+          showTrigger={false}
+          onConfirm={() => {
+            setRowAction(null);
+            onDelete(rowAction?.row.id ?? "");
+            rowAction?.row.toggleSelected(false);
+          }}
+        />
+      }
+      {
+        !props.readOnly && <EditRowDialog
+          open={rowAction?.variant === "update"}
+          onOpenChange={() => setRowAction(null)}
+          data={rowAction?.row.original}
+          schema={formSchema}
+          onSubmit={(data) => {
+            setRowAction(null);
+            if (data) {
+              updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data });
+            }
+          }}
+          showTrigger={false}
+        />
+      }
     </div>
   );
 }
@@ -424,12 +383,17 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
     React.SetStateAction<DataTableRowAction<NestedSchemaType<T>> | null>
   >;
   schema: S;
+  actions?: (ctx: CellContext<NestedSchemaType<T>, unknown>) => React.ReactNode;
+  readOnly?: boolean;
+  previewOverrides?: PreviewOverrides<T>;
 }
 
 function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   setRowAction,
   schema,
   previewOverrides,
+  actions,
+  readOnly,
 }: GetAutoTableColumnsProps<T, S>): EnhancedColumnDef<NestedSchemaType<T>>[] {
   const columns: EnhancedColumnDef<NestedSchemaType<T>>[] = [
     {
@@ -541,39 +505,48 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
     columns.push(column);
   }
 
-  columns.push({
-    id: "actions",
-    cell: function Cell({ row }) {
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              aria-label="Open menu"
-              variant="secondary"
-              className="flex size-8 p-0 data-[state=open]:bg-muted"
-            >
-              <Ellipsis className="size-4" aria-hidden="true" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40">
-            <DropdownMenuItem
-              onSelect={() => setRowAction({ row, variant: "update" })}
-            >
-              Edit
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={() => setRowAction({ row, variant: "delete" })}
-            >
-              Delete
-              <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
-    },
-    size: 40,
-  });
+  if (!readOnly || actions)
+    columns.push({
+      id: "actions",
+      cell: function Cell(props) {
+        const { row } = props;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                aria-label="Open menu"
+                variant="secondary"
+                className="flex size-8 p-0 data-[state=open]:bg-muted"
+              >
+                <Ellipsis className="size-4" aria-hidden="true" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              {
+                !readOnly && <>
+                  <DropdownMenuItem
+                    onSelect={() => setRowAction({ row, variant: "update" })}
+                  >
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              }
+              {
+                !readOnly && <DropdownMenuItem
+                  onSelect={() => setRowAction({ row, variant: "delete" })}
+                >
+                  Delete
+                  <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+                </DropdownMenuItem>
+              }
+              {actions?.(props)}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      size: 40,
+    });
 
   return columns;
 }

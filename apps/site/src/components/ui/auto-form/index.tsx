@@ -8,7 +8,7 @@ import {
 } from "react-hook-form";
 import type { z } from "zod";
 
-import { Button } from "@/components/ui/button";
+import { Button, type ButtonProps } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -22,15 +22,10 @@ import {
 
 export function AutoFormSubmit({
   children,
-  className,
-  disabled,
-}: {
-  children?: React.ReactNode;
-  className?: string;
-  disabled?: boolean;
-}) {
+  ...props
+}: ButtonProps) {
   return (
-    <Button type="submit" disabled={disabled} className={className}>
+    <Button type="submit" {...props}>
       {children ?? "Submit"}
     </Button>
   );

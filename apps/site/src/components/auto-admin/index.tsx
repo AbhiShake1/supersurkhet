@@ -1,6 +1,6 @@
 import * as Kanban from "@/components/ui/kanban";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import CollapsibleSidebar, { type SidebarItems } from "@/components/ui/collapsible-sidebar";
+import CollapsibleSidebar from "@/components/ui/collapsible-sidebar";
 import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { cn } from "@/lib/utils";
@@ -9,7 +9,7 @@ import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import _ from "lodash";
-import { GripVertical, QrCodeIcon, Settings, Search, BarChart3, Bell, type LucideIcon, X, Sigma } from "lucide-react";
+import { GripVertical, QrCodeIcon, BarChart3, type LucideIcon, Sigma } from "lucide-react";
 import type { ReactNode } from "react";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
@@ -18,12 +18,12 @@ import { Skeleton } from "../ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { AdminDashboard } from "../admin-dashboard";
 import { QRCodePage } from "../qr-code-page";
-import { Input } from "../ui/input";
 import Card from "../ui/minimal-card";
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 import type { z } from "zod";
 import { NotFound } from "../ui/not-found";
 import { CustomUiBuilderPage } from "../ui-builder";
+import { LanguageSelector } from "../language-selector";
 
 export interface AutoAdminProps {
   tabs: PossibleTabConfig[];
@@ -49,22 +49,6 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
 export function AutoAdmin({ tabs }: AutoAdminProps) {
   const { search, pathname: currentPathname } = useLocation();
   const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
-  const [searchQuery, setSearchQuery] = useState("");
-
-  // Keyboard shortcuts
-  const [showKeyboardShortcuts, setShowKeyboardShortcuts] = useState(false);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.key === 'k') {
-        e.preventDefault();
-        setShowKeyboardShortcuts(prev => !prev);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   const { data: allBusinesses = [] } = api.business.useGet({
     keys: [basePath],
@@ -72,17 +56,18 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
-  const tabsWithHome = [
+  const tabsWithHome = useMemo(() => [
     {
       title: "Dashboard",
       icon: BarChart3,
-      children: <AdminDashboard slug={basePath} />,
+      children: <AdminDashboard slug={basePath} businessType={business.businessType} />,
     },
     ...tabs,
     {
       title: "QR Management",
       icon: QrCodeIcon,
       children: <QRCodePage slug={basePath} />,
+      group: "System Configuration"
     },
     {
       title: "Website UI",
@@ -90,16 +75,8 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       children: <CustomUiBuilderPage slug={basePath} />,
       group: "System Configuration"
     }
-  ];
+  ], [tabs]);
 
-  const data: SidebarItems = {
-    items: tabsWithHome.map(tab => ({
-      title: tab.title,
-      url: `?tab=${tab.title}`,
-      icon: tab.icon,
-      group: tab.group,
-    })),
-  };
   // @ts-expect-error
   const tab = (search.tab as string) ?? tabsWithHome[0].title;
 
@@ -143,76 +120,34 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
   return (
     <SidebarProvider>
-      <CollapsibleSidebar tabs={tabsWithHome} data={data} businessName={business?.name} slug={business?.basePath} />
-      <SidebarInset className="min-w-0">
-        <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-16 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
-          <h1 className="font-bold text-lg px-4">{currentItem.title}</h1>
+      <CollapsibleSidebar tabs={tabsWithHome} businessName={business?.name} slug={business?.basePath} />
+      <SidebarInset className="min-w-0 flex flex-col">
+        <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-12 sm:h-16 shrink-0 items-center gap-0.5 sm:gap-2 border-b transition-[width,height] ease-linear px-0.5 sm:px-4">
+          <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">{currentItem.title}</h1>
 
           {/* Search and Action Bar */}
-          <div className="ml-auto flex items-center gap-2 px-4">
-            <Input
-              type="search"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 bg-background pl-8 md:w-[200px] lg:w-[300px]"
-              leadingIcon={<Search className="h-4 w-4" />}
-            />
-
-            <Button variant="outline" size="icon" className="relative">
-              <Bell className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 text-xs flex items-center justify-center text-white">3</span>
-            </Button>
-
-            <Button variant="outline" size="icon" className="">
-              <Settings className="h-4 w-4" />
-            </Button>
-
-            {/* Keyboard shortcuts indicator */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowKeyboardShortcuts(true)}
-              className="hidden md:flex items-center gap-1 text-xs"
-            >
-              <span className="hidden sm:inline">Help</span>
-              <span className="flex gap-1">
-                <kbd className="kbd kbd-xs">⌘</kbd>
-                <kbd className="kbd kbd-xs">K</kbd>
-              </span>
-            </Button>
+          <div className="ml-auto flex items-center gap-0.5 sm:gap-2 px-2">
+            {/* Language Selector */}
+            <LanguageSelector />
           </div>
         </header>
 
         <section
           className={cn(
-            "mx-6 items-start justify-center mt-6",
-            "min-w-[95%] max-w-[95%]",
+            "flex-1 overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6",
           )}
         >
           {"children" in currentItem ? (
             currentItem.children
           ) : "parsedSchema" in currentItem ? (
             <AutoTable
-              parsedSchema={currentItem.parsedSchema}
+              {...currentItem}
               slug={currentItem.slug ?? basePath}
-              transformer={currentItem.transformer}
-              extender={currentItem.extender}
-              fieldOverrides={currentItem.fieldOverrides}
-              onCreate={currentItem.onCreate}
-              onUpdate={currentItem.onUpdate}
-              previewOverrides={currentItem.previewOverrides}
             />
           ) : !components?.length ? (
             <AutoTable
-              schema={currentItem.schema}
+              {...currentItem}
               slug={currentItem.slug ?? basePath}
-              transformer={currentItem.transformer}
-              extender={currentItem.extender}
-              fieldOverrides={currentItem.fieldOverrides}
-              onCreate={currentItem.onCreate}
-              onUpdate={currentItem.onUpdate}
-              previewOverrides={currentItem.previewOverrides}
             />
           ) : (
             <Tabs
@@ -238,30 +173,21 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 ))}
               </TabsList>
               <TabsContent value="table" className={cn(
-                "flex-1 mt-4",
+                "flex-1 mt-1 sm:mt-4",
               )}>
-                <Card className="border rounded-lg shadow-sm">
-                  <div className="p-4">
+                <Card className="border rounded-lg shadow-sm overflow-hidden">
+                  <div className="p-0.5 sm:p-4">
                     <AutoTable
-                      fieldOverrides={currentItem.fieldOverrides}
-                      schema={currentItem.schema}
+                      {...currentItem}
                       slug={currentItem.slug ?? basePath}
-                      transformer={currentItem.transformer}
-                      extender={currentItem.extender}
-                      onCreate={currentItem.onCreate}
-                      onUpdate={currentItem.onUpdate}
-                      previewOverrides={currentItem.previewOverrides}
                     />
                   </div>
                 </Card>
               </TabsContent>
               {components.map(({ component, name }) => (
-                <TabsContent value={name} key={name} className="flex-1 mt-4">
-                  <Card className="border rounded-lg shadow-sm">
-                    <div className="p-4 border-b">
-                      <h2 className="text-xl font-semibold">{name}</h2>
-                    </div>
-                    <div className="p-4">
+                <TabsContent value={name} key={name} className="flex-1 mt-1 sm:mt-4">
+                  <Card className="border rounded-lg shadow-sm overflow-hidden">
+                    <div className="p-0.5 sm:p-4">
                       {component}
                     </div>
                   </Card>
@@ -270,59 +196,10 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
             </Tabs>
           )}
         </section>
-
-        {/* Keyboard Shortcuts Modal */}
-        {showKeyboardShortcuts && (
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-            <Card className="w-full max-w-md border rounded-lg shadow-lg p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold">Keyboard Shortcuts</h3>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowKeyboardShortcuts(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span>Open search</span>
-                  <span className="flex gap-1">
-                    <kbd className="kbd kbd-xs">⌘</kbd>
-                    <kbd className="kbd kbd-xs">K</kbd>
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Global search</span>
-                  <span className="flex gap-1">
-                    <kbd className="kbd kbd-xs">⌘</kbd>
-                    <kbd className="kbd kbd-xs">P</kbd>
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Quick add</span>
-                  <span className="flex gap-1">
-                    <kbd className="kbd kbd-xs">⌘</kbd>
-                    <kbd className="kbd kbd-xs">N</kbd>
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>Close modal</span>
-                  <span className="flex gap-1">
-                    <kbd className="kbd kbd-xs">ESC</kbd>
-                  </span>
-                </div>
-              </div>
-            </Card>
-          </div>
-        )}
       </SidebarInset>
     </SidebarProvider>
   );
 }
-
-// We need to define PlusIcon separately since it's used but not imported
 
 export type AutoKanbanProps<K extends SchemaKeys> = {
   slug: string;
@@ -362,7 +239,7 @@ export function AutoKanban<K extends SchemaKeys>({
       getItemValue={(item) => item._?.soul ?? ""}
     >
       <Kanban.Board className="grid auto-rows-fr grid-cols-3">
-        {Object.keys(schema.shape[groupKey].Values).map((status) => (
+        {Object.keys(schema.shape[groupKey].Values ?? schema.shape[groupKey]._def.innerType.Values).map((status) => (
           <KanbanColumn
             key={status}
             value={status}

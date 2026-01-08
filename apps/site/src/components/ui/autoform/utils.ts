@@ -9,6 +9,9 @@ type FieldConfigCustomData = {
 } & ({
   options?: [string, string][];
   onValueChange?: (value: string, path: string[], form: UseFormReturn) => void;
+}) & ({
+  onlyAllow?: string[]
+  configDisabled?: boolean
 })
 
 export const fieldConfig = buildZodFieldConfig<

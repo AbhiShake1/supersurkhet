@@ -12,8 +12,13 @@ import {
   Users,
   Activity
 } from "lucide-react";
+import { RetailReportsPage } from "../retail-reports-page";
 
-export function AdminDashboard({ slug }: { slug: string }) {
+export function AdminDashboard({ slug, businessType }: { slug: string, businessType?: string }) {
+  switch (businessType) {
+    case "retail":
+      return <RetailReportsPage slug={slug} />
+  }
   return (
     <div className="space-y-6">
       <div>
