@@ -40,6 +40,34 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       total: number;
     }[];
   };
+
+  type RevenueBreakdown = {
+    id: string;
+    customer: string;
+    totalAmount: number;
+    paidAmount: number;
+    dueAmount: number;
+    date: string;
+    items: {
+      product: string;
+      quantity: number;
+      unitPrice: number;
+      total: number;
+    }[];
+  };
+
+  type CostBreakdown = {
+    id: string;
+    supplier: string;
+    totalAmount: number;
+    date: string;
+    items: {
+      product: string;
+      quantity: number;
+      unitPrice: number; // This will be the cost price
+      total: number;
+    }[];
+  };
   const { data: sales = [] } = api.sale.useGet({ keys: [slug] });
   const { data: stockImports = [] } = api.stockImport.useGet({ keys: [slug] });
   const { data: parties = [] } = api.party.useGet({ keys: [slug] });
@@ -305,6 +333,56 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       .slice(0, 10); // Top 10 customers
   }, [filteredSales]);
 
+  // Revenue Breakdown - showing where revenue came from
+  const revenueBreakdown = useMemo(() => {
+    return filteredSales.map((sale: any) => {
+      const total = saleTotal(sale);
+      return {
+        id: sale._?.soul || '',
+        customer: sale.customerName || 'Walk-in Customer',
+        totalAmount: total,
+        paidAmount: sale.paidAmount ?? 0,
+        dueAmount: total - (sale.paidAmount ?? 0),
+        date: sale.saleDate || (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
+        items: sale.items?.map((item: any) => ({
+          product: productsBySoul.get(item.product)?.title || item.product,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          total: item.quantity * item.unitPrice
+        })) || []
+      };
+    });
+  }, [filteredSales, productsBySoul]);
+
+  // Cost Breakdown - showing where costs came from based on product cost prices
+  const costBreakdown = useMemo(() => {
+    return filteredSales.map((sale: any) => {
+      // Calculate cost based on product cost prices
+      const costItems = sale.items?.map((item: any) => {
+        const product = productsBySoul.get(item.product);
+        const costPrice = product?.costPrice || 0;
+        const totalCost = item.quantity * costPrice;
+
+        return {
+          product: product?.title || item.product,
+          quantity: item.quantity,
+          unitPrice: costPrice,
+          total: totalCost
+        };
+      }) || [];
+
+      const totalCost = costItems.reduce((sum: number, item: any) => sum + item.total, 0);
+
+      return {
+        id: sale._?.soul || '',
+        supplier: sale.customerName || 'Walk-in Customer', // Using customer name as supplier for this context
+        totalAmount: totalCost,
+        date: sale.saleDate || (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
+        items: costItems
+      };
+    }).filter((costEntry: any) => costEntry.totalAmount > 0); // Only include entries with actual costs
+  }, [filteredSales, productsBySoul]);
+
   return {
     totalRevenue,
     totalCosts,
@@ -313,6 +391,8 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     accountsPayable,
     accountsReceivableBreakdown,
     accountsPayableBreakdown,
+    revenueBreakdown,
+    costBreakdown,
     topSuppliers: supplierTotals,
     topProducts: productRevenue,
     salesTrends,
