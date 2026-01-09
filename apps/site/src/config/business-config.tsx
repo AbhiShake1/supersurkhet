@@ -1053,6 +1053,22 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
     group: "Logistics",
     previewOverrides: {
       vehicleId: (vehicleId) => vehiclesBySoul.get(vehicleId)?.name ?? "-",
+      products: (items) => {
+        const mapped = items.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
+      returnedProducts: (items) => {
+        const mapped = items.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     },
     fieldOverrides: {
       vehicleId: z.string().describe("Vehicle").superRefine(fieldConfig({
