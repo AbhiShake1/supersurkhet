@@ -88,19 +88,16 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     [filteredSales]
   );
 
+
   const totalCosts = useMemo(
     () =>
-      filteredSales.reduce(
-        (sum, sale) =>
-          sum +
-          (sale.items?.reduce(
-            (s, item) => s + (productsBySoul.get(item.product)?.costPrice || 0) * item.quantity,
-            0
-          ) ?? 0),
+      filteredStockImports.reduce(
+        (sum, imp) => sum + importTotal(imp),
         0
       ),
-    [filteredSales]
+    [filteredStockImports]
   );
+
 
   const netProfit = useMemo(
     () => totalRevenue - totalCosts,
@@ -355,34 +352,37 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   }, [filteredSales, productsBySoul]);
 
   // Cost Breakdown - showing where costs came from based on product cost prices
+
+  // Cost Breakdown - based on Stock Imports (SUPPLIERS)
   const costBreakdown = useMemo(() => {
-    return filteredSales.map((sale: any) => {
-      // Calculate cost based on product cost prices
-      const costItems = sale.items?.map((item: any) => {
-        const product = productsBySoul.get(item.product);
-        const costPrice = product?.costPrice || 0;
-        const totalCost = item.quantity * costPrice;
+    return filteredStockImports
+      .map((imp) => {
+        const party = partiesBySoul.get(imp.party);
+
+        const items =
+          imp.items?.map((item) => ({
+            product: productsBySoul.get(item.product)?.title || item.product,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            total: item.quantity * item.unitPrice,
+          })) || [];
+
+        const totalAmount = items.reduce((s, i) => s + i.total, 0);
 
         return {
-          product: product?.title || item.product,
-          quantity: item.quantity,
-          unitPrice: costPrice,
-          total: totalCost
+          id: imp._?.soul || "",
+          supplier: party?.name || "Unknown Supplier",
+          totalAmount,
+          date:
+            imp.importDate ||
+            (imp.timestamp
+              ? new Date(imp.timestamp).toISOString()
+              : ""),
+          items,
         };
-      }) || [];
-
-      const totalCost = costItems.reduce((sum: number, item: any) => sum + item.total, 0);
-
-      return {
-        id: sale._?.soul || '',
-        supplier: sale.customerName || 'Walk-in Customer', // Using customer name as supplier for this context
-        totalAmount: totalCost,
-        date: sale.saleDate || (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
-        items: costItems
-      };
-    }).filter((costEntry: any) => costEntry.totalAmount > 0); // Only include entries with actual costs
-  }, [filteredSales, productsBySoul]);
-
+      })
+      .filter((c) => c.totalAmount > 0);
+  }, [filteredStockImports, partiesBySoul, productsBySoul]);
   return {
     totalRevenue,
     totalCosts,

@@ -278,8 +278,7 @@ function FinancialOverview({
             <div key={item.id || index} className="border rounded-lg p-3 bg-card shadow-sm">
               <div className="flex justify-between items-start mb-2">
                 <div className="font-medium text-foreground">
-                  <span className="font-semibold">Supplier:</span> {item.supplier}
-                </div>
+                  <span className="font-semibold">Supplier:</span> {item.supplier || "Unknown Supplier"}                </div>
                 <div className="text-right">
                   <div className="text-lg font-bold text-red-600">{formatCurrency(item.totalAmount)}</div>
                   <div className="text-xs text-muted-foreground">
