@@ -48,6 +48,13 @@ import {
 import { CardDescription } from "./ui/card-hover-effect";
 import { formatCurrency } from "@/lib/intl";
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
+import { Button } from "./ui/button";
+
 interface ReportsPageProps {
   slug: string;
 }
@@ -175,6 +182,8 @@ function ReportHeader({
   );
 }
 
+
+
 function FinancialOverview({
   data,
 }: { data: ReturnType<typeof useBusinessAnalytics> }) {
@@ -193,7 +202,25 @@ function FinancialOverview({
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Total Revenue
           </CardTitle>
-          <TrendingUp className="h-4 w-4 text-emerald-500" />
+          <Tooltip>
+            <TooltipTrigger >
+              <Info className="size-4 text-muted-foreground " />
+            </TooltipTrigger>
+            <TooltipContent className="w-80 p-4">
+              <div className="space-y-2">
+                <h4 className="font-semibold border-b pb-1 text-emerald-600">Revenue Breakdown</h4>
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">Gross Sales income</span>
+                  <span className="font-bold">{formatCurrency(data.totalRevenue)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Total earnings from all sales. This represents the "Top Line" income before any expenses are deducted.
+                </p>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+          <div className="flex-1" />
+          <TrendingUp className="h-4  w-4 text-emerald-500" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
@@ -206,6 +233,26 @@ function FinancialOverview({
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Total Costs
           </CardTitle>
+          <Tooltip>
+            <TooltipTrigger >
+              <Info className="size-4 text-muted-foreground " />
+            </TooltipTrigger>
+            <TooltipContent className="w-80 p-4">
+              <div className="space-y-2">
+                <h4 className="font-semibold border-b pb-1 text-red-600">Cost Breakdown</h4>
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">Inventory Purchases</span>
+                  <span className="font-bold">{formatCurrency(data.totalCosts)}</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Total expenditure for acquiring stock and business supplies. High costs relative to revenue may indicate low margins.
+                </p>
+              </div>
+
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="flex-1" />
           <TrendingDown className="h-4 w-4 text-red-500" />
         </CardHeader>
         <CardContent>
@@ -219,6 +266,38 @@ function FinancialOverview({
           <CardTitle className="text-sm font-medium text-muted-foreground">
             Net Profit
           </CardTitle>
+          <Tooltip>
+            <TooltipTrigger >
+              <Info className="size-4 text-muted-foreground " />
+            </TooltipTrigger>
+            <TooltipContent className="w-80 p-4">
+              <div className="space-y-3">
+                <h4 className="font-semibold border-b pb-1">Profitability Analysis</h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Total Revenue</span>
+                    <span>{formatCurrency(data.totalRevenue)}</span>
+                  </div>
+                  <div className="flex justify-between text-red-600">
+                    <span>Total Costs</span>
+                    <span>- {formatCurrency(data.totalCosts)}</span>
+                  </div>
+                  <div className="flex justify-between border-t pt-2 font-bold text-base">
+                    <span>Net Profit</span>
+                    <span className={data.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}>
+                      {formatCurrency(data.netProfit)}
+                    </span>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  The actual money remaining after all costs are paid.
+                </p>
+              </div>
+
+            </TooltipContent>
+          </Tooltip>
+
+          <div className="flex-1" />
           <DollarSign className="h-4 w-4 text-blue-500" />
         </CardHeader>
         <CardContent>
