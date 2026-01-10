@@ -283,15 +283,12 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
           }
         }
 
-        return [
-          `itm_${index}`,
-          {
-            product: item.product,
-            quantity: adjustedQuantity,
-            rate: item.unitPrice,
-            total: item.quantity * item.unitPrice
-          }
-        ];
+        return {
+          product: item.product,
+          quantity: adjustedQuantity,
+          rate: item.unitPrice,
+          total: item.quantity * item.unitPrice
+        };
       }) ?? [];
 
       const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
@@ -300,7 +297,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         type: "purchase",
         partyId: variables.party,
         issuedAt: variables.importDate,
-        items: Object.fromEntries(invoiceItems),
+        items: invoiceItems,
         subTotal: totalAmount,
         tax: 0,
         paidAmount: variables.paidAmount || 0,
@@ -990,7 +987,7 @@ function useReturnProductsSchema({ slug }: { slug: string }) {
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
   return salesItemSchema
     .extend({
-      productId: z.string().describe("Product")
+      product: z.string().describe("Product")
         .superRefine(fieldConfig({
           fieldType: "select",
           customData: {
@@ -1212,31 +1209,31 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
       });
 
       // Create corresponding invoice for trip products
-      const invoiceItems = Object.fromEntries(
-        variables.products?.map((item, index) => [
-          `itm_${index}`,
-          {
-            product: item.product,
-            quantity: item.quantity,
-            rate: item.unitPrice,
-            total: item.quantity * item.unitPrice
-          }
-        ]) ?? []
-      );
-
-      const totalAmount = variables.products?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
-
-      createInvoice({
-        type: "trip-dispatch",
-        partyId: variables.customerId,
-        issuedAt: variables.startTime,
-        items: invoiceItems,
-        subTotal: totalAmount,
-        tax: 0,
-        paidAmount: totalAmount,
-        paymentStatus: "pending" as any,
-        fiscalYear: calculateFiscalYear()
-      });
+      // const invoiceItems = Object.fromEntries(
+      //   variables.products?.map((item, index) => [
+      //     `itm_${index}`,
+      //     {
+      //       product: item.product,
+      //       quantity: item.quantity,
+      //       rate: item.unitPrice,
+      //       total: item.quantity * item.unitPrice
+      //     }
+      //   ]) ?? []
+      // );
+      //
+      // const totalAmount = variables.products?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
+      //
+      // createInvoice({
+      //   type: "trip-dispatch",
+      //   partyId: variables.customerId,
+      //   issuedAt: variables.startTime,
+      //   items: invoiceItems,
+      //   subTotal: totalAmount,
+      //   tax: 0,
+      //   paidAmount: totalAmount,
+      //   paymentStatus: "pending" as any,
+      //   fiscalYear: calculateFiscalYear()
+      // });
     },
     onUpdate(_, variables) {
       // Stock update logic for updates - we need to handle the difference between old and new quantities
@@ -1267,7 +1264,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                       <div className="text-center">Returned</div>
                     </div>
                     {row.original.products?.map((product, idx: number) => {
-                      const prod = productsBySoul.get(product["#"]);
+                      const prod = productsBySoul.get(product?._?.soul);
                       return (
                         <div key={idx} className="grid grid-cols-3 gap-2 text-sm">
                           <div>{prod?.title || "Unknown Product"}</div>
