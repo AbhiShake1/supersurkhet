@@ -963,10 +963,11 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
     previewOverrides: {
       partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || "-",
       items: (items) => {
-        const mapped = items.map((item: SalesItem) => ({
+        const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
         }))
+        if (!mapped) return
         mapped["#"] = items?.["#"]
         return mapped
       },
