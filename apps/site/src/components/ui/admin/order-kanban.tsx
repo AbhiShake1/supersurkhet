@@ -3,7 +3,7 @@ import type { AdminComponent } from ".";
 import type { Order } from "@/lib/schema";
 import { api } from "@/lib/api";
 import { useState } from "react";
-import { cn, recordToList } from "@/lib/utils";
+import { cn, recordToList, soulToId } from "@/lib/utils";
 import {
   Credenza,
   CredenzaBody,
@@ -14,6 +14,7 @@ import {
 } from "../credenza";
 import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
 import { Plus } from "lucide-react";
+import { formatCurrency } from "@/lib/intl";
 
 export const OrderKanban: AdminComponent = ({ slug }) => {
   return (
@@ -92,8 +93,9 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <span className="text-right font-semibold">Order ID:</span>
-                <span className="col-span-3">{order._?.soul}</span>
-              </div>
+                <span className="col-span-3">
+                  {soulToId(order._?.soul)}
+                </span>              </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <span className="text-right font-semibold">Items:</span>
                 <span className="col-span-3">
@@ -108,7 +110,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                           {menuItem?.name}
                         </span>
                         <span className="font-bold">
-                          ${(item.quantity * item.unitPrice)?.toFixed(2)}
+                          {formatCurrency(item.quantity * item.unitPrice)}
                         </span>
                       </div>
                     );
@@ -118,7 +120,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               {order.customerId && (
                 <div className="grid grid-cols-4 items-center gap-4">
                   <span className="text-right font-semibold">Customer ID:</span>
-                  <span className="col-span-3">{order.customerId}</span>
+                  <span className="col-span-3">{soulToId(order.customerId)}</span>
                 </div>
               )}
               {order.subTotal && (

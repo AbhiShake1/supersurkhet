@@ -15,6 +15,11 @@ export function recordToList<R extends Record<string, any>>(record: R) {
     >;
 }
 
+export function soulToId(soul?: string | null) {
+  if (!soul) return "";
+  return soul.split("/").pop() ?? "";
+}
+
 // Function to get app icon from business data
 // Returns base64 image if available, otherwise returns a default icon based on business type
 export function getAppIcon(business: Business): string | null {
