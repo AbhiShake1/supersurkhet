@@ -140,10 +140,11 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     previewOverrides: {
       party: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
       items: (items) => {
-        const mapped = items.map((item: SalesItem) => ({
+        const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
         }))
+        if (!mapped) return
         mapped["#"] = items?.["#"]
         return mapped
       },
