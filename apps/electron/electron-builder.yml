@@ -1,0 +1,17 @@
+appId: com.supersurkhet.desktop
+productName: SuperSurkhet
+directories:
+  output: release
+files:
+  - dist/**/*
+  - package.json
+publish:
+  provider: github
+  owner: AbhiShake1
+  repo: supersurkhet
+win:
+  target: nsis
+mac:
+  target: dmg
+linux:
+  target: AppImage
