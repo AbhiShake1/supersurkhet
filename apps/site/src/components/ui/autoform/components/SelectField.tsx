@@ -23,7 +23,6 @@ export const SelectField: React.FC<AutoFormFieldProps> = ({
   const options = (field.fieldConfig?.customData?.options || field.options) as typeof field.options
   const form = useFormContext()
   const [innerValue, setInnerValue] = useState(value || field.default)
-  console.log({ options })
 
   return <Combobox
     {...props}
