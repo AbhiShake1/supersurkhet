@@ -9,13 +9,7 @@ import { getNestedZodShape } from "@gta/react-hooks";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "@tanstack/react-router";
 import _ from "lodash";
-import {
-  GripVertical,
-  QrCodeIcon,
-  BarChart3,
-  type LucideIcon,
-  Sigma,
-} from "lucide-react";
+import { GripVertical, QrCodeIcon, BarChart3, type LucideIcon, Sigma } from "lucide-react";
 import type { ReactNode } from "react";
 import { AutoTable, type AutoTableProps } from "../auto-table";
 import { Badge } from "../ui/badge";
@@ -62,40 +56,31 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
-  const tabsWithHome = useMemo(
-    () => [
-      {
-        title: "Dashboard",
-        icon: BarChart3,
-        children: (
-          <AdminDashboard
-            slug={basePath}
-            businessType={business.businessType}
-          />
-        ),
-      },
-      ...tabs,
-      {
-        title: "QR Management",
-        icon: QrCodeIcon,
-        children: <QRCodePage slug={basePath} />,
-        group: "System Configuration",
-      },
-      {
-        title: "Website UI",
-        icon: Sigma,
-        children: <CustomUiBuilderPage slug={basePath} />,
-        group: "System Configuration",
-      },
-    ],
-    [tabs],
-  );
+  const tabsWithHome = useMemo(() => [
+    {
+      title: "Dashboard",
+      icon: BarChart3,
+      children: <AdminDashboard slug={basePath} businessType={business.businessType} />,
+    },
+    ...tabs,
+    {
+      title: "QR Management",
+      icon: QrCodeIcon,
+      children: <QRCodePage slug={basePath} />,
+      group: "System Configuration"
+    },
+    {
+      title: "Website UI",
+      icon: Sigma,
+      children: <CustomUiBuilderPage slug={basePath} />,
+      group: "System Configuration"
+    }
+  ], [tabs]);
 
   // @ts-expect-error
   const tab = (search.tab as string) ?? tabsWithHome[0].title;
 
-  const currentItem =
-    tabsWithHome.find((t) => t.title === tab) ?? tabsWithHome?.[0];
+  const currentItem = tabsWithHome.find((t) => t.title === tab) ?? tabsWithHome?.[0];
 
   function _canGetComponents() {
     return !!currentItem;
@@ -111,9 +96,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
         const components = await currentSchema.components();
         const mappedNodes = components.map(async (c) => ({
           ...c,
-          component: await c.component({
-            slug: currentItem.slug ?? basePath,
-          }),
+          component: await c.component({ slug: currentItem.slug ?? basePath }),
         }));
         return Promise.all(mappedNodes);
       }
@@ -132,21 +115,15 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
 
   if (!currentItem) {
-    return <NotFound />;
+    return <NotFound />
   }
 
   return (
     <SidebarProvider>
-      <CollapsibleSidebar
-        tabs={tabsWithHome}
-        businessName={business?.name}
-        slug={business?.basePath}
-      />
+      <CollapsibleSidebar tabs={tabsWithHome} businessName={business?.name} slug={business?.basePath} />
       <SidebarInset className="min-w-0 flex flex-col">
         <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-12 sm:h-16 shrink-0 items-center gap-0.5 sm:gap-2 border-b transition-[width,height] ease-linear px-0.5 sm:px-4">
-          <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">
-            {currentItem.title}
-          </h1>
+          <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">{currentItem.title}</h1>
 
           {/* Search and Action Bar */}
           <div className="ml-auto flex items-center gap-0.5 sm:gap-2 px-2">
@@ -163,9 +140,15 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
           {"children" in currentItem ? (
             currentItem.children
           ) : "parsedSchema" in currentItem ? (
-            <AutoTable {...currentItem} slug={currentItem.slug ?? basePath} />
+            <AutoTable
+              {...currentItem}
+              slug={currentItem.slug ?? basePath}
+            />
           ) : !components?.length ? (
-            <AutoTable {...currentItem} slug={currentItem.slug ?? basePath} />
+            <AutoTable
+              {...currentItem}
+              slug={currentItem.slug ?? basePath}
+            />
           ) : (
             <Tabs
               key={tab}
@@ -174,7 +157,9 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 components[0]?.name ??
                 "table"
               }
-              className={cn("flex flex-1 flex-col")}
+              className={cn(
+                "flex flex-1 flex-col",
+              )}
               onValueChange={(value) => {
                 localStorage.setItem(`tab-#${basePath}-${tab}`, value);
               }}
@@ -187,7 +172,9 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                   </TabsTrigger>
                 ))}
               </TabsList>
-              <TabsContent value="table" className={cn("flex-1 mt-1 sm:mt-4")}>
+              <TabsContent value="table" className={cn(
+                "flex-1 mt-1 sm:mt-4",
+              )}>
                 <Card className="border rounded-lg shadow-sm overflow-hidden">
                   <div className="p-0.5 sm:p-4">
                     <AutoTable
@@ -198,13 +185,11 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 </Card>
               </TabsContent>
               {components.map(({ component, name }) => (
-                <TabsContent
-                  value={name}
-                  key={name}
-                  className="flex-1 mt-1 sm:mt-4"
-                >
+                <TabsContent value={name} key={name} className="flex-1 mt-1 sm:mt-4">
                   <Card className="border rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-0.5 sm:p-4">{component}</div>
+                    <div className="p-0.5 sm:p-4">
+                      {component}
+                    </div>
                   </Card>
                 </TabsContent>
               ))}
@@ -254,10 +239,7 @@ export function AutoKanban<K extends SchemaKeys>({
       getItemValue={(item) => item._?.soul ?? ""}
     >
       <Kanban.Board className="grid auto-rows-fr grid-cols-3">
-        {Object.keys(
-          schema.shape[groupKey].Values ??
-          schema.shape[groupKey]._def.innerType.Values,
-        ).map((status) => (
+        {Object.keys(schema.shape[groupKey].Values ?? schema.shape[groupKey]._def.innerType.Values).map((status) => (
           <KanbanColumn
             key={status}
             value={status}
