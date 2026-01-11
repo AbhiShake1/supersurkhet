@@ -1,4 +1,5 @@
 import "@/lib/monkey-patches";
+import { VibeKanbanWebCompanion } from "vibe-kanban-web-companion";
 import {
   HeadContent,
   Outlet,
@@ -285,6 +286,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       </style>
       <Toaster richColors />
       <Outlet />
+      <VibeKanbanWebCompanion />
       <TanStackRouterDevtools position="bottom-right" />
       <TanstackQueryLayout />
     </RootDocument>

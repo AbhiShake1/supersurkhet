@@ -1053,10 +1053,11 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
     previewOverrides: {
       vehicleId: (vehicleId) => vehiclesBySoul.get(vehicleId)?.name ?? "-",
       products: (items) => {
-        const mapped = items.map((item: SalesItem) => ({
+        const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
         }))
+        if (!mapped) return
         mapped["#"] = items?.["#"]
         return mapped
       },
