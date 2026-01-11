@@ -2,7 +2,7 @@ import { AutoKanban } from "@/components/auto-admin";
 import type { AdminComponent } from ".";
 import type { Order } from "@/lib/schema";
 import { api } from "@/lib/api";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn, recordToList, soulToId } from "@/lib/utils";
 import {
   Credenza,
@@ -38,10 +38,12 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
 };
 
 function OrderCard({ order, slug }: { order: Order; slug: string }) {
+  const { data: customers = [] } = api.customer.useGet({ keys: [slug] })
   const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
+  const customerById = useMemo(() => new Map(customers.map(c => [c._?.soul, c])), [])
   const [open, setOpen] = useState(false);
   if (!order?.items) return null;
-  const orderItems = recordToList(order.items);
+  const orderItems = order.items;
 
   function getBackgroundProps() {
     switch (order.orderStatus) {
@@ -74,6 +76,11 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
           className:
             "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
         };
+
+      default:
+        return {
+          className: ""
+        }
     }
   }
 
@@ -95,7 +102,8 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                 <span className="text-right font-semibold">Order ID:</span>
                 <span className="col-span-3">
                   {soulToId(order._?.soul)}
-                </span>              </div>
+                </span>
+              </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <span className="text-right font-semibold">Items:</span>
                 <span className="col-span-3">
@@ -119,9 +127,8 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               </div>
               {order.customerId && (
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <span className="text-right font-semibold">Customer ID:</span>
-                  <span className="col-span-3">{soulToId(order.customerId)}</span>
-                </div>
+                  <span className="text-right font-semibold">Customer:</span>
+                  <span className="col-span-3">{customerById.get(order.customerId)?.name}</span>                </div>
               )}
               {order.subTotal && (
                 <div className="grid grid-cols-4 items-center gap-4">
