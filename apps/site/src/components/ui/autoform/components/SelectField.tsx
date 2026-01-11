@@ -8,6 +8,8 @@ import {
 import type { AutoFormFieldProps } from "@autoform/react";
 import type React from "react";
 import { useFormContext } from "react-hook-form";
+import { Combobox } from "../../combobox";
+import { useState } from "react";
 
 export const SelectField: React.FC<AutoFormFieldProps> = ({
   field,
@@ -20,32 +22,28 @@ export const SelectField: React.FC<AutoFormFieldProps> = ({
   const { key, ...props } = inputProps;
   const options = (field.fieldConfig?.customData?.options || field.options) as typeof field.options
   const form = useFormContext()
+  const [innerValue, setInnerValue] = useState(value || field.default)
+  console.log({ options })
 
-  return (
-    <Select
-      {...props}
-      onValueChange={(value) => {
-        field.fieldConfig?.customData?.onValueChange?.(value, path, form)
-        const syntheticEvent = {
-          target: {
-            value,
-            name: path.join("."),
-          },
-        } as React.ChangeEvent<HTMLInputElement>;
-        props.onChange(syntheticEvent);
-      }}
-      defaultValue={field.default ?? value}
-    >
-      <SelectTrigger id={id} className={error ? "border-destructive" : ""}>
-        <SelectValue placeholder="Select an option" />
-      </SelectTrigger>
-      <SelectContent>
-        {(options || []).map(([key, label]) => (
-          <SelectItem key={key} value={key}>
-            {label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
+  return <Combobox
+    {...props}
+    options={options?.map(([value, label]) => ({
+      value,
+      label
+    }))}
+    value={innerValue}
+    onValueChange={(value) => {
+      setInnerValue(value)
+      field.fieldConfig?.customData?.onValueChange?.(value, path, form)
+      const syntheticEvent = {
+        target: {
+          value,
+          name: path.join("."),
+        },
+      } as React.ChangeEvent<HTMLInputElement>;
+      props.onChange(syntheticEvent);
+    }}
+    className={error ? "border-destructive" : ""}
+    disabled={props.disabled}
+  />
 };
