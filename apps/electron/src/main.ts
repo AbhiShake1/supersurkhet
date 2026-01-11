@@ -1,4 +1,12 @@
-import { app, BrowserWindow, shell, dialog } from "electron";
+import {
+	app,
+	BrowserWindow,
+	shell,
+	dialog,
+	Tray,
+	Menu,
+	nativeImage,
+} from "electron";
 import * as path from "node:path";
 import Store from "electron-store";
 import { autoUpdater } from "electron-updater";
@@ -20,6 +28,8 @@ const store = new Store<{
 });
 
 let mainWindow: BrowserWindow | null = null;
+let tray: Tray | null = null;
+let isQuitting = false;
 
 const BASE_URL = "https://surkhet.app";
 
@@ -40,7 +50,7 @@ const gotTheLock = app.requestSingleInstanceLock();
 if (!gotTheLock) {
 	app.quit();
 } else {
-	app.on("second-instance", (event, commandLine, workingDirectory) => {
+	app.on("second-instance", (_event, commandLine, _workingDirectory) => {
 		// Someone tried to run a second instance, we should focus our window.
 		if (mainWindow) {
 			if (mainWindow.isMinimized()) mainWindow.restore();
@@ -53,7 +63,16 @@ if (!gotTheLock) {
 		}
 	});
 
-	app.on("ready", createWindow);
+	app.on("ready", () => {
+		createWindow();
+		createTray();
+		app.setLoginItemSettings({
+			openAtLogin: true,
+			openAsHidden: true,
+			path: process.execPath,
+			args: ["--hidden"],
+		});
+	});
 }
 
 // Handle macOS open-url event
@@ -100,6 +119,49 @@ function handleDeepLink(url: string) {
 	}
 }
 
+function createTray() {
+	const iconPath = path.join(__dirname, "../assets/icon.png");
+	const icon = nativeImage
+		.createFromPath(iconPath)
+		.resize({ width: 16, height: 16 });
+	tray = new Tray(icon);
+	tray.setToolTip("SuperSurkhet");
+
+	const contextMenu = Menu.buildFromTemplate([
+		{
+			label: "Show App",
+			click: () => {
+				if (mainWindow) {
+					mainWindow.show();
+					mainWindow.focus();
+				} else {
+					createWindow();
+				}
+			},
+		},
+		{
+			label: "Quit",
+			click: () => {
+				isQuitting = true;
+				app.quit();
+			},
+		},
+	]);
+
+	tray.setContextMenu(contextMenu);
+
+	tray.on("double-click", () => {
+		if (mainWindow) {
+			if (mainWindow.isVisible()) {
+				mainWindow.hide();
+			} else {
+				mainWindow.show();
+				mainWindow.focus();
+			}
+		}
+	});
+}
+
 function createWindow() {
 	const { width, height, x, y } = store.get("windowBounds");
 
@@ -113,9 +175,19 @@ function createWindow() {
 			nodeIntegration: false,
 			contextIsolation: true,
 			sandbox: true,
+			backgroundThrottling: false,
 		},
 		title: "SuperSurkhet",
 		backgroundColor: "#ffffff",
+	});
+
+	// Handle window close (minimize to tray instead of quit)
+	mainWindow.on("close", (event) => {
+		if (!isQuitting) {
+			event.preventDefault();
+			mainWindow?.hide();
+			return false;
+		}
 	});
 
 	// Set custom user agent to identify Electron app
@@ -128,7 +200,11 @@ function createWindow() {
 
 	// Show window when ready to avoid flickering
 	mainWindow.once("ready-to-show", () => {
-		mainWindow?.show();
+		const { wasOpenedAsHidden } = app.getLoginItemSettings();
+		const isHiddenArg = process.argv.includes("--hidden");
+		if (!wasOpenedAsHidden && !isHiddenArg) {
+			mainWindow?.show();
+		}
 	});
 
 	// Save window bounds on resize/move
@@ -141,14 +217,14 @@ function createWindow() {
 	mainWindow.on("move", saveBounds);
 
 	// Persist current URL
-	mainWindow.webContents.on("did-navigate", (event, url) => {
+	mainWindow.webContents.on("did-navigate", (_event, url) => {
 		// Only save if it's within our domain scope (optional, but good practice)
 		if (url.startsWith(BASE_URL)) {
 			store.set("lastUrl", url);
 		}
 	});
 
-	mainWindow.webContents.on("did-navigate-in-page", (event, url) => {
+	mainWindow.webContents.on("did-navigate-in-page", (_event, url) => {
 		if (url.startsWith(BASE_URL)) {
 			store.set("lastUrl", url);
 		}
@@ -207,20 +283,26 @@ autoUpdater.on("update-downloaded", () => {
 			buttons: ["Restart", "Later"],
 		})
 		.then((returnValue) => {
-			if (returnValue.response === 0) autoUpdater.quitAndInstall();
+			if (returnValue.response === 0) {
+				isQuitting = true;
+				autoUpdater.quitAndInstall();
+			}
 		});
 });
 
-app.on("ready", createWindow);
-
 app.on("window-all-closed", () => {
-	if (process.platform !== "darwin") {
-		app.quit();
-	}
+	// Do not quit when all windows are closed
+	// We want the app to keep running in the background
+});
+
+app.on("before-quit", () => {
+	isQuitting = true;
 });
 
 app.on("activate", () => {
 	if (mainWindow === null) {
 		createWindow();
+	} else {
+		mainWindow.show();
 	}
 });

@@ -1,7 +1,7 @@
 {
 	"name": "supersurkhet-desktop",
 	"productName": "SuperSurkhet",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "SuperSurkhet Desktop App",
 	"main": "dist/main.js",
 	"scripts": {

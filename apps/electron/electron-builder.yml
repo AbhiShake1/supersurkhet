@@ -5,6 +5,7 @@ directories:
 files:
   - dist/**/*
   - package.json
+  - assets/**/*
 publish:
   provider: github
   owner: AbhiShake1
