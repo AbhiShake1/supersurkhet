@@ -111,7 +111,7 @@ const _ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
   const fullKey = (value as any)?.["#"] as string;
   if (!fullKey) return null;
   const arraySchema: z.ZodArray<any> = schema instanceof z.ZodEffects ? schema.innerType() : schema;
-  const parsedSchema = arraySchema._def.type
+  const parsedSchema = arraySchema._def.type || arraySchema._def.innerType
   const { openDialog } = useDrawer()
 
   return <Button

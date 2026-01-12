@@ -182,7 +182,7 @@ export function AutoTable<T extends SchemaKeys>({
     return getSchema(zodShape);
   })()
 
-  const schema = props.extender?.(_schema) ?? _schema.extend(props.fieldOverrides ?? {});
+  const schema = props.extender?.(_schema) ?? _schema.extend?.(props.fieldOverrides ?? {}) ?? _schema._def.type?.extend?.(props.fieldOverrides ?? {}) ?? _schema._def.innerType?.extend?.(props.fieldOverrides ?? {}) ?? _schema;
   const [rowAction, setRowAction] = React.useState<DataTableRowAction<
     NestedSchemaType<T>
   > | null>(null);

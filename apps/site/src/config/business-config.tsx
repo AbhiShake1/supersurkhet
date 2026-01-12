@@ -44,6 +44,7 @@ import { formatCurrency } from "@/lib/intl";
 import type { SchemaKeys } from "@gta/react-hooks";
 import { useDialog } from "@/contexts/dialog-context";
 import { Button } from "@/components/ui/button";
+import { AutoFormSubmit } from "@/components/ui/auto-form";
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoTableTab<K>
@@ -1425,7 +1426,9 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                       const closeBtn = document.querySelector('[data-state="open"] [data-dismiss]');
                       if (closeBtn) (closeBtn as HTMLElement).click();
                     }}
-                  />
+                  >
+                    <AutoFormSubmit className="w-full">Mark Return</AutoFormSubmit>
+                  </AutoForm>
                 </div>
               </CredenzaContent>
             </Credenza>
