@@ -987,16 +987,85 @@ export function useVehicleConfig({ slug }: { slug: string }): AutoTableTab<"vehi
 
 function useReturnProductsSchema({ slug }: { slug: string }) {
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
+
+  const productsBySoul = useMemo(() => new Map(
+    products
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [products]);
+
+  function getDefaultUnitField() {
+    return z.string().optional().describe("Unit").superRefine(fieldConfig({
+      inputProps: {
+        disabled: true,
+        placeholder: "Select product for unit",
+        className: "border-none"
+      }
+    }))
+  }
+
+  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
+
+  useEffect(() => {
+    return () => setUnitField(getDefaultUnitField())
+  }, [])
+
   return salesItemSchema
     .extend({
       product: z.string().describe("Product")
         .superRefine(fieldConfig({
           fieldType: "select",
           customData: {
+
             options: products.filter(p => !!p?._?.soul)
-              .map(p => [p._!.soul!, p.title]),
+
+              .map(p => [p._!.soul!, p.title]), onValueChange: (val, path, form) => {
+                const product = productsBySoul.get(val)
+                if (!product) return
+                const [itemsKey, index] = path
+
+                form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+
+                if (product.unit) {
+                  const [unitType, piecesPerUnit] = product.unit.split(':');
+                  if (piecesPerUnit) {
+                    setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                      fieldType: "unit",
+                      customData: {
+                        onlyAllow: [unitType, "piece"],
+                        configDisabled: true,
+                        onValueChange(value, path, form) {
+                          const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
+                          const [, quantityPerUnit] = value?.split(':') ?? []
+                          const [itemsKey, index] = path
+
+                          // if quantity exists in the unit, we dont want to use it as its the compound unit
+                          if (quantityPerUnit) {
+                            if (product.sellingPrice)
+                              form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+                          } else {
+                            if (productQuantityPerUnit && product.sellingPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
+                              form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice / Number(productQuantityPerUnit))
+                            }
+                          }
+                        },
+                      },
+                    })))
+                  } else {
+                    setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                      fieldType: "unit",
+                      customData: {
+                        onlyAllow: [unitType],
+                      },
+                    })))
+                  }
+                  form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+                }
+                refreshPaidAmount(form)
+              }
           },
         })),
+      unit: unitField,
       quantity: z.number({ coerce: true }).int().nonnegative()
         .describe("Quantity Returned")
         .superRefine(fieldConfig({
@@ -1062,7 +1131,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
         return mapped
       },
       returnedProducts: (items) => {
-        const mapped = items.map((item: SalesItem) => ({
+        const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
         }))
