@@ -15,6 +15,7 @@ import {
 import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
 import { Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/intl";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
 
 export const OrderKanban: AdminComponent = ({ slug }) => {
   return (
@@ -233,8 +234,45 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               .filter((m) => !!m)
               .join(", ")}
           </span>
+          <div className="flex items-center justify-between gap-2">
+            {/* Truncated items preview */}
+            <span className="line-clamp-1 font-medium text-sm">
+              {orderItems.slice(0, 3)
+                .map((i) => `${i.quantity}x ${productById.get(i.product)?.title ?? "Unknown"}`)
+                .join(", ")}
+              {orderItems.length > 3 ? ` ...and ${orderItems.length - 3} more` : ""}
+            </span>
+
+            <Tooltip>
+              <TooltipTrigger>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-200 text-green-800 cursor-pointer">
+                  {formatCurrency(order.paidAmount ?? 0)}
+                </span>
+              </TooltipTrigger>
+
+              <TooltipContent className="max-w-xs">
+                <div className="flex flex-col gap-2 justify-between w-full">
+                  {orderItems.map((item) => (
+                    <div
+                      key={item._?.soul}
+                    >
+                      <div className=" flex justify-between gap-2">
+                        <span className="font-medium">
+                          {item.quantity}x {productById.get(item.product)?.title ?? "Unknown"}
+                        </span>
+                        <span className="font-bold">
+                          {formatCurrency(item.quantity * item.unitPrice)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+
+          </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }
