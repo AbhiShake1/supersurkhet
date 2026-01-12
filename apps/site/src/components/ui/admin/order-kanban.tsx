@@ -40,7 +40,14 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
 function OrderCard({ order, slug }: { order: Order; slug: string }) {
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] })
   const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
-  const customerById = useMemo(() => new Map(customers.map(c => [c._?.soul, c])), [])
+  const customerById = useMemo(() => new Map(customers.map(c => [c._?.soul, c])), []);
+  const { data: products = [] } = api.product.useGet({ keys: [slug] });
+
+  const productById = useMemo(
+    () => new Map(products.map((p) => [p._?.soul, p])),
+    [products]
+  );
+
   const [open, setOpen] = useState(false);
   if (!order?.items) return null;
   const orderItems = order.items;
@@ -115,7 +122,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                       <div key={item._?.soul} className="flex justify-between">
                         <span>
                           <span className="font-bold">{item.quantity}x</span>{" "}
-                          {menuItem?.name}
+                          {productById.get(item.product)?.title}
                         </span>
                         <span className="font-bold">
                           {formatCurrency(item.quantity * item.unitPrice)}
