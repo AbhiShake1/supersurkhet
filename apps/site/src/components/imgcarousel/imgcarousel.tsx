@@ -36,7 +36,10 @@ export const CarouselFieldRegistry = z.object({
   discountPercentage: z.number().min(0).max(100).optional(),
   discountAmount: z.number().positive().optional(),
   discountText: z.string().optional(),
-  validUntil: z.string().datetime().optional(),
+  validUntil: z.string()
+                // .datetime()
+                .datetime({offset: true})
+                .optional(),
   rating: z.number().min(0).max(5).optional(),
   reviewCount: z.number().int().nonnegative().optional(),
   isFeatured: z.boolean().optional(),

@@ -80,25 +80,29 @@ export const paymentTransactionSchema = baseListingSchema
 			.superRefine(fieldConfig({ fieldType: "record" })),
 		processedAt: z
 			.string()
-			.datetime()
+			// .datetime()
+			.datetime({offset: true})
 			.optional()
 			.describe("Timestamp when payment was processed")
 			.superRefine(fieldConfig({ fieldType: "datetime" })),
 		completedAt: z
 			.string()
-			.datetime()
+			// .datetime()
+			.datetime({offset: true})
 			.optional()
 			.describe("Timestamp when payment was completed")
 			.superRefine(fieldConfig({ fieldType: "datetime" })),
 		cancelledAt: z
 			.string()
-			.datetime()
+			// .datetime()
+			.datetime({offset: true})
 			.optional()
 			.describe("Timestamp when payment was cancelled")
 			.superRefine(fieldConfig({ fieldType: "datetime" })),
 		refundedAt: z
 			.string()
-			.datetime()
+			// .datetime()
+			.datetime({offset: true})
 			.optional()
 			.describe("Timestamp when payment was refunded")
 			.superRefine(fieldConfig({ fieldType: "datetime" })),
