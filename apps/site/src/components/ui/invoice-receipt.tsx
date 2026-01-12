@@ -40,7 +40,8 @@ export function InvoiceReceipt({
     pending: { color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200", icon: AlertCircle, label: "Pending" },
   }
 
-  const statusConfig = paymentStatusConfig[invoice.paymentStatus]
+  // omit out (partial rs.xyz)
+  const statusConfig = paymentStatusConfig[invoice.paymentStatus.split(' ')[0] as keyof typeof paymentStatusConfig] ?? paymentStatusConfig.pending
   const StatusIcon = statusConfig.icon
 
   return (
