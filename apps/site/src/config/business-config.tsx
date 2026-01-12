@@ -1135,6 +1135,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
         }))
+        if (!mapped) return
         mapped["#"] = items?.["#"]
         return mapped
       },
