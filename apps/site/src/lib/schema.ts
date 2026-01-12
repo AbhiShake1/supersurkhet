@@ -938,7 +938,10 @@ export const featureSchema = createSchema({
   trip: {
     schema: z.object({
       vehicleId: z.string().describe("Vehicle ID"),
-      dispatchTime: z.string().datetime().describe("Dispatch Time")
+      dispatchTime: z.string()
+        .datetime({offset: true})
+        // .datetime()
+        .describe("Dispatch Time")
         .default(() => new Date().toISOString())
         .superRefine(fieldConfig({ fieldType: "datetime" })),
       returnTime: z.string().optional().describe("Return Time")
