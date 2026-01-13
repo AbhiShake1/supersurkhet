@@ -23,7 +23,7 @@ import {
 import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
 import type { BusinessType } from "@/lib/schema";
 import type { AutoTableTab } from "@/components/auto-admin";
-import { salesItemSchema, type Sale, type StockImport } from "@/lib/schemas/sales";
+import { salesItemSchema, type Sale, type SalesItem, type StockImport } from "@/lib/schemas/sales";
 import z from "zod";
 import { AutoForm, fieldConfig } from "@/components/ui/autoform";
 import { api } from "@/lib/api";
@@ -44,6 +44,7 @@ import { formatCurrency } from "@/lib/intl";
 import type { SchemaKeys } from "@gta/react-hooks";
 import { useDialog } from "@/contexts/dialog-context";
 import { Button } from "@/components/ui/button";
+import { AutoFormSubmit } from "@/components/ui/auto-form";
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoTableTab<K>
@@ -60,7 +61,7 @@ function calculateFiscalYear() {
 
 export type TransactionForm = UseFormReturn<StockImport | Sale>
 
-function calculateTotalCost(form: TransactionForm) {
+function calculateTotalCost(form: UseFormReturn) {
   const formValues = form.getValues()
   if (!formValues?.items?.length) return 0
 
@@ -74,7 +75,7 @@ function getPaymentStatus(paidAmount: number, totalCost: number) {
   return `partial (${formatCurrency(totalCost - paidAmount)} to pay)`
 }
 
-function refreshPaidAmount(form: TransactionForm) {
+function refreshPaidAmount(form: UseFormReturn) {
   const totalCost = calculateTotalCost(form)
   // const [,a] = formValues
   if (!totalCost) return
@@ -139,6 +140,15 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     }),
     previewOverrides: {
       party: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
+      items: (items) => {
+        const mapped = items?.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        if (!mapped) return
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     },
     fieldOverrides: {
       party: z.string().describe("Party").superRefine(fieldConfig({
@@ -275,15 +285,12 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
           }
         }
 
-        return [
-          `itm_${index}`,
-          {
-            product: item.product,
-            quantity: adjustedQuantity,
-            rate: item.unitPrice,
-            total: item.quantity * item.unitPrice
-          }
-        ];
+        return {
+          product: item.product,
+          quantity: adjustedQuantity,
+          rate: item.unitPrice,
+          total: item.quantity * item.unitPrice
+        };
       }) ?? [];
 
       const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
@@ -292,7 +299,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         type: "purchase",
         partyId: variables.party,
         issuedAt: variables.importDate,
-        items: Object.fromEntries(invoiceItems),
+        items: invoiceItems,
         subTotal: totalAmount,
         tax: 0,
         paidAmount: variables.paidAmount || 0,
@@ -430,6 +437,14 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
     slug,
     previewOverrides: {
       customerId: (customerId) => customersBySoul.get(customerId)?.name ?? "-",
+      items: (items) => {
+        const mapped = items.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     },
     formSchemaTransformer: (schema) => schema.superRefine((sale, ctx) => {
       if (!sale.paidAmount) return
@@ -859,40 +874,40 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
       });
     },
     onUpdate(prevVariables, newVariables) {
-      // Handle status change from pending/cancelled to done - deduct products
-      if (prevVariables.orderStatus !== "done" && newVariables.orderStatus === "done") {
-        // Deduct products from stock when order status changes to done
-        newVariables.items?.forEach((item: any) => {
-          const product = productsBySoul.get(item.product);
-          if (product && product._?.soul) {
-            let adjustedQuantity = item.quantity;
-            if (product.unit && product.unit.includes(':')) {
-              const [unitType, piecesPerUnit] = product.unit.split(':');
-              if (item.unit === unitType) {
-                adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
-              }
-            }
-            updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
-          }
-        });
-      }
-      // Handle status change from done to cancelled - add products back to stock
-      else if (prevVariables.orderStatus === "done" && newVariables.orderStatus === "cancelled") {
-        // Add products back to stock when order status changes from done to cancelled
-        prevVariables.items?.forEach((item: any) => {
-          const product = productsBySoul.get(item.product);
-          if (product && product._?.soul) {
-            let adjustedQuantity = item.quantity;
-            if (product.unit && product.unit.includes(':')) {
-              const [unitType, piecesPerUnit] = product.unit.split(':');
-              if (item.unit === unitType) {
-                adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
-              }
-            }
-            updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity + adjustedQuantity });
-          }
-        });
-      }
+      // // Handle status change from pending/cancelled to done - deduct products
+      // if (prevVariables.orderStatus !== "done" && newVariables.orderStatus === "done") {
+      //   // Deduct products from stock when order status changes to done
+      //   newVariables.items?.forEach((item: any) => {
+      //     const product = productsBySoul.get(item.product);
+      //     if (product && product._?.soul) {
+      //       let adjustedQuantity = item.quantity;
+      //       if (product.unit && product.unit.includes(':')) {
+      //         const [unitType, piecesPerUnit] = product.unit.split(':');
+      //         if (item.unit === unitType) {
+      //           adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+      //         }
+      //       }
+      //       updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
+      //     }
+      //   });
+      // }
+      // // Handle status change from done to cancelled - add products back to stock
+      // else if (prevVariables.orderStatus === "done" && newVariables.orderStatus === "cancelled") {
+      //   // Add products back to stock when order status changes from done to cancelled
+      //   prevVariables.items?.forEach((item: any) => {
+      //     const product = productsBySoul.get(item.product);
+      //     if (product && product._?.soul) {
+      //       let adjustedQuantity = item.quantity;
+      //       if (product.unit && product.unit.includes(':')) {
+      //         const [unitType, piecesPerUnit] = product.unit.split(':');
+      //         if (item.unit === unitType) {
+      //           adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+      //         }
+      //       }
+      //       updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity + adjustedQuantity });
+      //     }
+      //   });
+      // }
     },
   }
 }
@@ -900,6 +915,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
 export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"invoice"> {
   const { data: products = [] } = api.product.useGet({ keys: [slug] })
   const { data: parties = [] } = api.party.useGet({ keys: [slug] })
+  const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
@@ -910,6 +926,12 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   ), [parties])
+  const customersBySoul = useMemo(() => new Map(
+    customers
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [customers])
+
   return {
     schema: "invoice",
     title: "Invoices",
@@ -920,7 +942,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
     actions: ({ row }) => {
       const partyId = row.original.partyId
       if (!partyId) return null
-      const party = partiesBySoul.get(partyId)
+      const party = partiesBySoul.get(partyId) || customersBySoul.get(partyId);
       if (!party) return null
       return (
         <DropdownMenuItem onSelect={e => e.preventDefault()}>
@@ -940,7 +962,16 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
       );
     },
     previewOverrides: {
-      partyId: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
+      partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || "-",
+      items: (items) => {
+        const mapped = items?.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        if (!mapped) return
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     }
   }
 }
@@ -957,16 +988,85 @@ export function useVehicleConfig({ slug }: { slug: string }): AutoTableTab<"vehi
 
 function useReturnProductsSchema({ slug }: { slug: string }) {
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
+
+  const productsBySoul = useMemo(() => new Map(
+    products
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  ), [products]);
+
+  function getDefaultUnitField() {
+    return z.string().optional().describe("Unit").superRefine(fieldConfig({
+      inputProps: {
+        disabled: true,
+        placeholder: "Select product for unit",
+        className: "border-none"
+      }
+    }))
+  }
+
+  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
+
+  useEffect(() => {
+    return () => setUnitField(getDefaultUnitField())
+  }, [])
+
   return salesItemSchema
     .extend({
-      productId: z.string().describe("Product")
+      product: z.string().describe("Product")
         .superRefine(fieldConfig({
           fieldType: "select",
           customData: {
+
             options: products.filter(p => !!p?._?.soul)
-              .map(p => [p._!.soul!, p.title]),
+
+              .map(p => [p._!.soul!, p.title]), onValueChange: (val, path, form) => {
+                const product = productsBySoul.get(val)
+                if (!product) return
+                const [itemsKey, index] = path
+
+                form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+
+                if (product.unit) {
+                  const [unitType, piecesPerUnit] = product.unit.split(':');
+                  if (piecesPerUnit) {
+                    setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                      fieldType: "unit",
+                      customData: {
+                        onlyAllow: [unitType, "piece"],
+                        configDisabled: true,
+                        onValueChange(value, path, form) {
+                          const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
+                          const [, quantityPerUnit] = value?.split(':') ?? []
+                          const [itemsKey, index] = path
+
+                          // if quantity exists in the unit, we dont want to use it as its the compound unit
+                          if (quantityPerUnit) {
+                            if (product.sellingPrice)
+                              form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+                          } else {
+                            if (productQuantityPerUnit && product.sellingPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
+                              form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice / Number(productQuantityPerUnit))
+                            }
+                          }
+                        },
+                      },
+                    })))
+                  } else {
+                    setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                      fieldType: "unit",
+                      customData: {
+                        onlyAllow: [unitType],
+                      },
+                    })))
+                  }
+                  form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+                }
+                refreshPaidAmount(form)
+              }
           },
         })),
+      unit: unitField,
       quantity: z.number({ coerce: true }).int().nonnegative()
         .describe("Quantity Returned")
         .superRefine(fieldConfig({
@@ -1022,6 +1122,24 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
     group: "Logistics",
     previewOverrides: {
       vehicleId: (vehicleId) => vehiclesBySoul.get(vehicleId)?.name ?? "-",
+      products: (items) => {
+        const mapped = items?.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        if (!mapped) return
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
+      returnedProducts: (items) => {
+        const mapped = items?.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        if (!mapped) return
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     },
     fieldOverrides: {
       vehicleId: z.string().describe("Vehicle").superRefine(fieldConfig({
@@ -1165,31 +1283,31 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
       });
 
       // Create corresponding invoice for trip products
-      const invoiceItems = Object.fromEntries(
-        variables.products?.map((item, index) => [
-          `itm_${index}`,
-          {
-            product: item.product,
-            quantity: item.quantity,
-            rate: item.unitPrice,
-            total: item.quantity * item.unitPrice
-          }
-        ]) ?? []
-      );
-
-      const totalAmount = variables.products?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
-
-      createInvoice({
-        type: "trip-dispatch",
-        partyId: variables.customerId,
-        issuedAt: variables.startTime,
-        items: invoiceItems,
-        subTotal: totalAmount,
-        tax: 0,
-        paidAmount: totalAmount,
-        paymentStatus: "pending" as any,
-        fiscalYear: calculateFiscalYear()
-      });
+      // const invoiceItems = Object.fromEntries(
+      //   variables.products?.map((item, index) => [
+      //     `itm_${index}`,
+      //     {
+      //       product: item.product,
+      //       quantity: item.quantity,
+      //       rate: item.unitPrice,
+      //       total: item.quantity * item.unitPrice
+      //     }
+      //   ]) ?? []
+      // );
+      //
+      // const totalAmount = variables.products?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
+      //
+      // createInvoice({
+      //   type: "trip-dispatch",
+      //   partyId: variables.customerId,
+      //   issuedAt: variables.startTime,
+      //   items: invoiceItems,
+      //   subTotal: totalAmount,
+      //   tax: 0,
+      //   paidAmount: totalAmount,
+      //   paymentStatus: "pending" as any,
+      //   fiscalYear: calculateFiscalYear()
+      // });
     },
     onUpdate(_, variables) {
       // Stock update logic for updates - we need to handle the difference between old and new quantities
@@ -1220,7 +1338,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                       <div className="text-center">Returned</div>
                     </div>
                     {row.original.products?.map((product, idx: number) => {
-                      const prod = productsBySoul.get(product["#"]);
+                      const prod = productsBySoul.get(product?._?.soul);
                       return (
                         <div key={idx} className="grid grid-cols-3 gap-2 text-sm">
                           <div>{prod?.title || "Unknown Product"}</div>
@@ -1308,7 +1426,9 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                       const closeBtn = document.querySelector('[data-state="open"] [data-dismiss]');
                       if (closeBtn) (closeBtn as HTMLElement).click();
                     }}
-                  />
+                  >
+                    <AutoFormSubmit className="w-full">Mark Return</AutoFormSubmit>
+                  </AutoForm>
                 </div>
               </CredenzaContent>
             </Credenza>

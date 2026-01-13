@@ -32,8 +32,10 @@ export function UnitField({
   const configDisabled = field.fieldConfig?.customData?.configDisabled as boolean
 
   const [initialSelectedUnit, initialPiecesPerUnit] = value?.split(':') ?? []
-  const [selectedUnit, setSelectedUnit] = useState(initialSelectedUnit || "");
-  const [piecesPerUnit, setPiecesPerUnit] = useState(initialPiecesPerUnit || 1);
+  const [_selectedUnit, setSelectedUnit] = useState(initialSelectedUnit);
+  const [_piecesPerUnit, setPiecesPerUnit] = useState(initialPiecesPerUnit);
+  const selectedUnit = _selectedUnit ?? initialSelectedUnit;
+  const piecesPerUnit = _piecesPerUnit ?? initialPiecesPerUnit;
   const fieldName = path.join(".");
   const form = useFormContext();
 

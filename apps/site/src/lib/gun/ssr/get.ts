@@ -2,13 +2,17 @@ import { getGunRef, getNestedZodShape, mergeKeys } from "../utils";
 import { decrypt } from "../utils/sea";
 import type { NestedSchemaType, SchemaKeys } from "..";
 import { mergeOptionsWithDefaults } from "../options";
-import type { QueryOptions } from "@tanstack/react-query";
+import { type QueryObserverOptions } from "@tanstack/react-query";
 
 export type GetBuilder<T extends SchemaKeys> = {
   separator?: string;
   filter?: (item: NestedSchemaType<T>) => boolean;
   single?: boolean;
-  queryOptions?: QueryOptions
+  queryOptions?: Omit<
+    QueryObserverOptions<NestedSchemaType<T>[]>,
+    "queryKey" | "queryFn"
+  >;
+  treatSlugAsAbsolute?: boolean;
 };
 
 export function attachSouls(value: any, currentPath: string): any {

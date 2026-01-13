@@ -3,15 +3,12 @@ import type { DataTableRowAction, FilterVariant } from "@/types/data-table";
 import * as React from "react";
 import { useMemo } from "react";
 
-import { useAuth } from "@/components/auth-provider";
-
 import { DataTable } from "@/components/data-table";
 import { useDataTable } from "@/hooks/use-data-table";
 
-import { AutoForm, AutoFormWithoutLabel } from "@/components/ui/autoform";
-import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
+import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
+import { AutoFormWithoutLabel } from "@/components/ui/autoform";
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
@@ -21,11 +18,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import * as Editable from "@/components/ui/editable";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { applySorting } from "@/lib/sort";
 import { parseSchema } from "@autoform/zod";
-import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
 import {
   type NestedSchema,
   type NestedSchemaType,
@@ -34,54 +30,38 @@ import {
   getNestedZodShape,
   getSchema,
   getShape,
-  useCreate,
   useDelete,
   useGet,
-  useUpdate,
+  useUpdate
 } from "@gta/react-hooks";
+import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
 import { useSearch } from "@tanstack/react-router";
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
+import type { GunMessagePut } from "gun";
 import {
   ArrowUpDown,
   CalendarIcon,
   CircleDashed,
+  DatabaseZap,
   Ellipsis,
-  Plus,
-  Save,
-  Text, DatabaseZap, FileText,
-  FileJson, ArrowBigUpDash,
-  Sheet
+  Text
 } from "lucide-react";
+import { z } from "zod";
+import { AutoPreview } from "../auto-preview";
+import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
+import { DataTableColumnHeader } from "../data-table/data-table-column-header";
 import { DataTableFilterList } from "../data-table/data-table-filter-list";
 import { DataTableSortList } from "../data-table/data-table-sort-list";
 import { DeleteRowDialog } from "../data-table/delete-row-dialog";
 import { EditRowDialog } from "../data-table/edit-row-dialog";
 import SkeletonTableOneWrapper from "../mvpblocks/skeleton-table-1";
-import {
-  Credenza,
-  CredenzaBody,
-  CredenzaContent,
-  CredenzaDescription,
-  CredenzaFooter,
-  CredenzaHeader,
-  CredenzaTitle,
-  CredenzaTrigger,
-} from "../ui/credenza";
-import { AutoTableActionBar } from "./auto-table-action-bar";
-import { z } from "zod";
-import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
-import { DataTableColumnHeader } from "../data-table/data-table-column-header";
-import { AutoPreview } from "../auto-preview";
-import { api } from "@/lib/api";
 import { BadgeMarquee } from "../ui/badge-marquee";
-import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
-import type { GunMessagePut } from "gun";
-import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import { AutoTableActionBar } from "./auto-table-action-bar";
 
 type AggregationType =
   | 'sum'
   | 'avg'
-  | 'count'
+  | 'count '
   | 'min'
   | 'max'
   | 'distinct'
@@ -102,7 +82,6 @@ type EnhancedColumnDef<TData> = ColumnDef<TData> & {
 
 export type AutoTableProps<T extends SchemaKeys> = {
   className?: string;
-  slug: string;
   transformer?: (data: any[]) => NestedSchemaType<T>[];
   extender?: <E extends (shape: z.ZodObject<any>) => NestedSchemaType<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
   enableAdvancedFiltering?: boolean;
@@ -120,17 +99,26 @@ export type AutoTableProps<T extends SchemaKeys> = {
   onDelete?: (data: GunMessagePut, variables: string, context: unknown) => unknown
   onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
   readOnly?: boolean;
+  treatSlugAsAbsolute?: boolean;
   actions?: (ctx: CellContext<NestedSchemaType<T>, unknown>) => React.ReactNode;
 } & ({
   schema: T;
 }
   | {
     parsedSchema: z.ZodObject<any>;
+  }) & ({
+    slug: string;
+    data?: undefined;
+  } | {
+    data: NestedSchemaType<T>[];
+    slug?: undefined;
   });
 
 export function AutoTable<T extends SchemaKeys>({
   className,
   slug,
+  data: defaultData,
+  treatSlugAsAbsolute = false,
   enableAdvancedFiltering = true,
   enableAdvancedSorting = true,
   enableAggregations = false,
@@ -141,13 +129,17 @@ export function AutoTable<T extends SchemaKeys>({
   defaultPageSize = 10,
   ...props
 }: AutoTableProps<T>) {
-  const [formValues, setFormValues] = React.useState<Record<string, any>>({});
   const schemaName = "schema" in props ? props.schema : ("" as SchemaKeys);
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const { data: __data = [], isLoading } = useGet(schemaName, slug);
+  const { data: __data = [], isLoading } = useGet({
+    key: schemaName,
+    treatSlugAsAbsolute,
+    queryOptions: {
+      enabled: !!slug,
+      initialData: defaultData,
+    },
+  }, slug ?? "");
   const _data = props.transformer?.(__data) ?? __data;
   const search = useSearch({ from: "__root__" });
-  const { user } = useAuth()
   const data = useMemo(() => {
     // @ts-expect-error
     const filters = search.filters;
@@ -168,17 +160,9 @@ export function AutoTable<T extends SchemaKeys>({
     return getSorted(getFiltered());
   }, [_data, search]);
 
-  const createMutation = useCreate({
-    keys: [schemaName, slug],
-    onSuccess(...args) {
-      setDialogOpen(false)
-      props?.onCreate?.(...args)
-    }
-  });
   const updateMutation = useUpdate({
     keys: [schemaName, slug],
     onSuccess(...args) {
-      setDialogOpen(false)
       props?.onUpdate?.(...args)
     }
   });
@@ -197,7 +181,8 @@ export function AutoTable<T extends SchemaKeys>({
 
     return getSchema(zodShape);
   })()
-  const schema = props.extender?.(_schema) ?? _schema.extend(props.fieldOverrides ?? {});
+
+  const schema = props.extender?.(_schema) ?? _schema.extend?.(props.fieldOverrides ?? {}) ?? _schema._def.type?.extend?.(props.fieldOverrides ?? {}) ?? _schema._def.innerType?.extend?.(props.fieldOverrides ?? {}) ?? _schema;
   const [rowAction, setRowAction] = React.useState<DataTableRowAction<
     NestedSchemaType<T>
   > | null>(null);
@@ -223,7 +208,7 @@ export function AutoTable<T extends SchemaKeys>({
     enableColumnPinning: enableColumnPinning,
     initialState: {
       pagination: {
-        // pageIndex: search.pageIndex ?? 0,
+        pageIndex: search?.pageIndex ?? 0,
         pageSize: defaultPageSize
       },
       columnPinning: enableColumnPinning ? { right: ["actions"] } : undefined, columnVisibility: {}
@@ -233,72 +218,12 @@ export function AutoTable<T extends SchemaKeys>({
         updateMutation.mutate({ id: rowId, ...data });
       }
     },
-    getRowId: (originalRow) => originalRow?._?.soul ?? originalRow["#"]?.split("/").slice(2).join("/") ?? "", shallow: false, nttclearOnDefault: true,
+    getRowId: (originalRow) => originalRow?._?.soul ?? originalRow["#"]?.split("/").slice(2).join("/") ?? "",
+    shallow: false,
+    clearOnDefault: true,
   });
 
-  const [file, setFile] = React.useState<File | null>(null);
-  const [isImportPending, setIsImportPending] = React.useState(false);
-
   if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
-
-  const handleFileUpload = async (e: Event, format: 'csv' | 'excel' | 'json') => {
-    const selectedFile = e.target.files?.[0];
-    if (!selectedFile) return;
-
-    setFile(selectedFile);
-    setIsImportPending(true);
-
-    try {
-      let parsedData: any[] = [];
-
-      if (format === 'csv') {
-        parsedData = await parseCSVFile(selectedFile);
-      } else if (format === 'excel') {
-        parsedData = await parseExcelFile(selectedFile);
-      } else if (format === 'json') {
-        parsedData = await parseJSONFile(selectedFile);
-      }
-
-      // Validate the parsed data against the schema
-      const { validData, errors } = validateDataAgainstSchema(parsedData, schema as z.ZodObject<any>);
-
-      if (errors.length > 0) {
-        // Show validation errors to user
-        console.error("Validation errors:", errors);
-        alert(`Validation errors found in ${errors.length} records. Please check console for details.`);
-        return;
-      }
-
-      // Create all records
-      for (const record of validData) {
-        createMutation.mutate({
-          ...record,
-          // created_by: user?._?.soul ?? "anon",
-          timestamp: Date.now(),
-        });
-      }
-
-      // Reset file input
-      if (e.target) {
-        e.target.value = '';
-      }
-    } catch (error) {
-      console.error(`Error parsing ${format} file:`, error);
-      alert(`Error parsing ${format} file: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    } finally {
-      setIsImportPending(false);
-    }
-  };
-
-  function handleFileImport(acceptedFormats: string, fileType: 'csv' | 'excel' | 'json') {
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = acceptedFormats
-    input.onchange = e => {
-      handleFileUpload(e, fileType)
-    }
-    input.click()
-  }
 
   const formSchema = props.formSchemaTransformer?.(schema) ?? schema
 
@@ -446,6 +371,15 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
         function update(value: Record<string, unknown>) {
           // @ts-expect-error
           table.options.meta?.updateData(row.id, value);
+        }
+
+        if (readOnly) {
+          return <AutoPreview
+            field={field}
+            key={field.key}
+            value={previewOverrides?.[field.key]?.(value) ?? value}
+            baseSchema={schema.shape[field.key]}
+          />
         }
 
         return (

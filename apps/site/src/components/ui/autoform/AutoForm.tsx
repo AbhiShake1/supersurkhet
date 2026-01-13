@@ -3,7 +3,7 @@ import {
   type AutoFormUIComponents,
 } from "@autoform/react";
 import { ZodProvider, type ZodObjectOrWrapped } from "@autoform/zod";
-import { ZodObject } from "zod";
+import { ZodEffects, ZodObject } from "zod";
 import { ArrayElementWrapper } from "./components/ArrayElementWrapper";
 import { ArrayWrapper } from "./components/ArrayWrapper";
 import { BooleanField } from "./components/BooleanField";
@@ -115,10 +115,10 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
       {...props}
       schema={
         new ZodProvider(
-          schema instanceof ZodObject
-            ? // omit default fields of schema
+          schema instanceof ZodEffects
+            ? schema.innerType().omit({ _: true, created_by: true, timestamp: true })
+            : // omit default fields of schema
             schema.omit({ _: true, created_by: true, timestamp: true })
-            : schema,
         )
       }
       uiComponents={{ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }}

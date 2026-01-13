@@ -4,17 +4,6 @@
 
   var noop = function () { }, u;
 
-  // async JSON helpers (same contract as localStorage adapter)
-  var parse = JSON.parseAsync || function (t, cb, r) {
-    try { cb(u, JSON.parse(t, r)) }
-    catch (e) { cb(e) }
-  }
-
-  var json = JSON.stringifyAsync || function (v, cb, r, s) {
-    try { cb(u, JSON.stringify(v, r, s)) }
-    catch (e) { cb(e) }
-  }
-
   // -----------------------------
   // IndexedDB wrapper
   // -----------------------------
@@ -119,6 +108,10 @@
       var key = put['.'];
       var id = msg['#'];
       var ok = msg.ok || {};
+
+      if (!soul.startsWith("~") && !soul.startsWith("root") && !soul.startsWith("/RTC")) {
+        return
+      }
 
       if (!db) {
         return setTimeout(function () {

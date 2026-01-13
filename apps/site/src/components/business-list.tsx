@@ -1,4 +1,4 @@
-import { Search, XCircle } from "lucide-react";
+import { Search, Shield, XCircle } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { useState } from "react";
 import { Input } from "./ui/input";
@@ -15,6 +15,7 @@ import { Link } from "@tanstack/react-router";
 import { Badge } from "./ui/badge"; // Import Badge
 import { api } from "@/lib/api";
 import { Skeleton } from "./ui/skeleton";
+import { BusinessAccessGate } from "./permission-gate/business-access-gate";
 
 export interface BusinessListProps
   extends React.ComponentPropsWithoutRef<typeof ScrollArea> { }
@@ -81,7 +82,7 @@ export function BusinessList(props: BusinessListProps) {
                     {business.businessType?.replace(/_/g, " ")}
                   </Badge>
                 </CardHeader>
-                <CardContent className="flex-grow flex flex-col justify-end pt-0">
+                <CardContent className="flex-grow flex flex-col gap-2 justify-end pt-0">
                   <Button asChild className="w-full">
                     <Link
                       to="/$businessName"
@@ -90,12 +91,25 @@ export function BusinessList(props: BusinessListProps) {
                       Visit
                     </Link>
                   </Button>
+                  <BusinessAccessGate business={business}>
+                    <Button asChild className="w-full">
+                      <Link
+                        className="gap-2 flex"
+                        to="/$businessName/admin"
+                        params={{ businessName: business.basePath ?? "" }}
+                      >
+                        <Shield className="h-4 w-4" />
+                        Go to Admin
+                      </Link>
+                    </Button>
+                  </BusinessAccessGate>
                 </CardContent>
               </Card>
             ))}
           </div>
-        )}
-      </ScrollArea>
-    </div>
+        )
+        }
+      </ScrollArea >
+    </div >
   );
 }

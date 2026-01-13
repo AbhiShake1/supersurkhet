@@ -1,4 +1,5 @@
 import "@/lib/monkey-patches";
+import { VibeKanbanWebCompanion } from "vibe-kanban-web-companion";
 import {
   HeadContent,
   Outlet,
@@ -41,7 +42,7 @@ import type { IGunUserInstance } from "gun/types";
 import z from "zod";
 import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 import { I18nProvider } from "@/contexts/i18n-context";
-import { DialogProvider } from "@/contexts/dialog-context";
+import { DialogProvider, DrawerProvider } from "@/contexts/dialog-context";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -284,9 +285,8 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         {loaderData.criticalThemeCSS}
       </style>
       <Toaster richColors />
-      <NuqsAdapter>
-        <Outlet />
-      </NuqsAdapter>
+      <Outlet />
+      <VibeKanbanWebCompanion />
       <TanStackRouterDevtools position="bottom-right" />
       <TanstackQueryLayout />
     </RootDocument>
@@ -433,28 +433,32 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <div data-vaul-drawer-wrapper="">
-          <I18nProvider>
-            <ThemeModeProvider savedDarkMode={loaderData.savedDarkMode} savedTheme={loaderData.savedTheme} savedThemeName={loaderData.savedThemeName}>
-              <GoogleLoginProvider>
-                <AuthProvider>
-                  <TooltipProvider>
-                    <DialogProvider>
-                      <OneTapLoginProvider>
-                        <ConfettiProvider>
-                          <LoginPromptProvider>
-                            {children}
-                            {
-                              // isMobile && <QRScannerButton onActionDetected={handleActionDetected} />
-                            }
-                          </LoginPromptProvider>
-                        </ConfettiProvider>
-                      </OneTapLoginProvider>
-                    </DialogProvider>
-                  </TooltipProvider>
-                </AuthProvider>
-              </GoogleLoginProvider>
-            </ThemeModeProvider>
-          </I18nProvider>
+          <NuqsAdapter>
+            <I18nProvider>
+              <ThemeModeProvider savedDarkMode={loaderData.savedDarkMode} savedTheme={loaderData.savedTheme} savedThemeName={loaderData.savedThemeName}>
+                <GoogleLoginProvider>
+                  <AuthProvider>
+                    <TooltipProvider>
+                      <DialogProvider>
+                        <DrawerProvider>
+                          <OneTapLoginProvider>
+                            <ConfettiProvider>
+                              <LoginPromptProvider>
+                                {children}
+                                {
+                                  // isMobile && <QRScannerButton onActionDetected={handleActionDetected} />
+                                }
+                              </LoginPromptProvider>
+                            </ConfettiProvider>
+                          </OneTapLoginProvider>
+                        </DrawerProvider>
+                      </DialogProvider>
+                    </TooltipProvider>
+                  </AuthProvider>
+                </GoogleLoginProvider>
+              </ThemeModeProvider>
+            </I18nProvider>
+          </NuqsAdapter>
           <Scripts />
         </div>
       </body>

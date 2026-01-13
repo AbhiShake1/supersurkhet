@@ -2,8 +2,8 @@ import { AutoKanban } from "@/components/auto-admin";
 import type { AdminComponent } from ".";
 import type { Order } from "@/lib/schema";
 import { api } from "@/lib/api";
-import { useState } from "react";
-import { cn, recordToList } from "@/lib/utils";
+import { useMemo, useState } from "react";
+import { cn, recordToList, soulToId } from "@/lib/utils";
 import {
   Credenza,
   CredenzaBody,
@@ -14,6 +14,8 @@ import {
 } from "../credenza";
 import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
 import { Plus } from "lucide-react";
+import { formatCurrency } from "@/lib/intl";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
 
 export const OrderKanban: AdminComponent = ({ slug }) => {
   return (
@@ -37,10 +39,19 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
 };
 
 function OrderCard({ order, slug }: { order: Order; slug: string }) {
+  const { data: customers = [] } = api.customer.useGet({ keys: [slug] })
   const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
+  const customerById = useMemo(() => new Map(customers.map(c => [c._?.soul, c])), []);
+  const { data: products = [] } = api.product.useGet({ keys: [slug] });
+
+  const productById = useMemo(
+    () => new Map(products.map((p) => [p._?.soul, p])),
+    [products]
+  );
+
   const [open, setOpen] = useState(false);
   if (!order?.items) return null;
-  const orderItems = recordToList(order.items);
+  const orderItems = order.items;
 
   function getBackgroundProps() {
     switch (order.orderStatus) {
@@ -73,6 +84,11 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
           className:
             "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
         };
+
+      default:
+        return {
+          className: ""
+        }
     }
   }
 
@@ -92,7 +108,9 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <span className="text-right font-semibold">Order ID:</span>
-                <span className="col-span-3">{order._?.soul}</span>
+                <span className="col-span-3">
+                  {soulToId(order._?.soul)}
+                </span>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <span className="text-right font-semibold">Items:</span>
@@ -105,10 +123,10 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                       <div key={item._?.soul} className="flex justify-between">
                         <span>
                           <span className="font-bold">{item.quantity}x</span>{" "}
-                          {menuItem?.name}
+                          {productById.get(item.product)?.title}
                         </span>
                         <span className="font-bold">
-                          ${(item.quantity * item.unitPrice)?.toFixed(2)}
+                          {formatCurrency(item.quantity * item.unitPrice)}
                         </span>
                       </div>
                     );
@@ -117,9 +135,8 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               </div>
               {order.customerId && (
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <span className="text-right font-semibold">Customer ID:</span>
-                  <span className="col-span-3">{order.customerId}</span>
-                </div>
+                  <span className="text-right font-semibold">Customer:</span>
+                  <span className="col-span-3">{customerById.get(order.customerId)?.name}</span>                </div>
               )}
               {order.subTotal && (
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -217,8 +234,45 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               .filter((m) => !!m)
               .join(", ")}
           </span>
+          <div className="flex items-center justify-between gap-2">
+            {/* Truncated items preview */}
+            <span className="line-clamp-1 font-medium text-sm">
+              {orderItems.slice(0, 3)
+                .map((i) => `${i.quantity}x ${productById.get(i.product)?.title ?? "Unknown"}`)
+                .join(", ")}
+              {orderItems.length > 3 ? ` ...and ${orderItems.length - 3} more` : ""}
+            </span>
+
+            <Tooltip>
+              <TooltipTrigger>
+                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-200 text-green-800 cursor-pointer">
+                  {formatCurrency(order.paidAmount ?? 0)}
+                </span>
+              </TooltipTrigger>
+
+              <TooltipContent className="max-w-xs">
+                <div className="flex flex-col gap-2 justify-between w-full">
+                  {orderItems.map((item) => (
+                    <div
+                      key={item._?.soul}
+                    >
+                      <div className=" flex justify-between gap-2">
+                        <span className="font-medium">
+                          {item.quantity}x {productById.get(item.product)?.title ?? "Unknown"}
+                        </span>
+                        <span className="font-bold">
+                          {formatCurrency(item.quantity * item.unitPrice)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </TooltipContent>
+            </Tooltip>
+
+          </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

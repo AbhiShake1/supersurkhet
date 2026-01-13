@@ -191,8 +191,14 @@ export const invoiceSchema = z.object({
   type: z.enum(["purchase", "sale"]),
 
   partyId: z.string().describe("Party").optional(),
-  issuedAt: z.string().datetime().describe("Issued At").optional(),
-  dueDate: z.string().datetime().describe("Due Date").optional(),
+  issuedAt: z.string()
+            // .datetime()
+            .datetime({offset: true})
+            .describe("Issued At").optional(),
+  dueDate: z.string()
+            // .datetime()
+            .datetime({offset: true})
+            .describe("Due Date").optional(),
 
   items: z.array(
     z.object({
@@ -267,7 +273,9 @@ export const inventoryLedgerSchema = z.object({
 
   quantityIn: z.number({ coerce: true }).nonnegative(),
   quantityOut: z.number({ coerce: true }).nonnegative(),
-  date: z.string().datetime(),
+  date: z.string()
+        // .datetime()
+        .datetime({offset: true}),
 })
   .extend(table)
 // .superRefine((entry, ctx) => {
@@ -941,11 +949,17 @@ export const featureSchema = createSchema({
   trip: {
     schema: z.object({
       vehicleId: z.string().describe("Vehicle ID"),
-      dispatchTime: z.string().datetime().describe("Dispatch Time")
+      dispatchTime: z.string()
+        .datetime({offset: true})
+        // .datetime()
+        .describe("Dispatch Time")
         .default(() => new Date().toISOString())
         .superRefine(fieldConfig({ fieldType: "datetime" })),
-      returnTime: z.string().optional().describe("Return Time")
-        .superRefine(fieldConfig({ fieldType: "datetime" })),
+      returnTime: z.string()        
+        .datetime({offset: true})
+        .describe("Return Time")
+        .superRefine(fieldConfig({ fieldType: "datetime" }))
+        .optional(),
       destination: z.string().optional().describe("Destination"),
       products: salesItemSchema
         .array()
