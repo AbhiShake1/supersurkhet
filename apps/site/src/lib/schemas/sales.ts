@@ -28,6 +28,10 @@ export const saleSchema = z.object({
     .min(1, { message: "Please add at least one item." })
     .describe("Items Sold"),
   paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
+  iterativePayment: z.number({ coerce: true }).nonnegative().optional().describe("Iterative Payment")
+    .superRefine(fieldConfig({
+      // description: "Additional payment amount added to the original paid amount"
+    })),
   paymentStatus: z.string().default("pending").describe("Payment Status")
     .superRefine(fieldConfig({
       inputProps: {

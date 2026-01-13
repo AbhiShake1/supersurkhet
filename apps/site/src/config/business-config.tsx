@@ -456,6 +456,10 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       })
     }),
     fieldOverrides: {
+      // saleDate: z.string()
+      //   .datetime({offset: true})
+      //   .default(() => new Date().toISOString()).describe("Sale Date")
+      //   .superRefine(fieldConfig({ fieldType: "datetime" })),
       customerId: z.string().describe("Customer").superRefine(fieldConfig({
         fieldType: "select",
         customData: {
@@ -468,10 +472,45 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
           onValueChange: (_paidAmount, __, form) => {
             const paidAmount = Number(_paidAmount)
             const totalCost = calculateTotalCost(form)
-            form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
+            // Get iterative payment value
+            const iterativePayment = form.getValues()?.iterativePayment || 0;
+            const totalPaid = paidAmount + iterativePayment;
+            form.setValue("paymentStatus", getPaymentStatus(totalPaid, totalCost))
           },
+          inputProps: {
+            readOnly: (form) => {
+              // Make the field read-only during updates (when there's an ID)
+              const isUpdate = !!form.formState.defaultValues?.id || !!form.formState.defaultValues?._?.soul;
+              return isUpdate;
+            },
+            className: (form) => {
+              const isUpdate = !!form.formState.defaultValues?.id || !!form.formState.defaultValues?._?.soul;
+              return isUpdate ? "opacity-50 not-allowed cursor-not-allowed" : "";
+            },
+          }
         }
       })),
+      iterativePayment: z.number({ coerce: true }).nonnegative().optional().describe("Iterative Payment")
+        .superRefine(fieldConfig({          
+          inputProps: {
+            placeholder: "Enter additional payment amount",
+          },
+          customData: {
+            onValueChange: (_iterativePayment, __, form) => {
+              const iterativePayment = Number(_iterativePayment) || 0;
+              const paidAmount = form.getValues()?.paidAmount || 0;
+              const totalCost = calculateTotalCost(form);
+              const totalPaid = paidAmount + iterativePayment;
+
+              form.setValue("paymentStatus", getPaymentStatus(totalPaid, totalCost));
+            },
+            // Only show this field during updates 
+            hidden: (form) => {
+              const isUpdate = !!form.formState.defaultValues?.id || !!form.formState.defaultValues?._?.soul;
+              return !isUpdate; // Hide if it's not an update (i.e., it's a creation)
+            }
+          }
+        })),
       items: salesItemSchema
         .extend({
           product: z.string().describe("Product")
@@ -563,14 +602,29 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
           })
         })
         .describe("Items Sold"),
-      // customerName: z.string().optional().describe("Customer Name")
-      //   .superRefine(fieldConfig({
-      //     fieldType: "select",
-      //     customData: {
-      //       options: parties.map(p => [p._!.soul!, p.name]),
-      //     },
-      //   })),
+      
+      paymentStatus: z.string().default("pending").describe("Payment Status")
+        .superRefine(fieldConfig({
+          inputProps: {
+            className: "border-none",
+            disabled: true,
+          }
+        })),
+      paymentMethod: z.enum(["cash", "card", "bankTransfer", "credit"]).optional().describe("Payment Method")
+        .superRefine(fieldConfig({
+          fieldType: "select",
+          customData: {
+            options: [
+              ["cash", "Cash"],
+              ["card", "Card"],
+              ["bankTransfer", "Bank Transfer"],
+              ["credit", "Credit"],
+            ]
+          }
+        })),
+      notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
     },
+    fieldOrder: ["saleDate", "customerId", "items", "paidAmount", "iterativePayment", "paymentStatus", "paymentMethod", "notes"],
     onCreate(_, variables) {
       // Stock update logic with unit conversion
       const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity, unit }) => {
@@ -635,13 +689,74 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
         fiscalYear: calculateFiscalYear()
       });
     },
-    onUpdate(_, variables) {
+    onUpdate(prevVariables, variables) {
+      // Calculate new paid amount based on original paid amount + iterative payment
+      // At update, paid amount at i+1 = iterative amount at i + paid amount at i
+      let newPaidAmount = variables.paidAmount || 0;
+      if (variables.iterativePayment && variables.iterativePayment > 0) {
+        // Add the iterative payment to the previous paid amount
+        newPaidAmount = (prevVariables.paidAmount || 0) + variables.iterativePayment;
+      } else {
+        // If no iterative payment is provided, keep the original paid amount
+        newPaidAmount = variables.paidAmount || 0;
+      }
+
+      // Update the variables with the new calculated paid amount
+      const updatedVariables = {
+        ...variables,
+        paidAmount: newPaidAmount
+      };
+
+      // Update the payment status based on the new paid amount
+      const totalCost = updatedVariables.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0);
+      const newPaymentStatus = getPaymentStatus(newPaidAmount, totalCost);
+      updatedVariables.paymentStatus = newPaymentStatus;
+
       // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, uantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
       // Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
       //   const product = productsBySoul.get(productId)
       //   if (!product?._?.soul) return
       //   updateProduct({ id: product?._?.soul, stockQuantity: product?.stockQuantity + quantity })
       // })
+
+      // Update the invoice with the new payment information
+      const invoiceItems = updatedVariables.items?.map((item) => {
+        // Adjust quantity for invoice based on unit conversion
+        const productInfo = productsBySoul.get(item.product);
+        let adjustedQuantity = item.quantity;
+
+        if (productInfo?.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+
+          // If the sale unit matches the product's base unit type, convert to pieces for inventory tracking
+          if (item.unit === unitType) {
+            adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        return {
+          product: item.product,
+          quantity: adjustedQuantity,
+          rate: item.unitPrice,
+          total: item.quantity * item.unitPrice
+        };
+      }) ?? []
+
+      const totalAmount = updatedVariables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
+
+      // Find existing invoice for this sale and update it
+      // For now, we'll create a new invoice if one doesn't exist
+      createInvoice({
+        type: "sale",
+        partyId: updatedVariables.customerId,
+        issuedAt: updatedVariables.saleDate,
+        items: invoiceItems,
+        subTotal: totalAmount,
+        tax: 0,
+        paidAmount: newPaidAmount,
+        paymentStatus: newPaymentStatus,
+        fiscalYear: calculateFiscalYear()
+      });
     },
   }
 }
