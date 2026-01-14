@@ -1378,6 +1378,26 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                         returnedProducts: data.returnedProducts,
                       });
 
+                      //  RESTORE STOCK FOR RETURNED PRODUCTS
+                      data.returnedProducts?.forEach((returnedProduct: any) => {
+                        const product = productsBySoul.get(returnedProduct.product);
+                        if (!product?._?.soul) return;
+
+                        let adjustedQuantity = returnedProduct.quantity;
+
+                        // unit conversion (same logic you use everywhere)
+                        if (product.unit && product.unit.includes(':')) {
+                          const [unitType, piecesPerUnit] = product.unit.split(':');
+                          if (returnedProduct.unit === unitType) {
+                            adjustedQuantity = returnedProduct.quantity * parseInt(piecesPerUnit, 10);
+                          }
+                        }
+
+                        updateProduct({
+                          id: product._.soul,
+                          stockQuantity: product.stockQuantity + adjustedQuantity,
+                        });
+                      });
                       // Create a sale record for the sold products
                       if (soldProducts.length > 0) {
                         // Create corresponding invoice for sold products
