@@ -438,10 +438,11 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
     previewOverrides: {
       customerId: (customerId) => customersBySoul.get(customerId)?.name ?? "-",
       items: (items) => {
-        const mapped = items.map((item: SalesItem) => ({
+        const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
         }))
+        if (!mapped) return
         mapped["#"] = items?.["#"]
         return mapped
       },
