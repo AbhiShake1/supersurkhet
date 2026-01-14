@@ -199,6 +199,13 @@ export function DateTimePicker({
     onChange(new Date(date));
     setOpen(false);
   }, [date, onChange]);
+  
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    if (!newOpen) {      
+      onChange(new Date(date));
+    }
+    setOpen(newOpen);
+  }, [date, onChange]);
 
   const onMonthYearChanged = useCallback(
     (d: Date, mode: "month" | "year") => {
@@ -240,7 +247,7 @@ export function DateTimePicker({
   }, [displayValue, hideTime, use12HourFormat]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal={modal}>
+    <Popover open={open} onOpenChange={handleOpenChange} modal={modal}>
       <PopoverTrigger asChild>
         {renderTrigger ? (
           renderTrigger({
