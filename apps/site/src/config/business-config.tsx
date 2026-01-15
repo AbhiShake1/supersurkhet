@@ -1441,14 +1441,9 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                           0
                         );
 
-                        const vehicle = vehicles.find(
-                          v => v._?.soul === row.original.vehicleId || v._?.id === row.original.vehicleId
-                        );
-                        const partyIdForInvoice = vehicle?._!.soul ?? "trip-sale";
-
                         createInvoice({
                           type: "sale",
-                          partyId: partyIdForInvoice, // Could be linked to a specific customer
+                          partyId: "trip-sale", // Could be linked to a specific customer
                           issuedAt: new Date().toISOString(),
                           items: invoiceItems,
                           subTotal: totalAmount,
