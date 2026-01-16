@@ -913,14 +913,23 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
 }
 
 export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"invoice"> {
-  const { data: products = [] } = api.product.useGet({ keys: [slug] })
-  const { data: parties = [] } = api.party.useGet({ keys: [slug] })
+  const { data: products = [] } = api.product.useGet({ keys: [slug] });
+  const { data: parties = [] } = api.party.useGet({ keys: [slug] });
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
+  const { data: vehicles = [] } = api.vehicle.useGet({ keys: [slug] });
+
+  const vehiclesBySoul = useMemo(() => new Map(
+    vehicles
+      .filter(v => v?._?.soul)
+      .map(v => [v._!.soul!, v])
+  ), [vehicles])
+
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   ), [products])
+
   const partiesBySoul = useMemo(() => new Map(
     parties
       .filter(p => p?._?.soul)
@@ -942,7 +951,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
     actions: ({ row }) => {
       const partyId = row.original.partyId
       if (!partyId) return null
-      const party = partiesBySoul.get(partyId) || customersBySoul.get(partyId);
+      const party = partiesBySoul.get(partyId) || customersBySoul.get(partyId) || vehiclesBySoul.get(partyId);
       if (!party) return null
       return (
         <DropdownMenuItem onSelect={e => e.preventDefault()}>
@@ -962,7 +971,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
       );
     },
     previewOverrides: {
-      partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || "-",
+      partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || vehiclesBySoul.get(id)?.name || "-",
       items: (items) => {
         const mapped = items?.map((item: SalesItem) => ({
           ...item,
@@ -972,6 +981,18 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
         mapped["#"] = items?.["#"]
         return mapped
       },
+    },
+    fieldOverrides: {
+      partyId: z.string().describe("Party").superRefine(fieldConfig({
+        fieldType: "select",
+        customData: {
+          options: [
+            ...parties.map(p => [p._!.soul!, p.name]),
+            ...customers.map(c => [c._!.soul!, c.name]),
+            ...vehicles.map(v => [v._!.soul!, `${v.name} (${v.licensePlate})`])
+          ],
+        },
+      })),
     }
   }
 }
@@ -1256,6 +1277,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
       returnedProducts: returnedProductsSchema,
     },
     onCreate(_, variables) {
+
       // Stock update logic with unit conversion for products sent on trip
       const itemsByProductIdWithQuantity = variables.products?.reduce((a, { product, quantity, unit }) => {
         // Check if the product unit has pieces info (e.g., "cartoon:10")
@@ -1378,6 +1400,26 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                         returnedProducts: data.returnedProducts,
                       });
 
+                      //  RESTORE STOCK FOR RETURNED PRODUCTS
+                      data.returnedProducts?.forEach((returnedProduct: any) => {
+                        const product = productsBySoul.get(returnedProduct.product);
+                        if (!product?._?.soul) return;
+
+                        let adjustedQuantity = returnedProduct.quantity;
+
+                        // unit conversion (same logic you use everywhere)
+                        if (product.unit && product.unit.includes(':')) {
+                          const [unitType, piecesPerUnit] = product.unit.split(':');
+                          if (returnedProduct.unit === unitType) {
+                            adjustedQuantity = returnedProduct.quantity * parseInt(piecesPerUnit, 10);
+                          }
+                        }
+
+                        updateProduct({
+                          id: product._.soul,
+                          stockQuantity: product.stockQuantity + adjustedQuantity,
+                        });
+                      });
                       // Create a sale record for the sold products
                       if (soldProducts.length > 0) {
                         // Create corresponding invoice for sold products
@@ -1388,7 +1430,8 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                               product: item.productId,
                               quantity: item.quantity,
                               rate: productsBySoul.get(item.productId)?.sellingPrice || 0,
-                              total: item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0)
+                              total: item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0),
+                              vehicleId: row.original.vehicleId,
                             }
                           ])
                         );
@@ -1407,7 +1450,11 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                           tax: 0,
                           paidAmount: totalAmount,
                           paymentStatus: "paid" as any,
-                          fiscalYear: calculateFiscalYear()
+                          fiscalYear: calculateFiscalYear(),
+                          // Add vehicle reference to the invoice
+                          vehicleId: row.original.vehicleId,
+                          tripId: row.original._.soul,
+                          description: `Sale from trip ${row.original._.soul} by ${vehicle?.name || 'vehicle'}`
                         });
 
                         // Update product stock quantities
@@ -1432,7 +1479,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                 </div>
               </CredenzaContent>
             </Credenza>
-          </DropdownMenuItem>
+          </DropdownMenuItem >
         </>
       );
     },
