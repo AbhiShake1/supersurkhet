@@ -8,300 +8,216 @@
 // You should NOT make any changes in this file as it will be overwritten.
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
-import { Route as rootRouteImport } from './routes/__root'
-import { Route as S3testRouteImport } from './routes/s3test'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AuthRouteImport } from './routes/_auth'
-import { Route as BusinessNameRouteImport } from './routes/$businessName'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AppsIndexRouteImport } from './routes/apps/index'
-import { Route as BusinessNameIndexRouteImport } from './routes/$businessName/index'
-import { Route as BusinessChatRouteImport } from './routes/_business/chat'
-import { Route as AuthSettingsRouteImport } from './routes/_auth/settings'
-import { Route as AuthAuthRouteImport } from './routes/_auth/auth'
-import { Route as BusinessNameAdminIndexRouteImport } from './routes/$businessName/admin/index'
-import { Route as BusinessNameAdminInvitationRouteImport } from './routes/$businessName/admin/invitation'
-import { Route as BusinessNameAdminEditorRouteImport } from './routes/$businessName/admin/editor'
+// Import Routes
 
-const S3testRoute = S3testRouteImport.update({
+import { Route as rootRoute } from './routes/__root'
+import { Route as S3testImport } from './routes/s3test'
+import { Route as PrivacyImport } from './routes/privacy'
+import { Route as AdminImport } from './routes/admin'
+import { Route as AuthImport } from './routes/_auth'
+import { Route as BusinessNameImport } from './routes/$businessName'
+import { Route as IndexImport } from './routes/index'
+import { Route as AppsIndexImport } from './routes/apps/index'
+import { Route as BusinessNameIndexImport } from './routes/$businessName/index'
+import { Route as BusinessChatImport } from './routes/_business/chat'
+import { Route as AuthSettingsImport } from './routes/_auth/settings'
+import { Route as AuthAuthImport } from './routes/_auth/auth'
+import { Route as BusinessNameAdminIndexImport } from './routes/$businessName/admin/index'
+import { Route as BusinessNameAdminInvitationImport } from './routes/$businessName/admin/invitation'
+import { Route as BusinessNameAdminEditorImport } from './routes/$businessName/admin/editor'
+
+// Create/Update Routes
+
+const S3testRoute = S3testImport.update({
   id: '/s3test',
   path: '/s3test',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const PrivacyRoute = PrivacyRouteImport.update({
+
+const PrivacyRoute = PrivacyImport.update({
   id: '/privacy',
   path: '/privacy',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const AdminRoute = AdminRouteImport.update({
+
+const AdminRoute = AdminImport.update({
   id: '/admin',
   path: '/admin',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const AuthRoute = AuthRouteImport.update({
+
+const AuthRoute = AuthImport.update({
   id: '/_auth',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const BusinessNameRoute = BusinessNameRouteImport.update({
+
+const BusinessNameRoute = BusinessNameImport.update({
   id: '/$businessName',
   path: '/$businessName',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+
+const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const AppsIndexRoute = AppsIndexRouteImport.update({
+
+const AppsIndexRoute = AppsIndexImport.update({
   id: '/apps/',
   path: '/apps/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const BusinessNameIndexRoute = BusinessNameIndexRouteImport.update({
+
+const BusinessNameIndexRoute = BusinessNameIndexImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BusinessNameRoute,
 } as any)
-const BusinessChatRoute = BusinessChatRouteImport.update({
+
+const BusinessChatRoute = BusinessChatImport.update({
   id: '/_business/chat',
   path: '/chat',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => rootRoute,
 } as any)
-const AuthSettingsRoute = AuthSettingsRouteImport.update({
+
+const AuthSettingsRoute = AuthSettingsImport.update({
   id: '/settings',
   path: '/settings',
   getParentRoute: () => AuthRoute,
 } as any)
-const AuthAuthRoute = AuthAuthRouteImport.update({
+
+const AuthAuthRoute = AuthAuthImport.update({
   id: '/auth',
   path: '/auth',
   getParentRoute: () => AuthRoute,
 } as any)
-const BusinessNameAdminIndexRoute = BusinessNameAdminIndexRouteImport.update({
+
+const BusinessNameAdminIndexRoute = BusinessNameAdminIndexImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => BusinessNameRoute,
 } as any)
+
 const BusinessNameAdminInvitationRoute =
-  BusinessNameAdminInvitationRouteImport.update({
+  BusinessNameAdminInvitationImport.update({
     id: '/admin/invitation',
     path: '/admin/invitation',
     getParentRoute: () => BusinessNameRoute,
   } as any)
-const BusinessNameAdminEditorRoute = BusinessNameAdminEditorRouteImport.update({
+
+const BusinessNameAdminEditorRoute = BusinessNameAdminEditorImport.update({
   id: '/admin/editor',
   path: '/admin/editor',
   getParentRoute: () => BusinessNameRoute,
 } as any)
 
-export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/$businessName': typeof BusinessNameRouteWithChildren
-  '/admin': typeof AdminRoute
-  '/privacy': typeof PrivacyRoute
-  '/s3test': typeof S3testRoute
-  '/auth': typeof AuthAuthRoute
-  '/settings': typeof AuthSettingsRoute
-  '/chat': typeof BusinessChatRoute
-  '/$businessName/': typeof BusinessNameIndexRoute
-  '/apps': typeof AppsIndexRoute
-  '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
-  '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
-  '/$businessName/admin': typeof BusinessNameAdminIndexRoute
-}
-export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/privacy': typeof PrivacyRoute
-  '/s3test': typeof S3testRoute
-  '/auth': typeof AuthAuthRoute
-  '/settings': typeof AuthSettingsRoute
-  '/chat': typeof BusinessChatRoute
-  '/$businessName': typeof BusinessNameIndexRoute
-  '/apps': typeof AppsIndexRoute
-  '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
-  '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
-  '/$businessName/admin': typeof BusinessNameAdminIndexRoute
-}
-export interface FileRoutesById {
-  __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/$businessName': typeof BusinessNameRouteWithChildren
-  '/_auth': typeof AuthRouteWithChildren
-  '/admin': typeof AdminRoute
-  '/privacy': typeof PrivacyRoute
-  '/s3test': typeof S3testRoute
-  '/_auth/auth': typeof AuthAuthRoute
-  '/_auth/settings': typeof AuthSettingsRoute
-  '/_business/chat': typeof BusinessChatRoute
-  '/$businessName/': typeof BusinessNameIndexRoute
-  '/apps/': typeof AppsIndexRoute
-  '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
-  '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
-  '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
-}
-export interface FileRouteTypes {
-  fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/$businessName'
-    | '/admin'
-    | '/privacy'
-    | '/s3test'
-    | '/auth'
-    | '/settings'
-    | '/chat'
-    | '/$businessName/'
-    | '/apps'
-    | '/$businessName/admin/editor'
-    | '/$businessName/admin/invitation'
-    | '/$businessName/admin'
-  fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/admin'
-    | '/privacy'
-    | '/s3test'
-    | '/auth'
-    | '/settings'
-    | '/chat'
-    | '/$businessName'
-    | '/apps'
-    | '/$businessName/admin/editor'
-    | '/$businessName/admin/invitation'
-    | '/$businessName/admin'
-  id:
-    | '__root__'
-    | '/'
-    | '/$businessName'
-    | '/_auth'
-    | '/admin'
-    | '/privacy'
-    | '/s3test'
-    | '/_auth/auth'
-    | '/_auth/settings'
-    | '/_business/chat'
-    | '/$businessName/'
-    | '/apps/'
-    | '/$businessName/admin/editor'
-    | '/$businessName/admin/invitation'
-    | '/$businessName/admin/'
-  fileRoutesById: FileRoutesById
-}
-export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  BusinessNameRoute: typeof BusinessNameRouteWithChildren
-  AuthRoute: typeof AuthRouteWithChildren
-  AdminRoute: typeof AdminRoute
-  PrivacyRoute: typeof PrivacyRoute
-  S3testRoute: typeof S3testRoute
-  BusinessChatRoute: typeof BusinessChatRoute
-  AppsIndexRoute: typeof AppsIndexRoute
-}
+// Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/s3test': {
-      id: '/s3test'
-      path: '/s3test'
-      fullPath: '/s3test'
-      preLoaderRoute: typeof S3testRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_auth': {
-      id: '/_auth'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
     }
     '/$businessName': {
       id: '/$businessName'
       path: '/$businessName'
       fullPath: '/$businessName'
-      preLoaderRoute: typeof BusinessNameRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof BusinessNameImport
+      parentRoute: typeof rootRoute
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthImport
+      parentRoute: typeof rootRoute
     }
-    '/apps/': {
-      id: '/apps/'
-      path: '/apps'
-      fullPath: '/apps'
-      preLoaderRoute: typeof AppsIndexRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminImport
+      parentRoute: typeof rootRoute
     }
-    '/$businessName/': {
-      id: '/$businessName/'
-      path: '/'
-      fullPath: '/$businessName/'
-      preLoaderRoute: typeof BusinessNameIndexRouteImport
-      parentRoute: typeof BusinessNameRoute
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyImport
+      parentRoute: typeof rootRoute
     }
-    '/_business/chat': {
-      id: '/_business/chat'
-      path: '/chat'
-      fullPath: '/chat'
-      preLoaderRoute: typeof BusinessChatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_auth/settings': {
-      id: '/_auth/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthSettingsRouteImport
-      parentRoute: typeof AuthRoute
+    '/s3test': {
+      id: '/s3test'
+      path: '/s3test'
+      fullPath: '/s3test'
+      preLoaderRoute: typeof S3testImport
+      parentRoute: typeof rootRoute
     }
     '/_auth/auth': {
       id: '/_auth/auth'
       path: '/auth'
       fullPath: '/auth'
-      preLoaderRoute: typeof AuthAuthRouteImport
-      parentRoute: typeof AuthRoute
+      preLoaderRoute: typeof AuthAuthImport
+      parentRoute: typeof AuthImport
     }
-    '/$businessName/admin/': {
-      id: '/$businessName/admin/'
-      path: '/admin'
-      fullPath: '/$businessName/admin'
-      preLoaderRoute: typeof BusinessNameAdminIndexRouteImport
-      parentRoute: typeof BusinessNameRoute
+    '/_auth/settings': {
+      id: '/_auth/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthSettingsImport
+      parentRoute: typeof AuthImport
     }
-    '/$businessName/admin/invitation': {
-      id: '/$businessName/admin/invitation'
-      path: '/admin/invitation'
-      fullPath: '/$businessName/admin/invitation'
-      preLoaderRoute: typeof BusinessNameAdminInvitationRouteImport
-      parentRoute: typeof BusinessNameRoute
+    '/_business/chat': {
+      id: '/_business/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof BusinessChatImport
+      parentRoute: typeof rootRoute
+    }
+    '/$businessName/': {
+      id: '/$businessName/'
+      path: '/'
+      fullPath: '/$businessName/'
+      preLoaderRoute: typeof BusinessNameIndexImport
+      parentRoute: typeof BusinessNameImport
+    }
+    '/apps/': {
+      id: '/apps/'
+      path: '/apps'
+      fullPath: '/apps'
+      preLoaderRoute: typeof AppsIndexImport
+      parentRoute: typeof rootRoute
     }
     '/$businessName/admin/editor': {
       id: '/$businessName/admin/editor'
       path: '/admin/editor'
       fullPath: '/$businessName/admin/editor'
-      preLoaderRoute: typeof BusinessNameAdminEditorRouteImport
-      parentRoute: typeof BusinessNameRoute
+      preLoaderRoute: typeof BusinessNameAdminEditorImport
+      parentRoute: typeof BusinessNameImport
+    }
+    '/$businessName/admin/invitation': {
+      id: '/$businessName/admin/invitation'
+      path: '/admin/invitation'
+      fullPath: '/$businessName/admin/invitation'
+      preLoaderRoute: typeof BusinessNameAdminInvitationImport
+      parentRoute: typeof BusinessNameImport
+    }
+    '/$businessName/admin/': {
+      id: '/$businessName/admin/'
+      path: '/admin'
+      fullPath: '/$businessName/admin'
+      preLoaderRoute: typeof BusinessNameAdminIndexImport
+      parentRoute: typeof BusinessNameImport
     }
   }
 }
+
+// Create and export the route tree
 
 interface BusinessNameRouteChildren {
   BusinessNameIndexRoute: typeof BusinessNameIndexRoute
@@ -333,6 +249,119 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
+  '/$businessName': typeof BusinessNameRouteWithChildren
+  '': typeof AuthRouteWithChildren
+  '/admin': typeof AdminRoute
+  '/privacy': typeof PrivacyRoute
+  '/s3test': typeof S3testRoute
+  '/auth': typeof AuthAuthRoute
+  '/settings': typeof AuthSettingsRoute
+  '/chat': typeof BusinessChatRoute
+  '/$businessName/': typeof BusinessNameIndexRoute
+  '/apps': typeof AppsIndexRoute
+  '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
+  '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
+  '/$businessName/admin': typeof BusinessNameAdminIndexRoute
+}
+
+export interface FileRoutesByTo {
+  '/': typeof IndexRoute
+  '': typeof AuthRouteWithChildren
+  '/admin': typeof AdminRoute
+  '/privacy': typeof PrivacyRoute
+  '/s3test': typeof S3testRoute
+  '/auth': typeof AuthAuthRoute
+  '/settings': typeof AuthSettingsRoute
+  '/chat': typeof BusinessChatRoute
+  '/$businessName': typeof BusinessNameIndexRoute
+  '/apps': typeof AppsIndexRoute
+  '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
+  '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
+  '/$businessName/admin': typeof BusinessNameAdminIndexRoute
+}
+
+export interface FileRoutesById {
+  __root__: typeof rootRoute
+  '/': typeof IndexRoute
+  '/$businessName': typeof BusinessNameRouteWithChildren
+  '/_auth': typeof AuthRouteWithChildren
+  '/admin': typeof AdminRoute
+  '/privacy': typeof PrivacyRoute
+  '/s3test': typeof S3testRoute
+  '/_auth/auth': typeof AuthAuthRoute
+  '/_auth/settings': typeof AuthSettingsRoute
+  '/_business/chat': typeof BusinessChatRoute
+  '/$businessName/': typeof BusinessNameIndexRoute
+  '/apps/': typeof AppsIndexRoute
+  '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
+  '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
+  '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
+}
+
+export interface FileRouteTypes {
+  fileRoutesByFullPath: FileRoutesByFullPath
+  fullPaths:
+    | '/'
+    | '/$businessName'
+    | ''
+    | '/admin'
+    | '/privacy'
+    | '/s3test'
+    | '/auth'
+    | '/settings'
+    | '/chat'
+    | '/$businessName/'
+    | '/apps'
+    | '/$businessName/admin/editor'
+    | '/$businessName/admin/invitation'
+    | '/$businessName/admin'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | ''
+    | '/admin'
+    | '/privacy'
+    | '/s3test'
+    | '/auth'
+    | '/settings'
+    | '/chat'
+    | '/$businessName'
+    | '/apps'
+    | '/$businessName/admin/editor'
+    | '/$businessName/admin/invitation'
+    | '/$businessName/admin'
+  id:
+    | '__root__'
+    | '/'
+    | '/$businessName'
+    | '/_auth'
+    | '/admin'
+    | '/privacy'
+    | '/s3test'
+    | '/_auth/auth'
+    | '/_auth/settings'
+    | '/_business/chat'
+    | '/$businessName/'
+    | '/apps/'
+    | '/$businessName/admin/editor'
+    | '/$businessName/admin/invitation'
+    | '/$businessName/admin/'
+  fileRoutesById: FileRoutesById
+}
+
+export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
+  BusinessNameRoute: typeof BusinessNameRouteWithChildren
+  AuthRoute: typeof AuthRouteWithChildren
+  AdminRoute: typeof AdminRoute
+  PrivacyRoute: typeof PrivacyRoute
+  S3testRoute: typeof S3testRoute
+  BusinessChatRoute: typeof BusinessChatRoute
+  AppsIndexRoute: typeof AppsIndexRoute
+}
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BusinessNameRoute: BusinessNameRouteWithChildren,
@@ -343,6 +372,85 @@ const rootRouteChildren: RootRouteChildren = {
   BusinessChatRoute: BusinessChatRoute,
   AppsIndexRoute: AppsIndexRoute,
 }
-export const routeTree = rootRouteImport
+
+export const routeTree = rootRoute
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+/* ROUTE_MANIFEST_START
+{
+  "routes": {
+    "__root__": {
+      "filePath": "__root.tsx",
+      "children": [
+        "/",
+        "/$businessName",
+        "/_auth",
+        "/admin",
+        "/privacy",
+        "/s3test",
+        "/_business/chat",
+        "/apps/"
+      ]
+    },
+    "/": {
+      "filePath": "index.tsx"
+    },
+    "/$businessName": {
+      "filePath": "$businessName.tsx",
+      "children": [
+        "/$businessName/",
+        "/$businessName/admin/editor",
+        "/$businessName/admin/invitation",
+        "/$businessName/admin/"
+      ]
+    },
+    "/_auth": {
+      "filePath": "_auth.tsx",
+      "children": [
+        "/_auth/auth",
+        "/_auth/settings"
+      ]
+    },
+    "/admin": {
+      "filePath": "admin.tsx"
+    },
+    "/privacy": {
+      "filePath": "privacy.tsx"
+    },
+    "/s3test": {
+      "filePath": "s3test.tsx"
+    },
+    "/_auth/auth": {
+      "filePath": "_auth/auth.tsx",
+      "parent": "/_auth"
+    },
+    "/_auth/settings": {
+      "filePath": "_auth/settings.tsx",
+      "parent": "/_auth"
+    },
+    "/_business/chat": {
+      "filePath": "_business/chat.tsx"
+    },
+    "/$businessName/": {
+      "filePath": "$businessName/index.tsx",
+      "parent": "/$businessName"
+    },
+    "/apps/": {
+      "filePath": "apps/index.tsx"
+    },
+    "/$businessName/admin/editor": {
+      "filePath": "$businessName/admin/editor.tsx",
+      "parent": "/$businessName"
+    },
+    "/$businessName/admin/invitation": {
+      "filePath": "$businessName/admin/invitation.tsx",
+      "parent": "/$businessName"
+    },
+    "/$businessName/admin/": {
+      "filePath": "$businessName/admin/index.tsx",
+      "parent": "/$businessName"
+    }
+  }
+}
+ROUTE_MANIFEST_END */

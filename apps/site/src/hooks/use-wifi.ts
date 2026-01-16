@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { scanWifiNetworks, connectToWifi } from '../routes/api/wifi'
+
+function scanWifiNetworks() { }
+
+async function connectToWifi() { }
 
 // Custom hook for WiFi functionality
 export const useWifiNetworks = () => {
