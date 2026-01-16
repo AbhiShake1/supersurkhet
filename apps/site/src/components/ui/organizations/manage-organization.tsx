@@ -13,7 +13,7 @@ import {
 import { AutoForm, fieldConfig } from "../autoform";
 import { z } from "zod";
 import { api } from "@/lib/api";
-import type { BusinessMember } from "@/lib/schema";
+import type { BusinessInvitation, BusinessMember } from "@/lib/schema";
 import { Avatar, AvatarImage, AvatarFallback } from "../avatar";
 import { sendMail } from "@/emails/send-mail";
 import InvitationEmail from "@/emails/invitation-template";
@@ -24,6 +24,7 @@ import type { PossibleTabConfig } from "@/components/auto-admin";
 import { AutoFormSubmit } from "../auto-form";
 import { ConfettiButton } from "@/components/magicui/confetti";
 
+type Invitation = BusinessInvitation
 type Member = BusinessMember;
 
 interface ManageOrganizationProps {
@@ -392,7 +393,7 @@ const InvitationsTab = ({
           <tbody className="bg-card divide-y divide-gray-200">
             {filteredInvitations.map((invitation) => (
               <InvitationRow
-                key={invitation.email}
+                role key={invitation.email}
                 invitation={invitation}
                 searchTerm={searchTerm}
               />
@@ -409,7 +410,9 @@ const InvitationRow = ({
   invitation: { email, role, permissions, invitedAt },
   searchTerm,
 }: {
-  invitation: any; // TODO: Define proper type
+  invitation: Invitation;
+  onUpdatePermissions: (id: string, permissions: string[]) => void;
+
   searchTerm: string;
 }) => {
   if (
