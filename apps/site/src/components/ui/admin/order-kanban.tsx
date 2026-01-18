@@ -1,200 +1,207 @@
 import { AutoKanban } from "@/components/auto-admin";
-import type { AdminComponent } from ".";
-import type { Order } from "@/lib/schema";
-import { api } from "@/lib/api";
-import { useMemo, useState } from "react";
-import { cn, recordToList, soulToId } from "@/lib/utils";
-import {
-  Credenza,
-  CredenzaBody,
-  CredenzaContent,
-  CredenzaDescription,
-  CredenzaHeader,
-  CredenzaTitle,
-} from "../credenza";
 import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
-import { Plus } from "lucide-react";
+import { api } from "@/lib/api";
 import { formatCurrency } from "@/lib/intl";
+import type { Order } from "@/lib/schema";
+import { cn, recordToList, soulToId } from "@/lib/utils";
+import { Plus } from "lucide-react";
+import { useMemo, useState } from "react";
+import type { AdminComponent } from ".";
+import {
+	Credenza,
+	CredenzaBody,
+	CredenzaContent,
+	CredenzaDescription,
+	CredenzaHeader,
+	CredenzaTitle,
+} from "../credenza";
+
+const getTotalPaid = (order: Order) =>
+	order.paidAmounts.reduce((sum, payment) => sum + payment.paidAmount, 0);
 import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
 
 export const OrderKanban: AdminComponent = ({ slug }) => {
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <AddRowDialog
-          schema="order"
-          slug={slug}
-          buttonLabel="Add New Order"
-          buttonIcon={<Plus className="h-4 w-4" />}
-        />
-      </div>
-      <AutoKanban
-        slug={slug}
-        cardBuilder={(order) => <OrderCard order={order} slug={slug} />}
-        groupKey="orderStatus"
-        schema="order"
-      />
-    </div>
-  );
+	return (
+		<div className="space-y-4">
+			<div className="flex justify-end">
+				<AddRowDialog
+					schema="order"
+					slug={slug}
+					buttonLabel="Add New Order"
+					buttonIcon={<Plus className="h-4 w-4" />}
+				/>
+			</div>
+			<AutoKanban
+				slug={slug}
+				cardBuilder={(order) => <OrderCard order={order} slug={slug} />}
+				groupKey="orderStatus"
+				schema="order"
+			/>
+		</div>
+	);
 };
 
 function OrderCard({ order, slug }: { order: Order; slug: string }) {
-  const { data: customers = [] } = api.customer.useGet({ keys: [slug] })
-  const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
-  const customerById = useMemo(() => new Map(customers.map(c => [c._?.soul, c])), []);
-  const { data: products = [] } = api.product.useGet({ keys: [slug] });
+	const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
+	const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
+	const customerById = useMemo(
+		() => new Map(customers.map((c) => [c._?.soul, c])),
+		[],
+	);
+	const { data: products = [] } = api.product.useGet({ keys: [slug] });
 
-  const productById = useMemo(
-    () => new Map(products.map((p) => [p._?.soul, p])),
-    [products]
-  );
+	const productById = useMemo(
+		() => new Map(products.map((p) => [p._?.soul, p])),
+		[products],
+	);
 
-  const [open, setOpen] = useState(false);
-  if (!order?.items) return null;
-  const orderItems = order.items;
+	const [open, setOpen] = useState(false);
+	if (!order?.items) return null;
+	const orderItems = order.items;
 
-  function getBackgroundProps() {
-    switch (order.orderStatus) {
-      case "pending":
-        return {
-          className:
-            "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300",
-        };
-      case "preparing":
-        return {
-          className:
-            "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-        };
-      case "ready":
-        return {
-          className:
-            "bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
-        };
-      case "served":
-        return {
-          className:
-            "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
-        };
-      case "cancelled":
-        return {
-          className: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
-        };
-      case "confirmed":
-        return {
-          className:
-            "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
-        };
+	function getBackgroundProps() {
+		switch (order.orderStatus) {
+			case "pending":
+				return {
+					className:
+						"bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300",
+				};
+			case "preparing":
+				return {
+					className:
+						"bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+				};
+			case "ready":
+				return {
+					className:
+						"bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
+				};
+			case "served":
+				return {
+					className:
+						"bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
+				};
+			case "cancelled":
+				return {
+					className: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+				};
+			case "confirmed":
+				return {
+					className:
+						"bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
+				};
 
-      default:
-        return {
-          className: ""
-        }
-    }
-  }
+			default:
+				return {
+					className: "",
+				};
+		}
+	}
 
-  const { className } = getBackgroundProps();
+	const { className } = getBackgroundProps();
 
-  return (
-    <div>
-      <Credenza open={open} onOpenChange={setOpen}>
-        <CredenzaContent>
-          <CredenzaHeader>
-            <CredenzaTitle>Order Details</CredenzaTitle>
-            <CredenzaDescription>
-              Detailed information about the order.
-            </CredenzaDescription>
-          </CredenzaHeader>
-          <CredenzaBody>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <span className="text-right font-semibold">Order ID:</span>
-                <span className="col-span-3">
-                  {soulToId(order._?.soul)}
-                </span>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <span className="text-right font-semibold">Items:</span>
-                <span className="col-span-3">
-                  {orderItems.map((item) => {
-                    const menuItem = menuItems.find(
-                      (m) => m?._?.soul === item._?.soul,
-                    );
-                    return (
-                      <div key={item._?.soul} className="flex justify-between">
-                        <span>
-                          <span className="font-bold">{item.quantity}x</span>{" "}
-                          {productById.get(item.product)?.title}
-                        </span>
-                        <span className="font-bold">
-                          {formatCurrency(item.quantity * item.unitPrice)}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </span>
-              </div>
-              {order.customerId && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <span className="text-right font-semibold">Customer:</span>
-                  <span className="col-span-3">{customerById.get(order.customerId)?.name}</span>                </div>
-              )}
-              {order.subTotal && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <span className="text-right font-semibold">Subtotal:</span>
-                  <span className="col-span-3">
-                    Ra. {order.subTotal.toFixed(2)}
-                  </span>
-                </div>
-              )}
-              {order.taxes && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <span className="text-right font-semibold">Taxes:</span>
-                  <span className="col-span-3">
-                    Rs. {order.taxes.toFixed(2)}
-                  </span>
-                </div>
-              )}
-              {order.totalAmount && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <span className="text-right font-semibold">Total:</span>
-                  <span className="col-span-3">
-                    Rs. {order.totalAmount.toFixed(2)}
-                  </span>
-                </div>
-              )}
-              {order.paymentMethod && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <span className="text-right font-semibold">
-                    Payment Method:
-                  </span>
-                  <span className="col-span-3 capitalize">
-                    {order.paymentMethod}
-                  </span>
-                </div>
-              )}
-              {order.paymentStatus && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <span className="text-right font-semibold">
-                    Payment Status:
-                  </span>
-                  <span className="col-span-3 capitalize">
-                    {order.paymentStatus}
-                  </span>
-                </div>
-              )}
-              {order.estimatedDeliveryTime && (
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <span className="text-right font-semibold">
-                    Est. Delivery:
-                  </span>
-                  <span className="col-span-3">
-                    {new Date(order.estimatedDeliveryTime).toLocaleTimeString()}
-                  </span>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end">
-              {/* {order.orderStatus !== "cancelled" && (
+	return (
+		<div>
+			<Credenza open={open} onOpenChange={setOpen}>
+				<CredenzaContent>
+					<CredenzaHeader>
+						<CredenzaTitle>Order Details</CredenzaTitle>
+						<CredenzaDescription>
+							Detailed information about the order.
+						</CredenzaDescription>
+					</CredenzaHeader>
+					<CredenzaBody>
+						<div className="grid gap-4 py-4">
+							<div className="grid grid-cols-4 items-center gap-4">
+								<span className="text-right font-semibold">Order ID:</span>
+								<span className="col-span-3">{soulToId(order._?.soul)}</span>
+							</div>
+							<div className="grid grid-cols-4 items-center gap-4">
+								<span className="text-right font-semibold">Items:</span>
+								<span className="col-span-3">
+									{orderItems.map((item) => {
+										const menuItem = menuItems.find(
+											(m) => m?._?.soul === item._?.soul,
+										);
+										return (
+											<div key={item._?.soul} className="flex justify-between">
+												<span>
+													<span className="font-bold">{item.quantity}x</span>{" "}
+													{productById.get(item.product)?.title}
+												</span>
+												<span className="font-bold">
+													{formatCurrency(item.quantity * item.unitPrice)}
+												</span>
+											</div>
+										);
+									})}
+								</span>
+							</div>
+							{order.customerId && (
+								<div className="grid grid-cols-4 items-center gap-4">
+									<span className="text-right font-semibold">Customer:</span>
+									<span className="col-span-3">
+										{customerById.get(order.customerId)?.name}
+									</span>{" "}
+								</div>
+							)}
+							{order.subTotal && (
+								<div className="grid grid-cols-4 items-center gap-4">
+									<span className="text-right font-semibold">Subtotal:</span>
+									<span className="col-span-3">
+										Ra. {order.subTotal.toFixed(2)}
+									</span>
+								</div>
+							)}
+							{order.taxes && (
+								<div className="grid grid-cols-4 items-center gap-4">
+									<span className="text-right font-semibold">Taxes:</span>
+									<span className="col-span-3">
+										Rs. {order.taxes.toFixed(2)}
+									</span>
+								</div>
+							)}
+							{order.totalAmount && (
+								<div className="grid grid-cols-4 items-center gap-4">
+									<span className="text-right font-semibold">Total:</span>
+									<span className="col-span-3">
+										Rs. {order.totalAmount.toFixed(2)}
+									</span>
+								</div>
+							)}
+							{order.paymentMethod && (
+								<div className="grid grid-cols-4 items-center gap-4">
+									<span className="text-right font-semibold">
+										Payment Method:
+									</span>
+									<span className="col-span-3 capitalize">
+										{order.paymentMethod}
+									</span>
+								</div>
+							)}
+							{order.paymentStatus && (
+								<div className="grid grid-cols-4 items-center gap-4">
+									<span className="text-right font-semibold">
+										Payment Status:
+									</span>
+									<span className="col-span-3 capitalize">
+										{order.paymentStatus}
+									</span>
+								</div>
+							)}
+							{order.estimatedDeliveryTime && (
+								<div className="grid grid-cols-4 items-center gap-4">
+									<span className="text-right font-semibold">
+										Est. Delivery:
+									</span>
+									<span className="col-span-3">
+										{new Date(order.estimatedDeliveryTime).toLocaleTimeString()}
+									</span>
+								</div>
+							)}
+						</div>
+						<div className="flex justify-end">
+							{/* {order.orderStatus !== "cancelled" && (
                     <AlertDialog>
                       <AlertDialogTrigger>
                         <Button variant="destructive">
@@ -215,64 +222,68 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                       </AlertDialogContent>
                     </AlertDialog>
                   )} */}
-            </div>
-          </CredenzaBody>
-        </CredenzaContent>
-      </Credenza>
-      <div
-        className={cn(
-          className,
-          "rounded-md border bg-card p-3 shadow-xs flex flex-col gap-2",
-        )}
-        onClick={() => setOpen(true)}
-      >
-        <div className={cn("flex items-center justify-between gap-2")}>
-          <span className="line-clamp-1 font-medium text-sm">
-            {orderItems
-              .map((i) => menuItems.find((m) => m?._?.soul === i._?.soul))
-              .map((m) => m?.name)
-              .filter((m) => !!m)
-              .join(", ")}
-          </span>
-          <div className="flex items-center justify-between gap-2">
-            {/* Truncated items preview */}
-            <span className="line-clamp-1 font-medium text-sm">
-              {orderItems.slice(0, 3)
-                .map((i) => `${i.quantity}x ${productById.get(i.product)?.title ?? "Unknown"}`)
-                .join(", ")}
-              {orderItems.length > 3 ? ` ...and ${orderItems.length - 3} more` : ""}
-            </span>
+						</div>
+					</CredenzaBody>
+				</CredenzaContent>
+			</Credenza>
+			<div
+				className={cn(
+					className,
+					"rounded-md border bg-card p-3 shadow-xs flex flex-col gap-2",
+				)}
+				onClick={() => setOpen(true)}
+			>
+				<div className={cn("flex items-center justify-between gap-2")}>
+					<span className="line-clamp-1 font-medium text-sm">
+						{orderItems
+							.map((i) => menuItems.find((m) => m?._?.soul === i._?.soul))
+							.map((m) => m?.name)
+							.filter((m) => !!m)
+							.join(", ")}
+					</span>
+					<div className="flex items-center justify-between gap-2">
+						{/* Truncated items preview */}
+						<span className="line-clamp-1 font-medium text-sm">
+							{orderItems
+								.slice(0, 3)
+								.map(
+									(i) =>
+										`${i.quantity}x ${productById.get(i.product)?.title ?? "Unknown"}`,
+								)
+								.join(", ")}
+							{orderItems.length > 3
+								? ` ...and ${orderItems.length - 3} more`
+								: ""}
+						</span>
 
-            <Tooltip>
-              <TooltipTrigger>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-200 text-green-800 cursor-pointer">
-                  {formatCurrency(order.paidAmount ?? 0)}
-                </span>
-              </TooltipTrigger>
+						<Tooltip>
+							<TooltipTrigger>
+								<span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-200 text-green-800 cursor-pointer">
+									{formatCurrency(getTotalPaid(order))}
+								</span>
+							</TooltipTrigger>
 
-              <TooltipContent className="max-w-xs">
-                <div className="flex flex-col gap-2 justify-between w-full">
-                  {orderItems.map((item) => (
-                    <div
-                      key={item._?.soul}
-                    >
-                      <div className=" flex justify-between gap-2">
-                        <span className="font-medium">
-                          {item.quantity}x {productById.get(item.product)?.title ?? "Unknown"}
-                        </span>
-                        <span className="font-bold">
-                          {formatCurrency(item.quantity * item.unitPrice)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </TooltipContent>
-            </Tooltip>
-
-          </div>
-        </div>
-      </div>
-    </div >
-  );
+							<TooltipContent className="max-w-xs">
+								<div className="flex flex-col gap-2 justify-between w-full">
+									{orderItems.map((item) => (
+										<div key={item._?.soul}>
+											<div className=" flex justify-between gap-2">
+												<span className="font-medium">
+													{item.quantity}x{" "}
+													{productById.get(item.product)?.title ?? "Unknown"}
+												</span>
+												<span className="font-bold">
+													{formatCurrency(item.quantity * item.unitPrice)}
+												</span>
+											</div>
+										</div>
+									))}
+								</div>
+							</TooltipContent>
+						</Tooltip>
+					</div>
+				</div>
+			</div>
+		</div>
+	);
 }
