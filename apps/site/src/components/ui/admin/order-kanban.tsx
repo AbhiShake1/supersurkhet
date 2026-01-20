@@ -16,6 +16,7 @@ import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
 import { Plus } from "lucide-react";
 import { formatCurrency } from "@/lib/intl";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
+import { calculateTotalAmount } from "@/lib/calculate-sum";
 
 export const OrderKanban: AdminComponent = ({ slug }) => {
   return (
@@ -246,7 +247,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
             <Tooltip>
               <TooltipTrigger>
                 <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-green-200 text-green-800 cursor-pointer">
-                  {formatCurrency(order.paidAmount ?? 0)}
+                  {formatCurrency(calculateTotalAmount(order.paidAmounts ?? [0]))}
                 </span>
               </TooltipTrigger>
 

@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/tooltip"
 
 import { Button } from "./ui/button";
+import { calculateTotalAmount } from "@/lib/calculate-sum";
 
 interface ReportsPageProps {
   slug: string;
@@ -725,7 +726,7 @@ function AccountsSection({
                 </div>
                 <div>
                   <span className="text-muted-foreground">Paid:</span><br />
-                  <span className="font-medium">{formatCurrency(item.paidAmount)}</span>
+                  <span className="font-medium">{formatCurrency(calculateTotalAmount(item.paidAmount))}</span>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Due:</span><br />
