@@ -86,6 +86,16 @@ function refreshPaidAmount(form: UseFormReturn) {
   form.setValue("paymentStatus", paymentStatus)
 }
 
+function calculateTotalAmountForItem(items: any[], itemsKey: string, index: number, form: UseFormReturn) {
+  if (items && items[index]) {
+    const quantity = Number(items[index].quantity) || 0;
+    const unitPrice = Number(items[index].unitPrice) || 0;
+    const totalAmount = quantity * unitPrice;
+
+    form.setValue([itemsKey, index, "totalAmount"].join("."), totalAmount);
+  }
+}
+
 export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<"stockImport"> {
   const { data: parties = [] } = api.party.useGet({ keys: [slug] })
   const { data: products = [] } = api.product.useGet({ keys: [slug] })
@@ -1105,7 +1115,33 @@ function useReturnProductsSchema({ slug }: { slug: string }) {
         .describe("Quantity Returned")
         .superRefine(fieldConfig({
           fieldType: "number",
+          customData: {
+            onValueChange: (_, __, form) => {
+              // Calculate total amount when quantity changes
+              const items = form.getValues('returnedProducts');
+              const [itemsKey, index] = __;
+
+              calculateTotalAmountForItem(items, itemsKey, index, form);
+            },
+          }
         })),
+      unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
+        fieldType: "number",
+        customData: {
+          onValueChange: (_, __, form) => {
+            // Calculate total amount when unit price changes
+            const items = form.getValues('returnedProducts');
+            const [itemsKey, index] = __;
+
+            calculateTotalAmountForItem(items, itemsKey, index, form);
+          },
+        }
+      })),
+      totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
+        inputProps: {
+          readOnly: true,
+        }
+      }))
     })
     .array()
     .optional()
@@ -1160,6 +1196,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
         const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
+          totalAmount: (Number(item.quantity || 0) * Number(item.unitPrice || 0))
         }))
         if (!mapped) return
         mapped["#"] = items?.["#"]
@@ -1169,6 +1206,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
         const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
+          totalAmount: (Number(item.quantity || 0) * Number(item.unitPrice || 0))
         }))
         if (!mapped) return
         mapped["#"] = items?.["#"]
@@ -1244,6 +1282,11 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
               customData: {
                 onValueChange: (_, __, form) => {
                   refreshPaidAmount(form)
+                  // Calculate total amount when quantity changes
+                  const items = form.getValues('products');
+                  const [itemsKey, index] = __;
+
+                  calculateTotalAmountForItem(items, itemsKey, index, form);
                 },
               }
             })),
@@ -1252,9 +1295,19 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
             customData: {
               onValueChange: (_, __, form) => {
                 refreshPaidAmount(form)
+                // Calculate total amount when unit price changes
+                const items = form.getValues('products');
+                const [itemsKey, index] = __;
+
+                calculateTotalAmountForItem(items, itemsKey, index, form);
               },
             }
           })),
+          totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
+            inputProps: {
+              readOnly: true,
+            }
+          }))
         })
         .array()
         .min(1, { message: "Please add at least one product." })
