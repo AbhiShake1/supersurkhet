@@ -45,6 +45,7 @@ import type { SchemaKeys } from "@gta/react-hooks";
 import { useDialog } from "@/contexts/dialog-context";
 import { Button } from "@/components/ui/button";
 import { AutoFormSubmit } from "@/components/ui/auto-form";
+import { calculateTotalAmount } from "@/lib/calculate-sum";
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoTableTab<K>
@@ -79,11 +80,22 @@ function refreshPaidAmount(form: UseFormReturn) {
   const totalCost = calculateTotalCost(form)
   // const [,a] = formValues
   if (!totalCost) return
-  form.setValue("paidAmount", totalCost)
+  form.setValue("paid Amount", totalCost)
   const formValues = form.getValues()
   const paidAmount = formValues.paidAmount
   const paymentStatus = getPaymentStatus(paidAmount, totalCost)
   form.setValue("paymentStatus", paymentStatus)
+}
+
+function calculatePaidAmount(items: any[], itemsKey: string, index: number, form: UseFormReturn) {
+  if (items && items[index]) {
+    const paid = Number(items[index].paid) || 0; // take user input for paid
+    form.setValue([itemsKey, index, "paidAmount"].join("."), paid);
+
+    // Optionally refresh top-level paidAmount for the entire stock import
+    const totalPaid = items.reduce((sum, item) => sum + (Number(item.paid) || 0), 0);
+    form.setValue("paidAmount", totalPaid);
+  }
 }
 
 export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<"stockImport"> {
@@ -113,6 +125,19 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     }))
   }
 
+  const refreshPaidAmount = (form: UseFormReturn) => {
+    const items = form.getValues('items') || [];
+
+    const total = items.reduce((sum: number, item: any) => {
+      const qty = Number(item.quantity) || 0;
+      const price = Number(item.unitPrice) || 0;
+      return sum + (qty * price);
+    }, 0);
+
+    // This automatically updates the top-level paidAmount field
+    form.setValue("paidAmount", total);
+  };
+
   const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
 
   useEffect(() => {
@@ -130,9 +155,9 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     slug,
     group: "Inventory",
     formSchemaTransformer: (schema) => schema.superRefine((stockImport, ctx) => {
-      if (!stockImport.paidAmount) return
+      if (!stockImport.paidAmounts) return
       const totalCost = stockImport.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
-      if (stockImport.paidAmount > totalCost) ctx.addIssue({
+      if (calculateTotalAmount(stockImport.paidAmounts) > totalCost) ctx.addIssue({
         code: "custom",
         message: `Paid amount cannot be greater than total cost (${totalCost})`,
         path: ["paidAmount"],
@@ -157,17 +182,17 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
           options: parties.map(p => [p._!.soul!, p.name]),
         },
       })),
-      paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
-        fieldType: "number",
-        customData: {
-          onValueChange: (_paidAmount, __, form) => {
-            const paidAmount = Number(_paidAmount)
-            const totalCost = calculateTotalCost(form)
-            if (!totalCost) return
-            form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
-          },
-        }
-      })),
+      // paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
+      //   fieldType: "number",
+      //   customData: {
+      //     onValueChange: (_paidAmount, __, form) => {
+      //       const paidAmount = Number(_paidAmount)
+      //       const totalCost = calculateTotalCost(form)
+      //       if (!totalCost) return
+      //       form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
+      //     },
+      //   }
+      // })),
       items: salesItemSchema
         .extend({
           unit: unitField,
@@ -229,6 +254,26 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
                 refreshPaidAmount(form)
               },
             }
+          })),
+          paid: z.number({ coerce: true }).describe("Paid").superRefine(fieldConfig({
+            fieldType: "number",
+            customData: {
+              onValueChange: (_, __, form) => {
+                const [itemsKey, index] = __ ?? [];
+                if (!itemsKey || index === undefined) return;
+
+                const items = form.getValues('items') || [];
+                const paidValue = Number(items[index]?.paid || 0);
+                form.setValue([itemsKey, index, "paidAmount"].join("."), paidValue);
+
+                // Update top-level paidAmount
+                const totalPaid = items.reduce((sum, i) => sum + (Number(i.paid) || 0), 0);
+                form.setValue("paidAmount", totalPaid);
+              }
+            }
+          })),
+          paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
+            inputProps: { readOnly: true }
           })),
           unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
             fieldType: "number",
@@ -1455,7 +1500,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                           // Add vehicle reference to the invoice
                           vehicleId: row.original.vehicleId,
                           tripId: row.original._.soul,
-                          description: `Sale from trip ${row.original._.soul} by ${vehicle?.name || 'vehicle'}`
+                          description: `Sale from trip ${row.original._.soul} by ${vehicles?.name || 'vehicle'}`
                         });
 
                         // Update product stock quantities

@@ -20,14 +20,27 @@ export type SalesItem = z.infer<typeof salesItemSchema>;
 export const saleSchema = z.object({
   saleDate: z.string()
     // .datetime()
-    .datetime({offset: true})
+    .datetime({ offset: true })
     .default(() => new Date().toISOString()).describe("Sale Date")
     .superRefine(fieldConfig({ fieldType: "datetime" })),
   customerId: z.string().describe("Customer"),
   items: salesItemSchema.array()
     .min(1, { message: "Please add at least one item." })
     .describe("Items Sold"),
-  paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
+  paidAmounts: z
+    .array(
+      z.object({
+        paidAmount: z.number({ coerce: true }).positive(),
+        paidAt: z
+          .string()
+          .datetime({ offset: true })
+          .describe("Paid At")
+          .superRefine(fieldConfig({ fieldType: "datetime" })
+          ),
+      }),
+    )
+    .default([])
+    .describe("Payment history"),
   paymentStatus: z.string().default("pending").describe("Payment Status")
     .superRefine(fieldConfig({
       inputProps: {
@@ -44,11 +57,24 @@ export type Sale = z.infer<typeof saleSchema>;
 export const stockImportSchema = z.object({
   party: z.string().describe("Party"),
   importDate: z.string()
-              // .datetime()
-              .datetime({offset: true})
-              .default(() => new Date().toISOString()).describe("Import Date").superRefine(fieldConfig({ fieldType: "datetime" })),
+    // .datetime()
+    .datetime({ offset: true })
+    .default(() => new Date().toISOString()).describe("Import Date").superRefine(fieldConfig({ fieldType: "datetime" })),
   items: salesItemSchema.array().min(1, { message: "Please add at least one item." }).describe("Items"),
-  paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
+  paidAmounts: z
+    .array(
+      z.object({
+        paidAmount: z.number({ coerce: true }).positive(),
+        paidAt: z
+          .string()
+          .datetime({ offset: true })
+          .describe("Paid At")
+          .superRefine(fieldConfig({ fieldType: "datetime" })
+          ),
+      }),
+    )
+    .default([])
+    .describe("Payment history"),
   paymentStatus: z.string().default("pending").describe("Payment Status")
     .superRefine(fieldConfig({
       inputProps: {

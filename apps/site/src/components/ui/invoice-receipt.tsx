@@ -10,6 +10,7 @@ import {
 import type { Invoice, Party } from "@/lib/schema"
 import type { Product } from "../supersurkhet/products"
 import { formatCurrency } from "@/lib/intl"
+import { calculateTotalAmount } from "@/lib/calculate-sum"
 
 interface ReceiptProps {
   invoice: Invoice
@@ -23,7 +24,7 @@ export function InvoiceReceipt({
   party: { name: companyName },
 }: ReceiptProps) {
   const totalAmount = invoice.subTotal + invoice.tax
-  const outstandingAmount = totalAmount - invoice.paidAmount
+  const outstandingAmount = totalAmount - calculateTotalAmount(invoice.paidAmounts);
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "N/A"
@@ -163,7 +164,7 @@ export function InvoiceReceipt({
                     <DollarSign className="w-3 h-3" />
                     Amount Paid
                   </span>
-                  <span className="font-semibold">{formatCurrency(invoice.paidAmount)}</span>
+                  <span className="font-semibold">  {formatCurrency(calculateTotalAmount(Array.isArray(invoice.paidAmounts) ? invoice.paidAmounts : [invoice.paidAmounts ?? 0]))}</span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t">
                   <span className="text-muted-foreground font-medium flex items-center gap-1 text-sm">

@@ -2,6 +2,8 @@ import { useMemo } from "react";
 import { api } from "@/lib/api";
 import NepaliDate from "nepali-datetime";
 import type { Sale, StockImport } from "@/lib/schemas/sales";
+import { calculateTotalAmount } from "@/lib/calculate-sum";
+import { ca } from "date-fns/locale";
 
 const saleTotal = (sale: Sale) =>
   sale.items?.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0) ?? 0
@@ -73,9 +75,11 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   const { data: parties = [] } = api.party.useGet({ keys: [slug] });
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
   const { data: invoices = [] } = api.invoice.useGet({ keys: [slug] });
+  const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
 
   const productsBySoul = useMemo(() => new Map(products.map(p => [p._!.soul!, p])), [products]);
   const partiesBySoul = useMemo(() => new Map(parties.map(p => [p._!.soul!, p])), [parties]);
+  const customersBySoul = useMemo(() => new Map(customers.map(p => [p._!.soul!, p])), [customers]);
 
   // Filter data by time period
   const filteredSales = filterByPeriod(sales, period);
@@ -109,7 +113,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     () =>
       filteredSales.reduce((sum, sale) => {
         const total = saleTotal(sale);
-        const due = total - (sale.paidAmount ?? 0);
+        const due = total - calculateTotalAmount(sale.paidAmounts ?? []);
         return due > 0 ? sum + due : sum;
       }, 0),
     [filteredSales]
@@ -119,7 +123,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     () =>
       filteredStockImports.reduce((sum, imp) => {
         const total = importTotal(imp);
-        const due = total - (imp.paidAmount ?? 0);
+        const due = total - calculateTotalAmount(imp.paidAmounts ?? []);
         return due > 0 ? sum + due : sum;
       }, 0),
     [filteredStockImports]
@@ -128,19 +132,19 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   // Detailed breakdowns for Accounts Receivable
   const accountsReceivableBreakdown = useMemo(() => {
     return filteredSales
-      .filter((sale: any) => {
+      .filter((sale) => {
         const total = saleTotal(sale);
-        const due = total - (sale.paidAmount ?? 0);
+        const due = total - calculateTotalAmount(sale.paidAmounts ?? []);
         return due > 0;
       })
-      .map((sale: any) => {
+      .map((sale) => {
         const total = saleTotal(sale);
-        const due = total - (sale.paidAmount ?? 0);
+        const due = total - calculateTotalAmount(sale.paidAmounts ?? []);
         return {
           id: sale._?.soul || '',
-          customer: sale.customerName || 'Walk-in Customer',
+          customer: customersBySoul.get(sale.customerId)?.name ?? 'Walk-in Customer',
           totalAmount: total,
-          paidAmount: sale.paidAmount ?? 0,
+          paidAmount: calculateTotalAmount(sale.paidAmounts ?? [0]),
           dueAmount: due,
           date: sale.saleDate || (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
           items: sale.items?.map((item: any) => ({
@@ -158,18 +162,18 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     return filteredStockImports
       .filter((imp) => {
         const total = importTotal(imp);
-        const due = total - (imp.paidAmount ?? 0);
+        const due = total - calculateTotalAmount(imp.paidAmounts ?? []);
         return due > 0;
       })
       .map((imp) => {
         const total = importTotal(imp);
-        const due = total - (imp.paidAmount ?? 0);
+        const due = total - calculateTotalAmount(imp.paidAmounts ?? []);
         const party = partiesBySoul.get(imp.party);
         return {
           id: imp._?.soul || '',
           supplier: party?.name || imp.party,
           totalAmount: total,
-          paidAmount: imp.paidAmount ?? 0,
+          paidAmount: imp.paidAmounts ?? [0],
           dueAmount: due,
           date: imp.importDate || (imp.timestamp ? new Date(imp.timestamp).toISOString() : ''),
           items: imp.items?.map((item) => ({
@@ -220,8 +224,15 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   // Sales Trends - Group sales by date
   const salesTrends = useMemo(() => {
     const trends = filteredSales.reduce((acc, sale) => {
-      const date = new Date(sale.saleDate || sale.timestamp).toDateString();
-      acc[date] = (acc[date] || 0) + saleTotal(sale);
+      const rawDate =
+        sale.saleDate ??
+        (sale.timestamp
+          ? new Date(sale.timestamp).toISOString()
+          : undefined);
+
+      if (!rawDate) return acc;
+
+      const date = new Date(rawDate).toDateString(); acc[date] = (acc[date] || 0) + saleTotal(sale);
       return acc;
     }, {} as Record<string, number>);
 
@@ -308,7 +319,8 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   // Customer Purchase History
   const customerPurchaseHistory = useMemo(() => {
     const customerSales = filteredSales.reduce((acc, sale) => {
-      const customerName = sale.customerName || 'Walk-in Customer';
+      const customerName =
+        customersBySoul.get(sale.customerId)?.name ?? 'Walk-in Customer';
       if (!acc[customerName]) {
         acc[customerName] = {
           name: customerName,
@@ -338,8 +350,8 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
         id: sale._?.soul || '',
         customer: sale.customerName || 'Walk-in Customer',
         totalAmount: total,
-        paidAmount: sale.paidAmount ?? 0,
-        dueAmount: total - (sale.paidAmount ?? 0),
+        paidAmount: sale.paidAmount ?? [0],
+        dueAmount: total - (sale.paidAmount ?? [0]),
         date: sale.saleDate || (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
         items: sale.items?.map((item: any) => ({
           product: productsBySoul.get(item.product)?.title || item.product,
