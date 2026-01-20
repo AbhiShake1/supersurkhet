@@ -654,6 +654,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
   const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
+
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
@@ -686,7 +687,17 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
     slug,
     previewOverrides: {
       customerId: (customerId) => customersBySoul.get(customerId)?.name ?? "-",
+      items: (items) => {
+        const mapped = items?.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        if (!mapped) return
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     },
+
     formSchemaTransformer: (schema) => schema.superRefine((order, ctx) => {
       if (!order.paidAmount) return
       const totalCost = order.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
@@ -723,6 +734,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
                   .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
                 onValueChange: (val, path, form) => {
                   const product = productsBySoul.get(val)
+
                   if (!product) return
                   const [itemsKey, index] = path
 
