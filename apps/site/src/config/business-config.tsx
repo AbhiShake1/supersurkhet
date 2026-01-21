@@ -451,6 +451,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
         const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
+          totalAmount: (Number(item.quantity || 0) * Number(item.unitPrice || 0))
         }))
         if (!mapped) return
         mapped["#"] = items?.["#"]
@@ -531,6 +532,9 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
               customData: {
                 onValueChange: (_, __, form) => {
                   refreshPaidAmount(form)
+                  const items = form.getValues('items');
+                  const [itemsKey, index] = __;
+                  calculateTotalAmountForItem(items, itemsKey, index, form);
                 },
               }
             })),
@@ -539,8 +543,16 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
             customData: {
               onValueChange: (_, __, form) => {
                 refreshPaidAmount(form)
+                const items = form.getValues('items');
+                const [itemsKey, index] = __;
+                calculateTotalAmountForItem(items, itemsKey, index, form);
               },
             }
+          })),
+          totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
+            inputProps: {
+              readOnly: true,
+            },
           })),
         })
         .array()
