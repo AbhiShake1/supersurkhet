@@ -87,14 +87,13 @@ function refreshPaidAmount(form: UseFormReturn) {
   form.setValue("paymentStatus", paymentStatus)
 }
 
-function calculatePaidAmount(items: any[], itemsKey: string, index: number, form: UseFormReturn) {
+function calculateTotalAmountForItem(items: any[], itemsKey: string, index: number, form: UseFormReturn) {
   if (items && items[index]) {
-    const paid = Number(items[index].paid) || 0; // take user input for paid
-    form.setValue([itemsKey, index, "paidAmount"].join("."), paid);
+    const quantity = Number(items[index].quantity) || 0;
+    const unitPrice = Number(items[index].unitPrice) || 0;
+    const totalAmount = quantity * unitPrice;
 
-    // Optionally refresh top-level paidAmount for the entire stock import
-    const totalPaid = items.reduce((sum, item) => sum + (Number(item.paid) || 0), 0);
-    form.setValue("paidAmount", totalPaid);
+    form.setValue([itemsKey, index, "totalAmount"].join("."), totalAmount);
   }
 }
 
@@ -347,7 +346,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         items: invoiceItems,
         subTotal: totalAmount,
         tax: 0,
-        paidAmount: variables.paidAmount || 0,
+        paidAmounts: variables.paidAmounts || [],
         paymentStatus: variables.paymentStatus || "pending" as any,
         fiscalYear: calculateFiscalYear()
       });
@@ -493,9 +492,9 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       },
     },
     formSchemaTransformer: (schema) => schema.superRefine((sale, ctx) => {
-      if (!sale.paidAmount) return
+      if (!sale.paidAmounts?.length) return
       const totalCost = sale.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
-      if (sale.paidAmount > totalCost) ctx.addIssue({
+      if (calculateTotalAmount(sale.paidAmounts) > totalCost) ctx.addIssue({
         code: "custom",
         message: `Paid amount cannot be greater than total cost (${totalCost})`,
         path: ["paidAmount"],
@@ -676,7 +675,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
         items: invoiceItems,
         subTotal: totalAmount,
         tax: 0,
-        paidAmount: variables.paidAmount || 0,
+        paidAmounts: variables.paidAmounts || [],
         paymentStatus: variables.paymentStatus || "pending" as any,
         fiscalYear: calculateFiscalYear()
       });
@@ -699,6 +698,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
   const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
+
   const productsBySoul = useMemo(() => new Map(
     products
       .filter(p => p?._?.soul)
@@ -731,11 +731,21 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
     slug,
     previewOverrides: {
       customerId: (customerId) => customersBySoul.get(customerId)?.name ?? "-",
+      items: (items) => {
+        const mapped = items?.map((item: SalesItem) => ({
+          ...item,
+          product: productsBySoul.get(item.product)?.title ?? "-",
+        }))
+        if (!mapped) return
+        mapped["#"] = items?.["#"]
+        return mapped
+      },
     },
+
     formSchemaTransformer: (schema) => schema.superRefine((order, ctx) => {
-      if (!order.paidAmount) return
+      if (!order.paidAmounts?.length) return
       const totalCost = order.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
-      if (order.paidAmount > totalCost) ctx.addIssue({
+      if (calculateTotalAmount(order.paidAmounts) > totalCost) ctx.addIssue({
         code: "custom",
         message: `Paid amount cannot be greater than total cost (${totalCost})`,
         path: ["paidAmount"],
@@ -768,6 +778,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
                   .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
                 onValueChange: (val, path, form) => {
                   const product = productsBySoul.get(val)
+
                   if (!product) return
                   const [itemsKey, index] = path
 
@@ -914,12 +925,12 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
         items: invoiceItems,
         subTotal: totalAmount,
         tax: 0,
-        paidAmount: variables.paidAmount || 0,
+        paidAmounts: variables.paidAmounts || [],
         paymentStatus: variables.paymentStatus || "pending" as any,
         fiscalYear: calculateFiscalYear()
       });
     },
-    onUpdate(prevVariables, newVariables) {
+    onUpdate() {
       // // Handle status change from pending/cancelled to done - deduct products
       // if (prevVariables.orderStatus !== "done" && newVariables.orderStatus === "done") {
       //   // Deduct products from stock when order status changes to done
@@ -1033,9 +1044,9 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
         fieldType: "select",
         customData: {
           options: [
-            ...parties.map(p => [p._!.soul!, p.name]),
-            ...customers.map(c => [c._!.soul!, c.name]),
-            ...vehicles.map(v => [v._!.soul!, `${v.name} (${v.licensePlate})`])
+            ...parties.map(p => [p._!.soul!, p.name] as const),
+            ...customers.map(c => [c._!.soul!, c.name] as const),
+            ...vehicles.map(v => [v._!.soul!, `${v.name} (${v.licensePlate})`] as const)
           ],
         },
       })),
@@ -1138,7 +1149,33 @@ function useReturnProductsSchema({ slug }: { slug: string }) {
         .describe("Quantity Returned")
         .superRefine(fieldConfig({
           fieldType: "number",
+          customData: {
+            onValueChange: (_, path, form) => {
+              // Calculate total amount when quantity changes
+              const items = form.getValues('returnedProducts');
+              const [itemsKey, index] = path;
+
+              calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+            },
+          }
         })),
+      unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
+        fieldType: "number",
+        customData: {
+          onValueChange: (_, path, form) => {
+            // Calculate total amount when unit price changes
+            const items = form.getValues('returnedProducts');
+            const [itemsKey, index] = path;
+
+            calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+          },
+        }
+      })),
+      totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
+        inputProps: {
+          readOnly: true,
+        }
+      }))
     })
     .array()
     .optional()
@@ -1193,6 +1230,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
         const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
+          totalAmount: (Number(item.quantity || 0) * Number(item.unitPrice || 0))
         }))
         if (!mapped) return
         mapped["#"] = items?.["#"]
@@ -1202,6 +1240,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
         const mapped = items?.map((item: SalesItem) => ({
           ...item,
           product: productsBySoul.get(item.product)?.title ?? "-",
+          totalAmount: (Number(item.quantity || 0) * Number(item.unitPrice || 0))
         }))
         if (!mapped) return
         mapped["#"] = items?.["#"]
@@ -1275,19 +1314,34 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
             .superRefine(fieldConfig({
               fieldType: "number",
               customData: {
-                onValueChange: (_, __, form) => {
+                onValueChange: (_, path, form) => {
                   refreshPaidAmount(form)
+                  // Calculate total amount when quantity changes
+                  const items = form.getValues('products');
+                  const [itemsKey, index] = path;
+
+                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
                 },
               }
             })),
           unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
             fieldType: "number",
             customData: {
-              onValueChange: (_, __, form) => {
+              onValueChange: (_, path, form) => {
                 refreshPaidAmount(form)
+                // Calculate total amount when unit price changes
+                const items = form.getValues('products');
+                const [itemsKey, index] = path;
+
+                calculateTotalAmountForItem(items, itemsKey, Number(index), form);
               },
             }
           })),
+          totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
+            inputProps: {
+              readOnly: true,
+            }
+          }))
         })
         .array()
         .min(1, { message: "Please add at least one product." })
