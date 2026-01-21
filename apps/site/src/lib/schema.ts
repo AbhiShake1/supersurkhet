@@ -183,6 +183,7 @@ export const partySchema = z.object({
 
 export type Party = z.infer<typeof partySchema>
 
+export type Vehicle = z.infer<typeof featureSchema.rawShape.vehicle.schema>
 export const customerSchema = partySchema.extend({})
 
 export type Customer = z.infer<typeof customerSchema>
@@ -191,6 +192,7 @@ export const invoiceSchema = z.object({
   type: z.enum(["purchase", "sale"]),
 
   partyId: z.string().describe("Party").optional(),
+  vehicleId: z.string().describe("Vehicle").optional(),
   issuedAt: z.string()
     .datetime({ offset: true })
     .describe("Issued At").optional(),
@@ -963,7 +965,7 @@ export const featureSchema = createSchema({
       licensePlate: z.string().describe("License Plate Number"),
       description: z.string().optional().describe("Vehicle Description")
         .superRefine(fieldConfig({ fieldType: "richText" })),
-    }),
+    }).extend(table),
     icon: Car,
     group: "Logistics",
   },

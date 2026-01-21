@@ -2,7 +2,7 @@
 
 import { useRef } from "react"
 import { InvoiceReceipt } from "./invoice-receipt"
-import type { Party, Invoice } from "@/lib/schema"
+import type { Party, Invoice, Vehicle } from "@/lib/schema"
 import type { Product } from "../supersurkhet/products"
 import { toast } from "sonner"
 import { Button } from "./button"
@@ -31,7 +31,7 @@ if (typeof window !== 'undefined') {
     document.body.appendChild(myframe);
     // @ts-expect-error
     myframe.contentDocument.write(this.innerHTML);
-    setTimeout(function () {
+    setTimeout(function() {
       myframe.focus();
       // @ts-expect-error
       myframe.contentWindow.print();
@@ -44,10 +44,11 @@ if (typeof window !== 'undefined') {
 interface ReceiptWrapperProps {
   invoice: Invoice
   party: Party
+  vehiclesById: Map<string, Vehicle>
   productsById: Map<string, Product>
 }
 
-export function ReceiptWrapper({ invoice, party, productsById }: ReceiptWrapperProps) {
+export function ReceiptWrapper({ invoice, party, productsById, vehiclesById }: ReceiptWrapperProps) {
   const receiptRef = useRef<HTMLDivElement>(null)
 
   const handlePrint = () => {

@@ -1007,8 +1007,9 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
     icon: Receipt,
     actions: ({ row }) => {
       const partyId = row.original.partyId
+      const vehicleId = row.original.vehicleId
       if (!partyId) return null
-      const party = partiesBySoul.get(partyId) || customersBySoul.get(partyId) || vehiclesBySoul.get(partyId);
+      const party = partiesBySoul.get(partyId) || customersBySoul.get(partyId) || vehiclesBySoul.get(vehicleId ?? "");
       if (!party) return null
       return (
         <DropdownMenuItem onSelect={e => e.preventDefault()}>
@@ -1020,6 +1021,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
               <ReceiptWrapper
                 invoice={row.original}
                 party={party}
+                vehiclesById={vehiclesBySoul}
                 productsById={productsBySoul}
               />
             </CredenzaContent>
@@ -1028,7 +1030,9 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
       );
     },
     previewOverrides: {
-      partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || vehiclesBySoul.get(id)?.name || "-",
+      partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || "-",
+      vehicleId: (id) => vehiclesBySoul.get(id)?.name ? `${vehiclesBySoul.get(id)!.name} (${vehiclesBySoul.get(id)!.licensePlate})` : "-",
+
       items: (items) => {
         const mapped = items?.map((item: SalesItem) => ({
           ...item,
@@ -1542,19 +1546,19 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                         );
 
                         createInvoice({
-                          type: "sale",
+                          type: "trip-sale",
                           partyId: "trip-sale", // Could be linked to a specific customer
+                          vehicleId: row.original.vehicleId,
                           issuedAt: new Date().toISOString(),
                           items: invoiceItems,
                           subTotal: totalAmount,
                           tax: 0,
-                          paidAmount: totalAmount,
+                          paidAmounts: [{ paidAmount: totalAmount, paidAt: new Date().toISOString() }],
                           paymentStatus: "paid" as any,
                           fiscalYear: calculateFiscalYear(),
                           // Add vehicle reference to the invoice
-                          vehicleId: row.original.vehicleId,
                           tripId: row.original._.soul,
-                          description: `Sale from trip ${row.original._.soul} by ${vehicles?.name || 'vehicle'}`
+                          description: `Sale from trip ${row.original._.soul} by ${vehiclesBySoul.get(row.original.vehicleId)?.name ?? 'vehicle'}`
                         });
 
                         // Update product stock quantities
