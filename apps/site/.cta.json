@@ -1,21 +1,23 @@
 {
-  "framework": "react",
-  "typescript": true,
   "projectName": "supersurkhet",
   "mode": "file-router",
-  "tailwind": true,
+  "typescript": true,
   "packageManager": "pnpm",
-  "toolchain": "biome",
-  "variableValues": {},
+  "tailwind": true,
+  "addOnOptions": {},
   "git": true,
   "version": 1,
-  "existingAddOns": [
-    "form",
-    "sentry",
-    "shadcn",
+  "framework": "react-cra",
+  "chosenAddOns": [
+    "biome",
+    "nitro",
     "start",
+    "sentry",
+    "compiler",
+    "mcp",
+    "shadcn",
     "t3env",
-    "table",
-    "tanstack-query"
+    "tanstack-query",
+    "table"
   ]
 }

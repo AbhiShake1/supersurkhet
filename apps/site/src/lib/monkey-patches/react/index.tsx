@@ -15,8 +15,8 @@ const WRAPPED = Symbol("Wrapped:Provider");
   Provider[WRAPPED] = true;
 
   context.Provider = (props: any) => <ContextDataStore contextData={props?.value}>
-      <Provider {...props} />
-    </ContextDataStore>
+    <Provider {...props} />
+  </ContextDataStore>
 
   return context;
 };

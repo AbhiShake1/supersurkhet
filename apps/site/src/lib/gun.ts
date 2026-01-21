@@ -23,7 +23,7 @@ GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
     gun
       .not(() => res([]))
       .once(function (data, key) {
-        res(data, key); //call resolve when data is returned
+        res(data, key);
       })
   }))
   return cb ? p.then(cb) : p;
@@ -31,7 +31,7 @@ GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
 
 export const gun = GUN({
   localStorage: false,
-  radisk: false,
+  radisk: isServer,
   peers: [
     "wss://relay.surkhet.app/gun",
     "wss://gun-manhattan.herokuapp.com/gun",

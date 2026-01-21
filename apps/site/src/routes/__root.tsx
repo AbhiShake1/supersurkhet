@@ -5,35 +5,30 @@ import {
   Outlet,
   Scripts,
   createRootRouteWithContext,
-} from "@tanstack/react-router";
-import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+} from '@tanstack/react-router'
 import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
-
-import TanstackQueryLayout from "../integrations/tanstack-query/layout";
-
-import appCss from "../styles.css?url";
-
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
+import { TanStackDevtools } from '@tanstack/react-devtools'
+import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
+import appCss from '../styles.css?url'
 import { NotFound } from "@/components/ui/not-found";
 import { ErrorComponent } from "@/components/ui/error";
 import { Toaster } from "@/components/ui/sonner";
 import { gun } from "@/lib/gun";
-
 import { TooltipProvider } from "@radix-ui/react-tooltip";
-import type { QueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-
 import { AuthProvider } from "@/components/auth-provider";
 import { ConfettiProvider } from "@/components/confetti-provider";
 import { LoginPromptProvider } from "@/components/login-prompt-provider";
 import {
   GoogleLoginProvider,
   OneTapLoginProvider,
-} from "@/integrations/tanstack-query/google-login-provider";
+} from "@/integrations/google/google-login-provider";
 import { setGTADefaultOptions } from "@/lib/gun/options";
 import { appSchema, transformSchema } from "@/lib/schema";
-import { QRScannerButton } from "@/components/ui/qr-scanner-button";
-import { toast } from "sonner";
-import type { DataMatrixAction } from "@/lib/datamatrix";
+// import { QRScannerButton } from "@/components/ui/qr-scanner-button";
+// import { toast } from "sonner";
+// import type { DataMatrixAction } from "@/lib/datamatrix";
 import { getAppTheme, getAppDarkMode, getAppThemeData } from "@/contexts/theme-context";
 import { ThemeProvider as ThemeModeProvider } from "@/contexts/theme-context";
 import { defaultPresets } from "@/lib/theme";
@@ -43,12 +38,9 @@ import z from "zod";
 import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 import { I18nProvider } from "@/contexts/i18n-context";
 import { DialogProvider, DrawerProvider } from "@/contexts/dialog-context";
+import type { QueryClient } from '@tanstack/react-query'
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
-
-interface MyRouterContext {
-  queryClient: QueryClient;
-}
 
 export interface UserProfile {
   avatar: string;
@@ -108,6 +100,10 @@ async function isAuthenticated() {
   return !!gun.user().is;
 }
 
+interface MyRouterContext {
+  queryClient: QueryClient
+}
+
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
@@ -139,6 +135,14 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       {
         name: "robots",
         content: "index, follow",
+      },
+      {
+        name: "twitter:url",
+        content: "https://surkhet.app",
+      },
+      {
+        property: "og:url",
+        content: "https://surkhet.app",
       },
       {
         property: "og:title",
@@ -225,7 +229,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   validateSearch: z.object({
     p: z.string().optional().catch(undefined),
   }).optional(),
-  loader: async ({ context }) => {
+  loader: async () => {
     // const { api } = await import("@/lib/api");
     // setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
     // const bGet = await api.business.get({ keys: ["anjal-store"], single: true })
@@ -250,7 +254,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
           ? `:root { ${variables}; } .dark { ${variables}; }`
           : `:root { ${variables}; }`;
       }
-
     }
 
     return {
@@ -269,10 +272,10 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     },
     gun
   }),
-
   notFoundComponent: () => <NotFound />,
   errorComponent: () => <ErrorComponent />,
-  component: () => {
+
+  shellComponent: () => {
     const loaderData = Route.useLoaderData()
     // console.log({ loaderData })
 
@@ -287,11 +290,24 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       <Toaster richColors />
       <Outlet />
       <VibeKanbanWebCompanion />
-      <TanStackRouterDevtools position="bottom-right" />
-      <TanstackQueryLayout />
+      <TanStackDevtools
+        config={{
+          position: 'bottom-right',
+          openHotkey: ['Shift', 'd'],
+          triggerHidden: true,
+          hideUntilHover: true,
+        }}
+        plugins={[
+          {
+            name: 'Tanstack Router',
+            render: <TanStackRouterDevtoolsPanel />,
+          },
+          TanStackQueryDevtools,
+        ]}
+      />
     </RootDocument>
   },
-});
+})
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -321,113 +337,113 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const handleActionDetected = (action: DataMatrixAction) => {
-    console.log("Action detected:", action);
-
-    // Import utility functions for Expo communication
-    const isExpoContext = () => typeof window !== 'undefined' && !!(window as any).ReactNativeWebView;
-    const sendMessageToExpo = (message: any) => {
-      try {
-        if (isExpoContext()) {
-          (window as any).ReactNativeWebView.postMessage(JSON.stringify(message));
-        }
-      } catch (error) {
-        console.error('Failed to send message to Expo app:', error);
-      }
-    };
-
-    switch (action.action) {
-      case 'wifi_connect':
-        if (action.wifi) {
-          // Check if we're in Expo app context
-          if (isExpoContext()) {
-            // Send WiFi connection request to Expo app
-            sendMessageToExpo({
-              type: 'DATAMATRIX_ACTION',
-              payload: action
-            });
-          } else {
-            // In a web context, we can't directly connect to WiFi
-            // Instead, we'll show instructions to the user
-            toast.info(`WiFi Network: ${action.wifi.ssid}`, {
-              description: "Please connect to this WiFi network manually in your device settings.",
-              duration: 10000,
-            });
-
-            // If there's a post-connect notification, show it
-            if (action.post_connect) {
-              setTimeout(() => {
-                toast.success(
-                  action.post_connect?.notification.title,
-                  { description: action.post_connect?.notification.message }
-                );
-              }, 3000);
-            }
-
-            // If there's navigation after connection, show it
-            if (action.navigation) {
-              setTimeout(() => {
-                toast.info("Next Step", {
-                  description: `After connecting to WiFi, navigate to: ${action.navigation?.url}`,
-                });
-              }, 6000);
-            }
-          }
-        }
-        break;
-
-      case 'navigate':
-        if (action.navigation) {
-          // Check if we're in Expo app context
-          if (isExpoContext()) {
-            // Send navigation request to Expo app
-            sendMessageToExpo({
-              type: 'NAVIGATE',
-              payload: action.navigation
-            });
-          } else {
-            // Navigate to the specified URL in web context
-            window.location.href = action.navigation.url;
-          }
-        }
-        break;
-
-      case 'notification':
-        // Check if we're in Expo app context
-        if (isExpoContext()) {
-          // Send notification request to Expo app
-          sendMessageToExpo({
-            type: 'NOTIFICATION',
-            payload: {
-              title: "Notification",
-              message: "You've received a notification from the QR code."
-            }
-          });
-        } else {
-          // Show a notification in web context
-          toast.info("Notification", {
-            description: "You've received a notification from the QR code.",
-          });
-        }
-        break;
-
-      default:
-        // For all other actions, send to Expo app if available
-        if (isExpoContext()) {
-          sendMessageToExpo({
-            type: 'DATAMATRIX_ACTION',
-            payload: action
-          });
-        } else {
-          toast.success(`Action detected: ${action.action}`);
-        }
-    }
-  };
+  // const handleActionDetected = (action: DataMatrixAction) => {
+  //   console.log("Action detected:", action);
+  //
+  //   // Import utility functions for Expo communication
+  //   const isExpoContext = () => typeof window !== 'undefined' && !!(window as any).ReactNativeWebView;
+  //   const sendMessageToExpo = (message: any) => {
+  //     try {
+  //       if (isExpoContext()) {
+  //         (window as any).ReactNativeWebView.postMessage(JSON.stringify(message));
+  //       }
+  //     } catch (error) {
+  //       console.error('Failed to send message to Expo app:', error);
+  //     }
+  //   };
+  //
+  //   switch (action.action) {
+  //     case 'wifi_connect':
+  //       if (action.wifi) {
+  //         // Check if we're in Expo app context
+  //         if (isExpoContext()) {
+  //           // Send WiFi connection request to Expo app
+  //           sendMessageToExpo({
+  //             type: 'DATAMATRIX_ACTION',
+  //             payload: action
+  //           });
+  //         } else {
+  //           // In a web context, we can't directly connect to WiFi
+  //           // Instead, we'll show instructions to the user
+  //           toast.info(`WiFi Network: ${action.wifi.ssid}`, {
+  //             description: "Please connect to this WiFi network manually in your device settings.",
+  //             duration: 10000,
+  //           });
+  //
+  //           // If there's a post-connect notification, show it
+  //           if (action.post_connect) {
+  //             setTimeout(() => {
+  //               toast.success(
+  //                 action.post_connect?.notification.title,
+  //                 { description: action.post_connect?.notification.message }
+  //               );
+  //             }, 3000);
+  //           }
+  //
+  //           // If there's navigation after connection, show it
+  //           if (action.navigation) {
+  //             setTimeout(() => {
+  //               toast.info("Next Step", {
+  //                 description: `After connecting to WiFi, navigate to: ${action.navigation?.url}`,
+  //               });
+  //             }, 6000);
+  //           }
+  //         }
+  //       }
+  //       break;
+  //
+  //     case 'navigate':
+  //       if (action.navigation) {
+  //         // Check if we're in Expo app context
+  //         if (isExpoContext()) {
+  //           // Send navigation request to Expo app
+  //           sendMessageToExpo({
+  //             type: 'NAVIGATE',
+  //             payload: action.navigation
+  //           });
+  //         } else {
+  //           // Navigate to the specified URL in web context
+  //           window.location.href = action.navigation.url;
+  //         }
+  //       }
+  //       break;
+  //
+  //     case 'notification':
+  //       // Check if we're in Expo app context
+  //       if (isExpoContext()) {
+  //         // Send notification request to Expo app
+  //         sendMessageToExpo({
+  //           type: 'NOTIFICATION',
+  //           payload: {
+  //             title: "Notification",
+  //             message: "You've received a notification from the QR code."
+  //           }
+  //         });
+  //       } else {
+  //         // Show a notification in web context
+  //         toast.info("Notification", {
+  //           description: "You've received a notification from the QR code.",
+  //         });
+  //       }
+  //       break;
+  //
+  //     default:
+  //       // For all other actions, send to Expo app if available
+  //       if (isExpoContext()) {
+  //         sendMessageToExpo({
+  //           type: 'DATAMATRIX_ACTION',
+  //           payload: action
+  //         });
+  //       } else {
+  //         toast.success(`Action detected: ${action.action}`);
+  //       }
+  //   }
+  // };
 
   const loaderData = Route.useLoaderData()
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={loaderData.savedDarkMode === undefined || loaderData.savedDarkMode === 'true' ? 'dark' : ''}>
       <head>
         <HeadContent />
       </head>
@@ -463,5 +479,5 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         </div>
       </body>
     </html>
-  );
+  )
 }

@@ -13,14 +13,14 @@ export const salesItemSchema = z.object({
   })),
   quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),
   unitPrice: z.number({ coerce: true }).positive().describe("Unit Price"),
-})
+}).extend(table)
 
 export type SalesItem = z.infer<typeof salesItemSchema>;
 
 export const saleSchema = z.object({
   saleDate: z.string()
     // .datetime()
-    .datetime({offset: true})
+    .datetime({ offset: true })
     .default(() => new Date().toISOString()).describe("Sale Date")
     .superRefine(fieldConfig({ fieldType: "datetime" })),
   customerId: z.string().describe("Customer"),
@@ -44,9 +44,9 @@ export type Sale = z.infer<typeof saleSchema>;
 export const stockImportSchema = z.object({
   party: z.string().describe("Party"),
   importDate: z.string()
-              // .datetime()
-              .datetime({offset: true})
-              .default(() => new Date().toISOString()).describe("Import Date").superRefine(fieldConfig({ fieldType: "datetime" })),
+    // .datetime()
+    .datetime({ offset: true })
+    .default(() => new Date().toISOString()).describe("Import Date").superRefine(fieldConfig({ fieldType: "datetime" })),
   items: salesItemSchema.array().min(1, { message: "Please add at least one item." }).describe("Items"),
   paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
   paymentStatus: z.string().default("pending").describe("Payment Status")

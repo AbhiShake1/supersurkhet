@@ -25,7 +25,7 @@ export const removeUser = createServerFn().handler(() => {
 })
 
 export const setUser = createServerFn()
-  .validator(z.custom<ISEAPair>())
+  .inputValidator(z.custom<ISEAPair>())
   .handler(({ data: user }) => {
     return setCookie("gun-user", JSON.stringify(user))
   })

@@ -5,7 +5,7 @@ import z from "zod";
 // import { createStreamableValue } from "@ai-sdk/rsc"
 
 export const getBuilderChat = createServerFn({ method: 'POST' })
-  .validator(z.object({
+  .inputValidator(z.object({
     messages: z.array(z.string()),
     model: z.string().optional(),
     webSearch: z.boolean().optional(),

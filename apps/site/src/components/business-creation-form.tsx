@@ -62,20 +62,6 @@ const featureKeys = Object.keys(
 
 const businessTypeIcons = {
   retail: Store,
-  food: Utensils,
-  logistics: Car,
-  real_estate: Home,
-  education: School,
-  healthcare: Heart,
-  service: Building,
-  cooperative: Users,
-  other: Building,
-  hotel: Hotel,
-  petrol_pump: Fuel,
-  gym: Dumbbell,
-  cinema: Film,
-  financial_firm: CreditCard,
-  ride_sharing: Car,
 };
 
 const businessTypeGroups = {

@@ -1,34 +1,22 @@
-import { z } from "zod";
-import { fieldConfig } from "@/components/ui/autoform";
-import { List, LucideUser, type LucideIcon, Hotel, Fuel, Dumbbell, Film, CreditCard, Car, GraduationCap, HeartPulse, Home, Users, Building, Lock, Calendar, DollarSign, MessageCircle, Clock, ShoppingCart, Folder, QrCode, Package, Users2, MapIcon } from "lucide-react";
 import type { AdminComponent } from "@/components/ui/admin";
-import { educationSchema } from "./schemas/education-schema";
-import { healthcareSchema } from "./schemas/healthcare-schema";
-import { realEstateSchema } from "./schemas/real-estate-schema";
-import { cooperativeSchema } from "./schemas/cooperative-schema";
-import { paymentTransactionSchema } from "./schemas/payment-transaction-schema";
-import { hotelSchema } from "./schemas/hotel-schema";
-import { petrolPumpSchema } from "./schemas/petrol-pump-schema";
-import { gymSchema } from "./schemas/gym-schema";
-import { cinemaSchema } from "./schemas/cinema-schema";
-import { financialFirmSchema } from "./schemas/financial-firm-schema";
-import { rideSharingSchema } from "./schemas/ride-sharing-schema";
-import { serviceSchema } from "./schemas/service-schema";
-import {
-  baseListingSchema,
-  productSchema,
-  menuItemSchema,
-  propertyListingSchema,
-  withLabel,
-  table,
-} from "./schemas/listings";
+import { fieldConfig } from "@/components/ui/autoform";
+import { IconMoneybag } from "@tabler/icons-react";
+import { Building, Calendar, Car, Clock, DollarSign, Folder, Home, List, Lock, type LucideProps, LucideUser, MapIcon, MessageCircle, Package, QrCode, ShoppingCart, Users, Users2, type LucideIcon } from "lucide-react";
+import type { ForwardRefExoticComponent, RefAttributes } from "react";
+import { z } from "zod";
 import { dataMatrixActionSchema } from "./datamatrix";
 import { folderSchema } from "./schemas/folder-schema";
+import {
+  baseListingSchema,
+  menuItemSchema,
+  productSchema,
+  propertyListingSchema,
+  table,
+  withLabel,
+} from "./schemas/listings";
 import { qrFlowConfigSchema } from "./schemas/qr-flow-config-schema";
-import type { ReactNode } from "@tanstack/react-router";
-import { uiBuilderSchema } from "./schemas/ui-builder-schema";
-import { IconMoneybag } from "@tabler/icons-react";
 import { saleSchema, salesItemSchema, stockImportSchema } from "./schemas/sales";
+import { uiBuilderSchema } from "./schemas/ui-builder-schema";
 
 function getPermissions() {
   return ["product"] as readonly [string, ...string[]];
@@ -42,7 +30,7 @@ export interface GTAAppConfig {
   schema: {
     [table: string]: {
       schema: NonNullable<z.ZodObject<any> | z.ZodEffects<any>>;
-      icon?: ReactNode,
+      icon?: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
       group?: string,
       components?: () => Promise<
         Array<{
@@ -120,20 +108,6 @@ export type BusinessInvitation = z.infer<typeof businessInvitationSchema>;
 export const businessTypeSchema = z
   .enum([
     "retail",
-    "food",
-    "service",
-    "education",
-    "healthcare",
-    "logistics",
-    "real_estate",
-    "cooperative",
-    "other",
-    "hotel",
-    "petrol_pump",
-    "gym",
-    "cinema",
-    "financial_firm",
-    "ride_sharing",
   ])
   .describe("The primary category of the business")
 
@@ -265,38 +239,6 @@ export const transactionSchema = z.object({
 
 export type Transaction = z.infer<typeof transactionSchema>
 
-export const inventoryLedgerSchema = z.object({
-  product: productSchema,
-  invoice: invoiceSchema,
-
-  quantityIn: z.number({ coerce: true }).nonnegative(),
-  quantityOut: z.number({ coerce: true }).nonnegative(),
-  date: z.string()
-    // .datetime()
-    .datetime({ offset: true }),
-})
-  .extend(table)
-// .superRefine((entry, ctx) => {
-//   const inQty = entry.quantityIn;
-//   const outQty = entry.quantityOut;
-//
-//   if (inQty === 0 && outQty === 0) {
-//     ctx.addIssue({
-//       code: z.ZodIssueCode.custom,
-//       message: "Either quantityIn or quantityOut must be greater than zero",
-//     });
-//   }
-//
-//   if (inQty > 0 && outQty > 0) {
-//     ctx.addIssue({
-//       code: z.ZodIssueCode.custom,
-//       message: "Only one of quantityIn or quantityOut can be greater than zero",
-//     });
-//   }
-// })
-
-export type InventoryLedger = z.infer<typeof inventoryLedgerSchema>
-
 export const membershipSchema = z
   .object({
     userId: withLabel(z.string(), "User ID"),
@@ -371,25 +313,6 @@ export const appointmentSchema = z
       "completed",
       "cancelled",
       "no_show",
-    ]),
-  })
-  .extend(table);
-
-export const tripSchema = z
-  .object({
-    driverId: z.string(),
-    customerId: z.string(),
-    startTime: z.string(),
-    endTime: z.string().optional(),
-    startLocation: z.string(),
-    endLocation: z.string(),
-    fare: z.number({ coerce: true }).positive(),
-    status: z.enum([
-      "requested",
-      "accepted",
-      "in_progress",
-      "completed",
-      "cancelled",
     ]),
   })
   .extend(table);
@@ -506,22 +429,6 @@ export const coreSchema = createSchema({
 });
 
 export const featureSchema = createSchema({
-  driverProfile: {
-    icon: Car,
-    group: "User Management",
-    schema: driverProfileSchema,
-  },
-  studentProfile: {
-    icon: GraduationCap,
-    group: "User Management",
-    schema: studentProfileSchema,
-  },
-  coOpMemberProfile: {
-    icon: Users,
-    group: "User Management",
-    schema: coOpMemberProfileSchema,
-  },
-
   baseListing: {
     icon: Package,
     group: "Products & Inventory",
@@ -617,22 +524,6 @@ export const featureSchema = createSchema({
       ];
     },
   },
-  inventoryLedger: {
-    schema: inventoryLedgerSchema,
-    icon: IconMoneybag,
-    group: "Financial",
-    components: async () => {
-      const { InventoryLedgerManagement } = await import(
-        "@/components/ui/admin/inventory-ledger-management"
-      );
-      return [
-        {
-          name: "Inventory Ledger",
-          component: InventoryLedgerManagement,
-        },
-      ];
-    },
-  },
   menuItem: {
     schema: menuItemSchema,
     icon: Package,
@@ -672,21 +563,6 @@ export const featureSchema = createSchema({
     icon: Home,
     group: "Products & Inventory",
   },
-  service: {
-    schema: serviceSchema,
-    icon: Building,
-    components: async () => {
-      const { ServiceManagement } = await import(
-        "@/components/ui/admin/service-management"
-      );
-      return [
-        {
-          name: "Services & Appointments",
-          component: ServiceManagement,
-        },
-      ];
-    },
-  },
 
   order: {
     schema: orderSchema,
@@ -709,11 +585,6 @@ export const featureSchema = createSchema({
     icon: Calendar,
     group: "Business Operations",
   },
-  // trip: {
-  //   schema: tripSchema,
-  //   icon: CarIcon,
-  //   group: "Business Operations",
-  // },
   expense: {
     schema: expenseSchema,
     icon: DollarSign,
@@ -723,193 +594,6 @@ export const featureSchema = createSchema({
     schema: chatMessageSchema,
     icon: MessageCircle,
     group: "System Configuration",
-  },
-
-  // Hotel schema
-  hotel: {
-    schema: hotelSchema,
-    icon: Hotel,
-    components: async () => {
-      const { HotelManagement } = await import(
-        "@/components/ui/admin/hotel-management"
-      );
-      return [
-        {
-          name: "Rooms",
-          component: HotelManagement,
-        },
-      ];
-    },
-  },
-
-  // Petrol Pump schema
-  petrolPump: {
-    schema: petrolPumpSchema,
-    icon: Fuel,
-    components: async () => {
-      const { PetrolPumpManagement } = await import(
-        "@/components/ui/admin/petrol-pump-management"
-      );
-      return [
-        {
-          name: "Fuels & Services",
-          component: PetrolPumpManagement,
-        },
-      ];
-    },
-  },
-
-  // Gym schema
-  gym: {
-    schema: gymSchema,
-    icon: Dumbbell,
-    components: async () => {
-      const { GymManagement } = await import(
-        "@/components/ui/admin/gym-management"
-      );
-      return [
-        {
-          name: "Equipment & Memberships",
-          component: GymManagement,
-        },
-      ];
-    },
-  },
-
-  // Cinema schema
-  cinema: {
-    schema: cinemaSchema,
-    icon: Film,
-    components: async () => {
-      const { CinemaManagement } = await import(
-        "@/components/ui/admin/cinema-management"
-      );
-      return [
-        {
-          name: "Movies & Showtimes",
-          component: CinemaManagement,
-        },
-      ];
-    },
-  },
-
-  // Financial Firm schema
-  financialFirm: {
-    schema: financialFirmSchema,
-    icon: CreditCard,
-    components: async () => {
-      const { FinancialFirmManagement } = await import(
-        "@/components/ui/admin/financial-firm-management"
-      );
-      return [
-        {
-          name: "Services & Advisors",
-          component: FinancialFirmManagement,
-        },
-      ];
-    },
-  },
-
-  // Ride Sharing schema
-  rideSharing: {
-    schema: rideSharingSchema,
-    icon: Car,
-    components: async () => {
-      const { RideSharingManagement } = await import(
-        "@/components/ui/admin/ride-sharing-management"
-      );
-      return [
-        {
-          name: "Vehicles & Drivers",
-          component: RideSharingManagement,
-        },
-      ];
-    },
-  },
-
-  // Education schema
-  education: {
-    schema: educationSchema,
-    icon: GraduationCap,
-    components: async () => {
-      const { EducationManagement } = await import(
-        "@/components/ui/admin/education-management"
-      );
-      return [
-        {
-          name: "Courses & Students",
-          component: EducationManagement,
-        },
-      ];
-    },
-  },
-
-  // Healthcare schema
-  healthcare: {
-    schema: healthcareSchema,
-    icon: HeartPulse,
-    components: async () => {
-      const { HealthcareManagement } = await import(
-        "@/components/ui/admin/healthcare-management"
-      );
-      return [
-        {
-          name: "Patients & Doctors",
-          component: HealthcareManagement,
-        },
-      ];
-    },
-  },
-
-  // Real Estate schema
-  realEstate: {
-    schema: realEstateSchema,
-    icon: Home,
-    components: async () => {
-      const { RealEstateManagement } = await import(
-        "@/components/ui/admin/real-estate-management"
-      );
-      return [
-        {
-          name: "Properties & Listings",
-          component: RealEstateManagement,
-        },
-      ];
-    },
-  },
-
-  // Cooperative schema
-  cooperative: {
-    schema: cooperativeSchema,
-    icon: Users,
-    components: async () => {
-      const { CooperativeManagement } = await import(
-        "@/components/ui/admin/cooperative-management"
-      );
-      return [
-        {
-          name: "Members & Shares",
-          component: CooperativeManagement,
-        },
-      ];
-    },
-  },
-
-  // Payment Transaction schema
-  paymentTransaction: {
-    schema: paymentTransactionSchema,
-    icon: DollarSign,
-    components: async () => {
-      const { PaymentManagement } = await import(
-        "@/components/ui/admin/payment-management"
-      );
-      return [
-        {
-          name: "Payments & Transactions",
-          component: PaymentManagement,
-        },
-      ];
-    },
   },
 
   // Recently used apps schema
@@ -938,7 +622,7 @@ export const featureSchema = createSchema({
       licensePlate: z.string().describe("License Plate Number"),
       description: z.string().optional().describe("Vehicle Description")
         .superRefine(fieldConfig({ fieldType: "richText" })),
-    }),
+    }).extend(table),
     icon: Car,
     group: "Logistics",
   },
@@ -966,7 +650,7 @@ export const featureSchema = createSchema({
         .array()
         .optional()
         .describe("Products Returned from Trip"),
-    }),
+    }).extend(table),
     icon: MapIcon,
     group: "Logistics",
     components: async () => {

@@ -1,36 +1,49 @@
-import { createRouter as createTanstackRouter } from "@tanstack/react-router";
-import { ErrorComponent } from "@/components/ui/error";
+import { createRouter } from '@tanstack/react-router'
+import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query'
+import * as TanstackQuery from './integrations/tanstack-query/root-provider'
 
-import { routerWithQueryClient } from "@tanstack/react-router-with-query";
-import * as TanstackQuery from "./integrations/tanstack-query/root-provider";
+import * as Sentry from '@sentry/tanstackstart-react'
 
 // Import the generated route tree
-import { routeTree } from "./routeTree.gen";
+import { routeTree } from './routeTree.gen'
 
-// import "./styles.css";
-
-// Create a new router instance
-export function createRouter() {
-  const router = routerWithQueryClient(
-    createTanstackRouter({
-      routeTree,
-      context: {
-        ...TanstackQuery.getContext(),
-      },
-      scrollRestoration: true,
-      defaultPreloadStaleTime: 0,
-      defaultViewTransition: true,
-      defaultErrorComponent: ({ error }) => <ErrorComponent />,
-    }),
-    TanstackQuery.getContext().queryClient,
-  );
-
-  return router;
+// Register service worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('Service Worker registered with scope:', registration.scope);
+      })
+      .catch((error) => {
+        console.log('Service Worker registration failed:', error);
+      });
+  });
 }
 
-// Register the router instance for type safety
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: ReturnType<typeof createRouter>;
+// Create a new router instance
+export const getRouter = () => {
+  const rqContext = TanstackQuery.getContext()
+
+  const router = createRouter({
+    routeTree,
+    context: {
+      ...rqContext,
+    },
+
+    defaultPreload: 'intent',
+  })
+
+  setupRouterSsrQueryIntegration({ router, queryClient: rqContext.queryClient })
+
+  if (!router.isServer) {
+    Sentry.init({
+      dsn: import.meta.env.VITE_SENTRY_DSN,
+      integrations: [],
+      tracesSampleRate: 1.0,
+      sendDefaultPii: true,
+      defaultIntegrations: false,
+    })
   }
+
+  return router
 }

@@ -1,20 +1,20 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { I18nProvider } from "@/contexts/i18n-context";
-
-const queryClient = new QueryClient();
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 export function getContext() {
-	return {
-		queryClient,
-	};
+  const queryClient = new QueryClient()
+  return {
+    queryClient,
+  }
 }
 
-export function Provider({ children }: { children: React.ReactNode }) {
-	return (
-		<QueryClientProvider client={queryClient}>
-			<I18nProvider>
-				{children}
-			</I18nProvider>
-		</QueryClientProvider>
-	);
+export function Provider({
+  children,
+  queryClient,
+}: {
+  children: React.ReactNode
+  queryClient: QueryClient
+}) {
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  )
 }

@@ -20,10 +20,10 @@ import { AdminDashboard } from "../admin-dashboard";
 import { QRCodePage } from "../qr-code-page";
 import Card from "../ui/minimal-card";
 import { useMemo } from "react";
-import type { z } from "zod";
 import { NotFound } from "../ui/not-found";
 import { CustomUiBuilderPage } from "../ui-builder";
 import { LanguageSelector } from "../language-selector";
+import z from "zod";
 
 export interface AutoAdminProps {
   tabs: PossibleTabConfig[];
@@ -37,8 +37,6 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
   group?: string;
   title: string;
   icon?: LucideIcon;
-  transformer?: (data: any[]) => NestedSchemaType<K>[];
-  extender?: (shape: NestedSchemaType<K>) => z.ZodObject<any>;
 } & (
     | {
       children: ReactNode;
