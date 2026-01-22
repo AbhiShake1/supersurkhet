@@ -46,7 +46,7 @@ import { ZodObject } from "zod/v4";
 
 export type AddRowDialogProps<T extends SchemaKeys> = Pick<
   AutoTableProps<T>,
-  "slug" | "fieldOverrides" | "extender" | "onCreate" | "readOnly" | "className"
+  "slug" | "extender" | "onCreate" | "readOnly" | "className"
 > & {
   schema: T;
   children?: React.ReactNode;
@@ -57,7 +57,6 @@ export type AddRowDialogProps<T extends SchemaKeys> = Pick<
 export function AddRowDialog<T extends SchemaKeys>({
   schema,
   slug,
-  fieldOverrides,
   extender,
   onCreate,
   readOnly = false,
@@ -66,6 +65,7 @@ export function AddRowDialog<T extends SchemaKeys>({
   buttonLabel = "Add New",
   buttonIcon = <Plus className="size-4" />,
 }: AddRowDialogProps<T>) {
+  "use memo"
   const [formValues, setFormValues] = React.useState<Record<string, any>>({});
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const { user } = useAuth();
@@ -84,9 +84,8 @@ export function AddRowDialog<T extends SchemaKeys>({
   const schemaWithOverrides = getSchema(_schema);
   function getFinalSchema() {
     let schema: ZodObjectOrWrapped = schemaWithOverrides;
-    schema = schema.extend?.(fieldOverrides ?? {}) ?? schema._def.type?.extend?.(fieldOverrides ?? {}) ?? schema._def.innerType?.extend?.(fieldOverrides ?? {}) ?? schema;
     if (extender) {
-      schema = extender(_schema);
+      schema = extender(schema);
     }
     return schema;
   }

@@ -13,6 +13,12 @@ export const salesItemSchema = z.object({
   })),
   quantity: z.number({ coerce: true }).int().positive().describe("Quantity"),
   unitPrice: z.number({ coerce: true }).positive().describe("Unit Price"),
+  totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
+    inputProps: {
+      className: "border-none",
+      readOnly: true,
+    },
+  })),
 }).extend(table)
 
 export type SalesItem = z.infer<typeof salesItemSchema>;

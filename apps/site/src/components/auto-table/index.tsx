@@ -91,7 +91,6 @@ export type AutoTableProps<T extends SchemaKeys> = {
   enableGlobalFiltering?: boolean;
   enablePagination?: boolean;
   defaultPageSize?: number;
-  fieldOverrides?: Partial<Record<keyof NestedSchema<T>["shape"], z.ZodTypeAny>>;
   extender?: (schema: NestedSchema<T>) => ZodObjectOrWrapped;
   previewOverrides?: PreviewOverrides<T>;
   onCreate?: (data: GunMessagePut, variables: Omit<NestedSchemaType<T>, "_">, onMutateResult: unknown, context: MutationFunctionContext) => unknown
@@ -181,9 +180,8 @@ export function AutoTable<T extends SchemaKeys>({
 
   function getFinalSchema() {
     let schema: ZodObjectOrWrapped = _schema;
-    schema = schema.extend?.(props.fieldOverrides ?? {}) ?? schema._def.type?.extend?.(props.fieldOverrides ?? {}) ?? schema._def.innerType?.extend?.(props.fieldOverrides ?? {}) ?? schema;
     if (props.extender) {
-      schema = props.extender(_schema);
+      schema = props.extender(schema);
     }
     return schema;
   }

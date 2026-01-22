@@ -127,15 +127,109 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     icon: ShoppingBag,
     slug,
     group: "Inventory",
-    extender: (schema) => schema.superRefine((stockImport, ctx) => {
-      if (!stockImport.paidAmount) return
-      const totalCost = stockImport.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
-      if (stockImport.paidAmount > totalCost) ctx.addIssue({
-        code: "custom",
-        message: `Paid amount cannot be greater than total cost (${totalCost})`,
-        path: ["paidAmount"],
+    extender: (schema) => schema
+      .extend({
+        party: z.string().describe("Party").superRefine(fieldConfig({
+          fieldType: "select",
+          customData: {
+            options: parties.map(p => [p._!.soul!, p.name]),
+          },
+        })),
+        paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
+          fieldType: "number",
+          customData: {
+            onValueChange: (_paidAmount, __, form) => {
+              const paidAmount = Number(_paidAmount)
+              const totalCost = calculateTotalCost(form)
+              if (!totalCost) return
+              form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
+            },
+          }
+        })),
+        items: salesItemSchema
+          .extend({
+            unit: unitField,
+            product: z.string().describe("Product")
+              .superRefine(fieldConfig({
+                fieldType: "select",
+                customData: {
+                  options: products.filter(p => !!p?._?.soul)
+                    .map(p => [p._!.soul!, p.title]),
+                  onValueChange: (val, path, form) => {
+                    const product = productsBySoul.get(val)
+                    if (!product) return
+                    const [itemsKey, index] = path
+
+                    form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
+                    if (product.unit) {
+                      const [unitType, piecesPerUnit] = product.unit.split(':');
+                      if (piecesPerUnit) {
+                        setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                          fieldType: "unit",
+                          customData: {
+                            onlyAllow: [unitType, "piece"],
+                            configDisabled: true,
+                            onValueChange(value, path, form) {
+                              const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
+                              const [, quantityPerUnit] = value?.split(':') ?? []
+                              const [itemsKey, index] = path
+
+                              // if quantity exists in the unit, we dont want to use it as its the compound unit
+                              if (quantityPerUnit) {
+                                if (product.costPrice)
+                                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
+                              } else {
+                                if (productQuantityPerUnit && product.costPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
+                                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice / Number(productQuantityPerUnit))
+                                }
+                              }
+                            },
+                          },
+                        })))
+                      } else {
+                        setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                          fieldType: "unit",
+                          customData: {
+                            onlyAllow: [unitType],
+                          },
+                        })))
+                      }
+                      form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+                    }
+                    refreshPaidAmount(form)
+                  }
+                },
+              })),
+            quantity: z.number({ coerce: true }).int().positive().describe(getQuantityDescription()).superRefine(fieldConfig({
+              fieldType: "number",
+              customData: {
+                onValueChange: (_, __, form) => {
+                  refreshPaidAmount(form)
+                },
+              }
+            })),
+            unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
+              fieldType: "number",
+              customData: {
+                onValueChange: (_, __, form) => {
+                  refreshPaidAmount(form)
+                },
+              }
+            })),
+          })
+          .array()
+          .min(1, { message: "Please add at least one item." })
+          .describe("Items to Import"),
       })
-    }),
+      .superRefine((stockImport, ctx) => {
+        if (!stockImport.paidAmount) return
+        const totalCost = stockImport.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
+        if (stockImport.paidAmount > totalCost) ctx.addIssue({
+          code: "custom",
+          message: `Paid amount cannot be greater than total cost (${totalCost})`,
+          path: ["paidAmount"],
+        })
+      }),
     previewOverrides: {
       party: (partyId) => partiesBySoul.get(partyId)?.name ?? "-",
       items: (items) => {
@@ -147,99 +241,6 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         mapped["#"] = items?.["#"]
         return mapped
       },
-    },
-    fieldOverrides: {
-      party: z.string().describe("Party").superRefine(fieldConfig({
-        fieldType: "select",
-        customData: {
-          options: parties.map(p => [p._!.soul!, p.name]),
-        },
-      })),
-      paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
-        fieldType: "number",
-        customData: {
-          onValueChange: (_paidAmount, __, form) => {
-            const paidAmount = Number(_paidAmount)
-            const totalCost = calculateTotalCost(form)
-            if (!totalCost) return
-            form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
-          },
-        }
-      })),
-      items: salesItemSchema
-        .extend({
-          unit: unitField,
-          product: z.string().describe("Product")
-            .superRefine(fieldConfig({
-              fieldType: "select",
-              customData: {
-                options: products.filter(p => !!p?._?.soul)
-                  .map(p => [p._!.soul!, p.title]),
-                onValueChange: (val, path, form) => {
-                  const product = productsBySoul.get(val)
-                  if (!product) return
-                  const [itemsKey, index] = path
-
-                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
-                  if (product.unit) {
-                    const [unitType, piecesPerUnit] = product.unit.split(':');
-                    if (piecesPerUnit) {
-                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
-                        fieldType: "unit",
-                        customData: {
-                          onlyAllow: [unitType, "piece"],
-                          configDisabled: true,
-                          onValueChange(value, path, form) {
-                            const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
-                            const [, quantityPerUnit] = value?.split(':') ?? []
-                            const [itemsKey, index] = path
-
-                            // if quantity exists in the unit, we dont want to use it as its the compound unit
-                            if (quantityPerUnit) {
-                              if (product.costPrice)
-                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice)
-                            } else {
-                              if (productQuantityPerUnit && product.costPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
-                                form.setValue([itemsKey, index, "unitPrice"].join("."), product.costPrice / Number(productQuantityPerUnit))
-                              }
-                            }
-                          },
-                        },
-                      })))
-                    } else {
-                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
-                        fieldType: "unit",
-                        customData: {
-                          onlyAllow: [unitType],
-                        },
-                      })))
-                    }
-                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
-                  }
-                  refreshPaidAmount(form)
-                }
-              },
-            })),
-          quantity: z.number({ coerce: true }).int().positive().describe(getQuantityDescription()).superRefine(fieldConfig({
-            fieldType: "number",
-            customData: {
-              onValueChange: (_, __, form) => {
-                refreshPaidAmount(form)
-              },
-            }
-          })),
-          unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
-            fieldType: "number",
-            customData: {
-              onValueChange: (_, __, form) => {
-                refreshPaidAmount(form)
-              },
-            }
-          })),
-        })
-        .array()
-        .min(1, { message: "Please add at least one item." })
-        .describe("Items to Import"),
     },
     onCreate(_, variables) {
       // Stock update logic with unit conversion
@@ -449,76 +450,79 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
         return mapped
       },
     },
-    extender: (schema) => schema.superRefine((sale, ctx) => {
-      if (!sale.paidAmount) return
-      const totalCost = sale.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
-      if (sale.paidAmount > totalCost) ctx.addIssue({
-        code: "custom",
-        message: `Paid amount cannot be greater than total cost (${totalCost})`,
-        path: ["paidAmount"],
-      })
-    }),
-    fieldOverrides: {
-      customerId: z.string().describe("Customer").superRefine(fieldConfig({
-        fieldType: "select",
-        customData: {
-          options: customers.map(c => [c._!.soul!, c.name]),
-        }
-      })),
-      paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
-        fieldType: "number",
-        customData: {
-          onValueChange: (_paidAmount, __, form) => {
-            const paidAmount = Number(_paidAmount)
-            const totalCost = calculateTotalCost(form)
-            form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
-          },
-        }
-      })),
-      items: salesItemSchema
-        .extend({
-          product: z.string().describe("Product")
-            .superRefine(fieldConfig({
-              fieldType: "select",
-              customData: {
-                options: products.filter(p => !!p?._?.soul)
-                  .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
-                onValueChange: (val, path, form) => {
-                  const product = productsBySoul.get(val)
-                  if (!product) return
-                  const [itemsKey, index] = path
+    extender: (schema) => schema
+      .extend({
+        customerId: z.string().describe("Customer").superRefine(fieldConfig({
+          fieldType: "select",
+          customData: {
+            options: customers.map(c => [c._!.soul!, c.name]),
+          }
+        })),
+        paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
+          fieldType: "number",
+          customData: {
+            onValueChange: (_paidAmount, __, form) => {
+              const paidAmount = Number(_paidAmount)
+              const totalCost = calculateTotalCost(form)
+              form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
+            },
+          }
+        })),
+        items: salesItemSchema
+          .extend({
+            product: z.string().describe("Product")
+              .superRefine(fieldConfig({
+                fieldType: "select",
+                customData: {
+                  options: products.filter(p => !!p?._?.soul)
+                    .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+                  onValueChange: (val, path, form) => {
+                    const product = productsBySoul.get(val)
+                    if (!product) return
+                    const [itemsKey, index] = path
 
-                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+                    form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
 
-                  if (product.unit) {
-                    const [unitType, piecesPerUnit] = product.unit.split(':');
-                    if (piecesPerUnit) {
-                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
-                        fieldType: "unit",
-                        customData: {
-                          onlyAllow: [unitType, "piece"],
-                          configDisabled: true
-                        },
-                      })))
-                    } else {
-                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
-                        fieldType: "unit",
-                        customData: {
-                          onlyAllow: [unitType],
-                        },
-                      })))
+                    if (product.unit) {
+                      const [unitType, piecesPerUnit] = product.unit.split(':');
+                      if (piecesPerUnit) {
+                        setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                          fieldType: "unit",
+                          customData: {
+                            onlyAllow: [unitType, "piece"],
+                            configDisabled: true
+                          },
+                        })))
+                      } else {
+                        setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                          fieldType: "unit",
+                          customData: {
+                            onlyAllow: [unitType],
+                          },
+                        })))
+                      }
+                      form.setValue([itemsKey, index, "unit"].join("."), product.unit)
                     }
-                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
-                  }
 
-                  refreshPaidAmount(form)
+                    refreshPaidAmount(form)
+                  }
+                },
+              })),
+            unit: unitField,
+            quantity: z.number({ coerce: true }).int().positive()
+              .describe("Quantity")
+              .superRefine(fieldConfig({
+                fieldType: "number",
+                customData: {
+                  onValueChange: (_, path, form) => {
+                    refreshPaidAmount(form)
+                    const items = form.getValues('items');
+                    const [itemsKey, index] = path;
+                    calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+                  },
                 }
-              },
-            })),
-          unit: unitField,
-          quantity: z.number({ coerce: true }).int().positive()
-            .describe("Quantity")
-            .superRefine(fieldConfig({
+              })),
+            unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
               fieldType: "number",
               customData: {
                 onValueChange: (_, path, form) => {
@@ -529,62 +533,55 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
                 },
               }
             })),
-          unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
-            fieldType: "number",
-            customData: {
-              onValueChange: (_, path, form) => {
-                refreshPaidAmount(form)
-                const items = form.getValues('items');
-                const [itemsKey, index] = path;
-                calculateTotalAmountForItem(items, itemsKey, Number(index), form);
-              },
-            }
-          })),
-          totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
-            inputProps: {
-              readOnly: true,
-            },
-          })),
-        })
-        .array()
-        .min(1, { message: "Please add at least one item." })
-        .superRefine((items, ctx) => {
-          items.forEach((item, index) => {
-            const product = productsBySoul.get(item.product)
-
-            if (!product) return
-
-            // Handle stock checking based on unit configuration
-            let availableStock = product.stockQuantity;
-
-            // If product unit has pieces info (e.g., "cartoon:10"), adjust stock calculation
-            if (product.unit && product.unit.includes(':')) {
-              const [unitType, piecesPerUnit] = product.unit.split(':');
-
-              // If the sale unit matches the product's base unit type, convert stock to pieces for comparison
-              if (item.unit === unitType) {
-                availableStock = product.stockQuantity * parseInt(piecesPerUnit, 10);
-              }
-            }
-
-            if (item.quantity > availableStock) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: `Only ${availableStock} items of ${product.title} available in stock`,
-                path: [index, "quantity"],
-              })
-            }
           })
+          .array()
+          .min(1, { message: "Please add at least one item." })
+          .superRefine((items, ctx) => {
+            items.forEach((item, index) => {
+              const product = productsBySoul.get(item.product)
+
+              if (!product) return
+
+              // Handle stock checking based on unit configuration
+              let availableStock = product.stockQuantity;
+
+              // If product unit has pieces info (e.g., "cartoon:10"), adjust stock calculation
+              if (product.unit && product.unit.includes(':')) {
+                const [unitType, piecesPerUnit] = product.unit.split(':');
+
+                // If the sale unit matches the product's base unit type, convert stock to pieces for comparison
+                if (item.unit === unitType) {
+                  availableStock = product.stockQuantity * parseInt(piecesPerUnit, 10);
+                }
+              }
+
+              if (item.quantity > availableStock) {
+                ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message: `Only ${availableStock} items of ${product.title} available in stock`,
+                  path: [index, "quantity"],
+                })
+              }
+            })
+          })
+          .describe("Items Sold"),
+        // customerName: z.string().optional().describe("Customer Name")
+        //   .superRefine(fieldConfig({
+        //     fieldType: "select",
+        //     customData: {
+        //       options: parties.map(p => [p._!.soul!, p.name]),
+        //     },
+        //   })),
+      })
+      .superRefine((sale, ctx) => {
+        if (!sale.paidAmount) return
+        const totalCost = sale.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
+        if (sale.paidAmount > totalCost) ctx.addIssue({
+          code: "custom",
+          message: `Paid amount cannot be greater than total cost (${totalCost})`,
+          path: ["paidAmount"],
         })
-        .describe("Items Sold"),
-      // customerName: z.string().optional().describe("Customer Name")
-      //   .superRefine(fieldConfig({
-      //     fieldType: "select",
-      //     customData: {
-      //       options: parties.map(p => [p._!.soul!, p.name]),
-      //     },
-      //   })),
-    },
+      }),
     onCreate(_, variables) {
       // Stock update logic with unit conversion
       const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, quantity, unit }) => {
@@ -712,77 +709,77 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
       },
     },
 
-    extender: (schema) => schema.superRefine((order, ctx) => {
-      if (!order.paidAmount) return
-      const totalCost = order.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
-      if (order.paidAmount > totalCost) ctx.addIssue({
-        code: "custom",
-        message: `Paid amount cannot be greater than total cost (${totalCost})`,
-        path: ["paidAmount"],
-      })
-    }),
-    fieldOverrides: {
-      customerId: z.string().describe("Customer").superRefine(fieldConfig({
-        fieldType: "select",
-        customData: {
-          options: customers.map(c => [c._!.soul!, c.name]),
-        }
-      })),
-      paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
-        fieldType: "number",
-        customData: {
-          onValueChange: (_paidAmount, __, form) => {
-            const paidAmount = Number(_paidAmount)
-            const totalCost = calculateTotalCost(form)
-            form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
-          },
-        }
-      })),
-      items: salesItemSchema
-        .extend({
-          product: z.string().describe("Product")
-            .superRefine(fieldConfig({
-              fieldType: "select",
-              customData: {
-                options: products.filter(p => !!p?._?.soul)
-                  .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
-                onValueChange: (val, path, form) => {
-                  const product = productsBySoul.get(val)
+    extender: (schema) => schema
+      .extend({
+        customerId: z.string().describe("Customer").superRefine(fieldConfig({
+          fieldType: "select",
+          customData: {
+            options: customers.map(c => [c._!.soul!, c.name]),
+          }
+        })),
+        paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
+          fieldType: "number",
+          customData: {
+            onValueChange: (_paidAmount, __, form) => {
+              const paidAmount = Number(_paidAmount)
+              const totalCost = calculateTotalCost(form)
+              form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
+            },
+          }
+        })),
+        items: salesItemSchema
+          .extend({
+            product: z.string().describe("Product")
+              .superRefine(fieldConfig({
+                fieldType: "select",
+                customData: {
+                  options: products.filter(p => !!p?._?.soul)
+                    .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+                  onValueChange: (val, path, form) => {
+                    const product = productsBySoul.get(val)
 
-                  if (!product) return
-                  const [itemsKey, index] = path
+                    if (!product) return
+                    const [itemsKey, index] = path
 
-                  form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+                    form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
 
-                  if (product.unit) {
-                    const [unitType, piecesPerUnit] = product.unit.split(':');
-                    if (piecesPerUnit) {
-                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
-                        fieldType: "unit",
-                        customData: {
-                          onlyAllow: [unitType, "piece"],
-                          configDisabled: true
-                        },
-                      })))
-                    } else {
-                      setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
-                        fieldType: "unit",
-                        customData: {
-                          onlyAllow: [unitType],
-                        },
-                      })))
+                    if (product.unit) {
+                      const [unitType, piecesPerUnit] = product.unit.split(':');
+                      if (piecesPerUnit) {
+                        setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                          fieldType: "unit",
+                          customData: {
+                            onlyAllow: [unitType, "piece"],
+                            configDisabled: true
+                          },
+                        })))
+                      } else {
+                        setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                          fieldType: "unit",
+                          customData: {
+                            onlyAllow: [unitType],
+                          },
+                        })))
+                      }
+                      form.setValue([itemsKey, index, "unit"].join("."), product.unit)
                     }
-                    form.setValue([itemsKey, index, "unit"].join("."), product.unit)
-                  }
 
-                  refreshPaidAmount(form)
+                    refreshPaidAmount(form)
+                  }
+                },
+              })),
+            unit: unitField,
+            quantity: z.number({ coerce: true }).int().positive()
+              .describe("Quantity")
+              .superRefine(fieldConfig({
+                fieldType: "number",
+                customData: {
+                  onValueChange: (_, __, form) => {
+                    refreshPaidAmount(form)
+                  },
                 }
-              },
-            })),
-          unit: unitField,
-          quantity: z.number({ coerce: true }).int().positive()
-            .describe("Quantity")
-            .superRefine(fieldConfig({
+              })),
+            unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
               fieldType: "number",
               customData: {
                 onValueChange: (_, __, form) => {
@@ -790,78 +787,79 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
                 },
               }
             })),
-          unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
-            fieldType: "number",
-            customData: {
-              onValueChange: (_, __, form) => {
-                refreshPaidAmount(form)
-              },
-            }
-          })),
-        })
-        .array()
-        .min(1, { message: "Please add at least one item." })
-        .superRefine((items, ctx) => {
-          items.forEach((item, index) => {
-            const product = productsBySoul.get(item.product)
-
-            if (!product) return
-
-            // Handle stock checking based on unit configuration
-            let availableStock = product.stockQuantity;
-
-            // If product unit has pieces info (e.g., "cartoon:10"), adjust stock calculation
-            if (product.unit && product.unit.includes(':')) {
-              const [unitType, piecesPerUnit] = product.unit.split(':');
-
-              // If the sale unit matches the product's base unit type, convert stock to pieces for comparison
-              if (item.unit === unitType) {
-                availableStock = product.stockQuantity * parseInt(piecesPerUnit, 10);
-              }
-            }
-
-            if (item.quantity > availableStock) {
-              ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: `Only ${availableStock} items of ${product.title} available in stock`,
-                path: [index, "quantity"],
-              })
-            }
           })
-        })
-        .describe("Items Ordered"),
-      orderStatus: z.enum(["pending", "done", "cancelled"]).describe("Order Status").superRefine(fieldConfig({
-        fieldType: "select",
-        customData: {
-          options: [
-            ["pending", "Pending"],
-            ["done", "Done"],
-            ["cancelled", "Cancelled"],
-          ],
-          onValueChange: (newStatus, _, form) => {
-            // When order status changes to done, deduct from products
-            if (newStatus === "done") {
-              const order = form.getValues();
-              if (order.items) {
-                order.items.forEach((item: any) => {
-                  const product = productsBySoul.get(item.product);
-                  if (product && product._?.soul) {
-                    let adjustedQuantity = item.quantity;
-                    if (product.unit && product.unit.includes(':')) {
-                      const [unitType, piecesPerUnit] = product.unit.split(':');
-                      if (item.unit === unitType) {
-                        adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          .array()
+          .min(1, { message: "Please add at least one item." })
+          .superRefine((items, ctx) => {
+            items.forEach((item, index) => {
+              const product = productsBySoul.get(item.product)
+
+              if (!product) return
+
+              // Handle stock checking based on unit configuration
+              let availableStock = product.stockQuantity;
+
+              // If product unit has pieces info (e.g., "cartoon:10"), adjust stock calculation
+              if (product.unit && product.unit.includes(':')) {
+                const [unitType, piecesPerUnit] = product.unit.split(':');
+
+                // If the sale unit matches the product's base unit type, convert stock to pieces for comparison
+                if (item.unit === unitType) {
+                  availableStock = product.stockQuantity * parseInt(piecesPerUnit, 10);
+                }
+              }
+
+              if (item.quantity > availableStock) {
+                ctx.addIssue({
+                  code: z.ZodIssueCode.custom,
+                  message: `Only ${availableStock} items of ${product.title} available in stock`,
+                  path: [index, "quantity"],
+                })
+              }
+            })
+          })
+          .describe("Items Ordered"),
+        orderStatus: z.enum(["pending", "done", "cancelled"]).describe("Order Status").superRefine(fieldConfig({
+          fieldType: "select",
+          customData: {
+            options: [
+              ["pending", "Pending"],
+              ["done", "Done"],
+              ["cancelled", "Cancelled"],
+            ],
+            onValueChange: (newStatus, _, form) => {
+              // When order status changes to done, deduct from products
+              if (newStatus === "done") {
+                const order = form.getValues();
+                if (order.items) {
+                  order.items.forEach((item: any) => {
+                    const product = productsBySoul.get(item.product);
+                    if (product && product._?.soul) {
+                      let adjustedQuantity = item.quantity;
+                      if (product.unit && product.unit.includes(':')) {
+                        const [unitType, piecesPerUnit] = product.unit.split(':');
+                        if (item.unit === unitType) {
+                          adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+                        }
                       }
+                      updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
                     }
-                    updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
-                  }
-                });
+                  });
+                }
               }
             }
           }
-        }
-      })),
-    },
+        })),
+      })
+      .superRefine((order, ctx) => {
+        if (!order.paidAmount) return
+        const totalCost = order.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
+        if (order.paidAmount > totalCost) ctx.addIssue({
+          code: "custom",
+          message: `Paid amount cannot be greater than total cost (${totalCost})`,
+          path: ["paidAmount"],
+        })
+      }),
     onCreate(_, variables) {
       // Create corresponding invoice
       const invoiceItems = variables.items?.map((item) => {
@@ -1023,7 +1021,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
         return mapped
       },
     },
-    fieldOverrides: {
+    extender: (schema) => schema.extend({
       partyId: z.string().describe("Party").superRefine(fieldConfig({
         fieldType: "select",
         customData: {
@@ -1034,7 +1032,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
           ],
         },
       })),
-    }
+    }),
   }
 }
 
@@ -1233,7 +1231,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
         return mapped
       },
     },
-    fieldOverrides: {
+    extender: (schema) => schema.extend({
       vehicleId: z.string().describe("Vehicle").superRefine(fieldConfig({
         fieldType: "select",
         customData: {
@@ -1361,7 +1359,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
         })
         .describe("Products Sent on Trip"),
       returnedProducts: returnedProductsSchema,
-    },
+    }),
     onCreate(_, variables) {
 
       // Stock update logic with unit conversion for products sent on trip
