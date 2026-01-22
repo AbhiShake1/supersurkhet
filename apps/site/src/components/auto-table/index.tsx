@@ -20,7 +20,7 @@ import * as Editable from "@/components/ui/editable";
 import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { applySorting } from "@/lib/sort";
-import { parseSchema } from "@autoform/zod";
+import { parseSchema, type ZodObjectOrWrapped } from "@autoform/zod";
 import {
   type NestedSchema,
   type NestedSchemaType,
@@ -46,7 +46,7 @@ import {
   Ellipsis,
   Text
 } from "lucide-react";
-import { z } from "zod";
+import { z, ZodEffects, ZodObject } from "zod";
 import { AutoPreview } from "../auto-preview";
 import { DataTableAdvancedToolbar } from "../data-table/data-table-advanced-toolbar";
 import { DataTableColumnHeader } from "../data-table/data-table-column-header";
@@ -83,7 +83,6 @@ type EnhancedColumnDef<TData> = ColumnDef<TData> & {
 export type AutoTableProps<T extends SchemaKeys> = {
   className?: string;
   transformer?: (data: any[]) => NestedSchemaType<T>[];
-  extender?: <E extends (shape: z.ZodObject<any>) => NestedSchema<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
   enableAdvancedFiltering?: boolean;
   enableAdvancedSorting?: boolean;
   enableAggregations?: boolean;
@@ -93,9 +92,9 @@ export type AutoTableProps<T extends SchemaKeys> = {
   enablePagination?: boolean;
   defaultPageSize?: number;
   fieldOverrides?: Partial<Record<keyof NestedSchema<T>["shape"], z.ZodTypeAny>>;
-  formSchemaTransformer?: (schema: NestedSchema<T>) => z.ZodTypeAny;
+  extender?: (schema: NestedSchema<T>) => ZodObjectOrWrapped;
   previewOverrides?: PreviewOverrides<T>;
-  onCreate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
+  onCreate?: (data: GunMessagePut, variables: Omit<NestedSchemaType<T>, "_">, onMutateResult: unknown, context: MutationFunctionContext) => unknown
   onDelete?: (data: GunMessagePut, variables: string, onMutateResult: unknown, context: MutationFunctionContext) => unknown
   onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, onMutateResult: unknown, context: MutationFunctionContext) => unknown
   readOnly?: boolean;
@@ -180,14 +179,24 @@ export function AutoTable<T extends SchemaKeys>({
     return getSchema(zodShape);
   })()
 
-  const schema = props.extender?.(_schema) ?? _schema.extend?.(props.fieldOverrides ?? {}) ?? _schema._def.type?.extend?.(props.fieldOverrides ?? {}) ?? _schema._def.innerType?.extend?.(props.fieldOverrides ?? {}) ?? _schema;
+  function getFinalSchema() {
+    let schema: ZodObjectOrWrapped = _schema;
+    schema = schema.extend?.(props.fieldOverrides ?? {}) ?? schema._def.type?.extend?.(props.fieldOverrides ?? {}) ?? schema._def.innerType?.extend?.(props.fieldOverrides ?? {}) ?? schema;
+    if (props.extender) {
+      schema = props.extender(_schema);
+    }
+    return schema;
+  }
+
+  const schema = getFinalSchema();
+  const schemaObject = schema instanceof ZodEffects ? schema.innerType() : schema;
 
   const [rowAction, setRowAction] = React.useState<DataTableRowAction<
     NestedSchemaType<T>
   > | null>(null);
 
   const columns = getAutoTableColumns({
-    schema,
+    schema: schemaObject,
     setRowAction,
     previewOverrides: props.previewOverrides,
     readOnly: props.readOnly,
@@ -224,20 +233,14 @@ export function AutoTable<T extends SchemaKeys>({
 
   if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
 
-  const formSchema = props.formSchemaTransformer?.(schema) ?? schema
-
   return (
     <div className="py-6 space-y-4 flex flex-col items-end">
       {
         !props.readOnly && (
-          <AddRowDialog
+          <AddRowDialog<T>
             schema={schemaName}
             slug={slug}
-            fieldOverrides={props.fieldOverrides}
-            extender={props.extender}
-            formSchemaTransformer={props.formSchemaTransformer}
-            onCreate={props.onCreate}
-            readOnly={props.readOnly}
+            {...props}
           />
         )
       }
@@ -287,7 +290,7 @@ export function AutoTable<T extends SchemaKeys>({
           open={rowAction?.variant === "update"}
           onOpenChange={() => setRowAction(null)}
           data={rowAction?.row.original}
-          schema={formSchema}
+          schema={schema}
           onSubmit={(data) => {
             setRowAction(null);
             if (data) {

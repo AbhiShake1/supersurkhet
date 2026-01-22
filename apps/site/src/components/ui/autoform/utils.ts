@@ -7,7 +7,7 @@ type FieldConfigCustomData = {
   tabs?: PossibleTabConfig[];
   slug?: string;
 } & ({
-  options?: [string, string][];
+  options?: [string, string][] | (readonly [string, string])[];
   onValueChange?: (value: string, path: string[], form: UseFormReturn) => void;
 }) & ({
   onlyAllow?: string[]

@@ -84,6 +84,7 @@ function calculateTotalAmountForItem(items: any[], itemsKey: string, index: numb
 }
 
 export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<"stockImport"> {
+  "use memo"
   const { data: parties = [] } = api.party.useGet({ keys: [slug] })
   const { data: products = [] } = api.product.useGet({ keys: [slug] })
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
@@ -126,7 +127,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     icon: ShoppingBag,
     slug,
     group: "Inventory",
-    formSchemaTransformer: (schema) => schema.superRefine((stockImport, ctx) => {
+    extender: (schema) => schema.superRefine((stockImport, ctx) => {
       if (!stockImport.paidAmount) return
       const totalCost = stockImport.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
       if (stockImport.paidAmount > totalCost) ctx.addIssue({
@@ -268,7 +269,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
       })
 
       // Create corresponding invoice
-      const invoiceItems = variables.items?.map((item, index) => {
+      const invoiceItems = variables.items?.map((item) => {
         // Adjust quantity for invoice based on unit conversion
         const productInfo = productsBySoul.get(item.product);
         let adjustedQuantity = item.quantity;
@@ -315,6 +316,7 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
 }
 
 export function useCustomerConfig({ slug }: { slug: string }): AutoTableTab<"customer"> {
+  "use memo"
   const { openDialog, closeDialog } = useDialog()
   const { data: invoices = [] } = api.invoice.useGet({ keys: [slug] });
   const { mutate: deleteInvoice } = api.invoice.useDelete({ keys: [slug] });
@@ -356,6 +358,7 @@ export function useCustomerConfig({ slug }: { slug: string }): AutoTableTab<"cus
 }
 
 export function usePartyConfig({ slug }: { slug: string }): AutoTableTab<"party"> {
+  "use memo"
   const { openDialog, closeDialog } = useDialog()
   const { data: invoices = [] } = api.invoice.useGet({ keys: [slug] });
   const { mutate: deleteInvoice } = api.invoice.useDelete({ keys: [slug] });
@@ -396,6 +399,7 @@ export function usePartyConfig({ slug }: { slug: string }): AutoTableTab<"party"
 }
 
 export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale"> {
+  "use memo"
   const { data: products = [] } = api.product.useGet({
     keys: [slug],
   })
@@ -445,7 +449,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
         return mapped
       },
     },
-    formSchemaTransformer: (schema) => schema.superRefine((sale, ctx) => {
+    extender: (schema) => schema.superRefine((sale, ctx) => {
       if (!sale.paidAmount) return
       const totalCost = sale.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
       if (sale.paidAmount > totalCost) ctx.addIssue({
@@ -517,22 +521,22 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
             .superRefine(fieldConfig({
               fieldType: "number",
               customData: {
-                onValueChange: (_, __, form) => {
+                onValueChange: (_, path, form) => {
                   refreshPaidAmount(form)
                   const items = form.getValues('items');
-                  const [itemsKey, index] = __;
-                  calculateTotalAmountForItem(items, itemsKey, index, form);
+                  const [itemsKey, index] = path;
+                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
                 },
               }
             })),
           unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
             fieldType: "number",
             customData: {
-              onValueChange: (_, __, form) => {
+              onValueChange: (_, path, form) => {
                 refreshPaidAmount(form)
                 const items = form.getValues('items');
-                const [itemsKey, index] = __;
-                calculateTotalAmountForItem(items, itemsKey, index, form);
+                const [itemsKey, index] = path;
+                calculateTotalAmountForItem(items, itemsKey, Number(index), form);
               },
             }
           })),
@@ -645,7 +649,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
         fiscalYear: calculateFiscalYear()
       });
     },
-    onUpdate(_, variables) {
+    onUpdate(_) {
       // const itemsByProductIdWithQuantity = variables.items?.reduce((a, { product, uantity }) => ((a[product] = (a[product] || 0) + quantity), a), {} as Record<string, number>)
       // Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
       //   const product = productsBySoul.get(productId)
@@ -657,6 +661,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
 }
 
 export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"> {
+  "use memo"
   const { data: products = [] } = api.product.useGet({
     keys: [slug],
   })
@@ -707,7 +712,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
       },
     },
 
-    formSchemaTransformer: (schema) => schema.superRefine((order, ctx) => {
+    extender: (schema) => schema.superRefine((order, ctx) => {
       if (!order.paidAmount) return
       const totalCost = order.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
       if (order.paidAmount > totalCost) ctx.addIssue({
@@ -895,7 +900,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
         fiscalYear: calculateFiscalYear()
       });
     },
-    onUpdate(prevVariables, newVariables) {
+    onUpdate() {
       // // Handle status change from pending/cancelled to done - deduct products
       // if (prevVariables.orderStatus !== "done" && newVariables.orderStatus === "done") {
       //   // Deduct products from stock when order status changes to done
@@ -935,13 +940,21 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
 }
 
 export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"invoice"> {
+  "use memo"
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
+  const { data: trips = [] } = api.trip.useGet({ keys: [slug] });
   const { data: parties = [] } = api.party.useGet({ keys: [slug] });
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
   const { data: vehicles = [] } = api.vehicle.useGet({ keys: [slug] });
 
   const vehiclesBySoul = new Map(
     vehicles
+      .filter(v => v?._?.soul)
+      .map(v => [v._!.soul!, v])
+  )
+
+  const tripsBySoul = new Map(
+    trips
       .filter(v => v?._?.soul)
       .map(v => [v._!.soul!, v])
   )
@@ -993,7 +1006,13 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
       );
     },
     previewOverrides: {
-      partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || vehiclesBySoul.get(id)?.name || "-",
+      partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || "-",
+      vehicleId: (id) => vehiclesBySoul.get(id)?.name || "-",
+      tripId: (id) => {
+        const trip = tripsBySoul.get(id)
+        if (!trip) return "-"
+        return [trip.destination, [trip.dispatchTime, trip.returnTime].filter(Boolean).join(' - ')].join(' | ')
+      },
       items: (items) => {
         const mapped = items?.map((item: SalesItem) => ({
           ...item,
@@ -1009,9 +1028,9 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
         fieldType: "select",
         customData: {
           options: [
-            ...parties.map(p => [p._!.soul!, p.name]),
-            ...customers.map(c => [c._!.soul!, c.name]),
-            ...vehicles.map(v => [v._!.soul!, `${v.name} (${v.licensePlate})`])
+            ...parties.map(p => [p._!.soul!, p.name] as const),
+            ...customers.map(c => [c._!.soul!, c.name] as const),
+            ...vehicles.map(v => [v._!.soul!, `${v.name} (${v.licensePlate})`] as const)
           ],
         },
       })),
@@ -1020,6 +1039,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
 }
 
 export function useVehicleConfig({ slug }: { slug: string }): AutoTableTab<"vehicle"> {
+  "use memo"
   return {
     schema: "vehicle",
     title: "Vehicles",
@@ -1115,24 +1135,24 @@ function useReturnProductsSchema({ slug }: { slug: string }) {
         .superRefine(fieldConfig({
           fieldType: "number",
           customData: {
-            onValueChange: (_, __, form) => {
+            onValueChange: (_, path, form) => {
               // Calculate total amount when quantity changes
               const items = form.getValues('returnedProducts');
-              const [itemsKey, index] = __;
+              const [itemsKey, index] = path;
 
-              calculateTotalAmountForItem(items, itemsKey, index, form);
+              calculateTotalAmountForItem(items, itemsKey, Number(index), form);
             },
           }
         })),
       unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
         fieldType: "number",
         customData: {
-          onValueChange: (_, __, form) => {
+          onValueChange: (_, path, form) => {
             // Calculate total amount when unit price changes
             const items = form.getValues('returnedProducts');
-            const [itemsKey, index] = __;
+            const [itemsKey, index] = path;
 
-            calculateTotalAmountForItem(items, itemsKey, index, form);
+            calculateTotalAmountForItem(items, itemsKey, Number(index), form);
           },
         }
       })),
@@ -1148,6 +1168,7 @@ function useReturnProductsSchema({ slug }: { slug: string }) {
 }
 
 export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> {
+  "use memo"
   const { data: vehicles = [] } = api.vehicle.useGet({ keys: [slug] });
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
   const { mutate: updateTrip } = api.trip.useUpdate({ keys: [slug] });
@@ -1279,26 +1300,26 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
             .superRefine(fieldConfig({
               fieldType: "number",
               customData: {
-                onValueChange: (_, __, form) => {
+                onValueChange: (_, path, form) => {
                   refreshPaidAmount(form)
                   // Calculate total amount when quantity changes
                   const items = form.getValues('products');
-                  const [itemsKey, index] = __;
+                  const [itemsKey, index] = path;
 
-                  calculateTotalAmountForItem(items, itemsKey, index, form);
+                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
                 },
               }
             })),
           unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
             fieldType: "number",
             customData: {
-              onValueChange: (_, __, form) => {
+              onValueChange: (_, path, form) => {
                 refreshPaidAmount(form)
                 // Calculate total amount when unit price changes
                 const items = form.getValues('products');
-                const [itemsKey, index] = __;
+                const [itemsKey, index] = path;
 
-                calculateTotalAmountForItem(items, itemsKey, index, form);
+                calculateTotalAmountForItem(items, itemsKey, Number(index), form);
               },
             }
           })),
@@ -1396,7 +1417,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
       //   fiscalYear: calculateFiscalYear()
       // });
     },
-    onUpdate(_, variables) {
+    onUpdate(_) {
       // Stock update logic for updates - we need to handle the difference between old and new quantities
       // For now, we'll just log that this functionality would need to be implemented based on the specific use case
       console.log("Trip update functionality would handle stock adjustments here");
@@ -1438,7 +1459,10 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
 
                   <AutoForm
                     values={{
-                      returnedProducts: row.original.products
+                      returnedProducts: row.original.products.map(p => ({
+                        ...p,
+                        totalAmount: (p.quantity ?? 0) * (p.unitPrice ?? 0)
+                      }))
                     }}
                     schema={z.object({
                       returnedProducts: returnedProductsSchema
@@ -1460,7 +1484,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
 
                       // Update the trip with return time and returned products
                       updateTrip({
-                        id: row.original._.soul,
+                        id: row.original._?.soul ?? "",
                         returnTime: new Date().toISOString(),
                         returnedProducts: data.returnedProducts,
                       });
@@ -1488,18 +1512,13 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                       // Create a sale record for the sold products
                       if (soldProducts.length > 0) {
                         // Create corresponding invoice for sold products
-                        const invoiceItems = Object.fromEntries(
-                          soldProducts.map((item, index) => [
-                            `itm_${index}`,
-                            {
-                              product: item.productId,
-                              quantity: item.quantity,
-                              rate: productsBySoul.get(item.productId)?.sellingPrice || 0,
-                              total: item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0),
-                              vehicleId: row.original.vehicleId,
-                            }
-                          ])
-                        );
+                        const invoiceItems = soldProducts.map((item) => ({
+                          product: item.productId,
+                          quantity: item.quantity,
+                          rate: productsBySoul.get(item.productId)?.sellingPrice || 0,
+                          total: item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0),
+                          vehicleId: row.original.vehicleId,
+                        }))
 
                         const totalAmount = soldProducts.reduce(
                           (sum: number, item: any) => sum + (item.quantity * (productsBySoul.get(item.productId)?.sellingPrice || 0)),
@@ -1518,7 +1537,6 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                           paidAmount: totalAmount,
                           paymentStatus: "paid" as any,
                           fiscalYear: calculateFiscalYear(),
-                          // Add vehicle reference to the invoice
                           vehicleId: row.original.vehicleId,
                           tripId: row.original._?.soul,
                           description: `Sale from trip ${row.original._?.soul} by ${vehicle?.name || 'vehicle'}`
@@ -1554,6 +1572,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
 }
 
 export function useRetailConfig({ slug }: { slug: string }): BusinessConfigReturn["retail"] {
+  "use memo"
   const salesConfig = useSalesConfig({ slug });
   const stockImportsConfig = useStockImportsConfig({ slug });
   const invoicesConfig = useInvoicesConfig({ slug });

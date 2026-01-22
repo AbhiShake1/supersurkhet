@@ -1,23 +1,18 @@
 import * as React from "react";
-import { useMemo, useState } from "react";
 import { useAuth } from "@/components/auth-provider";
-import { AutoForm, AutoFormWithoutLabel } from "@/components/ui/autoform";
+import { AutoForm } from "@/components/ui/autoform";
 import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { appSchema } from "@/lib/schema";
-import { parseSchema } from "@autoform/zod";
 import {
-  type NestedSchema,
-  type NestedSchemaType,
   type SchemaKeys,
-  type UpdaterParams,
   getNestedZodShape,
   getSchema,
   useCreate,
 } from "@gta/react-hooks";
-import { z } from "zod";
+import { ZodEffects } from "zod";
 import {
   ArrowBigUpDash,
   FileJson,
@@ -39,26 +34,24 @@ import {
 import { BadgeMarquee } from "../ui/badge-marquee";
 import { api } from "@/lib/api";
 import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
-import type { GunMessagePut } from "gun";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { AutoTableProps } from "../auto-table";
+import type { ZodObjectOrWrapped } from "@autoform/zod";
+import { ZodObject } from "zod/v4";
 
-export interface AddRowDialogProps<T extends SchemaKeys> {
+export type AddRowDialogProps<T extends SchemaKeys> = Pick<
+  AutoTableProps<T>,
+  "slug" | "fieldOverrides" | "extender" | "onCreate" | "readOnly" | "className"
+> & {
   schema: T;
-  slug: string;
-  fieldOverrides?: Partial<Record<keyof NestedSchema<T>["shape"], z.ZodTypeAny>>;
-  extender?: <E extends (shape: z.ZodObject<any>) => NestedSchemaType<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
-  formSchemaTransformer?: (schema: NestedSchema<T>) => z.ZodTypeAny;
-  onCreate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown;
-  readOnly?: boolean;
-  className?: string;
   children?: React.ReactNode;
-  buttonLabel?: string;
-  buttonIcon?: React.ReactNode;
+  buttonLabel?: string | React.ReactNode;
+  buttonIcon?: string | React.ReactNode;
 }
 
 export function AddRowDialog<T extends SchemaKeys>({
@@ -66,7 +59,6 @@ export function AddRowDialog<T extends SchemaKeys>({
   slug,
   fieldOverrides,
   extender,
-  formSchemaTransformer,
   onCreate,
   readOnly = false,
   className,
@@ -81,7 +73,7 @@ export function AddRowDialog<T extends SchemaKeys>({
   const [isImportPending, setIsImportPending] = React.useState(false);
 
   const createMutation = useCreate({
-    keys: [schema, slug],
+    keys: [schema, slug ?? ""],
     onSuccess(...args) {
       setDialogOpen(false);
       onCreate?.(...args);
@@ -90,8 +82,16 @@ export function AddRowDialog<T extends SchemaKeys>({
 
   const _schema = getNestedZodShape(schema, appSchema.schemaShape);
   const schemaWithOverrides = getSchema(_schema);
-  const finalSchema = extender?.(schemaWithOverrides) ?? schemaWithOverrides.extend(fieldOverrides ?? {});
-  const formSchema = formSchemaTransformer?.(finalSchema) ?? finalSchema;
+  function getFinalSchema() {
+    let schema: ZodObjectOrWrapped = schemaWithOverrides;
+    schema = schema.extend?.(fieldOverrides ?? {}) ?? schema._def.type?.extend?.(fieldOverrides ?? {}) ?? schema._def.innerType?.extend?.(fieldOverrides ?? {}) ?? schema;
+    if (extender) {
+      schema = extender(_schema);
+    }
+    return schema;
+  }
+  const finalSchema = getFinalSchema();
+  const finalSchemaObject = finalSchema instanceof ZodEffects ? finalSchema.innerType() : finalSchema;
 
   const handleFileUpload = async (e: any, format: 'csv' | 'excel' | 'json') => {
     const selectedFile = e.target.files?.[0];
@@ -112,7 +112,7 @@ export function AddRowDialog<T extends SchemaKeys>({
       }
 
       // Validate the parsed data against the schema
-      const { validData, errors } = validateDataAgainstSchema(parsedData, finalSchema as z.ZodObject<any>);
+      const { validData, errors } = validateDataAgainstSchema(parsedData, finalSchemaObject);
 
       if (errors.length > 0) {
         // Show validation errors to user
@@ -158,52 +158,55 @@ export function AddRowDialog<T extends SchemaKeys>({
 
   return (
     <ButtonGroup className={className}>
-      <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
-        <CredenzaTrigger asChild>
-          <Button className="gap-2 rounded-r-none border-r">
-            {buttonIcon}
-            <span className="hidden sm:inline">
-              {buttonLabel}
-            </span>
-          </Button>
-        </CredenzaTrigger>
-        <CredenzaContent>
-          <CredenzaHeader className="min-w-0">
-            <CredenzaTitle className="capitalize">Add new {schema}</CredenzaTitle>
-            <CredenzaDescription asChild>
-              <AddDataSuggestions schemaName={schema} slug={slug} onSelected={setFormValues} />
-            </CredenzaDescription>
-          </CredenzaHeader>
-          <CredenzaBody asChild>
-            <ScrollArea className="h-[50vh] max-h-[60vh]">
-              <AutoForm
-                values={formValues}
-                schema={formSchema}
-                onSubmit={(b) => createMutation.mutate({ ...b, created_by: user?._?.soul ?? "anon", timestamp: Date.now() })}
-                formProps={{ id: "auto-table-add-form" }}
-              />
-            </ScrollArea>
-          </CredenzaBody>
-          <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => setDialogOpen(false)}
-            >
-              Cancel
+      {
+        slug &&
+        <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
+          <CredenzaTrigger asChild>
+            <Button className="gap-2 rounded-r-none border-r">
+              {buttonIcon}
+              <span className="hidden sm:inline">
+                {buttonLabel}
+              </span>
             </Button>
-            <SubmitButton
-              form="auto-table-add-form"
-              className="gap-2 w-full"
-              loading={createMutation.isPending}
-            >
-              <Save className="size-4" />
-              Save
-            </SubmitButton>
-          </CredenzaFooter>
-        </CredenzaContent>
-      </Credenza>
+          </CredenzaTrigger>
+          <CredenzaContent>
+            <CredenzaHeader className="min-w-0">
+              <CredenzaTitle className="capitalize">Add new {schema}</CredenzaTitle>
+              <CredenzaDescription asChild>
+                <AddDataSuggestions schemaName={schema} slug={slug} onSelected={setFormValues} />
+              </CredenzaDescription>
+            </CredenzaHeader>
+            <CredenzaBody asChild>
+              <ScrollArea className="h-[50vh] max-h-[60vh]">
+                <AutoForm
+                  values={formValues}
+                  schema={finalSchema}
+                  onSubmit={(b) => createMutation.mutate({ ...b, created_by: user?._?.soul ?? "anon", timestamp: Date.now() })}
+                  formProps={{ id: "auto-table-add-form" }}
+                />
+              </ScrollArea>
+            </CredenzaBody>
+            <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => setDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <SubmitButton
+                form="auto-table-add-form"
+                className="gap-2 w-full"
+                loading={createMutation.isPending}
+              >
+                <Save className="size-4" />
+                Save
+              </SubmitButton>
+            </CredenzaFooter>
+          </CredenzaContent>
+        </Credenza>
+      }
       <AddRowImportMenu
         onImport={handleFileImport}
         isImportPending={isImportPending}

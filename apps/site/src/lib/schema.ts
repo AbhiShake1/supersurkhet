@@ -162,6 +162,9 @@ export const invoiceSchema = z.object({
   type: z.enum(["purchase", "sale"]),
 
   partyId: z.string().describe("Party").optional(),
+  vehicleId: z.string().describe("Vehicle").optional(),
+  tripId: z.string().describe("Trip").optional(),
+  description: z.string().optional().superRefine(fieldConfig({ fieldType: "richText" })),
   issuedAt: z.string()
     .datetime({ offset: true })
     .describe("Issued At").optional(),
