@@ -617,6 +617,9 @@ importers:
       web-vitals:
         specifier: ^5.1.0
         version: 5.1.0
+      wrangler:
+        specifier: ^3.28.2
+        version: 3.114.17(@cloudflare/workers-types@4.20260122.0)
 
   apps/surkhet:
     dependencies:
