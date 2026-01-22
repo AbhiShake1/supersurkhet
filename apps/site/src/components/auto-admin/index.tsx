@@ -19,11 +19,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { AdminDashboard } from "../admin-dashboard";
 import { QRCodePage } from "../qr-code-page";
 import Card from "../ui/minimal-card";
-import { useMemo } from "react";
 import { NotFound } from "../ui/not-found";
 import { CustomUiBuilderPage } from "../ui-builder";
 import { LanguageSelector } from "../language-selector";
-import { v4 as uuid } from "uuid";
 
 export interface AutoAdminProps {
   tabs: PossibleTabConfig[];
@@ -54,7 +52,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
-  const tabsWithHome = useMemo(() => [
+  const tabsWithHome = [
     {
       title: "Dashboard",
       icon: BarChart3,
@@ -73,7 +71,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       children: <CustomUiBuilderPage slug={basePath} />,
       group: "System Configuration"
     }
-  ], [tabs]);
+  ]
 
   // @ts-expect-error
   const tab = (search.tab as string) ?? tabsWithHome[0].title;

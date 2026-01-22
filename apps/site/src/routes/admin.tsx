@@ -30,7 +30,7 @@ function RouteComponent() {
 
   if (!user) return null;
 
-  const tabs = useMemo(() => Object.keys(appSchema.rawShape)
+  const tabs = Object.keys(appSchema.rawShape)
     .sort((a, b) => a.localeCompare(b))
     .map((s) => {
       const schemaConfig = appSchema.rawShape[s as keyof typeof appSchema.rawShape];
@@ -53,7 +53,7 @@ function RouteComponent() {
         },
         extender: d => d.extend({ business: z.string().optional() }),
       };
-    }), [])
+    })
 
   return (
     <AutoAdmin

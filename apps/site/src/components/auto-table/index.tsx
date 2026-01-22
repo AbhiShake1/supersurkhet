@@ -1,7 +1,6 @@
 import { applyFilters } from "@/lib/filter";
 import type { DataTableRowAction, FilterVariant } from "@/types/data-table";
 import * as React from "react";
-import { useMemo } from "react";
 
 import { DataTable } from "@/components/data-table";
 import { useDataTable } from "@/hooks/use-data-table";
@@ -141,25 +140,23 @@ export function AutoTable<T extends SchemaKeys>({
   }, slug ?? "");
   const _data = props.transformer?.(__data) ?? __data;
   const search = useSearch({ from: "__root__" });
-  const data = useMemo(() => {
-    // @ts-expect-error
-    const filters = search.filters;
-    // @ts-expect-error
-    const sorting = search.sort;
-    function getFiltered() {
-      if (filters) {
-        return applyFilters(_data, filters);
-      }
-      return _data;
+  // @ts-expect-error
+  const filters = search.filters;
+  // @ts-expect-error
+  const sorting = search.sort;
+  function getFiltered() {
+    if (filters) {
+      return applyFilters(_data, filters);
     }
-    function getSorted(data: typeof _data) {
-      if (sorting) {
-        return applySorting(data, sorting);
-      }
-      return data;
+    return _data;
+  }
+  function getSorted(data: typeof _data) {
+    if (sorting) {
+      return applySorting(data, sorting);
     }
-    return getSorted(getFiltered());
-  }, [_data, search]);
+    return data;
+  }
+  const data = getSorted(getFiltered());
 
   const updateMutation = useUpdate({
     keys: [schemaName, slug ?? ""],

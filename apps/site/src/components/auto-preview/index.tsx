@@ -106,7 +106,7 @@ const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
   );
 };
 
-const _ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
+const ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
   if (!value) return null;
   const fullKey = (value as any)?.["#"] as string;
   if (!fullKey) return null;
@@ -122,7 +122,6 @@ const _ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
     Click to expand
   </Button>
 }
-const ArrayPreview = React.memo(_ArrayPreview, (p, n) => Object.is(p.value, n.value))
 
 const PhonePreview: AutoPreviewComponent<string> = ({ value }) => {
   return <>{value ? value.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3") : "-"}</>;

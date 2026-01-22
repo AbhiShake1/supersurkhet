@@ -40,7 +40,12 @@ const config = defineConfig({
     viteReact({
       babel: {
         plugins: [
-          'babel-plugin-react-compiler',
+          [
+            'babel-plugin-react-compiler',
+            {
+              compilationMode: 'annotation',
+            },
+          ],
           ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }],
         ],
       },

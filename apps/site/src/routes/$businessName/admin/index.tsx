@@ -15,15 +15,15 @@ export const Route = createFileRoute("/$businessName/admin/")({
     const { businessName } = Route.useParams();
     const { data: allBusinesses = [], isLoading } = api.business.useGet({ keys: [businessName], single: true });
     const { promptLogin, closeLoginPrompt } = useLoginPrompt();
-    const { isAuthenticated, user } = useAuth();
+    const { isAuthenticated, user, isLoading: isUserLoading } = useAuth();
 
     useEffect(() => {
-      if (!isAuthenticated && !isLoading)
+      if (!isAuthenticated && !isUserLoading)
         promptLogin({ dismissible: false, showBackgroundContent: false });
       else closeLoginPrompt();
     }, [isAuthenticated, isLoading]);
 
-    if (isLoading) {
+    if (isLoading || isUserLoading) {
       return (
         <div className="items-center justify-center w-screen h-screen flex">
           <Loader2

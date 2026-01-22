@@ -1,50 +1,37 @@
-import {
-  Bed,
-  Briefcase,
-  Calendar,
-  Car,
-  Dumbbell,
-  Film,
-  Fuel,
-  GraduationCap,
-  Heart,
-  Home,
-  Layout,
-  MapIcon,
-  Menu,
-  MenuSquare,
-  Receipt,
-  ShoppingBag,
-  Users,
-  Wrench, DollarSign,
-  Users2,
-  ShoppingCart
-} from "lucide-react";
-import { RestaurantLayoutEditor } from "@/components/seat-builder/restaurant-layout-editor";
-import type { BusinessType } from "@/lib/schema";
 import type { AutoTableTab } from "@/components/auto-admin";
-import { salesItemSchema, type Sale, type SalesItem, type StockImport } from "@/lib/schemas/sales";
-import z from "zod";
+import { AutoFormSubmit } from "@/components/ui/auto-form";
 import { AutoForm, fieldConfig } from "@/components/ui/autoform";
-import { api } from "@/lib/api";
-import { useEffect, useMemo, useState } from "react";
-import NepaliDate from "nepali-datetime";
-import type { UseFormReturn } from "react-hook-form";
+import { Button } from "@/components/ui/button";
+import {
+  Credenza,
+  CredenzaContent,
+  CredenzaTrigger
+} from "@/components/ui/credenza";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import {
-  Credenza,
-  CredenzaTrigger,
-  CredenzaContent
-} from "@/components/ui/credenza";
 import { ReceiptWrapper } from "@/components/ui/receipt-wrapper";
-import { formatCurrency } from "@/lib/intl";
-import type { SchemaKeys } from "@gta/react-hooks";
 import { useDialog } from "@/contexts/dialog-context";
-import { Button } from "@/components/ui/button";
-import { AutoFormSubmit } from "@/components/ui/auto-form";
+import { api } from "@/lib/api";
+import { formatCurrency } from "@/lib/intl";
+import type { BusinessType } from "@/lib/schema";
+import { salesItemSchema, type Sale, type SalesItem, type StockImport } from "@/lib/schemas/sales";
+import type { SchemaKeys } from "@gta/react-hooks";
+import {
+  Car,
+  DollarSign,
+  MapIcon,
+  Receipt,
+  ShoppingBag,
+  ShoppingCart,
+  Users,
+  Users2
+} from "lucide-react";
+import NepaliDate from "nepali-datetime";
+import { useEffect, useState } from "react";
+import type { UseFormReturn } from "react-hook-form";
+import z from "zod";
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoTableTab<K>
@@ -101,17 +88,17 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
   const { data: products = [] } = api.product.useGet({ keys: [slug] })
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
   const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
-  const productsBySoul = useMemo(() => new Map(
+  const productsBySoul = new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [products])
+  )
 
-  const partiesBySoul = useMemo(() => new Map(
+  const partiesBySoul = new Map(
     parties
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [parties])
+  )
 
   function getDefaultUnitField() {
     return z.string().optional().describe("Unit").superRefine(fieldConfig({
@@ -415,17 +402,17 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
   const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
-  const productsBySoul = useMemo(() => new Map(
+  const productsBySoul = new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [products])
+  )
 
-  const customersBySoul = useMemo(() => new Map(
+  const customersBySoul = new Map(
     customers
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [customers])
+  )
 
   function getDefaultUnitField() {
     return z.string().optional().describe("Unit").superRefine(fieldConfig({
@@ -677,17 +664,17 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
   const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
 
-  const productsBySoul = useMemo(() => new Map(
+  const productsBySoul = new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [products])
+  )
 
-  const customersBySoul = useMemo(() => new Map(
+  const customersBySoul = new Map(
     customers
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [customers])
+  )
 
   function getDefaultUnitField() {
     return z.string().optional().describe("Unit").superRefine(fieldConfig({
@@ -953,28 +940,28 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
   const { data: vehicles = [] } = api.vehicle.useGet({ keys: [slug] });
 
-  const vehiclesBySoul = useMemo(() => new Map(
+  const vehiclesBySoul = new Map(
     vehicles
       .filter(v => v?._?.soul)
       .map(v => [v._!.soul!, v])
-  ), [vehicles])
+  )
 
-  const productsBySoul = useMemo(() => new Map(
+  const productsBySoul = new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [products])
+  )
 
-  const partiesBySoul = useMemo(() => new Map(
+  const partiesBySoul = new Map(
     parties
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [parties])
-  const customersBySoul = useMemo(() => new Map(
+  )
+  const customersBySoul = new Map(
     customers
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [customers])
+  )
 
   return {
     schema: "invoice",
@@ -1045,11 +1032,11 @@ export function useVehicleConfig({ slug }: { slug: string }): AutoTableTab<"vehi
 function useReturnProductsSchema({ slug }: { slug: string }) {
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
 
-  const productsBySoul = useMemo(() => new Map(
+  const productsBySoul = new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [products]);
+  )
 
   function getDefaultUnitField() {
     return z.string().optional().describe("Unit").superRefine(fieldConfig({
@@ -1168,17 +1155,17 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] });
   const returnedProductsSchema = useReturnProductsSchema({ slug });
 
-  const vehiclesBySoul = useMemo(() => new Map(
+  const vehiclesBySoul = new Map(
     vehicles
       .filter(v => v?._?.soul)
       .map(v => [v._!.soul!, v])
-  ), [vehicles]);
+  )
 
-  const productsBySoul = useMemo(() => new Map(
+  const productsBySoul = new Map(
     products
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
-  ), [products]);
+  )
 
   function getDefaultUnitField() {
     return z.string().optional().describe("Unit").superRefine(fieldConfig({
@@ -1596,6 +1583,7 @@ export function useRetailConfig({ slug }: { slug: string }): BusinessConfigRetur
 }
 
 export function useBusinessConfig({ slug }: { slug: string }): BusinessConfigReturn {
+  "use memo"
   const retail = useRetailConfig({ slug });
   return {
     retail,
