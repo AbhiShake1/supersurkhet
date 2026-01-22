@@ -1,4 +1,4 @@
-import { buildZodFieldConfig } from "@autoform/react";
+import { buildZodFieldConfig } from "./react";
 import type { FieldTypes } from "./AutoForm";
 import type { PossibleTabConfig } from "@/components/auto-admin";
 import type { UseFormReturn } from "react-hook-form";

@@ -23,7 +23,7 @@ import { useMemo } from "react";
 import { NotFound } from "../ui/not-found";
 import { CustomUiBuilderPage } from "../ui-builder";
 import { LanguageSelector } from "../language-selector";
-import z from "zod";
+import { v4 as uuid } from "uuid";
 
 export interface AutoAdminProps {
   tabs: PossibleTabConfig[];
@@ -141,11 +141,13 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
             <AutoTable
               {...currentItem}
               slug={currentItem.slug ?? basePath}
+              key={tab}
             />
           ) : !components?.length ? (
             <AutoTable
               {...currentItem}
               slug={currentItem.slug ?? basePath}
+              key={tab}
             />
           ) : (
             <Tabs
@@ -178,6 +180,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                     <AutoTable
                       {...currentItem}
                       slug={currentItem.slug ?? basePath}
+                      key={tab}
                     />
                   </div>
                 </Card>

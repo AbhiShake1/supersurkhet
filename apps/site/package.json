@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "dotenv -e .env.local -- sh -c \"NODE_OPTIONS='--import ./instrument.server.mjs' vite dev --port 3000\"",
-    "build": "NODE_OPTIONS='--max-old-space-size=4096' vite build && cp instrument.server.mjs .output/server",
+    "build": "NODE_OPTIONS='--max-old-space-size=8192' vite build && cp instrument.server.mjs .output/server",
     "preview": "vite preview",
     "test": "vitest run",
     "format": "biome format",
@@ -14,8 +14,7 @@
   },
   "dependencies": {
     "@ark-ui/react": "^5.30.0",
-    "@autoform/core": "^3.0.0",
-    "@autoform/react": "^4.0.0",
+    "@autoform/core": "2.1.0",
     "@autoform/zod": "2.1.0",
     "@barcode-bakery/barcode-datamatrix": "^2.0.0",
     "@barcode-bakery/barcode-react": "^2.0.0",
@@ -27,7 +26,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@faker-js/faker": "^10.0.0",
     "@floating-ui/react": "^0.27.16",
-    "@hookform/resolvers": "^5.2.2",
+    "@hookform/resolvers": "^5.0.1",
     "@modelcontextprotocol/sdk": "^1.17.0",
     "@monaco-editor/react": "^4.7.0",
     "@number-flow/react": "^0.5.10",
@@ -172,6 +171,7 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@biomejs/biome": "2.2.4",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/devtools-vite": "^0.3.11",

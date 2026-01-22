@@ -1,11 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import type { AutoFormFieldProps } from "@autoform/react";
+import type { AutoFormFieldProps } from "../react";
 import type React from "react";
 import { useFormContext } from "react-hook-form";
 import { Combobox } from "../../combobox";

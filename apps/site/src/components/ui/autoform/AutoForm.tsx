@@ -1,7 +1,7 @@
 import {
   AutoForm as BaseAutoForm,
   type AutoFormUIComponents,
-} from "@autoform/react";
+} from "./react";
 import { ZodProvider, type ZodObjectOrWrapped } from "@autoform/zod";
 import { ZodEffects, ZodObject } from "zod";
 import { ArrayElementWrapper } from "./components/ArrayElementWrapper";
@@ -84,12 +84,7 @@ export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
       {...props}
       onSubmit={onSubmit}
       schema={
-        new ZodProvider(
-          schema instanceof ZodObject
-            ? // omit default fields of schema
-            schema.omit({ _: true, created_by: true, timestamp: true })
-            : schema,
-        )
+        new ZodProvider(schema)
       }
       uiComponents={{
         ...ShadcnUIComponents,
@@ -114,12 +109,7 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
     <BaseAutoForm
       {...props}
       schema={
-        new ZodProvider(
-          schema instanceof ZodEffects
-            ? schema.innerType().omit({ _: true, created_by: true, timestamp: true })
-            : // omit default fields of schema
-            schema.omit({ _: true, created_by: true, timestamp: true })
-        )
+        new ZodProvider(schema)
       }
       uiComponents={{ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }}
       formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}

@@ -11,7 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { generatePermissions } from "@/lib/permissions/generate-permissions";
-import type { AutoFormFieldProps } from "@autoform/react";
+import type { AutoFormFieldProps } from "../react";
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */

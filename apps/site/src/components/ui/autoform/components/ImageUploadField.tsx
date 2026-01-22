@@ -5,22 +5,23 @@ import {
   type UseImageUploadProps,
 } from "@/hooks/use-image-upload";
 import { cn } from "@/lib/utils";
-import type { AutoFormFieldProps } from "@autoform/react";
+import type { AutoFormFieldProps } from "../react";
 import { TooltipTrigger } from "@radix-ui/react-tooltip";
 import { Trash2, Upload, X } from "lucide-react";
 import type React from "react";
 import { useCallback, useState, type ComponentProps } from "react";
 import { Tooltip, TooltipContent } from "../../tooltip";
+import { useFormContext } from "react-hook-form";
 
 export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
   inputProps,
   error,
   id,
-  control,
   path,
   field,
   value,
 }) => {
+  const { control } = useFormContext()
   const { key, ...props } = inputProps;
 
   return (

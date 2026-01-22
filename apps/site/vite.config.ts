@@ -23,7 +23,7 @@ const config = defineConfig({
         nodeCompat: true,
         wrangler: {
           compatibility_date: '2026-01-21',
-          compatibility_flags: ["nodejs_compat", "fixup-transform-stream-backpressure"],
+          compatibility_flags: ["nodejs_compat"],
           observability: {
             enabled: true,
             logs: { enabled: true },
@@ -39,7 +39,10 @@ const config = defineConfig({
     tanstackStart(),
     viteReact({
       babel: {
-        plugins: ['babel-plugin-react-compiler'],
+        plugins: [
+          'babel-plugin-react-compiler',
+          ['@babel/plugin-transform-react-jsx', { runtime: 'automatic' }],
+        ],
       },
     }),
   ],

@@ -8,7 +8,7 @@ import { api } from "@/lib/api";
 import type { BusinessType } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/$businessName/admin/")({
   component: () => {

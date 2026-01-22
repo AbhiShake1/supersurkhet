@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import type { AutoFormFieldProps } from "@autoform/react";
+import type { AutoFormFieldProps } from "../react";
 import type React from "react";
 import { useFormContext } from "react-hook-form";
 

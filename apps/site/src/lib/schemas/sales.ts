@@ -46,7 +46,8 @@ export const stockImportSchema = z.object({
   importDate: z.string()
     // .datetime()
     .datetime({ offset: true })
-    .default(() => new Date().toISOString()).describe("Import Date").superRefine(fieldConfig({ fieldType: "datetime" })),
+    .default(() => new Date().toISOString()).describe("Import Date")
+    .superRefine(fieldConfig({ fieldType: "datetime" })),
   items: salesItemSchema.array().min(1, { message: "Please add at least one item." }).describe("Items"),
   paidAmount: z.number({ coerce: true }).positive().describe("Paid Amount"),
   paymentStatus: z.string().default("pending").describe("Payment Status")

@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
-import type { AutoFormFieldProps } from "@autoform/react";
+import type { AutoFormFieldProps } from "../react";
 
 export interface UnitFieldProps extends AutoFormFieldProps {
   placeholder?: string;

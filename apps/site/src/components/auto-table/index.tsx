@@ -35,6 +35,7 @@ import {
   useUpdate
 } from "@gta/react-hooks";
 import { DropdownMenuItem } from "@radix-ui/react-dropdown-menu";
+import type { MutationFunctionContext } from "@tanstack/react-query";
 import { useSearch } from "@tanstack/react-router";
 import type { CellContext, ColumnDef } from "@tanstack/react-table";
 import type { GunMessagePut } from "gun";
@@ -83,7 +84,7 @@ type EnhancedColumnDef<TData> = ColumnDef<TData> & {
 export type AutoTableProps<T extends SchemaKeys> = {
   className?: string;
   transformer?: (data: any[]) => NestedSchemaType<T>[];
-  extender?: <E extends (shape: z.ZodObject<any>) => NestedSchemaType<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
+  extender?: <E extends (shape: z.ZodObject<any>) => NestedSchema<T>>(shape: Parameters<E>[0]) => ReturnType<E>;
   enableAdvancedFiltering?: boolean;
   enableAdvancedSorting?: boolean;
   enableAggregations?: boolean;
@@ -96,8 +97,8 @@ export type AutoTableProps<T extends SchemaKeys> = {
   formSchemaTransformer?: (schema: NestedSchema<T>) => z.ZodTypeAny;
   previewOverrides?: PreviewOverrides<T>;
   onCreate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
-  onDelete?: (data: GunMessagePut, variables: string, context: unknown) => unknown
-  onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, context: unknown) => unknown
+  onDelete?: (data: GunMessagePut, variables: string, onMutateResult: unknown, context: MutationFunctionContext) => unknown
+  onUpdate?: (data: GunMessagePut, variables: UpdaterParams<T>, onMutateResult: unknown, context: MutationFunctionContext) => unknown
   readOnly?: boolean;
   treatSlugAsAbsolute?: boolean;
   actions?: (ctx: CellContext<NestedSchemaType<T>, unknown>) => React.ReactNode;
@@ -161,13 +162,13 @@ export function AutoTable<T extends SchemaKeys>({
   }, [_data, search]);
 
   const updateMutation = useUpdate({
-    keys: [schemaName, slug],
+    keys: [schemaName, slug ?? ""],
     onSuccess(...args) {
       props?.onUpdate?.(...args)
     }
   });
   const { mutate: onDelete } = useDelete({
-    keys: [schemaName, slug],
+    keys: [schemaName, slug ?? ""],
     onSuccess(...args) {
       props?.onDelete?.(...args)
     },
@@ -183,6 +184,7 @@ export function AutoTable<T extends SchemaKeys>({
   })()
 
   const schema = props.extender?.(_schema) ?? _schema.extend?.(props.fieldOverrides ?? {}) ?? _schema._def.type?.extend?.(props.fieldOverrides ?? {}) ?? _schema._def.innerType?.extend?.(props.fieldOverrides ?? {}) ?? _schema;
+
   const [rowAction, setRowAction] = React.useState<DataTableRowAction<
     NestedSchemaType<T>
   > | null>(null);
@@ -198,10 +200,10 @@ export function AutoTable<T extends SchemaKeys>({
   // @ts-expect-error
   const perPage = search.perPage ?? 10;
 
-  const { table, shallow, debounceMs, throttleMs } = useDataTable({
+  const { table, shallow, debounceMs, throttleMs } = useDataTable<NestedSchemaType<T>>({
     data,
     columns,
-    tpageCount: Math.ceil(data.length / perPage) || 1,
+    pageCount: Math.ceil(data.length / perPage) || 1,
     enableAdvancedFilter: enableAdvancedFiltering,
     enableGlobalFilter: enableGlobalFiltering,
     enableRowSelection: enableRowSelection,
@@ -218,7 +220,7 @@ export function AutoTable<T extends SchemaKeys>({
         updateMutation.mutate({ id: rowId, ...data });
       }
     },
-    getRowId: (originalRow) => originalRow?._?.soul ?? originalRow["#"]?.split("/").slice(2).join("/") ?? "",
+    getRowId: (originalRow) => originalRow?._?.soul ?? originalRow?.["#"]?.split("/").slice(2).join("/") ?? "",
     shallow: false,
     clearOnDefault: true,
   });

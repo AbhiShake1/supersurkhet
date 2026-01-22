@@ -4,7 +4,6 @@ const ReactLight = (props: SVGProps<SVGSVGElement>) => (
   <svg
     {...props}
     viewBox="0 0 569 512"
-    xmlns:xlink="http://www.w3.org/1999/xlink"
   >
     <g fill="none" fillRule="evenodd">
       <g fill="#087EA4" fillRule="nonzero">

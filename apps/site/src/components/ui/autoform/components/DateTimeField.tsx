@@ -1,6 +1,6 @@
 import { DateTimeInput } from "@/components/datetime-input";
 import { DateTimePicker } from "@/components/datetime-picker";
-import type { AutoFormFieldProps } from "@autoform/react";
+import type { AutoFormFieldProps } from "../react";
 import React from "react";
 import { cn } from "@/lib/utils";
 
