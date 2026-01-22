@@ -104,6 +104,7 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
   schema,
   ...props
 }: AutoFormProps<F>) {
+  "use memo"
   if (!schema) return null;
   return (
     <BaseAutoForm

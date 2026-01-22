@@ -35,6 +35,7 @@ export interface CollapsibleSidebarProps {
 }
 
 const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, slug, tabs }) => {
+  "use memo"
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(!isMobile);
   const [selected, setSelected] = useState("");

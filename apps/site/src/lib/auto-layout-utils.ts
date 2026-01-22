@@ -22,7 +22,7 @@ export const getLayoutedElements = (
   nodes.forEach((node) => {
     // Special handling for different node types
     let width, height;
-    
+
     if (node.type === "condition") {
       width = conditionNodeWidth;
       height = conditionNodeHeight;
@@ -33,7 +33,7 @@ export const getLayoutedElements = (
       width = node.measured?.width || nodeWidth;
       height = node.measured?.height || nodeHeight;
     }
-    
+
     dagreGraph.setNode(node.id, {
       width,
       height,
@@ -48,10 +48,10 @@ export const getLayoutedElements = (
 
   const newNodes = nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
-    
+
     // Special handling for different node types
     let width, height;
-    
+
     if (node.type === "condition") {
       width = conditionNodeWidth;
       height = conditionNodeHeight;
@@ -62,7 +62,7 @@ export const getLayoutedElements = (
       width = node.measured?.width || nodeWidth;
       height = node.measured?.height || nodeHeight;
     }
-    
+
     const newNode = {
       ...node,
       position: {

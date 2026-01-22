@@ -43,6 +43,7 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
   );
 
 export function AutoAdmin({ tabs }: AutoAdminProps) {
+  "use memo"
   const { search, pathname: currentPathname } = useLocation();
   const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
 

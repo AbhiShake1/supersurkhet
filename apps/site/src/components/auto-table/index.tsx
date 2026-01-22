@@ -319,6 +319,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   actions,
   readOnly,
 }: GetAutoTableColumnsProps<T, S>): EnhancedColumnDef<NestedSchemaType<T>>[] {
+  "use memo"
   const columns: EnhancedColumnDef<NestedSchemaType<T>>[] = [
     {
       id: "select",

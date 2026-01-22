@@ -108,6 +108,7 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
 }
 
 export function CustomUiRendererPage({ slug }: { slug: string }) {
+  "use memo"
   const search = useSearch({ from: "__root__" })
   const page = search?.p
   const { data: _business, isLoading } = api.business.useGet({ keys: [slug], single: true })

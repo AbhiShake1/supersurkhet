@@ -1,16 +1,14 @@
 import type { AdminComponent } from "@/components/ui/admin";
 import { fieldConfig } from "@/components/ui/autoform";
 import { IconMoneybag } from "@tabler/icons-react";
-import { Building, Calendar, Car, Clock, DollarSign, Folder, Home, List, Lock, type LucideProps, LucideUser, MapIcon, MessageCircle, Package, QrCode, ShoppingCart, Users, Users2, type LucideIcon } from "lucide-react";
+import { Building, Car, Clock, DollarSign, Folder, List, Lock, LucideUser, MapIcon, Package, QrCode, ShoppingCart, Users, Users2, type LucideIcon, type LucideProps } from "lucide-react";
 import type { ForwardRefExoticComponent, RefAttributes } from "react";
 import { z } from "zod";
 import { dataMatrixActionSchema } from "./datamatrix";
 import { folderSchema } from "./schemas/folder-schema";
 import {
-  baseListingSchema,
   menuItemSchema,
   productSchema,
-  propertyListingSchema,
   table,
   withLabel,
 } from "./schemas/listings";
@@ -24,7 +22,6 @@ function getPermissions() {
 
 export type Permission = keyof ReturnType<typeof getPermissions>;
 const permissionEnum = z.string()
-// const permissionEnum = z.lazy(() => z.enum(getPermissions()));
 
 export interface GTAAppConfig {
   schema: {
@@ -229,16 +226,6 @@ export const invoiceSchema = z.object({
 
 export type Invoice = z.infer<typeof invoiceSchema>
 
-export const transactionSchema = z.object({
-  // party: partySchema,
-  // invoice: invoiceSchema,
-
-  type: z.enum(["payment", "receipt", "deposit"]).default("payment"),
-  amount: z.number({ coerce: true }).int().positive(),
-}).extend(table)
-
-export type Transaction = z.infer<typeof transactionSchema>
-
 export const membershipSchema = z
   .object({
     userId: withLabel(z.string(), "User ID"),
@@ -249,37 +236,7 @@ export const membershipSchema = z
 
 // #endregion
 
-// #region Role-Based Profile Schemas (The "People")
-
-export const driverProfileSchema = z
-  .object({
-    userId: z.string().describe("Link to the user schema for this driver"),
-    vehicleDetails: z.string().describe("e.g., 'Blue Pulsar 220F'"),
-    licensePlate: z.string().describe("Vehicle license plate number"),
-    verificationStatus: z.enum(["pending", "verified", "rejected"]),
-  })
-  .extend(table);
-
-export const studentProfileSchema = z
-  .object({
-    userId: z.string().describe("Link to the user schema for this student"),
-    classId: z.string(),
-    rollNumber: z.string(),
-  })
-  .extend(table);
-
-export const coOpMemberProfileSchema = z
-  .object({
-    userId: z.string().describe("Link to the user schema for this member"),
-    membershipNumber: z.string().describe("Official membership number"),
-    joinDate: z.date(),
-  })
-  .extend(table);
-
-// #endregion
-
 // #region Transactional Schemas
-
 export const orderSchema = z
   .object({
     customerId: z.string().describe("Customer"),
@@ -299,39 +256,6 @@ export const orderSchema = z
     notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
   })
   .extend(table);
-
-export const appointmentSchema = z
-  .object({
-    customerId: z.string(),
-    employeeId: z.string().optional(),
-    serviceId: z.string().describe("ID of the service (from serviceSchema)"),
-    startTime: z.string(),
-    endTime: z.string(),
-    status: z.enum([
-      "scheduled",
-      "confirmed",
-      "completed",
-      "cancelled",
-      "no_show",
-    ]),
-  })
-  .extend(table);
-
-// ... other transactional schemas like expenseSchema, chatMessageSchema
-export const expenseSchema = z.object({}).extend(table); // Placeholder
-export const chatMessageSchema = z
-  .object({
-    created_by: z.string().describe("User ID of the creator").optional(),
-    content: z.string().describe("Message content"),
-    sender_id: z.string().describe("User ID of the sender"),
-    sender_name: z.string().describe("Name of the sender"),
-    timestamp: z
-      .number({ coerce: true })
-      .int(),
-    delivered: z.boolean().default(false),
-    read: z.boolean().default(false),
-  })
-  .extend(table); // Placeholder
 
 export const recentlyUsedAppSchema = z
   .object({
@@ -429,11 +353,6 @@ export const coreSchema = createSchema({
 });
 
 export const featureSchema = createSchema({
-  baseListing: {
-    icon: Package,
-    group: "Products & Inventory",
-    schema: baseListingSchema,
-  },
   product: {
     schema: productSchema,
     icon: Package,
@@ -508,18 +427,18 @@ export const featureSchema = createSchema({
     icon: ShoppingCart,
     group: "Financial",
   },
-  transaction: {
-    schema: transactionSchema,
-    icon: IconMoneybag,
-    group: "Financial",
+  order: {
+    schema: orderSchema,
+    icon: DollarSign,
+    group: "Business Operations",
     components: async () => {
-      const { TransactionManagement } = await import(
-        "@/components/ui/admin/transaction-management"
+      const { OrderKanban } = await import(
+        "@/components/ui/admin/order-kanban"
       );
       return [
         {
-          name: "Transactions",
-          component: TransactionManagement,
+          name: "Board",
+          component: OrderKanban,
         },
       ];
     },
@@ -557,43 +476,6 @@ export const featureSchema = createSchema({
       // 	},
       // ];
     },
-  },
-  propertyListing: {
-    schema: propertyListingSchema,
-    icon: Home,
-    group: "Products & Inventory",
-  },
-
-  order: {
-    schema: orderSchema,
-    icon: DollarSign,
-    group: "Business Operations",
-    components: async () => {
-      const { OrderKanban } = await import(
-        "@/components/ui/admin/order-kanban"
-      );
-      return [
-        {
-          name: "Board",
-          component: OrderKanban,
-        },
-      ];
-    },
-  },
-  appointment: {
-    schema: appointmentSchema,
-    icon: Calendar,
-    group: "Business Operations",
-  },
-  expense: {
-    schema: expenseSchema,
-    icon: DollarSign,
-    group: "Financial",
-  },
-  chat: {
-    schema: chatMessageSchema,
-    icon: MessageCircle,
-    group: "System Configuration",
   },
 
   // Recently used apps schema
@@ -683,7 +565,6 @@ declare global {
 // #region Type Exports
 export type User = z.infer<typeof userSchema>;
 export type Business = z.infer<typeof businessSchema>;
-export type ChatMessage = z.infer<typeof chatMessageSchema>;
 export type Order = z.infer<typeof orderSchema>;
 // #endregion
 

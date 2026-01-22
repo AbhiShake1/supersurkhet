@@ -73,20 +73,4 @@ export const menuItemSchema = productSchema.extend({
   preparationTime: z.number({ coerce: true }).int().positive().optional(),
 });
 
-export const propertyListingSchema = baseListingSchema.extend({
-  listingType: z.enum(["sale", "rent"]),
-  propertyType: z.enum(["land", "house", "apartment", "commercial"]),
-  size: z.string().describe("e.g., '1200 sq. ft.' or '5 aana'"),
-  amenities: z.record(z.string(), z.boolean()).optional(),
-});
-
-export const serviceSchema = baseListingSchema.extend({
-  duration: z
-    .number({ coerce: true })
-    .int()
-    .positive()
-    .optional()
-    .describe("Duration of the service in minutes"),
-});
-
 // #endregion

@@ -54,13 +54,12 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-import { Button } from "./ui/button";
-
 interface ReportsPageProps {
   slug: string;
 }
 
 export function RetailReportsPage({ slug }: ReportsPageProps) {
+  "use memo"
   const [period, setPeriod] = useState("all");
   const analytics = useBusinessAnalytics(slug, period);
 
