@@ -565,13 +565,6 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
             })
           })
           .describe("Items Sold"),
-        // customerName: z.string().optional().describe("Customer Name")
-        //   .superRefine(fieldConfig({
-        //     fieldType: "select",
-        //     customData: {
-        //       options: parties.map(p => [p._!.soul!, p.name]),
-        //     },
-        //   })),
       })
       .superRefine((sale, ctx) => {
         if (!sale.paidAmount) return
