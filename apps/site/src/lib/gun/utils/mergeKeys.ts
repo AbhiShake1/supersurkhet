@@ -28,3 +28,8 @@ export function getGunRef(key: string) {
   }
   return gunRef;
 }
+
+if (import.meta.env.DEV && typeof window !== "undefined") {
+  // @ts-expect-error
+  window.getGunRef = getGunRef;
+}

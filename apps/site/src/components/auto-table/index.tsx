@@ -290,10 +290,10 @@ export function AutoTable<T extends SchemaKeys>({
           data={rowAction?.row.original}
           schema={schema}
           onSubmit={(data) => {
-            setRowAction(null);
             if (data) {
               updateMutation.mutate({ id: rowAction?.row.id ?? "", ...data });
             }
+            setRowAction(null);
           }}
           showTrigger={false}
         />
