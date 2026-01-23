@@ -132,11 +132,10 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
         paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
           fieldType: "number",
           customData: {
-            onValueChange: (_paidAmount, __, form) => {
-              const paidAmount = Number(_paidAmount)
+            onValueChange: (paidAmount, __, form) => {
               const totalCost = calculateTotalCost(form)
               if (!totalCost) return
-              form.setValue("paymentStatus", getPaymentStatus(paidAmount, totalCost))
+              form.setValue("paymentStatus", getPaymentStatus(Number(paidAmount), totalCost))
             },
           }
         })),
@@ -1004,29 +1003,6 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
         return mapped
       },
     },
-    extender: (schema) => schema.extend({
-      partyId: z.string().describe("Party").superRefine(fieldConfig({
-        fieldType: "select",
-        customData: {
-          sources: [
-            {
-              table: "party",
-              displayKey: "name"
-            },
-            {
-              table: "customer",
-              displayKey: "name"
-            },
-            {
-              table: "vehicle",
-              displayKeys: ["name", "licensePlate"],
-              separator: " (",
-              suffix: ")"
-            }
-          ],
-        },
-      })),
-    }),
   }
 }
 
