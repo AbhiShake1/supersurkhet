@@ -15,8 +15,12 @@ export const BusinessProvider: React.FC<{ business: Business, children: React.Re
   );
 };
 
+export const useBusinessSafe = () => {
+  return React.useContext(BusinessContext);
+}
+
 export const useBusiness = () => {
-  const context = React.useContext(BusinessContext);
+  const context = useBusinessSafe();
   if (!context) {
     throw new Error(
       "Business components cannot be rendered outside the Business Context",
@@ -24,3 +28,4 @@ export const useBusiness = () => {
   }
   return context;
 };
+

@@ -23,13 +23,23 @@ export const salesItemSchema = z.object({
 
 export type SalesItem = z.infer<typeof salesItemSchema>;
 
+export const customerIdSchema: z.ZodEffects<z.ZodString> = z.string().describe("Customer").superRefine(fieldConfig({
+  fieldType: "select",
+  customData: {
+    sources: [{
+      table: "customer",
+      displayKey: "name"
+    }]
+  }
+}))
+
 export const saleSchema = z.object({
+  customerId: customerIdSchema,
   saleDate: z.string()
     // .datetime()
     .datetime({ offset: true })
     .default(() => new Date().toISOString()).describe("Sale Date")
     .superRefine(fieldConfig({ fieldType: "datetime" })),
-  customerId: z.string().describe("Customer"),
   items: salesItemSchema.array()
     .min(1, { message: "Please add at least one item." })
     .describe("Items Sold"),
@@ -47,10 +57,19 @@ export const saleSchema = z.object({
 
 export type Sale = z.infer<typeof saleSchema>;
 
+const partySchema: z.ZodEffects<z.ZodString> = z.string().describe("Party").superRefine(fieldConfig({
+  fieldType: "select",
+  customData: {
+    sources: [{
+      table: "party",
+      displayKey: "name"
+    }]
+  },
+}))
+
 export const stockImportSchema = z.object({
-  party: z.string().describe("Party"),
+  party: partySchema,
   importDate: z.string()
-    // .datetime()
     .datetime({ offset: true })
     .default(() => new Date().toISOString()).describe("Import Date")
     .superRefine(fieldConfig({ fieldType: "datetime" })),

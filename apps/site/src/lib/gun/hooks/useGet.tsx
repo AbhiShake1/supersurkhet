@@ -99,3 +99,5 @@ export type UseGetOptions<T extends SchemaKeys> = Omit<
 export type UseGetOptionsShort = Omit<UseGetOptions<SchemaKeys>, "key"> & {
   key?: string;
 };
+
+export type UseGet = typeof useGet

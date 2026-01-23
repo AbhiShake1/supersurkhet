@@ -229,6 +229,43 @@ export const invoiceSchema = z.object({
 
 export type Invoice = z.infer<typeof invoiceSchema>
 
+export const vehicleIdSchema: z.ZodEffects<z.ZodString> = z.string().describe("Vehicle").superRefine(fieldConfig({
+  fieldType: "select",
+  customData: {
+    sources: [{
+      table: "vehicle",
+      displayKeys: ["name", "licensePlate"],
+      separator: " (",
+      suffix: ")"
+    }],
+  },
+}))
+
+export const tripSchema = z.object({
+  vehicleId: vehicleIdSchema,
+  dispatchTime: z.string()
+    .datetime({ offset: true })
+    // .datetime()
+    .describe("Dispatch Time")
+    .default(() => new Date().toISOString())
+    .superRefine(fieldConfig({ fieldType: "datetime" })),
+  returnTime: z.string()
+    .datetime({ offset: true })
+    .describe("Return Time")
+    .superRefine(fieldConfig({ fieldType: "datetime" }))
+    .optional(),
+  destination: z.string().optional().describe("Destination"),
+  products: salesItemSchema
+    .array()
+    .describe("Products Sent on Trip"),
+  returnedProducts: salesItemSchema
+    .array()
+    .optional()
+    .describe("Products Returned from Trip"),
+}).extend(table)
+
+export type Trip = z.infer<typeof tripSchema>
+
 export const membershipSchema = z
   .object({
     userId: withLabel(z.string(), "User ID"),
@@ -239,10 +276,20 @@ export const membershipSchema = z
 
 // #endregion
 
+export const customerIdSchema: z.ZodEffects<z.ZodString> = z.string().describe("Customer").superRefine(fieldConfig({
+  fieldType: "select",
+  customData: {
+    sources: [{
+      table: "customer",
+      displayKey: "name"
+    }]
+  }
+}))
+
 // #region Transactional Schemas
 export const orderSchema = z
   .object({
-    customerId: z.string().describe("Customer"),
+    customerId: customerIdSchema,
     items: salesItemSchema.array()
       .min(1, { message: "Please add at least one item." })
       .describe("Items Ordered"),
@@ -514,28 +561,7 @@ export const featureSchema = createSchema({
 
   // Trip schema
   trip: {
-    schema: z.object({
-      vehicleId: z.string().describe("Vehicle ID"),
-      dispatchTime: z.string()
-        .datetime({ offset: true })
-        // .datetime()
-        .describe("Dispatch Time")
-        .default(() => new Date().toISOString())
-        .superRefine(fieldConfig({ fieldType: "datetime" })),
-      returnTime: z.string()
-        .datetime({ offset: true })
-        .describe("Return Time")
-        .superRefine(fieldConfig({ fieldType: "datetime" }))
-        .optional(),
-      destination: z.string().optional().describe("Destination"),
-      products: salesItemSchema
-        .array()
-        .describe("Products Sent on Trip"),
-      returnedProducts: salesItemSchema
-        .array()
-        .optional()
-        .describe("Products Returned from Trip"),
-    }).extend(table),
+    schema: tripSchema,
     icon: MapIcon,
     group: "Logistics",
     components: async () => {

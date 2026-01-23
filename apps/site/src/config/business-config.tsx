@@ -129,12 +129,6 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
     group: "Inventory",
     extender: (schema) => schema
       .extend({
-        party: z.string().describe("Party").superRefine(fieldConfig({
-          fieldType: "select",
-          customData: {
-            options: parties.map(p => [p._!.soul!, p.name]),
-          },
-        })),
         paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
           fieldType: "number",
           customData: {
@@ -153,8 +147,10 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
               .superRefine(fieldConfig({
                 fieldType: "select",
                 customData: {
-                  options: products.filter(p => !!p?._?.soul)
-                    .map(p => [p._!.soul!, p.title]),
+                  sources: [{
+                    table: "product",
+                    displayKey: "title"
+                  }],
                   onValueChange: (val, path, form) => {
                     const product = productsBySoul.get(val)
                     if (!product) return
@@ -452,12 +448,6 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
     },
     extender: (schema) => schema
       .extend({
-        customerId: z.string().describe("Customer").superRefine(fieldConfig({
-          fieldType: "select",
-          customData: {
-            options: customers.map(c => [c._!.soul!, c.name]),
-          }
-        })),
         paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
           fieldType: "number",
           customData: {
@@ -474,8 +464,11 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
               .superRefine(fieldConfig({
                 fieldType: "select",
                 customData: {
-                  options: products.filter(p => !!p?._?.soul)
-                    .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+                  sources: [{
+                    table: "product",
+                    displayKeys: ["title", "stockQuantity"],
+                    separator: " - Stock: "
+                  }],
                   onValueChange: (val, path, form) => {
                     const product = productsBySoul.get(val)
                     if (!product) return
@@ -704,12 +697,6 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
 
     extender: (schema) => schema
       .extend({
-        customerId: z.string().describe("Customer").superRefine(fieldConfig({
-          fieldType: "select",
-          customData: {
-            options: customers.map(c => [c._!.soul!, c.name]),
-          }
-        })),
         paidAmount: z.number({ coerce: true }).describe("Paid Amount").superRefine(fieldConfig({
           fieldType: "number",
           customData: {
@@ -726,8 +713,11 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
               .superRefine(fieldConfig({
                 fieldType: "select",
                 customData: {
-                  options: products.filter(p => !!p?._?.soul)
-                    .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+                  sources: [{
+                    table: "product",
+                    displayKeys: ["title", "stockQuantity"],
+                    separator: " - Stock: "
+                  }],
                   onValueChange: (val, path, form) => {
                     const product = productsBySoul.get(val)
 
@@ -1018,10 +1008,21 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
       partyId: z.string().describe("Party").superRefine(fieldConfig({
         fieldType: "select",
         customData: {
-          options: [
-            ...parties.map(p => [p._!.soul!, p.name] as const),
-            ...customers.map(c => [c._!.soul!, c.name] as const),
-            ...vehicles.map(v => [v._!.soul!, `${v.name} (${v.licensePlate})`] as const)
+          sources: [
+            {
+              table: "party",
+              displayKey: "name"
+            },
+            {
+              table: "customer",
+              displayKey: "name"
+            },
+            {
+              table: "vehicle",
+              displayKeys: ["name", "licensePlate"],
+              separator: " (",
+              suffix: ")"
+            }
           ],
         },
       })),
@@ -1071,53 +1072,54 @@ function useReturnProductsSchema({ slug }: { slug: string }) {
         .superRefine(fieldConfig({
           fieldType: "select",
           customData: {
+            sources: [{
+              table: "product",
+              displayKey: "title"
+            }],
+            onValueChange: (val, path, form) => {
+              const product = productsBySoul.get(val)
+              if (!product) return
+              const [itemsKey, index] = path
 
-            options: products.filter(p => !!p?._?.soul)
+              form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
 
-              .map(p => [p._!.soul!, p.title]), onValueChange: (val, path, form) => {
-                const product = productsBySoul.get(val)
-                if (!product) return
-                const [itemsKey, index] = path
+              if (product.unit) {
+                const [unitType, piecesPerUnit] = product.unit.split(':');
+                if (piecesPerUnit) {
+                  setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                    fieldType: "unit",
+                    customData: {
+                      onlyAllow: [unitType, "piece"],
+                      configDisabled: true,
+                      onValueChange(value, path, form) {
+                        const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
+                        const [, quantityPerUnit] = value?.split(':') ?? []
+                        const [itemsKey, index] = path
 
-                form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
-
-                if (product.unit) {
-                  const [unitType, piecesPerUnit] = product.unit.split(':');
-                  if (piecesPerUnit) {
-                    setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
-                      fieldType: "unit",
-                      customData: {
-                        onlyAllow: [unitType, "piece"],
-                        configDisabled: true,
-                        onValueChange(value, path, form) {
-                          const [, productQuantityPerUnit] = product.unit?.split(':') ?? []
-                          const [, quantityPerUnit] = value?.split(':') ?? []
-                          const [itemsKey, index] = path
-
-                          // if quantity exists in the unit, we dont want to use it as its the compound unit
-                          if (quantityPerUnit) {
-                            if (product.sellingPrice)
-                              form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
-                          } else {
-                            if (productQuantityPerUnit && product.sellingPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
-                              form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice / Number(productQuantityPerUnit))
-                            }
+                        // if quantity exists in the unit, we dont want to use it as its the compound unit
+                        if (quantityPerUnit) {
+                          if (product.sellingPrice)
+                            form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice)
+                        } else {
+                          if (productQuantityPerUnit && product.sellingPrice && productQuantityPerUnit && !isNaN(Number(productQuantityPerUnit))) {
+                            form.setValue([itemsKey, index, "unitPrice"].join("."), product.sellingPrice / Number(productQuantityPerUnit))
                           }
-                        },
+                        }
                       },
-                    })))
-                  } else {
-                    setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
-                      fieldType: "unit",
-                      customData: {
-                        onlyAllow: [unitType],
-                      },
-                    })))
-                  }
-                  form.setValue([itemsKey, index, "unit"].join("."), product.unit)
+                    },
+                  })))
+                } else {
+                  setUnitField(z.string().describe("Unit").superRefine(fieldConfig({
+                    fieldType: "unit",
+                    customData: {
+                      onlyAllow: [unitType],
+                    },
+                  })))
                 }
-                refreshPaidAmount(form)
+                form.setValue([itemsKey, index, "unit"].join("."), product.unit)
               }
+              refreshPaidAmount(form)
+            }
           },
         })),
       unit: unitField,
@@ -1225,20 +1227,17 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
       },
     },
     extender: (schema) => schema.extend({
-      vehicleId: z.string().describe("Vehicle").superRefine(fieldConfig({
-        fieldType: "select",
-        customData: {
-          options: vehicles.map(v => [v._!.soul!, `${v.name} (${v.licensePlate})`]),
-        },
-      })),
       products: salesItemSchema
         .extend({
           product: z.string().describe("Product")
             .superRefine(fieldConfig({
               fieldType: "select",
               customData: {
-                options: products.filter(p => !!p?._?.soul)
-                  .map(p => [p._!.soul!, `${p.title} - Stock: ${p.stockQuantity}`]),
+                sources: [{
+                  table: "product",
+                  displayKeys: ["title", "stockQuantity"],
+                  separator: " - Stock: "
+                }],
                 onValueChange: (val, path, form) => {
                   const product = productsBySoul.get(val)
                   if (!product) return
