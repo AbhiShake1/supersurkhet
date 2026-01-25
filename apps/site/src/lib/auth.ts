@@ -17,7 +17,7 @@ export type GoogleLoginSchema = z.infer<typeof googleLoginSchema>;
 
 const getBackdoor = createServerFn()
   .handler(() => {
-    return import.meta.env.GOOGLE_LOGIN_BACKDOOR
+    return process.env.GOOGLE_LOGIN_BACKDOOR
   })
 
 export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
