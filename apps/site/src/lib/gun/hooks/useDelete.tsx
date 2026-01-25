@@ -1,30 +1,19 @@
 import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import type { SchemaKeys } from "..";
-import { getGunRef, mergeKeys } from "../utils";
 import { createGunHook } from "./useGunHook";
-import type { GunMessagePut } from "gun/types";
+import { remove } from "../ssr/delete";
 
-export const useDelete = createGunHook((messenger) => {
-  const fn = <T extends SchemaKeys>(key: T, ...restKeys: string[]) => {
-    // const options = messenger._options;
-    return async (id: string) => {
-      const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
-      getGunRef(keys).get(id).put(null);
-
-      return { deleted: true, id }
-    };
-  };
-
+export const useDelete = createGunHook(() => {
   return <const T extends SchemaKeys>(opts: UseDeleteOptions<T>) => {
     const [key, ...keys] = opts.keys;
     return useMutation({
       ...opts,
-      mutationFn: fn(key, ...keys),
+      mutationFn: remove(key, ...keys),
     });
   };
 });
 
-type Options = UseMutationOptions<GunMessagePut, Error, string, unknown>;
+type Options = UseMutationOptions<{ deleted: boolean, id: string }, Error, string, unknown>;
 
 export type UseDeleteOptions<T extends SchemaKeys> = Omit<
   Options,

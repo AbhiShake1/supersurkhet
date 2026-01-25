@@ -1,6 +1,5 @@
 import type { z } from "zod";
 import {
-  get,
   useCreate,
   useDelete,
   useGet,
@@ -22,8 +21,6 @@ function createApi<const TSchema extends z.ZodObject<any>>(schema: TSchema) {
       const key = k as SchemaKeys;
       return {
         [key]: {
-          get: (opts?: UseGetBuilder<typeof key> & { keys?: string[] }) =>
-            get({ key, ...opts }, ...(opts?.keys ?? [])),
           useGet: (opts?: UseGetBuilder<typeof key> & { keys?: string[], queryOptions?: QueryOptions }) =>
             useGet({ key, ...opts }, ...(opts?.keys ?? [])),
           useUpdate: (opts?: UseUpdateOptionsShort) =>
@@ -37,7 +34,6 @@ function createApi<const TSchema extends z.ZodObject<any>>(schema: TSchema) {
     })
     .reduce((acc, curr) => ({ ...acc, ...curr }), {}) as unknown as {
       [K in SchemaKeys]: {
-        get: (opts?: UseGetBuilder<K> & { keys?: string[] }) => ReturnType<typeof get<K>>;
         useGet: (
           opts?: UseGetBuilder<K> & { keys?: string[], queryOptions?: QueryOptions },
         ) => ReturnType<typeof useGet<K>>;

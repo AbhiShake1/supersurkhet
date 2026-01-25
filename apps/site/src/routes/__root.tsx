@@ -39,6 +39,7 @@ import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 import { I18nProvider } from "@/contexts/i18n-context";
 import { DialogProvider, DrawerProvider } from "@/contexts/dialog-context";
 import type { QueryClient } from '@tanstack/react-query'
+import { UserLoading } from "@/components/ui/user-loading";
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -274,7 +275,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   }),
   notFoundComponent: () => <NotFound />,
   errorComponent: () => <ErrorComponent />,
-
+  pendingComponent: () => <UserLoading />,
   shellComponent: () => {
     const loaderData = Route.useLoaderData()
     // console.log({ loaderData })

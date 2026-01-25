@@ -9,16 +9,17 @@ import { pixelArt } from "@dicebear/collection";
 import type { IGunChain } from "gun/types";
 import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 import _ from "lodash";
+import { UserLoading } from "./ui/user-loading";
 
 interface AuthContextType {
-	user: User | undefined;
-	setUser: (user: User | undefined) => void;
-	logout: () => void;
-	isAuthenticated: boolean;
-	refreshUser: () => void;
-	anonymousUserId: string | null;
-	linkAnonymousUser: (authenticatedUser: User) => Promise<void>;
-	isLoading: boolean;
+  user: User;
+  setUser: (user: User | undefined) => void;
+  logout: () => void;
+  isAuthenticated: boolean;
+  refreshUser: () => void;
+  anonymousUserId: string | null;
+  linkAnonymousUser: (authenticatedUser: User) => Promise<void>;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,195 +27,194 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const ANONYMOUS_USER_KEY = "supersurkhet_anonymous_user_id";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-	children,
+  children,
 }) => {
-	const { auth } = useRouteContext({ from: "__root__" });
-	const [user, setUser] = useState<User>();
-	const [refreshState, setRefreshState] = useState(0);
-	const [authUser, setAuthUser] =
-		useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
-	const [anonymousUserId, setAnonymousUserId] = useState<string | null>(null);
-	const [isLoading, setIsLoading] = useState(true);
+  const { auth } = useRouteContext({ from: "__root__" });
+  const [user, setUser] = useState<User>();
+  const [refreshState, setRefreshState] = useState(0);
+  const [authUser, setAuthUser] =
+    useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
+  const [anonymousUserId, setAnonymousUserId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-	// Initialize anonymous user ID
-	useEffect(() => {
-		// Check if we already have an anonymous user ID in localStorage
-		const storedAnonymousId = localStorage.getItem(ANONYMOUS_USER_KEY);
-		let userId = storedAnonymousId;
+  // Initialize anonymous user ID
+  useEffect(() => {
+    // Check if we already have an anonymous user ID in localStorage
+    const storedAnonymousId = localStorage.getItem(ANONYMOUS_USER_KEY);
+    let userId = storedAnonymousId;
 
-		// If no stored ID, generate a new one
-		if (!storedAnonymousId) {
-			userId = uuid();
-			if (userId) localStorage.setItem(ANONYMOUS_USER_KEY, userId);
-		}
+    // If no stored ID, generate a new one
+    if (!storedAnonymousId) {
+      userId = uuid();
+      if (userId) localStorage.setItem(ANONYMOUS_USER_KEY, userId);
+    }
 
-		if (userId) {
-			setAnonymousUserId(userId);
-		}
-	}, []);
+    if (userId) {
+      setAnonymousUserId(userId);
+    }
+  }, []);
 
-	// Handle Electron deep link auth
-	useEffect(() => {
-		const handleMessage = async (event: MessageEvent) => {
-			if (event.data?.type === "DEEP_LINK_AUTH" && event.data?.data) {
-				console.log("Received auth data from deep link", event.data.data);
-				const userData = event.data.data;
-				if (userData) {
-					// If we have existing anonymous data, link it
-					await linkAnonymousUser(userData);
-					refreshUser();
-				}
-			}
-		};
+  // Handle Electron deep link auth
+  useEffect(() => {
+    const handleMessage = async (event: MessageEvent) => {
+      if (event.data?.type === "DEEP_LINK_AUTH" && event.data?.data) {
+        console.log("Received auth data from deep link", event.data.data);
+        const userData = event.data.data;
+        if (userData) {
+          // If we have existing anonymous data, link it
+          await linkAnonymousUser(userData);
+          refreshUser();
+        }
+      }
+    };
 
-		window.addEventListener("message", handleMessage);
-		return () => window.removeEventListener("message", handleMessage);
-	}, [anonymousUserId]);
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [anonymousUserId]);
 
-	function refreshUser() {
-		setRefreshState((r) => r + 1);
-	}
+  function refreshUser() {
+    setRefreshState((r) => r + 1);
+  }
 
-	// Handle authentication state and user data
-	useEffect(() => {
-		let ref: IGunChain<any>;
-		setIsLoading(true);
+  // Handle authentication state and user data
+  useEffect(() => {
+    let ref: IGunChain<any>;
+    setIsLoading(true);
 
-		auth
-			.getCurrentUser()
-			.then((_authUser) => {
-				setAuthUser(_authUser);
+    auth
+      .getCurrentUser()
+      .then((_authUser) => {
+        setAuthUser(_authUser);
 
-				// If we have an authenticated user, use that
-				if (_authUser) {
-					ref = getGunRef(mergeKeys("user"))
-						.get(_authUser.pub)
-						.open((data) => {
-							setUser({ ..._authUser, ...data });
-							setIsLoading(false);
-						});
+        // If we have an authenticated user, use that
+        if (_authUser) {
+          ref = getGunRef(mergeKeys("user"))
+            .get(_authUser.pub)
+            .open((data) => {
+              setUser({ ..._authUser, ...data });
+              setIsLoading(false);
+            });
 
-					// If no authenticated user but we have an anonymous user ID
-					if (anonymousUserId) {
-						ref = getGunRef(mergeKeys("user"))
-							.get(anonymousUserId)
-							.open((data) => {
-								setUser({
-									pub: anonymousUserId,
-									email: undefined,
-									name: "Anonymous User",
-									avatar: createAvatar(pixelArt).toDataUri(),
-									...data,
-								});
-								setIsLoading(false);
-							});
-					} else {
-						setIsLoading(false);
-					}
-				} else {
-					// If no authenticated user but we have an anonymous user ID
-					if (anonymousUserId) {
-						ref = getGunRef(mergeKeys("user"))
-							.get(anonymousUserId)
-							.open((data) => {
-								setUser({
-									pub: anonymousUserId,
-									email: undefined,
-									name: "Anonymous User",
-									avatar: createAvatar(pixelArt).toDataUri(),
-									...data,
-								});
-								setIsLoading(false);
-							});
-					} else {
-						setIsLoading(false);
-					}
-				}
-			})
-			.catch(() => {
-				setIsLoading(false);
-			});
+          // If no authenticated user but we have an anonymous user ID
+          if (anonymousUserId) {
+            ref = getGunRef(mergeKeys("user"))
+              .get(anonymousUserId)
+              .open((data) => {
+                setUser({
+                  pub: anonymousUserId,
+                  email: undefined,
+                  name: "Anonymous User",
+                  avatar: createAvatar(pixelArt).toDataUri(),
+                  ...data,
+                });
+                setIsLoading(false);
+              });
+          } else {
+            setIsLoading(false);
+          }
+        } else {
+          // If no authenticated user but we have an anonymous user ID
+          if (anonymousUserId) {
+            ref = getGunRef(mergeKeys("user"))
+              .get(anonymousUserId)
+              .open((data) => {
+                setUser({
+                  pub: anonymousUserId,
+                  email: undefined,
+                  name: "Anonymous User",
+                  avatar: createAvatar(pixelArt).toDataUri(),
+                  ...data,
+                });
+                setIsLoading(false);
+              });
+          } else {
+            setIsLoading(false);
+          }
+        }
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
 
-		return () => {
-			ref?.off();
-		};
-	}, [refreshState, auth.getCurrentUser, anonymousUserId]);
+    return () => {
+      ref?.off();
+    };
+  }, [refreshState, auth.getCurrentUser, anonymousUserId]);
 
-	const isAuthenticated = useMemo(() => !!authUser, [authUser]);
+  const isAuthenticated = useMemo(() => !!authUser, [authUser]);
 
-	async function linkAnonymousUser(authenticatedUser: User) {
-		function saveUser(anonymousData: any, onSaved?: () => void) {
-			const mergedData = {
-				...authenticatedUser,
-				...anonymousData,
-			};
+  async function linkAnonymousUser(authenticatedUser: User) {
+    function saveUser(anonymousData: any, onSaved?: () => void) {
+      const mergedData = {
+        ...authenticatedUser,
+        ...anonymousData,
+      };
 
-			getGunRef(mergeKeys("user")).get(authenticatedUser.pub).put(mergedData);
+      getGunRef(mergeKeys("user")).get(authenticatedUser.pub).put(mergedData);
 
-			setUser(mergedData);
+      setUser(mergedData);
 
-			// Clear the anonymous user ID from localStorage
-			localStorage.removeItem(ANONYMOUS_USER_KEY);
+      // Clear the anonymous user ID from localStorage
+      localStorage.removeItem(ANONYMOUS_USER_KEY);
 
-			// Update the anonymousUserId state
-			setAnonymousUserId(null);
+      // Update the anonymousUserId state
+      setAnonymousUserId(null);
 
-			onSaved?.();
-		}
-		return new Promise<void>((resolve) => {
-			if (!anonymousUserId) {
-				// If there's no anonymous user, just set the authenticated user
-				setUser(authenticatedUser);
-				resolve();
-				return;
-			}
+      onSaved?.();
+    }
+    return new Promise<void>((resolve) => {
+      if (!anonymousUserId) {
+        // If there's no anonymous user, just set the authenticated user
+        setUser(authenticatedUser);
+        resolve();
+        return;
+      }
 
-			// Get data from the anonymous user node
-			getGunRef(mergeKeys("user"))
-				.get(anonymousUserId)
-				.not(() => {
-					saveUser({}, resolve);
-					resolve();
-				})
-				.once((anonymousData) => {
-					saveUser(anonymousData, resolve);
-				});
-		});
-	}
+      // Get data from the anonymous user node
+      getGunRef(mergeKeys("user"))
+        .get(anonymousUserId)
+        .not(() => {
+          saveUser({}, resolve);
+          resolve();
+        })
+        .once((anonymousData) => {
+          saveUser(anonymousData, resolve);
+        });
+    });
+  }
 
-	function logout() {
-		auth.logout?.();
-		setUser(undefined);
-		googleLogout();
-	}
+  function logout() {
+    auth.logout?.();
+    setUser(undefined);
+    googleLogout();
+  }
 
-	return (
-		<AuthContext.Provider
-			value={{
-				user: user
-					? {
-							...user,
-							_: _.pick(user._, ["soul", "id", "ing", "get", "rad"]),
-						}
-					: user,
-				setUser,
-				logout,
-				isAuthenticated,
-				refreshUser,
-				anonymousUserId,
-				linkAnonymousUser,
-				isLoading,
-			}}
-		>
-			{children}
-		</AuthContext.Provider>
-	);
+  if (isLoading) {
+    return <UserLoading />
+  }
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user: user,
+        setUser,
+        logout,
+        isAuthenticated,
+        refreshUser,
+        anonymousUserId,
+        linkAnonymousUser,
+        isLoading,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
-	const context = useContext(AuthContext);
-	if (!context) {
-		throw new Error("useAuth must be used within an AuthProvider");
-	}
-	return context;
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
 };

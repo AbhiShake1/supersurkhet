@@ -24,6 +24,7 @@ const config = defineConfig({
         wrangler: {
           compatibility_date: '2026-01-21',
           compatibility_flags: ["nodejs_compat"],
+          keep_vars: true,
           observability: {
             enabled: true,
             logs: { enabled: true },

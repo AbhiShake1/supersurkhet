@@ -1,40 +1,15 @@
 import type { NestedSchemaType, SchemaKeys } from "..";
-import { getGunRef, mergeKeys } from "../utils";
-import { getNestedZodShape } from "../utils/parser";
 import { createGunHook } from "./useGunHook";
-import { encrypt } from "../utils/sea";
 import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
 import type { GunMessagePut } from "gun/types";
+import { create } from "../ssr/create";
 
-export const useCreate = createGunHook((messenger) => {
-  const fn = <T extends SchemaKeys>(key: T, ...restKeys: string[]) => {
-    const options = messenger._options;
-    const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
-    const schema = getNestedZodShape(key, options.schema)
-    return async (value: Omit<NestedSchemaType<T>, "_"> & { id?: string | number }) => {
-      const encrypted = await encrypt(value, schema)
-      return new Promise<GunMessagePut>((resolve, reject) => {
-        getGunRef(keys)
-          .get(encrypted?.id ?? (keys + "/" + Date.now().toString()))
-          .put(
-            encrypted,
-            (ack) => {
-              if ("err" in ack && !!ack.err) {
-                reject(ack.err);
-              } else {
-                resolve(ack);
-              }
-            },
-          );
-      });
-    };
-  };
-
+export const useCreate = createGunHook(() => {
   return <const T extends SchemaKeys>(opts: UseCreateOptions<T>) => {
     const [key, ...keys] = opts.keys;
     return useMutation({
       ...opts,
-      mutationFn: fn(key, ...keys),
+      mutationFn: create(key, ...keys),
     });
   };
 });

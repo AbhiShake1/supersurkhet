@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { appSchema } from "@/lib/schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { LucideBriefcaseBusiness } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { z } from "zod";
 
 export const Route = createFileRoute("/admin")({

@@ -3,6 +3,7 @@ import type { FieldTypes } from "./AutoForm";
 import type { PossibleTabConfig } from "@/components/auto-admin";
 import type { UseFormReturn } from "react-hook-form";
 import type { NestedSchemaType, SchemaKeys } from "@/lib/gun/index";
+import type { LogicExprWithContext } from "@/lib/hooks/useLogicEngine";
 
 export type SourceConfig = {
   [K in SchemaKeys]: {
@@ -21,7 +22,11 @@ export type FieldConfigCustomData = {
   tabs?: PossibleTabConfig[];
   slug?: string;
 } & ({
-  onValueChange?: (value: string, path: string[], form: UseFormReturn) => void;
+  onValueChange?: LogicExprWithContext<{
+    value: string;
+    path: string[];
+    form: UseFormReturn
+  }>;
 }) & ({
   options?: [string, string][] | (readonly [string, string])[];
   source?: never

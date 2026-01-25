@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 export function GoogleLoginProvider({ children }: React.PropsWithChildren) {
   return (
-    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID}>
+    <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_OAUTH_CLIENT_ID || import.meta.env.GOOGLE_OAUTH_CLIENT_ID}>
       {children}
     </GoogleOAuthProvider>
   );
