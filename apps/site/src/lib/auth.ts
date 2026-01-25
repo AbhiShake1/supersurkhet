@@ -15,7 +15,7 @@ export const googleLoginSchema = z.object({
 export type GoogleLoginSchema = z.infer<typeof googleLoginSchema>;
 
 export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
-  if (!import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR) return;
+  if (!import.meta.env.GOOGLE_LOGIN_BACKDOOR) return;
 
   // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
   return new Promise<IGunUserInstance["is"]>(async (resolve, reject) => {
@@ -27,7 +27,7 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
     if (userExists) {
       gun
         .user()
-        .auth(alias, import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR, (ack) => {
+        .auth(alias, import.meta.env.GOOGLE_LOGIN_BACKDOOR, (ack) => {
           if ("err" in ack && ack.err) return reject(new Error(ack.err));
           if ("sea" in ack) {
             setUser({ data: ack.sea })
@@ -37,7 +37,7 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
     } else {
       gun
         .user()
-        .create(alias, import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR, (ack) => {
+        .create(alias, import.meta.env.GOOGLE_LOGIN_BACKDOOR, (ack) => {
           if ("err" in ack) return reject(new Error(ack.err));
 
           const userProfile = {
@@ -52,7 +52,7 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
           getGunRef(mergeKeys("user")).get(ack.pub).put(userProfile);
           gun
             .user()
-            .auth(alias, import.meta.env.VITE_GOOGLE_LOGIN_BACKDOOR, (ack) => {
+            .auth(alias, import.meta.env.GOOGLE_LOGIN_BACKDOOR, (ack) => {
               if ("err" in ack && ack.err) return reject(new Error(ack.err));
               if ("sea" in ack) {
                 setUser({ data: ack.sea })

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { Resend, type CreateEmailOptions } from 'resend';
 
 const emailMiddleware = createMiddleware().server(async ({ next }) => {
-  const resend = new Resend(import.meta.env.VITE_RESEND_API_KEY)
+  const resend = new Resend(import.meta.env.RESEND_API_KEY)
   return next({ context: { resend } })
 })
 
