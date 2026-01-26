@@ -27,7 +27,8 @@ export const table = {
     .superRefine(fieldConfig({ fieldType: "timestamp" }))
     .optional(),
   created_by: z.string().describe("Created by").optional(),
-  _: z.object({ soul: z.string() }),
+  // _: z.object({ soul: z.string() }),
+  _: z.object({ soul: z.string().optional() }).optional(),
 };
 // #endregion
 
