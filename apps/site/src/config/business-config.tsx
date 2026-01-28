@@ -506,23 +506,27 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
               .superRefine(fieldConfig({
                 fieldType: "number",
                 customData: {
-                  onValueChange: (_, path, form) => {
-                    refreshPaidAmount(form)
-                    const items = form.getValues('items');
-                    const [itemsKey, index] = path;
-                    calculateTotalAmountForItem(items, itemsKey, Number(index), form);
-                  },
+                  onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
+                  refreshPaidAmount(form);
+                  const items = form.getValues('items');
+                  const [itemsKey, index] = path;
+                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+
+                  return value; 
+                }) as any,
                 }
               })),
             unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
               fieldType: "number",
               customData: {
-                onValueChange: (_, path, form) => {
-                  refreshPaidAmount(form)
+                onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
+                  refreshPaidAmount(form);
                   const items = form.getValues('items');
                   const [itemsKey, index] = path;
                   calculateTotalAmountForItem(items, itemsKey, Number(index), form);
-                },
+
+                  return value; 
+                }) as any,
               }
             })),
           })
@@ -756,17 +760,32 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
               .superRefine(fieldConfig({
                 fieldType: "number",
                 customData: {
-                  onValueChange: (_, __, form) => {
-                    refreshPaidAmount(form)
-                  },
+                  onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
+                  refreshPaidAmount(form);
+                  const items = form.getValues('items');
+                  const [itemsKey, index] = path;
+                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+
+                  return value; 
+                }) as any,
                 }
               })),
             unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
               fieldType: "number",
               customData: {
-                onValueChange: (_, __, form) => {
-                  refreshPaidAmount(form)
-                },
+                onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
+                  refreshPaidAmount(form);
+                  const items = form.getValues('items');
+                  const [itemsKey, index] = path;
+                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+
+                  return value; 
+                }) as any,
+              }
+            })),
+            totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
+              inputProps: {
+                readOnly: true,
               }
             })),
           })
@@ -1104,25 +1123,27 @@ function useReturnProductsSchema({ slug }: { slug: string }) {
         .superRefine(fieldConfig({
           fieldType: "number",
           customData: {
-            onValueChange: (_, path, form) => {
-              // Calculate total amount when quantity changes
-              const items = form.getValues('returnedProducts');
-              const [itemsKey, index] = path;
+            onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
+                  
+                  const items = form.getValues('returnedProducts');
+                  const [itemsKey, index] = path;
+                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-              calculateTotalAmountForItem(items, itemsKey, Number(index), form);
-            },
+                  return value; 
+                }) as any,
           }
         })),
       unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
         fieldType: "number",
         customData: {
-          onValueChange: (_, path, form) => {
-            // Calculate total amount when unit price changes
-            const items = form.getValues('returnedProducts');
-            const [itemsKey, index] = path;
+          onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
+                  
+                  const items = form.getValues('returnedProducts');
+                  const [itemsKey, index] = path;
+                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-            calculateTotalAmountForItem(items, itemsKey, Number(index), form);
-          },
+                  return value; 
+                }) as any,
         }
       })),
       totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
@@ -1266,27 +1287,27 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
             .superRefine(fieldConfig({
               fieldType: "number",
               customData: {
-                onValueChange: (_, path, form) => {
-                  refreshPaidAmount(form)
-                  // Calculate total amount when quantity changes
+                onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
+                  refreshPaidAmount(form);
                   const items = form.getValues('products');
                   const [itemsKey, index] = path;
-
                   calculateTotalAmountForItem(items, itemsKey, Number(index), form);
-                },
+
+                  return value; 
+                }) as any,
               }
             })),
           unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
             fieldType: "number",
             customData: {
-              onValueChange: (_, path, form) => {
-                refreshPaidAmount(form)
-                // Calculate total amount when unit price changes
-                const items = form.getValues('products');
-                const [itemsKey, index] = path;
+              onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
+                  refreshPaidAmount(form);
+                  const items = form.getValues('products');
+                  const [itemsKey, index] = path;
+                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-                calculateTotalAmountForItem(items, itemsKey, Number(index), form);
-              },
+                  return value; 
+                }) as any,
             }
           })),
           totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
