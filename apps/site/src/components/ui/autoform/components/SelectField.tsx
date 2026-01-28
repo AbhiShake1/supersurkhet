@@ -61,13 +61,13 @@ const _SelectField: React.FC<AutoFormFieldProps & {
     const { key, ...props } = inputProps;
     const customData = field.fieldConfig?.customData as FieldConfigCustomData;
 
-    const sources = "sources" in customData && customData.sources || []
+    const sources = customData && "sources" in customData ? customData.sources || [] : []
 
     const { options: fetchedOptions } = useMultiSourceOptions(sources, useGet);
 
     function getOptions(): typeof field.options {
-      if ("sources" in customData) {
-        return fetchedOptions
+      if (customData && "sources" in customData) {
+        return fetchedOptions;
       }
       return customData?.options as typeof field.options
         || field.options
