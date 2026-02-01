@@ -7,7 +7,7 @@ import { fileURLToPath, URL } from 'url'
 
 import tailwindcss from '@tailwindcss/vite'
 import { nitro } from 'nitro/vite'
-import zodTypegen from '../packages/vite/zod-typegen/src/index'
+import { zodTypegen } from '@supersurkhet/vite-plugin-zod-typegen'
 
 const config = defineConfig({
   resolve: {
@@ -39,6 +39,7 @@ const config = defineConfig({
     }),
     tailwindcss(),
     tanstackStart(),
+    // @ts-expect-error
     zodTypegen({
       entry: fileURLToPath(new URL('./src/lib/schema.ts', import.meta.url)),
       output: fileURLToPath(new URL('./src/types/db.d.ts', import.meta.url)),

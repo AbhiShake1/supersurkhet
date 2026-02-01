@@ -581,7 +581,6 @@ export const featureSchema = createSchema({
 // A composite schema that brings together all the individual schemas.
 // This is useful for type inference and for providing a single entry point to all data models.
 export const appSchema = coreSchema.merge(featureSchema);
-export type AppSchema = z.infer<AppSchemaType>;
 export type AppSchemaType = ExtractZodSchema<typeof appSchema>;
 
 declare global {

@@ -1,13 +1,13 @@
-import * as React from "react";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
 import { NotFound } from "@/components/ui/not-found";
-import { Slot, Slottable } from "@radix-ui/react-slot";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useBusiness } from "@/contexts/business-context";
-import { z } from "zod";
+import { api } from "@/lib/api";
 import type { SchemaKeys } from "@/lib/gun/index";
 import type { AppSchemaType } from "@/lib/schema";
+import { cn } from "@/lib/utils";
+import { Slot } from "@radix-ui/react-slot";
+import * as React from "react";
+import { z } from "zod";
 
 type AllCompositeSchemas = AppSchemaType["shape"]
 
@@ -238,10 +238,7 @@ const SingleData = React.forwardRef<HTMLDivElement, DataProps>(
 SingleData.displayName = "SingleData";
 
 export {
-  DataList,
+  DataDetail, DataList,
   DataProvider,
-  SingleData,
-  DataDetail,
-  type Data,
-  useData,
+  SingleData, useData, type Data
 };

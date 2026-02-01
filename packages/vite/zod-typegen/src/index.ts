@@ -1,4 +1,4 @@
-import { type Plugin } from 'vite';
+import type { PluginOption } from 'vite';
 import { generate } from './emit.js';
 
 export interface ZodTypegenOptions {
@@ -6,7 +6,7 @@ export interface ZodTypegenOptions {
   output: string;
 }
 
-export default function zodTypegen(options: ZodTypegenOptions): Plugin {
+export function zodTypegen(options: ZodTypegenOptions): PluginOption {
   return {
     name: 'vite-plugin-zod-typegen',
     buildStart() {

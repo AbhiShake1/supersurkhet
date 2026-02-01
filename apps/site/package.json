@@ -171,6 +171,7 @@
     "zustand": "^5.0.10"
   },
   "devDependencies": {
+    "@supersurkhet/vite-plugin-zod-typegen": "workspace:*",
     "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@biomejs/biome": "2.2.4",
     "@tailwindcss/typography": "^0.5.19",
