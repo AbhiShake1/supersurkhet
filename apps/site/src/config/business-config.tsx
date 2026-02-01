@@ -199,10 +199,10 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
               fieldType: "number",
               customData: {
                 onValueChange: (value, path, form) => {
-                const [itemsKey, index] = path
-               const items = form.getValues("items")
- 
-                // Calculate total for this item
+                  const [itemsKey, index] = path
+                  const items = form.getValues("items")
+
+                  // Calculate total for this item
                   calculateTotalAmountForItem(items, itemsKey, index, form)
                   refreshPaidAmount(form)
                 },
@@ -211,13 +211,13 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
             unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
               fieldType: "number",
               customData: {
-               onValueChange: (value, path, form) => {
-               const [itemsKey, index] = path
-              const items = form.getValues("items")
+                onValueChange: (value, path, form) => {
+                  const [itemsKey, index] = path
+                  const items = form.getValues("items")
 
-            // Calculate total for this item
-             calculateTotalAmountForItem(items, itemsKey, index, form)
-                refreshPaidAmount(form)
+                  // Calculate total for this item
+                  calculateTotalAmountForItem(items, itemsKey, index, form)
+                  refreshPaidAmount(form)
                 },
               }
             })),
@@ -517,13 +517,13 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
                 fieldType: "number",
                 customData: {
                   onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
-                  refreshPaidAmount(form);
-                  const items = form.getValues('items');
-                  const [itemsKey, index] = path;
-                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+                    refreshPaidAmount(form);
+                    const items = form.getValues('items');
+                    const [itemsKey, index] = path;
+                    calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-                  return value; 
-                }) as any,
+                    return value;
+                  }) as any,
                 }
               })),
             unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
@@ -535,7 +535,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
                   const [itemsKey, index] = path;
                   calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-                  return value; 
+                  return value;
                 }) as any,
               }
             })),
@@ -771,13 +771,13 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
                 fieldType: "number",
                 customData: {
                   onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
-                  refreshPaidAmount(form);
-                  const items = form.getValues('items');
-                  const [itemsKey, index] = path;
-                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+                    refreshPaidAmount(form);
+                    const items = form.getValues('items');
+                    const [itemsKey, index] = path;
+                    calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-                  return value; 
-                }) as any,
+                    return value;
+                  }) as any,
                 }
               })),
             unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
@@ -789,7 +789,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
                   const [itemsKey, index] = path;
                   calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-                  return value; 
+                  return value;
                 }) as any,
               }
             })),
@@ -1134,26 +1134,26 @@ function useReturnProductsSchema({ slug }: { slug: string }) {
           fieldType: "number",
           customData: {
             onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
-                  
-                  const items = form.getValues('returnedProducts');
-                  const [itemsKey, index] = path;
-                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-                  return value; 
-                }) as any,
+              const items = form.getValues('returnedProducts');
+              const [itemsKey, index] = path;
+              calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+
+              return value;
+            }) as any,
           }
         })),
       unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
         fieldType: "number",
         customData: {
           onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
-                  
-                  const items = form.getValues('returnedProducts');
-                  const [itemsKey, index] = path;
-                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-                  return value; 
-                }) as any,
+            const items = form.getValues('returnedProducts');
+            const [itemsKey, index] = path;
+            calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+
+            return value;
+          }) as any,
         }
       })),
       totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
@@ -1303,7 +1303,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                   const [itemsKey, index] = path;
                   calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-                  return value; 
+                  return value;
                 }) as any,
               }
             })),
@@ -1311,13 +1311,13 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
             fieldType: "number",
             customData: {
               onValueChange: ((value: string, path: string[], form: UseFormReturn) => {
-                  refreshPaidAmount(form);
-                  const items = form.getValues('products');
-                  const [itemsKey, index] = path;
-                  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+                refreshPaidAmount(form);
+                const items = form.getValues('products');
+                const [itemsKey, index] = path;
+                calculateTotalAmountForItem(items, itemsKey, Number(index), form);
 
-                  return value; 
-                }) as any,
+                return value;
+              }) as any,
             }
           })),
           totalAmount: z.number({ coerce: true }).describe("Total Amount").superRefine(fieldConfig({
@@ -1456,7 +1456,7 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
 
                   <AutoForm
                     values={{
-                      returnedProducts: row.original.products.map(p => ({
+                      returnedProducts: (row.original.products ?? []).map(p => ({
                         ...p,
                         totalAmount: (p.quantity ?? 0) * (p.unitPrice ?? 0)
                       }))
