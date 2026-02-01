@@ -1,0 +1,81 @@
+{
+  "projectSummary": {
+    "monorepo": true,
+    "packages": ["apps/site", "apps/surkhet", "apps/electron", "apps/relay", "packages/typescript-config"],
+    "zodVersion": "^3.24.3",
+    "typescriptVersion": "^5.7.2",
+    "mainSchemaDirectory": "apps/site/src/lib/schemas"
+  },
+  "schemas": [
+    {
+      "schemaName": "uiBuilderLayerSchema",
+      "filePath": "apps/site/src/lib/schemas/ui-builder-schema.ts",
+      "methodsUsed": ["z.lazy", "z.object", "z.string", "z.record", "z.any", "z.union", "z.array"],
+      "isRecursive": true,
+      "factoryFunction": null,
+      "metadata": {},
+      "circularDependencies": ["uiBuilderLayerSchema -> uiBuilderLayerSchema"],
+      "unrepresentable": [],
+      "usageContext": "UI Builder state validation, Monaco Editor schema generation",
+      "typeBlastRadius": "Used in EditorComponent, LayerRenderer, and business update functions",
+      "notes": "Recursive schema representing a tree of UI components. Critical for the UI builder."
+    },
+    {
+      "schemaName": "listings.ts schemas",
+      "filePath": "apps/site/src/lib/schemas/listings.ts",
+      "methodsUsed": ["z.object", "z.string", "z.number", "z.boolean", "z.optional", "z.default", "z.extend", "superRefine"],
+      "isRecursive": false,
+      "factoryFunction": "withMeta, withLabel",
+      "metadata": {
+        "describe": "Extensive use for UI labels",
+        "default": "Used for stock quantities and activation status"
+      },
+      "circularDependencies": [],
+      "unrepresentable": ["superRefine(fieldConfig(...))"],
+      "usageContext": "Product and Listing validation",
+      "typeBlastRadius": "Core business logic, used across multiple components and server functions",
+      "notes": "Uses custom metadata helpers that modify _def.meta directly. Plugin must handle these properties if they are to be preserved in IR."
+    },
+    {
+      "schemaName": "InputSchema",
+      "filePath": "apps/site/src/components/ui/input.tsx",
+      "methodsUsed": ["z.object", "z.string", "z.enum", "z.custom", "z.boolean", "z.union", "z.literal", "z.number"],
+      "isRecursive": false,
+      "factoryFunction": null,
+      "metadata": {
+        "default": "Used for placeholders and types"
+      },
+      "circularDependencies": [],
+      "unrepresentable": ["z.custom<React.ReactNode>()"],
+      "usageContext": "React component props validation",
+      "typeBlastRadius": "Used in Input component and registry",
+      "notes": "z.custom<React.ReactNode>() is used for icons. This will need special mapping in a Vite plugin that generates static types."
+    },
+    {
+      "schemaName": "Flexbox",
+      "filePath": "apps/site/src/lib/ui-builder/registry/complex-component-definitions.ts",
+      "methodsUsed": ["z.object", "z.enum", "z.preprocess", "z.transform", "z.any"],
+      "isRecursive": false,
+      "factoryFunction": null,
+      "circularDependencies": [],
+      "unrepresentable": ["z.preprocess", "z.transform"],
+      "usageContext": "Registry component definitions",
+      "notes": "Uses preprocess and transform for gap property (string enum to number)."
+    }
+  ],
+  "commonPatterns": {
+    "recursion": "Usage of z.lazy in UI tree structures.",
+    "metadata": "Heavy use of .describe() and custom _def.meta modification via helpers.",
+    "unrepresentable": "z.custom for React components, superRefine for custom UI config, and z.preprocess/transform for data normalization.",
+    "footprint": "Schemas are often used with z.infer to define component props or state types."
+  },
+  "pluginRecommendations": {
+    "prioritization": [
+      "Handle z.lazy for recursive structures like uiBuilderLayerSchema.",
+      "Implement a robust metadata extraction for .describe() and custom .meta fields.",
+      "Provide an override mechanism for unrepresentable types like z.custom and superRefine.",
+      "Support z.coerce and z.preprocess for form-like data handling."
+    ],
+    "virtualModuleDesign": "Should handle @ alias resolution as defined in tsconfig. Manual parsing of imports might be needed for incremental updates (HMR)."
+  }
+}
