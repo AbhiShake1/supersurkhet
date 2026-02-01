@@ -9,6 +9,7 @@ export interface ZodTypegenOptions {
 export function zodTypegen(options: ZodTypegenOptions): PluginOption {
   return {
     name: 'vite-plugin-zod-typegen',
+    enforce: 'pre',
     buildStart() {
       generate(options);
     },
