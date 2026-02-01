@@ -198,7 +198,12 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
             quantity: z.number({ coerce: true }).int().positive().describe(getQuantityDescription()).superRefine(fieldConfig({
               fieldType: "number",
               customData: {
-                onValueChange: (_, __, form) => {
+                onValueChange: (value, path, form) => {
+                const [itemsKey, index] = path
+               const items = form.getValues("items")
+ 
+                // Calculate total for this item
+                  calculateTotalAmountForItem(items, itemsKey, index, form)
                   refreshPaidAmount(form)
                 },
               }
@@ -206,8 +211,13 @@ export function useStockImportsConfig({ slug }: { slug: string }): AutoTableTab<
             unitPrice: z.number({ coerce: true }).describe("Unit Price").superRefine(fieldConfig({
               fieldType: "number",
               customData: {
-                onValueChange: (_, __, form) => {
-                  refreshPaidAmount(form)
+               onValueChange: (value, path, form) => {
+               const [itemsKey, index] = path
+              const items = form.getValues("items")
+
+            // Calculate total for this item
+             calculateTotalAmountForItem(items, itemsKey, index, form)
+                refreshPaidAmount(form)
                 },
               }
             })),
