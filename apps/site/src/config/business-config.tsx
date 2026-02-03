@@ -1022,6 +1022,18 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
         if (!trip) return "-"
         return [trip.destination, [trip.dispatchTime, trip.returnTime].filter(Boolean).join(' - ')].join(' | ')
       },
+      issuedAt: (date) => date ? new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+      }) : "-",
+      dueDate: (date) => date ? new Date(date).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+      }) : "-",
       items: (items) => {
         const mapped = items?.map((item: SalesItem) => ({
           ...item,
@@ -1197,6 +1209,8 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
       }
     }))
   }
+
+  const { openDialog, closeDialog } = useDialog()
 
   const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField)
 
@@ -1427,14 +1441,11 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
         <>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={e => e.preventDefault()}>
-            <Credenza>
-              <CredenzaTrigger className="w-full text-start">
-                Mark Return
-              </CredenzaTrigger>
-              <CredenzaContent className="max-h-[80vh] overflow-y-auto">
+            <button className="w-full" onClick={() => openDialog({
+              title: "Mark Return for Trip",
+              className: "max-h-[80vh] overflow-y-auto",
+              children: (
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Mark Return for Trip</h3>
-
                   <div className="mb-6">
                     <h4 className="font-medium mb-2">Products Dispatched:</h4>
                     <div className="grid grid-cols-3 gap-2 text-sm font-medium mb-2">
@@ -1559,8 +1570,8 @@ export function useTripConfig({ slug }: { slug: string }): AutoTableTab<"trip"> 
                     <AutoFormSubmit className="w-full">Mark Return</AutoFormSubmit>
                   </AutoForm>
                 </div>
-              </CredenzaContent>
-            </Credenza>
+              )
+            })}>Mark Return</button>
           </DropdownMenuItem >
         </>
       );
