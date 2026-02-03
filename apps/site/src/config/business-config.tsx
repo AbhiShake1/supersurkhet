@@ -872,45 +872,44 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
         })
       }),
     onCreate(_, variables) {
-      // Create corresponding invoice
-      const invoiceItems = variables.items?.map((item) => {
-        // Adjust quantity for invoice based on unit conversion
-        const productInfo = productsBySoul.get(item.product);
-        let adjustedQuantity = item.quantity;
+      // ONLY create invoice if the order status is 'done'
+      if (variables.orderStatus === "done") {
+        const invoiceItems = variables.items?.map((item) => {
+          const productInfo = productsBySoul.get(item.product);
+          let adjustedQuantity = item.quantity;
 
-        if (productInfo?.unit && productInfo.unit.includes(':')) {
-          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-
-          // If the order unit matches the product's base unit type, convert to pieces for inventory tracking
-          if (item.unit === unitType) {
-            adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          if (productInfo?.unit && productInfo.unit.includes(':')) {
+            const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+            if (item.unit === unitType) {
+              adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+            }
           }
-        }
 
-        return {
-          product: item.product,
-          quantity: adjustedQuantity,
-          rate: item.unitPrice,
-          total: item.quantity * item.unitPrice
-        };
-      }) ?? []
+          return {
+            product: item.product,
+            quantity: adjustedQuantity,
+            rate: item.unitPrice,
+            total: item.quantity * item.unitPrice
+          };
+        }) ?? []
 
-      const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
+        const totalAmount = variables.items?.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0) ?? 0;
 
-      createInvoice({
-        type: "sale",
-        partyId: variables.customerId,
-        issuedAt: new Date().toISOString(), // Using current date for orders
-        items: invoiceItems,
-        subTotal: totalAmount,
-        tax: 0,
-        paidAmount: variables.paidAmount || 0,
-        paymentStatus: variables.paymentStatus || "pending" as any,
-        fiscalYear: calculateFiscalYear()
-      });
+        createInvoice({
+          type: "sale",
+          partyId: variables.customerId,
+          issuedAt: new Date().toISOString(),
+          items: invoiceItems,
+          subTotal: totalAmount,
+          tax: 0,
+          paidAmount: variables.paidAmount || 0,
+          paymentStatus: variables.paymentStatus || "pending" as any,
+          fiscalYear: calculateFiscalYear()
+        });
+      }
     },
     onUpdate() {
-      // // Handle status change from pending/cancelled to done - deduct products
+      // Handle status change from pending/cancelled to done - deduct products
       // if (prevVariables.orderStatus !== "done" && newVariables.orderStatus === "done") {
       //   // Deduct products from stock when order status changes to done
       //   newVariables.items?.forEach((item: any) => {
