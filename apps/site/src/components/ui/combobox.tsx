@@ -48,9 +48,25 @@ export function Combobox({
   }, [_options, search])
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
+    <Popover
+      open={disabled ? false : open}
+      onOpenChange={(nextOpen) => {
+        if (disabled) return;
+        setOpen(nextOpen);
+      }}
+      modal
+    >
       <PopoverTrigger asChild>
-        <span className="w-full">
+        <span
+          className="w-full"
+          aria-disabled={disabled}
+          onPointerDown={(event) => {
+            if (disabled) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+          }}
+        >
           <Button
             variant="outline"
             role="combobox"
