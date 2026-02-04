@@ -3,7 +3,16 @@ import { fieldConfig } from "@/components/ui/autoform";
 import { table } from "./listings";
 
 export const salesItemSchema = z.object({
-  product: z.string().describe("Product"),
+  product: z.string().describe("Product").superRefine(fieldConfig({
+    fieldType: "select",
+    customData: {
+      sources: [{
+        table: "product",
+        displayKeys: ["title", "stockQuantity"],
+        separator: " - Stock: "
+      }]
+    }
+  })),
   unit: z.string().optional().describe("Unit").superRefine(fieldConfig({
     fieldType: "unit",
     inputProps: {
