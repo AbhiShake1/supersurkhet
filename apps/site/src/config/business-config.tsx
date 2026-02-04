@@ -1021,7 +1021,7 @@ export function useInvoicesConfig({ slug }: { slug: string }): AutoTableTab<"inv
         if (!trip) return "-"
         return [trip.destination, [trip.dispatchTime, trip.returnTime].filter(Boolean).join(' - ')].join(' | ')
       },
-      issuedAt: (date) => date ? new Date(date).toLocaleDateString("en-US", {
+      issuedAt: (date) => date ? new Date(date).toLocaleString("en-US", {
         year: "numeric",
         month: "short",
         day: "numeric",
