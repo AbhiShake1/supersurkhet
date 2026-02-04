@@ -34,7 +34,9 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
         groupKey="orderStatus"
         schema="order"
         isItemLocked={(order) =>
-          order.orderStatus === "done" || order.orderStatus === "cancelled"
+          order.orderStatus === "done" ||
+          order.orderStatus === "completed" ||
+          order.orderStatus === "cancelled"
         }
       />
     </div>

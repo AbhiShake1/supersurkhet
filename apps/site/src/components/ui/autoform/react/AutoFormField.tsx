@@ -1,11 +1,12 @@
 import React from "react";
-import { useFormContext } from "react-hook-form";
+import { useFormContext, useWatch } from "react-hook-form";
 import { useAutoForm } from "./context";
 import { getLabel, type ParsedField } from "@autoform/core";
 import { ObjectField } from "./ObjectField";
 import { ArrayField } from "./ArrayField";
 import type { AutoFormFieldProps } from "./types";
 import { getPathInObject } from "./utils";
+import type { FieldConfigCustomData } from "../utils";
 
 export const AutoFormField: React.FC<{
   field: ParsedField;
@@ -21,6 +22,14 @@ export const AutoFormField: React.FC<{
   const fullPath = path.join(".");
   const error = getPathInObject(errors, path)?.message as string | undefined;
   const value = getValues(fullPath);
+  const watchedValue = useWatch({ name: fullPath });
+  const customData = field.fieldConfig?.customData as FieldConfigCustomData | undefined;
+  const isLocked =
+    Array.isArray(customData?.disableWhenValueIn) &&
+    customData?.disableWhenValueIn.includes(
+      watchedValue ?? value
+    );
+  const inputDisabled = Boolean(field.fieldConfig?.inputProps?.disabled || isLocked);
 
   const FieldWrapper =
     field.fieldConfig?.fieldWrapper || uiComponents.FieldWrapper;
@@ -61,6 +70,7 @@ export const AutoFormField: React.FC<{
           error: error,
           key: `${fullPath}-input`,
           ...field.fieldConfig?.inputProps,
+          disabled: inputDisabled,
           ...register(fullPath),
         }}
       />

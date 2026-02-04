@@ -345,6 +345,7 @@ function KanbanColumn<K extends SchemaKeys>({
               order={order}
               cardBuilder={cardBuilder}
               asHandle={!(isItemLocked?.(order) ?? false)}
+              disabled={isItemLocked?.(order) ?? false}
             />
           ))}
       </div>
