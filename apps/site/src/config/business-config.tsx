@@ -847,25 +847,6 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
             ],
             disableWhenValueIn: ["done", "cancelled"],
             onValueChange: (newStatus, _, form) => {
-              // When order status changes to done, deduct from products
-              if (newStatus === "done") {
-                const order = form.getValues();
-                if (order.items) {
-                  order.items.forEach((item: any) => {
-                    const product = productsBySoul.get(item.product);
-                    if (product && product._?.soul) {
-                      let adjustedQuantity = item.quantity;
-                      if (product.unit && product.unit.includes(':')) {
-                        const [unitType, piecesPerUnit] = product.unit.split(':');
-                        if (item.unit === unitType) {
-                          adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
-                        }
-                      }
-                      updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
-                    }
-                  });
-                }
-              }
             }
           }
         })),
@@ -882,6 +863,25 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
     onCreate(_, variables) {
       // ONLY create invoice if the order status is 'done'
       if (variables.orderStatus === "done") {
+        const itemsByProductIdWithQuantity = variables.items?.reduce((a, item) => {
+          const product = productsBySoul.get(item.product);
+          let adjustedQuantity = item.quantity;
+          if (product?.unit && product.unit.includes(':')) {
+            const [unitType, piecesPerUnit] = product.unit.split(':');
+            if (item.unit === unitType) {
+              adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+            }
+          }
+          a[item.product] = (a[item.product] || 0) + adjustedQuantity;
+          return a;
+        }, {} as Record<string, number>);
+
+        Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+          const product = productsBySoul.get(productId);
+          if (!product?._?.soul) return;
+          updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - quantity });
+        });
+
         const invoiceItems = variables.items?.map((item) => {
           const productInfo = productsBySoul.get(item.product);
           let adjustedQuantity = item.quantity;
@@ -921,6 +921,25 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
       const currentOrder = ordersBySoul.get(variables.id);
       const order = { ...currentOrder, ...variables } as any;
       if (!order?.items?.length || !order?.customerId) return;
+
+      const itemsByProductIdWithQuantity = order.items?.reduce((a: Record<string, number>, item: any) => {
+        const product = productsBySoul.get(item.product);
+        let adjustedQuantity = item.quantity;
+        if (product?.unit && product.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = product.unit.split(':');
+          if (item.unit === unitType) {
+            adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+        a[item.product] = (a[item.product] || 0) + adjustedQuantity;
+        return a;
+      }, {} as Record<string, number>);
+
+      Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
+        const product = productsBySoul.get(productId);
+        if (!product?._?.soul) return;
+        updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - quantity });
+      });
 
       const invoiceItems = order.items?.map((item: any) => {
         const productInfo = productsBySoul.get(item.product);
