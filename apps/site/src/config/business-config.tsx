@@ -846,10 +846,8 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
               ["cancelled", "Cancelled"],
             ],
             disableWhenValueIn: ["done", "cancelled"],
-            onValueChange: (newStatus, _, form) => {
-            }
           }
-        })),
+        })).default("pending"),
       })
       .superRefine((order, ctx) => {
         if (!order.paidAmount) return
