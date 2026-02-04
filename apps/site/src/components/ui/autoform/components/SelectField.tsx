@@ -76,6 +76,11 @@ const _SelectField: React.FC<AutoFormFieldProps & {
     const options = getOptions();
     const form = useFormContext()
     const [innerValue, setInnerValue] = useState(value || field.default)
+    const currentValue = form.watch(path.join("."));
+    const lockedValues = customData?.disableWhenValueIn;
+    const isLocked =
+      Array.isArray(lockedValues) &&
+      lockedValues.includes(currentValue ?? innerValue);
 
     return <Combobox
       {...props}
@@ -96,7 +101,7 @@ const _SelectField: React.FC<AutoFormFieldProps & {
         props.onChange(syntheticEvent);
       }}
       className={error ? "border-destructive" : ""}
-      disabled={props.disabled}
+      disabled={props.disabled || isLocked}
     />
   }
 
@@ -114,4 +119,3 @@ export const SelectField: React.FC<AutoFormFieldProps> = ({ ...props }) => {
 
   return <_SelectField useGet={useGet} {...props} />
 };
-

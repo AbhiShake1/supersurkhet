@@ -206,6 +206,7 @@ export type AutoKanbanProps<K extends SchemaKeys> = {
   groupKey: keyof NestedSchemaType<K>;
   cardBuilder: (data: NestedSchemaType<K>) => ReactNode;
   schema: K;
+  isItemLocked?: (item: NestedSchemaType<K>) => boolean;
 };
 
 export function AutoKanban<K extends SchemaKeys>({
@@ -213,6 +214,7 @@ export function AutoKanban<K extends SchemaKeys>({
   schema: schemaName,
   groupKey,
   cardBuilder,
+  isItemLocked,
 }: AutoKanbanProps<K>) {
   const { data: orders = [], isLoading } = api[schemaName].useGet({
     keys: [slug],
@@ -230,6 +232,7 @@ export function AutoKanban<K extends SchemaKeys>({
         for (const [status, orders] of Object.entries(columns)) {
           for (const order of orders) {
             if (!order._?.soul) continue;
+            if (isItemLocked?.(order)) continue;
             // @ts-expect-error
             update({ id: order._?.soul, [groupKey]: status });
           }
@@ -245,6 +248,7 @@ export function AutoKanban<K extends SchemaKeys>({
             value={status}
             orders={columns?.[status] ?? []}
             cardBuilder={cardBuilder}
+            isItemLocked={isItemLocked}
           />
         ))}
       </Kanban.Board>
@@ -297,12 +301,14 @@ interface KanbanColumnProps<K extends SchemaKeys>
   extends Omit<React.ComponentProps<typeof Kanban.Column>, "children"> {
   orders: NestedSchemaType<K>[];
   cardBuilder: AutoKanbanProps<K>["cardBuilder"];
+  isItemLocked?: AutoKanbanProps<K>["isItemLocked"];
 }
 
 function KanbanColumn<K extends SchemaKeys>({
   value,
   orders,
   cardBuilder,
+  isItemLocked,
   ...props
 }: KanbanColumnProps<K>) {
   const context = Kanban.useKanbanContext("KanbanColumn");
@@ -338,7 +344,7 @@ function KanbanColumn<K extends SchemaKeys>({
               key={order._?.soul}
               order={order}
               cardBuilder={cardBuilder}
-              asHandle
+              asHandle={!(isItemLocked?.(order) ?? false)}
             />
           ))}
       </div>

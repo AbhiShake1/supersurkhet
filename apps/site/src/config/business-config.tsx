@@ -412,6 +412,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
   const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
   const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
+  const { data: orders = [] } = api.order.useGet({ keys: [slug] });
   const productsBySoul = new Map(
     products
       .filter(p => p?._?.soul)
@@ -420,6 +421,12 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
 
   const customersBySoul = new Map(
     customers
+      .filter(p => p?._?.soul)
+      .map(p => [p._!.soul!, p])
+  )
+
+  const ordersBySoul = new Map(
+    orders
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   )
@@ -838,6 +845,7 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
               ["done", "Done"],
               ["cancelled", "Cancelled"],
             ],
+            disableWhenValueIn: ["done", "cancelled"],
             onValueChange: (newStatus, _, form) => {
               // When order status changes to done, deduct from products
               if (newStatus === "done") {
@@ -908,41 +916,47 @@ export function useOrderConfig({ slug }: { slug: string }): AutoTableTab<"order"
         });
       }
     },
-    onUpdate() {
-      // Handle status change from pending/cancelled to done - deduct products
-      // if (prevVariables.orderStatus !== "done" && newVariables.orderStatus === "done") {
-      //   // Deduct products from stock when order status changes to done
-      //   newVariables.items?.forEach((item: any) => {
-      //     const product = productsBySoul.get(item.product);
-      //     if (product && product._?.soul) {
-      //       let adjustedQuantity = item.quantity;
-      //       if (product.unit && product.unit.includes(':')) {
-      //         const [unitType, piecesPerUnit] = product.unit.split(':');
-      //         if (item.unit === unitType) {
-      //           adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
-      //         }
-      //       }
-      //       updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - adjustedQuantity });
-      //     }
-      //   });
-      // }
-      // // Handle status change from done to cancelled - add products back to stock
-      // else if (prevVariables.orderStatus === "done" && newVariables.orderStatus === "cancelled") {
-      //   // Add products back to stock when order status changes from done to cancelled
-      //   prevVariables.items?.forEach((item: any) => {
-      //     const product = productsBySoul.get(item.product);
-      //     if (product && product._?.soul) {
-      //       let adjustedQuantity = item.quantity;
-      //       if (product.unit && product.unit.includes(':')) {
-      //         const [unitType, piecesPerUnit] = product.unit.split(':');
-      //         if (item.unit === unitType) {
-      //           adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
-      //         }
-      //       }
-      //       updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity + adjustedQuantity });
-      //     }
-      //   });
-      // }
+    onUpdate(_, variables) {
+      if (variables.orderStatus !== "done") return;
+      const currentOrder = ordersBySoul.get(variables.id);
+      const order = { ...currentOrder, ...variables } as any;
+      if (!order?.items?.length || !order?.customerId) return;
+
+      const invoiceItems = order.items?.map((item: any) => {
+        const productInfo = productsBySoul.get(item.product);
+        let adjustedQuantity = item.quantity;
+
+        if (productInfo?.unit && productInfo.unit.includes(':')) {
+          const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+          if (item.unit === unitType) {
+            adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
+          }
+        }
+
+        return {
+          product: item.product,
+          quantity: adjustedQuantity,
+          rate: item.unitPrice,
+          total: item.quantity * item.unitPrice
+        };
+      }) ?? [];
+
+      const totalAmount = order.items?.reduce(
+        (sum: number, item: any) => sum + (item.quantity * item.unitPrice),
+        0
+      ) ?? 0;
+
+      createInvoice({
+        type: "sale",
+        partyId: order.customerId,
+        issuedAt: new Date().toISOString(),
+        items: invoiceItems,
+        subTotal: totalAmount,
+        tax: 0,
+        paidAmount: order.paidAmount || 0,
+        paymentStatus: order.paymentStatus || "pending" as any,
+        fiscalYear: calculateFiscalYear()
+      });
     },
   }
 }

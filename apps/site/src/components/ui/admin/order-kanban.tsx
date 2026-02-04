@@ -33,6 +33,9 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
         cardBuilder={(order) => <OrderCard order={order} slug={slug} />}
         groupKey="orderStatus"
         schema="order"
+        isItemLocked={(order) =>
+          order.orderStatus === "done" || order.orderStatus === "cancelled"
+        }
       />
     </div>
   );

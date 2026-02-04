@@ -21,6 +21,7 @@ export type SourceConfig = {
 export type FieldConfigCustomData = {
   tabs?: PossibleTabConfig[];
   slug?: string;
+  disableWhenValueIn?: string[];
 } & ({
   onValueChange?: LogicExprWithContext<{
     value: string;
