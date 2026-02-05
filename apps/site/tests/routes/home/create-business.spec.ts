@@ -12,4 +12,18 @@ test.describe("Home - Create Business", () => {
       page.getByRole("heading", { name: /Sign In/i }),
     ).toBeVisible();
   });
+
+  test("browse businesses create flow prompts login", async ({ page }) => {
+    await page.goto("/");
+
+    await page.getByRole("button", { name: /Browse Businesses/i }).click();
+    await page.getByRole("button", { name: /Create Your Own Business/i }).click();
+
+    await expect(
+      page.getByRole("heading", { name: /Sign In/i }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Please sign in to continue.", { exact: true }),
+    ).toBeVisible();
+  });
 });

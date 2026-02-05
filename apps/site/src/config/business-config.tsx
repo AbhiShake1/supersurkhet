@@ -33,6 +33,7 @@ import NepaliDate from "nepali-datetime";
 import { useState } from "react";
 import type { UseFormReturn } from "react-hook-form";
 import z from "zod";
+import { api } from "@/lib/api";
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoTableTab<K>;
@@ -227,7 +228,7 @@ export function useStockImportsConfig({
                                                 "unitPrice",
                                               ].join("."),
                                               product.costPrice /
-                                                Number(productQuantityPerUnit),
+                                              Number(productQuantityPerUnit),
                                             );
                                           }
                                         }
@@ -277,7 +278,7 @@ export function useStockImportsConfig({
                         calculateTotalAmountForItem(
                           items,
                           itemsKey,
-                          index,
+                          Number(index),
                           form,
                         );
                         refreshPaidAmount(form);
@@ -299,7 +300,7 @@ export function useStockImportsConfig({
                         calculateTotalAmountForItem(
                           items,
                           itemsKey,
-                          index,
+                          Number(index),
                           form,
                         );
                         refreshPaidAmount(form);
@@ -519,7 +520,6 @@ export function usePartyConfig({
   };
 }
 
-<<<<<<< ours
 export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale"> {
   "use memo"
   const { data: products = [] } = api.product.useGet({
@@ -540,14 +540,6 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       .filter(p => p?._?.soul)
       .map(p => [p._!.soul!, p])
   )
-=======
-export function useSalesConfig({
-  slug,
-}: {
-  slug: string;
-}): AutoTableTab<"sale"> {
-  "use memo";
->>>>>>> theirs
 
   const ordersBySoul = new Map(
     orders
@@ -710,7 +702,7 @@ export function useSalesConfig({
                   fieldConfig({
                     fieldType: "number",
                     customData: {
-                      onValueChange: ((value: string, path: string[], form) => {
+                      onValueChange: (value, path, form) => {
                         refreshPaidAmount(form);
                         const items = form.getValues("items");
                         const [itemsKey, index] = path;
@@ -722,7 +714,7 @@ export function useSalesConfig({
                         );
 
                         return value;
-                      }) as any,
+                      },
                     },
                   }),
                 ),
@@ -1019,27 +1011,27 @@ export function useOrderConfig({
                 ),
             })
 <<<<<<< ours
-          })
-          .describe("Items Ordered"),
-        orderStatus: z.enum(["pending", "done", "cancelled"]).describe("Order Status").superRefine(fieldConfig({
-          fieldType: "select",
-          customData: {
-            options: [
-              ["pending", "Pending"],
-              ["done", "Done"],
-              ["cancelled", "Cancelled"],
-            ],
-            disableWhenValueIn: ["done", "cancelled"],
-          }
-        })).default("pending"),
-      })
+        })
+        .describe("Items Ordered"),
+    orderStatus: z.enum(["pending", "done", "cancelled"]).describe("Order Status").superRefine(fieldConfig({
+      fieldType: "select",
+      customData: {
+        options: [
+          ["pending", "Pending"],
+          ["done", "Done"],
+          ["cancelled", "Cancelled"],
+        ],
+        disableWhenValueIn: ["done", "cancelled"],
+      }
+    })).default("pending"),
+  })
       .superRefine((order, ctx) => {
-        if (!order.paidAmount) return
-        const totalCost = order.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
-        if (order.paidAmount > totalCost) ctx.addIssue({
-          code: "custom",
-          message: `Paid amount cannot be greater than total cost (${totalCost})`,
-          path: ["paidAmount"],
+    if (!order.paidAmount) return
+    const totalCost = order.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
+    if (order.paidAmount > totalCost) ctx.addIssue({
+      code: "custom",
+      message: `Paid amount cannot be greater than total cost (${totalCost})`,
+      path: ["paidAmount"],
 =======
             .array()
             .min(1, { message: "Please add at least one item." })
@@ -1094,22 +1086,22 @@ export function useOrderConfig({
               }),
             ),
 >>>>>>> theirs
-        })
-        .superRefine((order, ctx) => {
-          if (!order.paidAmount) return;
-          const totalCost = order.items.reduce(
-            (sum, item) =>
-              sum + Number(item.quantity || 0) * Number(item.unitPrice || 0),
-            0,
-          );
-          if (order.paidAmount > totalCost)
-            ctx.addIssue({
-              code: "custom",
-              message: `Paid amount cannot be greater than total cost (${totalCost})`,
-              path: ["paidAmount"],
-            });
-        }),
-    async onCreate(_, variables) {
+    })
+      .superRefine((order, ctx) => {
+        if (!order.paidAmount) return;
+        const totalCost = order.items.reduce(
+          (sum, item) =>
+            sum + Number(item.quantity || 0) * Number(item.unitPrice || 0),
+          0,
+        );
+        if (order.paidAmount > totalCost)
+          ctx.addIssue({
+            code: "custom",
+            message: `Paid amount cannot be greater than total cost (${totalCost})`,
+            path: ["paidAmount"],
+          });
+      }),
+      async onCreate(_, variables) {
       const products = await db.product.get({ keys: [slug] });
       const productsBySoul = new Map(
         products
@@ -1147,20 +1139,20 @@ export function useOrderConfig({
             let adjustedQuantity = item.quantity;
 >>>>>>> theirs
 
-            if (productInfo?.unit && productInfo.unit.includes(":")) {
-              const [unitType, piecesPerUnit] = productInfo.unit.split(":");
-              if (item.unit === unitType) {
-                adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
-              }
+          if (productInfo?.unit && productInfo.unit.includes(":")) {
+            const [unitType, piecesPerUnit] = productInfo.unit.split(":");
+            if (item.unit === unitType) {
+              adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
             }
+          }
 
-            return {
-              product: item.product,
-              quantity: adjustedQuantity,
-              rate: item.unitPrice,
-              total: item.quantity * item.unitPrice,
-            };
-          }) ?? [];
+          return {
+            product: item.product,
+            quantity: adjustedQuantity,
+            rate: item.unitPrice,
+            total: item.quantity * item.unitPrice,
+          };
+        }) ?? [];
 
         const totalAmount =
           variables.items?.reduce(
@@ -1453,7 +1445,7 @@ export function useTripConfig({
                                         "unitPrice",
                                       ].join("."),
                                       product.sellingPrice /
-                                        Number(productQuantityPerUnit),
+                                      Number(productQuantityPerUnit),
                                     );
                                   }
                                 }
@@ -1656,7 +1648,7 @@ export function useTripConfig({
                                               "unitPrice",
                                             ].join("."),
                                             product.sellingPrice /
-                                              Number(productQuantityPerUnit),
+                                            Number(productQuantityPerUnit),
                                           );
                                         }
                                       }
@@ -1927,8 +1919,8 @@ export function useTripConfig({
                               (sum: number, item: any) =>
                                 sum +
                                 item.quantity *
-                                  (productsBySoul.get(item.productId)
-                                    ?.sellingPrice || 0),
+                                (productsBySoul.get(item.productId)
+                                  ?.sellingPrice || 0),
                               0,
                             );
 

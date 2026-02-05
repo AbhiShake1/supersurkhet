@@ -38,4 +38,37 @@ test.describe("Home", () => {
     await page.getByRole("button", { name: /Clear Search/i }).click();
     await expect(page.getByText(name)).toBeVisible();
   });
+
+  test("browse businesses visit navigates to the business page", async ({ page }) => {
+    const { name, slug } = readBusinessSeed();
+
+    await page.goto("/");
+    await page.getByRole("button", { name: /Browse Businesses/i }).click();
+
+    const searchInput = page.getByPlaceholder(
+      "Search businesses by name, type, or location...",
+    );
+    await searchInput.fill(name);
+
+    await page.getByRole("button", { name: /Visit/i }).click();
+    await expect(page).toHaveURL(new RegExp(`/${slug}(/)?$`));
+    await expect(
+      page.getByRole("button", { name: /Contact Us/i }),
+    ).toBeVisible();
+  });
+
+  test("pricing toggle switches to annual billing", async ({ page }) => {
+    await page.goto("/");
+
+    const pricingSection = page.locator("#pricing");
+    await pricingSection
+      .getByRole("heading", { name: /Community-First Pricing/i })
+      .scrollIntoViewIfNeeded();
+
+    await expect(pricingSection.getByText(/billed monthly/i).first()).toBeVisible();
+
+    await pricingSection.getByRole("switch").click();
+
+    await expect(pricingSection.getByText(/billed annually/i).first()).toBeVisible();
+  });
 });
