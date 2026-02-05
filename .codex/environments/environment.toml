@@ -3,7 +3,10 @@ version = 1
 name = "supersurkhet"
 
 [setup]
-script = ""
+script = '''
+fish
+pnpm i
+'''
 
 [[actions]]
 name = "Run"

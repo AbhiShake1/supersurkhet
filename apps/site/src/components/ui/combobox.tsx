@@ -29,6 +29,7 @@ interface ComboboxProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  testId?: string;
 }
 
 export function Combobox({
@@ -38,6 +39,7 @@ export function Combobox({
   placeholder = "Select an option...",
   className,
   disabled = false,
+  testId,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -73,6 +75,7 @@ export function Combobox({
             aria-expanded={open}
             className={cn("w-full justify-between", className)}
             disabled={disabled}
+            data-testid={testId}
           >
             <span className="truncate">
               {value

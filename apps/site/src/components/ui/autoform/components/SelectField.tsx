@@ -102,6 +102,7 @@ const _SelectField: React.FC<AutoFormFieldProps & {
       }}
       className={error ? "border-destructive" : ""}
       disabled={props.disabled || isLocked}
+      testId={inputProps?.["data-testid"]}
     />
   }
 

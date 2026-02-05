@@ -7,6 +7,9 @@
     "build": "NODE_OPTIONS='--max-old-space-size=8192' vite build && cp instrument.server.mjs .output/server",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
     "format": "biome format",
     "lint": "biome lint",
     "check": "biome check",
@@ -173,6 +176,7 @@
   "devDependencies": {
     "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@biomejs/biome": "2.2.4",
+    "@playwright/test": "^1.51.1",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/devtools-vite": "^0.3.11",
     "@testing-library/dom": "^10.4.0",

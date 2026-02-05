@@ -5,7 +5,7 @@ import { getLabel, type ParsedField } from "@autoform/core";
 import { ObjectField } from "./ObjectField";
 import { ArrayField } from "./ArrayField";
 import type { AutoFormFieldProps } from "./types";
-import { getPathInObject } from "./utils";
+import { formatTestId, getPathInObject } from "./utils";
 import type { FieldConfigCustomData } from "../utils";
 
 export const AutoFormField: React.FC<{
@@ -33,6 +33,9 @@ export const AutoFormField: React.FC<{
 
   const FieldWrapper =
     field.fieldConfig?.fieldWrapper || uiComponents.FieldWrapper;
+  const testIdBase = formatTestId(path);
+  const inputTestId =
+    field.fieldConfig?.inputProps?.["data-testid"] ?? `af-input-${testIdBase}`;
 
   let FieldComponent: React.ComponentType<AutoFormFieldProps> = () => (
     <uiComponents.ErrorMessage
@@ -56,6 +59,7 @@ export const AutoFormField: React.FC<{
       error={error}
       id={fullPath}
       field={field}
+      testId={testIdBase}
     >
       <FieldComponent
         label={getLabel(field)}
@@ -65,12 +69,14 @@ export const AutoFormField: React.FC<{
         id={fullPath}
         key={fullPath}
         path={path}
+        testId={testIdBase}
         inputProps={{
           required: field.required,
           error: error,
           key: `${fullPath}-input`,
           ...field.fieldConfig?.inputProps,
           disabled: inputDisabled,
+          "data-testid": inputTestId,
           ...register(fullPath),
         }}
       />

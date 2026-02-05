@@ -5,6 +5,9 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "start": "turbo start",
+    "test:e2e": "pnpm --filter supersurkhet test:e2e",
+    "test:e2e:headed": "pnpm --filter supersurkhet test:e2e:headed",
+    "test:e2e:ui": "pnpm --filter supersurkhet test:e2e:ui",
     "ai": "node scripts/copy-chat.js && qwen --resume default-chat -y --experimental-skills"
   },
   "devDependencies": {
