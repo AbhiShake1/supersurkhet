@@ -49,7 +49,7 @@ const plans = [
     ],
     description: "Perfect for individuals and small projects",
     buttonText: "Start Free Trial",
-    href: "/sign-up",
+    href: "/auth?m=signup",
     isPopular: false,
   },
   {
@@ -69,7 +69,7 @@ const plans = [
     ],
     description: "Ideal for growing teams and businesses",
     buttonText: "Get Started",
-    href: "/sign-up",
+    href: "/auth?m=signup",
     isPopular: true,
   },
   {
