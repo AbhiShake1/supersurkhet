@@ -54,6 +54,7 @@ export interface FieldWrapperProps {
   children: ReactNode;
   id: string;
   field: ParsedField;
+  testId?: string;
 }
 
 export interface ArrayWrapperProps {
@@ -61,18 +62,23 @@ export interface ArrayWrapperProps {
   children: ReactNode;
   field: ParsedField;
   onAddItem: () => void;
+  testId?: string;
+  addTestId?: string;
 }
 
 export interface ArrayElementWrapperProps {
   children: ReactNode;
   onRemove: () => void;
   index: number;
+  testId?: string;
+  removeTestId?: string;
 }
 
 export interface ObjectWrapperProps {
   label: Renderable<ReactNode>;
   children: ReactNode;
   field: ParsedField;
+  testId?: string;
 }
 
 export interface AutoFormFieldProps {
@@ -83,6 +89,7 @@ export interface AutoFormFieldProps {
   id: string;
   path: string[];
   inputProps: any;
+  testId?: string;
 }
 
 export interface AutoFormContextType {

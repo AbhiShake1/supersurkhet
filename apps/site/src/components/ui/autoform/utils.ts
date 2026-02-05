@@ -21,12 +21,14 @@ export type SourceConfig = {
 export type FieldConfigCustomData = {
   tabs?: PossibleTabConfig[];
   slug?: string;
+  disableWhenValueIn?: string[];
 } & ({
-  onValueChange?: LogicExprWithContext<{
-    value: string;
-    path: string[];
-    form: UseFormReturn
-  }>;
+  onValueChange?: (value: any, path: string[], form: UseFormReturn) => any
+  // onValueChange?: LogicExprWithContext<{
+  //   value: string;
+  //   path: string[];
+  //   form: UseFormReturn
+  // }>;
 }) & ({
   options?: [string, string][] | (readonly [string, string])[];
   source?: never

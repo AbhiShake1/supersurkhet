@@ -26,6 +26,7 @@ export function UnitField({
   inputProps: {
     placeholder = "Select unit...",
     className,
+    "data-testid": testId,
   },
 }: UnitFieldProps) {
   const onlyAllow = field.fieldConfig?.customData?.onlyAllow
@@ -80,7 +81,10 @@ export function UnitField({
             value={selectedUnit}
             onValueChange={handleUnitChange}
           >
-            <SelectTrigger className={error ? "border-destructive" : ""}>
+            <SelectTrigger
+              className={error ? "border-destructive" : ""}
+              data-testid={testId}
+            >
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
@@ -103,6 +107,7 @@ export function UnitField({
               onChange={handlePiecesPerUnitChange}
               placeholder="Pieces"
               className="h-9"
+              data-testid={testId ? `${testId}-pieces` : undefined}
             />
             <p className="text-xs text-muted-foreground mt-1">pieces per {selectedUnit}</p>
           </div>

@@ -29,6 +29,7 @@ interface ComboboxProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  testId?: string;
 }
 
 export function Combobox({
@@ -38,6 +39,7 @@ export function Combobox({
   placeholder = "Select an option...",
   className,
   disabled = false,
+  testId,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -48,22 +50,41 @@ export function Combobox({
   }, [_options, search])
 
   return (
-    <Popover open={open} onOpenChange={setOpen} modal>
+    <Popover
+      open={disabled ? false : open}
+      onOpenChange={(nextOpen) => {
+        if (disabled) return;
+        setOpen(nextOpen);
+      }}
+      modal
+    >
       <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          role="combobox"
-          aria-expanded={open}
-          className={cn("w-full justify-between", className)}
-          disabled={disabled}
+        <span
+          className="w-full"
+          aria-disabled={disabled}
+          onPointerDown={(event) => {
+            if (disabled) {
+              event.preventDefault();
+              event.stopPropagation();
+            }
+          }}
         >
-          <span className="truncate">
-            {value
-              ? options.find((option) => option.value === value)?.label
-              : placeholder}
-          </span>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn("w-full justify-between", className)}
+            disabled={disabled}
+            data-testid={testId}
+          >
+            <span className="truncate">
+              {value
+                ? options.find((option) => option.value === value)?.label
+                : placeholder}
+            </span>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </span>
       </PopoverTrigger>
       <PopoverContent className="w-full p-0 z-50 pointer-events-auto" portal={false}>
         <Command>

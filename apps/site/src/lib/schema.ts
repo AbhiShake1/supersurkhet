@@ -301,7 +301,7 @@ export const orderSchema = z
           disabled: true,
         }
       })),
-    orderStatus: z.enum(["pending", "done", "cancelled"]).default("pending").describe("Order Status"),
+    orderStatus: z.enum(["pending", "done", "cancelled"]).describe("Order Status").default("pending"),
     paymentMethod: z.enum(["cash", "card", "bankTransfer", "credit"]).optional().describe("Payment Method"),
     notes: z.string().optional().describe("Notes").superRefine(fieldConfig({ fieldType: "richText" })),
   })

@@ -4,9 +4,10 @@ import type { ObjectWrapperProps } from "../react";
 export const ObjectWrapper: React.FC<ObjectWrapperProps> = ({
   label,
   children,
+  testId,
 }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid={testId ? `af-object-${testId}` : undefined}>
       <h3 className="text-lg font-medium">{label}</h3>
       {children}
     </div>

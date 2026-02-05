@@ -34,3 +34,9 @@ export function getPathInObject(obj: any, path: string[]): any {
   }
   return current;
 }
+
+export function formatTestId(path: string[]) {
+  return path
+    .join("__")
+    .replace(/[^a-zA-Z0-9_-]/g, "_");
+}

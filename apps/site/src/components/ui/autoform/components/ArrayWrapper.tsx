@@ -7,12 +7,20 @@ export const ArrayWrapper: React.FC<ArrayWrapperProps> = ({
   label,
   children,
   onAddItem,
+  testId,
+  addTestId,
 }) => {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid={testId ? `af-array-${testId}` : undefined}>
       <h3 className="text-lg font-medium">{label}</h3>
       {children}
-      <Button onClick={onAddItem} variant="outline" size="sm" type="button">
+      <Button
+        onClick={onAddItem}
+        variant="outline"
+        size="sm"
+        type="button"
+        data-testid={addTestId}
+      >
         <PlusIcon className="h-4 w-4" />
       </Button>
     </div>
