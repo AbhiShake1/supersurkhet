@@ -16,6 +16,7 @@ import {
 } from "./components/FieldWrapper";
 import { Form } from "./components/Form";
 import { ImageUploadField } from "./components/ImageUploadField";
+import { MapField } from "./components/MapField";
 import { NumberField } from "./components/NumberField";
 import { ObjectWrapper } from "./components/ObjectWrapper";
 import { RecordField } from "./components/RecordField";
@@ -54,6 +55,7 @@ export const ShadcnAutoFormFieldComponents = {
   datetime: DateTimeField,
   select: SelectField,
   image: ImageUploadField,
+  map: MapField,
   record: RecordField,
   password: PasswordField,
   richText: RichTextField,

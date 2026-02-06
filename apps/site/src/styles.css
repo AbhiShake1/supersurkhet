@@ -53,6 +53,12 @@ html {
     @apply bg-background text-foreground;
     letter-spacing: var(--tracking-normal);
   }
+  .maplibregl-popup-content {
+    @apply bg-transparent! shadow-none! p-0! rounded-none!;
+  }
+  .maplibregl-popup-tip {
+    @apply hidden!;
+  }
 }
 
 @theme inline {

@@ -136,6 +136,11 @@ export const businessSchema = z
       .base64()
       .describe("Business icon")
       .optional(),
+    locationCoordinates: z
+      .string()
+      .describe("GPS coordinates for the business location [latitude, longitude]")
+      .optional()
+      .superRefine(fieldConfig({ fieldType: "map" })),
     members: z.record(z.string(), businessMemberSchema).optional(),
     invitations: z.record(z.string(), businessInvitationSchema).optional(),
     uiBuilder: uiBuilderSchema.optional(),
