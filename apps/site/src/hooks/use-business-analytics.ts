@@ -10,69 +10,10 @@ const importTotal = (imp: StockImport) =>
   imp.items?.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0) ?? 0
 
 export function useBusinessAnalytics(slug: string, period: string = 'all') {
-  // Define types for the breakdowns
-  type ReceivableBreakdown = {
-    id: string;
-    customer: string;
-    totalAmount: number;
-    paidAmount: number;
-    dueAmount: number;
-    date: string;
-    items: {
-      product: string;
-      quantity: number;
-      unitPrice: number;
-      total: number;
-    }[];
-  };
-
-  type PayableBreakdown = {
-    id: string;
-    supplier: string;
-    totalAmount: number;
-    paidAmount: number;
-    dueAmount: number;
-    date: string;
-    items: {
-      product: string;
-      quantity: number;
-      unitPrice: number;
-      total: number;
-    }[];
-  };
-
-  type RevenueBreakdown = {
-    id: string;
-    customer: string;
-    totalAmount: number;
-    paidAmount: number;
-    dueAmount: number;
-    date: string;
-    items: {
-      product: string;
-      quantity: number;
-      unitPrice: number;
-      total: number;
-    }[];
-  };
-
-  type CostBreakdown = {
-    id: string;
-    supplier: string;
-    totalAmount: number;
-    date: string;
-    items: {
-      product: string;
-      quantity: number;
-      unitPrice: number; // This will be the cost price
-      total: number;
-    }[];
-  };
   const { data: sales = [] } = api.sale.useGet({ keys: [slug] });
   const { data: stockImports = [] } = api.stockImport.useGet({ keys: [slug] });
   const { data: parties = [] } = api.party.useGet({ keys: [slug] });
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
-  const { data: invoices = [] } = api.invoice.useGet({ keys: [slug] });
 
   const productsBySoul = useMemo(() => new Map(products.map(p => [p._!.soul!, p])), [products]);
   const partiesBySoul = useMemo(() => new Map(parties.map(p => [p._!.soul!, p])), [parties]);
@@ -80,7 +21,6 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   // Filter data by time period
   const filteredSales = filterByPeriod(sales, period);
   const filteredStockImports = filterByPeriod(stockImports, period);
-  const filteredInvoices = filterByPeriod(invoices, period);
 
   // Financial Overview
   const totalRevenue = useMemo(
@@ -203,7 +143,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
   const productRevenue = useMemo(() => {
     const revenue = filteredSales.reduce((acc, sale) => {
       sale.items?.forEach(item => {
-        acc[item.product] = (acc[item.product] || 0) + (item.quantity * item.unitPrice);
+        acc[item.product] = (acc[item.product] || 0) + ((item.quantity??0) * (item.unitPrice??0));
       });
       return acc;
     }, {} as Record<string, number>);
@@ -364,7 +304,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
             product: productsBySoul.get(item.product)?.title || item.product,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
-            total: item.quantity * item.unitPrice,
+            total: (item.quantity??0) * (item.unitPrice??0),
           })) || [];
 
         const totalAmount = items.reduce((s, i) => s + i.total, 0);

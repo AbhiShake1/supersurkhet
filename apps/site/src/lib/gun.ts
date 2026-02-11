@@ -38,7 +38,7 @@ type ExtratedSchema = {
   [K in keyof BaseAppSchemaType as BaseAppSchemaType[K] extends { schema: any } ? K : never]: BaseAppSchemaType[K] extends { schema: infer S } ? z.infer<S> : never
 }
 
-export const gun = GUN<ExtratedSchema>({
+export const gun = GUN/*<ExtratedSchema>*/({
   localStorage: false,
   radisk: isServer,
   peers: [

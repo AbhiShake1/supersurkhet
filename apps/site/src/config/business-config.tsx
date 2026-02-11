@@ -1,39 +1,21 @@
-import type { AutoTableTab } from "@/components/auto-admin";
-import type { AutoTableProps } from "@/components/auto-table";
-import { AutoFormSubmit } from "@/components/ui/auto-form";
-import { AutoForm, fieldConfig } from "@/components/ui/autoform";
-import { Button } from "@/components/ui/button";
-import {
-  Credenza,
-  CredenzaContent,
-  CredenzaTrigger,
-} from "@/components/ui/credenza";
-import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { ReceiptWrapper } from "@/components/ui/receipt-wrapper";
-import { useDialog } from "@/contexts/dialog-context";
-import { formatCurrency } from "@/lib/intl";
-import type { BusinessType } from "@/lib/schema";
-import { db } from "@/lib/ssr/api";
-import { salesItemSchema, type SalesItem } from "@/lib/schemas/sales";
-import type { SchemaKeys } from "@gta/react-hooks";
-import {
-  Car,
-  DollarSign,
-  MapIcon,
-  Receipt,
-  ShoppingBag,
-  ShoppingCart,
-  Users,
-  Users2,
-} from "lucide-react";
+import type {AutoTableTab} from "@/components/auto-admin";
+import {AutoFormSubmit} from "@/components/ui/auto-form";
+import {AutoForm, fieldConfig} from "@/components/ui/autoform";
+import {Button} from "@/components/ui/button";
+import {Credenza, CredenzaContent, CredenzaTrigger,} from "@/components/ui/credenza";
+import {DropdownMenuItem, DropdownMenuSeparator,} from "@/components/ui/dropdown-menu";
+import {ReceiptWrapper} from "@/components/ui/receipt-wrapper";
+import {useDialog} from "@/contexts/dialog-context";
+import {formatCurrency} from "@/lib/intl";
+import type {BusinessType} from "@/lib/schema";
+import {db} from "@/lib/ssr/api";
+import {type SalesItem, salesItemSchema} from "@/lib/schemas/sales";
+import type {SchemaKeys} from "@gta/react-hooks";
+import {Car, DollarSign, MapIcon, Receipt, ShoppingBag, ShoppingCart, Users, Users2,} from "lucide-react";
 import NepaliDate from "nepali-datetime";
-import { useState } from "react";
-import type { UseFormReturn } from "react-hook-form";
+import {useState} from "react";
+import type {UseFormReturn} from "react-hook-form";
 import z from "zod";
-import { api } from "@/lib/api";
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoTableTab<K>;
@@ -116,9 +98,7 @@ export function useStockImportsConfig({
       );
   }
 
-  const [unitField, setUnitField] = useState<z.ZodType<any>>(
-    getDefaultUnitField,
-  );
+  const [unitField, setUnitField] = useState<z.ZodType>>(getDefaultUnitField);
 
   function getQuantityDescription() {
     return "Quantity";
@@ -522,29 +502,6 @@ export function usePartyConfig({
 
 export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale"> {
   "use memo"
-  const { data: products = [] } = api.product.useGet({
-    keys: [slug],
-  })
-  const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
-  const { data: orders = [] } = api.order.useGet({ keys: [slug] });
-  const productsBySoul = new Map(
-    products
-      .filter(p => p?._?.soul)
-      .map(p => [p._!.soul!, p])
-  )
-
-  const customersBySoul = new Map(
-    customers
-      .filter(p => p?._?.soul)
-      .map(p => [p._!.soul!, p])
-  )
-
-  const ordersBySoul = new Map(
-    orders
-      .filter(p => p?._?.soul)
-      .map(p => [p._!.soul!, p])
-  )
-
   function getDefaultUnitField() {
     return z
       .string()
@@ -561,9 +518,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
       );
   }
 
-  const [unitField, setUnitField] = useState<z.ZodType<any>>(
-    getDefaultUnitField,
-  );
+  const [unitField, setUnitField] = useState<z.ZodType>>(getDefaultUnitField);
 
   return {
     schema: "sale",
@@ -824,9 +779,7 @@ export function useOrderConfig({
       );
   }
 
-  const [unitField, setUnitField] = useState<z.ZodType<any>>(
-    getDefaultUnitField,
-  );
+  const [unitField, setUnitField] = useState<z.ZodType>>(getDefaultUnitField);
 
   return {
     schema: "order",
@@ -1208,7 +1161,8 @@ export function useInvoicesConfig({
     actions: ({ row }) => {
       const partyId = row.original.partyId;
       if (!partyId) return null;
-      const party = null;
+      const parties = await db.party.get({keys: [slug]});
+      const party = parties?.find(p => p?._?.soul === partyId)
       if (!party) return null;
       return (
         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -1297,13 +1251,9 @@ export function useTripConfig({
       );
   }
 
-  const [unitField, setUnitField] = useState<z.ZodType<any>>(
-    getDefaultUnitField,
-  );
+  const [unitField, setUnitField] = useState<z.ZodType>>(getDefaultUnitField);
 
-  const [returnedUnitField, setReturnedUnitField] = useState<z.ZodType<any>>(
-    getDefaultUnitField,
-  );
+  const [returnedUnitField, setReturnedUnitField] = useState<z.ZodType>>(getDefaultUnitField);
 
   const returnedProductsSchema = salesItemSchema
     .extend({
@@ -1740,10 +1690,9 @@ export function useTripConfig({
                           <div className="text-center">Returned</div>
                         </div>
                         {row.original.products?.map((product, idx: number) => {
-                          const prod = product;
-                          return (
+                            return (
                             <div key={idx} className="grid grid-cols-3 gap-2 text-sm">
-                              <div>{prod?.title || "Unknown Product"}</div>
+                              <div>{product?.title || "Unknown Product"}</div>
                               <div className="text-center">
                                 {product.quantity}
                               </div>
