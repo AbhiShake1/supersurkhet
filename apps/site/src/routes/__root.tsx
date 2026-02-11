@@ -16,6 +16,7 @@ import { NotFound } from '@/components/ui/not-found';
 import { ErrorComponent } from '@/components/ui/error';
 import { Toaster } from '@/components/ui/sonner';
 import { gun } from '@/lib/gun';
+import { DismissableLayerBranch } from '@radix-ui/react-dismissable-layer';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { useEffect } from 'react';
 import { AuthProvider } from '@/components/auth-provider';
@@ -493,9 +494,60 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             </I18nProvider>
           </NuqsAdapter>
           <Scripts />
-          {import.meta.env.DEV ? <Agentation /> : null}
+          <AgentationBridge />
         </div>
       </body>
     </html>
+  );
+}
+
+function AgentationBridge() {
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+
+    const isAgentationTarget = (target: EventTarget | null) =>
+      target instanceof Element &&
+      target.closest('[data-feedback-toolbar], [data-agentation-root]') !==
+        null;
+
+    const handleFocusIn = (event: FocusEvent) => {
+      if (!isAgentationTarget(event.target)) return;
+      event.stopImmediatePropagation();
+    };
+
+    const handleFocusOut = (event: FocusEvent) => {
+      if (
+        !isAgentationTarget(event.target) &&
+        !isAgentationTarget(event.relatedTarget)
+      ) {
+        return;
+      }
+      event.stopImmediatePropagation();
+    };
+
+    document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('focusout', handleFocusOut);
+
+    return () => {
+      document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('focusout', handleFocusOut);
+    };
+  }, []);
+
+  if (!import.meta.env.DEV) return null;
+
+  const stopPropagation = (event: React.SyntheticEvent) => {
+    event.stopPropagation();
+  };
+
+  return (
+    <DismissableLayerBranch
+      data-agentation-root="true"
+      onPointerDown={stopPropagation}
+      onFocus={stopPropagation}
+      onBlur={stopPropagation}
+    >
+      <Agentation />
+    </DismissableLayerBranch>
   );
 }

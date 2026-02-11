@@ -219,7 +219,7 @@ const TitleSection: React.FC<{
   if (!isAuthenticated) return null;
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-800 pb-1 sm:pb-4">
+    <div className="border-b border-gray-200 dark:border-gray-800 pb-0 sm:pb-2">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <div
