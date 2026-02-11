@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * @author: @dorian_baffier
@@ -10,15 +10,15 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { motion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
-import z from "zod";
+import { motion } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
+import z from 'zod';
 
 export const TypewriterSequenceSchema = z.object({
   text: z.string().optional(),
   deleteAfter: z.boolean().optional(),
   pauseAfter: z.number().optional(),
-})
+});
 
 export const TypewriterTitleSchema = z.object({
   sequences: z.array(TypewriterSequenceSchema).optional(),
@@ -29,15 +29,15 @@ export const TypewriterTitleSchema = z.object({
   deleteSpeed: z.number().optional(),
   pauseBeforeDelete: z.number().optional(),
   naturalVariance: z.boolean().optional(),
-})
+});
 
 export type TypewriterSequence = z.infer<typeof TypewriterSequenceSchema>;
 export type TypewriterTitleProps = z.infer<typeof TypewriterTitleSchema>;
 
 const DEFAULT_SEQUENCES: TypewriterSequence[] = [
-  { text: "Typewriter", deleteAfter: true },
-  { text: "Multiple Words", deleteAfter: true },
-  { text: "Auto Loop", deleteAfter: false },
+  { text: 'Typewriter', deleteAfter: true },
+  { text: 'Multiple Words', deleteAfter: true },
+  { text: 'Auto Loop', deleteAfter: false },
 ];
 
 export default function TypewriterTitle({
@@ -50,7 +50,7 @@ export default function TypewriterTitle({
   pauseBeforeDelete = 1000,
   naturalVariance = true,
 }: TypewriterTitleProps) {
-  const [displayText, setDisplayText] = useState("");
+  const [displayText, setDisplayText] = useState('');
   const sequenceIndexRef = useRef(0);
   const charIndexRef = useRef(0);
   const isDeletingRef = useRef(false);
@@ -136,14 +136,14 @@ export default function TypewriterTitle({
             timeoutRef.current = setTimeout(() => {
               sequenceIndexRef.current = 0;
               charIndexRef.current = 0;
-              setDisplayText("");
+              setDisplayText('');
               runTypewriter();
             }, loopDelay);
           } else if (!isLastSequence) {
             timeoutRef.current = setTimeout(() => {
               sequenceIndexRef.current += 1;
               charIndexRef.current = 0;
-              setDisplayText("");
+              setDisplayText('');
               runTypewriter();
             }, pauseDuration);
           }
@@ -191,8 +191,8 @@ export default function TypewriterTitle({
             transition={{
               duration: 1,
               repeat: Number.POSITIVE_INFINITY,
-              repeatType: "loop",
-              ease: "linear",
+              repeatType: 'loop',
+              ease: 'linear',
             }}
           />
         </motion.div>

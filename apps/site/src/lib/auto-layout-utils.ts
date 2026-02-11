@@ -1,5 +1,5 @@
-import dagre from "dagre";
-import type { Node, Edge } from "@xyflow/react";
+import dagre from 'dagre';
+import type { Node, Edge } from '@xyflow/react';
 
 const nodeWidth = 250;
 const nodeHeight = 80;
@@ -11,22 +11,22 @@ const startEndNodeHeight = 100;
 export const getLayoutedElements = (
   nodes: Node[],
   edges: Edge[],
-  direction = "TB"
+  direction = 'TB',
 ) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-  const isHorizontal = direction === "LR";
+  const isHorizontal = direction === 'LR';
   dagreGraph.setGraph({ rankdir: direction });
 
   nodes.forEach((node) => {
     // Special handling for different node types
     let width, height;
 
-    if (node.type === "condition") {
+    if (node.type === 'condition') {
       width = conditionNodeWidth;
       height = conditionNodeHeight;
-    } else if (node.type === "start" || node.type === "end") {
+    } else if (node.type === 'start' || node.type === 'end') {
       width = startEndNodeWidth;
       height = startEndNodeHeight;
     } else {
@@ -52,10 +52,10 @@ export const getLayoutedElements = (
     // Special handling for different node types
     let width, height;
 
-    if (node.type === "condition") {
+    if (node.type === 'condition') {
       width = conditionNodeWidth;
       height = conditionNodeHeight;
-    } else if (node.type === "start" || node.type === "end") {
+    } else if (node.type === 'start' || node.type === 'end') {
       width = startEndNodeWidth;
       height = startEndNodeHeight;
     } else {

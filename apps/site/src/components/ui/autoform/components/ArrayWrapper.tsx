@@ -1,7 +1,7 @@
-import type React from "react";
-import { Button } from "@/components/ui/button";
-import { PlusIcon } from "lucide-react";
-import type { ArrayWrapperProps } from "../react";
+import type React from 'react';
+import { Button } from '@/components/ui/button';
+import { PlusIcon } from 'lucide-react';
+import type { ArrayWrapperProps } from '../react';
 
 export const ArrayWrapper: React.FC<ArrayWrapperProps> = ({
   label,
@@ -11,7 +11,10 @@ export const ArrayWrapper: React.FC<ArrayWrapperProps> = ({
   addTestId,
 }) => {
   return (
-    <div className="space-y-4" data-testid={testId ? `af-array-${testId}` : undefined}>
+    <div
+      className="space-y-4"
+      data-testid={testId ? `af-array-${testId}` : undefined}
+    >
       <h3 className="text-lg font-medium">{label}</h3>
       {children}
       <Button

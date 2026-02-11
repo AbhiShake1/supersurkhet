@@ -1,4 +1,7 @@
-import type { ComponentLayer, ComponentRegistry } from '@/components/ui/ui-builder/types';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
 import { getDefaultProps } from '@/lib/ui-builder/store/schema-utils';
 
 /**
@@ -9,7 +12,14 @@ import { getDefaultProps } from '@/lib/ui-builder/store/schema-utils';
  * @param visitor - A function that takes a layer and returns a modified layer.
  * @returns The modified layer after applying the visitor function.
  */
-export const visitLayer = (layer: ComponentLayer, parentLayer: ComponentLayer | null, visitor: (layer: ComponentLayer, parentLayer: ComponentLayer | null) => ComponentLayer): ComponentLayer => {
+export const visitLayer = (
+  layer: ComponentLayer,
+  parentLayer: ComponentLayer | null,
+  visitor: (
+    layer: ComponentLayer,
+    parentLayer: ComponentLayer | null,
+  ) => ComponentLayer,
+): ComponentLayer => {
   // Apply the visitor to the current layer
   const updatedLayer = visitor(layer, parentLayer);
 
@@ -17,7 +27,7 @@ export const visitLayer = (layer: ComponentLayer, parentLayer: ComponentLayer | 
   let finalLayer = updatedLayer;
   if (hasLayerChildren(updatedLayer)) {
     const updatedChildren = updatedLayer.children.map((child) =>
-      visitLayer(child, updatedLayer, visitor)
+      visitLayer(child, updatedLayer, visitor),
     );
     finalLayer = { ...updatedLayer, children: updatedChildren };
   }
@@ -37,7 +47,13 @@ export const visitLayer = (layer: ComponentLayer, parentLayer: ComponentLayer | 
  * @param visitor - A function that takes a layer and returns a modified layer.
  * @returns The modified layer after applying the visitor function to ReactNode props.
  */
-export const visitLayerReactNodeProps = (layer: ComponentLayer, visitor: (layer: ComponentLayer, parentLayer: ComponentLayer | null) => ComponentLayer): ComponentLayer => {
+export const visitLayerReactNodeProps = (
+  layer: ComponentLayer,
+  visitor: (
+    layer: ComponentLayer,
+    parentLayer: ComponentLayer | null,
+  ) => ComponentLayer,
+): ComponentLayer => {
   const updatedProps = { ...layer.props };
   let hasChanges = false;
 
@@ -51,8 +67,8 @@ export const visitLayerReactNodeProps = (layer: ComponentLayer, visitor: (layer:
       }
     } else if (Array.isArray(value)) {
       // Array of component layers in a prop
-      const updatedArray = value.map(item =>
-        isComponentLayer(item) ? visitLayer(item, layer, visitor) : item
+      const updatedArray = value.map((item) =>
+        isComponentLayer(item) ? visitLayer(item, layer, visitor) : item,
       );
       if (JSON.stringify(updatedArray) !== JSON.stringify(value)) {
         updatedProps[key] = updatedArray;
@@ -68,12 +84,22 @@ export const visitLayerReactNodeProps = (layer: ComponentLayer, visitor: (layer:
         }
       }
       // Check for objects that might have children-like structures
-      if (Array.isArray((value as any).children) && typeof (value as any).children !== 'string') {
-        const updatedNestedChildren = (value as any).children.map((item: ComponentLayer) =>
-          isComponentLayer(item) ? visitLayer(item, layer, visitor) : item
+      if (
+        Array.isArray((value as any).children) &&
+        typeof (value as any).children !== 'string'
+      ) {
+        const updatedNestedChildren = (value as any).children.map(
+          (item: ComponentLayer) =>
+            isComponentLayer(item) ? visitLayer(item, layer, visitor) : item,
         );
-        if (JSON.stringify(updatedNestedChildren) !== JSON.stringify((value as any).children)) {
-          (updatedProps as any)[key] = { ...value, children: updatedNestedChildren };
+        if (
+          JSON.stringify(updatedNestedChildren) !==
+          JSON.stringify((value as any).children)
+        ) {
+          (updatedProps as any)[key] = {
+            ...value,
+            children: updatedNestedChildren,
+          };
           hasChanges = true;
         }
       }
@@ -122,7 +148,8 @@ export const countLayersInReactNodeProps = (layer: ComponentLayer): number => {
       // Array of component layers
       for (const item of value) {
         if (isComponentLayer(item)) {
-          count += 1 + (hasLayerChildren(item) ? countLayers(item.children) : 0);
+          count +=
+            1 + (hasLayerChildren(item) ? countLayers(item.children) : 0);
           if (hasLayerReactNodeProps(item)) {
             count += countLayersInReactNodeProps(item);
           }
@@ -131,13 +158,17 @@ export const countLayersInReactNodeProps = (layer: ComponentLayer): number => {
     } else if (typeof value === 'object' && value !== null) {
       // Check for objects that might contain component layers
       if (isComponentLayer(value)) {
-        count += 1 + (hasLayerChildren(value) ? countLayers(value.children) : 0);
+        count +=
+          1 + (hasLayerChildren(value) ? countLayers(value.children) : 0);
         if (hasLayerReactNodeProps(value)) {
           count += countLayersInReactNodeProps(value);
         }
       }
       // Check for objects that might have children-like structures
-      if (Array.isArray((value as any).children) && typeof (value as any).children !== 'string') {
+      if (
+        Array.isArray((value as any).children) &&
+        typeof (value as any).children !== 'string'
+      ) {
         count += countLayers((value as any).children);
       }
     }
@@ -146,7 +177,12 @@ export const countLayersInReactNodeProps = (layer: ComponentLayer): number => {
   return count;
 };
 
-export const addLayer = (layers: ComponentLayer[], newLayer: ComponentLayer, parentId?: string, parentPosition?: number): ComponentLayer[] => {
+export const addLayer = (
+  layers: ComponentLayer[],
+  newLayer: ComponentLayer,
+  parentId?: string,
+  parentPosition?: number,
+): ComponentLayer[] => {
   const updatedPages = layers.map((page) =>
     visitLayer(page, null, (layer) => {
       if (layer.id === parentId) {
@@ -155,7 +191,11 @@ export const addLayer = (layers: ComponentLayer[], newLayer: ComponentLayer, par
 
         if (hasLayerChildren(layer)) {
           updatedChildren = [...layer.children];
-        } else if (layer.children === undefined || layer.children === null || (Array.isArray(layer.children) && layer.children.length === 0)) {
+        } else if (
+          layer.children === undefined ||
+          layer.children === null ||
+          (Array.isArray(layer.children) && layer.children.length === 0)
+        ) {
           // Initialize children array for layers with undefined/null children or empty arrays
           updatedChildren = [];
         } else {
@@ -175,7 +215,7 @@ export const addLayer = (layers: ComponentLayer[], newLayer: ComponentLayer, par
             updatedChildren = [
               ...updatedChildren.slice(0, parentPosition),
               newLayer,
-              ...updatedChildren.slice(parentPosition)
+              ...updatedChildren.slice(parentPosition),
             ];
           }
         } else {
@@ -187,18 +227,21 @@ export const addLayer = (layers: ComponentLayer[], newLayer: ComponentLayer, par
       }
 
       return layer;
-    })
+    }),
   );
   return updatedPages;
-}
+};
 
-export const findAllParentLayersRecursive = (layers: ComponentLayer[], layerId: string): ComponentLayer[] => {
+export const findAllParentLayersRecursive = (
+  layers: ComponentLayer[],
+  layerId: string,
+): ComponentLayer[] => {
   const parents: ComponentLayer[] = [];
 
   const findParents = (layers: ComponentLayer[], targetId: string): boolean => {
     for (const layer of layers) {
       if (hasLayerChildren(layer)) {
-        if (layer.children.some(child => child.id === targetId)) {
+        if (layer.children.some((child) => child.id === targetId)) {
           parents.push(layer);
           // Continue searching upwards
           findParents(layers, layer.id);
@@ -241,7 +284,10 @@ export const findAllParentLayersRecursive = (layers: ComponentLayer[], layerId: 
  * @param layerId - The ID to search for
  * @returns true if the layer exists in ReactNode props
  */
-export const hasLayerInReactNodeProps = (layer: ComponentLayer, layerId: string): boolean => {
+export const hasLayerInReactNodeProps = (
+  layer: ComponentLayer,
+  layerId: string,
+): boolean => {
   const props = layer.props || {};
 
   for (const [key, value] of Object.entries(props)) {
@@ -276,7 +322,10 @@ export const hasLayerInReactNodeProps = (layer: ComponentLayer, layerId: string)
         }
       }
       // Check for objects that might have children-like structures
-      if (Array.isArray((value as any).children) && typeof (value as any).children !== 'string') {
+      if (
+        Array.isArray((value as any).children) &&
+        typeof (value as any).children !== 'string'
+      ) {
         if (findLayerRecursive((value as any).children, layerId)) {
           return true;
         }
@@ -287,7 +336,10 @@ export const hasLayerInReactNodeProps = (layer: ComponentLayer, layerId: string)
   return false;
 };
 
-export const findLayerRecursive = (layers: ComponentLayer[], layerId: string): ComponentLayer | undefined => {
+export const findLayerRecursive = (
+  layers: ComponentLayer[],
+  layerId: string,
+): ComponentLayer | undefined => {
   for (const layer of layers) {
     if (layer.id === layerId) {
       return layer;
@@ -309,13 +361,18 @@ export const findLayerRecursive = (layers: ComponentLayer[], layerId: string): C
   return undefined;
 };
 
-export const duplicateWithNewIdsAndName = (layer: ComponentLayer, addCopySuffix = true): ComponentLayer => {
+export const duplicateWithNewIdsAndName = (
+  layer: ComponentLayer,
+  addCopySuffix = true,
+): ComponentLayer => {
   const newLayer: ComponentLayer = { ...layer, id: createId() };
   if (layer.name) {
     newLayer.name = `${layer.name}${addCopySuffix ? ' (Copy)' : ''}`;
   }
   if (hasLayerChildren(newLayer) && hasLayerChildren(layer)) {
-    newLayer.children = layer.children.map(child => duplicateWithNewIdsAndName(child, false));
+    newLayer.children = layer.children.map((child) =>
+      duplicateWithNewIdsAndName(child, false),
+    );
   }
   // Also duplicate layers in ReactNode props
   if (hasLayerReactNodeProps(layer)) {
@@ -328,8 +385,12 @@ export const duplicateWithNewIdsAndName = (layer: ComponentLayer, addCopySuffix 
         // Array of component layers in a prop
         duplicatedProps[key] = value
           .filter(isComponentLayer)
-          .map(child => duplicateWithNewIdsAndName(child, false));
-      } else if (typeof value === 'object' && value !== null && isComponentLayer(value)) {
+          .map((child) => duplicateWithNewIdsAndName(child, false));
+      } else if (
+        typeof value === 'object' &&
+        value !== null &&
+        isComponentLayer(value)
+      ) {
         // Object that is itself a component layer
         duplicatedProps[key] = duplicateWithNewIdsAndName(value, false);
       }
@@ -339,9 +400,9 @@ export const duplicateWithNewIdsAndName = (layer: ComponentLayer, addCopySuffix 
   return newLayer;
 };
 
-
 export function createId(): string {
-  const ALPHABET = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  const ALPHABET =
+    '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
   const ID_LENGTH = 7;
   let result = '';
   const alphabetLength = ALPHABET.length;
@@ -354,7 +415,9 @@ export function createId(): string {
   return result;
 }
 
-export const hasLayerChildren = (layer: ComponentLayer): layer is ComponentLayer & { children: ComponentLayer[] } => {
+export const hasLayerChildren = (
+  layer: ComponentLayer,
+): layer is ComponentLayer & { children: ComponentLayer[] } => {
   return Array.isArray(layer.children) && typeof layer.children !== 'string';
 };
 
@@ -371,7 +434,11 @@ export const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
       return true;
     }
     // Check if this prop contains an array of component layers
-    if (Array.isArray(value) && value.length > 0 && value.every(isComponentLayer)) {
+    if (
+      Array.isArray(value) &&
+      value.length > 0 &&
+      value.every(isComponentLayer)
+    ) {
       return true;
     }
   }
@@ -383,7 +450,11 @@ export const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
         return true;
       }
       // Look for objects with a children-like structure
-      if (Array.isArray((value as any).children) && typeof (value as any).children !== 'string' && (value as any).children.length > 0) {
+      if (
+        Array.isArray((value as any).children) &&
+        typeof (value as any).children !== 'string' &&
+        (value as any).children.length > 0
+      ) {
         return true;
       }
     }
@@ -397,17 +468,21 @@ export const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
  * @returns true if the value is a component layer
  */
 export const isComponentLayer = (value: any): value is ComponentLayer => {
-  return value &&
-         typeof value === 'object' &&
-         typeof value.id === 'string' &&
-         typeof value.type === 'string' &&
-         (Array.isArray(value.children) || typeof value.children === 'string' || value.children === undefined);
+  return (
+    value &&
+    typeof value === 'object' &&
+    typeof value.id === 'string' &&
+    typeof value.type === 'string' &&
+    (Array.isArray(value.children) ||
+      typeof value.children === 'string' ||
+      value.children === undefined)
+  );
 };
 
 /**
  * Creates a new component layer with default props and children initialized from the component registry.
  * This utility function consolidates the layer initialization logic used across the application.
- * 
+ *
  * @param layerType - The type of component to create
  * @param componentRegistry - The component registry containing component definitions
  * @param options - Optional configuration for the layer
@@ -419,11 +494,12 @@ export const createComponentLayer = (
   options: {
     id?: string;
     name?: string;
-  } = {}
+  } = {},
 ): ComponentLayer => {
   const { id, name } = options;
 
-  const componentDef = componentRegistry[layerType as keyof typeof componentRegistry];
+  const componentDef =
+    componentRegistry[layerType as keyof typeof componentRegistry];
   if (!componentDef) {
     throw new Error(`Component definition not found for type: ${layerType}`);
   }
@@ -431,18 +507,25 @@ export const createComponentLayer = (
   const schema = componentDef.schema;
 
   // Safely check if schema has shape property (ZodObject)
-  const defaultProps = 'shape' in schema && schema.shape ? getDefaultProps(schema as any) : {};
+  const defaultProps =
+    'shape' in schema && schema.shape ? getDefaultProps(schema as any) : {};
   const defaultChildrenRaw = componentDef.defaultChildren;
-  const defaultChildren = typeof defaultChildrenRaw === "string"
-    ? defaultChildrenRaw
-    : (defaultChildrenRaw?.map(child => duplicateWithNewIdsAndName(child, false)) || []);
+  const defaultChildren =
+    typeof defaultChildrenRaw === 'string'
+      ? defaultChildrenRaw
+      : defaultChildrenRaw?.map((child) =>
+          duplicateWithNewIdsAndName(child, false),
+        ) || [];
 
-  const initialProps = Object.entries(defaultProps).reduce((acc, [key, propDef]) => {
-    if (key !== "children") {
-      acc[key] = propDef;
-    }
-    return acc;
-  }, {} as Record<string, any>);
+  const initialProps = Object.entries(defaultProps).reduce(
+    (acc, [key, propDef]) => {
+      if (key !== 'children') {
+        acc[key] = propDef;
+      }
+      return acc;
+    },
+    {} as Record<string, any>,
+  );
 
   const newLayer: ComponentLayer = {
     id: id || createId(),
@@ -469,7 +552,7 @@ export const moveLayer = (
   layers: ComponentLayer[],
   sourceLayerId: string,
   targetParentId: string,
-  targetPosition: number
+  targetPosition: number,
 ): ComponentLayer[] => {
   let layerToMove: ComponentLayer | null = null;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -480,7 +563,10 @@ export const moveLayer = (
   let sourcePropName: string | null = null;
 
   // Find the layer to move and its current parent
-  const findLayerAndParent = (layers: ComponentLayer[], parentId: string | null = null): boolean => {
+  const findLayerAndParent = (
+    layers: ComponentLayer[],
+    parentId: string | null = null,
+  ): boolean => {
     for (let i = 0; i < layers.length; i++) {
       const layer = layers[i];
       if (layer.id === sourceLayerId) {
@@ -507,7 +593,9 @@ export const moveLayer = (
               sourceParentType = 'prop';
               return true;
             } else if (Array.isArray(value)) {
-              const index = value.findIndex(item => isComponentLayer(item) && item.id === sourceLayerId);
+              const index = value.findIndex(
+                (item) => isComponentLayer(item) && item.id === sourceLayerId,
+              );
               if (index !== -1) {
                 layerToMove = value[index];
                 sourceParentId = layer.id;
@@ -535,17 +623,19 @@ export const moveLayer = (
   // Remove the layer from its current position
   let layersWithoutSource = layers;
   if (sourceParentType === 'children') {
-    layersWithoutSource = layers.map(page =>
+    layersWithoutSource = layers.map((page) =>
       visitLayer(page, null, (layer) => {
         if (hasLayerChildren(layer)) {
-          const updatedChildren = layer.children.filter(child => child.id !== sourceLayerId);
+          const updatedChildren = layer.children.filter(
+            (child) => child.id !== sourceLayerId,
+          );
           return { ...layer, children: updatedChildren };
         }
         return layer;
-      })
+      }),
     );
   } else if (sourceParentType === 'prop') {
-    layersWithoutSource = layers.map(page =>
+    layersWithoutSource = layers.map((page) =>
       visitLayer(page, null, (layer) => {
         if (layer.id === sourceParentId && sourcePropName) {
           const updatedProps = { ...layer.props };
@@ -553,30 +643,36 @@ export const moveLayer = (
           return { ...layer, props: updatedProps };
         }
         return layer;
-      })
+      }),
     );
   } else if (sourceParentType === 'propArray') {
-    layersWithoutSource = layers.map(page =>
+    layersWithoutSource = layers.map((page) =>
       visitLayer(page, null, (layer) => {
         if (layer.id === sourceParentId && sourcePropName) {
           const updatedProps = { ...layer.props };
           const currentArray = updatedProps[sourcePropName];
           if (Array.isArray(currentArray)) {
-            const updatedArray = currentArray.filter(item =>
-              !isComponentLayer(item) || item.id !== sourceLayerId
+            const updatedArray = currentArray.filter(
+              (item) => !isComponentLayer(item) || item.id !== sourceLayerId,
             );
-            updatedProps[sourcePropName] = updatedArray.length > 0 ? updatedArray : undefined;
+            updatedProps[sourcePropName] =
+              updatedArray.length > 0 ? updatedArray : undefined;
           }
           return { ...layer, props: updatedProps };
         }
         return layer;
-      })
+      }),
     );
   }
 
   // Add the layer to its new position
   // For now, just add to children, but we may want to extend this to support adding to props too
-  const updatedLayers = addLayer(layersWithoutSource, layerToMove, targetParentId, targetPosition);
+  const updatedLayers = addLayer(
+    layersWithoutSource,
+    layerToMove,
+    targetParentId,
+    targetPosition,
+  );
 
   return updatedLayers;
 };
@@ -590,13 +686,15 @@ export const moveLayer = (
  */
 export const canLayerAcceptChildren = (
   layer: ComponentLayer,
-  componentRegistry: ComponentRegistry
+  componentRegistry: ComponentRegistry,
 ): boolean => {
-  const componentDef = componentRegistry[layer.type as keyof typeof componentRegistry];
+  const componentDef =
+    componentRegistry[layer.type as keyof typeof componentRegistry];
   if (!componentDef) return false;
 
   // Safely check if schema has shape property (ZodObject) and children field
-  const hasChildrenField = 'shape' in componentDef.schema &&
+  const hasChildrenField =
+    'shape' in componentDef.schema &&
     componentDef.schema.shape &&
     componentDef.schema.shape.children !== undefined;
 
@@ -612,7 +710,12 @@ export const canLayerAcceptChildren = (
  * @param propName - The name of the prop to add the layer to
  * @returns The updated layers array with the new layer added to the specified prop
  */
-export const addLayerToProp = (layers: ComponentLayer[], newLayer: ComponentLayer, parentId: string, propName: string): ComponentLayer[] => {
+export const addLayerToProp = (
+  layers: ComponentLayer[],
+  newLayer: ComponentLayer,
+  parentId: string,
+  propName: string,
+): ComponentLayer[] => {
   return layers.map((page) =>
     visitLayer(page, null, (layer) => {
       if (layer.id === parentId) {
@@ -622,7 +725,7 @@ export const addLayerToProp = (layers: ComponentLayer[], newLayer: ComponentLaye
         return { ...layer, props: updatedProps };
       }
       return layer;
-    })
+    }),
   );
 };
 
@@ -636,7 +739,13 @@ export const addLayerToProp = (layers: ComponentLayer[], newLayer: ComponentLaye
  * @param position - The position in the array to add the layer (defaults to end)
  * @returns The updated layers array with the new layer added to the specified prop array
  */
-export const addLayerToPropArray = (layers: ComponentLayer[], newLayer: ComponentLayer, parentId: string, propName: string, position?: number): ComponentLayer[] => {
+export const addLayerToPropArray = (
+  layers: ComponentLayer[],
+  newLayer: ComponentLayer,
+  parentId: string,
+  propName: string,
+  position?: number,
+): ComponentLayer[] => {
   return layers.map((page) =>
     visitLayer(page, null, (layer) => {
       if (layer.id === parentId) {
@@ -656,7 +765,7 @@ export const addLayerToPropArray = (layers: ComponentLayer[], newLayer: Componen
             currentArray = [
               ...currentArray.slice(0, position),
               newLayer,
-              ...currentArray.slice(position)
+              ...currentArray.slice(position),
             ];
           }
         } else {
@@ -667,7 +776,7 @@ export const addLayerToPropArray = (layers: ComponentLayer[], newLayer: Componen
         return { ...layer, props: updatedProps };
       }
       return layer;
-    })
+    }),
   );
 };
 
@@ -680,7 +789,12 @@ export const addLayerToPropArray = (layers: ComponentLayer[], newLayer: Componen
  * @param propName - The name of the prop to remove the layer from
  * @returns The updated layers array with the layer removed from the specified prop
  */
-export const removeLayerFromProp = (layers: ComponentLayer[], layerId: string, parentId: string, propName: string): ComponentLayer[] => {
+export const removeLayerFromProp = (
+  layers: ComponentLayer[],
+  layerId: string,
+  parentId: string,
+  propName: string,
+): ComponentLayer[] => {
   return layers.map((page) =>
     visitLayer(page, null, (layer) => {
       if (layer.id === parentId) {
@@ -693,14 +807,17 @@ export const removeLayerFromProp = (layers: ComponentLayer[], layerId: string, p
           updatedProps[propName] = undefined;
         } else if (Array.isArray(propValue)) {
           // Array of component layers - filter out the matching layer
-          const filteredArray = propValue.filter(layer => layer.id !== layerId);
-          updatedProps[propName] = filteredArray.length > 0 ? filteredArray : undefined;
+          const filteredArray = propValue.filter(
+            (layer) => layer.id !== layerId,
+          );
+          updatedProps[propName] =
+            filteredArray.length > 0 ? filteredArray : undefined;
         }
 
         return { ...layer, props: updatedProps };
       }
       return layer;
-    })
+    }),
   );
 };
 
@@ -711,7 +828,10 @@ export const removeLayerFromProp = (layers: ComponentLayer[], layerId: string, p
  * @param layerId - The ID of the layer to find
  * @returns The found layer or undefined
  */
-export const findLayerInReactNodeProps = (layer: ComponentLayer, layerId: string): ComponentLayer | undefined => {
+export const findLayerInReactNodeProps = (
+  layer: ComponentLayer,
+  layerId: string,
+): ComponentLayer | undefined => {
   const props = layer.props || {};
 
   for (const [key, value] of Object.entries(props)) {
@@ -750,8 +870,14 @@ export const findLayerInReactNodeProps = (layer: ComponentLayer, layerId: string
         }
       }
       // Check for objects that might have children-like structure
-      if (Array.isArray((value as any).children) && typeof (value as any).children !== 'string') {
-        const foundInChildren = findLayerRecursive((value as any).children, layerId);
+      if (
+        Array.isArray((value as any).children) &&
+        typeof (value as any).children !== 'string'
+      ) {
+        const foundInChildren = findLayerRecursive(
+          (value as any).children,
+          layerId,
+        );
         if (foundInChildren) {
           return foundInChildren;
         }
@@ -761,4 +887,3 @@ export const findLayerInReactNodeProps = (layer: ComponentLayer, layerId: string
 
   return undefined;
 };
-

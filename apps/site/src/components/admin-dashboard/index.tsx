@@ -3,21 +3,22 @@ import {
   IncreaseSizePieChart,
   DefaultRadialChart,
   StrokeMultipleRadarChart,
-  ValueLineBarChart
-} from "@/components/admin-dashboard/charts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  DollarSign,
-  CreditCard,
-  Users,
-  Activity
-} from "lucide-react";
-import { RetailReportsPage } from "../retail-reports-page";
+  ValueLineBarChart,
+} from '@/components/admin-dashboard/charts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DollarSign, CreditCard, Users, Activity } from 'lucide-react';
+import { RetailReportsPage } from '../retail-reports-page';
 
-export function AdminDashboard({ slug, businessType }: { slug: string, businessType?: string }) {
+export function AdminDashboard({
+  slug,
+  businessType,
+}: {
+  slug: string;
+  businessType?: string;
+}) {
   switch (businessType) {
-    case "retail":
-      return <RetailReportsPage slug={slug} />
+    case 'retail':
+      return <RetailReportsPage slug={slug} />;
   }
   return (
     <div className="space-y-6">

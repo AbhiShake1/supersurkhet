@@ -1,18 +1,18 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 import type {
   ParsedField,
   ParsedSchema,
   Renderable,
   SchemaProvider,
   FieldConfig as BaseFieldConfig,
-} from "@autoform/core";
-import type { FieldValues, UseFormReturn } from "react-hook-form";
+} from '@autoform/core';
+import type { FieldValues, UseFormReturn } from 'react-hook-form';
 
 export interface AutoFormProps<T extends FieldValues> {
   schema: SchemaProvider<T>;
   onSubmit?: (
     values: T,
-    form: UseFormReturn<T, any, T>
+    form: UseFormReturn<T, any, T>,
   ) => void | Promise<void>;
 
   defaultValues?: Partial<T>;
@@ -23,19 +23,19 @@ export interface AutoFormProps<T extends FieldValues> {
   formComponents: AutoFormFieldComponents;
   withSubmit?: boolean;
   onFormInit?: (form: UseFormReturn<T, any, T>) => void;
-  formProps?: React.ComponentProps<"form"> | Record<string, any>;
+  formProps?: React.ComponentProps<'form'> | Record<string, any>;
 }
 
 export type ExtendableAutoFormProps<T extends FieldValues> = Omit<
   AutoFormProps<T>,
-  "uiComponents" | "formComponents"
+  'uiComponents' | 'formComponents'
 > & {
   uiComponents?: Partial<AutoFormUIComponents>;
   formComponents?: Partial<AutoFormFieldComponents>;
 };
 
 export interface AutoFormUIComponents {
-  Form: React.ComponentType<React.ComponentProps<"form">>;
+  Form: React.ComponentType<React.ComponentProps<'form'>>;
   FieldWrapper: React.ComponentType<FieldWrapperProps>;
   ErrorMessage: React.ComponentType<{ error: string }>;
   SubmitButton: React.ComponentType<{ children: ReactNode }>;

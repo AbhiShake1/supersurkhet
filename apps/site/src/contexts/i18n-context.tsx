@@ -1,5 +1,9 @@
 import React, { createContext, useContext, type ReactNode } from 'react';
-import i18n, { type Language, DEFAULT_LANGUAGE, AVAILABLE_LANGUAGES } from '../lib/i18n';
+import i18n, {
+  type Language,
+  DEFAULT_LANGUAGE,
+  AVAILABLE_LANGUAGES,
+} from '../lib/i18n';
 
 // Define the context type
 interface I18nContextType {
@@ -19,13 +23,13 @@ interface I18nProviderProps {
   initialLanguage?: Language;
 }
 
-export const I18nProvider: React.FC<I18nProviderProps> = ({
-  children,
-}) => {
+export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
   // Hydrate language from localStorage or use provided initial language or default
   const getInitialLanguage = (): Language => {
     if (typeof window !== 'undefined') {
-      const savedLanguage = localStorage.getItem('i18n-language') as Language | null;
+      const savedLanguage = localStorage.getItem(
+        'i18n-language',
+      ) as Language | null;
       if (savedLanguage && AVAILABLE_LANGUAGES.includes(savedLanguage)) {
         return savedLanguage;
       }
@@ -35,7 +39,8 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
   };
 
   // Set the initial language
-  const [language, setLanguageState] = React.useState<Language>(getInitialLanguage);
+  const [language, setLanguageState] =
+    React.useState<Language>(getInitialLanguage);
 
   // Function to change language
   const changeLanguage = async (lang: Language) => {
@@ -59,18 +64,19 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({
   }, []);
 
   // Memoize the context value
-  const contextValue = React.useMemo(() => ({
-    language,
-    setLanguage: changeLanguage,
-    availableLanguages: AVAILABLE_LANGUAGES,
-    t: (key: string, options?: any) => i18n.t(key, options),
-    changeLanguage
-  }), [language]);
+  const contextValue = React.useMemo(
+    () => ({
+      language,
+      setLanguage: changeLanguage,
+      availableLanguages: AVAILABLE_LANGUAGES,
+      t: (key: string, options?: any) => i18n.t(key, options),
+      changeLanguage,
+    }),
+    [language],
+  );
 
   return (
-    <I18nContext.Provider value={contextValue}>
-      {children}
-    </I18nContext.Provider>
+    <I18nContext.Provider value={contextValue}>{children}</I18nContext.Provider>
   );
 };
 
@@ -85,11 +91,11 @@ export const useI18n = (): I18nContextType => {
 
 // Higher-order component for class components
 export const withI18n = <P extends object>(
-  Component: React.ComponentType<P & I18nContextType>
+  Component: React.ComponentType<P & I18nContextType>,
 ): React.FC<Omit<P, keyof I18nContextType>> => {
   return (props: Omit<P, keyof I18nContextType>) => (
     <I18nContext.Consumer>
-      {(context) => <Component {...props as P} {...context!} />}
+      {(context) => <Component {...(props as P)} {...context!} />}
     </I18nContext.Consumer>
   );
 };

@@ -4,7 +4,10 @@
  * @param contextData - Contextual data like user info, business info, etc.
  * @returns String with contextual mentions resolved
  */
-export function resolveContextualMentions(value: string, contextData: Record<string, any>): string {
+export function resolveContextualMentions(
+  value: string,
+  contextData: Record<string, any>,
+): string {
   if (!contextData) {
     return value;
   }
@@ -43,4 +46,3 @@ export function resolveContextualMentions(value: string, contextData: Record<str
     }
   });
 }
-

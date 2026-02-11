@@ -1,7 +1,7 @@
-import type React from "react";
-import { Button } from "@/components/ui/button";
-import { TrashIcon } from "lucide-react";
-import type { ArrayElementWrapperProps } from "../react";
+import type React from 'react';
+import { Button } from '@/components/ui/button';
+import { TrashIcon } from 'lucide-react';
+import type { ArrayElementWrapperProps } from '../react';
 
 export const ArrayElementWrapper: React.FC<ArrayElementWrapperProps> = ({
   children,
@@ -10,10 +10,7 @@ export const ArrayElementWrapper: React.FC<ArrayElementWrapperProps> = ({
   removeTestId,
 }) => {
   return (
-    <div
-      className="relative border p-4 rounded-md mt-2"
-      data-testid={testId}
-    >
+    <div className="relative border p-4 rounded-md mt-2" data-testid={testId}>
       <Button
         onClick={onRemove}
         variant="ghost"

@@ -1,8 +1,8 @@
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 
 export function HugIcon({ className }: { className?: string }) {
   return (
-    <svg className={cn("!size-6", className)} fill="none" viewBox="0 0 24 24">
+    <svg className={cn('!size-6', className)} fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -15,7 +15,7 @@ export function HugIcon({ className }: { className?: string }) {
 
 export function FillIcon({ className }: { className?: string }) {
   return (
-    <svg className={cn("!size-6", className)} fill="none" viewBox="0 0 24 24">
+    <svg className={cn('!size-6', className)} fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -28,7 +28,7 @@ export function FillIcon({ className }: { className?: string }) {
 
 export function FixedIcon({ className }: { className?: string }) {
   return (
-    <svg className={cn("!size-6", className)} fill="none" viewBox="0 0 24 24">
+    <svg className={cn('!size-6', className)} fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -55,16 +55,16 @@ export function PaddingIcon() {
 export function PaddingSideIcon({
   side,
 }: {
-  side: "top" | "right" | "bottom" | "left";
+  side: 'top' | 'right' | 'bottom' | 'left';
 }) {
   return (
     <svg
       className={cn(
-        "!size-6",
-        side === "left" && "rotate-0",
-        side === "top" && "rotate-90",
-        side === "right" && "rotate-180",
-        side === "bottom" && "-rotate-90"
+        '!size-6',
+        side === 'left' && 'rotate-0',
+        side === 'top' && 'rotate-90',
+        side === 'right' && 'rotate-180',
+        side === 'bottom' && '-rotate-90',
       )}
       fill="none"
       viewBox="0 0 24 24"
@@ -79,13 +79,13 @@ export function PaddingSideIcon({
   );
 }
 
-export function PaddingAxisIcon({ axis }: { axis: "x" | "y" }) {
+export function PaddingAxisIcon({ axis }: { axis: 'x' | 'y' }) {
   return (
     <svg
       className={cn(
-        "!size-6",
-        axis === "x" && "rotate-0",
-        axis === "y" && "rotate-90"
+        '!size-6',
+        axis === 'x' && 'rotate-0',
+        axis === 'y' && 'rotate-90',
       )}
       fill="none"
       viewBox="0 0 24 24"

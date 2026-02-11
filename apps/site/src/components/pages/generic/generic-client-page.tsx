@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -8,9 +8,9 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Phone,
   Mail,
@@ -19,9 +19,9 @@ import {
   Star,
   CheckCircle,
   ArrowRight,
-} from "lucide-react";
-import { useState, useRef } from "react";
-import { motion, useInView } from "framer-motion";
+} from 'lucide-react';
+import { useState, useRef } from 'react';
+import { motion, useInView } from 'framer-motion';
 
 interface Service {
   id: string;
@@ -56,116 +56,123 @@ export default function GenericClientPage({
   slug,
   businessType,
 }: GenericClientPageProps) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
   const [activeFAQ, setActiveFAQ] = useState<string | null>(null);
 
   // Mock data - in a real implementation, this would come from the API
   const businessInfo = {
-    name: "Business Name",
-    tagline: "Your Trusted Partner in Surkhet",
+    name: 'Business Name',
+    tagline: 'Your Trusted Partner in Surkhet',
     description:
-      "Delivering exceptional service and quality solutions tailored to your needs in the heart of Surkhet Valley.",
+      'Delivering exceptional service and quality solutions tailored to your needs in the heart of Surkhet Valley.',
     rating: 4.7,
     totalReviews: 89,
-    address: "Business Address, Birendranagar, Surkhet",
-    phone: "+977-98XXXXXXXX",
-    email: "info@business.com",
-    hours: "9:00 AM - 6:00 PM, Sun-Fri",
+    address: 'Business Address, Birendranagar, Surkhet',
+    phone: '+977-98XXXXXXXX',
+    email: 'info@business.com',
+    hours: '9:00 AM - 6:00 PM, Sun-Fri',
   };
 
   const services: Service[] = [
     {
-      id: "1",
-      name: "Basic Service",
-      description: "Essential service package for small needs",
-      price: "Starting from Rs. 1,000",
+      id: '1',
+      name: 'Basic Service',
+      description: 'Essential service package for small needs',
+      price: 'Starting from Rs. 1,000',
       features: [
-        "Core feature one",
-        "Core feature two",
-        "Email support",
-        "Basic reporting",
+        'Core feature one',
+        'Core feature two',
+        'Email support',
+        'Basic reporting',
       ],
     },
     {
-      id: "2",
-      name: "Premium Service",
-      description: "Comprehensive solution with advanced features",
-      price: "Starting from Rs. 2,500",
+      id: '2',
+      name: 'Premium Service',
+      description: 'Comprehensive solution with advanced features',
+      price: 'Starting from Rs. 2,500',
       features: [
-        "All Basic features",
-        "Priority support",
-        "Advanced analytics",
-        "Customization options",
-        "Monthly reviews",
+        'All Basic features',
+        'Priority support',
+        'Advanced analytics',
+        'Customization options',
+        'Monthly reviews',
       ],
       popular: true,
     },
     {
-      id: "3",
-      name: "Enterprise Solution",
-      description: "Full-service package for large organizations",
-      price: "Starting from Rs. 5,000",
+      id: '3',
+      name: 'Enterprise Solution',
+      description: 'Full-service package for large organizations',
+      price: 'Starting from Rs. 5,000',
       features: [
-        "All Premium features",
-        "24/7 dedicated support",
-        "Custom development",
-        "Training sessions",
-        "SLA guarantee",
-        "Quarterly strategy sessions",
+        'All Premium features',
+        '24/7 dedicated support',
+        'Custom development',
+        'Training sessions',
+        'SLA guarantee',
+        'Quarterly strategy sessions',
       ],
     },
   ];
 
   const testimonials: Testimonial[] = [
     {
-      id: "1",
-      name: "Ramesh Thapa",
-      role: "Local Business Owner",
-      content: "Outstanding service that exceeded our expectations. The team was professional and delivered results on time.",
+      id: '1',
+      name: 'Ramesh Thapa',
+      role: 'Local Business Owner',
+      content:
+        'Outstanding service that exceeded our expectations. The team was professional and delivered results on time.',
       rating: 5,
-      avatar: "",
+      avatar: '',
     },
     {
-      id: "2",
-      name: "Sita Gurung",
-      role: "Entrepreneur",
-      content: "Reliable partners who understand our business needs. Their solutions have helped us grow significantly.",
+      id: '2',
+      name: 'Sita Gurung',
+      role: 'Entrepreneur',
+      content:
+        'Reliable partners who understand our business needs. Their solutions have helped us grow significantly.',
       rating: 4,
-      avatar: "",
+      avatar: '',
     },
     {
-      id: "3",
-      name: "Krishna KC",
-      role: "Community Leader",
-      content: "Exceptional quality and customer service. They truly care about their clients' success.",
+      id: '3',
+      name: 'Krishna KC',
+      role: 'Community Leader',
+      content:
+        "Exceptional quality and customer service. They truly care about their clients' success.",
       rating: 5,
-      avatar: "",
+      avatar: '',
     },
   ];
 
   const faqs: FAQ[] = [
     {
-      id: "1",
-      question: "How long does it take to see results?",
-      answer: "Most clients see significant improvements within 30-60 days, though results can vary based on specific needs and commitment levels."
+      id: '1',
+      question: 'How long does it take to see results?',
+      answer:
+        'Most clients see significant improvements within 30-60 days, though results can vary based on specific needs and commitment levels.',
     },
     {
-      id: "2",
-      question: "Do you offer customized solutions?",
-      answer: "Yes, we specialize in creating tailored solutions that align with your specific business goals and requirements."
+      id: '2',
+      question: 'Do you offer customized solutions?',
+      answer:
+        'Yes, we specialize in creating tailored solutions that align with your specific business goals and requirements.',
     },
     {
-      id: "3",
-      question: "What sets you apart from competitors?",
-      answer: "Our local expertise, personalized approach, and commitment to long-term partnerships distinguish us from generic service providers."
+      id: '3',
+      question: 'What sets you apart from competitors?',
+      answer:
+        'Our local expertise, personalized approach, and commitment to long-term partnerships distinguish us from generic service providers.',
     },
     {
-      id: "4",
-      question: "How do you ensure quality?",
-      answer: "We follow industry best practices, conduct regular quality checks, and maintain transparent communication throughout the process."
-    }
+      id: '4',
+      question: 'How do you ensure quality?',
+      answer:
+        'We follow industry best practices, conduct regular quality checks, and maintain transparent communication throughout the process.',
+    },
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -174,9 +181,9 @@ export default function GenericClientPage({
     alert(
       `Thank you ${name}! Your message has been sent to ${businessInfo.name}.`,
     );
-    setName("");
-    setEmail("");
-    setMessage("");
+    setName('');
+    setEmail('');
+    setMessage('');
   };
 
   // Refs for animations
@@ -186,11 +193,20 @@ export default function GenericClientPage({
   const faqRef = useRef(null);
   const contactRef = useRef(null);
 
-  const isHeroInView = useInView(heroRef, { once: true, margin: "-100px" });
-  const isServicesInView = useInView(servicesRef, { once: true, margin: "-100px" });
-  const isTestimonialsInView = useInView(testimonialsRef, { once: true, margin: "-100px" });
-  const isFAQInView = useInView(faqRef, { once: true, margin: "-100px" });
-  const isContactInView = useInView(contactRef, { once: true, margin: "-100px" });
+  const isHeroInView = useInView(heroRef, { once: true, margin: '-100px' });
+  const isServicesInView = useInView(servicesRef, {
+    once: true,
+    margin: '-100px',
+  });
+  const isTestimonialsInView = useInView(testimonialsRef, {
+    once: true,
+    margin: '-100px',
+  });
+  const isFAQInView = useInView(faqRef, { once: true, margin: '-100px' });
+  const isContactInView = useInView(contactRef, {
+    once: true,
+    margin: '-100px',
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -201,7 +217,9 @@ export default function GenericClientPage({
         <div className="relative z-20 flex flex-col items-center justify-center min-h-[70vh] px-6 py-20 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
-            animate={isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            animate={
+              isHeroInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+            }
             transition={{ duration: 0.6 }}
             className="max-w-4xl"
           >
@@ -219,22 +237,34 @@ export default function GenericClientPage({
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={`business-rating-star-${i}`}
-                    className={`w-5 h-5 ${i < Math.floor(businessInfo.rating)
-                      ? "fill-yellow-400 text-yellow-400"
-                      : "text-white/30"
-                      }`}
+                    className={`w-5 h-5 ${
+                      i < Math.floor(businessInfo.rating)
+                        ? 'fill-yellow-400 text-yellow-400'
+                        : 'text-white/30'
+                    }`}
                   />
                 ))}
-                <span className="ml-2 text-white font-medium">{businessInfo.rating}</span>
+                <span className="ml-2 text-white font-medium">
+                  {businessInfo.rating}
+                </span>
                 <span className="mx-2 text-white/50">•</span>
-                <span className="text-white/80">{businessInfo.totalReviews} reviews</span>
+                <span className="text-white/80">
+                  {businessInfo.totalReviews} reviews
+                </span>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="text-lg px-8 py-6 rounded-full bg-white text-primary hover:bg-white/90 transition-all duration-300 transform hover:scale-105">
+              <Button
+                size="lg"
+                className="text-lg px-8 py-6 rounded-full bg-white text-primary hover:bg-white/90 transition-all duration-300 transform hover:scale-105"
+              >
                 Get Started
               </Button>
-              <Button variant="outline" size="lg" className="text-lg px-8 py-6 rounded-full border-white text-white hover:bg-white/10 transition-all duration-300">
+              <Button
+                variant="outline"
+                size="lg"
+                className="text-lg px-8 py-6 rounded-full border-white text-white hover:bg-white/10 transition-all duration-300"
+              >
                 Contact Us
               </Button>
             </div>
@@ -247,11 +277,15 @@ export default function GenericClientPage({
         <section className="mb-24" ref={servicesRef}>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={isServicesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            animate={
+              isServicesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }
+            }
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Our Services</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Our Services
+            </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Comprehensive solutions tailored to meet your specific needs
             </p>
@@ -262,11 +296,17 @@ export default function GenericClientPage({
               <motion.div
                 key={service.id}
                 initial={{ opacity: 0, y: 30 }}
-                animate={isServicesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                animate={
+                  isServicesInView
+                    ? { opacity: 1, y: 0 }
+                    : { opacity: 0, y: 30 }
+                }
                 transition={{ duration: 0.6, delay: index * 0.1 }}
                 className="h-full"
               >
-                <Card className={`overflow-hidden h-full border-2 ${service.popular ? 'border-primary shadow-xl relative' : 'border-border'} rounded-2xl`}>
+                <Card
+                  className={`overflow-hidden h-full border-2 ${service.popular ? 'border-primary shadow-xl relative' : 'border-border'} rounded-2xl`}
+                >
                   {service.popular && (
                     <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-bold z-10">
                       MOST POPULAR
@@ -276,7 +316,9 @@ export default function GenericClientPage({
                     <CardTitle className="text-2xl">{service.name}</CardTitle>
                     <CardDescription>{service.description}</CardDescription>
                     <div className="mt-4">
-                      <span className="text-3xl font-bold text-primary">{service.price}</span>
+                      <span className="text-3xl font-bold text-primary">
+                        {service.price}
+                      </span>
                     </div>
                   </CardHeader>
                   <CardContent className="pb-6">
@@ -292,7 +334,7 @@ export default function GenericClientPage({
                   <CardFooter>
                     <Button
                       className={`w-full py-6 text-lg rounded-xl ${service.popular ? 'bg-primary hover:bg-primary/90' : 'bg-secondary hover:bg-secondary/90'}`}
-                      variant={service.popular ? "default" : "secondary"}
+                      variant={service.popular ? 'default' : 'secondary'}
                     >
                       Learn More
                     </Button>
@@ -307,13 +349,20 @@ export default function GenericClientPage({
         <section className="mb-24" ref={testimonialsRef}>
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={isTestimonialsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+            animate={
+              isTestimonialsInView
+                ? { opacity: 1, y: 0 }
+                : { opacity: 0, y: 30 }
+            }
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">What Our Clients Say</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              What Our Clients Say
+            </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Don't just take our word for it - hear from our satisfied customers
+              Don't just take our word for it - hear from our satisfied
+              customers
             </p>
           </motion.div>
 
@@ -322,32 +371,43 @@ export default function GenericClientPage({
               <motion.div
                 key={testimonial.id}
                 initial={{ opacity: 0, y: 30 }}
-                animate={isTestimonialsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+                animate={
+                  isTestimonialsInView
+                    ? { opacity: 1, y: 0 }
+                    : { opacity: 0, y: 30 }
+                }
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
                 <Card className="overflow-hidden h-full border border-border rounded-2xl">
                   <CardContent className="pt-8">
                     <div className="flex items-center mb-4">
                       <div className="bg-muted rounded-full w-12 h-12 flex items-center justify-center mr-4">
-                        <span className="font-bold">{testimonial.name.charAt(0)}</span>
+                        <span className="font-bold">
+                          {testimonial.name.charAt(0)}
+                        </span>
                       </div>
                       <div>
                         <h3 className="font-semibold">{testimonial.name}</h3>
-                        <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {testimonial.role}
+                        </p>
                       </div>
                     </div>
                     <div className="flex mb-4">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={`testimonial-rating-${testimonial.id}-${i}`}
-                          className={`w-4 h-4 ${i < testimonial.rating
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-gray-300"
-                            }`}
+                          className={`w-4 h-4 ${
+                            i < testimonial.rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
                         />
                       ))}
                     </div>
-                    <p className="text-muted-foreground">"{testimonial.content}"</p>
+                    <p className="text-muted-foreground">
+                      "{testimonial.content}"
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -363,7 +423,9 @@ export default function GenericClientPage({
             transition={{ duration: 0.6 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked Questions</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Frequently Asked Questions
+            </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Find answers to common questions about our services
             </p>
@@ -374,13 +436,17 @@ export default function GenericClientPage({
               <motion.div
                 key={faq.id}
                 initial={{ opacity: 0, y: 20 }}
-                animate={isFAQInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+                animate={
+                  isFAQInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }
+                }
                 transition={{ duration: 0.4, delay: index * 0.1 }}
               >
                 <Card className="border border-border rounded-xl overflow-hidden">
                   <CardHeader
                     className="cursor-pointer pb-4"
-                    onClick={() => setActiveFAQ(activeFAQ === faq.id ? null : faq.id)}
+                    onClick={() =>
+                      setActiveFAQ(activeFAQ === faq.id ? null : faq.id)
+                    }
                   >
                     <div className="flex justify-between items-center">
                       <CardTitle className="text-lg">{faq.question}</CardTitle>
@@ -412,10 +478,14 @@ export default function GenericClientPage({
             {/* Contact Info */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
-              animate={isContactInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
+              animate={
+                isContactInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }
+              }
               transition={{ duration: 0.6 }}
             >
-              <h2 className="text-3xl md:text-4xl font-bold mb-6">Get In Touch</h2>
+              <h2 className="text-3xl md:text-4xl font-bold mb-6">
+                Get In Touch
+              </h2>
               <p className="text-lg text-muted-foreground mb-8">
                 Ready to get started? Contact us today for a free consultation.
               </p>
@@ -425,7 +495,9 @@ export default function GenericClientPage({
                   <MapPin className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-lg">Location</h3>
-                    <p className="text-muted-foreground">{businessInfo.address}</p>
+                    <p className="text-muted-foreground">
+                      {businessInfo.address}
+                    </p>
                   </div>
                 </div>
 
@@ -433,7 +505,9 @@ export default function GenericClientPage({
                   <Phone className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-lg">Phone</h3>
-                    <p className="text-muted-foreground">{businessInfo.phone}</p>
+                    <p className="text-muted-foreground">
+                      {businessInfo.phone}
+                    </p>
                   </div>
                 </div>
 
@@ -441,7 +515,9 @@ export default function GenericClientPage({
                   <Mail className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-lg">Email</h3>
-                    <p className="text-muted-foreground">{businessInfo.email}</p>
+                    <p className="text-muted-foreground">
+                      {businessInfo.email}
+                    </p>
                   </div>
                 </div>
 
@@ -449,24 +525,30 @@ export default function GenericClientPage({
                   <Clock className="w-6 h-6 text-primary mr-4 mt-1 flex-shrink-0" />
                   <div>
                     <h3 className="font-semibold text-lg">Hours</h3>
-                    <p className="text-muted-foreground">{businessInfo.hours}</p>
+                    <p className="text-muted-foreground">
+                      {businessInfo.hours}
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="mt-10 p-6 bg-muted rounded-2xl">
-                <h3 className="font-semibold text-lg mb-3">Need Immediate Assistance?</h3>
-                <p className="text-muted-foreground mb-4">Call us directly for urgent inquiries.</p>
-                <Button className="w-full py-6">
-                  Call Now
-                </Button>
+                <h3 className="font-semibold text-lg mb-3">
+                  Need Immediate Assistance?
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  Call us directly for urgent inquiries.
+                </p>
+                <Button className="w-full py-6">Call Now</Button>
               </div>
             </motion.div>
 
             {/* Contact Form */}
             <motion.div
               initial={{ opacity: 0, x: 30 }}
-              animate={isContactInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }}
+              animate={
+                isContactInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }
+              }
               transition={{ duration: 0.6 }}
             >
               <Card className="border border-border rounded-2xl shadow-lg">
@@ -514,7 +596,10 @@ export default function GenericClientPage({
                         placeholder="How can we help you?"
                       />
                     </div>
-                    <Button type="submit" className="w-full py-6 text-lg rounded-xl">
+                    <Button
+                      type="submit"
+                      className="w-full py-6 text-lg rounded-xl"
+                    >
                       Send Message
                     </Button>
                   </form>

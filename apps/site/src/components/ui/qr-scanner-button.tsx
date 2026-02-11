@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { QrCode, X } from "lucide-react";
-import { DataMatrixScanner } from "@/components/ui/datamatrix-scanner";
-import { toast } from "sonner";
-import type { DataMatrixAction } from "@/lib/datamatrix";
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { QrCode, X } from 'lucide-react';
+import { DataMatrixScanner } from '@/components/ui/datamatrix-scanner';
+import { toast } from 'sonner';
+import type { DataMatrixAction } from '@/lib/datamatrix';
 
 interface QRScannerButtonProps extends React.HTMLAttributes<HTMLDivElement> {
   onActionDetected?: (action: DataMatrixAction) => void;
@@ -20,7 +20,7 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
       if (typeof window !== 'undefined') {
         return {
           x: window.innerWidth / 2 - 32,
-          y: window.innerHeight - 100
+          y: window.innerHeight - 100,
         };
       }
       return { x: 0, y: 0 }; // Fallback for SSR
@@ -30,12 +30,14 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
     const [isDragging, setIsDragging] = React.useState(false);
     const [dragStart, setDragStart] = React.useState({ x: 0, y: 0 });
     const [isOpen, setIsOpen] = React.useState(false);
-    const [initialPosition, setInitialPosition] = React.useState(getDefaultPosition());
+    const [initialPosition, setInitialPosition] = React.useState(
+      getDefaultPosition(),
+    );
     const buttonRef = React.useRef<HTMLButtonElement>(null);
 
     // Load position from localStorage on mount
     React.useEffect(() => {
-      const savedPosition = localStorage.getItem("qrScannerButtonPosition");
+      const savedPosition = localStorage.getItem('qrScannerButtonPosition');
       if (savedPosition) {
         try {
           const parsed = JSON.parse(savedPosition);
@@ -54,7 +56,10 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
     // Save position to localStorage with debounce
     React.useEffect(() => {
       const timer = setTimeout(() => {
-        localStorage.setItem("qrScannerButtonPosition", JSON.stringify(position));
+        localStorage.setItem(
+          'qrScannerButtonPosition',
+          JSON.stringify(position),
+        );
       }, 500);
 
       return () => clearTimeout(timer);
@@ -63,18 +68,18 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
     // Handle window resize
     React.useEffect(() => {
       const handleResize = () => {
-        setPosition(prev => {
+        setPosition((prev) => {
           // Keep button within viewport bounds
           const boundedPosition = {
             x: Math.max(0, Math.min(prev.x, window.innerWidth - 64)),
-            y: Math.max(0, Math.min(prev.y, window.innerHeight - 64))
+            y: Math.max(0, Math.min(prev.y, window.innerHeight - 64)),
           };
           return boundedPosition;
         });
       };
 
-      window.addEventListener("resize", handleResize);
-      return () => window.removeEventListener("resize", handleResize);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -82,27 +87,30 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
       setIsDragging(true);
       setDragStart({
         x: e.clientX - position.x,
-        y: e.clientY - position.y
+        y: e.clientY - position.y,
       });
       setInitialPosition(position);
     };
 
-    const handleMouseMove = React.useCallback((e: MouseEvent) => {
-      if (isDragging) {
-        const newPosition = {
-          x: e.clientX - dragStart.x,
-          y: e.clientY - dragStart.y
-        };
+    const handleMouseMove = React.useCallback(
+      (e: MouseEvent) => {
+        if (isDragging) {
+          const newPosition = {
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y,
+          };
 
-        // Keep button within viewport bounds
-        const boundedPosition = {
-          x: Math.max(0, Math.min(newPosition.x, window.innerWidth - 64)),
-          y: Math.max(0, Math.min(newPosition.y, window.innerHeight - 64))
-        };
+          // Keep button within viewport bounds
+          const boundedPosition = {
+            x: Math.max(0, Math.min(newPosition.x, window.innerWidth - 64)),
+            y: Math.max(0, Math.min(newPosition.y, window.innerHeight - 64)),
+          };
 
-        setPosition(boundedPosition);
-      }
-    }, [isDragging, dragStart]);
+          setPosition(boundedPosition);
+        }
+      },
+      [isDragging, dragStart],
+    );
 
     const handleMouseUp = React.useCallback(() => {
       setIsDragging(false);
@@ -110,7 +118,7 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
       // If the button didn't move much, treat it as a click
       const distance = Math.sqrt(
         (position.x - initialPosition.x) ** 2 +
-        (position.y - initialPosition.y) ** 2
+          (position.y - initialPosition.y) ** 2,
       );
 
       if (distance < 5) {
@@ -120,26 +128,26 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
 
     React.useEffect(() => {
       if (isDragging) {
-        document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseUp);
-        document.body.style.userSelect = "none";
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.body.style.userSelect = 'none';
       } else {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        document.body.style.userSelect = "";
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.userSelect = '';
       }
 
       return () => {
-        document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseUp);
-        document.body.style.userSelect = "";
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+        document.body.style.userSelect = '';
       };
     }, [isDragging, handleMouseMove, handleMouseUp]);
 
     const handleActionDetected = (action: DataMatrixAction) => {
       onActionDetected?.(action);
       setIsOpen(false);
-      toast.success("Action detected!");
+      toast.success('Action detected!');
     };
 
     return (
@@ -147,9 +155,9 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
         <div
           ref={ref}
           className={cn(
-            "fixed z-50 transition-all duration-200",
-            isDragging ? "cursor-grabbing" : "cursor-pointer",
-            className
+            'fixed z-50 transition-all duration-200',
+            isDragging ? 'cursor-grabbing' : 'cursor-pointer',
+            className,
           )}
           style={{
             left: `${position.x}px`,
@@ -161,8 +169,8 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
             ref={buttonRef}
             size="icon"
             className={cn(
-              "h-16 w-16 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl",
-              isDragging ? "scale-110" : ""
+              'h-16 w-16 rounded-full shadow-lg transition-all duration-200 hover:shadow-xl',
+              isDragging ? 'scale-110' : '',
             )}
             onMouseDown={handleMouseDown}
           >
@@ -209,9 +217,9 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
         )}
       </>
     );
-  }
+  },
 );
 
-QRScannerButton.displayName = "QRScannerButton";
+QRScannerButton.displayName = 'QRScannerButton';
 
 export { QRScannerButton, type QRScannerButtonProps };

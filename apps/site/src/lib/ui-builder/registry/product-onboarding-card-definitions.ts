@@ -1,12 +1,18 @@
-import type { ComponentLayer, ComponentRegistry } from "@/components/ui/ui-builder/types"
-import { commonFieldOverrides } from "./form-field-overrides"
-import { ProductOnboardingCard, ProductOnboardingCardSchema } from '@/components/onboarding/product-definition';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import { commonFieldOverrides } from './form-field-overrides';
+import {
+  ProductOnboardingCard,
+  ProductOnboardingCardSchema,
+} from '@/components/onboarding/product-definition';
 
 export const productOnboardingComponentDefinitions: ComponentRegistry = {
   ProductOnboardingCard: {
     component: ProductOnboardingCard,
     schema: ProductOnboardingCardSchema,
-    from: "@/components/onboarding/product-definition",
+    from: '@/components/onboarding/product-definition',
     fieldOverrides: commonFieldOverrides(),
     // props: {
     //   mainIcon: {
@@ -17,92 +23,92 @@ export const productOnboardingComponentDefinitions: ComponentRegistry = {
     // },
     defaultChildren: [
       {
-        id: "onboarding-main-icon",
-        type: "Icon",
-        name: "Icon",
+        id: 'onboarding-main-icon',
+        type: 'Icon',
+        name: 'Icon',
         props: {
-          iconName: "Sparkles",
-          size: "large",
-          className: "text-white",
+          iconName: 'Sparkles',
+          size: 'large',
+          className: 'text-white',
         },
         children: [],
       },
       {
-        id: "onboarding-title",
-        type: "span",
-        name: "span",
-        props: { className: "text-3xl font-bold" },
-        children: "Welcome to Our Product",
+        id: 'onboarding-title',
+        type: 'span',
+        name: 'span',
+        props: { className: 'text-3xl font-bold' },
+        children: 'Welcome to Our Product',
       },
       {
-        id: "onboarding-description",
-        type: "span",
-        name: "span",
-        props: { className: "text-muted-foreground" },
-        children: "Get started with our amazing features",
+        id: 'onboarding-description',
+        type: 'span',
+        name: 'span',
+        props: { className: 'text-muted-foreground' },
+        children: 'Get started with our amazing features',
       },
       {
-        id: "onboarding-card-content",
-        type: "Card",
-        name: "Card",
+        id: 'onboarding-card-content',
+        type: 'Card',
+        name: 'Card',
         props: {},
         children: [
           {
-            id: "onboarding-card-header",
-            type: "CardHeader",
-            name: "CardHeader",
+            id: 'onboarding-card-header',
+            type: 'CardHeader',
+            name: 'CardHeader',
             props: {},
             children: [
               {
-                id: "card-icon",
-                type: "Icon",
-                name: "Icon",
-                props: { iconName: "CheckCircle", size: "medium" },
+                id: 'card-icon',
+                type: 'Icon',
+                name: 'Icon',
+                props: { iconName: 'CheckCircle', size: 'medium' },
                 children: [],
               },
               {
-                id: "card-header-label",
-                type: "span",
-                name: "span",
+                id: 'card-header-label',
+                type: 'span',
+                name: 'span',
                 props: {
                   className:
-                    "text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+                    'text-xs font-semibold uppercase tracking-wider text-muted-foreground',
                 },
-                children: "FEATURE",
+                children: 'FEATURE',
               },
             ],
           },
           {
-            id: "onboarding-card-body",
-            type: "CardContent",
-            name: "CardContent",
+            id: 'onboarding-card-body',
+            type: 'CardContent',
+            name: 'CardContent',
             props: {},
             children: [
               {
-                id: "card-title",
-                type: "CardTitle",
-                name: "CardTitle",
+                id: 'card-title',
+                type: 'CardTitle',
+                name: 'CardTitle',
                 props: {},
-                children: "First Steps",
+                children: 'First Steps',
               },
               {
-                id: "card-description",
-                type: "CardDescription",
-                name: "CardDescription",
+                id: 'card-description',
+                type: 'CardDescription',
+                name: 'CardDescription',
                 props: {},
-                children: "Complete these initial tasks to get started",
+                children: 'Complete these initial tasks to get started',
               },
             ],
           },
         ],
       },
       {
-        id: "onboarding-button",
-        type: "Button",
-        name: "Button",
-        props: { className: "w-full max-w-xs", variant: "default" },
-        children: "Get Started",
+        id: 'onboarding-button',
+        type: 'Button',
+        name: 'Button',
+        props: { className: 'w-full max-w-xs', variant: 'default' },
+        children: 'Get Started',
       },
     ] satisfies ComponentLayer[],
   },
-}
+};

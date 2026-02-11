@@ -1,6 +1,6 @@
-import type { AutoFormFieldProps } from "../react";
-import type React from "react";
-import { AutoForm } from "../AutoForm";
+import type { AutoFormFieldProps } from '../react';
+import type React from 'react';
+import { AutoForm } from '../AutoForm';
 
 export const RecordField: React.FC<AutoFormFieldProps> = ({ inputProps }) => {
   const { key, ...props } = inputProps;

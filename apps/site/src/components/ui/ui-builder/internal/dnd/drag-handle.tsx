@@ -16,20 +16,15 @@ export const DragHandle: React.FC<DragHandleProps> = ({
   layerType,
   className,
 }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    isDragging,
-  } = useDraggable({
-    id: layerId,
-    data: {
-      type: 'layer',
-      layerId,
-      layerType,
-    },
-  });
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: layerId,
+      data: {
+        type: 'layer',
+        layerId,
+        layerType,
+      },
+    });
 
   const { setDragging } = useComponentDragContext();
 
@@ -51,14 +46,14 @@ export const DragHandle: React.FC<DragHandleProps> = ({
       {...listeners}
       {...attributes}
       className={cn(
-        "cursor-grab size-6 flex items-center justify-center active:cursor-grabbing bg-blue-500 text-white hover:bg-white hover:text-black p-1 rounded-lg z-50",
-        "opacity-100 transition-opacity duration-200",
-        isDragging && "cursor-grabbing opacity-0",
-        className
+        'cursor-grab size-6 flex items-center justify-center active:cursor-grabbing bg-blue-500 text-white hover:bg-white hover:text-black p-1 rounded-lg z-50',
+        'opacity-100 transition-opacity duration-200',
+        isDragging && 'cursor-grabbing opacity-0',
+        className,
       )}
       data-testid={`drag-handle-${layerId}`}
     >
-      {!isDragging && <GripVertical className='size-3' />}
+      {!isDragging && <GripVertical className="size-3" />}
     </div>
   );
 };

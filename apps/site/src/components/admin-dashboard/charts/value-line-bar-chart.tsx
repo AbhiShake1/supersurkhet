@@ -1,52 +1,52 @@
-"use client";
+'use client';
 
-import { TrendingUp } from "lucide-react";
-import { Bar, BarChart, Cell, XAxis, ReferenceLine } from "recharts";
-import React from "react";
-import { AnimatePresence } from "motion/react";
+import { TrendingUp } from 'lucide-react';
+import { Bar, BarChart, Cell, XAxis, ReferenceLine } from 'recharts';
+import React from 'react';
+import { AnimatePresence } from 'motion/react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { type ChartConfig, ChartContainer } from "@/components/ui/chart";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { useMotionValueEvent, useSpring } from "framer-motion";
+} from '@/components/ui/card';
+import { type ChartConfig, ChartContainer } from '@/components/ui/chart';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { useMotionValueEvent, useSpring } from 'framer-motion';
 
 const CHART_MARGIN = 35;
 
 const chartData = [
-  { month: "January", desktop: 342 },
-  { month: "February", desktop: 676 },
-  { month: "March", desktop: 512 },
-  { month: "April", desktop: 629 },
-  { month: "May", desktop: 458 },
-  { month: "June", desktop: 781 },
-  { month: "July", desktop: 394 },
-  { month: "August", desktop: 924 },
-  { month: "September", desktop: 647 },
-  { month: "October", desktop: 532 },
-  { month: "November", desktop: 803 },
-  { month: "December", desktop: 271 },
-  { month: "January", desktop: 342 },
-  { month: "February", desktop: 876 },
-  { month: "March", desktop: 512 },
-  { month: "April", desktop: 629 },
+  { month: 'January', desktop: 342 },
+  { month: 'February', desktop: 676 },
+  { month: 'March', desktop: 512 },
+  { month: 'April', desktop: 629 },
+  { month: 'May', desktop: 458 },
+  { month: 'June', desktop: 781 },
+  { month: 'July', desktop: 394 },
+  { month: 'August', desktop: 924 },
+  { month: 'September', desktop: 647 },
+  { month: 'October', desktop: 532 },
+  { month: 'November', desktop: 803 },
+  { month: 'December', desktop: 271 },
+  { month: 'January', desktop: 342 },
+  { month: 'February', desktop: 876 },
+  { month: 'March', desktop: 512 },
+  { month: 'April', desktop: 629 },
 ];
 
 const chartConfig = {
   desktop: {
-    label: "Desktop",
-    color: "var(--secondary-foreground)",
+    label: 'Desktop',
+    color: 'var(--secondary-foreground)',
   },
 } satisfies ChartConfig;
 
 export function ValueLineBarChart() {
   const [activeIndex, setActiveIndex] = React.useState<number | undefined>(
-    undefined
+    undefined,
   );
 
   const maxValueIndex = React.useMemo(() => {
@@ -59,7 +59,7 @@ export function ValueLineBarChart() {
       (max, data, index) => {
         return data.desktop > max.value ? { index, value: data.desktop } : max;
       },
-      { index: 0, value: 0 }
+      { index: 0, value: 0 },
     );
   }, [activeIndex]);
 
@@ -70,7 +70,7 @@ export function ValueLineBarChart() {
 
   const [springyValue, setSpringyValue] = React.useState(maxValueIndex.value);
 
-  useMotionValueEvent(maxValueIndexSpring, "change", (latest) => {
+  useMotionValueEvent(maxValueIndexSpring, 'change', (latest) => {
     setSpringyValue(Number(latest.toFixed(0)));
   });
 
@@ -82,9 +82,7 @@ export function ValueLineBarChart() {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <span
-            className={cn("text-2xl tracking-tighter")}
-          >
+          <span className={cn('text-2xl tracking-tighter')}>
             ${maxValueIndex.value}
           </span>
           <Badge variant="secondary">

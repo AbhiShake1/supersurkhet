@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Angular = (props: SVGProps<SVGSVGElement>) => (
   <svg {...props} fill="none" viewBox="0 0 242 256">
@@ -10,7 +10,7 @@ const Angular = (props: SVGProps<SVGSVGElement>) => (
         x="0"
         y="0"
         maskUnits="userSpaceOnUse"
-        style={{ maskType: "luminance" }}
+        style={{ maskType: 'luminance' }}
       >
         <path fill="#fff" d="M0 0h242v256H0V0Z" />
       </mask>

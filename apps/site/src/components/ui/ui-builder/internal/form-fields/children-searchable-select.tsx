@@ -1,15 +1,17 @@
-import React, { useCallback } from "react";
+import React, { useCallback } from 'react';
 
-import { X as XIcon, ChevronsUpDown } from "lucide-react";
-import {
-  useLayerStore,
-} from "@/lib/ui-builder/store/layer-store";
-import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
+import { X as XIcon, ChevronsUpDown } from 'lucide-react';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { AddComponentsPopover } from "@/components/ui/ui-builder/internal/components/add-component-popover";
-import { hasLayerChildren, isComponentLayer, createComponentLayer } from "@/lib/ui-builder/store/layer-utils";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
+import {
+  hasLayerChildren,
+  isComponentLayer,
+  createComponentLayer,
+} from '@/lib/ui-builder/store/layer-utils';
 
 interface ChildrenSearchableSelectProps {
   layer: ComponentLayer;
@@ -18,8 +20,20 @@ interface ChildrenSearchableSelectProps {
   fieldName?: string;
 }
 
-export function ChildrenSearchableSelect({ layer: _l, optionsFilter, fieldName, onChange }: ChildrenSearchableSelectProps) {
-  const { selectLayer, findLayerById, selectedLayerId, removeLayer, addComponentLayer, updateLayer } = useLayerStore();
+export function ChildrenSearchableSelect({
+  layer: _l,
+  optionsFilter,
+  fieldName,
+  onChange,
+}: ChildrenSearchableSelectProps) {
+  const {
+    selectLayer,
+    findLayerById,
+    selectedLayerId,
+    removeLayer,
+    addComponentLayer,
+    updateLayer,
+  } = useLayerStore();
 
   const layer = findLayerById(selectedLayerId)!;
 
@@ -43,84 +57,97 @@ export function ChildrenSearchableSelect({ layer: _l, optionsFilter, fieldName, 
   })();
 
   // Handle adding a component to the appropriate field
-  const handleAddComponent = useCallback(({ layerType, parentLayerId, addPosition }: {
-    layerType: string,
-    parentLayerId: string,
-    addPosition?: number
-  }) => {
-    if (!fieldName || fieldName === 'children') {
-      // For the 'children' field, use the default add logic
-      addComponentLayer(layerType as any, parentLayerId, addPosition);
-    } else {
-      // For other ReactNode fields, create the component and add it to the prop
-      const { registry } = useEditorStore.getState();
-      const newLayer = createComponentLayer(layerType, registry, {});
+  const handleAddComponent = useCallback(
+    ({
+      layerType,
+      parentLayerId,
+      addPosition,
+    }: {
+      layerType: string;
+      parentLayerId: string;
+      addPosition?: number;
+    }) => {
+      if (!fieldName || fieldName === 'children') {
+        // For the 'children' field, use the default add logic
+        addComponentLayer(layerType as any, parentLayerId, addPosition);
+      } else {
+        // For other ReactNode fields, create the component and add it to the prop
+        const { registry } = useEditorStore.getState();
+        const newLayer = createComponentLayer(layerType, registry, {});
 
-      // Get the current value of the field and update it with the new component
-      const currentPropValue = layer.props?.[fieldName];
-      let newPropValue;
+        // Get the current value of the field and update it with the new component
+        const currentPropValue = layer.props?.[fieldName];
+        let newPropValue;
 
-      if (isComponentLayer(currentPropValue)) {
-        // Existing single component - convert to array and add
-        newPropValue = [currentPropValue, newLayer];
-      } else if (Array.isArray(currentPropValue)) {
-        // Existing array - add to it
-        if (addPosition !== undefined) {
-          if (addPosition < 0) {
-            newPropValue = [newLayer, ...currentPropValue];
-          } else if (addPosition >= currentPropValue.length) {
-            newPropValue = [...currentPropValue, newLayer];
+        if (isComponentLayer(currentPropValue)) {
+          // Existing single component - convert to array and add
+          newPropValue = [currentPropValue, newLayer];
+        } else if (Array.isArray(currentPropValue)) {
+          // Existing array - add to it
+          if (addPosition !== undefined) {
+            if (addPosition < 0) {
+              newPropValue = [newLayer, ...currentPropValue];
+            } else if (addPosition >= currentPropValue.length) {
+              newPropValue = [...currentPropValue, newLayer];
+            } else {
+              newPropValue = [
+                ...currentPropValue.slice(0, addPosition),
+                newLayer,
+                ...currentPropValue.slice(addPosition),
+              ];
+            }
           } else {
-            newPropValue = [
-              ...currentPropValue.slice(0, addPosition),
-              newLayer,
-              ...currentPropValue.slice(addPosition)
-            ];
+            newPropValue = [...currentPropValue, newLayer];
           }
         } else {
-          newPropValue = [...currentPropValue, newLayer];
+          // No existing value - set as single component
+          newPropValue = newLayer;
         }
-      } else {
-        // No existing value - set as single component
-        newPropValue = newLayer;
+
+        // Update the layer in the store directly
+        updateLayer(layer.id, { [fieldName]: newPropValue });
+
+        // Also call onChange to update form state
+        onChange(newPropValue ?? []);
       }
-
-      // Update the layer in the store directly
-      updateLayer(layer.id, { [fieldName]: newPropValue });
-
-      // Also call onChange to update form state
-      onChange(newPropValue ?? []);
-    }
-  }, [fieldName, layer, onChange, updateLayer, addComponentLayer]);
+    },
+    [fieldName, layer, onChange, updateLayer, addComponentLayer],
+  );
 
   // Create a proper removal handler that can be used by ChildLayerBadge
-  const handleRemoveComponent = useCallback((childId: string) => {
-    // Remove the component from the specific field
-    if (!fieldName || fieldName === 'children') {
-      removeLayer(childId); // This will remove from children array
-    } else {
-      // Remove from the specific ReactNode prop and update form
-      const currentPropValue = layer.props?.[fieldName];
-      let newPropValue;
+  const handleRemoveComponent = useCallback(
+    (childId: string) => {
+      // Remove the component from the specific field
+      if (!fieldName || fieldName === 'children') {
+        removeLayer(childId); // This will remove from children array
+      } else {
+        // Remove from the specific ReactNode prop and update form
+        const currentPropValue = layer.props?.[fieldName];
+        let newPropValue;
 
-      if (isComponentLayer(currentPropValue) && currentPropValue.id === childId) {
-        // Single component - remove the entire prop
-        newPropValue = undefined;
-      } else if (Array.isArray(currentPropValue)) {
-        // Array of components - filter out the specific one
-        const filteredArray = currentPropValue.filter(item =>
-          !isComponentLayer(item) || item.id !== childId
-        );
-        newPropValue = filteredArray.length > 0 ? filteredArray : undefined;
+        if (
+          isComponentLayer(currentPropValue) &&
+          currentPropValue.id === childId
+        ) {
+          // Single component - remove the entire prop
+          newPropValue = undefined;
+        } else if (Array.isArray(currentPropValue)) {
+          // Array of components - filter out the specific one
+          const filteredArray = currentPropValue.filter(
+            (item) => !isComponentLayer(item) || item.id !== childId,
+          );
+          newPropValue = filteredArray.length > 0 ? filteredArray : undefined;
+        }
+
+        // Update the layer in the store directly
+        updateLayer(layer.id, { [fieldName]: newPropValue });
+
+        // Also call onChange to update form state
+        onChange(newPropValue ?? []);
       }
-
-      // Update the layer in the store directly
-      updateLayer(layer.id, { [fieldName]: newPropValue });
-
-      // Also call onChange to update form state
-      onChange(newPropValue ?? []);
-    }
-  }, [fieldName, layer, onChange, updateLayer]);
+    },
+    [fieldName, layer, onChange, updateLayer],
+  );
 
   return (
     <div className="w-full space-y-4">
@@ -157,7 +184,15 @@ export function ChildrenSearchableSelect({ layer: _l, optionsFilter, fieldName, 
   );
 }
 
-function ChildLayerBadge({ child, selectLayer, removeLayer }: { child: ComponentLayer, selectLayer: (id: string) => void, removeLayer: (id: string) => void }) {
+function ChildLayerBadge({
+  child,
+  selectLayer,
+  removeLayer,
+}: {
+  child: ComponentLayer;
+  selectLayer: (id: string) => void;
+  removeLayer: (id: string) => void;
+}) {
   const handleSelect = useCallback(() => {
     selectLayer(child.id);
   }, [selectLayer, child.id]);
@@ -170,17 +205,31 @@ function ChildLayerBadge({ child, selectLayer, removeLayer }: { child: Component
   if (!layerName) return null;
 
   return (
-    <Badge key={child.id} className="flex items-center space-x-2 pl-2 pr-0 py-0" variant="secondary">
-      <Button className="p-0 h-5" variant="link" size="sm" onClick={handleSelect}>
+    <Badge
+      key={child.id}
+      className="flex items-center space-x-2 pl-2 pr-0 py-0"
+      variant="secondary"
+    >
+      <Button
+        className="p-0 h-5"
+        variant="link"
+        size="sm"
+        onClick={handleSelect}
+      >
         {layerName}
       </Button>
-      <Button className="p-0 size-6 rounded-full" variant="ghost" size="icon" onClick={handleRemove}>
+      <Button
+        className="p-0 size-6 rounded-full"
+        variant="ghost"
+        size="icon"
+        onClick={handleRemove}
+      >
         <XIcon className="w-4 h-4" />
       </Button>
     </Badge>
-  )
+  );
 }
 
 const nameForLayer = (layer: ComponentLayer) => {
-  return layer.name || layer.type?.replaceAll("_", "");
+  return layer.name || layer.type?.replaceAll('_', '');
 };

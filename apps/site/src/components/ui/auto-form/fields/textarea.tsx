@@ -1,9 +1,9 @@
-import { FormControl, FormItem, FormMessage } from "@/components/ui/form";
-import { MentionInputTextarea } from "@/components/ui/mention-input-textarea";
-import AutoFormLabel from "../common/label";
-import AutoFormTooltip from "../common/tooltip";
-import type { AutoFormInputComponentProps } from "../types";
-import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
+import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
+import { MentionInputTextarea } from '@/components/ui/mention-input-textarea';
+import AutoFormLabel from '../common/label';
+import AutoFormTooltip from '../common/tooltip';
+import type { AutoFormInputComponentProps } from '../types';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 
 export default function AutoFormTextarea({
   label,
@@ -17,13 +17,13 @@ export default function AutoFormTextarea({
   const contextData = useLayerStore((state) => state.getSelectedContext());
 
   function formatedContext() {
-    if (!contextData) return {}
-    if ("context" in contextData) {
-      return contextData
+    if (!contextData) return {};
+    if ('context' in contextData) {
+      return contextData;
     }
     return {
       context: contextData,
-    }
+    };
   }
 
   return (

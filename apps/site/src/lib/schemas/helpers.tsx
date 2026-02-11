@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod';
 
 export function zStringified<T extends z.ZodTypeAny>(schema: T) {
   return z.string().superRefine((val, ctx) => {
@@ -8,16 +8,15 @@ export function zStringified<T extends z.ZodTypeAny>(schema: T) {
 
       if (!result.success) {
         ctx.addIssue({
-          code: "custom",
-          message: "String does not match required JSON shape",
+          code: 'custom',
+          message: 'String does not match required JSON shape',
         });
       }
     } catch (err) {
       ctx.addIssue({
-        code: "custom",
-        message: "Invalid JSON string",
+        code: 'custom',
+        message: 'Invalid JSON string',
       });
     }
   });
 }
-

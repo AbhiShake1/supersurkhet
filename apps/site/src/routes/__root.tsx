@@ -1,46 +1,50 @@
-import "@/lib/monkey-patches";
-import { VibeKanbanWebCompanion } from "vibe-kanban-web-companion";
-import { Agentation } from "agentation";
+import '@/lib/monkey-patches';
+import { VibeKanbanWebCompanion } from 'vibe-kanban-web-companion';
+import { Agentation } from 'agentation';
 import {
   HeadContent,
   Outlet,
   Scripts,
   createRootRouteWithContext,
-} from '@tanstack/react-router'
-import { NuqsAdapter } from "nuqs/adapters/tanstack-router";
-import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
-import { TanStackDevtools } from '@tanstack/react-devtools'
-import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
-import appCss from '../styles.css?url'
-import { NotFound } from "@/components/ui/not-found";
-import { ErrorComponent } from "@/components/ui/error";
-import { Toaster } from "@/components/ui/sonner";
-import { gun } from "@/lib/gun";
-import { TooltipProvider } from "@radix-ui/react-tooltip";
-import { useEffect } from "react";
-import { AuthProvider } from "@/components/auth-provider";
-import { ConfettiProvider } from "@/components/confetti-provider";
-import { LoginPromptProvider } from "@/components/login-prompt-provider";
+} from '@tanstack/react-router';
+import { NuqsAdapter } from 'nuqs/adapters/tanstack-router';
+import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools';
+import { TanStackDevtools } from '@tanstack/react-devtools';
+import TanStackQueryDevtools from '../integrations/tanstack-query/devtools';
+import appCss from '../styles.css?url';
+import { NotFound } from '@/components/ui/not-found';
+import { ErrorComponent } from '@/components/ui/error';
+import { Toaster } from '@/components/ui/sonner';
+import { gun } from '@/lib/gun';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
+import { useEffect } from 'react';
+import { AuthProvider } from '@/components/auth-provider';
+import { ConfettiProvider } from '@/components/confetti-provider';
+import { LoginPromptProvider } from '@/components/login-prompt-provider';
 import {
   GoogleLoginProvider,
   OneTapLoginProvider,
-} from "@/integrations/google/google-login-provider";
-import { setGTADefaultOptions } from "@/lib/gun/options";
-import { appSchema, transformSchema } from "@/lib/schema";
+} from '@/integrations/google/google-login-provider';
+import { setGTADefaultOptions } from '@/lib/gun/options';
+import { appSchema, transformSchema } from '@/lib/schema';
 // import { QRScannerButton } from "@/components/ui/qr-scanner-button";
 // import { toast } from "sonner";
 // import type { DataMatrixAction } from "@/lib/datamatrix";
-import { getAppTheme, getAppDarkMode, getAppThemeData } from "@/contexts/theme-context";
-import { ThemeProvider as ThemeModeProvider } from "@/contexts/theme-context";
-import { defaultPresets } from "@/lib/theme";
-import { getUser, removeUser } from "@/server-functions/user";
-import type { IGunUserInstance } from "gun/types";
-import z from "zod";
-import { getGunRef, mergeKeys } from "@/lib/gun/utils";
-import { I18nProvider } from "@/contexts/i18n-context";
-import { DialogProvider, DrawerProvider } from "@/contexts/dialog-context";
-import type { QueryClient } from '@tanstack/react-query'
-import { UserLoading } from "@/components/ui/user-loading";
+import {
+  getAppTheme,
+  getAppDarkMode,
+  getAppThemeData,
+} from '@/contexts/theme-context';
+import { ThemeProvider as ThemeModeProvider } from '@/contexts/theme-context';
+import { defaultPresets } from '@/lib/theme';
+import { getUser, removeUser } from '@/server-functions/user';
+import type { IGunUserInstance } from 'gun/types';
+import z from 'zod';
+import { getGunRef, mergeKeys } from '@/lib/gun/utils';
+import { I18nProvider } from '@/contexts/i18n-context';
+import { DialogProvider, DrawerProvider } from '@/contexts/dialog-context';
+import type { QueryClient } from '@tanstack/react-query';
+import { UserLoading } from '@/components/ui/user-loading';
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
 
@@ -56,21 +60,23 @@ async function getUserProfile() {
   const user = await getCurrentUser();
   if (!user) return null;
   return await new Promise<UserProfile>((resolve) => {
-    getGunRef(mergeKeys("user")).get(user.pub).once(resolve);
+    getGunRef(mergeKeys('user')).get(user.pub).once(resolve);
   });
 }
 
 async function getCurrentUser() {
   // const user = await recallUser();
-  const userLocal = await getUser()
+  const userLocal = await getUser();
   gun.user().auth(userLocal);
-  const user = gun.user().recall({ sessionStorage: false }) as IGunUserInstance<any, any, any, any> | undefined;
+  const user = gun.user().recall({ sessionStorage: false }) as
+    | IGunUserInstance<any, any, any, any>
+    | undefined;
   if (!user?.is) return null;
   return {
     pub: user.is.pub,
     email: user.is.alias,
     // @ts-expect-error
-    role: user._?.role || "user",
+    role: user._?.role || 'user',
     // @ts-expect-error
     businessId: user._?.businessId,
     // @ts-expect-error
@@ -93,119 +99,119 @@ async function recallUser() {
 
 function logout() {
   gun.user().leave();
-  removeUser()
+  removeUser();
   window.location.reload();
 }
 
 async function isAuthenticated() {
-  await recallUser()
+  await recallUser();
   return !!gun.user().is;
 }
 
 interface MyRouterContext {
-  queryClient: QueryClient
+  queryClient: QueryClient;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
   head: () => ({
     meta: [
       {
-        charSet: "utf-8",
+        charSet: 'utf-8',
       },
       {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
+        name: 'viewport',
+        content: 'width=device-width, initial-scale=1',
       },
       {
         title:
-          "SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive",
+          'SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive',
       },
       {
-        name: "description",
+        name: 'description',
         content:
-          "SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
+          'SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.',
       },
       {
-        name: "keywords",
+        name: 'keywords',
         content:
-          "Surkhet, digital platform, local businesses, community services, Nepal, marketplace, directory, events",
+          'Surkhet, digital platform, local businesses, community services, Nepal, marketplace, directory, events',
       },
       {
-        name: "author",
-        content: "SuperSurkhet Team",
+        name: 'author',
+        content: 'SuperSurkhet Team',
       },
       {
-        name: "robots",
-        content: "index, follow",
+        name: 'robots',
+        content: 'index, follow',
       },
       {
-        name: "twitter:url",
-        content: "https://surkhet.app",
+        name: 'twitter:url',
+        content: 'https://surkhet.app',
       },
       {
-        property: "og:url",
-        content: "https://surkhet.app",
+        property: 'og:url',
+        content: 'https://surkhet.app',
       },
       {
-        property: "og:title",
+        property: 'og:title',
         content:
-          "SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive",
+          'SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive',
       },
       {
-        property: "og:description",
+        property: 'og:description',
         content:
-          "SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
+          'SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.',
       },
       {
-        property: "og:type",
-        content: "website",
+        property: 'og:type',
+        content: 'website',
       },
       {
-        property: "og:locale",
-        content: "en_US",
+        property: 'og:locale',
+        content: 'en_US',
       },
       {
-        property: "og:site_name",
-        content: "SuperSurkhet",
+        property: 'og:site_name',
+        content: 'SuperSurkhet',
       },
       {
-        name: "twitter:card",
-        content: "summary_large_image",
+        name: 'twitter:card',
+        content: 'summary_large_image',
       },
       {
-        name: "twitter:title",
+        name: 'twitter:title',
         content:
-          "SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive",
+          'SuperSurkhet - Digital Hub of Surkhet | Connect, Discover, Thrive',
       },
       {
-        name: "twitter:description",
+        name: 'twitter:description',
         content:
-          "SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.",
+          'SuperSurkhet is your comprehensive digital platform connecting people, businesses, and services in Surkhet Valley. Discover local businesses, connect with community, and access essential services all in one place.',
       },
       {
-        property: "og:image",
-        content: "/og-image.png",
+        property: 'og:image',
+        content: '/og-image.png',
       },
       {
-        property: "og:image:width",
-        content: "1200",
+        property: 'og:image:width',
+        content: '1200',
       },
       {
-        property: "og:image:height",
-        content: "630",
+        property: 'og:image:height',
+        content: '630',
       },
       {
-        name: "twitter:image",
-        content: "/og-image.png",
+        name: 'twitter:image',
+        content: '/og-image.png',
       },
       {
-        name: "theme-color",
-        content: "#000000",
+        name: 'theme-color',
+        content: '#000000',
       },
     ],
     links: [
       {
-        rel: "stylesheet",
+        rel: 'stylesheet',
         href: appCss,
       },
       // {
@@ -213,44 +219,49 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       //   children: ctx.loaderData.criticalThemeCSS,
       // },
       {
-        rel: "icon",
-        type: "image/x-icon",
-        href: "/favicon.ico",
+        rel: 'icon',
+        type: 'image/x-icon',
+        href: '/favicon.ico',
       },
       {
-        rel: "apple-touch-icon",
-        sizes: "180x180",
-        href: "/apple-touch-icon.png",
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+        href: '/apple-touch-icon.png',
       },
       {
-        rel: "manifest",
-        href: "/manifest.json",
+        rel: 'manifest',
+        href: '/manifest.json',
       },
     ],
   }),
-  validateSearch: z.object({
-    p: z.string().optional().catch(undefined),
-  }).optional(),
+  validateSearch: z
+    .object({
+      p: z.string().optional().catch(undefined),
+    })
+    .optional(),
   loader: async () => {
     const savedThemeName = await getAppTheme();
     const savedDarkMode = await getAppDarkMode();
     const _savedTheme = await getAppThemeData();
-    const savedTheme = _savedTheme ?? defaultPresets["tangerine"].styles
+    const savedTheme = _savedTheme ?? defaultPresets['tangerine'].styles;
 
     // Generate critical CSS for the current theme to prevent FOUC
     let criticalThemeCSS = '';
     if (savedTheme) {
-      const themeToUse = savedDarkMode === 'true' ? savedTheme.dark : savedTheme.light;
-      const themeNotToUse = savedDarkMode === 'true' ? savedTheme.light : savedTheme.dark;
+      const themeToUse =
+        savedDarkMode === 'true' ? savedTheme.dark : savedTheme.light;
+      const themeNotToUse =
+        savedDarkMode === 'true' ? savedTheme.light : savedTheme.dark;
       if (themeToUse) {
         const variables = Object.entries({ ...themeNotToUse, ...themeToUse })
           .filter(([_, value]) => value !== undefined)
           .map(([key, value]) => `--${key}: ${value}`)
           .join('; ');
 
-        criticalThemeCSS = savedDarkMode === 'true'
-          ? `:root { ${variables}; } .dark { ${variables}; }`
-          : `:root { ${variables}; }`;
+        criticalThemeCSS =
+          savedDarkMode === 'true'
+            ? `:root { ${variables}; } .dark { ${variables}; }`
+            : `:root { ${variables}; }`;
       }
     }
 
@@ -258,7 +269,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       savedThemeName,
       savedDarkMode,
       savedTheme,
-      criticalThemeCSS
+      criticalThemeCSS,
     };
   },
   context: () => ({
@@ -268,38 +279,38 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
       isAuthenticated,
       getUserProfile,
     },
-    gun
+    gun,
   }),
   notFoundComponent: () => <NotFound />,
   errorComponent: () => <ErrorComponent />,
   pendingComponent: () => <UserLoading />,
   shellComponent: () => {
-    const loaderData = Route.useLoaderData()
-    return <RootDocument>
-      <style>
-        {loaderData.criticalThemeCSS}
-      </style>
-      <Toaster richColors />
-      <Outlet />
-      <VibeKanbanWebCompanion />
-      <TanStackDevtools
-        config={{
-          position: 'bottom-right',
-          openHotkey: ['Shift', 'd'],
-          triggerHidden: true,
-          hideUntilHover: true,
-        }}
-        plugins={[
-          {
-            name: 'Tanstack Router',
-            render: <TanStackRouterDevtoolsPanel />,
-          },
-          TanStackQueryDevtools,
-        ]}
-      />
-    </RootDocument>
+    const loaderData = Route.useLoaderData();
+    return (
+      <RootDocument>
+        <style>{loaderData.criticalThemeCSS}</style>
+        <Toaster richColors />
+        <Outlet />
+        <VibeKanbanWebCompanion />
+        <TanStackDevtools
+          config={{
+            position: 'bottom-right',
+            openHotkey: ['Shift', 'd'],
+            triggerHidden: true,
+            hideUntilHover: true,
+          }}
+          plugins={[
+            {
+              name: 'Tanstack Router',
+              render: <TanStackRouterDevtoolsPanel />,
+            },
+            TanStackQueryDevtools,
+          ]}
+        />
+      </RootDocument>
+    );
   },
-})
+});
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -308,7 +319,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     // Set up message listener for communication with Expo app
     const handleMessage = (event: MessageEvent) => {
       try {
-        const message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+        const message =
+          typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
 
         // Handle messages from the Expo app
         if (message.type === 'DEVICE_READY') {
@@ -432,10 +444,18 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   //   }
   // };
 
-  const loaderData = Route.useLoaderData()
+  const loaderData = Route.useLoaderData();
 
   return (
-    <html lang="en" className={loaderData.savedDarkMode === undefined || loaderData.savedDarkMode === 'true' ? 'dark' : ''}>
+    <html
+      lang="en"
+      className={
+        loaderData.savedDarkMode === undefined ||
+        loaderData.savedDarkMode === 'true'
+          ? 'dark'
+          : ''
+      }
+    >
       <head>
         <HeadContent />
       </head>
@@ -443,7 +463,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <div data-vaul-drawer-wrapper="">
           <NuqsAdapter>
             <I18nProvider>
-              <ThemeModeProvider savedDarkMode={loaderData.savedDarkMode} savedTheme={loaderData.savedTheme} savedThemeName={loaderData.savedThemeName}>
+              <ThemeModeProvider
+                savedDarkMode={loaderData.savedDarkMode}
+                savedTheme={loaderData.savedTheme}
+                savedThemeName={loaderData.savedThemeName}
+              >
                 <GoogleLoginProvider>
                   <AuthProvider>
                     <TooltipProvider>
@@ -472,5 +496,5 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         </div>
       </body>
     </html>
-  )
+  );
 }

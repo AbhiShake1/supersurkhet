@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 export interface KeyCombination {
   keys: {
@@ -15,7 +15,11 @@ export function useKeyboardShortcuts(combinations: KeyCombination[]) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       combinations.forEach((combo) => {
-        const { keys: { ctrlKey, metaKey, shiftKey, altKey }, key, handler } = combo;
+        const {
+          keys: { ctrlKey, metaKey, shiftKey, altKey },
+          key,
+          handler,
+        } = combo;
         const isMatch =
           (ctrlKey === undefined || event.ctrlKey === ctrlKey) &&
           (metaKey === undefined || event.metaKey === metaKey) &&
@@ -30,11 +34,11 @@ export function useKeyboardShortcuts(combinations: KeyCombination[]) {
       });
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
 
     // Cleanup event listener on unmount
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [combinations]);
 }

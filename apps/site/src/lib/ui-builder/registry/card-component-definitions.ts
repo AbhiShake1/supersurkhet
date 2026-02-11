@@ -1,8 +1,18 @@
-import type { ComponentLayer, ComponentRegistry } from "@/components/ui/ui-builder/types";
-import z from "zod";
-import { commonFieldOverrides } from "./form-field-overrides";
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import z from 'zod';
+import { commonFieldOverrides } from './form-field-overrides';
 
-import { Card, CardTitle, CardDescription, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
+import {
+  Card,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from '@/components/ui/card';
 
 export const cardComponentDefinitions: ComponentRegistry = {
   Card: {
@@ -14,75 +24,75 @@ export const cardComponentDefinitions: ComponentRegistry = {
     from: '@/components/ui/card',
     defaultChildren: [
       {
-        id: "card-header",
-        type: "CardHeader",
-        name: "CardHeader",
+        id: 'card-header',
+        type: 'CardHeader',
+        name: 'CardHeader',
         props: {},
         children: [
           {
-            id: "card-title",
-            type: "CardTitle",
-            name: "CardTitle",
+            id: 'card-title',
+            type: 'CardTitle',
+            name: 'CardTitle',
             props: {},
             children: [
               {
-                id: "card-title-text",
-                type: "span",
-                name: "span",
+                id: 'card-title-text',
+                type: 'span',
+                name: 'span',
                 props: {},
-                children: "Card Title",
+                children: 'Card Title',
               } satisfies ComponentLayer,
             ],
           },
           {
-            id: "card-description",
-            type: "CardDescription",
-            name: "CardDescription",
+            id: 'card-description',
+            type: 'CardDescription',
+            name: 'CardDescription',
             props: {},
             children: [
               {
-                id: "card-description-text",
-                type: "span",
-                name: "span",
+                id: 'card-description-text',
+                type: 'span',
+                name: 'span',
                 props: {},
-                children: "Card Description",
+                children: 'Card Description',
               } satisfies ComponentLayer,
             ],
           },
         ],
       },
       {
-        id: "card-content",
-        type: "CardContent",
-        name: "CardContent",
+        id: 'card-content',
+        type: 'CardContent',
+        name: 'CardContent',
         props: {},
         children: [
           {
-            id: "card-content-paragraph",
-            type: "span",
-            name: "span",
+            id: 'card-content-paragraph',
+            type: 'span',
+            name: 'span',
             props: {},
-            children: "Card Content",
+            children: 'Card Content',
           } satisfies ComponentLayer,
         ],
       },
       {
-        id: "card-footer",
-        type: "CardFooter",
-        name: "CardFooter",
+        id: 'card-footer',
+        type: 'CardFooter',
+        name: 'CardFooter',
         props: {},
         children: [
           {
-            id: "card-footer-paragraph",
-            type: "span",
-            name: "span",
+            id: 'card-footer-paragraph',
+            type: 'span',
+            name: 'span',
             props: {},
-            children: "Card Footer",
+            children: 'Card Footer',
           } satisfies ComponentLayer,
         ],
       },
     ],
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: commonFieldOverrides(),
   },
   CardHeader: {
     component: CardHeader,
@@ -91,7 +101,7 @@ export const cardComponentDefinitions: ComponentRegistry = {
       children: z.any().optional(),
     }),
     from: '@/components/ui/card',
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: commonFieldOverrides(),
   },
   CardFooter: {
     component: CardFooter,
@@ -100,7 +110,7 @@ export const cardComponentDefinitions: ComponentRegistry = {
       children: z.any().optional(),
     }),
     from: '@/components/ui/card',
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: commonFieldOverrides(),
   },
   CardTitle: {
     component: CardTitle,
@@ -109,7 +119,7 @@ export const cardComponentDefinitions: ComponentRegistry = {
       children: z.any().optional(),
     }),
     from: '@/components/ui/card',
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: commonFieldOverrides(),
   },
   CardDescription: {
     component: CardDescription,
@@ -118,7 +128,7 @@ export const cardComponentDefinitions: ComponentRegistry = {
       children: z.any().optional(),
     }),
     from: '@/components/ui/card',
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: commonFieldOverrides(),
   },
   CardContent: {
     component: CardContent,
@@ -127,6 +137,6 @@ export const cardComponentDefinitions: ComponentRegistry = {
       children: z.any().optional(),
     }),
     from: '@/components/ui/card',
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: commonFieldOverrides(),
   },
-}
+};

@@ -1,13 +1,13 @@
-import Gun from "gun/gun";
-import { hash } from "./hash";
+import Gun from 'gun/gun';
+import { hash } from './hash';
 
-const SCOPE_FIELD = "\u2316";
-let preset = "";
+const SCOPE_FIELD = '\u2316';
+let preset = '';
 
 type GunInternals = {
   is(value: unknown): boolean;
   obj: { is(value: unknown): value is Record<string, unknown> };
-  on(event: "opt"): { event(handler: (gun: ChainNode) => void): void };
+  on(event: 'opt'): { event(handler: (gun: ChainNode) => void): void };
   chain: {
     get: (...args: unknown[]) => unknown;
     key: (...args: unknown[]) => unknown;
@@ -54,12 +54,12 @@ function find(chain: unknown, cb: (node: ChainNode) => unknown): unknown {
 
 function findScope(instance: ChainNode): string {
   let found = find(instance, (chain) => chain._?.[SCOPE_FIELD]);
-  found = typeof found === "string" ? found : instance.__?.[SCOPE_FIELD];
-  return typeof found === "string" ? found : "";
+  found = typeof found === 'string' ? found : instance.__?.[SCOPE_FIELD];
+  return typeof found === 'string' ? found : '';
 }
 
 function prefix(gunChain: ChainNode, name: unknown): unknown {
-  if (typeof name === "string") {
+  if (typeof name === 'string') {
     const scope = findScope(gunChain);
     const match = new RegExp(`^${scope}`);
     if (!name.match(match)) {
@@ -70,10 +70,10 @@ function prefix(gunChain: ChainNode, name: unknown): unknown {
 
   if (gun.obj.is(name)) {
     const value = name as Record<string, unknown>;
-    if (!value["#"]) {
+    if (!value['#']) {
       return value;
     }
-    value["#"] = prefix(gunChain, value["#"]);
+    value['#'] = prefix(gunChain, value['#']);
     return value;
   }
 
@@ -81,23 +81,23 @@ function prefix(gunChain: ChainNode, name: unknown): unknown {
 }
 
 gun.scope = (name: string) => {
-  preset = typeof name === "string" ? hash(name) : preset;
+  preset = typeof name === 'string' ? hash(name) : preset;
   return Gun;
 };
 
-gun.on("opt").event((instance) => {
+gun.on('opt').event((instance) => {
   instance.__[SCOPE_FIELD] = (instance.__[SCOPE_FIELD] as string) || preset;
 });
 
 gun.chain.scope = function scope(name: string | null) {
   const chain = (this as ChainNode).chain();
 
-  if (typeof name === "string") {
+  if (typeof name === 'string') {
     chain._[SCOPE_FIELD] = hash(name);
   }
 
   if (name === null) {
-    chain._[SCOPE_FIELD] = "";
+    chain._[SCOPE_FIELD] = '';
   }
 
   return chain;
@@ -126,6 +126,6 @@ const scopedRandom = ((originalRandom) =>
 
 gun.text.random = scopedRandom;
 
-gun.text.random.scope = "";
+gun.text.random.scope = '';
 
 export default Gun;

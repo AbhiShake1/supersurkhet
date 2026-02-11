@@ -1,44 +1,47 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   Users,
   CreditCard,
   Search,
   UserPlus,
   Mail,
-  PartyPopper
-} from "lucide-react";
-import { AutoForm, fieldConfig } from "../autoform";
-import { z } from "zod";
-import { api } from "@/lib/api";
-import type { BusinessInvitation, BusinessMember } from "@/lib/schema";
-import { Avatar, AvatarImage, AvatarFallback } from "../avatar";
-import { sendMail } from "@/emails/send-mail";
-import InvitationEmail from "@/emails/invitation-template";
-import { useAuth } from "@/components/auth-provider";
-import { toast } from "sonner";
-import { render } from "@react-email/render";
-import type { PossibleTabConfig } from "@/components/auto-admin";
-import { AutoFormSubmit } from "../auto-form";
-import { ConfettiButton } from "@/components/magicui/confetti";
+  PartyPopper,
+} from 'lucide-react';
+import { AutoForm, fieldConfig } from '../autoform';
+import { z } from 'zod';
+import { api } from '@/lib/api';
+import type { BusinessInvitation, BusinessMember } from '@/lib/schema';
+import { Avatar, AvatarImage, AvatarFallback } from '../avatar';
+import { sendMail } from '@/emails/send-mail';
+import InvitationEmail from '@/emails/invitation-template';
+import { useAuth } from '@/components/auth-provider';
+import { toast } from 'sonner';
+import { render } from '@react-email/render';
+import type { PossibleTabConfig } from '@/components/auto-admin';
+import { AutoFormSubmit } from '../auto-form';
+import { ConfettiButton } from '@/components/magicui/confetti';
 
-type Invitation = BusinessInvitation
+type Invitation = BusinessInvitation;
 type Member = BusinessMember;
 
 interface ManageOrganizationProps {
-  slug: string
-  tabs: PossibleTabConfig[]
+  slug: string;
+  tabs: PossibleTabConfig[];
 }
 
 export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
-  const [activeTab, setActiveTab] = useState("members");
-  const [searchTerm, setSearchTerm] = useState("");
-  const members = useOrgMembers(slug)
+  const [activeTab, setActiveTab] = useState('members');
+  const [searchTerm, setSearchTerm] = useState('');
+  const members = useOrgMembers(slug);
   const [showInviteForm, setShowInviteForm] = useState(false);
   const { user } = useAuth();
-  const { data: businesses } = api.business.useGet({ keys: [slug], single: true });
+  const { data: businesses } = api.business.useGet({
+    keys: [slug],
+    single: true,
+  });
   const business = businesses?.[0];
   const updateBusinessMutation = api.business.useUpdate();
 
@@ -46,7 +49,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
   const handleInviteMember = async (data: any) => {
     try {
       if (!business) {
-        toast.error("Business not found");
+        toast.error('Business not found');
       }
 
       // Generate a unique token for the invitation
@@ -58,17 +61,17 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
       // Send the invitation email. dont wait
       sendMail({
         data: {
-          from: "SuperSurkhet <onboarding@surkhet.app>",
+          from: 'SuperSurkhet <onboarding@surkhet.app>',
           to: data.email,
           subject: `Invitation to join ${business!.name}`,
           html: await render(
             <InvitationEmail
-              inviterName={user?.name || user?.email || "A user"}
+              inviterName={user?.name || user?.email || 'A user'}
               businessName={business!.name}
               inviteeEmail={data.email}
               role="staff" // Default role, can be changed based on requirements
               invitationUrl={invitationUrl}
-            />
+            />,
           ),
         },
       });
@@ -78,18 +81,18 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
         invitations: {
           [invitationToken]: {
             email: data.email,
-            role: "staff",
+            role: 'staff',
             permissions: data.permissions,
             invitedAt: Date.now(),
             token: invitationToken,
-          }
-        }
+          },
+        },
       });
 
       setShowInviteForm(false);
     } catch (error) {
-      console.error("Error sending invitation:", error);
-      toast.error("Failed to send invitation. Please try again.");
+      console.error('Error sending invitation:', error);
+      toast.error('Failed to send invitation. Please try again.');
     }
   };
 
@@ -112,15 +115,17 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
   };
 
   const navigationItems = [
-    { id: "members", label: "Members", icon: Users },
-    { id: "invitations", label: "Invitations", icon: Mail },
-    { id: "billing", label: "Billing", icon: CreditCard },
+    { id: 'members', label: 'Members', icon: Users },
+    { id: 'invitations', label: 'Invitations', icon: Mail },
+    { id: 'billing', label: 'Billing', icon: CreditCard },
   ];
 
   return (
     <div className="flex flex-col min-w-0">
       {/* Sidebar */}
-      <div className={`w-full bg-card border-r transition-all duration-300 flex flex-row`}>
+      <div
+        className={`w-full bg-card border-r transition-all duration-300 flex flex-row`}
+      >
         <nav className="flex-1 p-2">
           <ul className="space-x-1 flex flex-row justify-center">
             {navigationItems.map((item) => {
@@ -128,8 +133,8 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
               return (
                 <li key={item.id}>
                   <Button
-                    variant={activeTab === item.id ? "secondary" : "ghost"}
-                    className={`w-full justify-start ${activeTab === item.id ? "font-semibold" : ""}`}
+                    variant={activeTab === item.id ? 'secondary' : 'ghost'}
+                    className={`w-full justify-start ${activeTab === item.id ? 'font-semibold' : ''}`}
                     onClick={() => setActiveTab(item.id)}
                   >
                     <Icon className="h-4 w-4 mr-3" />
@@ -144,7 +149,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
 
       {/* Main Content */}
       <div className="flex-1 p-6">
-        {activeTab === "members" && (
+        {activeTab === 'members' && (
           <MembersTab
             members={members}
             searchTerm={searchTerm}
@@ -158,29 +163,29 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
             slug={slug}
           />
         )}
-        {activeTab === "invitations" && (
+        {activeTab === 'invitations' && (
           <InvitationsTab
             slug={slug}
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
           />
         )}
-        {activeTab === "billing" && (
-          <BillingTab />
-        )}
+        {activeTab === 'billing' && <BillingTab />}
       </div>
     </div>
   );
 }
 
 const BillingTab = () => {
-  return "Coming Soon!"
-}
+  return 'Coming Soon!';
+};
 
 function useOrgMembers(slug: string) {
-  const { data } = api.business.useGet({ keys: [slug], single: true })
-  if (!data?.[0]?.members) return []
-  return Object.values(data?.[0]?.members).filter(m => typeof m === "object" && !!m.userId)
+  const { data } = api.business.useGet({ keys: [slug], single: true });
+  if (!data?.[0]?.members) return [];
+  return Object.values(data?.[0]?.members).filter(
+    (m) => typeof m === 'object' && !!m.userId,
+  );
 }
 
 // Members Tab Component
@@ -204,8 +209,8 @@ const MembersTab = ({
   onInviteMember: (data: any) => void;
   onUpdatePermissions: (id: string, permissions: string[]) => void;
   onRemoveMember: (id: string) => void;
-  tabs: PossibleTabConfig[]
-  slug: string
+  tabs: PossibleTabConfig[];
+  slug: string;
 }) => {
   return (
     <div className="space-y-6">
@@ -218,7 +223,10 @@ const MembersTab = ({
           className="w-[30%]"
           leadingIcon={<Search className="h-4 w-4" />}
         />
-        <Button onClick={() => setShowInviteForm(!showInviteForm)} className="gap-2">
+        <Button
+          onClick={() => setShowInviteForm(!showInviteForm)}
+          className="gap-2"
+        >
           <UserPlus className="h-4 w-4" />
           Invite
         </Button>
@@ -229,8 +237,13 @@ const MembersTab = ({
           <h3 className="text-lg font-medium mb-4">Invite New Member</h3>
           <AutoForm
             schema={z.object({
-              email: z.string().email("Invalid email address"),
-              permissions: z.record(z.string(), z.boolean()).superRefine(fieldConfig({ fieldType: "permissions", customData: { tabs, slug } })),
+              email: z.string().email('Invalid email address'),
+              permissions: z.record(z.string(), z.boolean()).superRefine(
+                fieldConfig({
+                  fieldType: 'permissions',
+                  customData: { tabs, slug },
+                }),
+              ),
             })}
             onSubmit={onInviteMember}
           >
@@ -291,18 +304,20 @@ const MemberRow = ({
   onRemoveMember: (id: string) => void;
   searchTerm: string;
 }) => {
-  const { data } = api.user.useGet({ keys: [userId?.substring(1)], single: true })
-  const member = data?.[0]
+  const { data } = api.user.useGet({
+    keys: [userId?.substring(1)],
+    single: true,
+  });
+  const member = data?.[0];
 
-  if (!member) return null
+  if (!member) return null;
 
   if (
     !!searchTerm &&
-    (
-      !member.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      || !member.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  ) return null
+    (!member.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      !member.email?.toLowerCase().includes(searchTerm.toLowerCase()))
+  )
+    return null;
 
   return (
     <tr>
@@ -310,29 +325,37 @@ const MemberRow = ({
         <div className="flex items-center">
           <div className="flex-shrink-0 h-10 w-10">
             <Avatar className="bg-card border-2 border-dashed rounded-xl w-10 h-10">
-              <AvatarImage src={member?.avatar} alt={member?.name} className="rounded-xl" />
+              <AvatarImage
+                src={member?.avatar}
+                alt={member?.name}
+                className="rounded-xl"
+              />
               <AvatarFallback className="rounded-xl">
-                <span>{member?.name?.substring(0, 1)?.toUpperCase() ?? "U"}</span>
+                <span>
+                  {member?.name?.substring(0, 1)?.toUpperCase() ?? 'U'}
+                </span>
               </AvatarFallback>
             </Avatar>
           </div>
           <div className="ml-4">
-            <div className="text-sm font-medium text-foreground">{member?.name}</div>
+            <div className="text-sm font-medium text-foreground">
+              {member?.name}
+            </div>
             <div className="text-sm text-muted-foreground">{member?.email}</div>
           </div>
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <Badge variant="secondary" className="rounded-xl">{role}</Badge>
+        <Badge variant="secondary" className="rounded-xl">
+          {role}
+        </Badge>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         {
           <div className="flex flex-wrap gap-1">
-            {
-              role === "owner" ?
-                "*"
-                : permissions && `${Object.keys(permissions).length} Permissions`
-            }
+            {role === 'owner'
+              ? '*'
+              : permissions && `${Object.keys(permissions).length} Permissions`}
           </div>
         }
       </td>
@@ -347,16 +370,17 @@ const MemberRow = ({
 const InvitationsTab = ({
   slug,
   searchTerm,
-  setSearchTerm
+  setSearchTerm,
 }: {
   slug: string;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
 }) => {
   const invitations = useOrgInvitations(slug);
-  const filteredInvitations = invitations.filter(invitation =>
-    !searchTerm ||
-    invitation.email.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredInvitations = invitations.filter(
+    (invitation) =>
+      !searchTerm ||
+      invitation.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
@@ -393,7 +417,8 @@ const InvitationsTab = ({
           <tbody className="bg-card divide-y divide-gray-200">
             {filteredInvitations.map((invitation) => (
               <InvitationRow
-                role key={invitation.email}
+                role
+                key={invitation.email}
                 invitation={invitation}
                 searchTerm={searchTerm}
               />
@@ -415,10 +440,8 @@ const InvitationRow = ({
 
   searchTerm: string;
 }) => {
-  if (
-    !!searchTerm &&
-    !email?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) return null;
+  if (!!searchTerm && !email?.toLowerCase().includes(searchTerm.toLowerCase()))
+    return null;
 
   return (
     <tr>
@@ -426,12 +449,14 @@ const InvitationRow = ({
         <div className="text-sm font-medium text-foreground">{email}</div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <Badge variant="secondary" className="rounded-xl">{role}</Badge>
+        <Badge variant="secondary" className="rounded-xl">
+          {role}
+        </Badge>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="flex flex-wrap gap-1">
-          {role === "owner"
-            ? "*"
+          {role === 'owner'
+            ? '*'
             : permissions && `${Object.keys(permissions).length} Permissions`}
         </div>
       </td>
@@ -446,6 +471,7 @@ const InvitationRow = ({
 function useOrgInvitations(slug: string) {
   const { data } = api.business.useGet({ keys: [slug], single: true });
   if (!data?.[0]?.invitations) return [];
-  return Object.values(data?.[0]?.invitations).filter(inv => typeof inv === "object" && !!inv.email);
+  return Object.values(data?.[0]?.invitations).filter(
+    (inv) => typeof inv === 'object' && !!inv.email,
+  );
 }
-

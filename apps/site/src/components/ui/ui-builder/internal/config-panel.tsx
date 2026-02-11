@@ -1,13 +1,11 @@
-import type React from "react";
-import { useCallback, useMemo } from "react";
-import { z } from "zod";
-import {
-  useLayerStore,
-} from "@/lib/ui-builder/store/layer-store";
-import { Button } from "@/components/ui/button";
-import AutoForm from "@/components/ui/auto-form";
-import { addDefaultValues } from "@/lib/ui-builder/store/schema-utils";
-import type { ComponentLayer } from "@/components/ui/ui-builder/types";
+import type React from 'react';
+import { useCallback, useMemo } from 'react';
+import { z } from 'zod';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { Button } from '@/components/ui/button';
+import AutoForm from '@/components/ui/auto-form';
+import { addDefaultValues } from '@/lib/ui-builder/store/schema-utils';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 
 export const ConfigPanel = () => {
   const {
@@ -25,7 +23,7 @@ export const ConfigPanel = () => {
     (layerId: string) => {
       removeLayer(layerId);
     },
-    [removeLayer]
+    [removeLayer],
   );
 
   const handleDuplicateLayer = useCallback(() => {
@@ -38,11 +36,11 @@ export const ConfigPanel = () => {
     (
       id: string,
       props: Record<string, any>,
-      rest?: Omit<ComponentLayer, "props" | "children">
+      rest?: Omit<ComponentLayer, 'props' | 'children'>,
     ) => {
       updateLayer(id, props, rest);
     },
-    [updateLayer]
+    [updateLayer],
   );
 
   return (
@@ -63,7 +61,7 @@ interface PageLayerFormProps {
   updateLayerProps: (
     id: string,
     props: Record<string, any>,
-    rest?: Omit<ComponentLayer, "props" | "children">
+    rest?: Omit<ComponentLayer, 'props' | 'children'>,
   ) => void;
   allowDelete: boolean;
 }
@@ -75,10 +73,13 @@ const PageLayerForm: React.FC<PageLayerFormProps> = ({
   updateLayerProps,
   allowDelete,
 }) => {
-
-  const schema = useMemo(() => z.object({
-    name: z.string().min(1, "Name is required"),
-  }), []);
+  const schema = useMemo(
+    () =>
+      z.object({
+        name: z.string().min(1, 'Name is required'),
+      }),
+    [],
+  );
 
   const handleSetValues = useCallback(
     (data: Partial<z.infer<typeof schema>>) => {
@@ -90,25 +91,35 @@ const PageLayerForm: React.FC<PageLayerFormProps> = ({
 
       updateLayerProps(selectedLayer.id, props, rest);
     },
-    [selectedLayer, updateLayerProps]
+    [selectedLayer, updateLayerProps],
   );
 
-  const formSchema = useMemo(() => addDefaultValues(schema, {
-    name: selectedLayer.name,
-  }), [selectedLayer, schema]);
+  const formSchema = useMemo(
+    () =>
+      addDefaultValues(schema, {
+        name: selectedLayer.name,
+      }),
+    [selectedLayer, schema],
+  );
 
-  const values = useMemo(() => ({
-    name: selectedLayer.name,
-  }), [selectedLayer]);
+  const values = useMemo(
+    () => ({
+      name: selectedLayer.name,
+    }),
+    [selectedLayer],
+  );
 
-  const fieldConfig = useMemo(() => ({
-    name: {
-      inputProps: {
-        value: selectedLayer.name,
-        // defaultValue: selectedLayer.name,
+  const fieldConfig = useMemo(
+    () => ({
+      name: {
+        inputProps: {
+          value: selectedLayer.name,
+          // defaultValue: selectedLayer.name,
+        },
       },
-    },
-  }), [selectedLayer]);
+    }),
+    [selectedLayer],
+  );
 
   const handleDuplicateLayer = useCallback(() => {
     duplicateLayer(selectedLayer.id);

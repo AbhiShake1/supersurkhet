@@ -1,25 +1,25 @@
-import type React from "react";
+import type React from 'react';
 import {
   FormControl,
   FormDescription,
   FormItem,
   FormLabel,
-} from "@/components/ui/form";
-import { ChildrenSearchableSelect } from "@/components/ui/ui-builder/internal/form-fields/children-searchable-select";
+} from '@/components/ui/form';
+import { ChildrenSearchableSelect } from '@/components/ui/ui-builder/internal/form-fields/children-searchable-select';
 import type {
   AutoFormInputComponentProps,
   ComponentLayer,
   FieldConfigFunction,
-} from "@/components/ui/ui-builder/types";
-import IconNameField from "@/components/ui/ui-builder/internal/form-fields/iconname-field";
-import { MinimalTiptapEditor } from "@/components/ui/minimal-tiptap/minimal-tiptap";
-import { useLayerStore } from "../store/layer-store";
-import BreakpointClassNameControl from "@/components/ui/ui-builder/internal/form-fields/classname-control";
-import { MentionInput } from "@/components/ui/mention-input";
-import { MentionInputTextarea } from "@/components/ui/mention-input-textarea";
-import { Combobox } from "@/components/ui/combobox";
-import { useBusiness } from "@/contexts/business-context";
-import { useBusinessConfig } from "@/config/business-config";
+} from '@/components/ui/ui-builder/types';
+import IconNameField from '@/components/ui/ui-builder/internal/form-fields/iconname-field';
+import { MinimalTiptapEditor } from '@/components/ui/minimal-tiptap/minimal-tiptap';
+import { useLayerStore } from '../store/layer-store';
+import BreakpointClassNameControl from '@/components/ui/ui-builder/internal/form-fields/classname-control';
+import { MentionInput } from '@/components/ui/mention-input';
+import { MentionInputTextarea } from '@/components/ui/mention-input-textarea';
+import { Combobox } from '@/components/ui/combobox';
+import { useBusiness } from '@/contexts/business-context';
+import { useBusinessConfig } from '@/config/business-config';
 
 export const classNameFieldOverrides: FieldConfigFunction = () => {
   return {
@@ -43,10 +43,9 @@ export const classNameFieldOverrides: FieldConfigFunction = () => {
   };
 };
 
-export const childrenFieldOverrides: FieldConfigFunction<{ optionsFilter?: (k: string) => boolean }> = (
-  layer,
-  options
-) => {
+export const childrenFieldOverrides: FieldConfigFunction<{
+  optionsFilter?: (k: string) => boolean;
+}> = (layer, options) => {
   return {
     fieldType: ({
       label,
@@ -92,7 +91,7 @@ export const iconNameFieldOverrides: FieldConfigFunction = (layer) => {
 };
 
 export const childrenAsTextareaFieldOverrides: FieldConfigFunction = (
-  layer
+  layer,
 ) => {
   return {
     fieldType: ({
@@ -123,9 +122,7 @@ export const childrenAsTextareaFieldOverrides: FieldConfigFunction = (
   };
 };
 
-export const childrenAsTipTapFieldOverrides: FieldConfigFunction = (
-  layer,
-) => {
+export const childrenAsTipTapFieldOverrides: FieldConfigFunction = (layer) => {
   return {
     fieldType: ({
       label,
@@ -148,10 +145,10 @@ export const childrenAsTipTapFieldOverrides: FieldConfigFunction = (
           // eslint-disable-next-line react-perf/jsx-no-new-function-as-prop
           onChange={(content) => {
             //if string call field.onChange
-            if (typeof content === "string") {
+            if (typeof content === 'string') {
               field.onChange(content);
             } else {
-              console.warn("Tiptap content is not a string");
+              console.warn('Tiptap content is not a string');
             }
           }}
           {...fieldProps}
@@ -162,7 +159,10 @@ export const childrenAsTipTapFieldOverrides: FieldConfigFunction = (
 };
 
 // Memoized common field overrides to avoid recreating objects
-const memoizedCommonFieldOverrides = new Map<boolean, Record<string, FieldConfigFunction>>();
+const memoizedCommonFieldOverrides = new Map<
+  boolean,
+  Record<string, FieldConfigFunction>
+>();
 
 export const commonFieldOverrides = (allowBinding = false) => {
   if (memoizedCommonFieldOverrides.has(allowBinding)) {
@@ -178,8 +178,7 @@ export const commonFieldOverrides = (allowBinding = false) => {
   return overrides;
 };
 
-export const textInputFieldOverrides = (
-) => {
+export const textInputFieldOverrides = () => {
   return {
     fieldType: ({
       label,
@@ -250,16 +249,17 @@ export const tablePickerFieldOverrides = (layer: ComponentLayer) => {
       // Use basePath as the slug, fallback to id if basePath is not available
       const slug = business?.basePath || business?.id;
 
-      const businessConfig = useBusinessConfig({ slug })
+      const businessConfig = useBusinessConfig({ slug });
 
       // Get the business config for the current business
       const config = businessType && slug ? businessConfig[businessType] : [];
 
       // Extract schema names from the business config for options
-      const options = config?.map((configItem) => ({
-        value: configItem.schema,
-        label: configItem.title,
-      })) || [];
+      const options =
+        config?.map((configItem) => ({
+          value: configItem.schema,
+          label: configItem.title,
+        })) || [];
 
       return (
         <FormItem>
@@ -272,7 +272,9 @@ export const tablePickerFieldOverrides = (layer: ComponentLayer) => {
               options={options}
               value={field.value?.toString()}
               onValueChange={(value) => field.onChange(value)}
-              placeholder={fieldConfigItem?.inputProps?.placeholder || "Select a table..."}
+              placeholder={
+                fieldConfigItem?.inputProps?.placeholder || 'Select a table...'
+              }
               className={fieldProps.className}
               disabled={fieldProps.disabled}
             />

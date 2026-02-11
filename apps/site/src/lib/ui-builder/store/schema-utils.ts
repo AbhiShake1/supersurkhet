@@ -1,4 +1,21 @@
-import { z, ZodObject, type ZodTypeAny, ZodDate, ZodNumber, ZodEnum, ZodOptional, ZodNullable, ZodDefault, ZodArray, type ZodRawShape, ZodLiteral, ZodUnion, ZodTuple, ZodString, ZodAny } from 'zod';
+import {
+  z,
+  ZodObject,
+  type ZodTypeAny,
+  ZodDate,
+  ZodNumber,
+  ZodEnum,
+  ZodOptional,
+  ZodNullable,
+  ZodDefault,
+  ZodArray,
+  type ZodRawShape,
+  ZodLiteral,
+  ZodUnion,
+  ZodTuple,
+  ZodString,
+  ZodAny,
+} from 'zod';
 
 /**
  * Generates default props based on the provided Zod schema.
@@ -67,9 +84,7 @@ export function patchSchema(schema: ZodObject<any>): ZodObject<any> {
  * @param schema - The original Zod object schema.
  * @returns A new Zod object schema with the `className` property added.
  */
-function addCommon<T extends ZodRawShape>(
-  schema: ZodObject<T>
-) {
+function addCommon<T extends ZodRawShape>(schema: ZodObject<T>) {
   return schema.extend({
     className: z.string().optional(),
   });
@@ -90,16 +105,17 @@ function transformUnionToEnum<T extends ZodTypeAny>(schema: T): T {
     // Check if all options are ZodLiteral instances with string values
     if (
       options.every(
-        (option: any) => option instanceof ZodLiteral && typeof option._def.value === 'string'
+        (option: any) =>
+          option instanceof ZodLiteral && typeof option._def.value === 'string',
       )
     ) {
-      const enumValues = options.map(
-        (option: ZodLiteral<string>) => option.value
-      ).reverse();
+      const enumValues = options
+        .map((option: ZodLiteral<string>) => option.value)
+        .reverse();
 
       // Ensure there is at least one value to create an enum
       if (enumValues.length === 0) {
-        throw new Error("Cannot create enum with no values.");
+        throw new Error('Cannot create enum with no values.');
       }
 
       // Create a ZodEnum from the string literals
@@ -110,7 +126,6 @@ function transformUnionToEnum<T extends ZodTypeAny>(schema: T): T {
 
       // Apply default before adding modifiers to ensure it doesn't get overridden
       transformedSchema = enumSchema.default(enumValues[0]);
-
 
       if (schema.isNullable()) {
         transformedSchema = transformedSchema.nullable();
@@ -156,7 +171,9 @@ function transformUnionToEnum<T extends ZodTypeAny>(schema: T): T {
 
   // Handle ZodTuples by transforming each element type
   if (schema instanceof ZodTuple) {
-    const transformedItems = schema.items.map((item: any) => transformUnionToEnum(item));
+    const transformedItems = schema.items.map((item: any) =>
+      transformUnionToEnum(item),
+    );
     return z.tuple(transformedItems) as unknown as T;
   }
 
@@ -214,7 +231,9 @@ function addCoerceToNumberAndDate<T extends ZodTypeAny>(schema: T): T {
 
   // Handle unions by applying the transformation to each option
   if (schema instanceof ZodUnion) {
-    const transformedOptions = schema.options.map((option: any) => addCoerceToNumberAndDate(option));
+    const transformedOptions = schema.options.map((option: any) =>
+      addCoerceToNumberAndDate(option),
+    );
     return z.union(transformedOptions) as any;
   }
 
@@ -230,7 +249,7 @@ function addCoerceToNumberAndDate<T extends ZodTypeAny>(schema: T): T {
 // patch for autoform to respect existing values, specifically for enums
 export function addDefaultValues<T extends ZodObject<any>>(
   schema: T,
-  defaultValues: Partial<z.infer<T>>
+  defaultValues: Partial<z.infer<T>>,
 ): T {
   const shape = schema.shape;
 
@@ -240,9 +259,9 @@ export function addDefaultValues<T extends ZodObject<any>>(
     if (updatedShape[key]) {
       // Apply the default value to the existing schema field
       updatedShape[key] = updatedShape[key].default(defaultValues[key]);
-    } else if (process.env.NODE_ENV !== "production") {
+    } else if (process.env.NODE_ENV !== 'production') {
       console.warn(
-        `Key "${key}" does not exist in the schema and will be ignored.`
+        `Key "${key}" does not exist in the schema and will be ignored.`,
       );
     }
   }
@@ -261,7 +280,10 @@ export function hasAnyChildrenField(schema: ZodObject<any>): boolean {
 
   // Unwrap optional and nullable wrappers to get the inner type
   let childrenSchema = shape.children;
-  while (childrenSchema instanceof ZodOptional || childrenSchema instanceof ZodNullable) {
+  while (
+    childrenSchema instanceof ZodOptional ||
+    childrenSchema instanceof ZodNullable
+  ) {
     childrenSchema = childrenSchema.unwrap();
   }
 
@@ -269,8 +291,8 @@ export function hasAnyChildrenField(schema: ZodObject<any>): boolean {
 }
 
 /**
-* Checks if a Zod schema has a children field of type String
-*/
+ * Checks if a Zod schema has a children field of type String
+ */
 export function hasChildrenFieldOfTypeString(schema: ZodObject<any>): boolean {
   const shape = schema.shape;
   if (!shape.children) {
@@ -279,7 +301,10 @@ export function hasChildrenFieldOfTypeString(schema: ZodObject<any>): boolean {
 
   // Unwrap optional and nullable wrappers to get the inner type
   let childrenSchema = shape.children;
-  while (childrenSchema instanceof ZodOptional || childrenSchema instanceof ZodNullable) {
+  while (
+    childrenSchema instanceof ZodOptional ||
+    childrenSchema instanceof ZodNullable
+  ) {
     childrenSchema = childrenSchema.unwrap();
   }
 

@@ -1,9 +1,9 @@
-import { useAuth } from "@/components/auth-provider";
-import { api } from "@/lib/api";
-import { useCreate, useGet, type NestedSchemaType } from "@gta/react-hooks";
-import { createContext, useContext, useMemo } from "react";
+import { useAuth } from '@/components/auth-provider';
+import { api } from '@/lib/api';
+import { useCreate, useGet, type NestedSchemaType } from '@gta/react-hooks';
+import { createContext, useContext, useMemo } from 'react';
 
-export type RecentlyUsedApp = NestedSchemaType<"recentlyUsedApp">;
+export type RecentlyUsedApp = NestedSchemaType<'recentlyUsedApp'>;
 
 interface RecentlyUsedAppsContextType {
   recentlyUsedApps: RecentlyUsedApp[];
@@ -11,39 +11,52 @@ interface RecentlyUsedAppsContextType {
   isLoading: boolean;
 }
 
-const RecentlyUsedAppsContext = createContext<RecentlyUsedAppsContextType | undefined>(undefined);
+const RecentlyUsedAppsContext = createContext<
+  RecentlyUsedAppsContextType | undefined
+>(undefined);
 
-export function RecentlyUsedAppsProvider({ children }: { children: React.ReactNode }) {
+export function RecentlyUsedAppsProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const { user } = useAuth();
 
   const userId = user?._?.soul?.split('.')[1] || '';
 
   const { data: fetchedApps = [], isLoading } = api.recentlyUsedApp.useGet({
-    keys: [userId]
+    keys: [userId],
   });
 
-  const createRecentlyUsedApp = api.recentlyUsedApp.useCreate({ keys: [userId] });
+  const createRecentlyUsedApp = api.recentlyUsedApp.useCreate({
+    keys: [userId],
+  });
 
   // Process fetched apps to get only the user's recently used apps, sorted and limited to 5
   const recentlyUsedApps = useMemo(() => {
     if (!fetchedApps?.length) return [];
 
     const appWithTotalUsage = fetchedApps.reduce((acc, app) => {
-      const existingApp = acc.find(a => a.appId === app.appId);
+      const existingApp = acc.find((a) => a.appId === app.appId);
       if (existingApp) {
         existingApp.usageCount += app.usageCount ?? 0;
       } else {
         acc.push({ ...app, usageCount: app.usageCount });
       }
       return acc;
-    }, [] as RecentlyUsedApp[])
+    }, [] as RecentlyUsedApp[]);
 
     // Filter to only include apps for this specific user and sort by timestamp
-    const sortedApps = [...appWithTotalUsage].sort((a, b) => {
-      if (a.usageCount === b.usageCount) return (b.timestamp ?? 0) - (a.timestamp ?? 0);
-      return b.usageCount - a.usageCount;
-    }).slice(0, 5); // Only take the 5 most recent
-    return Object.values(Object.fromEntries(sortedApps.map((app) => [app.appId, app])));
+    const sortedApps = [...appWithTotalUsage]
+      .sort((a, b) => {
+        if (a.usageCount === b.usageCount)
+          return (b.timestamp ?? 0) - (a.timestamp ?? 0);
+        return b.usageCount - a.usageCount;
+      })
+      .slice(0, 5); // Only take the 5 most recent
+    return Object.values(
+      Object.fromEntries(sortedApps.map((app) => [app.appId, app])),
+    );
   }, [fetchedApps]);
 
   const addRecentlyUsedApp = async (businessId: string) => {
@@ -55,10 +68,10 @@ export function RecentlyUsedAppsProvider({ children }: { children: React.ReactNo
         appId: businessId,
         timestamp: Math.floor(Date.now() / 1000), // Unix timestamp in seconds
         usageCount: 1,
-        created_by: user?._?.soul ?? "anon",
+        created_by: user?._?.soul ?? 'anon',
       });
     } catch (error) {
-      console.error("Error adding recently used app:", error);
+      console.error('Error adding recently used app:', error);
     }
   };
 
@@ -78,7 +91,9 @@ export function RecentlyUsedAppsProvider({ children }: { children: React.ReactNo
 export function useRecentlyUsedApps() {
   const context = useContext(RecentlyUsedAppsContext);
   if (context === undefined) {
-    throw new Error("useRecentlyUsedApps must be used within a RecentlyUsedAppsProvider");
+    throw new Error(
+      'useRecentlyUsedApps must be used within a RecentlyUsedAppsProvider',
+    );
   }
   return context;
 }

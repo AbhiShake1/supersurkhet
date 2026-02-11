@@ -1,5 +1,5 @@
-import type { SchemaKeys } from "..";
-import { getGunRef, mergeKeys } from "../utils";
+import type { SchemaKeys } from '..';
+import { getGunRef, mergeKeys } from '../utils';
 
 export function remove<const T extends SchemaKeys>(
   key: T,
@@ -10,7 +10,6 @@ export function remove<const T extends SchemaKeys>(
     const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
     getGunRef(keys).get(id).put(null);
 
-    return { deleted: true, id }
+    return { deleted: true, id };
   };
 }
-

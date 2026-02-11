@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * @author: @dorian_baffier
@@ -10,10 +10,10 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { motion } from "motion/react";
-import { cn } from "@/lib/utils";
-import z from "zod";
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion } from 'motion/react';
+import { cn } from '@/lib/utils';
+import z from 'zod';
 
 interface LetterState {
   char: string;
@@ -27,29 +27,29 @@ export const MatrixTextSchema = z.object({
   initialDelay: z.number().optional(),
   letterAnimationDuration: z.number().optional(),
   letterInterval: z.number().optional(),
-})
+});
 
 export type MatrixTextProps = z.infer<typeof MatrixTextSchema>;
 
 const MatrixText = ({
-  text = "HelloWorld!",
+  text = 'HelloWorld!',
   className,
   initialDelay = 200,
   letterAnimationDuration = 500,
   letterInterval = 100,
 }: MatrixTextProps) => {
   const [letters, setLetters] = useState<LetterState[]>(() =>
-    text.split("").map((char) => ({
+    text.split('').map((char) => ({
       char,
       isMatrix: false,
-      isSpace: char === " ",
-    }))
+      isSpace: char === ' ',
+    })),
   );
   const [isAnimating, setIsAnimating] = useState(false);
 
   const getRandomChar = useCallback(
-    () => (Math.random() > 0.5 ? "1" : "0"),
-    []
+    () => (Math.random() > 0.5 ? '1' : '0'),
+    [],
   );
 
   const animateLetter = useCallback(
@@ -82,7 +82,7 @@ const MatrixText = ({
         }, letterAnimationDuration);
       });
     },
-    [getRandomChar, text, letterAnimationDuration]
+    [getRandomChar, text, letterAnimationDuration],
   );
 
   const startAnimation = useCallback(() => {
@@ -116,22 +116,22 @@ const MatrixText = ({
       //     color: "rgb(var(--foreground-rgb))",
       // },
       matrix: {
-        color: "#00ff00",
-        textShadow: "0 2px 4px rgba(0, 255, 0, 0.5)",
+        color: '#00ff00',
+        textShadow: '0 2px 4px rgba(0, 255, 0, 0.5)',
       },
       // normal: {
       //     color: "rgb(var(--foreground-rgb))",
       //     textShadow: "none",
       // },
     }),
-    []
+    [],
   );
 
   return (
     <div
       className={cn(
-        "flex min-h-screen items-center justify-center text-black dark:text-white",
-        className
+        'flex min-h-screen items-center justify-center text-black dark:text-white',
+        className,
       )}
       aria-label="Matrix text animation"
     >
@@ -142,18 +142,18 @@ const MatrixText = ({
               key={`${index}-${letter.char}`}
               className="font-mono text-4xl md:text-6xl w-[1ch] text-center overflow-hidden"
               initial="initial"
-              animate={letter.isMatrix ? "matrix" : "normal"}
+              animate={letter.isMatrix ? 'matrix' : 'normal'}
               variants={motionVariants}
               transition={{
                 duration: 0.1,
-                ease: "easeInOut",
+                ease: 'easeInOut',
               }}
               style={{
-                display: "inline-block",
-                fontVariantNumeric: "tabular-nums",
+                display: 'inline-block',
+                fontVariantNumeric: 'tabular-nums',
               }}
             >
-              {letter.isSpace ? "\u00A0" : letter.char}
+              {letter.isSpace ? '\u00A0' : letter.char}
             </motion.div>
           ))}
         </div>

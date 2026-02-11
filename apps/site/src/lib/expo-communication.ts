@@ -28,26 +28,32 @@ export const sendMessageToExpo = (message: any): void => {
 export const sendDataMatrixActionToExpo = (action: any): void => {
   sendMessageToExpo({
     type: 'DATAMATRIX_ACTION',
-    payload: action
+    payload: action,
   });
 };
 
 /**
  * Send a navigation request to the Expo app
  */
-export const sendNavigationToExpo = (navigation: { url: string; params?: Record<string, any> }): void => {
+export const sendNavigationToExpo = (navigation: {
+  url: string;
+  params?: Record<string, any>;
+}): void => {
   sendMessageToExpo({
     type: 'NAVIGATE',
-    payload: navigation
+    payload: navigation,
   });
 };
 
 /**
  * Send a notification request to the Expo app
  */
-export const sendNotificationToExpo = (notification: { title: string; message: string }): void => {
+export const sendNotificationToExpo = (notification: {
+  title: string;
+  message: string;
+}): void => {
   sendMessageToExpo({
     type: 'NOTIFICATION',
-    payload: notification
+    payload: notification,
   });
 };

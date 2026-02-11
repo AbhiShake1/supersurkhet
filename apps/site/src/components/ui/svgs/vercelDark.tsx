@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const VercelDark = (props: SVGProps<SVGSVGElement>) => (
   <svg {...props} viewBox="0 0 256 222" preserveAspectRatio="xMidYMid">

@@ -1,10 +1,7 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const ReactDark = (props: SVGProps<SVGSVGElement>) => (
-  <svg
-    {...props}
-    viewBox="0 0 569 512"
-  >
+  <svg {...props} viewBox="0 0 569 512">
     <g fill="none" fillRule="evenodd">
       <g transform="translate(-227, -256)" fill="#58C4DC" fillRule="nonzero">
         <g transform="translate(227, 256)">

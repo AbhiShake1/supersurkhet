@@ -1,10 +1,10 @@
-import type React from "react";
-import { useCallback, useMemo } from "react";
+import type React from 'react';
+import { useCallback, useMemo } from 'react';
 
 import MultipleSelector, {
   type Option,
-} from "@/components/ui/ui-builder/internal/components/multi-select";
-import { TAILWIND_CLASSES_WITH_BREAKPOINTS } from "@/components/ui/ui-builder/internal/utils/tailwind-classes";
+} from '@/components/ui/ui-builder/internal/components/multi-select';
+import { TAILWIND_CLASSES_WITH_BREAKPOINTS } from '@/components/ui/ui-builder/internal/utils/tailwind-classes';
 
 const EMPTY_OPTIONS: Option[] = [];
 
@@ -21,25 +21,25 @@ const ClassNameMultiselect: React.FC<ClassNameMultiselectProps> = ({
     async (value: string): Promise<Option[]> => {
       return new Promise((resolve) => {
         const res = TAILWIND_CLASSES_WITH_BREAKPOINTS.filter((option) =>
-          option.includes(value)
+          option.includes(value),
         );
         resolve(
           res.map((cls) => ({
             value: cls,
             label: cls,
-          }))
+          })),
         );
       });
     },
-    []
+    [],
   );
 
   const handleChange = useCallback(
     (values: Option[]) => {
-      const newClassName = values.map((v) => v.value).join(" ");
+      const newClassName = values.map((v) => v.value).join(' ');
       onChange(newClassName);
     },
-    [onChange]
+    [onChange],
   );
 
   const emptyIndicator = useMemo(
@@ -48,7 +48,7 @@ const ClassNameMultiselect: React.FC<ClassNameMultiselectProps> = ({
         No results found.
       </p>
     ),
-    []
+    [],
   );
 
   const loadingIndicator = useMemo(
@@ -57,20 +57,20 @@ const ClassNameMultiselect: React.FC<ClassNameMultiselectProps> = ({
         Loading...
       </p>
     ),
-    []
+    [],
   );
 
-
   const multipleSelectorValues = useMemo(() => {
-    return value
-    ?.split(" ")
-    .filter((cls) => cls.trim() !== "")
-    .map((cls: string) => ({
-      value: cls,
-      label: cls,
-    })) || EMPTY_OPTIONS
+    return (
+      value
+        ?.split(' ')
+        .filter((cls) => cls.trim() !== '')
+        .map((cls: string) => ({
+          value: cls,
+          label: cls,
+        })) || EMPTY_OPTIONS
+    );
   }, [value]);
-
 
   return (
     <MultipleSelector

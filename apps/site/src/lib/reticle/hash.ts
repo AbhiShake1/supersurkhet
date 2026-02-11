@@ -1,6 +1,6 @@
 export function hash(value: string | number | null | undefined): string {
-  if (value === null || value === undefined || value === "") {
-    return "";
+  if (value === null || value === undefined || value === '') {
+    return '';
   }
 
   const input = String(value);
@@ -14,4 +14,3 @@ export function hash(value: string | number | null | undefined): string {
 
   return `${result.toString(36)}:`;
 }
-

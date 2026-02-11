@@ -7,7 +7,9 @@ interface CopyPromptButtonProps {
   onGeneratePrompt: () => string;
 }
 
-export const CopyPromptButton = ({ onGeneratePrompt }: CopyPromptButtonProps) => {
+export const CopyPromptButton = ({
+  onGeneratePrompt,
+}: CopyPromptButtonProps) => {
   const [buttonState, setButtonState] = useState<'idle' | 'success'>('idle');
 
   const copyMutation = useMutation({

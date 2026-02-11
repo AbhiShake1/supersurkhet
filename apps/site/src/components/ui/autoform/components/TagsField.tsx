@@ -1,10 +1,10 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { FieldWrapperProps } from "./FieldWrapper";
-import { useState, useRef, useEffect } from "react";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { FieldWrapperProps } from './FieldWrapper';
+import { useState, useRef, useEffect } from 'react';
 
 export interface TagsFieldProps extends FieldWrapperProps {
   placeholder?: string;
@@ -18,12 +18,14 @@ export function TagsField({
   description,
   error,
   className,
-  placeholder = "Add a tag...",
+  placeholder = 'Add a tag...',
   maxTags,
   ...props
 }: TagsFieldProps) {
-  const [inputValue, setInputValue] = useState("");
-  const [tags, setTags] = useState<string[]>(Array.isArray(field.value) ? field.value : []);
+  const [inputValue, setInputValue] = useState('');
+  const [tags, setTags] = useState<string[]>(
+    Array.isArray(field.value) ? field.value : [],
+  );
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Update field value when tags change
@@ -36,10 +38,10 @@ export function TagsField({
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === 'Enter' || e.key === ',') {
       e.preventDefault();
       addTag();
-    } else if (e.key === "Backspace" && inputValue === "" && tags.length > 0) {
+    } else if (e.key === 'Backspace' && inputValue === '' && tags.length > 0) {
       // Remove last tag when backspace is pressed on empty input
       removeTag(tags.length - 1);
     }
@@ -47,9 +49,13 @@ export function TagsField({
 
   const addTag = () => {
     const trimmedValue = inputValue.trim();
-    if (trimmedValue && !tags.includes(trimmedValue) && (!maxTags || tags.length < maxTags)) {
+    if (
+      trimmedValue &&
+      !tags.includes(trimmedValue) &&
+      (!maxTags || tags.length < maxTags)
+    ) {
       setTags([...tags, trimmedValue]);
-      setInputValue("");
+      setInputValue('');
     }
   };
 
@@ -59,39 +65,44 @@ export function TagsField({
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const pastedText = e.clipboardData.getData("text");
+    const pastedText = e.clipboardData.getData('text');
     const newTags = pastedText
       .split(/[,;\n]/)
-      .map(tag => tag.trim())
-      .filter(tag => tag && !tags.includes(tag));
+      .map((tag) => tag.trim())
+      .filter((tag) => tag && !tags.includes(tag));
 
     if (newTags.length > 0) {
-      const availableSlots = maxTags ? maxTags - tags.length : Number.POSITIVE_INFINITY;
+      const availableSlots = maxTags
+        ? maxTags - tags.length
+        : Number.POSITIVE_INFINITY;
       const tagsToAdd = newTags.slice(0, availableSlots);
       setTags([...tags, ...tagsToAdd]);
     }
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {label && (
-        <Label htmlFor={field.name} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        <Label
+          htmlFor={field.name}
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
           {label}
         </Label>
       )}
-      
-      <div 
+
+      <div
         className={cn(
-          "flex flex-wrap items-center gap-2 rounded-md border border-input bg-background px-3 py-2 min-h-10",
-          error && "border-destructive",
-          field.disabled && "opacity-50"
+          'flex flex-wrap items-center gap-2 rounded-md border border-input bg-background px-3 py-2 min-h-10',
+          error && 'border-destructive',
+          field.disabled && 'opacity-50',
         )}
         onClick={() => inputRef.current?.focus()}
       >
         {tags.map((tag, index) => (
-          <Badge 
-            key={index} 
-            variant="secondary" 
+          <Badge
+            key={index}
+            variant="secondary"
             className="flex items-center gap-1 pl-2 pr-1 py-1"
           >
             <span className="text-xs">{tag}</span>
@@ -109,7 +120,7 @@ export function TagsField({
             </button>
           </Badge>
         ))}
-        
+
         {!field.disabled && (!maxTags || tags.length < maxTags) && (
           <Input
             ref={inputRef}
@@ -118,16 +129,20 @@ export function TagsField({
             onChange={handleInputChange}
             onKeyDown={handleInputKeyDown}
             onPaste={handlePaste}
-            placeholder={tags.length === 0 ? placeholder : ""}
+            placeholder={tags.length === 0 ? placeholder : ''}
             className="flex-1 border-0 p-0 h-6 focus-visible:ring-0 focus-visible:ring-offset-0"
             disabled={field.disabled}
           />
         )}
       </div>
-      
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
-      {error && <p className="text-sm font-medium text-destructive">{error.message}</p>}
-      
+
+      {description && (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
+      {error && (
+        <p className="text-sm font-medium text-destructive">{error.message}</p>
+      )}
+
       {maxTags && (
         <p className="text-xs text-muted-foreground text-right">
           {tags.length}/{maxTags} tags

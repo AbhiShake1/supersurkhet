@@ -1,14 +1,11 @@
-import { z } from "zod";
-import { table, withLabel } from "./listings";
+import { z } from 'zod';
+import { table, withLabel } from './listings';
 
 export const folderSchema = z
   .object({
-    name: withLabel(z.string().optional(), "Folder Name"),
-    apps: withLabel(
-      z.record(z.boolean()).default({}),
-      "Apps in Folder"
-    ),
-    userId: withLabel(z.string(), "User ID"),
+    name: withLabel(z.string().optional(), 'Folder Name'),
+    apps: withLabel(z.record(z.boolean()).default({}), 'Apps in Folder'),
+    userId: withLabel(z.string(), 'User ID'),
   })
   .extend(table);
 

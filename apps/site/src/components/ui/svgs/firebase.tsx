@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Firebase = (props: SVGProps<SVGSVGElement>) => (
   <svg {...props} fill="none" viewBox="0 0 600 600">

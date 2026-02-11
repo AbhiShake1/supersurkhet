@@ -1,19 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ClassNameMultiselect from "@/components/ui/ui-builder/internal/form-fields/classname-control/classname-multiselect";
-import { ClassNameItemControl } from "@/components/ui/ui-builder/internal/form-fields/classname-control/classname-item-control";
+} from '@/components/ui/tooltip';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ClassNameMultiselect from '@/components/ui/ui-builder/internal/form-fields/classname-control/classname-multiselect';
+import { ClassNameItemControl } from '@/components/ui/ui-builder/internal/form-fields/classname-control/classname-item-control';
 import {
   Accordion,
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
-} from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
+} from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 
 interface BreakpointClassNameControlProps {
   onChange?: (classes: string) => void;
@@ -30,29 +30,29 @@ export const BreakpointClassNameControl = ({
     const md: string[] = [];
     const rest: string[] = [];
     for (const token of tokens) {
-      if (token.startsWith("md:")) {
+      if (token.startsWith('md:')) {
         md.push(token.slice(3));
-      } else if (token.includes(":")) {
+      } else if (token.includes(':')) {
         rest.push(token);
       } else if (token) {
         base.push(token);
       }
     }
     return {
-      base: base.join(" "),
-      md: md.join(" "),
-      rest: rest.join(" "),
+      base: base.join(' '),
+      md: md.join(' '),
+      rest: rest.join(' '),
     };
   };
 
   // State for the full class string
-  const [classString, setClassString] = useState(value || "");
+  const [classString, setClassString] = useState(value || '');
   // State for the tab
-  const [tab, setTab] = useState<"base" | "md">("base");
+  const [tab, setTab] = useState<'base' | 'md'>('base');
 
   // Sync classString with value prop (uncontrolled to controlled fix)
   useEffect(() => {
-    if (typeof value === "string" && value !== classString) {
+    if (typeof value === 'string' && value !== classString) {
       setClassString(value);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -68,35 +68,35 @@ export const BreakpointClassNameControl = ({
         newBase,
         md &&
           md
-            .split(" ")
+            .split(' ')
             .map((cls) => `md:${cls}`)
-            .join(" "),
+            .join(' '),
         rest,
       ]
         .filter(Boolean)
-        .join(" ")
-        .replace(/\s+/g, " ")
+        .join(' ')
+        .replace(/\s+/g, ' ')
         .trim();
       setClassString(newClassString);
     },
-    [md, rest]
+    [md, rest],
   );
 
   const handleMdChange = useCallback(
     (newMd: string) => {
       const mdClasses = newMd
-        .split(" ")
+        .split(' ')
         .filter(Boolean)
         .map((cls) => `md:${cls}`)
-        .join(" ");
+        .join(' ');
       const newClassString = [base, mdClasses, rest]
         .filter(Boolean)
-        .join(" ")
-        .replace(/\s+/g, " ")
+        .join(' ')
+        .replace(/\s+/g, ' ')
         .trim();
       setClassString(newClassString);
     },
-    [base, rest]
+    [base, rest],
   );
 
   // When classString changes, call parent onChange
@@ -110,8 +110,8 @@ export const BreakpointClassNameControl = ({
   }, []);
 
   const handleTabChange = useCallback(
-    (val: string) => setTab(val as "base" | "md"),
-    []
+    (val: string) => setTab(val as 'base' | 'md'),
+    [],
   );
 
   return (
@@ -136,7 +136,7 @@ export const BreakpointClassNameControl = ({
                   <span>Base</span>
                   {base && (
                     <Badge className="ml-1 justify-center text-center px-[3px] h-[18px] min-w-[18px] !text-[10px]">
-                      {base.split(" ").filter(Boolean).length}
+                      {base.split(' ').filter(Boolean).length}
                     </Badge>
                   )}
                 </div>
@@ -153,7 +153,7 @@ export const BreakpointClassNameControl = ({
                   </span>
                   {md && (
                     <Badge className="ml-1 justify-center text-center px-[3px] h-[18px] min-w-[18px] !text-[10px]">
-                      {md.split(" ").filter(Boolean).length}
+                      {md.split(' ').filter(Boolean).length}
                     </Badge>
                   )}
                 </div>
@@ -192,10 +192,10 @@ export const BreakpointClassNameControl = ({
           >
             Edit All Classes
           </AccordionTrigger>
-            <AccordionContent
-              data-testid="classes-accordion-content"
-              id="accordion-content"
-            >
+          <AccordionContent
+            data-testid="classes-accordion-content"
+            id="accordion-content"
+          >
             <ClassNameMultiselect
               value={classString}
               onChange={handleMultiselectChange}

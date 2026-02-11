@@ -1,9 +1,5 @@
-import confetti from "canvas-confetti";
-import React, {
-  createContext,
-  useCallback,
-  useContext
-} from "react";
+import confetti from 'canvas-confetti';
+import React, { createContext, useCallback, useContext } from 'react';
 
 type ConfettiApi = {
   fire: () => void;
@@ -16,7 +12,7 @@ export const ConfettiProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const fire = useCallback(() => {
     const end = Date.now() + 3 * 1000; // 3 seconds
-    const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
+    const colors = ['#a786ff', '#fd8bbc', '#eca184', '#f8deb1'];
 
     const frame = () => {
       if (Date.now() > end) return;
@@ -55,7 +51,7 @@ export const ConfettiProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useConfetti = () => {
   const context = useContext(ConfettiContext);
   if (context === undefined) {
-    throw new Error("useConfetti must be used within a ConfettiProvider");
+    throw new Error('useConfetti must be used within a ConfettiProvider');
   }
   return context;
 };

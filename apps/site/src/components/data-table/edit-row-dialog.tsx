@@ -1,6 +1,6 @@
-import { AutoForm } from "@/components/ui/autoform";
-import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
-import { Button } from "@/components/ui/button";
+import { AutoForm } from '@/components/ui/autoform';
+import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
+import { Button } from '@/components/ui/button';
 import {
   Credenza,
   CredenzaBody,
@@ -9,10 +9,10 @@ import {
   CredenzaFooter,
   CredenzaHeader,
   CredenzaTitle,
-} from "@/components/ui/credenza";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Save } from "lucide-react";
-import type { ZodObject } from "zod";
+} from '@/components/ui/credenza';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Save } from 'lucide-react';
+import type { ZodObject } from 'zod';
 
 interface EditRowDialogProps<T, S> {
   open: boolean;
@@ -41,7 +41,7 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
         <CredenzaBody asChild>
           <ScrollArea className="h-[50vh] max-h-[60vh]">
             <AutoForm
-              formProps={{ id: "edit-row-form" }}
+              formProps={{ id: 'edit-row-form' }}
               schema={schema}
               defaultValues={data || {}}
               onSubmit={(values, form) => {

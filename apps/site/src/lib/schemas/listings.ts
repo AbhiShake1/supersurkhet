@@ -1,5 +1,5 @@
-import { z } from "zod";
-import { fieldConfig } from "@/components/ui/autoform";
+import { z } from 'zod';
+import { fieldConfig } from '@/components/ui/autoform';
 
 // #region Core Helpers
 const withMeta = <T extends z.ZodTypeAny>(
@@ -23,10 +23,10 @@ export const withLabel = <T extends z.ZodTypeAny>(
 export const table = {
   timestamp: z
     .number({ coerce: true })
-    .describe("Created at")
-    .superRefine(fieldConfig({ fieldType: "timestamp" }))
+    .describe('Created at')
+    .superRefine(fieldConfig({ fieldType: 'timestamp' }))
     .optional(),
-  created_by: z.string().describe("Created by").optional(),
+  created_by: z.string().describe('Created by').optional(),
   // _: z.object({ soul: z.string() }),
   // _: z
   // 	.object({
@@ -41,34 +41,60 @@ export const table = {
 
 export const baseListingSchema = z
   .object({
-    title: z.string().min(1).describe("Product Name"),
-    hsCode: z.string().min(1).describe("HS Code"),
-    unit: z.string().optional().describe("Unit").superRefine(fieldConfig({ fieldType: "unit" })),
-    costPrice: z.number({ coerce: true }).positive().describe("Cost Price"),
-    sellingPrice: z.number({ coerce: true }).positive().optional().describe("Default Selling Price").superRefine(fieldConfig({ label: "Default Selling Price" })),
-    stockQuantity: z.number({ coerce: true }).int().min(0).default(0).describe("Quantity in Stock").superRefine(fieldConfig({ label: "Opening Stock Quantity" })),
-    barcode: z.string().optional().describe("Barcode"),
-    reorderLevel: z.number({ coerce: true }).int().positive().optional().describe("Reorder Level").superRefine(fieldConfig({
-      inputProps: {
-        placeholder: "You will be reminded to reorder this product when only this many is available in stock"
-      }
-    })),
-    description: z.string().optional().describe("Product Description")
-      .superRefine(fieldConfig({ fieldType: "richText" })),
-    category: z.string().default("Others").optional(),
-    sku: z.string().optional().describe("Stock Keeping Unit"),
+    title: z.string().min(1).describe('Product Name'),
+    hsCode: z.string().min(1).describe('HS Code'),
+    unit: z
+      .string()
+      .optional()
+      .describe('Unit')
+      .superRefine(fieldConfig({ fieldType: 'unit' })),
+    costPrice: z.number({ coerce: true }).positive().describe('Cost Price'),
+    sellingPrice: z
+      .number({ coerce: true })
+      .positive()
+      .optional()
+      .describe('Default Selling Price')
+      .superRefine(fieldConfig({ label: 'Default Selling Price' })),
+    stockQuantity: z
+      .number({ coerce: true })
+      .int()
+      .min(0)
+      .default(0)
+      .describe('Quantity in Stock')
+      .superRefine(fieldConfig({ label: 'Opening Stock Quantity' })),
+    barcode: z.string().optional().describe('Barcode'),
+    reorderLevel: z
+      .number({ coerce: true })
+      .int()
+      .positive()
+      .optional()
+      .describe('Reorder Level')
+      .superRefine(
+        fieldConfig({
+          inputProps: {
+            placeholder:
+              'You will be reminded to reorder this product when only this many is available in stock',
+          },
+        }),
+      ),
+    description: z
+      .string()
+      .optional()
+      .describe('Product Description')
+      .superRefine(fieldConfig({ fieldType: 'richText' })),
+    category: z.string().default('Others').optional(),
+    sku: z.string().optional().describe('Stock Keeping Unit'),
     imageUrl: z
       .string()
-      .describe("Image")
-      .superRefine(fieldConfig({ fieldType: "image" }))
+      .describe('Image')
+      .superRefine(fieldConfig({ fieldType: 'image' }))
       .optional(),
     isFeatured: z.boolean({ coerce: true }).optional(),
     isActive: z.boolean({ coerce: true }).default(true),
   })
   .extend(table);
 
-export const productSchema = baseListingSchema.extend({
-});
+export const productSchema = baseListingSchema.extend({});
 
 export type Product = z.infer<typeof productSchema>;
 

@@ -1,9 +1,9 @@
-import React from "react";
-import { useFieldArray, useFormContext } from "react-hook-form";
-import { AutoFormField } from "./AutoFormField";
-import { useAutoForm } from "./context";
-import { getLabel, type ParsedField } from "@autoform/core";
-import { formatTestId } from "./utils";
+import React from 'react';
+import { useFieldArray, useFormContext } from 'react-hook-form';
+import { AutoFormField } from './AutoFormField';
+import { useAutoForm } from './context';
+import { getLabel, type ParsedField } from '@autoform/core';
+import { formatTestId } from './utils';
 
 export const ArrayField: React.FC<{
   field: ParsedField;
@@ -13,15 +13,15 @@ export const ArrayField: React.FC<{
   const { control } = useFormContext();
   const { fields, append, remove } = useFieldArray({
     control,
-    name: path.join("."),
+    name: path.join('.'),
   });
   const testIdBase = formatTestId(path);
 
   const subFieldType = field.schema?.[0]?.type;
   let defaultValue: any;
-  if (subFieldType === "object") {
+  if (subFieldType === 'object') {
     defaultValue = {};
-  } else if (subFieldType === "array") {
+  } else if (subFieldType === 'array') {
     defaultValue = [];
   } else {
     defaultValue = null;

@@ -1,27 +1,29 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus,
   Search,
   Edit,
-  Trash2, Briefcase,
-  User, TrendingUp,
-  Star
-} from "lucide-react";
-import { toast } from "sonner";
-import type { AdminComponent } from "@/components/ui/admin";
+  Trash2,
+  Briefcase,
+  User,
+  TrendingUp,
+  Star,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { AdminComponent } from '@/components/ui/admin';
 
 interface Service {
   id: string;
@@ -34,7 +36,7 @@ interface Product {
   id: string;
   name: string;
   description: string;
-  riskLevel: "Low" | "Medium" | "High";
+  riskLevel: 'Low' | 'Medium' | 'High';
   active: boolean;
 }
 
@@ -49,81 +51,81 @@ interface Advisor {
 
 const mockServices: Service[] = [
   {
-    id: "1",
-    name: "Investment Advisory",
+    id: '1',
+    name: 'Investment Advisory',
     description:
-      "Personalized investment strategies tailored to your financial goals",
+      'Personalized investment strategies tailored to your financial goals',
     active: true,
   },
   {
-    id: "2",
-    name: "Insurance Planning",
+    id: '2',
+    name: 'Insurance Planning',
     description:
-      "Comprehensive insurance solutions to protect your assets and family",
+      'Comprehensive insurance solutions to protect your assets and family',
     active: true,
   },
   {
-    id: "3",
-    name: "Retirement Planning",
-    description: "Strategic planning for a secure and comfortable retirement",
+    id: '3',
+    name: 'Retirement Planning',
+    description: 'Strategic planning for a secure and comfortable retirement',
     active: false,
   },
 ];
 
 const mockProducts: Product[] = [
   {
-    id: "1",
-    name: "Mutual Funds",
+    id: '1',
+    name: 'Mutual Funds',
     description:
-      "Diversified investment options with professional fund management",
-    riskLevel: "Medium",
+      'Diversified investment options with professional fund management',
+    riskLevel: 'Medium',
     active: true,
   },
   {
-    id: "2",
-    name: "Fixed Deposits",
-    description: "Secure investment with guaranteed returns",
-    riskLevel: "Low",
+    id: '2',
+    name: 'Fixed Deposits',
+    description: 'Secure investment with guaranteed returns',
+    riskLevel: 'Low',
     active: true,
   },
   {
-    id: "3",
-    name: "Life Insurance",
-    description: "Comprehensive life coverage for you and your family",
-    riskLevel: "Low",
+    id: '3',
+    name: 'Life Insurance',
+    description: 'Comprehensive life coverage for you and your family',
+    riskLevel: 'Low',
     active: true,
   },
   {
-    id: "4",
-    name: "Stock Portfolio",
-    description: "High-growth potential with active portfolio management",
-    riskLevel: "High",
+    id: '4',
+    name: 'Stock Portfolio',
+    description: 'High-growth potential with active portfolio management',
+    riskLevel: 'High',
     active: false,
   },
 ];
 
 const mockAdvisors: Advisor[] = [
   {
-    id: "1",
-    name: "Rajesh K.C.",
-    specialization: "Investment Advisory",
-    experience: "10+ years",
+    id: '1',
+    name: 'Rajesh K.C.',
+    specialization: 'Investment Advisory',
+    experience: '10+ years',
     rating: 4.9,
     active: true,
   },
   {
-    id: "2",
-    name: "Sunita Thapa",
-    specialization: "Insurance Planning",
-    experience: "8+ years",
+    id: '2',
+    name: 'Sunita Thapa',
+    specialization: 'Insurance Planning',
+    experience: '8+ years',
     rating: 4.8,
     active: true,
   },
   {
-    id: "3",
-    name: "Amit Shah",
-    specialization: "Retirement Planning",
-    experience: "12+ years",
+    id: '3',
+    name: 'Amit Shah',
+    specialization: 'Retirement Planning',
+    experience: '12+ years',
     rating: 5.0,
     active: false,
   },
@@ -135,9 +137,9 @@ export const FinancialFirmManagement: AdminComponent = () => {
       services={mockServices}
       products={mockProducts}
       advisors={mockAdvisors}
-      onAddService={() => { }}
-      onAddProduct={() => { }}
-      onAddAdvisor={() => { }}
+      onAddService={() => {}}
+      onAddProduct={() => {}}
+      onAddAdvisor={() => {}}
     />
   );
 };
@@ -159,8 +161,8 @@ function _FinancialFirmManagement({
   products,
   advisors,
 }: FinancialFirmManagementProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState("services");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState('services');
 
   const filteredServices = services.filter((service) => {
     return (
@@ -190,32 +192,32 @@ function _FinancialFirmManagement({
 
   const toggleServiceActive = (id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Service ${active ? "activated" : "deactivated"}`);
+    toast.success(`Service ${active ? 'activated' : 'deactivated'}`);
   };
 
   const toggleProductActive = (id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Product ${active ? "activated" : "deactivated"}`);
+    toast.success(`Product ${active ? 'activated' : 'deactivated'}`);
   };
 
   const toggleAdvisorActive = (id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Advisor ${active ? "activated" : "deactivated"}`);
+    toast.success(`Advisor ${active ? 'activated' : 'deactivated'}`);
   };
 
   const deleteService = (id: string) => {
     // In a real implementation, this would delete the service from GunDB
-    toast.success("Service removed");
+    toast.success('Service removed');
   };
 
   const deleteProduct = (id: string) => {
     // In a real implementation, this would delete the product from GunDB
-    toast.success("Product removed");
+    toast.success('Product removed');
   };
 
   const deleteAdvisor = (id: string) => {
     // In a real implementation, this would delete the advisor from GunDB
-    toast.success("Advisor removed");
+    toast.success('Advisor removed');
   };
 
   return (
@@ -306,7 +308,7 @@ function _FinancialFirmManagement({
                 <p className="text-2xl font-bold text-purple-600">
                   {(
                     advisors.reduce((sum, advisor) => sum + advisor.rating, 0) /
-                    advisors.length || 0
+                      advisors.length || 0
                   ).toFixed(1)}
                 </p>
               </div>
@@ -360,7 +362,7 @@ function _FinancialFirmManagement({
             {filteredServices.map((service) => (
               <Card
                 key={service.id}
-                className={`${!service.active ? "opacity-60" : ""}`}
+                className={`${!service.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -388,7 +390,7 @@ function _FinancialFirmManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {service.active ? "Active" : "Inactive"}
+                        {service.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -433,7 +435,7 @@ function _FinancialFirmManagement({
             {filteredProducts.map((product) => (
               <Card
                 key={product.id}
-                className={`${!product.active ? "opacity-60" : ""}`}
+                className={`${!product.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -447,12 +449,13 @@ function _FinancialFirmManagement({
                           {product.description}
                         </CardDescription>
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${product.riskLevel === "Low"
-                            ? "bg-green-100 text-green-800"
-                            : product.riskLevel === "Medium"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                            }`}
+                          className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${
+                            product.riskLevel === 'Low'
+                              ? 'bg-green-100 text-green-800'
+                              : product.riskLevel === 'Medium'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                          }`}
                         >
                           {product.riskLevel} Risk
                         </span>
@@ -471,7 +474,7 @@ function _FinancialFirmManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {product.active ? "Active" : "Inactive"}
+                        {product.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -516,7 +519,7 @@ function _FinancialFirmManagement({
             {filteredAdvisors.map((advisor) => (
               <Card
                 key={advisor.id}
-                className={`${!advisor.active ? "opacity-60" : ""}`}
+                className={`${!advisor.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -535,10 +538,11 @@ function _FinancialFirmManagement({
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-3 h-3 ${i < Math.floor(advisor.rating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                                }`}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(advisor.rating)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
                             />
                           ))}
                           <span className="text-xs ml-1">{advisor.rating}</span>
@@ -561,7 +565,7 @@ function _FinancialFirmManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {advisor.active ? "Active" : "Inactive"}
+                        {advisor.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 

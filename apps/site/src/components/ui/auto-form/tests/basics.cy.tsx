@@ -1,44 +1,44 @@
-import { z } from "zod";
-import AutoForm from "../index";
+import { z } from 'zod';
+import AutoForm from '../index';
 
-describe("<AutoForm />", () => {
-  it("renders fields", () => {
+describe('<AutoForm />', () => {
+  it('renders fields', () => {
     const formSchema = z.object({
       username: z.string().min(2, {
-        message: "Username must be at least 2 characters.",
+        message: 'Username must be at least 2 characters.',
       }),
 
-      password: z.string().describe("Your secure password").min(8, {
-        message: "Password must be at least 8 characters.",
+      password: z.string().describe('Your secure password').min(8, {
+        message: 'Password must be at least 8 characters.',
       }),
     });
 
     cy.mount(<AutoForm formSchema={formSchema} />);
-    cy.get("input[name=username]").should("exist");
-    cy.get("input[name=password]").should("exist");
+    cy.get('input[name=username]').should('exist');
+    cy.get('input[name=password]').should('exist');
   });
 
-  it("renders fields with custom labels", () => {
+  it('renders fields with custom labels', () => {
     const formSchema = z.object({
-      username: z.string().describe("Your username"),
+      username: z.string().describe('Your username'),
     });
 
     cy.mount(<AutoForm formSchema={formSchema} />);
 
-    cy.get("label").contains("Your username");
+    cy.get('label').contains('Your username');
   });
 
-  it("generates default labels", () => {
+  it('generates default labels', () => {
     const formSchema = z.object({
       someFieldName: z.string(),
     });
 
     cy.mount(<AutoForm formSchema={formSchema} />);
 
-    cy.get("label").contains("Some Field Name");
+    cy.get('label').contains('Some Field Name');
   });
 
-  it("allows setting custom field labels", () => {
+  it('allows setting custom field labels', () => {
     const formSchema = z.object({
       someFieldName: z.string(),
     });
@@ -47,17 +47,17 @@ describe("<AutoForm />", () => {
       <AutoForm
         fieldConfig={{
           someFieldName: {
-            label: "My field name",
+            label: 'My field name',
           },
         }}
         formSchema={formSchema}
       />,
     );
 
-    cy.get("label").contains("My field name");
+    cy.get('label').contains('My field name');
   });
 
-  it("allows setting custom field props", () => {
+  it('allows setting custom field props', () => {
     const formSchema = z.object({
       username: z.string(),
     });
@@ -68,21 +68,21 @@ describe("<AutoForm />", () => {
         fieldConfig={{
           username: {
             inputProps: {
-              placeholder: "Enter your username",
+              placeholder: 'Enter your username',
             },
           },
         }}
       />,
     );
 
-    cy.get("input[name=username]").should(
-      "have.attr",
-      "placeholder",
-      "Enter your username",
+    cy.get('input[name=username]').should(
+      'have.attr',
+      'placeholder',
+      'Enter your username',
     );
   });
 
-  it("allows setting custom field type", () => {
+  it('allows setting custom field type', () => {
     const formSchema = z.object({
       username: z.string(),
     });
@@ -92,16 +92,16 @@ describe("<AutoForm />", () => {
         formSchema={formSchema}
         fieldConfig={{
           username: {
-            fieldType: "number",
+            fieldType: 'number',
           },
         }}
       />,
     );
 
-    cy.get("input").should("have.attr", "type", "number");
+    cy.get('input').should('have.attr', 'type', 'number');
   });
 
-  it("can submit valid forms", () => {
+  it('can submit valid forms', () => {
     const formSchema = z.object({
       username: z.string(),
     });
@@ -111,7 +111,7 @@ describe("<AutoForm />", () => {
         formSchema={formSchema}
         onSubmit={(values) => {
           expect(values).to.deep.equal({
-            username: "john",
+            username: 'john',
           });
         }}
       >
@@ -119,11 +119,11 @@ describe("<AutoForm />", () => {
       </AutoForm>,
     );
 
-    cy.get("input[name=username]").type("john");
-    cy.get("button[type=submit]").click();
+    cy.get('input[name=username]').type('john');
+    cy.get('button[type=submit]').click();
   });
 
-  it("shows error for invalid forms", () => {
+  it('shows error for invalid forms', () => {
     const formSchema = z.object({
       username: z.string(),
     });
@@ -132,29 +132,29 @@ describe("<AutoForm />", () => {
       <AutoForm
         formSchema={formSchema}
         onSubmit={() => {
-          expect.fail("Should not be called.");
+          expect.fail('Should not be called.');
         }}
       >
         <button type="submit">Submit</button>
       </AutoForm>,
     );
 
-    cy.get("button[type=submit]").click();
+    cy.get('button[type=submit]').click();
   });
 
-  it("can set default values", () => {
+  it('can set default values', () => {
     const formSchema = z.object({
-      username: z.string().default("john"),
+      username: z.string().default('john'),
     });
 
     cy.mount(<AutoForm formSchema={formSchema} />);
 
-    cy.get("input[name=username]").should("have.value", "john");
+    cy.get('input[name=username]').should('have.value', 'john');
   });
 
-  it("can submit with default values", () => {
+  it('can submit with default values', () => {
     const formSchema = z.object({
-      username: z.string().default("john"),
+      username: z.string().default('john'),
     });
 
     cy.mount(
@@ -162,7 +162,7 @@ describe("<AutoForm />", () => {
         formSchema={formSchema}
         onSubmit={(values) => {
           expect(values).to.deep.equal({
-            username: "john",
+            username: 'john',
           });
         }}
       >
@@ -170,10 +170,10 @@ describe("<AutoForm />", () => {
       </AutoForm>,
     );
 
-    cy.get("button[type=submit]").click();
+    cy.get('button[type=submit]').click();
   });
 
-  it("can set and submit optional values", () => {
+  it('can set and submit optional values', () => {
     const formSchema = z.object({
       username: z.string().optional(),
     });
@@ -191,11 +191,11 @@ describe("<AutoForm />", () => {
       </AutoForm>,
     );
 
-    cy.get("input[name=username]").should("have.value", "");
-    cy.get("button[type=submit]").click();
+    cy.get('input[name=username]').should('have.value', '');
+    cy.get('button[type=submit]').click();
   });
 
-  it("can add description", () => {
+  it('can add description', () => {
     const formSchema = z.object({
       username: z.string(),
     });
@@ -205,44 +205,44 @@ describe("<AutoForm />", () => {
         formSchema={formSchema}
         fieldConfig={{
           username: {
-            description: "Your username here",
+            description: 'Your username here',
           },
         }}
       />,
     );
 
-    cy.get("p").contains("Your username here");
+    cy.get('p').contains('Your username here');
   });
 
-  it("can set default values on array", () => {
+  it('can set default values on array', () => {
     const formSchema = z.object({
       arr: z.array(z.object({ name: z.string(), age: z.number() })).default([
-        { name: "Haykal", age: 21 },
-        { name: "John", age: 20 },
+        { name: 'Haykal', age: 21 },
+        { name: 'John', age: 20 },
       ]),
     });
 
     cy.mount(<AutoForm formSchema={formSchema} />);
 
     //get button with text Arr
-    cy.get("button").contains("Arr").click();
-    cy.get("input[name='arr.0.name']").should("have.value", "Haykal");
-    cy.get("input[name='arr.0.age']").should("have.value", "21");
-    cy.get("input[name='arr.1.name']").should("have.value", "John");
-    cy.get("input[name='arr.1.age']").should("have.value", "20");
+    cy.get('button').contains('Arr').click();
+    cy.get("input[name='arr.0.name']").should('have.value', 'Haykal');
+    cy.get("input[name='arr.0.age']").should('have.value', '21');
+    cy.get("input[name='arr.1.name']").should('have.value', 'John');
+    cy.get("input[name='arr.1.age']").should('have.value', '20');
   });
 
-  it("can set default value of number to 0", () => {
+  it('can set default value of number to 0', () => {
     const formSchema = z.object({
       number: z.number().default(0),
     });
 
     cy.mount(<AutoForm formSchema={formSchema} />);
 
-    cy.get("input[name='number']").should("have.value", "0");
+    cy.get("input[name='number']").should('have.value', '0');
   });
 
-  it("renders record field with add button", () => {
+  it('renders record field with add button', () => {
     const formSchema = z.object({
       metadata: z.record(z.string()),
     });
@@ -250,17 +250,17 @@ describe("<AutoForm />", () => {
     cy.mount(<AutoForm formSchema={formSchema} />);
 
     // Check if the record field accordion exists
-    cy.get("button").contains("Metadata").click();
+    cy.get('button').contains('Metadata').click();
 
     // Check if the add button exists
-    cy.get("button").contains("Add Key-Value Pair").should("exist");
+    cy.get('button').contains('Add Key-Value Pair').should('exist');
 
     // Initially there should be no key-value pair inputs
-    cy.get("input[placeholder='Key']").should("not.exist");
-    cy.get("input[placeholder='Value']").should("not.exist");
+    cy.get("input[placeholder='Key']").should('not.exist');
+    cy.get("input[placeholder='Value']").should('not.exist');
   });
 
-  it("can add and remove key-value pairs in record field", () => {
+  it('can add and remove key-value pairs in record field', () => {
     const formSchema = z.object({
       tags: z.record(z.string()).default({}),
     });
@@ -268,27 +268,27 @@ describe("<AutoForm />", () => {
     cy.mount(<AutoForm formSchema={formSchema} />);
 
     // Open the accordion
-    cy.get("button").contains("Tags").click();
+    cy.get('button').contains('Tags').click();
 
     // Add a new key-value pair
-    cy.get("button").contains("Add Key-Value Pair").click();
+    cy.get('button').contains('Add Key-Value Pair').click();
 
     // Check if key and value inputs appear
-    cy.get("input[placeholder='Key']").should("have.length", 1);
-    cy.get("input[placeholder='Value']").should("have.length", 1);
+    cy.get("input[placeholder='Key']").should('have.length', 1);
+    cy.get("input[placeholder='Value']").should('have.length', 1);
 
     // Add another key-value pair
-    cy.get("button").contains("Add Key-Value Pair").click();
+    cy.get('button').contains('Add Key-Value Pair').click();
 
     // Check if there are now 2 key-value pairs
-    cy.get("input[placeholder='Key']").should("have.length", 2);
-    cy.get("input[placeholder='Value']").should("have.length", 2);
+    cy.get("input[placeholder='Key']").should('have.length', 2);
+    cy.get("input[placeholder='Value']").should('have.length', 2);
 
     // Test removing a key-value pair by clicking the trash button
-    cy.get("button").find("svg").first().click(); // Click the first trash icon
+    cy.get('button').find('svg').first().click(); // Click the first trash icon
 
     // Check if there is now only 1 key-value pair
-    cy.get("input[placeholder='Key']").should("have.length", 1);
-    cy.get("input[placeholder='Value']").should("have.length", 1);
+    cy.get("input[placeholder='Key']").should('have.length', 1);
+    cy.get("input[placeholder='Value']").should('have.length', 1);
   });
 });

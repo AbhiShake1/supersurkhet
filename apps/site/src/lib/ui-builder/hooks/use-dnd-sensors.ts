@@ -12,6 +12,6 @@ export const useDndSensors = () => {
         delay: 100,
         tolerance: 8,
       },
-    })
+    }),
   );
-}; 
+};

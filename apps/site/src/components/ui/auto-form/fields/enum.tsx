@@ -1,10 +1,10 @@
-import { FormControl, FormItem, FormMessage } from "@/components/ui/form";
-import type * as z from "zod";
-import AutoFormLabel from "../common/label";
-import AutoFormTooltip from "../common/tooltip";
-import type { AutoFormInputComponentProps } from "../types";
-import { getBaseSchema } from "../utils";
-import { Combobox } from "@/components/ui/combobox";
+import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
+import type * as z from 'zod';
+import AutoFormLabel from '../common/label';
+import AutoFormTooltip from '../common/tooltip';
+import type { AutoFormInputComponentProps } from '../types';
+import { getBaseSchema } from '../utils';
+import { Combobox } from '@/components/ui/combobox';
 
 export default function AutoFormEnum({
   label,
@@ -41,7 +41,9 @@ export default function AutoFormEnum({
           options={options}
           value={field.value?.toString()}
           onValueChange={field.onChange}
-          placeholder={fieldConfigItem.inputProps?.placeholder || "Select an option..."}
+          placeholder={
+            fieldConfigItem.inputProps?.placeholder || 'Select an option...'
+          }
           className={fieldProps.className}
           disabled={fieldProps.disabled}
         />

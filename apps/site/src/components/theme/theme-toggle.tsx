@@ -1,15 +1,25 @@
-import { useState } from "react";
-import { useTheme } from "@/contexts/theme-context";
-import { Button } from "@/components/ui/button";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Moon, Sun, Check, ChevronDown, Palette } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { defaultPresets } from "@/lib/theme";
-import { ButtonGroup } from "@/components/ui/button-group";
+import { useState } from 'react';
+import { useTheme } from '@/contexts/theme-context';
+import { Button } from '@/components/ui/button';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Moon, Sun, Check, ChevronDown, Palette } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { defaultPresets } from '@/lib/theme';
+import { ButtonGroup } from '@/components/ui/button-group';
 
-interface ThemeToggleProps extends React.ComponentProps<typeof Button> { }
+interface ThemeToggleProps extends React.ComponentProps<typeof Button> {}
 
 const ColorSwatch = ({ color }: { color: string }) => (
   <div
@@ -19,7 +29,13 @@ const ColorSwatch = ({ color }: { color: string }) => (
 );
 
 export function ThemeToggle({ className, ...props }: ThemeToggleProps) {
-  const { isDarkMode, toggleDarkMode, getAvailablePresets, applyPreset, currentThemeName } = useTheme();
+  const {
+    isDarkMode,
+    toggleDarkMode,
+    getAvailablePresets,
+    applyPreset,
+    currentThemeName,
+  } = useTheme();
   const [open, setOpen] = useState(false);
 
   const handleThemeToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -28,7 +44,9 @@ export function ThemeToggle({ className, ...props }: ThemeToggleProps) {
   };
 
   const presets = getAvailablePresets();
-  const currentPreset = presets.find(preset => preset.name === currentThemeName);
+  const currentPreset = presets.find(
+    (preset) => preset.name === currentThemeName,
+  );
 
   return (
     <ButtonGroup className="items-center">
@@ -38,7 +56,11 @@ export function ThemeToggle({ className, ...props }: ThemeToggleProps) {
         size="icon"
         aria-label="Toggle theme"
       >
-        {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        {isDarkMode ? (
+          <Sun className="h-4 w-4" />
+        ) : (
+          <Moon className="h-4 w-4" />
+        )}
       </Button>
       <Popover modal open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
@@ -65,9 +87,12 @@ export function ThemeToggle({ className, ...props }: ThemeToggleProps) {
               <CommandEmpty>No theme found.</CommandEmpty>
               <CommandGroup>
                 {presets.map((preset) => {
-                  const presetData = defaultPresets[preset.name as keyof typeof defaultPresets];
+                  const presetData =
+                    defaultPresets[preset.name as keyof typeof defaultPresets];
                   // Use the current theme mode to determine which theme to display for previews
-                  const themeToUse = isDarkMode ? presetData.styles.dark : presetData.styles.light;
+                  const themeToUse = isDarkMode
+                    ? presetData.styles.dark
+                    : presetData.styles.light;
 
                   return (
                     <CommandItem
@@ -82,19 +107,31 @@ export function ThemeToggle({ className, ...props }: ThemeToggleProps) {
                       <div className="flex w-full items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="flex gap-1">
-                            <ColorSwatch color={themeToUse.primary || '#3b82f6'} />
-                            <ColorSwatch color={themeToUse.secondary || '#f3f4f6'} />
-                            <ColorSwatch color={themeToUse.accent || '#e5e7eb'} />
-                            <ColorSwatch color={themeToUse.border || '#e5e7eb'} />
+                            <ColorSwatch
+                              color={themeToUse.primary || '#3b82f6'}
+                            />
+                            <ColorSwatch
+                              color={themeToUse.secondary || '#f3f4f6'}
+                            />
+                            <ColorSwatch
+                              color={themeToUse.accent || '#e5e7eb'}
+                            />
+                            <ColorSwatch
+                              color={themeToUse.border || '#e5e7eb'}
+                            />
                           </div>
                           <div className="flex flex-col">
-                            <span className="text-sm font-medium">{preset.label}</span>
+                            <span className="text-sm font-medium">
+                              {preset.label}
+                            </span>
                           </div>
                         </div>
                         <Check
                           className={cn(
-                            "h-4 w-4",
-                            currentThemeName === preset.name ? "opacity-100" : "opacity-0"
+                            'h-4 w-4',
+                            currentThemeName === preset.name
+                              ? 'opacity-100'
+                              : 'opacity-0',
                           )}
                         />
                       </div>

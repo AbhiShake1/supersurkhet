@@ -1,8 +1,8 @@
-import { api } from "@/lib/api";
-import type { Business } from "@/lib/schema";
-import { Search, Settings, XCircle } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Button } from "../ui/button";
+import { api } from '@/lib/api';
+import type { Business } from '@/lib/schema';
+import { Search, Settings, XCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Button } from '../ui/button';
 import {
   Credenza,
   CredenzaBody,
@@ -10,45 +10,45 @@ import {
   CredenzaHeader,
   CredenzaTitle,
   CredenzaTrigger,
-} from "../ui/credenza";
-import { Input } from "../ui/input";
-import { ScrollArea } from "../ui/scroll-area";
-import { Skeleton } from "../ui/skeleton";
-import { AppGrid } from "./app-grid";
-import { useRecentlyUsedApps } from "./recently-used-apps-context";
-import { useFolders } from "./folders-context";
-import { AppDrawerSettings } from "./settings";
+} from '../ui/credenza';
+import { Input } from '../ui/input';
+import { ScrollArea } from '../ui/scroll-area';
+import { Skeleton } from '../ui/skeleton';
+import { AppGrid } from './app-grid';
+import { useRecentlyUsedApps } from './recently-used-apps-context';
+import { useFolders } from './folders-context';
+import { AppDrawerSettings } from './settings';
 
 export interface AppDrawerProps
-  extends React.ComponentPropsWithoutRef<typeof ScrollArea> { }
+  extends React.ComponentPropsWithoutRef<typeof ScrollArea> {}
 
 export function AppDrawer(props: AppDrawerProps) {
   const { data: allBusinesses = [], isLoading } = api.business.useGet();
   const { recentlyUsedApps, isLoading: isLoadingRecentlyUsed } =
     useRecentlyUsedApps();
   const { folders } = useFolders();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Settings for app drawer customization
   const [settings, setSettings] = useState({
     gridColumns: 4,
-    iconSize: "md" as "sm" | "md" | "lg",
+    iconSize: 'md' as 'sm' | 'md' | 'lg',
   });
 
   // Load saved settings from localStorage
   useEffect(() => {
-    const savedSettings = localStorage.getItem("appDrawerSettings");
+    const savedSettings = localStorage.getItem('appDrawerSettings');
     if (savedSettings) {
       try {
         const parsed = JSON.parse(savedSettings);
         // Ensure we only use the properties we need
         setSettings({
           gridColumns: parsed.gridColumns || 4,
-          iconSize: parsed.iconSize || "md",
+          iconSize: parsed.iconSize || 'md',
         });
       } catch (e) {
-        console.error("Failed to parse app drawer settings", e);
+        console.error('Failed to parse app drawer settings', e);
       }
     }
   }, []);
@@ -56,7 +56,7 @@ export function AppDrawer(props: AppDrawerProps) {
   // Save settings to localStorage
   const saveSettings = (newSettings: typeof settings) => {
     setSettings(newSettings);
-    localStorage.setItem("appDrawerSettings", JSON.stringify(newSettings));
+    localStorage.setItem('appDrawerSettings', JSON.stringify(newSettings));
   };
 
   // Handler for settings changes
@@ -66,7 +66,10 @@ export function AppDrawer(props: AppDrawerProps) {
   };
 
   // Create stable skeleton IDs for loading state
-  const skeletonIds = useMemo(() => Array.from({ length: 10 }, (_, i) => `skeleton-${i}`), []);
+  const skeletonIds = useMemo(
+    () => Array.from({ length: 10 }, (_, i) => `skeleton-${i}`),
+    [],
+  );
 
   // Get all app IDs that are in folders
   const appIdsInFolders = useMemo(
@@ -78,7 +81,7 @@ export function AppDrawer(props: AppDrawerProps) {
   const businessesNotInFolders = useMemo(
     () =>
       allBusinesses.filter(
-        (business) => !appIdsInFolders.includes(business._?.soul || ""),
+        (business) => !appIdsInFolders.includes(business._?.soul || ''),
       ),
     [allBusinesses, appIdsInFolders],
   );
@@ -139,7 +142,7 @@ export function AppDrawer(props: AppDrawerProps) {
               variant="ghost"
               size="icon"
               className="absolute right-3 top-1/2 -translate-y-1/2 h-6 w-6"
-              onClick={() => setSearchTerm("")}
+              onClick={() => setSearchTerm('')}
             >
               <XCircle className="h-4 w-4" />
             </Button>
@@ -182,7 +185,7 @@ export function AppDrawer(props: AppDrawerProps) {
             <p>No apps found matching your search.</p>
             {searchTerm && (
               <div className="mt-4">
-                <Button variant="ghost" onClick={() => setSearchTerm("")}>
+                <Button variant="ghost" onClick={() => setSearchTerm('')}>
                   <XCircle className="h-4 w-4 mr-2" />
                   Clear Search
                 </Button>
@@ -207,7 +210,9 @@ export function AppDrawer(props: AppDrawerProps) {
             {(filteredAllBusinesses.length > 0 || folders.length > 0) && (
               <div className="flex items-center my-4 flex-row">
                 <div className="w-full border-t border-dotted border-muted" />
-                <span className="px-4 text-muted-foreground text-sm whitespace-nowrap flex-shrink-0">All Apps</span>
+                <span className="px-4 text-muted-foreground text-sm whitespace-nowrap flex-shrink-0">
+                  All Apps
+                </span>
                 <div className="w-full border-t border-dotted border-muted" />
               </div>
             )}

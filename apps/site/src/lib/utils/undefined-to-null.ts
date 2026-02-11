@@ -9,4 +9,3 @@ export function omitUndefined<T>(value: Partial<T>) {
     Object.entries(value).filter(([_, value]) => value !== undefined),
   ) as Required<T>;
 }
-

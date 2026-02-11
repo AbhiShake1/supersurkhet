@@ -27,4 +27,4 @@ export const ComponentDragContext = createContext<ComponentDragContextState>({
 
 // Custom hooks for using contexts
 export const useDndContext = () => useContext(DndContextStateContext);
-export const useComponentDragContext = () => useContext(ComponentDragContext); 
+export const useComponentDragContext = () => useContext(ComponentDragContext);

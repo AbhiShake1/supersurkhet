@@ -1,44 +1,41 @@
-import {
-  AutoForm as BaseAutoForm,
-  type AutoFormUIComponents,
-} from "./react";
-import { ZodProvider, type ZodObjectOrWrapped } from "@autoform/zod";
-import { ZodEffects, ZodObject } from "zod";
-import { ArrayElementWrapper } from "./components/ArrayElementWrapper";
-import { ArrayWrapper } from "./components/ArrayWrapper";
-import { BooleanField } from "./components/BooleanField";
-import { DateField } from "./components/DateField";
-import { DateTimeField } from "./components/DateTimeField";
-import { ErrorMessage } from "./components/ErrorMessage";
+import { AutoForm as BaseAutoForm, type AutoFormUIComponents } from './react';
+import { ZodProvider, type ZodObjectOrWrapped } from '@autoform/zod';
+import { ZodEffects, ZodObject } from 'zod';
+import { ArrayElementWrapper } from './components/ArrayElementWrapper';
+import { ArrayWrapper } from './components/ArrayWrapper';
+import { BooleanField } from './components/BooleanField';
+import { DateField } from './components/DateField';
+import { DateTimeField } from './components/DateTimeField';
+import { ErrorMessage } from './components/ErrorMessage';
 import {
   FieldWrapper,
   FieldWrapperWithoutLabel,
-} from "./components/FieldWrapper";
-import { Form } from "./components/Form";
-import { ImageUploadField } from "./components/ImageUploadField";
-import { MapField } from "./components/MapField";
-import { NumberField } from "./components/NumberField";
-import { ObjectWrapper } from "./components/ObjectWrapper";
-import { RecordField } from "./components/RecordField";
-import { SelectField } from "./components/SelectField";
-import { StringField } from "./components/StringField";
-import { SubmitButton } from "./components/SubmitButton";
-import type { AutoFormProps } from "./types";
-import { RichTextField } from "./components/RichTextField";
-import { EditorField } from "./components/EditorField";
-import { ColorField } from "./components/ColorField";
-import { FileUploadField } from "./components/FileUploadField";
-import { RatingField } from "./components/RatingField";
-import { SliderField } from "./components/SliderField";
-import { TagsField } from "./components/TagsField";
-import { CurrencyField } from "./components/CurrencyField";
-import { PhoneField } from "./components/PhoneField";
-import { UrlField } from "./components/UrlField";
-import { PasswordField } from "./components/PasswordField";
-import { PermissionsField } from "./components/PermissionsField";
-import { UnitField } from "./components/UnitField";
+} from './components/FieldWrapper';
+import { Form } from './components/Form';
+import { ImageUploadField } from './components/ImageUploadField';
+import { MapField } from './components/MapField';
+import { NumberField } from './components/NumberField';
+import { ObjectWrapper } from './components/ObjectWrapper';
+import { RecordField } from './components/RecordField';
+import { SelectField } from './components/SelectField';
+import { StringField } from './components/StringField';
+import { SubmitButton } from './components/SubmitButton';
+import type { AutoFormProps } from './types';
+import { RichTextField } from './components/RichTextField';
+import { EditorField } from './components/EditorField';
+import { ColorField } from './components/ColorField';
+import { FileUploadField } from './components/FileUploadField';
+import { RatingField } from './components/RatingField';
+import { SliderField } from './components/SliderField';
+import { TagsField } from './components/TagsField';
+import { CurrencyField } from './components/CurrencyField';
+import { PhoneField } from './components/PhoneField';
+import { UrlField } from './components/UrlField';
+import { PasswordField } from './components/PasswordField';
+import { PermissionsField } from './components/PermissionsField';
+import { UnitField } from './components/UnitField';
 
-const ShadcnUIComponents: Omit<AutoFormUIComponents, "FieldWrapper"> = {
+const ShadcnUIComponents: Omit<AutoFormUIComponents, 'FieldWrapper'> = {
   Form,
   ErrorMessage,
   SubmitButton,
@@ -85,9 +82,7 @@ export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
     <BaseAutoForm
       {...props}
       onSubmit={onSubmit}
-      schema={
-        new ZodProvider(schema)
-      }
+      schema={new ZodProvider(schema)}
       uiComponents={{
         ...ShadcnUIComponents,
         FieldWrapper: FieldWrapperWithoutLabel,
@@ -106,14 +101,12 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
   schema,
   ...props
 }: AutoFormProps<F>) {
-  "use memo"
+  'use memo';
   if (!schema) return null;
   return (
     <BaseAutoForm
       {...props}
-      schema={
-        new ZodProvider(schema)
-      }
+      schema={new ZodProvider(schema)}
       uiComponents={{ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }}
       formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
     />

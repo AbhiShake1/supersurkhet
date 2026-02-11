@@ -3,63 +3,70 @@ import {
   useQueryClient,
   type UseQueryOptions,
   type UseQueryResult,
-} from "@tanstack/react-query";
-import type { NestedSchemaType, SchemaKeys } from "..";
-import { getGunRef, getNestedZodShape, mergeKeys } from "../utils";
-import { decrypt } from "../utils/sea";
-import { createGunHook } from "./useGunHook";
-import { attachSouls, type GetBuilder as UseGetBuilder } from "../ssr/get";
+} from '@tanstack/react-query';
+import type { NestedSchemaType, SchemaKeys } from '..';
+import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
+import { decrypt } from '../utils/sea';
+import { createGunHook } from './useGunHook';
+import { attachSouls, type GetBuilder as UseGetBuilder } from '../ssr/get';
 
-export type { UseGetBuilder }
+export type { UseGetBuilder };
 
 export const useGet = createGunHook((messenger) => {
   return <const T extends SchemaKeys>(
     key:
       | T
       | (UseGetBuilder<T> & {
-        key: T;
-      }),
+          key: T;
+        }),
     ...restKeys: string[]
   ): UseQueryResult<NestedSchemaType<T>[] | undefined, Error> => {
     const queryClient = useQueryClient();
-    const isSingle = typeof key !== "string" && key.single || false
-    const k = typeof key === "string" ? key : key.key;
-    const queryKey = ["get", key, ...restKeys];
-    const schema = getNestedZodShape(k, messenger._options.schema)
+    const isSingle = (typeof key !== 'string' && key.single) || false;
+    const k = typeof key === 'string' ? key : key.key;
+    const queryKey = ['get', key, ...restKeys];
+    const schema = getNestedZodShape(k, messenger._options.schema);
     return useQuery({
-      ...(typeof key !== "string" && key.queryOptions),
+      ...(typeof key !== 'string' && key.queryOptions),
       queryKey,
       queryFn: async () => {
         const _keys = mergeKeys(k, ...restKeys) as T;
         const keys =
-          typeof key !== "string" && key.separator?.length
-            ? _keys.replaceAll("/", key.separator)
+          typeof key !== 'string' && key.separator?.length
+            ? _keys.replaceAll('/', key.separator)
             : _keys;
 
-        const node = typeof key !== "string" && key.treatSlugAsAbsolute ?
-          messenger._options.gun.get(keys) :
-          getGunRef(keys);
+        const node =
+          typeof key !== 'string' && key.treatSlugAsAbsolute
+            ? messenger._options.gun.get(keys)
+            : getGunRef(keys);
 
         async function transform(fullData: any) {
-          if (!fullData || typeof fullData !== "object") return;
+          if (!fullData || typeof fullData !== 'object') return;
 
           const entries = Object.entries(fullData) as [string, any][];
           const newList: NestedSchemaType<T>[] = [];
 
           if (isSingle) {
-            const decrypted = await decrypt<NestedSchemaType<T>>(fullData, schema);
+            const decrypted = await decrypt<NestedSchemaType<T>>(
+              fullData,
+              schema,
+            );
             if (decrypted) {
               const item = attachSouls(decrypted, keys);
               newList.push(item);
             }
           } else {
             for (const [soul, val] of entries) {
-              if (soul === "_" || val === null) continue;
+              if (soul === '_' || val === null) continue;
 
-              const decrypted = await decrypt<NestedSchemaType<T>>({
-                ...val,
-                _: { soul },
-              }, schema);
+              const decrypted = await decrypt<NestedSchemaType<T>>(
+                {
+                  ...val,
+                  _: { soul },
+                },
+                schema,
+              );
 
               if (decrypted) {
                 const item = attachSouls(decrypted, `${keys}/${soul}`);
@@ -72,12 +79,16 @@ export const useGet = createGunHook((messenger) => {
           return newList.filter(Boolean);
         }
 
-        const firstData = await node.open(async (fullData) => {
-          const newList = await transform(fullData);
-          queryClient.setQueryData(queryKey, newList);
-        }).then()
+        const firstData = await node
+          .open(async (fullData) => {
+            const newList = await transform(fullData);
+            queryClient.setQueryData(queryKey, newList);
+          })
+          .then();
 
-        return (queryClient.getQueryData(queryKey) ?? await transform(firstData) ?? []) as NestedSchemaType<T>[] | undefined;
+        return (queryClient.getQueryData(queryKey) ??
+          (await transform(firstData)) ??
+          []) as NestedSchemaType<T>[] | undefined;
       },
     });
   };
@@ -91,13 +102,13 @@ type Options<T extends SchemaKeys> = UseQueryOptions<
 
 export type UseGetOptions<T extends SchemaKeys> = Omit<
   Options<T>,
-  "queryFn"
+  'queryFn'
 > & {
   key: T;
 };
 
-export type UseGetOptionsShort = Omit<UseGetOptions<SchemaKeys>, "key"> & {
+export type UseGetOptionsShort = Omit<UseGetOptions<SchemaKeys>, 'key'> & {
   key?: string;
 };
 
-export type UseGet = typeof useGet
+export type UseGet = typeof useGet;

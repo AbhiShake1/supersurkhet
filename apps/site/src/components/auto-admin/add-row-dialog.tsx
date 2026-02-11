@@ -1,20 +1,20 @@
-import * as React from "react";
-import { useAuth } from "@/components/auth-provider";
-import { AutoForm } from "@/components/ui/autoform";
-import { SubmitButton } from "@/components/ui/autoform/components/SubmitButton";
-import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { appSchema } from "@/lib/schema";
+import * as React from 'react';
+import { useAuth } from '@/components/auth-provider';
+import { AutoForm } from '@/components/ui/autoform';
+import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
+import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { appSchema } from '@/lib/schema';
 import {
   type SchemaKeys,
   type NestedSchemaType,
   getNestedZodShape,
   getSchema,
   useCreate,
-} from "@gta/react-hooks";
-import { ZodEffects } from "zod";
-import type { ZodType } from "zod";
+} from '@gta/react-hooks';
+import { ZodEffects } from 'zod';
+import type { ZodType } from 'zod';
 import {
   ArrowBigUpDash,
   FileJson,
@@ -22,7 +22,7 @@ import {
   Plus,
   Save,
   Sheet,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   Credenza,
   CredenzaBody,
@@ -32,28 +32,33 @@ import {
   CredenzaHeader,
   CredenzaTitle,
   CredenzaTrigger,
-} from "../ui/credenza";
-import { BadgeMarquee } from "../ui/badge-marquee";
-import { api } from "@/lib/api";
-import { parseCSVFile, parseExcelFile, parseJSONFile, validateDataAgainstSchema } from "@/lib/import";
+} from '../ui/credenza';
+import { BadgeMarquee } from '../ui/badge-marquee';
+import { api } from '@/lib/api';
+import {
+  parseCSVFile,
+  parseExcelFile,
+  parseJSONFile,
+  validateDataAgainstSchema,
+} from '@/lib/import';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { AutoTableProps } from "../auto-table";
-import type { ZodObjectOrWrapped } from "@autoform/zod";
+} from '@/components/ui/dropdown-menu';
+import type { AutoTableProps } from '../auto-table';
+import type { ZodObjectOrWrapped } from '@autoform/zod';
 
 export type AddRowDialogProps<T extends SchemaKeys> = Pick<
   AutoTableProps<T>,
-  "slug" | "extender" | "onCreate" | "readOnly" | "className"
+  'slug' | 'extender' | 'onCreate' | 'readOnly' | 'className'
 > & {
   schema: T;
   children?: React.ReactNode;
   buttonLabel?: string | React.ReactNode;
   buttonIcon?: string | React.ReactNode;
-}
+};
 
 export function AddRowDialog<T extends SchemaKeys>({
   schema,
@@ -63,21 +68,23 @@ export function AddRowDialog<T extends SchemaKeys>({
   readOnly = false,
   className,
   children,
-  buttonLabel = "Add New",
+  buttonLabel = 'Add New',
   buttonIcon = <Plus className="size-4" />,
 }: AddRowDialogProps<T>) {
-  "use memo"
-  const [formValues, setFormValues] = React.useState<Record<string, unknown>>({});
+  'use memo';
+  const [formValues, setFormValues] = React.useState<Record<string, unknown>>(
+    {},
+  );
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const { user } = useAuth();
   const [isImportPending, setIsImportPending] = React.useState(false);
 
   const createMutation = useCreate({
-    keys: [schema, slug ?? ""],
+    keys: [schema, slug ?? ''],
     onSuccess(...args) {
       setDialogOpen(false);
       onCreate?.(...args);
-    }
+    },
   });
 
   const _schema = getNestedZodShape(schema, appSchema.schemaShape);
@@ -92,14 +99,14 @@ export function AddRowDialog<T extends SchemaKeys>({
   const finalSchema = getFinalSchema();
   const finalSchemaObject =
     finalSchema instanceof ZodEffects ? finalSchema.innerType() : finalSchema;
-  type SchemaRecord = Omit<NestedSchemaType<T>, "_"> & {
+  type SchemaRecord = Omit<NestedSchemaType<T>, '_'> & {
     id?: string | number;
   };
   const typedSchema = finalSchemaObject as ZodType<SchemaRecord>;
 
   const handleFileUpload = async (
     selectedFile: File | null,
-    format: "csv" | "excel" | "json",
+    format: 'csv' | 'excel' | 'json',
   ) => {
     if (!selectedFile) return;
     setIsImportPending(true);
@@ -123,8 +130,10 @@ export function AddRowDialog<T extends SchemaKeys>({
 
       if (errors.length > 0) {
         // Show validation errors to user
-        console.error("Validation errors:", errors);
-        alert(`Validation errors found in ${errors.length} records. Please check console for details.`);
+        console.error('Validation errors:', errors);
+        alert(
+          `Validation errors found in ${errors.length} records. Please check console for details.`,
+        );
         return;
       }
 
@@ -141,7 +150,9 @@ export function AddRowDialog<T extends SchemaKeys>({
       // file input value reset handled in handleFileImport
     } catch (error) {
       console.error(`Error parsing ${format} file:`, error);
-      alert(`Error parsing ${format} file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      alert(
+        `Error parsing ${format} file: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
     } finally {
       setIsImportPending(false);
     }
@@ -149,14 +160,14 @@ export function AddRowDialog<T extends SchemaKeys>({
 
   const handleFileImport = (
     acceptedFormats: string,
-    fileType: "csv" | "excel" | "json",
+    fileType: 'csv' | 'excel' | 'json',
   ) => {
-    const input = document.createElement("input");
-    input.type = "file";
+    const input = document.createElement('input');
+    input.type = 'file';
     input.accept = acceptedFormats;
     input.onchange = () => {
       handleFileUpload(input.files?.[0] ?? null, fileType).finally(() => {
-        input.value = "";
+        input.value = '';
       });
     };
     input.click();
@@ -168,22 +179,25 @@ export function AddRowDialog<T extends SchemaKeys>({
 
   return (
     <ButtonGroup className={className}>
-      {
-        slug &&
+      {slug && (
         <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
           <CredenzaTrigger asChild>
             <Button className="gap-2 rounded-r-none border-r">
               {buttonIcon}
-              <span className="hidden sm:inline">
-                {buttonLabel}
-              </span>
+              <span className="hidden sm:inline">{buttonLabel}</span>
             </Button>
           </CredenzaTrigger>
           <CredenzaContent>
             <CredenzaHeader className="min-w-0">
-              <CredenzaTitle className="capitalize">Add new {schema}</CredenzaTitle>
+              <CredenzaTitle className="capitalize">
+                Add new {schema}
+              </CredenzaTitle>
               <CredenzaDescription asChild>
-                <AddDataSuggestions schemaName={schema} slug={slug} onSelected={setFormValues} />
+                <AddDataSuggestions
+                  schemaName={schema}
+                  slug={slug}
+                  onSelected={setFormValues}
+                />
               </CredenzaDescription>
             </CredenzaHeader>
             <CredenzaBody asChild>
@@ -194,12 +208,12 @@ export function AddRowDialog<T extends SchemaKeys>({
                   onSubmit={(b) => {
                     const payload = typedSchema.parse({
                       ...b,
-                      created_by: user?._?.soul ?? "anon",
+                      created_by: user?._?.soul ?? 'anon',
                       timestamp: Date.now(),
                     });
                     createMutation.mutate(payload);
                   }}
-                  formProps={{ id: "auto-table-add-form" }}
+                  formProps={{ id: 'auto-table-add-form' }}
                 />
               </ScrollArea>
             </CredenzaBody>
@@ -223,7 +237,7 @@ export function AddRowDialog<T extends SchemaKeys>({
             </CredenzaFooter>
           </CredenzaContent>
         </Credenza>
-      }
+      )}
       <AddRowImportMenu
         onImport={handleFileImport}
         isImportPending={isImportPending}
@@ -233,11 +247,17 @@ export function AddRowDialog<T extends SchemaKeys>({
 }
 
 interface AddRowImportMenuProps {
-  onImport: (acceptedFormats: string, fileType: 'csv' | 'excel' | 'json') => void;
+  onImport: (
+    acceptedFormats: string,
+    fileType: 'csv' | 'excel' | 'json',
+  ) => void;
   isImportPending: boolean;
 }
 
-function AddRowImportMenu({ onImport, isImportPending }: AddRowImportMenuProps) {
+function AddRowImportMenu({
+  onImport,
+  isImportPending,
+}: AddRowImportMenuProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -252,15 +272,24 @@ function AddRowImportMenu({ onImport, isImportPending }: AddRowImportMenuProps) 
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
-        <DropdownMenuItem onClick={() => onImport(".csv", "csv")} className="gap-2">
+        <DropdownMenuItem
+          onClick={() => onImport('.csv', 'csv')}
+          className="gap-2"
+        >
           <FileText className="h-4 w-4" />
           Import from CSV
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onImport(".json", "json")} className="gap-2">
+        <DropdownMenuItem
+          onClick={() => onImport('.json', 'json')}
+          className="gap-2"
+        >
           <FileJson className="h-4 w-4" />
           Import from JSON
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onImport(".xlsx,.xls", "excel")} className="gap-2">
+        <DropdownMenuItem
+          onClick={() => onImport('.xlsx,.xls', 'excel')}
+          className="gap-2"
+        >
           <Sheet className="h-4 w-4" />
           Import from Excel
         </DropdownMenuItem>
@@ -269,46 +298,61 @@ function AddRowImportMenu({ onImport, isImportPending }: AddRowImportMenuProps) 
   );
 }
 
-
 export interface AddDataSuggestionsProps {
   slug: string;
   schemaName: SchemaKeys;
   onSelected: (item: SuggestionItem) => void;
 }
 
-type SuggestionItem = Record<string, unknown> & { business: string | undefined };
+type SuggestionItem = Record<string, unknown> & {
+  business: string | undefined;
+};
 
-export function AddDataSuggestions({ schemaName, slug, onSelected }: AddDataSuggestionsProps) {
+export function AddDataSuggestions({
+  schemaName,
+  slug,
+  onSelected,
+}: AddDataSuggestionsProps) {
   const { data, isLoading } = useAllData(schemaName);
 
-  if (isLoading) return "loading suggestions..."
+  if (isLoading) return 'loading suggestions...';
 
   function getTeansformedData() {
-    if (!data?.length) return []
-    const othersData = data.filter(d => d?.business !== slug)
+    if (!data?.length) return [];
+    const othersData = data.filter((d) => d?.business !== slug);
 
     const getLabel = (item: SuggestionItem) => {
-      const labelKeys = ["title", "name", "label", "text", "displayName", "heading"];
+      const labelKeys = [
+        'title',
+        'name',
+        'label',
+        'text',
+        'displayName',
+        'heading',
+      ];
       for (const key of labelKeys) {
         const value = item[key];
-        if (typeof value === "string" && value.length > 0) return value;
+        if (typeof value === 'string' && value.length > 0) return value;
       }
-      return "";
+      return '';
     };
 
     const uniqueData = Object.values(
       Object.fromEntries(
-        othersData.map((item, index) => [getLabel(item) || `item-${index}`, item]),
+        othersData.map((item, index) => [
+          getLabel(item) || `item-${index}`,
+          item,
+        ]),
       ),
     );
-    return uniqueData
+    return uniqueData;
   }
 
-  const transformedData = getTeansformedData()
+  const transformedData = getTeansformedData();
 
-  if (!transformedData?.length) return null
+  if (!transformedData?.length) return null;
 
-  return <BadgeMarquee items={transformedData} onSelected={onSelected} />
+  return <BadgeMarquee items={transformedData} onSelected={onSelected} />;
 }
 
 function useAllData(tableName: SchemaKeys) {
@@ -317,13 +361,13 @@ function useAllData(tableName: SchemaKeys) {
   const isSuggestionItem = (
     value: SuggestionItem | null,
   ): value is SuggestionItem =>
-    !!value && typeof value === "object" && !("soul" in value);
+    !!value && typeof value === 'object' && !('soul' in value);
 
   const data = allItems
     ?.flatMap((item) => {
       const business = item._?.soul;
       return Object.values(item).map((entry) => {
-        if (!entry || typeof entry !== "object") return null;
+        if (!entry || typeof entry !== 'object') return null;
         return { ...(entry as Record<string, unknown>), business };
       });
     })

@@ -1,19 +1,23 @@
-import React, { type ComponentPropsWithoutRef, type CSSProperties } from "react"
+import React, {
+  type ComponentPropsWithoutRef,
+  type CSSProperties,
+} from 'react';
 import { z } from 'zod';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
 export const ShimmerButtonSchema = z.object({
-  shimmerColor: z.string().default("#ffffff"),
-  shimmerSize: z.string().default("0.05em"),
-  shimmerDuration: z.string().default("3s"),
-  borderRadius: z.string().default("100px"),
-  background: z.string().default("rgba(0, 0, 0, 1)"),
+  shimmerColor: z.string().default('#ffffff'),
+  shimmerSize: z.string().default('0.05em'),
+  shimmerDuration: z.string().default('3s'),
+  borderRadius: z.string().default('100px'),
+  background: z.string().default('rgba(0, 0, 0, 1)'),
   className: z.string().optional(),
   children: z.any().optional(),
 });
 
-export type ShimmerButtonProps = z.infer<typeof ShimmerButtonSchema> & ComponentPropsWithoutRef<"button">;
+export type ShimmerButtonProps = z.infer<typeof ShimmerButtonSchema> &
+  ComponentPropsWithoutRef<'button'>;
 
 export const ShimmerButton = React.forwardRef<
   HTMLButtonElement,
@@ -21,33 +25,33 @@ export const ShimmerButton = React.forwardRef<
 >(
   (
     {
-      shimmerColor = "#ffffff",
-      shimmerSize = "0.05em",
-      shimmerDuration = "3s",
-      borderRadius = "100px",
-      background = "rgba(0, 0, 0, 1)",
+      shimmerColor = '#ffffff',
+      shimmerSize = '0.05em',
+      shimmerDuration = '3s',
+      borderRadius = '100px',
+      background = 'rgba(0, 0, 0, 1)',
       className,
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     return (
       <button
         style={
           {
-            "--spread": "90deg",
-            "--shimmer-color": shimmerColor,
-            "--radius": borderRadius,
-            "--speed": shimmerDuration,
-            "--cut": shimmerSize,
-            "--bg": background,
+            '--spread': '90deg',
+            '--shimmer-color': shimmerColor,
+            '--radius': borderRadius,
+            '--speed': shimmerDuration,
+            '--cut': shimmerSize,
+            '--bg': background,
           } as CSSProperties
         }
         className={cn(
-          "group relative z-0 flex cursor-pointer items-center justify-center overflow-hidden [border-radius:var(--radius)] border border-white/10 px-6 py-3 whitespace-nowrap text-white [background:var(--bg)]",
-          "transform-gpu transition-transform duration-300 ease-in-out active:translate-y-px",
-          className
+          'group relative z-0 flex cursor-pointer items-center justify-center overflow-hidden [border-radius:var(--radius)] border border-white/10 px-6 py-3 whitespace-nowrap text-white [background:var(--bg)]',
+          'transform-gpu transition-transform duration-300 ease-in-out active:translate-y-px',
+          className,
         )}
         ref={ref}
         {...props}
@@ -55,8 +59,8 @@ export const ShimmerButton = React.forwardRef<
         {/* spark container */}
         <div
           className={cn(
-            "-z-30 blur-[2px]",
-            "[container-type:size] absolute inset-0 overflow-visible"
+            '-z-30 blur-[2px]',
+            '[container-type:size] absolute inset-0 overflow-visible',
           )}
         >
           {/* spark */}
@@ -70,30 +74,30 @@ export const ShimmerButton = React.forwardRef<
         {/* Highlight */}
         <div
           className={cn(
-            "absolute inset-0 size-full",
+            'absolute inset-0 size-full',
 
-            "rounded-2xl px-4 py-1.5 text-sm font-medium shadow-[inset_0_-8px_10px_#ffffff1f]",
+            'rounded-2xl px-4 py-1.5 text-sm font-medium shadow-[inset_0_-8px_10px_#ffffff1f]',
 
             // transition
-            "transform-gpu transition-all duration-300 ease-in-out",
+            'transform-gpu transition-all duration-300 ease-in-out',
 
             // on hover
-            "group-hover:shadow-[inset_0_-6px_10px_#ffffff3f]",
+            'group-hover:shadow-[inset_0_-6px_10px_#ffffff3f]',
 
             // on click
-            "group-active:shadow-[inset_0_-10px_10px_#ffffff3f]"
+            'group-active:shadow-[inset_0_-10px_10px_#ffffff3f]',
           )}
         />
 
         {/* backdrop */}
         <div
           className={cn(
-            "absolute [inset:var(--cut)] -z-20 [border-radius:var(--radius)] [background:var(--bg)]"
+            'absolute [inset:var(--cut)] -z-20 [border-radius:var(--radius)] [background:var(--bg)]',
           )}
         />
       </button>
-    )
-  }
-)
+    );
+  },
+);
 
-ShimmerButton.displayName = "ShimmerButton"
+ShimmerButton.displayName = 'ShimmerButton';

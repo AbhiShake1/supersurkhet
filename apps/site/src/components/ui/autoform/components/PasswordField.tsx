@@ -1,6 +1,6 @@
-import type { AutoFormFieldProps } from "../react";
-import type React from "react";
-import { PasswordInput } from "../../password-input";
+import type { AutoFormFieldProps } from '../react';
+import type React from 'react';
+import { PasswordInput } from '../../password-input';
 
 export const PasswordField: React.FC<AutoFormFieldProps> = ({
   inputProps,
@@ -12,7 +12,7 @@ export const PasswordField: React.FC<AutoFormFieldProps> = ({
   return (
     <PasswordInput
       id={id}
-      className={error ? "border-destructive" : ""}
+      className={error ? 'border-destructive' : ''}
       {...props}
     />
   );

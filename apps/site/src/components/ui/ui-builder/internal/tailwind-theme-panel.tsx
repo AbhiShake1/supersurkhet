@@ -1,24 +1,22 @@
-"use client";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+'use client';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   baseColors,
   type BaseColor,
-} from "@/components/ui/ui-builder/internal/utils/base-colors";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { CheckIcon, InfoIcon, MoonIcon, SunIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  useLayerStore,
-} from "@/lib/ui-builder/store/layer-store";
+} from '@/components/ui/ui-builder/internal/utils/base-colors';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { CheckIcon, InfoIcon, MoonIcon, SunIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
-import { Toggle } from "@/components/ui/toggle";
+import { Toggle } from '@/components/ui/toggle';
 
 const RESET_THEME_PROPS = {
   style: undefined,
-  "data-mode": undefined,
-  "data-color-theme": undefined,
-  "data-border-radius": undefined,
+  'data-mode': undefined,
+  'data-color-theme': undefined,
+  'data-border-radius': undefined,
 } as const;
 
 export function TailwindThemePanel() {
@@ -29,7 +27,7 @@ export function TailwindThemePanel() {
   } = useLayerStore();
   const selectedPageData = findLayerById(selectedPageId) as ComponentLayer;
   const [isCustomTheme, setIsCustomTheme] = useState(
-    selectedPageData?.props["data-color-theme"] !== undefined
+    selectedPageData?.props['data-color-theme'] !== undefined,
   );
   //if not isCustomTheme we delete the themeColors from the pageLayer
   useEffect(() => {
@@ -49,7 +47,7 @@ export function TailwindThemePanel() {
         onPressedChange={handleOnToggle}
         aria-label="Toggle italic"
       >
-        {isCustomTheme ? "Use Default Theme" : "Use Custom Theme"}
+        {isCustomTheme ? 'Use Default Theme' : 'Use Custom Theme'}
       </Toggle>
       {!isCustomTheme && (
         <span className="flex items-center gap-2">
@@ -57,7 +55,11 @@ export function TailwindThemePanel() {
         </span>
       )}
       {selectedPageData && isCustomTheme && (
-        <ThemePicker key={selectedPageId} isDisabled={!isCustomTheme} pageLayer={selectedPageData} />
+        <ThemePicker
+          key={selectedPageId}
+          isDisabled={!isCustomTheme}
+          pageLayer={selectedPageData}
+        />
       )}
     </div>
   );
@@ -75,26 +77,28 @@ function ThemePicker({
   const { updateLayer: updateLayerProps } = useLayerStore();
 
   // Safely extract values with type checking
-  const colorThemeValue = pageLayer.props?.["data-color-theme"];
-  const modeValue = pageLayer.props?.["data-mode"];
+  const colorThemeValue = pageLayer.props?.['data-color-theme'];
+  const modeValue = pageLayer.props?.['data-mode'];
   const borderRadiusValue = pageLayer.props?.borderRadius;
 
-  const [colorTheme, setColorTheme] = useState<BaseColor["name"]>(
-    (typeof colorThemeValue === 'string' ? colorThemeValue : "red") as BaseColor["name"]
+  const [colorTheme, setColorTheme] = useState<BaseColor['name']>(
+    (typeof colorThemeValue === 'string'
+      ? colorThemeValue
+      : 'red') as BaseColor['name'],
   );
   const [borderRadius, setBorderRadius] = useState(
-    typeof borderRadiusValue === 'number' ? borderRadiusValue : 0.5
+    typeof borderRadiusValue === 'number' ? borderRadiusValue : 0.5,
   );
-  const [mode, setMode] = useState<"light" | "dark">(
-    (typeof modeValue === 'string' ? modeValue : "light") as "light" | "dark"
+  const [mode, setMode] = useState<'light' | 'dark'>(
+    (typeof modeValue === 'string' ? modeValue : 'light') as 'light' | 'dark',
   );
-
-
 
   useEffect(() => {
     if (isDisabled) return;
 
-    const colorThemeData = baseColors.find((color) => color.name === colorTheme);
+    const colorThemeData = baseColors.find(
+      (color) => color.name === colorTheme,
+    );
 
     if (colorThemeData) {
       const colorDataWithBorder = {
@@ -112,52 +116,71 @@ function ThemePicker({
 
       updateLayerProps(pageLayer.id, {
         style: themeStyle,
-        "data-mode": mode,
-        "data-color-theme": colorTheme,
-        "data-border-radius": borderRadius,
+        'data-mode': mode,
+        'data-color-theme': colorTheme,
+        'data-border-radius': borderRadius,
       });
     }
-  }, [pageLayer.id, updateLayerProps, colorTheme, borderRadius, mode, isDisabled]);
+  }, [
+    pageLayer.id,
+    updateLayerProps,
+    colorTheme,
+    borderRadius,
+    mode,
+    isDisabled,
+  ]);
 
-  const colorOptions = useMemo(() => baseColors.map((color: BaseColor) => {
-    return (
-      <ThemeColorOption
-        key={color.name}
-        color={color}
-        colorTheme={colorTheme}
-        mode={mode}
-        onClick={setColorTheme}
-      />
-    );
-  }), [colorTheme, mode]);
-  const borderRadiusOptions = useMemo(() => [0.0, 0.15, 0.3, 0.5, 0.75, 1.0].map((radius) => {
-    return (
-      <ThemeBorderRadiusOption
-        key={radius}
-        radius={radius}
-        borderRadius={borderRadius}
-        onClick={setBorderRadius}
-      />
-    );
-  }), [borderRadius, setBorderRadius]);
+  const colorOptions = useMemo(
+    () =>
+      baseColors.map((color: BaseColor) => {
+        return (
+          <ThemeColorOption
+            key={color.name}
+            color={color}
+            colorTheme={colorTheme}
+            mode={mode}
+            onClick={setColorTheme}
+          />
+        );
+      }),
+    [colorTheme, mode],
+  );
+  const borderRadiusOptions = useMemo(
+    () =>
+      [0.0, 0.15, 0.3, 0.5, 0.75, 1.0].map((radius) => {
+        return (
+          <ThemeBorderRadiusOption
+            key={radius}
+            radius={radius}
+            borderRadius={borderRadius}
+            onClick={setBorderRadius}
+          />
+        );
+      }),
+    [borderRadius, setBorderRadius],
+  );
 
-  const modeOptions = useMemo(() => (["light", "dark"] as const).map((modeOption) => {
-    return (
-      <ThemeModeOption
-        key={modeOption}
-        mode={mode}
-        modeOption={modeOption}
-        onClick={setMode}
-      />
-    );
-  }), [mode, setMode]);
+  const modeOptions = useMemo(
+    () =>
+      (['light', 'dark'] as const).map((modeOption) => {
+        return (
+          <ThemeModeOption
+            key={modeOption}
+            mode={mode}
+            modeOption={modeOption}
+            onClick={setMode}
+          />
+        );
+      }),
+    [mode, setMode],
+  );
 
   return (
     <div
       className={cn(
-        "flex flex-col gap-2",
+        'flex flex-col gap-2',
         className,
-        isDisabled && "opacity-30 pointer-events-none"
+        isDisabled && 'opacity-30 pointer-events-none',
       )}
     >
       <Label className="mt-2">Colors</Label>
@@ -170,16 +193,29 @@ function ThemePicker({
   );
 }
 
-function ThemeColorOption({ color, colorTheme, mode, onClick }: { color: BaseColor, colorTheme: string, mode: "light" | "dark", onClick: (name: BaseColor["name"]) => void }) {
-
+function ThemeColorOption({
+  color,
+  colorTheme,
+  mode,
+  onClick,
+}: {
+  color: BaseColor;
+  colorTheme: string;
+  mode: 'light' | 'dark';
+  onClick: (name: BaseColor['name']) => void;
+}) {
   const handleOnClick = useCallback(() => {
     onClick(color.name);
   }, [onClick, color.name]);
 
-  const style = useMemo(() => ({
-    backgroundColor: `hsl(${color.activeColor[mode === "dark" ? "dark" : "light"]
+  const style = useMemo(
+    () => ({
+      backgroundColor: `hsl(${
+        color.activeColor[mode === 'dark' ? 'dark' : 'light']
       })`,
-  }), [color.activeColor, mode]);
+    }),
+    [color.activeColor, mode],
+  );
 
   return (
     <Button
@@ -187,15 +223,12 @@ function ThemeColorOption({ color, colorTheme, mode, onClick }: { color: BaseCol
       variant="outline"
       size="sm"
       className={cn(
-        "gap-2",
-        color.name === colorTheme && "border-primary border-2"
+        'gap-2',
+        color.name === colorTheme && 'border-primary border-2',
       )}
       onClick={handleOnClick}
     >
-      <div
-        className="size-4 rounded-full"
-        style={style}
-      >
+      <div className="size-4 rounded-full" style={style}>
         {color.name === colorTheme && <CheckIcon className="size-4" />}
       </div>
       {color.label}
@@ -203,15 +236,25 @@ function ThemeColorOption({ color, colorTheme, mode, onClick }: { color: BaseCol
   );
 }
 
-function ThemeBorderRadiusOption({ radius, borderRadius, onClick }: { radius: number, borderRadius: number, onClick: (radius: number) => void }) {
-
+function ThemeBorderRadiusOption({
+  radius,
+  borderRadius,
+  onClick,
+}: {
+  radius: number;
+  borderRadius: number;
+  onClick: (radius: number) => void;
+}) {
   const handleOnClick = useCallback(() => {
     onClick(radius);
   }, [onClick, radius]);
 
-  const style = useMemo(() => ({
-    borderRadius: `${radius}rem`,
-  }), [radius]);
+  const style = useMemo(
+    () => ({
+      borderRadius: `${radius}rem`,
+    }),
+    [radius],
+  );
 
   return (
     <Button
@@ -219,8 +262,8 @@ function ThemeBorderRadiusOption({ radius, borderRadius, onClick }: { radius: nu
       variant="outline"
       size="sm"
       className={cn(
-        "gap-2",
-        radius === borderRadius && "border-primary border-2"
+        'gap-2',
+        radius === borderRadius && 'border-primary border-2',
       )}
       onClick={handleOnClick}
     >
@@ -235,8 +278,15 @@ function ThemeBorderRadiusOption({ radius, borderRadius, onClick }: { radius: nu
   );
 }
 
-function ThemeModeOption({ modeOption, mode, onClick }: { modeOption: "light" | "dark", mode: "light" | "dark", onClick: (mode: "light" | "dark") => void }) {
-
+function ThemeModeOption({
+  modeOption,
+  mode,
+  onClick,
+}: {
+  modeOption: 'light' | 'dark';
+  mode: 'light' | 'dark';
+  onClick: (mode: 'light' | 'dark') => void;
+}) {
   const handleOnClick = useCallback(() => {
     onClick(modeOption);
   }, [onClick, modeOption]);
@@ -247,9 +297,9 @@ function ThemeModeOption({ modeOption, mode, onClick }: { modeOption: "light" | 
       variant="outline"
       size="sm"
       onClick={handleOnClick}
-      className={cn(mode === modeOption && "border-2 border-primary")}
+      className={cn(mode === modeOption && 'border-2 border-primary')}
     >
-      {modeOption === "light" ? (
+      {modeOption === 'light' ? (
         <SunIcon className="mr-1 -translate-x-1" />
       ) : (
         <MoonIcon className="mr-1 -translate-x-1" />
@@ -259,12 +309,11 @@ function ThemeModeOption({ modeOption, mode, onClick }: { modeOption: "light" | 
   );
 }
 
-
 function themeToStyleVars(
   colors:
-    | BaseColor["cssVars"]["dark"]
-    | BaseColor["cssVars"]["light"]
-    | undefined
+    | BaseColor['cssVars']['dark']
+    | BaseColor['cssVars']['light']
+    | undefined,
 ) {
   if (!colors) {
     return undefined;
@@ -274,7 +323,7 @@ function themeToStyleVars(
       acc[`--${key}`] = value;
       return acc;
     },
-    {} as { [key: string]: string }
+    {} as { [key: string]: string },
   );
   const globalOverrides = {
     color: `hsl(${colors.foreground})`,

@@ -1,19 +1,22 @@
-import { useAuth } from "@/components/auth-provider";
-import { AutoAdmin } from "@/components/auto-admin";
-import { useLoginPrompt } from "@/components/login-prompt-provider";
-import { NotFound } from "@/components/ui/not-found";
-import { useBusinessConfig } from "@/config/business-config";
-import { BusinessProvider } from "@/contexts/business-context";
-import { api } from "@/lib/api";
-import type { BusinessType } from "@/lib/schema";
-import { createFileRoute } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useAuth } from '@/components/auth-provider';
+import { AutoAdmin } from '@/components/auto-admin';
+import { useLoginPrompt } from '@/components/login-prompt-provider';
+import { NotFound } from '@/components/ui/not-found';
+import { useBusinessConfig } from '@/config/business-config';
+import { BusinessProvider } from '@/contexts/business-context';
+import { api } from '@/lib/api';
+import type { BusinessType } from '@/lib/schema';
+import { createFileRoute } from '@tanstack/react-router';
+import { Loader2 } from 'lucide-react';
+import { useEffect } from 'react';
 
-export const Route = createFileRoute("/$businessName/admin/")({
+export const Route = createFileRoute('/$businessName/admin/')({
   component: () => {
     const { businessName } = Route.useParams();
-    const { data: allBusinesses = [], isLoading } = api.business.useGet({ keys: [businessName], single: true });
+    const { data: allBusinesses = [], isLoading } = api.business.useGet({
+      keys: [businessName],
+      single: true,
+    });
     const { promptLogin, closeLoginPrompt } = useLoginPrompt();
     const { isAuthenticated, user, isLoading: isUserLoading } = useAuth();
 
@@ -40,22 +43,34 @@ export const Route = createFileRoute("/$businessName/admin/")({
     const business = allBusinesses?.[0];
 
     if (!business?.basePath) {
-      return <NotFound />
+      return <NotFound />;
     }
 
-    return <BusinessProvider business={business}>
-      <Child businessName={businessName} businessType={business.businessType} />
-    </BusinessProvider>
+    return (
+      <BusinessProvider business={business}>
+        <Child
+          businessName={businessName}
+          businessType={business.businessType}
+        />
+      </BusinessProvider>
+    );
   },
 });
 
-function Child({ businessName, businessType }: { businessName: string, businessType: BusinessType }) {
+function Child({
+  businessName,
+  businessType,
+}: {
+  businessName: string;
+  businessType: BusinessType;
+}) {
   const config = useBusinessConfig({ slug: businessName })[businessType];
-  if (!config?.length) return (
-    <div className="p-2">
-      <h3>{businessName} Admin Dashboard</h3>
-      <p>This is the admin panel for {businessName}.</p>
-    </div>
-  );
-  return <AutoAdmin tabs={config} />
+  if (!config?.length)
+    return (
+      <div className="p-2">
+        <h3>{businessName} Admin Dashboard</h3>
+        <p>This is the admin panel for {businessName}.</p>
+      </div>
+    );
+  return <AutoAdmin tabs={config} />;
 }

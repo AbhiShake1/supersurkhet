@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import React, { useCallback, forwardRef, type ReactNode } from "react";
+import React, { useCallback, forwardRef, type ReactNode } from 'react';
 import {
   useReactFlow,
   useNodeId,
   Handle,
   Position,
   type NodeProps,
-} from "@xyflow/react";
+} from '@xyflow/react';
 
-import { BaseNode } from "@/components/base-node";
+import { BaseNode } from '@/components/base-node';
 
 export type PlaceholderNodeProps = Partial<NodeProps> & {
   children?: ReactNode;
@@ -36,8 +36,8 @@ export const PlaceholderNode = forwardRef<HTMLDivElement, PlaceholderNodeProps>(
             // For example, you can change the label or other properties of the node.
             return {
               ...node,
-              data: { ...node.data, label: "Node" },
-              type: "default",
+              data: { ...node.data, label: 'Node' },
+              type: 'default',
             };
           }
           return node;
@@ -55,13 +55,13 @@ export const PlaceholderNode = forwardRef<HTMLDivElement, PlaceholderNodeProps>(
         {children}
         <Handle
           type="target"
-          style={{ visibility: "hidden" }}
+          style={{ visibility: 'hidden' }}
           position={Position.Top}
           isConnectable={false}
         />
         <Handle
           type="source"
-          style={{ visibility: "hidden" }}
+          style={{ visibility: 'hidden' }}
           position={Position.Bottom}
           isConnectable={false}
         />
@@ -70,4 +70,4 @@ export const PlaceholderNode = forwardRef<HTMLDivElement, PlaceholderNodeProps>(
   },
 );
 
-PlaceholderNode.displayName = "PlaceholderNode";
+PlaceholderNode.displayName = 'PlaceholderNode';

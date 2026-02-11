@@ -1,12 +1,12 @@
-import React from "react";
-import { useFormContext, useWatch } from "react-hook-form";
-import { useAutoForm } from "./context";
-import { getLabel, type ParsedField } from "@autoform/core";
-import { ObjectField } from "./ObjectField";
-import { ArrayField } from "./ArrayField";
-import type { AutoFormFieldProps } from "./types";
-import { formatTestId, getPathInObject } from "./utils";
-import type { FieldConfigCustomData } from "../utils";
+import React from 'react';
+import { useFormContext, useWatch } from 'react-hook-form';
+import { useAutoForm } from './context';
+import { getLabel, type ParsedField } from '@autoform/core';
+import { ObjectField } from './ObjectField';
+import { ArrayField } from './ArrayField';
+import type { AutoFormFieldProps } from './types';
+import { formatTestId, getPathInObject } from './utils';
+import type { FieldConfigCustomData } from '../utils';
 
 export const AutoFormField: React.FC<{
   field: ParsedField;
@@ -19,23 +19,25 @@ export const AutoFormField: React.FC<{
     getValues,
   } = useFormContext();
 
-  const fullPath = path.join(".");
+  const fullPath = path.join('.');
   const error = getPathInObject(errors, path)?.message as string | undefined;
   const value = getValues(fullPath);
   const watchedValue = useWatch({ name: fullPath });
-  const customData = field.fieldConfig?.customData as FieldConfigCustomData | undefined;
+  const customData = field.fieldConfig?.customData as
+    | FieldConfigCustomData
+    | undefined;
   const isLocked =
     Array.isArray(customData?.disableWhenValueIn) &&
-    customData?.disableWhenValueIn.includes(
-      watchedValue ?? value
-    );
-  const inputDisabled = Boolean(field.fieldConfig?.inputProps?.disabled || isLocked);
+    customData?.disableWhenValueIn.includes(watchedValue ?? value);
+  const inputDisabled = Boolean(
+    field.fieldConfig?.inputProps?.disabled || isLocked,
+  );
 
   const FieldWrapper =
     field.fieldConfig?.fieldWrapper || uiComponents.FieldWrapper;
   const testIdBase = formatTestId(path);
   const inputTestId =
-    field.fieldConfig?.inputProps?.["data-testid"] ?? `af-input-${testIdBase}`;
+    field.fieldConfig?.inputProps?.['data-testid'] ?? `af-input-${testIdBase}`;
 
   let FieldComponent: React.ComponentType<AutoFormFieldProps> = () => (
     <uiComponents.ErrorMessage
@@ -43,13 +45,13 @@ export const AutoFormField: React.FC<{
     />
   );
 
-  if (field.type === "array") {
+  if (field.type === 'array') {
     FieldComponent = ArrayField;
-  } else if (field.type === "object") {
+  } else if (field.type === 'object') {
     FieldComponent = ObjectField;
   } else if (field.type in formComponents) {
     FieldComponent = formComponents[field.type as keyof typeof formComponents]!;
-  } else if ("fallback" in formComponents) {
+  } else if ('fallback' in formComponents) {
     FieldComponent = formComponents.fallback;
   }
 
@@ -76,7 +78,7 @@ export const AutoFormField: React.FC<{
           key: `${fullPath}-input`,
           ...field.fieldConfig?.inputProps,
           disabled: inputDisabled,
-          "data-testid": inputTestId,
+          'data-testid': inputTestId,
           ...register(fullPath),
         }}
       />
