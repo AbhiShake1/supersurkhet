@@ -1,10 +1,7 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const ReactWordmarkDark = (props: SVGProps<SVGSVGElement>) => (
-  <svg
-    {...props}
-    viewBox="0 0 600 180.766722"
-  >
+  <svg {...props} viewBox="0 0 600 180.766722">
     <g fill="none" fillRule="evenodd">
       <g transform="translate(0, 0)" fillRule="nonzero">
         <path

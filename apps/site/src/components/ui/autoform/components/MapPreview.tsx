@@ -1,12 +1,16 @@
-import { Card } from "@/components/ui/card";
-import { Map, MapControls, MapMarker, MarkerContent } from "@/components/ui/map";
-import type { AutoPreviewComponent } from "../../../auto-preview";
-import type React from "react";
+import { Card } from '@/components/ui/card';
+import {
+  Map,
+  MapControls,
+  MapMarker,
+  MarkerContent,
+} from '@/components/ui/map';
+import type { AutoPreviewComponent } from '../../../auto-preview';
+import type React from 'react';
 
-type GpsCoordinate = [number, number]; 
+type GpsCoordinate = [number, number];
 
 export const MapPreview: AutoPreviewComponent<string> = ({ value }) => {
-
   let coordinates: GpsCoordinate = [28.597, 81.634]; // Default to Surkhet, Nepal
 
   if (value) {
@@ -30,15 +34,12 @@ export const MapPreview: AutoPreviewComponent<string> = ({ value }) => {
   return (
     <div className="space-y-2">
       <Card className="h-[300px] p-0 overflow-hidden relative">
-        <Map 
+        <Map
           center={[coordinates[1], coordinates[0]]} // Note: Map expects [longitude, latitude] but we store [latitude, longitude]
           zoom={13}
         >
           <MapControls showZoom={true} showLocate={false} />
-          <MapMarker 
-            longitude={coordinates[1]} 
-            latitude={coordinates[0]}
-          >
+          <MapMarker longitude={coordinates[1]} latitude={coordinates[0]}>
             <MarkerContent />
           </MapMarker>
         </Map>

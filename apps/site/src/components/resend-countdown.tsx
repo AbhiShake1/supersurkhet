@@ -1,16 +1,23 @@
-import { useEffect } from "react";
-import { useRateLimit } from "../hooks/use-rate-limit";
+import { useEffect } from 'react';
+import { useRateLimit } from '../hooks/use-rate-limit';
 
 interface ResendCountdownProps {
   email: string;
   onCountdownComplete?: () => void;
 }
 
-export function ResendCountdown({ email, onCountdownComplete }: ResendCountdownProps) {
+export function ResendCountdown({
+  email,
+  onCountdownComplete,
+}: ResendCountdownProps) {
   const { data: rateLimitStatus, isLoading } = useRateLimit(email);
 
   useEffect(() => {
-    if (rateLimitStatus && rateLimitStatus.secondsLeft === 0 && onCountdownComplete) {
+    if (
+      rateLimitStatus &&
+      rateLimitStatus.secondsLeft === 0 &&
+      onCountdownComplete
+    ) {
       onCountdownComplete();
     }
   }, [rateLimitStatus, onCountdownComplete]);
@@ -21,7 +28,8 @@ export function ResendCountdown({ email, onCountdownComplete }: ResendCountdownP
 
   return (
     <div className="text-red-500 text-sm">
-      Please wait {rateLimitStatus.secondsLeft} seconds before requesting another verification email.
+      Please wait {rateLimitStatus.secondsLeft} seconds before requesting
+      another verification email.
     </div>
   );
 }

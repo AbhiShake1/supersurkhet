@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef } from 'react';
 import {
   motion,
   useTransform,
   AnimatePresence,
   useMotionValue,
   useSpring,
-} from "motion/react";
+} from 'motion/react';
 
 export const AnimatedTooltip = ({
   items,
@@ -62,7 +62,7 @@ export const AnimatedTooltip = ({
                   y: 0,
                   scale: 1,
                   transition: {
-                    type: "spring",
+                    type: 'spring',
                     stiffness: 260,
                     damping: 10,
                   },
@@ -71,7 +71,7 @@ export const AnimatedTooltip = ({
                 style={{
                   translateX: translateX,
                   rotate: rotate,
-                  whiteSpace: "nowrap",
+                  whiteSpace: 'nowrap',
                 }}
                 className="absolute -top-16 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center justify-center rounded-md bg-black px-4 py-2 text-xs shadow-xl"
               >

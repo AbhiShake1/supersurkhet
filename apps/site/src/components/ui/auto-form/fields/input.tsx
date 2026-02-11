@@ -1,9 +1,9 @@
-import { FormControl, FormItem, FormMessage } from "@/components/ui/form";
-import { MentionInput } from "@/components/ui/mention-input";
-import AutoFormLabel from "../common/label";
-import AutoFormTooltip from "../common/tooltip";
-import type { AutoFormInputComponentProps } from "../types";
-import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
+import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
+import { MentionInput } from '@/components/ui/mention-input';
+import AutoFormLabel from '../common/label';
+import AutoFormTooltip from '../common/tooltip';
+import type { AutoFormInputComponentProps } from '../types';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 
 export default function AutoFormInput({
   label,
@@ -15,16 +15,18 @@ export default function AutoFormInput({
   const showLabel = _showLabel === undefined ? true : _showLabel;
 
   // Try to get context data from the context store
-  const selectedLayerContext = useLayerStore((state) => state.getSelectedContext());
+  const selectedLayerContext = useLayerStore((state) =>
+    state.getSelectedContext(),
+  );
 
   function formatedContext() {
-    if (!selectedLayerContext) return {}
-    if ("context" in selectedLayerContext) {
-      return selectedLayerContext
+    if (!selectedLayerContext) return {};
+    if ('context' in selectedLayerContext) {
+      return selectedLayerContext;
     }
     return {
       context: selectedLayerContext,
-    }
+    };
   }
 
   return (

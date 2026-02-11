@@ -1,17 +1,17 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   useImageUpload,
   type UseImageUploadProps,
-} from "@/hooks/use-image-upload";
-import { cn } from "@/lib/utils";
-import type { AutoFormFieldProps } from "../react";
-import { TooltipTrigger } from "@radix-ui/react-tooltip";
-import { Trash2, Upload, X } from "lucide-react";
-import type React from "react";
-import { useCallback, useState, type ComponentProps } from "react";
-import { Tooltip, TooltipContent } from "../../tooltip";
-import { useFormContext } from "react-hook-form";
+} from '@/hooks/use-image-upload';
+import { cn } from '@/lib/utils';
+import type { AutoFormFieldProps } from '../react';
+import { TooltipTrigger } from '@radix-ui/react-tooltip';
+import { Trash2, Upload, X } from 'lucide-react';
+import type React from 'react';
+import { useCallback, useState, type ComponentProps } from 'react';
+import { Tooltip, TooltipContent } from '../../tooltip';
+import { useFormContext } from 'react-hook-form';
 
 export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
   inputProps,
@@ -21,13 +21,13 @@ export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
   field,
   value,
 }) => {
-  const { control } = useFormContext()
+  const { control } = useFormContext();
   const { key, ...props } = inputProps;
 
   return (
     <ImageUploadItem
       id={id}
-      className={error && "border-destructive"}
+      className={error && 'border-destructive'}
       control={control}
       path={path}
       defaultValue={props.defaultValue ?? value ?? field.default}
@@ -38,9 +38,9 @@ export const ImageUploadField: React.FC<AutoFormFieldProps> = ({
 };
 
 export interface ImageUploadItemProps
-  extends Omit<ComponentProps<"input">, "defaultValue" | "value">,
-  UseImageUploadProps,
-  Pick<AutoFormFieldProps, "control" | "path"> { }
+  extends Omit<ComponentProps<'input'>, 'defaultValue' | 'value'>,
+    UseImageUploadProps,
+    Pick<AutoFormFieldProps, 'control' | 'path'> {}
 
 export function ImageUploadItem({
   className,
@@ -62,7 +62,7 @@ export function ImageUploadItem({
     value,
     onUpload() {
       control.unregister();
-      control?.register(path.join("."), { shouldUnregister: true });
+      control?.register(path.join('.'), { shouldUnregister: true });
     },
   });
 
@@ -92,7 +92,7 @@ export function ImageUploadItem({
       setIsDragging(false);
 
       const file = e.dataTransfer.files?.[0];
-      if (file?.type.startsWith("image/")) {
+      if (file?.type.startsWith('image/')) {
         const fakeEvent = {
           target: {
             files: [file],
@@ -107,14 +107,14 @@ export function ImageUploadItem({
   return (
     <div
       className={cn(
-        "w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm",
+        'w-full max-w-md space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm',
         className,
-        isUploading && "opacity-70 pointer-events-none",
+        isUploading && 'opacity-70 pointer-events-none',
       )}
     >
       <div className="space-y-2">
         <h3 className="text-lg font-medium">
-          {isUploading ? "Uploading..." : "Image Upload"}
+          {isUploading ? 'Uploading...' : 'Image Upload'}
         </h3>
         <p className="text-sm text-muted-foreground">
           Supported formats: JPG, PNG, GIF
@@ -138,8 +138,8 @@ export function ImageUploadItem({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           className={cn(
-            "flex h-64 cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted",
-            isDragging && "border-primary/50 bg-primary/5",
+            'flex h-64 cursor-pointer flex-col items-center justify-center gap-4 rounded-lg border-2 border-dashed border-muted-foreground/25 bg-muted/50 transition-colors hover:bg-muted',
+            isDragging && 'border-primary/50 bg-primary/5',
           )}
         >
           <UploadIllustration />
@@ -167,7 +167,7 @@ export function ImageUploadItem({
                     size="sm"
                     variant="secondary"
                     onClick={(e) => {
-                      e.currentTarget.closest("form");
+                      e.currentTarget.closest('form');
                     }}
                     className="h-9 w-9 p-0"
                   >

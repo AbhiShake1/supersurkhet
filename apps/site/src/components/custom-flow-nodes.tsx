@@ -1,38 +1,61 @@
-"use client";
+'use client';
 
-import { BaseHandle } from "@/components/base-handle";
-import { BaseNode, BaseNodeContent, BaseNodeHeader, BaseNodeHeaderTitle } from "@/components/base-node";
-import { NodeStatusIndicator, type NodeStatus } from "@/components/node-status-indicator";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { type Node, type NodeProps, Position, useReactFlow } from "@xyflow/react";
-import { Trash } from "lucide-react";
-import { useCallback } from "react";
+import { BaseHandle } from '@/components/base-handle';
+import {
+  BaseNode,
+  BaseNodeContent,
+  BaseNodeHeader,
+  BaseNodeHeaderTitle,
+} from '@/components/base-node';
+import {
+  NodeStatusIndicator,
+  type NodeStatus,
+} from '@/components/node-status-indicator';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  type Node,
+  type NodeProps,
+  Position,
+  useReactFlow,
+} from '@xyflow/react';
+import { Trash } from 'lucide-react';
+import { useCallback } from 'react';
 
 export function DeleteNodeButton({ id }: { id: string }) {
   const { setNodes } = useReactFlow();
 
-  const handleDelete = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setNodes((prevNodes) => prevNodes.filter((node) => node.id !== id));
-  }, [id, setNodes]);
+  const handleDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      setNodes((prevNodes) => prevNodes.filter((node) => node.id !== id));
+    },
+    [id, setNodes],
+  );
 
-  return <TooltipProvider>
-    <Tooltip>
-      <TooltipTrigger>
-        <Button
-          variant="link"
-          className="nodrag p-1 text-white"
-          onClick={handleDelete}
-        >
-          <Trash className="h-4 w-4" />
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <p>Delete Node</p>
-      </TooltipContent>
-    </Tooltip>
-  </TooltipProvider>
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger>
+          <Button
+            variant="link"
+            className="nodrag p-1 text-white"
+            onClick={handleDelete}
+          >
+            <Trash className="h-4 w-4" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Delete Node</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
 }
 
 type ConditionNodeData = {
@@ -69,7 +92,10 @@ type LoopNodeData = {
 };
 
 // Diamond-shaped node for conditions
-export const ConditionNode = ({ data, id }: NodeProps<Node<ConditionNodeData>>) => {
+export const ConditionNode = ({
+  data,
+  id,
+}: NodeProps<Node<ConditionNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div className="relative" style={{ width: 120, height: 120 }}>
@@ -151,7 +177,7 @@ type IO_NodeData = {
   status: NodeStatus;
   description: string;
   config: {
-    ioType: "input" | "output";
+    ioType: 'input' | 'output';
   };
 };
 
@@ -164,19 +190,21 @@ export const IO_Node = ({ data, id }: NodeProps<Node<IO_NodeData>>) => {
         style={{
           width: 160,
           height: 80,
-          transform: "skewX(-20deg)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          transform: 'skewX(-20deg)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <div
           className="flex flex-col items-center justify-center w-full h-full"
-          style={{ transform: "skewX(20deg)" }}
+          style={{ transform: 'skewX(20deg)' }}
         >
           <div className="font-semibold text-center px-4">{data.label}</div>
           {data.description && (
-            <div className="text-xs text-center px-4 mt-1">{data.description}</div>
+            <div className="text-xs text-center px-4 mt-1">
+              {data.description}
+            </div>
           )}
         </div>
         <div className="absolute -top-3 left-1/3 transform -translate-x-1/2">
@@ -225,7 +253,9 @@ export const ProcessNode = ({ data, id }: NodeProps<Node<ProcessNodeData>>) => {
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>Action:</span>
-              <span className="font-mono">{data.config?.action || "Not set"}</span>
+              <span className="font-mono">
+                {data.config?.action || 'Not set'}
+              </span>
             </div>
           </div>
         </BaseNodeContent>
@@ -257,7 +287,10 @@ type PredefinedProcessNodeData = {
 };
 
 // Rounded rectangle node for predefined process
-export const PredefinedProcessNode = ({ data, id }: NodeProps<Node<PredefinedProcessNodeData>>) => {
+export const PredefinedProcessNode = ({
+  data,
+  id,
+}: NodeProps<Node<PredefinedProcessNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div
@@ -265,15 +298,17 @@ export const PredefinedProcessNode = ({ data, id }: NodeProps<Node<PredefinedPro
         style={{
           width: 160,
           height: 80,
-          borderLeft: "double 4px",
-          borderRight: "double 4px",
-          borderColor: "rgb(99 102 241)", // indigo-500
+          borderLeft: 'double 4px',
+          borderRight: 'double 4px',
+          borderColor: 'rgb(99 102 241)', // indigo-500
         }}
       >
         <div className="flex flex-col items-center justify-center w-full h-full">
           <div className="font-semibold text-center px-4">{data.label}</div>
           {data.description && (
-            <div className="text-xs text-center px-4 mt-1">{data.description}</div>
+            <div className="text-xs text-center px-4 mt-1">
+              {data.description}
+            </div>
           )}
         </div>
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
@@ -308,7 +343,10 @@ type DocumentNodeData = {
 };
 
 // Document node (rectangle with wavy bottom)
-export const DocumentNode = ({ data, id }: NodeProps<Node<DocumentNodeData>>) => {
+export const DocumentNode = ({
+  data,
+  id,
+}: NodeProps<Node<DocumentNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
       <div
@@ -321,7 +359,9 @@ export const DocumentNode = ({ data, id }: NodeProps<Node<DocumentNodeData>>) =>
         <div className="flex flex-col items-center justify-center w-full h-full">
           <div className="font-semibold text-center px-4">{data.label}</div>
           {data.description && (
-            <div className="text-xs text-center px-4 mt-1">{data.description}</div>
+            <div className="text-xs text-center px-4 mt-1">
+              {data.description}
+            </div>
           )}
         </div>
         {/* Wavy bottom border */}
@@ -367,16 +407,19 @@ export const LoopNode = ({ data, id }: NodeProps<Node<LoopNodeData>>) => {
         style={{
           width: 140,
           height: 100,
-          clipPath: "polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
+          clipPath:
+            'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <div className="flex flex-col items-center justify-center w-full h-full">
           <div className="font-semibold text-center px-4">{data.label}</div>
           {data.description && (
-            <div className="text-xs text-center px-4 mt-1">{data.description}</div>
+            <div className="text-xs text-center px-4 mt-1">
+              {data.description}
+            </div>
           )}
         </div>
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">

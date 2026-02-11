@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   type ColumnFiltersState,
@@ -17,7 +17,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table";
+} from '@tanstack/react-table';
 import {
   type Parser,
   type UseQueryStateOptions,
@@ -26,23 +26,23 @@ import {
   parseAsString,
   useQueryState,
   useQueryStates,
-} from "nuqs";
-import * as React from "react";
+} from 'nuqs';
+import * as React from 'react';
 
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
-import { getSortingStateParser } from "@/lib/parsers";
-import type { ExtendedColumnSort } from "@/types/data-table";
+import { useDebouncedCallback } from '@/hooks/use-debounced-callback';
+import { getSortingStateParser } from '@/lib/parsers';
+import type { ExtendedColumnSort } from '@/types/data-table';
 
-const PAGE_KEY = "page";
-const PER_PAGE_KEY = "perPage";
-const SORT_KEY = "sort";
-const ARRAY_SEPARATOR = ",";
+const PAGE_KEY = 'page';
+const PER_PAGE_KEY = 'perPage';
+const SORT_KEY = 'sort';
+const ARRAY_SEPARATOR = ',';
 const DEBOUNCE_MS = 300;
 const THROTTLE_MS = 50;
 
 function parseSortingFromUrl() {
-  if (typeof window === "undefined") return [];
-  const rawSorting = new URL(window.location.href).searchParams.get("sort");
+  if (typeof window === 'undefined') return [];
+  const rawSorting = new URL(window.location.href).searchParams.get('sort');
 
   if (!rawSorting) return [];
 
@@ -50,26 +50,26 @@ function parseSortingFromUrl() {
     const sorting = JSON.parse(decodeURIComponent(rawSorting));
     return sorting;
   } catch (e) {
-    console.error("Failed to parse sorting:", e);
+    console.error('Failed to parse sorting:', e);
     return [];
   }
 }
 
 interface UseDataTableProps<TData>
   extends Omit<
-    TableOptions<TData>,
-    | "state"
-    | "pageCount"
-    | "getCoreRowModel"
-    | "manualFiltering"
-    | "manualPagination"
-    | "manualSorting"
-  >,
-  Required<Pick<TableOptions<TData>, "pageCount">> {
-  initialState?: Omit<Partial<TableState>, "sorting"> & {
+      TableOptions<TData>,
+      | 'state'
+      | 'pageCount'
+      | 'getCoreRowModel'
+      | 'manualFiltering'
+      | 'manualPagination'
+      | 'manualSorting'
+    >,
+    Required<Pick<TableOptions<TData>, 'pageCount'>> {
+  initialState?: Omit<Partial<TableState>, 'sorting'> & {
     sorting?: ExtendedColumnSort<TData>[];
   };
-  history?: "push" | "replace";
+  history?: 'push' | 'replace';
   debounceMs?: number;
   throttleMs?: number;
   clearOnDefault?: boolean;
@@ -80,12 +80,12 @@ interface UseDataTableProps<TData>
 }
 
 export function useDataTable<TData>(props: UseDataTableProps<TData>) {
-  "use memo"
+  'use memo';
   const {
     columns,
     pageCount = -1,
     initialState,
-    history = "replace",
+    history = 'replace',
     debounceMs = DEBOUNCE_MS,
     throttleMs = THROTTLE_MS,
     clearOnDefault = false,
@@ -97,7 +97,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   } = props;
 
   const queryStateOptions = React.useMemo<
-    Omit<UseQueryStateOptions<string>, "parse">
+    Omit<UseQueryStateOptions<string>, 'parse'>
   >(
     () => ({
       history,
@@ -144,7 +144,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   }, [page, perPage]);
 
   const onPaginationChange = (updaterOrValue: Updater<PaginationState>) => {
-    if (typeof updaterOrValue === "function") {
+    if (typeof updaterOrValue === 'function') {
       const newPagination = updaterOrValue(pagination);
       void setPage(newPagination.pageIndex + 1);
       void setPerPage(newPagination.pageSize);
@@ -172,7 +172,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   );
 
   const onSortingChange = (updaterOrValue: Updater<SortingState>) => {
-    if (typeof updaterOrValue === "function") {
+    if (typeof updaterOrValue === 'function') {
       const newSorting = updaterOrValue(sorting);
       setSorting(newSorting as ExtendedColumnSort<TData>[]);
     } else {
@@ -193,12 +193,12 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
       Record<string, Parser<string> | Parser<string[]>>
     >((acc, column) => {
       if (column.meta?.options) {
-        acc[column.id ?? ""] = parseAsArrayOf(
+        acc[column.id ?? ''] = parseAsArrayOf(
           parseAsString,
           ARRAY_SEPARATOR,
         ).withOptions(queryStateOptions);
       } else {
-        acc[column.id ?? ""] = parseAsString.withOptions(queryStateOptions);
+        acc[column.id ?? ''] = parseAsString.withOptions(queryStateOptions);
       }
       return acc;
     }, {});
@@ -222,7 +222,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
         if (value !== null) {
           const processedValue = Array.isArray(value)
             ? value
-            : typeof value === "string" && /[^a-zA-Z0-9]/.test(value)
+            : typeof value === 'string' && /[^a-zA-Z0-9]/.test(value)
               ? value.split(/[^a-zA-Z0-9]+/).filter(Boolean)
               : [value];
 
@@ -247,7 +247,7 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
 
     setColumnFilters((prev) => {
       const next =
-        typeof updaterOrValue === "function"
+        typeof updaterOrValue === 'function'
           ? updaterOrValue(prev)
           : updaterOrValue;
 

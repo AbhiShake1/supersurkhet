@@ -1,5 +1,16 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  type ReactNode,
+} from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Drawer, DrawerContent } from '@/components/ui/drawer';
 import { CredenzaBody } from '@/components/ui/credenza';
 
@@ -32,7 +43,9 @@ type DialogProviderProps = {
 
 export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [dialogContent, setDialogContent] = useState<DialogContentProps | null>(null);
+  const [dialogContent, setDialogContent] = useState<DialogContentProps | null>(
+    null,
+  );
 
   const openDialog = (content: DialogContentProps) => {
     setDialogContent(content);
@@ -49,11 +62,20 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
       {children}
       {dialogContent && (
         <Dialog open={isOpen} onOpenChange={closeDialog}>
-          <DialogContent hideClose={!dialogContent.showCloseButton} className={dialogContent.className}>
+          <DialogContent
+            hideClose={!dialogContent.showCloseButton}
+            className={dialogContent.className}
+          >
             {(dialogContent.title || dialogContent.description) && (
               <DialogHeader>
-                {dialogContent.title && <DialogTitle>{dialogContent.title}</DialogTitle>}
-                {dialogContent.description && <DialogDescription>{dialogContent.description}</DialogDescription>}
+                {dialogContent.title && (
+                  <DialogTitle>{dialogContent.title}</DialogTitle>
+                )}
+                {dialogContent.description && (
+                  <DialogDescription>
+                    {dialogContent.description}
+                  </DialogDescription>
+                )}
               </DialogHeader>
             )}
             {dialogContent.children}
@@ -64,11 +86,17 @@ export const DialogProvider: React.FC<DialogProviderProps> = ({ children }) => {
   );
 };
 
-const drawerContext = React.createContext<DialogContextType | undefined>(undefined);
+const drawerContext = React.createContext<DialogContextType | undefined>(
+  undefined,
+);
 
-export const DrawerProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
+export const DrawerProvider: React.FC<React.PropsWithChildren> = ({
+  children,
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [dialogContent, setDialogContent] = useState<DialogContentProps | null>(null);
+  const [dialogContent, setDialogContent] = useState<DialogContentProps | null>(
+    null,
+  );
 
   const openDialog = (content: DialogContentProps) => {
     setDialogContent(content);
@@ -88,12 +116,20 @@ export const DrawerProvider: React.FC<React.PropsWithChildren> = ({ children }) 
           <DrawerContent className={dialogContent.className}>
             {(dialogContent.title || dialogContent.description) && (
               <DialogHeader>
-                {dialogContent.title && <DialogTitle>{dialogContent.title}</DialogTitle>}
-                {dialogContent.description && <DialogDescription>{dialogContent.description}</DialogDescription>}
+                {dialogContent.title && (
+                  <DialogTitle>{dialogContent.title}</DialogTitle>
+                )}
+                {dialogContent.description && (
+                  <DialogDescription>
+                    {dialogContent.description}
+                  </DialogDescription>
+                )}
               </DialogHeader>
             )}
             {dialogContent.children && (
-              <CredenzaBody className='mx-4'>{dialogContent.children}</CredenzaBody>
+              <CredenzaBody className="mx-4">
+                {dialogContent.children}
+              </CredenzaBody>
             )}
           </DrawerContent>
         </Drawer>

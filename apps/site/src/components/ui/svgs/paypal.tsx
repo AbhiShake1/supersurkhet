@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Paypal = (props: SVGProps<SVGSVGElement>) => (
   <svg {...props} viewBox="7.056000232696533 3 37.35095977783203 45">

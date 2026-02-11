@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
-import { Button, type ButtonProps } from "@/components/ui/button";
-import { Check, Copy, Image } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { Button, type ButtonProps } from '@/components/ui/button';
+import { Check, Copy, Image } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface CopyButtonProps extends ButtonProps {
   value?: string;
   getImage?: () => Promise<Blob | null>;
   onCopy?: () => void;
-  copyType?: "text" | "image";
+  copyType?: 'text' | 'image';
 }
 
 const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
@@ -20,53 +20,53 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
       getImage,
       onCopy,
       className,
-      variant = "outline",
-      size = "sm",
-      copyType = "text",
+      variant = 'outline',
+      size = 'sm',
+      copyType = 'text',
       children,
       ...props
     },
-    ref
+    ref,
   ) => {
     const [isCopied, setIsCopied] = React.useState(false);
 
     const copyText = async () => {
       if (!value) return;
-      
+
       try {
         await navigator.clipboard.writeText(value);
         setIsCopied(true);
         onCopy?.();
         setTimeout(() => setIsCopied(false), 2000);
       } catch (error) {
-        toast.error("Failed to copy to clipboard");
+        toast.error('Failed to copy to clipboard');
       }
     };
 
     const copyImage = async () => {
       if (!getImage) return;
-      
+
       try {
         const blob = await getImage();
         if (!blob) {
-          toast.error("Failed to get image data");
+          toast.error('Failed to get image data');
           return;
         }
-        
+
         const item = new ClipboardItem({ [blob.type]: blob });
         await navigator.clipboard.write([item]);
         setIsCopied(true);
         onCopy?.();
         setTimeout(() => setIsCopied(false), 2000);
       } catch (error) {
-        toast.error("Failed to copy image to clipboard");
+        toast.error('Failed to copy image to clipboard');
       }
     };
 
     const handleCopy = () => {
-      if (copyType === "image" && getImage) {
+      if (copyType === 'image' && getImage) {
         copyImage();
-      } else if (copyType === "text" && value) {
+      } else if (copyType === 'text' && value) {
         copyText();
       }
     };
@@ -76,7 +76,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         ref={ref}
         variant={variant}
         size={size}
-        className={cn("transition-all duration-200", className)}
+        className={cn('transition-all duration-200', className)}
         onClick={handleCopy}
         disabled={!value && !getImage}
         {...props}
@@ -88,19 +88,21 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
           </>
         ) : (
           <>
-            {copyType === "image" ? (
+            {copyType === 'image' ? (
               <Image className="h-4 w-4" />
             ) : (
               <Copy className="h-4 w-4" />
             )}
-            <span className="ml-2">{children || (copyType === "image" ? "Copy Image" : "Copy")}</span>
+            <span className="ml-2">
+              {children || (copyType === 'image' ? 'Copy Image' : 'Copy')}
+            </span>
           </>
         )}
       </Button>
     );
-  }
+  },
 );
 
-CopyButton.displayName = "CopyButton";
+CopyButton.displayName = 'CopyButton';
 
 export { CopyButton, type CopyButtonProps };

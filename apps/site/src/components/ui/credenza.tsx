@@ -1,7 +1,7 @@
-import * as React from "react";
+import * as React from 'react';
 
-import { cn } from "@/lib/utils";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogClose,
@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Drawer,
   DrawerClose,
@@ -21,7 +21,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerTrigger,
-} from "@/components/ui/drawer";
+} from '@/components/ui/drawer';
 
 interface BaseProps {
   children: React.ReactNode;
@@ -45,7 +45,7 @@ const useCredenzaContext = () => {
   const context = React.useContext(CredenzaContext);
   if (!context) {
     throw new Error(
-      "Credenza components cannot be rendered outside the Credenza Context",
+      'Credenza components cannot be rendered outside the Credenza Context',
     );
   }
   return context;
@@ -100,8 +100,9 @@ const CredenzaContent = ({
   return (
     <CredenzaContent
       className={cn(
-        isMobile && "fixed inset-x-0 bottom-0 top-auto mt-auto rounded-t-xl border-t max-h-[90vh]",
-        className
+        isMobile &&
+          'fixed inset-x-0 bottom-0 top-auto mt-auto rounded-t-xl border-t max-h-[90vh]',
+        className,
       )}
       {...props}
     >
@@ -131,10 +132,7 @@ const CredenzaHeader = ({ className, children, ...props }: CredenzaProps) => {
 
   return (
     <CredenzaHeader
-      className={cn(
-        isMobile && "pt-4 pb-2",
-        className
-      )}
+      className={cn(isMobile && 'pt-4 pb-2', className)}
       {...props}
     >
       {children}
@@ -155,13 +153,7 @@ const CredenzaTitle = ({ className, children, ...props }: CredenzaProps) => {
 
 const CredenzaBody = ({ className, children, ...props }: CredenzaProps) => {
   return (
-    <div
-      className={cn(
-        "px-4 md:px-0",
-        className
-      )}
-      {...props}
-    >
+    <div className={cn('px-4 md:px-0', className)} {...props}>
       {children}
     </div>
   );
@@ -173,10 +165,7 @@ const CredenzaFooter = ({ className, children, ...props }: CredenzaProps) => {
 
   return (
     <CredenzaFooter
-      className={cn(
-        isMobile && "pb-4 pt-2",
-        className
-      )}
+      className={cn(isMobile && 'pb-4 pt-2', className)}
       {...props}
     >
       {children}

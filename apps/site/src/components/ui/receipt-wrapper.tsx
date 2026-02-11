@@ -1,12 +1,12 @@
-"use client"
+'use client';
 
-import { useRef } from "react"
-import { InvoiceReceipt } from "./invoice-receipt"
-import type { Party, Invoice } from "@/lib/schema"
-import type { Product } from "../supersurkhet/products"
-import { toast } from "sonner"
-import { Button } from "./button"
-import { Printer as Print, Download, Share2 } from "lucide-react"
+import { useRef } from 'react';
+import { InvoiceReceipt } from './invoice-receipt';
+import type { Party, Invoice } from '@/lib/schema';
+import type { Product } from '../supersurkhet/products';
+import { toast } from 'sonner';
+import { Button } from './button';
+import { Printer as Print, Download, Share2 } from 'lucide-react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas-oklch';
 
@@ -26,8 +26,8 @@ if (typeof window !== 'undefined') {
     var myframe = document.createElement('IFRAME');
     // @ts-expect-error
     myframe.domain = document.domain;
-    myframe.style.position = "absolute";
-    myframe.style.top = "-10000px";
+    myframe.style.position = 'absolute';
+    myframe.style.top = '-10000px';
     document.body.appendChild(myframe);
     // @ts-expect-error
     myframe.contentDocument.write(this.innerHTML);
@@ -35,29 +35,36 @@ if (typeof window !== 'undefined') {
       myframe.focus();
       // @ts-expect-error
       myframe.contentWindow.print();
-      myframe.parentNode?.removeChild(myframe);// remove frame
+      myframe.parentNode?.removeChild(myframe); // remove frame
     }, 3000); // wait for images to load inside iframe
     window.focus();
   }
 }
 
 interface ReceiptWrapperProps {
-  invoice: Invoice
-  party: Party
-  productsById: Map<string, Product>
+  invoice: Invoice;
+  party: Party;
+  productsById: Map<string, Product>;
 }
 
-export function ReceiptWrapper({ invoice, party, productsById }: ReceiptWrapperProps) {
-  const receiptRef = useRef<HTMLDivElement>(null)
+export function ReceiptWrapper({
+  invoice,
+  party,
+  productsById,
+}: ReceiptWrapperProps) {
+  const receiptRef = useRef<HTMLDivElement>(null);
 
   const handlePrint = () => {
-    receiptRef.current?.print()
-  }
+    receiptRef.current?.print();
+  };
 
   const handleDownload = async () => {
-    if (!receiptRef.current) return
+    if (!receiptRef.current) return;
     try {
-      const canvas = await html2canvas(receiptRef.current, { useCORS: true, scale: 2 }); // higher scale = crisper output
+      const canvas = await html2canvas(receiptRef.current, {
+        useCORS: true,
+        scale: 2,
+      }); // higher scale = crisper output
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ unit: 'px', format: 'a4' });
 
@@ -67,10 +74,10 @@ export function ReceiptWrapper({ invoice, party, productsById }: ReceiptWrapperP
       pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
       pdf.save(`invoice-${Date.now()}.pdf`);
     } catch (error) {
-      toast.error("Failed to download PDF")
-      console.error("Download error:", error)
+      toast.error('Failed to download PDF');
+      console.error('Download error:', error);
     }
-  }
+  };
 
   return (
     <div className="min-h-0">
@@ -80,18 +87,32 @@ export function ReceiptWrapper({ invoice, party, productsById }: ReceiptWrapperP
           {/* Header Actions */}
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
             <h1 className="text-xl md:text-2xl font-bold">
-              {invoice.type === "sale" ? "Invoice" : "Purchase Order"}
+              {invoice.type === 'sale' ? 'Invoice' : 'Purchase Order'}
             </h1>
             <div className="flex gap-2 flex-wrap">
-              <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1 bg-transparent">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePrint}
+                className="gap-1 bg-transparent"
+              >
                 <Print className="w-3 h-3" />
                 <span className="hidden sm:inline text-xs">Print</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={handleDownload} className="gap-1 bg-transparent">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownload}
+                className="gap-1 bg-transparent"
+              >
                 <Download className="w-3 h-3" />
                 <span className="hidden sm:inline text-xs">PDF</span>
               </Button>
-              <Button variant="outline" size="sm" className="gap-1 bg-transparent">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1 bg-transparent"
+              >
                 <Share2 className="w-3 h-3" />
                 <span className="hidden sm:inline text-xs">Share</span>
               </Button>
@@ -107,5 +128,5 @@ export function ReceiptWrapper({ invoice, party, productsById }: ReceiptWrapperP
         </div>
       </div>
     </div>
-  )
+  );
 }

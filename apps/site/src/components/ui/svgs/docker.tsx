@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Docker = (props: SVGProps<SVGSVGElement>) => (
   <svg {...props} viewBox="0 0 24 24" fill="#008fe2">

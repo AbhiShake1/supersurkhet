@@ -1,15 +1,15 @@
-import type React from "react";
-import { useCallback, useMemo } from "react";
+import type React from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   FormItem,
   FormLabel,
   FormControl,
   FormDescription,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import MultipleSelector, {
   type Option,
-} from "@/components/ui/ui-builder/internal/components/multi-select";
-import { iconNames } from "@/components/ui/ui-builder/components/icon";
+} from '@/components/ui/ui-builder/internal/components/multi-select';
+import { iconNames } from '@/components/ui/ui-builder/components/icon';
 
 const EMPTY_OPTIONS: Option[] = [];
 
@@ -31,13 +31,13 @@ const IconNameField: React.FC<IconNameFieldProps> = ({
   const searchNames = useCallback(async (value: string): Promise<Option[]> => {
     return new Promise((resolve) => {
       const res = iconNames.filter((option) =>
-        option.toLowerCase().includes(value.toLowerCase())
+        option.toLowerCase().includes(value.toLowerCase()),
       );
       resolve(
         res.map((name) => ({
           value: name,
           label: name,
-        }))
+        })),
       );
     });
   }, []);
@@ -48,24 +48,30 @@ const IconNameField: React.FC<IconNameFieldProps> = ({
         onChange(values[0].value);
       }
     },
-    [onChange]
+    [onChange],
   );
 
   const multipleSelectorValues = useMemo(() => {
     return [{ value: value, label: value }];
   }, [value]);
 
-  const emptyIndicator = useMemo(() => (
-    <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
-      No results found.
-    </p>
-  ), []);
+  const emptyIndicator = useMemo(
+    () => (
+      <p className="text-center text-lg leading-10 text-gray-600 dark:text-gray-400">
+        No results found.
+      </p>
+    ),
+    [],
+  );
 
-  const loadingIndicator = useMemo(() => (
-    <p className="py-2 text-center text-lg leading-10 text-muted-foreground">
-      Loading...
-    </p>
-  ), []);
+  const loadingIndicator = useMemo(
+    () => (
+      <p className="py-2 text-center text-lg leading-10 text-muted-foreground">
+        Loading...
+      </p>
+    ),
+    [],
+  );
 
   return (
     <FormItem className="flex flex-col">

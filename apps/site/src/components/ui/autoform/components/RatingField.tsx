@@ -1,8 +1,8 @@
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { Star } from "lucide-react";
-import type { FieldWrapperProps } from "./FieldWrapper";
-import { useState } from "react";
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import { Star } from 'lucide-react';
+import type { FieldWrapperProps } from './FieldWrapper';
+import { useState } from 'react';
 
 export interface RatingFieldProps extends FieldWrapperProps {
   max?: number;
@@ -39,14 +39,15 @@ export function RatingField({
 
   const renderStars = () => {
     const displayRating = hoverRating || currentRating;
-    
+
     return Array.from({ length: max }, (_, index) => {
       const starValue = index + 1;
       const isFilled = starValue <= displayRating;
-      const isHalfFilled = allowHalf && 
-        starValue - 0.5 <= displayRating && 
+      const isHalfFilled =
+        allowHalf &&
+        starValue - 0.5 <= displayRating &&
         displayRating < starValue;
-      
+
       return (
         <button
           key={starValue}
@@ -59,13 +60,14 @@ export function RatingField({
         >
           <Star
             className={cn(
-              "h-6 w-6 transition-colors",
-              isFilled 
-                ? "fill-yellow-400 text-yellow-400" 
+              'h-6 w-6 transition-colors',
+              isFilled
+                ? 'fill-yellow-400 text-yellow-400'
                 : isHalfFilled
-                ? "fill-yellow-400 text-yellow-400 opacity-50"
-                : "fill-muted stroke-muted-foreground text-muted",
-              !field.disabled && "cursor-pointer hover:fill-yellow-300 hover:text-yellow-300"
+                  ? 'fill-yellow-400 text-yellow-400 opacity-50'
+                  : 'fill-muted stroke-muted-foreground text-muted',
+              !field.disabled &&
+                'cursor-pointer hover:fill-yellow-300 hover:text-yellow-300',
             )}
           />
         </button>
@@ -74,13 +76,13 @@ export function RatingField({
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {label && (
         <Label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
           {label}
         </Label>
       )}
-      
+
       <div className="flex items-center">
         <div className="flex" role="radiogroup" aria-label={label}>
           {renderStars()}
@@ -89,9 +91,13 @@ export function RatingField({
           {currentRating.toFixed(allowHalf ? 1 : 0)}
         </span>
       </div>
-      
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
-      {error && <p className="text-sm font-medium text-destructive">{error.message}</p>}
+
+      {description && (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
+      {error && (
+        <p className="text-sm font-medium text-destructive">{error.message}</p>
+      )}
     </div>
   );
 }

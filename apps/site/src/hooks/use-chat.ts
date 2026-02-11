@@ -1,4 +1,4 @@
-import { api } from "@/lib/api";
+import { api } from '@/lib/api';
 
 export function useChat(roomId: string) {
   const { data: messages = [] } = api.chat.useGet({ keys: [roomId] });

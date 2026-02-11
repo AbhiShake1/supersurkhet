@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   Background,
@@ -11,9 +11,9 @@ import {
   Position,
   ReactFlow,
   ReactFlowProvider,
-  useReactFlow
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
+  useReactFlow,
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
 import {
   DndContext,
   type DragEndEvent,
@@ -23,34 +23,28 @@ import {
   PointerSensor,
   TouchSensor,
   useSensor,
-  useSensors
-} from "@dnd-kit/core";
-import type React from "react";
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  useMemo
-} from "react";
+  useSensors,
+} from '@dnd-kit/core';
+import type React from 'react';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CustomSelect } from "@/components/ui/custom-select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Progress } from "@/components/ui/progress";
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CustomSelect } from '@/components/ui/custom-select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
-import { useWifiNetworks } from "@/hooks/use-wifi";
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import { useWifiNetworks } from '@/hooks/use-wifi';
 import {
   ArrowRight,
   Bell,
@@ -77,8 +71,8 @@ import {
   Upload,
   User,
   Wifi,
-  X
-} from "lucide-react";
+  X,
+} from 'lucide-react';
 
 import {
   Sortable,
@@ -86,54 +80,73 @@ import {
   SortableItem,
   SortableItemHandle,
   SortableOverlay,
-} from "@/components/ui/sortable";
+} from '@/components/ui/sortable';
 
-import { CopyButton } from "@/components/ui/copy-button";
-import { DataMatrixCode } from "@/components/ui/datamatrix-code";
-import { type DataMatrixAction, dataMatrixActionSchema } from "@/lib/datamatrix";
-import { toast } from "sonner";
+import { CopyButton } from '@/components/ui/copy-button';
+import { DataMatrixCode } from '@/components/ui/datamatrix-code';
+import {
+  type DataMatrixAction,
+  dataMatrixActionSchema,
+} from '@/lib/datamatrix';
+import { toast } from 'sonner';
 
-import { AnimatedSvgEdge } from "@/components/animated-svg-edge";
-import { BaseNode, BaseNodeContent, BaseNodeHeader, BaseNodeHeaderTitle } from "@/components/base-node";
-import { CustomEdge } from "@/components/custom-edge";
-import { DeleteNodeButton, flowNodeTypes } from "@/components/custom-flow-nodes";
-import { DataEdge } from "@/components/data-edge";
-import { FlowProvider, useFlow } from "@/components/flow-context";
-import { NodeButtonHandle } from "@/components/node-button-handle";
-import { NodeStats } from "@/components/node-stats";
-import { type NodeStatus, NodeStatusIndicator } from "@/components/node-status-indicator";
+import { AnimatedSvgEdge } from '@/components/animated-svg-edge';
+import {
+  BaseNode,
+  BaseNodeContent,
+  BaseNodeHeader,
+  BaseNodeHeaderTitle,
+} from '@/components/base-node';
+import { CustomEdge } from '@/components/custom-edge';
+import {
+  DeleteNodeButton,
+  flowNodeTypes,
+} from '@/components/custom-flow-nodes';
+import { DataEdge } from '@/components/data-edge';
+import { FlowProvider, useFlow } from '@/components/flow-context';
+import { NodeButtonHandle } from '@/components/node-button-handle';
+import { NodeStats } from '@/components/node-stats';
+import {
+  type NodeStatus,
+  NodeStatusIndicator,
+} from '@/components/node-status-indicator';
 import {
   Drawer,
   DrawerClose,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
-} from "@/components/ui/drawer";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { ZoomSlider } from "@/components/zoom-slider";
-import { getLayoutedElements } from "@/lib/auto-layout-utils";
-import { ScrollArea } from "../ui/scroll-area";
+} from '@/components/ui/drawer';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { ZoomSlider } from '@/components/zoom-slider';
+import { getLayoutedElements } from '@/lib/auto-layout-utils';
+import { ScrollArea } from '../ui/scroll-area';
 
 // Define custom node types
 export type NodeType =
-  | "wifiConnect"
-  | "profileEnrichment"
-  | "equipmentSession"
-  | "restaurantOrdering"
-  | "productInteraction"
-  | "navigate"
-  | "notification"
-  | "condition"
-  | "loop"
-  | "apiCall"
-  | "custom"
-  | "runner"
+  | 'wifiConnect'
+  | 'profileEnrichment'
+  | 'equipmentSession'
+  | 'restaurantOrdering'
+  | 'productInteraction'
+  | 'navigate'
+  | 'notification'
+  | 'condition'
+  | 'loop'
+  | 'apiCall'
+  | 'custom'
+  | 'runner'
   // Custom flow node types with special shapes
-  | "input"
-  | "output"
-  | "process"
-  | "predefined"
-  | "document";
+  | 'input'
+  | 'output'
+  | 'process'
+  | 'predefined'
+  | 'document';
 
 type BaseNodeData = {
   label: string;
@@ -147,44 +160,68 @@ type BaseNodeData = {
     error?: number;
     progress?: number; // Add progress property
   };
-}
+};
 
 // Helper function to get fixed label and description for each node type
 export const getNodeLabelAndDescription = (type: NodeType) => {
   switch (type) {
-    case "wifiConnect":
-      return { label: "WiFi Connection", description: "Connect to a WiFi network" };
-    case "profileEnrichment":
-      return { label: "Profile Enrichment", description: "Collect user profile information" };
-    case "equipmentSession":
-      return { label: "Equipment Session", description: "Manage equipment access session" };
-    case "restaurantOrdering":
-      return { label: "Restaurant Ordering", description: "Place restaurant orders" };
-    case "productInteraction":
-      return { label: "Product Interaction", description: "Interact with products" };
-    case "navigate":
-      return { label: "Navigation", description: "Navigate to a URL" };
-    case "notification":
-      return { label: "Notification", description: "Send a notification" };
-    case "condition":
-      return { label: "Condition", description: "Conditional branching" };
-    case "loop":
-      return { label: "Loop", description: "Repeat a set of actions" };
-    case "apiCall":
-      return { label: "API Call", description: "Make an API request" };
-    case "runner":
-      return { label: "Workflow Runner", description: "Execute and monitor workflow" };
+    case 'wifiConnect':
+      return {
+        label: 'WiFi Connection',
+        description: 'Connect to a WiFi network',
+      };
+    case 'profileEnrichment':
+      return {
+        label: 'Profile Enrichment',
+        description: 'Collect user profile information',
+      };
+    case 'equipmentSession':
+      return {
+        label: 'Equipment Session',
+        description: 'Manage equipment access session',
+      };
+    case 'restaurantOrdering':
+      return {
+        label: 'Restaurant Ordering',
+        description: 'Place restaurant orders',
+      };
+    case 'productInteraction':
+      return {
+        label: 'Product Interaction',
+        description: 'Interact with products',
+      };
+    case 'navigate':
+      return { label: 'Navigation', description: 'Navigate to a URL' };
+    case 'notification':
+      return { label: 'Notification', description: 'Send a notification' };
+    case 'condition':
+      return { label: 'Condition', description: 'Conditional branching' };
+    case 'loop':
+      return { label: 'Loop', description: 'Repeat a set of actions' };
+    case 'apiCall':
+      return { label: 'API Call', description: 'Make an API request' };
+    case 'runner':
+      return {
+        label: 'Workflow Runner',
+        description: 'Execute and monitor workflow',
+      };
     // Custom flow node types
-    case "input":
-      return { label: "Input", description: "Input data or parameters" };
-    case "output":
-      return { label: "Output", description: "Output results or data" };
-    case "process":
-      return { label: "Process", description: "Process or transformation" };
-    case "predefined":
-      return { label: "Predefined Process", description: "Predefined or named process" };
-    case "document":
-      return { label: "Document", description: "Document or report generation" };
+    case 'input':
+      return { label: 'Input', description: 'Input data or parameters' };
+    case 'output':
+      return { label: 'Output', description: 'Output results or data' };
+    case 'process':
+      return { label: 'Process', description: 'Process or transformation' };
+    case 'predefined':
+      return {
+        label: 'Predefined Process',
+        description: 'Predefined or named process',
+      };
+    case 'document':
+      return {
+        label: 'Document',
+        description: 'Document or report generation',
+      };
     default:
       return { label: type, description: `Configure this ${type} node` };
   }
@@ -208,15 +245,20 @@ type WifiConnectNodeData = {
     password: string;
     security: string;
   };
-}
+};
 
-const WifiConnectNode = ({ data, id }: NodeProps<Node<WifiConnectNodeData>>) => {
+const WifiConnectNode = ({
+  data,
+  id,
+}: NodeProps<Node<WifiConnectNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
 
   // Calculate progress based on stats
-  const progress = data.stats?.progress ??
-    (data.stats?.completed && data.stats?.started ?
-      (data.stats.completed / data.stats.started) * 100 : 0);
+  const progress =
+    data.stats?.progress ??
+    (data.stats?.completed && data.stats?.started
+      ? (data.stats.completed / data.stats.started) * 100
+      : 0);
 
   return (
     <NodeStatusIndicator status={data.status}>
@@ -233,15 +275,17 @@ const WifiConnectNode = ({ data, id }: NodeProps<Node<WifiConnectNodeData>>) => 
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>SSID:</span>
-              <span className="font-mono">{data.config?.ssid || "Not set"}</span>
+              <span className="font-mono">
+                {data.config?.ssid || 'Not set'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Security:</span>
-              <span>{data.config?.security || "WPA2"}</span>
+              <span>{data.config?.security || 'WPA2'}</span>
             </div>
           </div>
           <NodeStats stats={data.stats} className="mt-2" />
-          {data.status === "loading" && (
+          {data.status === 'loading' && (
             <div className="mt-2">
               <Progress value={progress} className="h-1.5" />
             </div>
@@ -285,9 +329,12 @@ type ProfileEnrichmentNodeData = {
     field: string;
     required: boolean;
   };
-}
+};
 
-const ProfileEnrichmentNode = ({ data, id }: NodeProps<Node<ProfileEnrichmentNodeData>>) => {
+const ProfileEnrichmentNode = ({
+  data,
+  id,
+}: NodeProps<Node<ProfileEnrichmentNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
 
   return (
@@ -305,11 +352,13 @@ const ProfileEnrichmentNode = ({ data, id }: NodeProps<Node<ProfileEnrichmentNod
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>Field:</span>
-              <span className="font-mono">{data.config?.field || "Not set"}</span>
+              <span className="font-mono">
+                {data.config?.field || 'Not set'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Required:</span>
-              <span>{data.config?.required ? "Yes" : "No"}</span>
+              <span>{data.config?.required ? 'Yes' : 'No'}</span>
             </div>
           </div>
         </BaseNodeContent>
@@ -349,7 +398,10 @@ type EquipmentSessionNodeData = {
   };
 };
 
-const EquipmentSessionNode = ({ data, id }: NodeProps<Node<EquipmentSessionNodeData>>) => {
+const EquipmentSessionNode = ({
+  data,
+  id,
+}: NodeProps<Node<EquipmentSessionNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
 
   return (
@@ -367,11 +419,13 @@ const EquipmentSessionNode = ({ data, id }: NodeProps<Node<EquipmentSessionNodeD
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>Equipment:</span>
-              <span className="font-mono">{data.config?.equipmentId || "Not set"}</span>
+              <span className="font-mono">
+                {data.config?.equipmentId || 'Not set'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Duration:</span>
-              <span>{data.config?.duration || "30"} min</span>
+              <span>{data.config?.duration || '30'} min</span>
             </div>
           </div>
         </BaseNodeContent>
@@ -411,7 +465,10 @@ type RestaurantOrderingNodeData = {
   };
 };
 
-const RestaurantOrderingNode = ({ data, id }: NodeProps<Node<RestaurantOrderingNodeData>>) => {
+const RestaurantOrderingNode = ({
+  data,
+  id,
+}: NodeProps<Node<RestaurantOrderingNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
 
   return (
@@ -429,11 +486,13 @@ const RestaurantOrderingNode = ({ data, id }: NodeProps<Node<RestaurantOrderingN
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>Restaurant:</span>
-              <span className="font-mono">{data.config?.restaurantId || "Not set"}</span>
+              <span className="font-mono">
+                {data.config?.restaurantId || 'Not set'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>Table:</span>
-              <span>{data.config?.table || "Not set"}</span>
+              <span>{data.config?.table || 'Not set'}</span>
             </div>
           </div>
         </BaseNodeContent>
@@ -473,7 +532,10 @@ type ProductInteractionNodeData = {
   };
 };
 
-const ProductInteractionNode = ({ data, id }: NodeProps<Node<ProductInteractionNodeData>>) => {
+const ProductInteractionNode = ({
+  data,
+  id,
+}: NodeProps<Node<ProductInteractionNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
 
   return (
@@ -491,11 +553,13 @@ const ProductInteractionNode = ({ data, id }: NodeProps<Node<ProductInteractionN
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>Product:</span>
-              <span className="font-mono">{data.config?.productId || "Not set"}</span>
+              <span className="font-mono">
+                {data.config?.productId || 'Not set'}
+              </span>
             </div>
             <div className="flex justify-between">
               <span>SKU:</span>
-              <span>{data.config?.sku || "Not set"}</span>
+              <span>{data.config?.sku || 'Not set'}</span>
             </div>
           </div>
         </BaseNodeContent>
@@ -552,7 +616,9 @@ const NavigateNode = ({ data, id }: NodeProps<Node<NavigateNodeData>>) => {
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>URL:</span>
-              <span className="font-mono truncate max-w-[100px]">{data.config?.url || "Not set"}</span>
+              <span className="font-mono truncate max-w-[100px]">
+                {data.config?.url || 'Not set'}
+              </span>
             </div>
           </div>
         </BaseNodeContent>
@@ -591,7 +657,10 @@ type NotificationNodeData = {
   };
 };
 
-const NotificationNode = ({ data, id }: NodeProps<Node<NotificationNodeData>>) => {
+const NotificationNode = ({
+  data,
+  id,
+}: NodeProps<Node<NotificationNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
 
   return (
@@ -609,7 +678,9 @@ const NotificationNode = ({ data, id }: NodeProps<Node<NotificationNodeData>>) =
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>Title:</span>
-              <span className="font-mono truncate max-w-[100px]">{data.config?.title || "Not set"}</span>
+              <span className="font-mono truncate max-w-[100px]">
+                {data.config?.title || 'Not set'}
+              </span>
             </div>
           </div>
         </BaseNodeContent>
@@ -651,25 +722,28 @@ type ApiCallNodeData = {
     method: string;
     url: string;
   };
-}
+};
 
 const APICallNode = ({ data, id }: NodeProps<Node<ApiCallNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
   // Calculate progress based on stats
-  const progress = data.stats?.progress ??
-    (data.stats?.completed && data.stats?.started ?
-      (data.stats.completed / data.stats.started) * 100 : 0);
+  const progress =
+    data.stats?.progress ??
+    (data.stats?.completed && data.stats?.started
+      ? (data.stats.completed / data.stats.started) * 100
+      : 0);
 
   // Get method-specific color
-  const method = data.config?.method || "GET";
+  const method = data.config?.method || 'GET';
   const methodColors = {
-    GET: "bg-emerald-500",
-    POST: "bg-blue-500",
-    PUT: "bg-amber-500",
-    DELETE: "bg-red-500",
-    PATCH: "bg-purple-500",
+    GET: 'bg-emerald-500',
+    POST: 'bg-blue-500',
+    PUT: 'bg-amber-500',
+    DELETE: 'bg-red-500',
+    PATCH: 'bg-purple-500',
   };
-  const methodColor = methodColors[method as keyof typeof methodColors] || "bg-emerald-500";
+  const methodColor =
+    methodColors[method as keyof typeof methodColors] || 'bg-emerald-500';
 
   return (
     <NodeStatusIndicator status={data.status}>
@@ -677,8 +751,19 @@ const APICallNode = ({ data, id }: NodeProps<Node<ApiCallNodeData>>) => {
         <BaseNodeHeader className="text-emerald-900 dark:text-emerald-100">
           <BaseNodeHeaderTitle className="text-emerald-900 dark:text-emerald-100 flex items-center gap-2">
             <svg
-              role="img" aria-label="DataMatrix Scanner"
-              xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              role="img"
+              aria-label="DataMatrix Scanner"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
               <path d="m7 11 2-2-2-2" />
               <path d="M11 13h4" />
               <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
@@ -697,11 +782,13 @@ const APICallNode = ({ data, id }: NodeProps<Node<ApiCallNodeData>>) => {
             </div>
             <div className="flex justify-between">
               <span>URL:</span>
-              <span className="font-mono truncate max-w-[100px]">{data.config?.url || "Not set"}</span>
+              <span className="font-mono truncate max-w-[100px]">
+                {data.config?.url || 'Not set'}
+              </span>
             </div>
           </div>
           <NodeStats stats={data.stats} className="mt-2" />
-          {data.status === "loading" && (
+          {data.status === 'loading' && (
             <div className="mt-2">
               <Progress value={progress} className="h-1.5" />
             </div>
@@ -747,14 +834,16 @@ type RunnerNodeData = {
     retries: number;
     continueOnError: boolean;
   };
-}
+};
 
 const RunnerNode = ({ data, id }: NodeProps<Node<RunnerNodeData>>) => {
   const { onAddNodeAtHandle } = useFlow();
   // Calculate progress based on stats
-  const progress = data.stats?.progress ??
-    (data.stats?.completed && data.stats?.started ?
-      (data.stats.completed / data.stats.started) * 100 : 0);
+  const progress =
+    data.stats?.progress ??
+    (data.stats?.completed && data.stats?.started
+      ? (data.stats.completed / data.stats.started) * 100
+      : 0);
 
   return (
     <NodeStatusIndicator status={data.status}>
@@ -762,8 +851,19 @@ const RunnerNode = ({ data, id }: NodeProps<Node<RunnerNodeData>>) => {
         <BaseNodeHeader className="text-violet-900 dark:text-violet-100">
           <BaseNodeHeaderTitle className="text-violet-900 dark:text-violet-100 flex items-center gap-2">
             <svg
-              role="img" aria-label="Workflow Runner"
-              xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+              role="img"
+              aria-label="Workflow Runner"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4"
+            >
               <path d="M12 2v20" />
               <path d="m8 18 4-4 4 4" />
               <path d="m8 6 4 4 4-4" />
@@ -777,15 +877,15 @@ const RunnerNode = ({ data, id }: NodeProps<Node<RunnerNodeData>>) => {
           <div className="space-y-1">
             <div className="flex justify-between">
               <span>Status:</span>
-              <span className="capitalize">{data.status || "idle"}</span>
+              <span className="capitalize">{data.status || 'idle'}</span>
             </div>
             <div className="flex justify-between">
               <span>Mode:</span>
-              <span>{data.config?.mode || "sequential"}</span>
+              <span>{data.config?.mode || 'sequential'}</span>
             </div>
           </div>
           <NodeStats stats={data.stats} className="mt-2" />
-          {data.status === "loading" && (
+          {data.status === 'loading' && (
             <div className="mt-2">
               <Progress value={progress} className="h-1.5" />
             </div>
@@ -841,7 +941,7 @@ const edgeTypes: EdgeTypes = {
 // Draggable node component for the sidebar
 const DraggableNode = ({
   nodeType,
-  onAddNode
+  onAddNode,
 }: {
   nodeType: {
     type: string;
@@ -894,7 +994,9 @@ const DraggableNode = ({
           >
             <div className={`w-3 h-3 rounded-full ${nodeType.color}`} />
             <Icon className="h-4 w-4" />
-            <p className="text-left overflow-ellipsis line-clamp-1">{nodeType.label}</p>
+            <p className="text-left overflow-ellipsis line-clamp-1">
+              {nodeType.label}
+            </p>
           </Button>
         </TooltipTrigger>
         <TooltipContent side="right">
@@ -906,16 +1008,22 @@ const DraggableNode = ({
 };
 
 // Sidebar component for node library with drag and drop
-const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => {
-  const { nodeLibraryOrder, setNodeLibraryOrder, resetNodeLibraryOrder } = useFlow();
-  const [searchTerm, setSearchTerm] = useState("");
+const NodeLibrary = ({
+  onAddNode,
+}: {
+  onAddNode: (type: NodeType) => void;
+}) => {
+  const { nodeLibraryOrder, setNodeLibraryOrder, resetNodeLibraryOrder } =
+    useFlow();
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Filter node types based on search term
   const filteredNodeTypes = useMemo(() => {
     if (!searchTerm) return nodeLibraryOrder;
-    return nodeLibraryOrder.filter(nodeType =>
-      nodeType.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      nodeType.type.toLowerCase().includes(searchTerm.toLowerCase())
+    return nodeLibraryOrder.filter(
+      (nodeType) =>
+        nodeType.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        nodeType.type.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [nodeLibraryOrder, searchTerm]);
 
@@ -965,10 +1073,18 @@ const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => 
             <SortableContent asChild>
               <div className="space-y-2">
                 {filteredNodeTypes.map((nodeType) => (
-                  <SortableItem key={nodeType.type} value={nodeType.type} asChild>
+                  <SortableItem
+                    key={nodeType.type}
+                    value={nodeType.type}
+                    asChild
+                  >
                     <div className="flex items-center gap-2">
                       <SortableItemHandle asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 p-0 cursor-grab">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 p-0 cursor-grab"
+                        >
                           <GripVertical className="h-4 w-4" />
                         </Button>
                       </SortableItemHandle>
@@ -1007,7 +1123,7 @@ const NodeLibrary = ({ onAddNode }: { onAddNode: (type: NodeType) => void }) => 
 // Node Setup Panel - Shows setup form when node is not configured
 const NodeSetupPanel = ({
   selectedNode,
-  onUpdateNode
+  onUpdateNode,
 }: {
   selectedNode: CustomNode;
   onUpdateNode: (id: string, data: BaseNodeData) => void;
@@ -1015,12 +1131,12 @@ const NodeSetupPanel = ({
   const handleConfigChange = (key: string, value: any) => {
     const updatedConfig = {
       ...selectedNode.data.config,
-      [key]: value
+      [key]: value,
     };
 
     onUpdateNode(selectedNode.id, {
       ...selectedNode.data,
-      config: updatedConfig
+      config: updatedConfig,
     });
   };
 
@@ -1042,7 +1158,10 @@ const NodeSetupPanel = ({
           </div>
 
           {/* Show node-specific setup form based on type */}
-          <NodeSetupForm selectedNode={selectedNode} handleConfigChange={handleConfigChange} />
+          <NodeSetupForm
+            selectedNode={selectedNode}
+            handleConfigChange={handleConfigChange}
+          />
 
           <div className="pt-4">
             <Button
@@ -1064,36 +1183,42 @@ const NodeSetupPanel = ({
 };
 
 // Helper function to render node-specific setup form
-const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: CustomNode, handleConfigChange: (key: string, value: any) => void }) => {
+const NodeSetupForm = ({
+  selectedNode,
+  handleConfigChange,
+}: {
+  selectedNode: CustomNode;
+  handleConfigChange: (key: string, value: any) => void;
+}) => {
   switch (selectedNode.type) {
-    case "wifiConnect": {
+    case 'wifiConnect': {
       // Use our WiFi hook for real network scanning
       const {
         wifiScanResult,
         isScanning,
         scanNetworks,
         wifiScanError,
-        isScanError
+        isScanError,
       } = useWifiNetworks();
 
       // Get available networks from scan result or use mock data as fallback
-      const availableNetworks = wifiScanResult?.success ?
-        wifiScanResult.networks.map((net: any) => net.ssid) :
-        ["HomeNetwork", "OfficeWiFi", "CoffeeShop-Guest", "NeighborNetwork"];
+      const availableNetworks = wifiScanResult?.success
+        ? wifiScanResult.networks.map((net: any) => net.ssid)
+        : ['HomeNetwork', 'OfficeWiFi', 'CoffeeShop-Guest', 'NeighborNetwork'];
 
       // Handle network selection from dropdown or direct input
       const handleNetworkChange = (value: string) => {
-        handleConfigChange("ssid", value);
+        handleConfigChange('ssid', value);
 
         // If it's a known network, also set the security type
-        const network = wifiScanResult?.success ?
-          wifiScanResult.networks.find((net: any) => net.ssid === value) :
-          [
-            { ssid: "HomeNetwork", security: "WPA2" },
-            { ssid: "OfficeWiFi", security: "WPA3" },
-            { ssid: "CoffeeShop-Guest", security: "open" },
-            { ssid: "NeighborNetwork", security: "WPA2" },
-          ].find(net => net.ssid === value);
+        const network = wifiScanResult?.success
+          ? wifiScanResult.networks.find((net: any) => net.ssid === value)
+          : [
+              { ssid: 'HomeNetwork', security: 'WPA2' },
+              { ssid: 'OfficeWiFi', security: 'WPA3' },
+              { ssid: 'CoffeeShop-Guest', security: 'open' },
+              { ssid: 'NeighborNetwork', security: 'WPA2' },
+            ].find((net) => net.ssid === value);
 
         if (network) {
           // handleConfigChange("security", network.security);
@@ -1111,21 +1236,24 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
                 onClick={() => scanNetworks()}
                 disabled={isScanning}
               >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isScanning ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`h-4 w-4 mr-2 ${isScanning ? 'animate-spin' : ''}`}
+                />
                 {isScanning ? 'Scanning...' : 'Scan'}
               </Button>
             </div>
 
             {isScanError && (
               <div className="text-sm text-red-500">
-                Error scanning networks: {wifiScanError?.message || 'Unknown error'}
+                Error scanning networks:{' '}
+                {wifiScanError?.message || 'Unknown error'}
               </div>
             )}
 
             <div className="space-y-2">
               <Label>Network Name (SSID)</Label>
               <CustomSelect
-                value={selectedNode.data.config?.ssid as string || ""}
+                value={(selectedNode.data.config?.ssid as string) || ''}
                 onValueChange={handleNetworkChange}
                 placeholder="Select or type network name..."
                 options={availableNetworks}
@@ -1142,8 +1270,8 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Input
               id="password"
               type="password"
-              value={(selectedNode.data.config?.password as string) || ""}
-              onChange={(e) => handleConfigChange("password", e.target.value)}
+              value={(selectedNode.data.config?.password as string) || ''}
+              onChange={(e) => handleConfigChange('password', e.target.value)}
               placeholder="Enter password"
             />
           </div>
@@ -1151,8 +1279,8 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
           <div className="space-y-2">
             <Label htmlFor="security">Security Type</Label>
             <Select
-              value={(selectedNode.data.config?.security as string) || "WPA2"}
-              onValueChange={(value) => handleConfigChange("security", value)}
+              value={(selectedNode.data.config?.security as string) || 'WPA2'}
+              onValueChange={(value) => handleConfigChange('security', value)}
             >
               <SelectTrigger id="security">
                 <SelectValue />
@@ -1169,15 +1297,15 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
       );
     }
 
-    case "navigate":
+    case 'navigate':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="url">URL</Label>
             <Input
               id="url"
-              value={(selectedNode.data.config?.url as string) || ""}
-              onChange={(e) => handleConfigChange("url", e.target.value)}
+              value={(selectedNode.data.config?.url as string) || ''}
+              onChange={(e) => handleConfigChange('url', e.target.value)}
               placeholder="https://example.com"
             />
           </div>
@@ -1185,16 +1313,19 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="params">URL Parameters</Label>
             <Textarea
               id="params"
-              value={selectedNode.data.config?.paramsRaw as string || JSON.stringify(selectedNode.data.config?.params || {}, null, 2)}
-              onChange={(e) => handleConfigChange("paramsRaw", e.target.value)}
+              value={
+                (selectedNode.data.config?.paramsRaw as string) ||
+                JSON.stringify(selectedNode.data.config?.params || {}, null, 2)
+              }
+              onChange={(e) => handleConfigChange('paramsRaw', e.target.value)}
               onBlur={(e) => {
                 try {
                   const params = JSON.parse(e.target.value);
-                  handleConfigChange("params", params);
-                  handleConfigChange("paramsRaw", undefined);
-                  toast.success("Parameters updated successfully");
+                  handleConfigChange('params', params);
+                  handleConfigChange('paramsRaw', undefined);
+                  toast.success('Parameters updated successfully');
                 } catch (error) {
-                  toast.error("Invalid JSON in parameters");
+                  toast.error('Invalid JSON in parameters');
                 }
               }}
               placeholder='{"param1": "value1", "param2": "value2"}'
@@ -1202,21 +1333,22 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
               className="font-mono text-sm"
             />
             <p className="text-xs text-muted-foreground">
-              Enter parameters as JSON key-value pairs. Press Tab or click outside to save.
+              Enter parameters as JSON key-value pairs. Press Tab or click
+              outside to save.
             </p>
           </div>
         </div>
       );
 
-    case "notification":
+    case 'notification':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
             <Input
               id="title"
-              value={(selectedNode.data.config?.title as string) || ""}
-              onChange={(e) => handleConfigChange("title", e.target.value)}
+              value={(selectedNode.data.config?.title as string) || ''}
+              onChange={(e) => handleConfigChange('title', e.target.value)}
               placeholder="Notification title"
             />
           </div>
@@ -1224,8 +1356,8 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="message">Message</Label>
             <Textarea
               id="message"
-              value={(selectedNode.data.config?.message as string) || ""}
-              onChange={(e) => handleConfigChange("message", e.target.value)}
+              value={(selectedNode.data.config?.message as string) || ''}
+              onChange={(e) => handleConfigChange('message', e.target.value)}
               placeholder="Notification message"
               rows={3}
             />
@@ -1233,7 +1365,7 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
         </div>
       );
 
-    case "profileEnrichment":
+    case 'profileEnrichment':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -1246,8 +1378,8 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="field">Field Name</Label>
             <Input
               id="field"
-              value={(selectedNode.data.config?.field as string) || ""}
-              onChange={(e) => handleConfigChange("field", e.target.value)}
+              value={(selectedNode.data.config?.field as string) || ''}
+              onChange={(e) => handleConfigChange('field', e.target.value)}
               placeholder="e.g., emergency_contact"
             />
           </div>
@@ -1255,14 +1387,16 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Switch
               id="required"
               checked={selectedNode.data.config?.required === true}
-              onCheckedChange={(checked) => handleConfigChange("required", checked)}
+              onCheckedChange={(checked) =>
+                handleConfigChange('required', checked)
+              }
             />
             <Label htmlFor="required">Field Required</Label>
           </div>
         </div>
       );
 
-    case "equipmentSession":
+    case 'equipmentSession':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -1275,8 +1409,10 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="equipmentId">Equipment ID</Label>
             <Input
               id="equipmentId"
-              value={(selectedNode.data.config?.equipmentId as string) || ""}
-              onChange={(e) => handleConfigChange("equipmentId", e.target.value)}
+              value={(selectedNode.data.config?.equipmentId as string) || ''}
+              onChange={(e) =>
+                handleConfigChange('equipmentId', e.target.value)
+              }
               placeholder="e.g., treadmill_001"
             />
           </div>
@@ -1284,8 +1420,10 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="equipmentType">Equipment Type</Label>
             <Input
               id="equipmentType"
-              value={(selectedNode.data.config?.equipmentType as string) || ""}
-              onChange={(e) => handleConfigChange("equipmentType", e.target.value)}
+              value={(selectedNode.data.config?.equipmentType as string) || ''}
+              onChange={(e) =>
+                handleConfigChange('equipmentType', e.target.value)
+              }
               placeholder="e.g., cardio"
             />
           </div>
@@ -1294,15 +1432,20 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Input
               id="duration"
               type="number"
-              value={(selectedNode.data.config?.duration as number) || ""}
-              onChange={(e) => handleConfigChange("duration", Number.parseInt(e.target.value) || 0)}
+              value={(selectedNode.data.config?.duration as number) || ''}
+              onChange={(e) =>
+                handleConfigChange(
+                  'duration',
+                  Number.parseInt(e.target.value) || 0,
+                )
+              }
               placeholder="30"
             />
           </div>
         </div>
       );
 
-    case "restaurantOrdering":
+    case 'restaurantOrdering':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -1315,8 +1458,10 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="restaurantId">Restaurant ID</Label>
             <Input
               id="restaurantId"
-              value={(selectedNode.data.config?.restaurantId as string) || ""}
-              onChange={(e) => handleConfigChange("restaurantId", e.target.value)}
+              value={(selectedNode.data.config?.restaurantId as string) || ''}
+              onChange={(e) =>
+                handleConfigChange('restaurantId', e.target.value)
+              }
               placeholder="e.g., anjal_restaurant"
             />
           </div>
@@ -1324,15 +1469,15 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="table">Table Identifier</Label>
             <Input
               id="table"
-              value={(selectedNode.data.config?.table as string) || ""}
-              onChange={(e) => handleConfigChange("table", e.target.value)}
+              value={(selectedNode.data.config?.table as string) || ''}
+              onChange={(e) => handleConfigChange('table', e.target.value)}
               placeholder="e.g., table_5 or from_context"
             />
           </div>
         </div>
       );
 
-    case "productInteraction":
+    case 'productInteraction':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -1345,8 +1490,8 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="productId">Product ID</Label>
             <Input
               id="productId"
-              value={(selectedNode.data.config?.productId as string) || ""}
-              onChange={(e) => handleConfigChange("productId", e.target.value)}
+              value={(selectedNode.data.config?.productId as string) || ''}
+              onChange={(e) => handleConfigChange('productId', e.target.value)}
               placeholder="e.g., smart_watch_x1"
             />
           </div>
@@ -1354,15 +1499,15 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="sku">Product SKU</Label>
             <Input
               id="sku"
-              value={(selectedNode.data.config?.sku as string) || ""}
-              onChange={(e) => handleConfigChange("sku", e.target.value)}
+              value={(selectedNode.data.config?.sku as string) || ''}
+              onChange={(e) => handleConfigChange('sku', e.target.value)}
               placeholder="e.g., SW-X1-BLK-001"
             />
           </div>
         </div>
       );
 
-    case "condition":
+    case 'condition':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -1375,20 +1520,21 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="condition">Condition Expression</Label>
             <Input
               id="condition"
-              value={(selectedNode.data.config?.condition as string) || ""}
-              onChange={(e) => handleConfigChange("condition", e.target.value)}
+              value={(selectedNode.data.config?.condition as string) || ''}
+              onChange={(e) => handleConfigChange('condition', e.target.value)}
               placeholder="e.g., user.age > 18"
             />
             <p className="text-xs text-muted-foreground">
-              Use JavaScript expressions. Available variables: user, context, data
+              Use JavaScript expressions. Available variables: user, context,
+              data
             </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="truePath">True Path Label</Label>
             <Input
               id="truePath"
-              value={(selectedNode.data.config?.truePath as string) || "True"}
-              onChange={(e) => handleConfigChange("truePath", e.target.value)}
+              value={(selectedNode.data.config?.truePath as string) || 'True'}
+              onChange={(e) => handleConfigChange('truePath', e.target.value)}
               placeholder="e.g., Adult Content"
             />
           </div>
@@ -1396,8 +1542,8 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="falsePath">False Path Label</Label>
             <Input
               id="falsePath"
-              value={(selectedNode.data.config?.falsePath as string) || "False"}
-              onChange={(e) => handleConfigChange("falsePath", e.target.value)}
+              value={(selectedNode.data.config?.falsePath as string) || 'False'}
+              onChange={(e) => handleConfigChange('falsePath', e.target.value)}
               placeholder="e.g., Restricted Content"
             />
           </div>
@@ -1418,7 +1564,7 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
         </div>
       );
 
-    case "loop":
+    case 'loop':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -1432,8 +1578,13 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Input
               id="iterations"
               type="number"
-              value={(selectedNode.data.config?.iterations as number) || ""}
-              onChange={(e) => handleConfigChange("iterations", Number.parseInt(e.target.value) || 0)}
+              value={(selectedNode.data.config?.iterations as number) || ''}
+              onChange={(e) =>
+                handleConfigChange(
+                  'iterations',
+                  Number.parseInt(e.target.value) || 0,
+                )
+              }
               placeholder="e.g., 5"
             />
           </div>
@@ -1441,15 +1592,19 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="loopVariable">Loop Variable Name</Label>
             <Input
               id="loopVariable"
-              value={(selectedNode.data.config?.loopVariable as string) || "item"}
-              onChange={(e) => handleConfigChange("loopVariable", e.target.value)}
+              value={
+                (selectedNode.data.config?.loopVariable as string) || 'item'
+              }
+              onChange={(e) =>
+                handleConfigChange('loopVariable', e.target.value)
+              }
               placeholder="e.g., item, user, product"
             />
           </div>
         </div>
       );
 
-    case "apiCall":
+    case 'apiCall':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -1461,8 +1616,8 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
           <div className="space-y-2">
             <Label htmlFor="method">HTTP Method</Label>
             <Select
-              value={(selectedNode.data.config?.method as string) || "GET"}
-              onValueChange={(value) => handleConfigChange("method", value)}
+              value={(selectedNode.data.config?.method as string) || 'GET'}
+              onValueChange={(value) => handleConfigChange('method', value)}
             >
               <SelectTrigger id="method">
                 <SelectValue />
@@ -1480,8 +1635,8 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="url">API Endpoint URL</Label>
             <Input
               id="url"
-              value={(selectedNode.data.config?.url as string) || ""}
-              onChange={(e) => handleConfigChange("url", e.target.value)}
+              value={(selectedNode.data.config?.url as string) || ''}
+              onChange={(e) => handleConfigChange('url', e.target.value)}
               placeholder="https://api.example.com/endpoint"
             />
           </div>
@@ -1489,16 +1644,19 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="headers">Headers (JSON)</Label>
             <Textarea
               id="headers"
-              value={selectedNode.data.config?.headersRaw as string || JSON.stringify(selectedNode.data.config?.headers || {}, null, 2)}
-              onChange={(e) => handleConfigChange("headersRaw", e.target.value)}
+              value={
+                (selectedNode.data.config?.headersRaw as string) ||
+                JSON.stringify(selectedNode.data.config?.headers || {}, null, 2)
+              }
+              onChange={(e) => handleConfigChange('headersRaw', e.target.value)}
               onBlur={(e) => {
                 try {
                   const headers = JSON.parse(e.target.value);
-                  handleConfigChange("headers", headers);
-                  handleConfigChange("headersRaw", undefined);
-                  toast.success("Headers updated successfully");
+                  handleConfigChange('headers', headers);
+                  handleConfigChange('headersRaw', undefined);
+                  toast.success('Headers updated successfully');
                 } catch (error) {
-                  toast.error("Invalid JSON in headers");
+                  toast.error('Invalid JSON in headers');
                 }
               }}
               placeholder='{"Authorization": "Bearer token", "Content-Type": "application/json"}'
@@ -1510,16 +1668,19 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Label htmlFor="body">Request Body (JSON)</Label>
             <Textarea
               id="body"
-              value={selectedNode.data.config?.bodyRaw as string || JSON.stringify(selectedNode.data.config?.body || {}, null, 2)}
-              onChange={(e) => handleConfigChange("bodyRaw", e.target.value)}
+              value={
+                (selectedNode.data.config?.bodyRaw as string) ||
+                JSON.stringify(selectedNode.data.config?.body || {}, null, 2)
+              }
+              onChange={(e) => handleConfigChange('bodyRaw', e.target.value)}
               onBlur={(e) => {
                 try {
                   const body = JSON.parse(e.target.value);
-                  handleConfigChange("body", body);
-                  handleConfigChange("bodyRaw", undefined);
-                  toast.success("Body updated successfully");
+                  handleConfigChange('body', body);
+                  handleConfigChange('bodyRaw', undefined);
+                  toast.success('Body updated successfully');
                 } catch (error) {
-                  toast.error("Invalid JSON in body");
+                  toast.error('Invalid JSON in body');
                 }
               }}
               placeholder='{"key": "value"}'
@@ -1530,7 +1691,7 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
         </div>
       );
 
-    case "runner":
+    case 'runner':
       return (
         <div className="space-y-4">
           <div className="space-y-2">
@@ -1542,8 +1703,8 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
           <div className="space-y-2">
             <Label htmlFor="mode">Execution Mode</Label>
             <Select
-              value={(selectedNode.data.config?.mode as string) || "sequential"}
-              onValueChange={(value) => handleConfigChange("mode", value)}
+              value={(selectedNode.data.config?.mode as string) || 'sequential'}
+              onValueChange={(value) => handleConfigChange('mode', value)}
             >
               <SelectTrigger id="mode">
                 <SelectValue />
@@ -1561,7 +1722,12 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
               id="timeout"
               type="number"
               value={(selectedNode.data.config?.timeout as number) || 30}
-              onChange={(e) => handleConfigChange("timeout", Number.parseInt(e.target.value) || 30)}
+              onChange={(e) =>
+                handleConfigChange(
+                  'timeout',
+                  Number.parseInt(e.target.value) || 30,
+                )
+              }
               placeholder="30"
             />
           </div>
@@ -1571,7 +1737,12 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
               id="retries"
               type="number"
               value={(selectedNode.data.config?.retries as number) || 3}
-              onChange={(e) => handleConfigChange("retries", Number.parseInt(e.target.value) || 3)}
+              onChange={(e) =>
+                handleConfigChange(
+                  'retries',
+                  Number.parseInt(e.target.value) || 3,
+                )
+              }
               placeholder="3"
             />
           </div>
@@ -1579,7 +1750,9 @@ const NodeSetupForm = ({ selectedNode, handleConfigChange }: { selectedNode: Cus
             <Switch
               id="continueOnError"
               checked={selectedNode.data.config?.continueOnError === true}
-              onCheckedChange={(checked) => handleConfigChange("continueOnError", checked)}
+              onCheckedChange={(checked) =>
+                handleConfigChange('continueOnError', checked)
+              }
             />
             <Label htmlFor="continueOnError">Continue on Error</Label>
           </div>
@@ -1613,11 +1786,7 @@ const PreviewPanel = ({ action }: { action: DataMatrixAction | null }) => {
           {action ? (
             <>
               <div className="p-4 bg-white rounded-lg shadow-sm">
-                <DataMatrixCode
-                  value={action}
-                  size={200}
-                  format="datamatrix"
-                />
+                <DataMatrixCode value={action} size={200} format="datamatrix" />
               </div>
               <div className="text-center">
                 <p className="text-sm text-muted-foreground">
@@ -1720,14 +1889,18 @@ const PreviewPanel = ({ action }: { action: DataMatrixAction | null }) => {
                   if (canvas) {
                     canvas.toBlob((blob) => {
                       if (blob) {
-                        const file = new File([blob], 'datamatrix-code.png', { type: 'image/png' });
-                        navigator.share({
-                          title: 'DataMatrix Code',
-                          text: 'Scan this DataMatrix code',
-                          files: [file]
-                        }).catch(() => {
-                          // User cancelled or share failed
+                        const file = new File([blob], 'datamatrix-code.png', {
+                          type: 'image/png',
                         });
+                        navigator
+                          .share({
+                            title: 'DataMatrix Code',
+                            text: 'Scan this DataMatrix code',
+                            files: [file],
+                          })
+                          .catch(() => {
+                            // User cancelled or share failed
+                          });
                       }
                     });
                   }
@@ -1757,20 +1930,25 @@ const FlowBuilder = () => {
     setEdges,
     onAddNode,
     onConnect,
-    setIsDraggingNode
+    setIsDraggingNode,
   } = useFlow();
 
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const selectedNode = nodes.find(node => node.id === selectedNodeId);
+  const selectedNode = nodes.find((node) => node.id === selectedNodeId);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [previewAction, setPreviewAction] = useState<DataMatrixAction | null>(null);
+  const [previewAction, setPreviewAction] = useState<DataMatrixAction | null>(
+    null,
+  );
   const [isPreviewValid, setIsPreviewValid] = useState(true);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useReactFlow();
 
   // State for drag and drop
   const [activeDragType, setActiveDragType] = useState<string | null>(null);
-  const [dragPreviewPosition, setDragPreviewPosition] = useState<{ x: number; y: number } | null>(null);
+  const [dragPreviewPosition, setDragPreviewPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Sensors for drag and drop
   const sensors = useSensors(
@@ -1785,7 +1963,7 @@ const FlowBuilder = () => {
         delay: 250,
         tolerance: 5,
       },
-    })
+    }),
   );
 
   // Drag and drop handlers for React Flow
@@ -1794,43 +1972,48 @@ const FlowBuilder = () => {
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const onDrop = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
+  const onDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
 
-    // Check if we have a valid reactFlowInstance
-    if (!reactFlowInstance) return;
+      // Check if we have a valid reactFlowInstance
+      if (!reactFlowInstance) return;
 
-    // Get the node type from dataTransfer
-    const nodeType = event.dataTransfer.getData('application/reactflow');
+      // Get the node type from dataTransfer
+      const nodeType = event.dataTransfer.getData('application/reactflow');
 
-    // Check if the dropped element is valid
-    if (!nodeType || !nodeTypes[nodeType as NodeType]) return;
+      // Check if the dropped element is valid
+      if (!nodeType || !nodeTypes[nodeType as NodeType]) return;
 
-    // Convert screen coordinates to flow coordinates
-    const position = reactFlowInstance.screenToFlowPosition({
-      x: event.clientX,
-      y: event.clientY,
-    });
+      // Convert screen coordinates to flow coordinates
+      const position = reactFlowInstance.screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      });
 
-    // Get label and description for the node type
-    const { label, description } = getNodeLabelAndDescription(nodeType as NodeType);
+      // Get label and description for the node type
+      const { label, description } = getNodeLabelAndDescription(
+        nodeType as NodeType,
+      );
 
-    // Create new node
-    const newNode: CustomNode = {
-      id: `${nodeType}-${Date.now()}`,
-      type: nodeType as NodeType,
-      position,
-      data: {
-        label,
-        description,
-        status: "initial",
-        config: {}
-      },
-    };
+      // Create new node
+      const newNode: CustomNode = {
+        id: `${nodeType}-${Date.now()}`,
+        type: nodeType as NodeType,
+        position,
+        data: {
+          label,
+          description,
+          status: 'initial',
+          config: {},
+        },
+      };
 
-    // Add the new node to the flow
-    setNodes((nds) => nds.concat(newNode));
-  }, [reactFlowInstance, setNodes]);
+      // Add the new node to the flow
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [reactFlowInstance, setNodes],
+  );
 
   const onDragStart = (event: DragStartEvent) => {
     const { active } = event;
@@ -1874,8 +2057,8 @@ const FlowBuilder = () => {
           data: {
             label,
             description,
-            status: "initial",
-            config: {}
+            status: 'initial',
+            config: {},
           },
         };
         setNodes((nds) => nds.concat(newNode));
@@ -1883,40 +2066,45 @@ const FlowBuilder = () => {
     }
   };
 
-  const onUpdateNode = useCallback((id: string, data: BaseNodeData) => {
-    setNodes((nds) =>
-      nds.map((node) => (node.id === id ? { ...node, data } : node))
-    );
-  }, [setNodes]);
+  const onUpdateNode = useCallback(
+    (id: string, data: BaseNodeData) => {
+      setNodes((nds) =>
+        nds.map((node) => (node.id === id ? { ...node, data } : node)),
+      );
+    },
+    [setNodes],
+  );
 
   // Generate preview action from nodes and edges
   const generatePreviewAction = useCallback(() => {
     try {
-      // This is a simplified version - in a real implementation, 
+      // This is a simplified version - in a real implementation,
       // we would traverse the graph to build the action
       const action: Partial<DataMatrixAction> = {
-        version: "1.0",
+        version: '1.0',
       };
 
       // Find the first wifiConnect node and use its config
-      const wifiNode = nodes.find(node => node.type === "wifiConnect");
+      const wifiNode = nodes.find((node) => node.type === 'wifiConnect');
       if (wifiNode?.data.config) {
-        action.action = "wifi_connect";
+        action.action = 'wifi_connect';
         action.wifi = {
-          ssid: (wifiNode.data.config.ssid as string) || "",
-          password: (wifiNode.data.config.password as string) || "",
-          security: (wifiNode.data.config.security as string) || "WPA2",
+          ssid: (wifiNode.data.config.ssid as string) || '',
+          password: (wifiNode.data.config.password as string) || '',
+          security: (wifiNode.data.config.security as string) || 'WPA2',
         };
       }
 
       // Find the first notification node and use its config for post_connect
-      const notificationNode = nodes.find(node => node.type === "notification");
+      const notificationNode = nodes.find(
+        (node) => node.type === 'notification',
+      );
       if (notificationNode?.data.config) {
         action.post_connect = {
           notification: {
-            title: (notificationNode.data.config.title as string) || "",
-            message: (notificationNode.data.config.message as string) || "",
-          }
+            title: (notificationNode.data.config.title as string) || '',
+            message: (notificationNode.data.config.message as string) || '',
+          },
         };
       }
 
@@ -1926,9 +2114,9 @@ const FlowBuilder = () => {
       setIsPreviewValid(true);
       return validatedAction;
     } catch (error) {
-      console.error("Validation error:", error);
+      console.error('Validation error:', error);
       setIsPreviewValid(false);
-      toast.error("Invalid action configuration");
+      toast.error('Invalid action configuration');
       return null;
     }
   }, [nodes]);
@@ -1957,36 +2145,39 @@ const FlowBuilder = () => {
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
 
-      toast.success("Flow exported successfully");
+      toast.success('Flow exported successfully');
     } else {
-      toast.error("Cannot export invalid flow");
+      toast.error('Cannot export invalid flow');
     }
   }, [generatePreviewAction, isPreviewValid]);
 
   // Import functionality to load DataMatrixAction object
-  const importFlow = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const importFlow = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const parsed = JSON.parse(content);
-        // In a real implementation, this would parse the flow and set nodes/edges
-        toast.success("Flow imported successfully");
-      } catch (error) {
-        toast.error("Failed to import flow");
-      }
-    };
-    reader.readAsText(file);
-  }, []);
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const content = e.target?.result as string;
+          const parsed = JSON.parse(content);
+          // In a real implementation, this would parse the flow and set nodes/edges
+          toast.success('Flow imported successfully');
+        } catch (error) {
+          toast.error('Failed to import flow');
+        }
+      };
+      reader.readAsText(file);
+    },
+    [],
+  );
 
   // Auto-layout functionality
   const onLayout = useCallback(() => {
     const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
       nodes,
-      edges
+      edges,
     );
     setNodes(layoutedNodes);
     setEdges(layoutedEdges);
@@ -1994,48 +2185,48 @@ const FlowBuilder = () => {
 
   // Workflow runner functionality
   const [isRunning, setIsRunning] = useState(false);
-  const [runnerStatus, setRunnerStatus] = useState<NodeStatus>("initial");
+  const [runnerStatus, setRunnerStatus] = useState<NodeStatus>('initial');
 
   const runWorkflow = useCallback(async () => {
     setIsRunning(true);
-    setRunnerStatus("loading");
+    setRunnerStatus('loading');
 
     // Find the runner node if it exists
-    const runnerNode = nodes.find(node => node.type === "runner");
+    const runnerNode = nodes.find((node) => node.type === 'runner');
 
     try {
       // Simulate workflow execution
       // In a real implementation, this would execute the actual workflow
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Update runner node status if it exists
       if (runnerNode) {
-        setNodes(nds =>
-          nds.map(node =>
+        setNodes((nds) =>
+          nds.map((node) =>
             node.id === runnerNode.id
-              ? { ...node, data: { ...node.data, status: "success" } }
-              : node
-          )
+              ? { ...node, data: { ...node.data, status: 'success' } }
+              : node,
+          ),
         );
       }
 
-      setRunnerStatus("success");
-      toast.success("Workflow executed successfully");
+      setRunnerStatus('success');
+      toast.success('Workflow executed successfully');
     } catch (error) {
       // Update runner node status if it exists
       if (runnerNode) {
-        setNodes(nds =>
-          nds.map(node =>
+        setNodes((nds) =>
+          nds.map((node) =>
             node.id === runnerNode.id
-              ? { ...node, data: { ...node.data, status: "error" } }
-              : node
-          )
+              ? { ...node, data: { ...node.data, status: 'error' } }
+              : node,
+          ),
         );
       }
 
-      setRunnerStatus("error");
-      toast.error("Failed to execute workflow");
-      console.error("Workflow execution error:", error);
+      setRunnerStatus('error');
+      toast.error('Failed to execute workflow');
+      console.error('Workflow execution error:', error);
     } finally {
       setIsRunning(false);
     }
@@ -2047,7 +2238,7 @@ const FlowBuilder = () => {
 
     // Get the appropriate node component based on type
     switch (type) {
-      case "wifiConnect":
+      case 'wifiConnect':
         return (
           <BaseNode className="w-48 bg-blue-500/20 dark:bg-blue-600/20 backdrop-blur-sm border border-blue-500/30 dark:border-blue-600/30 text-blue-900 dark:text-blue-100 shadow-sm">
             <BaseNodeHeader className="text-blue-900 dark:text-blue-100">
@@ -2094,7 +2285,7 @@ const FlowBuilder = () => {
 
   // Toggle workflow lock
   const toggleLock = useCallback(() => {
-    setIsLocked(prev => !prev);
+    setIsLocked((prev) => !prev);
     toast.info(`Workflow ${isLocked ? 'unlocked' : 'locked'}`);
   }, [isLocked]);
 
@@ -2178,7 +2369,7 @@ const FlowBuilder = () => {
                 style={{
                   left: dragPreviewPosition.x,
                   top: dragPreviewPosition.y,
-                  transform: 'translate(-50%, -50%)'
+                  transform: 'translate(-50%, -50%)',
                 }}
               />
             )}
@@ -2219,7 +2410,12 @@ const FlowBuilder = () => {
                 </marker>
               </defs>
             </svg>
-            <Background variant={BackgroundVariant.Dots} gap={12} size={1} color="#94a3b8" />
+            <Background
+              variant={BackgroundVariant.Dots}
+              gap={12}
+              size={1}
+              color="#94a3b8"
+            />
             <ZoomSlider />
             <Panel position="top-right" className="flex gap-2">
               <TooltipProvider>
@@ -2249,9 +2445,26 @@ const FlowBuilder = () => {
                         onClick={onLayout}
                       >
                         <svg
-                          role="img" aria-label="Auto Layout"
-                          xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                          role="img"
+                          aria-label="Auto Layout"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <rect
+                            x="3"
+                            y="3"
+                            width="18"
+                            height="18"
+                            rx="2"
+                            ry="2"
+                          />
                           <line x1="3" y1="9" x2="21" y2="9" />
                           <line x1="9" y1="21" x2="9" y2="9" />
                         </svg>
@@ -2305,7 +2518,9 @@ const FlowBuilder = () => {
                         variant="outline"
                         size="icon"
                         className="rounded-none border-0 border-b last:border-b-0"
-                        onClick={() => document.getElementById('import-flow')?.click()}
+                        onClick={() =>
+                          document.getElementById('import-flow')?.click()
+                        }
                       >
                         <Upload className="h-4 w-4" />
                         <input
@@ -2345,12 +2560,12 @@ const FlowBuilder = () => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant={isLocked ? "default" : "outline"}
+                        variant={isLocked ? 'default' : 'outline'}
                         size="icon"
                         className="rounded-none border-0 border-b last:border-b-0"
                         onClick={() => {
-                          setSelectedNodeId(null)
-                          setIsDrawerOpen(true)
+                          setSelectedNodeId(null);
+                          setIsDrawerOpen(true);
                         }}
                       >
                         <Eye className="h-4 w-4" />
@@ -2364,7 +2579,7 @@ const FlowBuilder = () => {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        variant={isLocked ? "default" : "outline"}
+                        variant={isLocked ? 'default' : 'outline'}
                         size="icon"
                         className="rounded-none border-0 border-b last:border-b-0"
                         onClick={toggleLock}
@@ -2387,11 +2602,15 @@ const FlowBuilder = () => {
         </div>
 
         {/* Drawer for node configuration */}
-        <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen} direction="right">
+        <Drawer
+          open={isDrawerOpen}
+          onOpenChange={setIsDrawerOpen}
+          direction="right"
+        >
           <DrawerContent className="max-w-[100vw] sm:max-w-sm ml-auto">
             <DrawerHeader className="flex items-center justify-between">
               <DrawerTitle>
-                {selectedNode ? selectedNode.data.label : "Configuration"}
+                {selectedNode ? selectedNode.data.label : 'Configuration'}
               </DrawerTitle>
               <DrawerClose asChild>
                 <Button variant="ghost" size="icon">

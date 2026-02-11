@@ -1,7 +1,7 @@
-import { VerifiedIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import z from "zod";
-import { Link } from "@tanstack/react-router";
+import { VerifiedIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import z from 'zod';
+import { Link } from '@tanstack/react-router';
 
 /**
  * @author: @dorian_baffier
@@ -20,68 +20,65 @@ export const ReplySchema = z.object({
   content: z.string(),
   isVerified: z.boolean().optional(),
   timestamp: z.string().optional(),
-})
-
+});
 
 export const TweetCardSchema = ReplySchema.extend({
   reply: ReplySchema.optional(),
   content: z.string().array().optional(),
   link: z.string().optional(),
-})
+});
 
 export type ReplyProps = z.infer<typeof ReplySchema>;
 
 export type TweetCardProps = z.infer<typeof TweetCardSchema>;
 
 export default function TweetCard({
-  authorName = "Dorian",
-  authorHandle = "dorian_baffier",
-  authorImage = "https://pbs.twimg.com/profile_images/1971614417809997824/Zen4oXbs_400x400.jpg",
+  authorName = 'Dorian',
+  authorHandle = 'dorian_baffier',
+  authorImage = 'https://pbs.twimg.com/profile_images/1971614417809997824/Zen4oXbs_400x400.jpg',
   content = [
-    "All components from KokonutUI can now be open in @v0 🎉",
+    'All components from KokonutUI can now be open in @v0 🎉',
     "1. Click on 'Open in V0'",
-    "2. Customize with prompts",
-    "3. Deploy to your app",
+    '2. Customize with prompts',
+    '3. Deploy to your app',
   ],
   isVerified = true,
-  timestamp = "Jan 18, 2025",
-  link = "https://x.com/dorian_baffier/status/1880291036410572934",
+  timestamp = 'Jan 18, 2025',
+  link = 'https://x.com/dorian_baffier/status/1880291036410572934',
   reply = {
-    authorName: "shadcn",
-    authorHandle: "shadcn",
+    authorName: 'shadcn',
+    authorHandle: 'shadcn',
     authorImage:
-      "https://pbs.twimg.com/profile_images/1593304942210478080/TUYae5z7_400x400.jpg",
-    content: "Awesome.",
+      'https://pbs.twimg.com/profile_images/1593304942210478080/TUYae5z7_400x400.jpg',
+    content: 'Awesome.',
     isVerified: true,
-    timestamp: "Jan 18",
+    timestamp: 'Jan 18',
   },
 }: TweetCardProps) {
   return (
-    <Link
-      to={link}
-    >
+    <Link to={link}>
       <div
         className={cn(
-          "w-full min-w-[400px] md:min-w-[500px] max-w-xl p-1.5 rounded-2xl relative isolate overflow-hidden",
-          "bg-white/5 dark:bg-black/90",
-          "bg-linear-to-br from-black/5 to-black/[0.02] dark:from-white/5 dark:to-white/[0.02]",
-          "backdrop-blur-xl backdrop-saturate-[180%]",
-          "border border-black/10 dark:border-white/10",
-          "shadow-[0_8px_16px_rgb(0_0_0_/_0.15)] dark:shadow-[0_8px_16px_rgb(0_0_0_/_0.25)]",
-          "will-change-transform translate-z-0"
+          'w-full min-w-[400px] md:min-w-[500px] max-w-xl p-1.5 rounded-2xl relative isolate overflow-hidden',
+          'bg-white/5 dark:bg-black/90',
+          'bg-linear-to-br from-black/5 to-black/[0.02] dark:from-white/5 dark:to-white/[0.02]',
+          'backdrop-blur-xl backdrop-saturate-[180%]',
+          'border border-black/10 dark:border-white/10',
+          'shadow-[0_8px_16px_rgb(0_0_0_/_0.15)] dark:shadow-[0_8px_16px_rgb(0_0_0_/_0.25)]',
+          'will-change-transform translate-z-0',
         )}
       >
         <div
           className={cn(
-            "w-full p-5 rounded-xl relative",
-            "bg-linear-to-br from-black/[0.05] to-transparent dark:from-white/[0.08] dark:to-transparent",
-            "backdrop-blur-md backdrop-saturate-150",
-            "border border-black/[0.05] dark:border-white/[0.08]",
-            "text-black/90 dark:text-white",
-            "shadow-xs",
-            "will-change-transform translate-z-0",
-            "before:absolute before:inset-0 before:bg-linear-to-br before:from-black/[0.02] before:to-black/[0.01] dark:before:from-white/[0.03] dark:before:to-white/[0.01] before:opacity-0 before:transition-opacity before:pointer-events-none",
-            "hover:before:opacity-100"
+            'w-full p-5 rounded-xl relative',
+            'bg-linear-to-br from-black/[0.05] to-transparent dark:from-white/[0.08] dark:to-transparent',
+            'backdrop-blur-md backdrop-saturate-150',
+            'border border-black/[0.05] dark:border-white/[0.08]',
+            'text-black/90 dark:text-white',
+            'shadow-xs',
+            'will-change-transform translate-z-0',
+            'before:absolute before:inset-0 before:bg-linear-to-br before:from-black/[0.02] before:to-black/[0.01] dark:before:from-white/[0.03] dark:before:to-white/[0.01] before:opacity-0 before:transition-opacity before:pointer-events-none',
+            'hover:before:opacity-100',
           )}
         >
           <div className="flex gap-3">

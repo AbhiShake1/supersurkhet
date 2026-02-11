@@ -1,21 +1,28 @@
-import React, { memo, Suspense, useMemo, useRef } from "react";
-import isDeepEqual from "fast-deep-equal";
+import React, { memo, Suspense, useMemo, useRef } from 'react';
+import isDeepEqual from 'fast-deep-equal';
 
-import { ElementSelector } from "@/components/ui/ui-builder/internal/components/element-selector";
-import { DropPlaceholder } from "@/components/ui/ui-builder/internal/dnd/drop-zone";
-import { useDndContext } from "@/lib/ui-builder/context/dnd-context";
-import { ErrorBoundary } from "react-error-boundary";
+import { ElementSelector } from '@/components/ui/ui-builder/internal/components/element-selector';
+import { DropPlaceholder } from '@/components/ui/ui-builder/internal/dnd/drop-zone';
+import { useDndContext } from '@/lib/ui-builder/context/dnd-context';
+import { ErrorBoundary } from 'react-error-boundary';
 
-import { ErrorFallback } from "@/components/ui/ui-builder/internal/components/error-fallback";
-import { isPrimitiveComponent } from "@/lib/ui-builder/store/editor-utils";
-import { hasLayerChildren, canLayerAcceptChildren } from "@/lib/ui-builder/store/layer-utils";
-import { DevProfiler } from "@/components/ui/ui-builder/internal/components/dev-profiler";
-import type { ComponentRegistry, ComponentLayer, PropValue } from '@/components/ui/ui-builder/types';
-import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
-import { resolveContextualMentions } from "@/lib/ui-builder/utils/variable-resolver";
-import { useContextData } from "@/lib/ui-builder/context/context-data-store";
-import { isComponentLayer } from "@/lib/ui-builder/store/layer-utils";
+import { ErrorFallback } from '@/components/ui/ui-builder/internal/components/error-fallback';
+import { isPrimitiveComponent } from '@/lib/ui-builder/store/editor-utils';
+import {
+  hasLayerChildren,
+  canLayerAcceptChildren,
+} from '@/lib/ui-builder/store/layer-utils';
+import { DevProfiler } from '@/components/ui/ui-builder/internal/components/dev-profiler';
+import type {
+  ComponentRegistry,
+  ComponentLayer,
+  PropValue,
+} from '@/components/ui/ui-builder/types';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { resolveContextualMentions } from '@/lib/ui-builder/utils/variable-resolver';
+import { useContextData } from '@/lib/ui-builder/context/context-data-store';
+import { isComponentLayer } from '@/lib/ui-builder/store/layer-utils';
 
 // Custom hook to safely use DND context
 const useSafeDndContext = () => {
@@ -26,22 +33,19 @@ const useSafeDndContext = () => {
   }
 };
 
-function resolveStringsDeep(
-  value: any,
-  contextData: any
-): any {
+function resolveStringsDeep(value: any, contextData: any): any {
   // Resolve strings
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     return resolveContextualMentions(value, contextData);
   }
 
   // Primitives / non-resolvable
   if (
     value == null ||
-    typeof value === "number" ||
-    typeof value === "boolean" ||
-    typeof value === "function" ||
-    typeof value === "symbol"
+    typeof value === 'number' ||
+    typeof value === 'boolean' ||
+    typeof value === 'function' ||
+    typeof value === 'symbol'
   ) {
     return value;
   }
@@ -53,11 +57,11 @@ function resolveStringsDeep(
 
   // Arrays
   if (Array.isArray(value)) {
-    return value.map(v => resolveStringsDeep(v, contextData));
+    return value.map((v) => resolveStringsDeep(v, contextData));
   }
 
   // Plain objects
-  if (typeof value === "object") {
+  if (typeof value === 'object') {
     const out: Record<string, any> = {};
     for (const key in value) {
       out[key] = resolveStringsDeep(value[key], contextData);
@@ -74,37 +78,37 @@ declare global {
   }
 }
 
-const Wrapper = React.forwardRef<any, {
-  props: any;
-  element: React.ComponentType<any>;
-  _layerId?: string;
-}>(
-  ({ props, element: Element, _layerId }, ref) => {
-    const contextData = useContextData();
-
-    // Resolve all strings in props (deeply)
-    const resolvedProps = React.useMemo(
-      () => resolveStringsDeep(props, contextData),
-      [props, contextData]
-    );
-
-    // Expose context imperatively if needed by the engine
-    React.useImperativeHandle(ref, () => ({
-      contextdata: contextData?.context,
-    }));
-
-    // Optional debug hook
-    window.contextDatas ||= {};
-    if (_layerId)
-      window.contextDatas[_layerId] = contextData;
-
-    return (
-      <div className="wrapper">
-        <Element {...resolvedProps} ref={ref} />
-      </div>
-    );
+const Wrapper = React.forwardRef<
+  any,
+  {
+    props: any;
+    element: React.ComponentType<any>;
+    _layerId?: string;
   }
-);
+>(({ props, element: Element, _layerId }, ref) => {
+  const contextData = useContextData();
+
+  // Resolve all strings in props (deeply)
+  const resolvedProps = React.useMemo(
+    () => resolveStringsDeep(props, contextData),
+    [props, contextData],
+  );
+
+  // Expose context imperatively if needed by the engine
+  React.useImperativeHandle(ref, () => ({
+    contextdata: contextData?.context,
+  }));
+
+  // Optional debug hook
+  window.contextDatas ||= {};
+  if (_layerId) window.contextDatas[_layerId] = contextData;
+
+  return (
+    <div className="wrapper">
+      <Element {...resolvedProps} ref={ref} />
+    </div>
+  );
+});
 
 export interface EditorConfig {
   zIndex: number;
@@ -125,8 +129,8 @@ export interface RenderLayerProps {
 
 export const RenderLayer: React.FC<RenderLayerProps> = (props) => {
   if (!props?.layer) return null;
-  return <_RenderLayer {...props} />
-}
+  return <_RenderLayer {...props} />;
+};
 
 const _RenderLayer: React.FC<RenderLayerProps> = memo(
   ({ layer, componentRegistry, editorConfig }) => {
@@ -139,38 +143,53 @@ const _RenderLayer: React.FC<RenderLayerProps> = memo(
 
     const prevLayer = useRef(layer);
 
-    const infoData = useMemo(() => ({
-      layerType: layer.type,
-      layerId: layer.id,
-      layerName: layer.name,
-      availableComponents: Object.keys(componentRegistry),
-      layer: layer
-    }), [layer, componentRegistry]);
+    const infoData = useMemo(
+      () => ({
+        layerType: layer.type,
+        layerId: layer.id,
+        layerName: layer.name,
+        availableComponents: Object.keys(componentRegistry),
+        layer: layer,
+      }),
+      [layer, componentRegistry],
+    );
 
     const resolvedProps = layer.props;
 
-    const childProps: Record<string, PropValue> = useMemo(() => ({
-      ...resolvedProps,
-    }), [resolvedProps]);
+    const childProps: Record<string, PropValue> = useMemo(
+      () => ({
+        ...resolvedProps,
+      }),
+      [resolvedProps],
+    );
 
     // Memoize child editor config to avoid creating objects in JSX
     const childEditorConfig = useMemo(() => {
       return editorConfig
-        ? { ...editorConfig, zIndex: editorConfig.zIndex + 1, parentUpdated: editorConfig.parentUpdated || !isDeepEqual(prevLayer.current, layer) }
+        ? {
+            ...editorConfig,
+            zIndex: editorConfig.zIndex + 1,
+            parentUpdated:
+              editorConfig.parentUpdated ||
+              !isDeepEqual(prevLayer.current, layer),
+          }
         : undefined;
     }, [editorConfig, layer]);
 
     // Check if this layer can accept children and if drag is active (must be before early returns)
-    const canAcceptChildren = useMemo(() => canLayerAcceptChildren(layer, registry), [layer, registry]);
-    const showDropZones = useMemo(() =>
-      editorConfig && dndContext?.isDragging && canAcceptChildren,
-      [editorConfig, dndContext?.isDragging, canAcceptChildren]
+    const canAcceptChildren = useMemo(
+      () => canLayerAcceptChildren(layer, registry),
+      [layer, registry],
+    );
+    const showDropZones = useMemo(
+      () => editorConfig && dndContext?.isDragging && canAcceptChildren,
+      [editorConfig, dndContext?.isDragging, canAcceptChildren],
     );
 
     if (!componentDefinition) {
       console.error(
         `[UIBuilder] Component definition not found in registry:`,
-        infoData
+        infoData,
       );
       return null;
     }
@@ -217,7 +236,10 @@ const _RenderLayer: React.FC<RenderLayerProps> = memo(
       // Add drop zone after the last child using a similar wrapper approach
       if (showDropZones) {
         const lastDropZone = (
-          <div key={`drop-${layer.id}-${layer.children.length}`} className="relative">
+          <div
+            key={`drop-${layer.id}-${layer.children.length}`}
+            className="relative"
+          >
             <DropPlaceholder
               parentId={layer.id}
               position={layer.children.length}
@@ -229,18 +251,14 @@ const _RenderLayer: React.FC<RenderLayerProps> = memo(
       }
 
       childProps.children = childElements;
-    } else if (typeof layer.children === "string") {
+    } else if (typeof layer.children === 'string') {
       // String children will be processed by the Wrapper component
       childProps.children = layer.children;
     } else if (showDropZones && hasLayerChildren(layer)) {
       // Show drop zone for empty containers
       childProps.children = (
         <div className="relative min-h-[2rem]">
-          <DropPlaceholder
-            parentId={layer.id}
-            position={0}
-            isActive={true}
-          />
+          <DropPlaceholder parentId={layer.id} position={0} isActive={true} />
         </div>
       );
     }
@@ -261,14 +279,16 @@ const _RenderLayer: React.FC<RenderLayerProps> = memo(
         // Array of component layers in a prop
         const componentLayers = propValue.filter(isComponentLayer);
         if (componentLayers.length > 0) {
-          childProps[propName] = componentLayers.map((componentLayer, index) => (
-            <RenderLayer
-              key={componentLayer.id}
-              componentRegistry={componentRegistry}
-              layer={componentLayer}
-              editorConfig={childEditorConfig}
-            />
-          ));
+          childProps[propName] = componentLayers.map(
+            (componentLayer, index) => (
+              <RenderLayer
+                key={componentLayer.id}
+                componentRegistry={componentRegistry}
+                layer={componentLayer}
+                editorConfig={childEditorConfig}
+              />
+            ),
+          );
         }
       }
     }
@@ -324,10 +344,7 @@ const _RenderLayer: React.FC<RenderLayerProps> = memo(
       } = editorConfig;
 
       return (
-        <DevProfiler
-          id={layer.type}
-          threshold={20}
-        >
+        <DevProfiler id={layer.type} threshold={20}>
           <ElementSelector
             key={layer.id}
             layer={layer}
@@ -351,14 +368,14 @@ const _RenderLayer: React.FC<RenderLayerProps> = memo(
     }
     const editorConfigEqual = isDeepEqual(
       prevProps.editorConfig?.selectedLayer?.id,
-      nextProps.editorConfig?.selectedLayer?.id
+      nextProps.editorConfig?.selectedLayer?.id,
     );
     const layerEqual = isDeepEqual(prevProps.layer, nextProps.layer);
     return editorConfigEqual && layerEqual;
-  }
+  },
 );
 
-RenderLayer.displayName = "RenderLayer";
+RenderLayer.displayName = 'RenderLayer';
 
 const ErrorSuspenseWrapper: React.FC<{
   id: string;
@@ -373,7 +390,4 @@ const ErrorSuspenseWrapper: React.FC<{
   );
 };
 
-const LoadingComponent: React.FC = () => (
-  <div>Loading...</div>
-);
-
+const LoadingComponent: React.FC = () => <div>Loading...</div>;

@@ -1,10 +1,7 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Nodejs = (props: SVGProps<SVGSVGElement>) => (
-  <svg
-    {...props}
-    viewBox="0 0 256 292"
-  >
+  <svg {...props} viewBox="0 0 256 292">
     <defs>
       <linearGradient
         id="a"

@@ -4,7 +4,9 @@ import { cva } from 'class-variance-authority';
 
 import { cn } from '@/lib/utils';
 
-const DrawerContext = React.createContext<{ direction?: 'right' | 'top' | 'bottom' | 'left' }>({
+const DrawerContext = React.createContext<{
+  direction?: 'right' | 'top' | 'bottom' | 'left';
+}>({
   direction: 'bottom',
 });
 
@@ -41,19 +43,22 @@ const DrawerOverlay = React.forwardRef<
 ));
 DrawerOverlay.displayName = DrawerPrimitive.Overlay.displayName;
 
-const drawerContentVariants = cva('fixed z-50 flex h-auto flex-col border bg-background', {
-  variants: {
-    direction: {
-      right: 'ml-24 right-0 rounded-l-[10px] inset-y-0',
-      top: 'mb-24 top-0 rounded-b-[10px] inset-x-0',
-      bottom: 'mt-24 rounded-t-[10px] bottom-0 inset-x-0',
-      left: 'mr-24 left-0 rounded-r-[10px] inset-y-0',
+const drawerContentVariants = cva(
+  'fixed z-50 flex h-auto flex-col border bg-background',
+  {
+    variants: {
+      direction: {
+        right: 'ml-24 right-0 rounded-l-[10px] inset-y-0',
+        top: 'mb-24 top-0 rounded-b-[10px] inset-x-0',
+        bottom: 'mt-24 rounded-t-[10px] bottom-0 inset-x-0',
+        left: 'mr-24 left-0 rounded-r-[10px] inset-y-0',
+      },
+    },
+    defaultVariants: {
+      direction: 'right',
     },
   },
-  defaultVariants: {
-    direction: 'right',
-  },
-});
+);
 
 const DrawerContent = React.forwardRef<
   React.ElementRef<typeof DrawerPrimitive.Content>,
@@ -77,13 +82,25 @@ const DrawerContent = React.forwardRef<
 });
 DrawerContent.displayName = 'DrawerContent';
 
-const DrawerHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('grid gap-1.5 p-4 text-center sm:text-left', className)} {...props} />
+const DrawerHeader = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn('grid gap-1.5 p-4 text-center sm:text-left', className)}
+    {...props}
+  />
 );
 DrawerHeader.displayName = 'DrawerHeader';
 
-const DrawerFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />
+const DrawerFooter = ({
+  className,
+  ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={cn('mt-auto flex flex-col gap-2 p-4', className)}
+    {...props}
+  />
 );
 DrawerFooter.displayName = 'DrawerFooter';
 
@@ -93,7 +110,10 @@ const DrawerTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DrawerPrimitive.Title
     ref={ref}
-    className={cn('text-lg font-semibold leading-none tracking-tight', className)}
+    className={cn(
+      'text-lg font-semibold leading-none tracking-tight',
+      className,
+    )}
     {...props}
   />
 ));

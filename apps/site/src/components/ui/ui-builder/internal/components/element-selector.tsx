@@ -1,5 +1,5 @@
-"use client";
-import type React from "react";
+'use client';
+import type React from 'react';
 import {
   useCallback,
   useEffect,
@@ -8,26 +8,26 @@ import {
   useLayoutEffect,
   useMemo,
   useContext,
-} from "react";
-import { useTransformEffect } from "react-zoom-pan-pinch";
-import type { ComponentLayer } from "@/components/ui/ui-builder/types";
-import { LayerMenu } from "@/components/ui/ui-builder/internal/components/layer-menu";
-import { DragHandle as ComponentDragHandle } from "@/components/ui/ui-builder/internal/dnd/drag-handle";
-import { DragHandleContext } from "@/components/ui/ui-builder/internal/canvas/resizable-wrapper";
-import { useDndContext } from "@/lib/ui-builder/context/dnd-context";
-import { cn } from "@/lib/utils";
+} from 'react';
+import { useTransformEffect } from 'react-zoom-pan-pinch';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import { LayerMenu } from '@/components/ui/ui-builder/internal/components/layer-menu';
+import { DragHandle as ComponentDragHandle } from '@/components/ui/ui-builder/internal/dnd/drag-handle';
+import { DragHandleContext } from '@/components/ui/ui-builder/internal/canvas/resizable-wrapper';
+import { useDndContext } from '@/lib/ui-builder/context/dnd-context';
+import { cn } from '@/lib/utils';
 import {
   offset,
   useFloating,
   autoUpdate,
   shift,
   limitShift,
-} from "@floating-ui/react";
-import { getScrollParent } from "@/lib/ui-builder/utils/get-scroll-parent";
-import { useFrame } from "@/components/ui/ui-builder/internal/canvas/auto-frame";
+} from '@floating-ui/react';
+import { getScrollParent } from '@/lib/ui-builder/utils/get-scroll-parent';
+import { useFrame } from '@/components/ui/ui-builder/internal/canvas/auto-frame';
 
 const style: React.CSSProperties = {
-  display: "contents",
+  display: 'contents',
 };
 
 interface ElementSelectorProps {
@@ -69,7 +69,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({
   const dndContext = useDndContext();
 
   const { refs, floatingStyles } = useFloating({
-    placement: "top-start",
+    placement: 'top-start',
     whileElementsMounted: autoUpdate,
     middleware: [
       offset(-2), // Negative offset to overlap like the sticky label
@@ -89,7 +89,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({
       e.preventDefault();
       onSelectElement(layer.id);
     },
-    [layer.id, onSelectElement]
+    [layer.id, onSelectElement],
   );
 
   // Block all pointer events from passing through
@@ -99,16 +99,16 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({
   }, []);
 
   const overlayStyle = useMemo(() => {
-    if (!boundingRect) return { display: "none" };
+    if (!boundingRect) return { display: 'none' };
     return {
-      position: "fixed" as const,
+      position: 'fixed' as const,
       top: boundingRect.top,
       left: boundingRect.left,
       width: boundingRect.width,
       height: boundingRect.height,
       zIndex: zIndex,
-      boxSizing: "border-box" as const,
-      pointerEvents: "auto" as const, // Ensure overlay captures all pointer events
+      boxSizing: 'border-box' as const,
+      pointerEvents: 'auto' as const, // Ensure overlay captures all pointer events
     } as React.CSSProperties;
   }, [boundingRect, zIndex]);
 
@@ -121,12 +121,12 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({
         right: number;
         width: number;
         height: number;
-      } | null
+      } | null,
     ) => {
       setBoundingRect(rect);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [layer.id]
+    [layer.id],
   );
 
   return (
@@ -144,12 +144,12 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({
           onContextMenu={handlePointerEvent}
           ref={refs.setReference}
           className={cn(
-            "fixed box-border hover:border-blue-300 hover:border-2 hover:bg-blue-300/20 hover:shadow-md hover:shadow-blue-500/20 cursor-default",
+            'fixed box-border hover:border-blue-300 hover:border-2 hover:bg-blue-300/20 hover:shadow-md hover:shadow-blue-500/20 cursor-default',
             isBeingDragged
-              ? "border-2 border-orange-500 border-dashed shadow-lg shadow-orange-500/30 opacity-70 bg-orange-50/20"
+              ? 'border-2 border-orange-500 border-dashed shadow-lg shadow-orange-500/30 opacity-70 bg-orange-50/20'
               : isSelected
-                ? "border-2 border-blue-500 hover:border-blue-500 hover:bg-transparent  hover:shadow-none"
-                : ""
+                ? 'border-2 border-blue-500 hover:border-blue-500 hover:bg-transparent  hover:shadow-none'
+                : '',
           )}
           style={overlayStyle}
         ></div>
@@ -170,8 +170,8 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({
                   {layer.name
                     ?.toLowerCase()
                     .startsWith(layer.type.toLowerCase())
-                    ? layer.type.replaceAll("_", "")
-                    : `${layer.name} (${layer.type.replaceAll("_", "")})`}
+                    ? layer.type.replaceAll('_', '')
+                    : `${layer.name} (${layer.type.replaceAll('_', '')})`}
                 </span>
                 <div className="w-px h-4 bg-white/20 ml-1" />
                 <LayerMenu
@@ -191,7 +191,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({
 export interface MeasureRangeProps {
   /** Called after every size/position change. */
   onChange?: (
-    rect: DOMRectReadOnly & { bottom: number; right: number }
+    rect: DOMRectReadOnly & { bottom: number; right: number },
   ) => void;
   /** Children you want to watch (anything renderable). */
   children: React.ReactNode;
@@ -269,13 +269,13 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
         const hasChanged =
           !lastMeasurementRef.current ||
           Math.abs(lastMeasurementRef.current.top - newRect.top) >
-          MIN_CHANGE_THRESHOLD ||
+            MIN_CHANGE_THRESHOLD ||
           Math.abs(lastMeasurementRef.current.left - newRect.left) >
-          MIN_CHANGE_THRESHOLD ||
+            MIN_CHANGE_THRESHOLD ||
           Math.abs(lastMeasurementRef.current.width - newRect.width) >
-          MIN_CHANGE_THRESHOLD ||
+            MIN_CHANGE_THRESHOLD ||
           Math.abs(lastMeasurementRef.current.height - newRect.height) >
-          MIN_CHANGE_THRESHOLD;
+            MIN_CHANGE_THRESHOLD;
 
         if (hasChanged) {
           lastMeasurementRef.current = newRect;
@@ -295,7 +295,7 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
 
         transformUpdatePendingRef.current = false;
       } catch (error) {
-        console.warn("Error measuring elements:", error);
+        console.warn('Error measuring elements:', error);
       }
     });
   }, [onChange]);
@@ -308,7 +308,7 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
 
       transformUpdatePendingRef.current = true;
       measureElements();
-    }, [measureElements])
+    }, [measureElements]),
   );
 
   // Re-measure when dragging state changes (for ResizableWrapper)
@@ -331,7 +331,7 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
         const element = node as Element;
         const rect = element.getBoundingClientRect();
         return rect.width > 0 || rect.height > 0;
-      }
+      },
     );
 
     elementsRef.current = elements;
@@ -347,9 +347,9 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
 
     // Set up parent container ResizeObserver to track ResizableWrapper changes
     const parentContainer =
-      wrapper.closest("#editor-panel-container") ||
+      wrapper.closest('#editor-panel-container') ||
       wrapper.closest('[data-testid="transform-component"]') ||
-      wrapper.closest(".relative");
+      wrapper.closest('.relative');
     if (parentContainer && parentContainer instanceof HTMLElement) {
       parentObserverRef.current = new ResizeObserver(measureElements);
       parentObserverRef.current.observe(parentContainer);
@@ -365,22 +365,22 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
     // Listen to multiple potential scroll containers
     const potentialScrollContainers = [
       // Editor panel container (in parent document)
-      document.getElementById("editor-panel-container"),
+      document.getElementById('editor-panel-container'),
       // Transform component (zoom/pan container)
       wrapper.closest('[data-testid="transform-component"]'),
       // Any iframe that might contain our content
-      document.querySelector("iframe"),
+      document.querySelector('iframe'),
       // Canvas containers
-      wrapper.closest(".relative"),
-      wrapper.closest("[data-zoom-pan-pinch]"),
+      wrapper.closest('.relative'),
+      wrapper.closest('[data-zoom-pan-pinch]'),
       // Traditional scroll parent
       elements.length > 0 ? getScrollParent(elements[0] as HTMLElement) : null,
       // Iframe-specific containers if we're in an iframe
       ...(frameContext.document
         ? [
-          frameContext.document.getElementById("frame-root"),
-          frameContext.document.body,
-        ]
+            frameContext.document.getElementById('frame-root'),
+            frameContext.document.body,
+          ]
         : []),
     ].filter(Boolean) as HTMLElement[];
 
@@ -394,9 +394,9 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
         const scrollHandler = () => {
           measureElements();
         };
-        container.addEventListener("scroll", scrollHandler, { passive: true });
+        container.addEventListener('scroll', scrollHandler, { passive: true });
         scrollListeners.push(() =>
-          container.removeEventListener("scroll", scrollHandler)
+          container.removeEventListener('scroll', scrollHandler),
         );
       }
     });
@@ -411,36 +411,36 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
         measureElements();
       };
 
-      win.addEventListener("scroll", windowScrollHandler, { passive: true });
-      win.addEventListener("resize", windowResizeHandler, { passive: true });
+      win.addEventListener('scroll', windowScrollHandler, { passive: true });
+      win.addEventListener('resize', windowResizeHandler, { passive: true });
 
       scrollListeners.push(() =>
-        win.removeEventListener("scroll", windowScrollHandler)
+        win.removeEventListener('scroll', windowScrollHandler),
       );
       scrollListeners.push(() =>
-        win.removeEventListener("resize", windowResizeHandler)
+        win.removeEventListener('resize', windowResizeHandler),
       );
     };
 
     // Always listen to parent window
-    setupWindowListeners(window, "Parent");
+    setupWindowListeners(window, 'Parent');
 
     // Also listen to iframe window if available and different from parent
     if (frameContext.window && frameContext.window !== window) {
-      setupWindowListeners(frameContext.window, "Iframe");
+      setupWindowListeners(frameContext.window, 'Iframe');
     }
 
     // Add mutation observer for style/class changes that might affect positioning
     let mutationObserver: MutationObserver | null = null;
-    if ("MutationObserver" in targetWindow) {
+    if ('MutationObserver' in targetWindow) {
       mutationObserver = new MutationObserver(measureElements);
       // Watch for transform/style changes on containers in the appropriate document context
       const transformContainer =
         wrapper.closest('[data-testid="transform-component"]') ||
-        wrapper.closest("[data-zoom-pan-pinch]") ||
+        wrapper.closest('[data-zoom-pan-pinch]') ||
         targetDocument.body;
       mutationObserver.observe(transformContainer, {
-        attributeFilter: ["style", "class", "transform"],
+        attributeFilter: ['style', 'class', 'transform'],
         attributes: true,
         subtree: true,
       });
@@ -483,16 +483,16 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
   const memoizedStyle: React.CSSProperties = useMemo(() => {
     if (!rect) return {};
     return {
-      position: "fixed",
+      position: 'fixed',
       top: rect.top,
       left: rect.left,
       width: Math.max(rect.width, MIN_SIZE),
       height: Math.max(rect.height, MIN_SIZE),
-      border: "1px solid #5be312",
+      border: '1px solid #5be312',
       zIndex: 9999,
-      boxSizing: "border-box",
-      pointerEvents: "none",
-      cursor: "default",
+      boxSizing: 'border-box',
+      pointerEvents: 'none',
+      cursor: 'default',
     };
   }, [rect]);
 

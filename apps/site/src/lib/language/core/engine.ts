@@ -3,7 +3,7 @@ import type {
   LogicExpr,
   EngineOptions,
   MethodDefinition,
-  CallableFunction
+  CallableFunction,
 } from './types';
 
 /**
@@ -25,7 +25,12 @@ import type {
  * @param up - Character used for upward navigation (default: '/')
  * @returns Array of path segments
  */
-export function splitPath(str: string, separator: string = '.', escape: string = '\\', up: string = '/'): string[] {
+export function splitPath(
+  str: string,
+  separator: string = '.',
+  escape: string = '\\',
+  up: string = '/',
+): string[] {
   const parts: string[] = [];
   let current = '';
 
@@ -168,12 +173,10 @@ export class LogicEngine {
    * });
    * ```
    */
-  constructor(
-    methods: Record<string, any> = {},
-    options: EngineOptions = {}
-  ) {
+  constructor(methods: Record<string, any> = {}, options: EngineOptions = {}) {
     this.disableInline = options.disableInline ?? false;
-    this.disableInterpretedOptimization = options.disableInterpretedOptimization ?? false;
+    this.disableInterpretedOptimization =
+      options.disableInterpretedOptimization ?? false;
     this.methods = { ...methods, ...this.getDefaultMethods() };
 
     this.optimizedMap = new WeakMap();
@@ -181,11 +184,12 @@ export class LogicEngine {
 
     this.options = {
       disableInline: options.disableInline ?? false,
-      disableInterpretedOptimization: options.disableInterpretedOptimization ?? false,
+      disableInterpretedOptimization:
+        options.disableInterpretedOptimization ?? false,
       permissive: options.permissive ?? false,
       maxDepth: options.maxDepth ?? 0,
-      maxArrayLength: options.maxArrayLength ?? (1 << 15),
-      maxStringLength: options.maxStringLength ?? (1 << 16),
+      maxArrayLength: options.maxArrayLength ?? 1 << 15,
+      maxStringLength: options.maxStringLength ?? 1 << 16,
     };
 
     this.allowFunctions = options.allowFunctions ?? false;
@@ -248,7 +252,11 @@ export class LogicEngine {
           }
 
           let iter = 0;
-          while (typeof key === 'string' && key.startsWith('../') && iter < above.length) {
+          while (
+            typeof key === 'string' &&
+            key.startsWith('../') &&
+            iter < above.length
+          ) {
             context = above[iter++];
             key = key.substring(3);
             if (iter === above.length && Array.isArray(context)) {
@@ -261,7 +269,8 @@ export class LogicEngine {
           const notFound = defaultValue === undefined ? null : defaultValue;
 
           if (typeof key === 'undefined' || key === '' || key === null) {
-            if (engine.allowFunctions || typeof context !== 'function') return context;
+            if (engine.allowFunctions || typeof context !== 'function')
+              return context;
             return null;
           }
 
@@ -273,7 +282,8 @@ export class LogicEngine {
             if (context === undefined) return notFound;
           }
 
-          if (engine.allowFunctions || typeof context !== 'function') return context;
+          if (engine.allowFunctions || typeof context !== 'function')
+            return context;
           return null;
         },
         /**
@@ -331,15 +341,22 @@ export class LogicEngine {
          * calculate({ a: 10, b: 5 }); // 15
          * ```
          */
-        method: (args: any[], context: any, above: any[], engine: LogicEngine) => {
+        method: (
+          args: any[],
+          context: any,
+          above: any[],
+          engine: LogicEngine,
+        ) => {
           if (!Array.isArray(args) || args.length < 1) {
-            throw new Error('call method requires at least one argument (the function)');
+            throw new Error(
+              'call method requires at least one argument (the function)',
+            );
           }
 
           const [fn, ...callArgs] = args;
 
           // Evaluate arguments that might be logic expressions
-          const evaluatedArgs = callArgs.map(arg => {
+          const evaluatedArgs = callArgs.map((arg) => {
             if (arg && typeof arg === 'object' && !Array.isArray(arg)) {
               // If it's a logic expression, evaluate it
               return engine.run(arg, context, { above });
@@ -350,7 +367,11 @@ export class LogicEngine {
           if (typeof fn === 'function') {
             // Direct function reference
             return fn(...evaluatedArgs);
-          } else if (typeof fn === 'string' && context && typeof context[fn] === 'function') {
+          } else if (
+            typeof fn === 'string' &&
+            context &&
+            typeof context[fn] === 'function'
+          ) {
             // String function name from context
             return context[fn](...evaluatedArgs);
           } else if (typeof fn === 'object' && fn.var) {
@@ -359,7 +380,9 @@ export class LogicEngine {
             if (typeof resolvedFn === 'function') {
               return resolvedFn(...evaluatedArgs);
             } else {
-              throw new Error(`Referenced value is not a function: ${typeof resolvedFn}`);
+              throw new Error(
+                `Referenced value is not a function: ${typeof resolvedFn}`,
+              );
             }
           } else {
             throw new Error(`Cannot call ${typeof fn} as a function`);
@@ -408,7 +431,9 @@ export class LogicEngine {
             // If it's a variable reference, resolve it
             return engine.run(fn, context, { above });
           } else {
-            throw new Error('fn method expects a function or a variable reference to a function');
+            throw new Error(
+              'fn method expects a function or a variable reference to a function',
+            );
           }
         },
         deterministic: false,
@@ -444,11 +469,13 @@ export class LogicEngine {
         if (typeof data === 'string') return +data;
         if (typeof data === 'number') return +data;
         if (typeof data === 'boolean') return +data;
-        if (typeof data === 'object' && !Array.isArray(data)) throw new Error('Invalid operand for +');
+        if (typeof data === 'object' && !Array.isArray(data))
+          throw new Error('Invalid operand for +');
 
         let res = 0;
         for (let i = 0; i < data.length; i++) {
-          if (data[i] && typeof data[i] === 'object') throw new Error('Invalid operand for +');
+          if (data[i] && typeof data[i] === 'object')
+            throw new Error('Invalid operand for +');
           res += +data[i];
         }
         return res;
@@ -482,7 +509,8 @@ export class LogicEngine {
         if (data.length === 0) return 1;
         let res = 1;
         for (let i = 0; i < data.length; i++) {
-          if (data[i] && typeof data[i] === 'object') throw new Error('Invalid operand for *');
+          if (data[i] && typeof data[i] === 'object')
+            throw new Error('Invalid operand for *');
           res *= +data[i];
         }
         return res;
@@ -520,14 +548,17 @@ export class LogicEngine {
         if (typeof data === 'string') return -data;
         if (typeof data === 'number') return -data;
         if (typeof data === 'boolean') return -data;
-        if (typeof data === 'object' && !Array.isArray(data)) throw new Error('Invalid operand for -');
+        if (typeof data === 'object' && !Array.isArray(data))
+          throw new Error('Invalid operand for -');
 
-        if (data.length === 0) throw new Error('Subtraction requires at least one operand');
+        if (data.length === 0)
+          throw new Error('Subtraction requires at least one operand');
         if (data.length === 1) return -data[0];
 
         let res = data[0];
         for (let i = 1; i < data.length; i++) {
-          if (data[i] && typeof data[i] === 'object') throw new Error('Invalid operand for -');
+          if (data[i] && typeof data[i] === 'object')
+            throw new Error('Invalid operand for -');
           res -= +data[i];
         }
         return res;
@@ -561,15 +592,18 @@ export class LogicEngine {
        * ```
        */
       '/': (data: any) => {
-        if (data.length === 0) throw new Error('Division requires at least one operand');
+        if (data.length === 0)
+          throw new Error('Division requires at least one operand');
         if (data.length === 1) {
-          if (!data[0] || (typeof data[0] === 'object')) throw new Error('Invalid operand for division');
+          if (!data[0] || typeof data[0] === 'object')
+            throw new Error('Invalid operand for division');
           return 1 / +data[0];
         }
 
         let res = +data[0];
         for (let i = 1; i < data.length; i++) {
-          if (data[i] && typeof data[i] === 'object') throw new Error('Invalid operand for /');
+          if (data[i] && typeof data[i] === 'object')
+            throw new Error('Invalid operand for /');
           if (!data[i]) throw new Error('Division by zero');
           res /= +data[i];
         }
@@ -598,9 +632,12 @@ export class LogicEngine {
        * ```
        */
       '%': (data: any) => {
-        if (!Array.isArray(data) || data.length !== 2) throw new Error('Modulo requires exactly two operands');
-        if (data[0] && typeof data[0] === 'object') throw new Error('Invalid operand for %');
-        if (data[1] && typeof data[1] === 'object') throw new Error('Invalid operand for %');
+        if (!Array.isArray(data) || data.length !== 2)
+          throw new Error('Modulo requires exactly two operands');
+        if (data[0] && typeof data[0] === 'object')
+          throw new Error('Invalid operand for %');
+        if (data[1] && typeof data[1] === 'object')
+          throw new Error('Invalid operand for %');
         if (!data[1]) throw new Error('Division by zero in modulo operation');
         return +data[0] % +data[1];
       },
@@ -625,12 +662,15 @@ export class LogicEngine {
        * ```
        */
       max: (data: any) => {
-        if (!Array.isArray(data) || data.length === 0) throw new Error('max requires a non-empty array');
-        if (typeof data[0] !== 'number') throw new Error('max requires numeric values');
+        if (!Array.isArray(data) || data.length === 0)
+          throw new Error('max requires a non-empty array');
+        if (typeof data[0] !== 'number')
+          throw new Error('max requires numeric values');
 
         let max = data[0];
         for (let i = 1; i < data.length; i++) {
-          if (typeof data[i] !== 'number') throw new Error('max requires numeric values');
+          if (typeof data[i] !== 'number')
+            throw new Error('max requires numeric values');
           if (data[i] > max) max = data[i];
         }
         return max;
@@ -656,12 +696,15 @@ export class LogicEngine {
        * ```
        */
       min: (data: any) => {
-        if (!Array.isArray(data) || data.length === 0) throw new Error('min requires a non-empty array');
-        if (typeof data[0] !== 'number') throw new Error('min requires numeric values');
+        if (!Array.isArray(data) || data.length === 0)
+          throw new Error('min requires a non-empty array');
+        if (typeof data[0] !== 'number')
+          throw new Error('min requires numeric values');
 
         let min = data[0];
         for (let i = 1; i < data.length; i++) {
-          if (typeof data[i] !== 'number') throw new Error('min requires numeric values');
+          if (typeof data[i] !== 'number')
+            throw new Error('min requires numeric values');
           if (data[i] < min) min = data[i];
         }
         return min;
@@ -692,7 +735,8 @@ export class LogicEngine {
        * ```
        */
       '>': (data: any) => {
-        if (!Array.isArray(data) || data.length !== 2) throw new Error('> requires exactly two operands');
+        if (!Array.isArray(data) || data.length !== 2)
+          throw new Error('> requires exactly two operands');
         return data[0] > data[1];
       },
 
@@ -720,7 +764,8 @@ export class LogicEngine {
        * ```
        */
       '>=': (data: any) => {
-        if (!Array.isArray(data) || data.length !== 2) throw new Error('>= requires exactly two operands');
+        if (!Array.isArray(data) || data.length !== 2)
+          throw new Error('>= requires exactly two operands');
         return data[0] >= data[1];
       },
 
@@ -748,7 +793,8 @@ export class LogicEngine {
        * ```
        */
       '<': (data: any) => {
-        if (!Array.isArray(data) || data.length !== 2) throw new Error('< requires exactly two operands');
+        if (!Array.isArray(data) || data.length !== 2)
+          throw new Error('< requires exactly two operands');
         return data[0] < data[1];
       },
 
@@ -776,7 +822,8 @@ export class LogicEngine {
        * ```
        */
       '<=': (data: any) => {
-        if (!Array.isArray(data) || data.length !== 2) throw new Error('<= requires exactly two operands');
+        if (!Array.isArray(data) || data.length !== 2)
+          throw new Error('<= requires exactly two operands');
         return data[0] <= data[1];
       },
 
@@ -804,7 +851,8 @@ export class LogicEngine {
        * ```
        */
       '==': (data: any) => {
-        if (!Array.isArray(data) || data.length !== 2) throw new Error('== requires exactly two operands');
+        if (!Array.isArray(data) || data.length !== 2)
+          throw new Error('== requires exactly two operands');
         return data[0] == data[1];
       },
 
@@ -832,7 +880,8 @@ export class LogicEngine {
        * ```
        */
       '===': (data: any) => {
-        if (!Array.isArray(data) || data.length !== 2) throw new Error('=== requires exactly two operands');
+        if (!Array.isArray(data) || data.length !== 2)
+          throw new Error('=== requires exactly two operands');
         return data[0] === data[1];
       },
 
@@ -860,7 +909,8 @@ export class LogicEngine {
        * ```
        */
       '!=': (data: any) => {
-        if (!Array.isArray(data) || data.length !== 2) throw new Error('!= requires exactly two operands');
+        if (!Array.isArray(data) || data.length !== 2)
+          throw new Error('!= requires exactly two operands');
         return data[0] != data[1];
       },
 
@@ -888,7 +938,8 @@ export class LogicEngine {
        * ```
        */
       '!==': (data: any) => {
-        if (!Array.isArray(data) || data.length !== 2) throw new Error('!== requires exactly two operands');
+        if (!Array.isArray(data) || data.length !== 2)
+          throw new Error('!== requires exactly two operands');
         return data[0] !== data[1];
       },
 
@@ -916,13 +967,15 @@ export class LogicEngine {
        */
       cat: (data: any) => {
         if (!Array.isArray(data)) return String(data);
-        return data.map(item => {
-          if (item && typeof item === 'object' && item.var) {
-            // This would be handled by the engine before reaching here
-            return item;
-          }
-          return String(item);
-        }).join('');
+        return data
+          .map((item) => {
+            if (item && typeof item === 'object' && item.var) {
+              // This would be handled by the engine before reaching here
+              return item;
+            }
+            return String(item);
+          })
+          .join('');
       },
 
       /**
@@ -950,7 +1003,8 @@ export class LogicEngine {
        * ```
        */
       substr: (data: any) => {
-        if (!Array.isArray(data) || data.length < 2) throw new Error('substr requires [string, start, length?]');
+        if (!Array.isArray(data) || data.length < 2)
+          throw new Error('substr requires [string, start, length?]');
         const [str, start, length] = data;
         if (length < 0) {
           const result = String(str).substr(start);
@@ -987,8 +1041,10 @@ export class LogicEngine {
       length: (data: any) => {
         if (!data) throw new Error('length requires a value');
         const parsed = data;
-        if (typeof parsed === 'string' || Array.isArray(parsed)) return parsed.length;
-        if (parsed && typeof parsed === 'object') return Object.keys(parsed).length;
+        if (typeof parsed === 'string' || Array.isArray(parsed))
+          return parsed.length;
+        if (parsed && typeof parsed === 'object')
+          return Object.keys(parsed).length;
         throw new Error('length requires a string, array, or object');
       },
 
@@ -1047,10 +1103,16 @@ export class LogicEngine {
          * getGrade({ percentage: 85 }); // 'B'
          * ```
          */
-        method: (input: any[], context: any, above: any[], engine: LogicEngine) => {
+        method: (
+          input: any[],
+          context: any,
+          above: any[],
+          engine: LogicEngine,
+        ) => {
           if (!Array.isArray(input)) throw new Error('if requires an array');
 
-          if (input.length === 1) return engine.run(input[0], context, { above });
+          if (input.length === 1)
+            return engine.run(input[0], context, { above });
           if (input.length < 2) return null;
 
           const args = [...input];
@@ -1064,7 +1126,8 @@ export class LogicEngine {
 
             const test = engine.run(check, context, { above });
 
-            if (engine.truthy(test)) return engine.run(onTrue, context, { above });
+            if (engine.truthy(test))
+              return engine.run(onTrue, context, { above });
           }
 
           return engine.run(onFalse, context, { above });
@@ -1100,7 +1163,10 @@ export class LogicEngine {
        * ```
        */
       '?:': (data: any) => {
-        if (!Array.isArray(data) || data.length < 2) throw new Error('?: requires [condition, true_result, false_result?]');
+        if (!Array.isArray(data) || data.length < 2)
+          throw new Error(
+            '?: requires [condition, true_result, false_result?]',
+          );
         if (data.length === 2) return data[0] ? data[1] : null;
         return data[0] ? data[1] : data[2];
       },
@@ -1145,7 +1211,12 @@ export class LogicEngine {
          * validateRange({ value: 150 }); // false
          * ```
          */
-        method: (arr: any[], context: any, above: any[], engine: LogicEngine) => {
+        method: (
+          arr: any[],
+          context: any,
+          above: any[],
+          engine: LogicEngine,
+        ) => {
           if (!Array.isArray(arr)) throw new Error('and requires an array');
           if (!arr.length) return null;
 
@@ -1198,7 +1269,12 @@ export class LogicEngine {
          * hasPermission({ role: 'admin' }); // true
          * ```
          */
-        method: (arr: any[], context: any, above: any[], engine: LogicEngine) => {
+        method: (
+          arr: any[],
+          context: any,
+          above: any[],
+          engine: LogicEngine,
+        ) => {
           if (!Array.isArray(arr)) throw new Error('or requires an array');
           if (!arr.length) return null;
 
@@ -1318,7 +1394,8 @@ export class LogicEngine {
        * ```
        */
       '??': (data: any) => {
-        if (!Array.isArray(data) || data.length < 2) throw new Error('?? requires [value, default]');
+        if (!Array.isArray(data) || data.length < 2)
+          throw new Error('?? requires [value, default]');
         return data[0] !== null && data[0] !== undefined ? data[0] : data[1];
       },
 
@@ -1373,7 +1450,12 @@ export class LogicEngine {
          * doubleNumbers({ numbers: [1, 2, 3, 4] }); // [2, 4, 6, 8]
          * ```
          */
-        method: (input: any[], context: any, above: any[], engine: LogicEngine) => {
+        method: (
+          input: any[],
+          context: any,
+          above: any[],
+          engine: LogicEngine,
+        ) => {
           if (!Array.isArray(input) || input.length < 2) {
             throw new Error('map requires [array, expression]');
           }
@@ -1454,7 +1536,12 @@ export class LogicEngine {
          * }); // [{ name: 'Bob', age: 22 }]
          * ```
          */
-        method: (input: any[], context: any, above: any[], engine: LogicEngine) => {
+        method: (
+          input: any[],
+          context: any,
+          above: any[],
+          engine: LogicEngine,
+        ) => {
           if (!Array.isArray(input) || input.length < 2) {
             throw new Error('filter requires [array, expression]');
           }
@@ -1469,7 +1556,9 @@ export class LogicEngine {
           return array.filter((item, index) => {
             const itemContext = { ...context, current: item, index };
             const newAbove = [item, context, ...above];
-            const result = engine.run(expression, itemContext, { above: newAbove });
+            const result = engine.run(expression, itemContext, {
+              above: newAbove,
+            });
             return engine.truthy(result);
           });
         },
@@ -1507,7 +1596,8 @@ export class LogicEngine {
         if ('length' in value && value.length === 0) return false;
         if ('size' in value && value.size === 0) return false;
       }
-      if (value.constructor?.name === 'Object') return Object.keys(value).length > 0;
+      if (value.constructor?.name === 'Object')
+        return Object.keys(value).length > 0;
     }
     return value;
   }
@@ -1526,7 +1616,13 @@ export class LogicEngine {
    * @returns Result of the operation
    * @internal
    */
-  private _parse(logic: any, context: any, above: any[], func: string, length: number): any {
+  private _parse(
+    logic: any,
+    context: any,
+    above: any[],
+    func: string,
+    length: number,
+  ): any {
     const data = logic[func];
 
     if (this.isData(logic, func)) return logic;
@@ -1535,19 +1631,37 @@ export class LogicEngine {
       throw new Error(`Unknown operator: ${func}`);
     }
 
-    if ((func === 'var' || func === 'val') && this.methods[func][ORIGINAL_IMPL]) {
-      const input = (!data || typeof data !== 'object') ? data : this.run(data, context, { above });
+    if (
+      (func === 'var' || func === 'val') &&
+      this.methods[func][ORIGINAL_IMPL]
+    ) {
+      const input =
+        !data || typeof data !== 'object'
+          ? data
+          : this.run(data, context, { above });
       return this.methods[func].method(input, context, above, this);
     }
 
     if (typeof this.methods[func] === 'function') {
-      const input = (!data || typeof data !== 'object') ? [data] : this.run(data, context, { above });
-      return this.methods[func](Array.isArray(input) ? input : [input], context, above, this);
+      const input =
+        !data || typeof data !== 'object'
+          ? [data]
+          : this.run(data, context, { above });
+      return this.methods[func](
+        Array.isArray(input) ? input : [input],
+        context,
+        above,
+        this,
+      );
     }
 
     if (typeof this.methods[func] === 'object') {
       const { method, lazy } = this.methods[func];
-      const parsedData = !lazy ? ((!data || typeof data !== 'object') ? [data] : this.run(data, context, { above })) : data;
+      const parsedData = !lazy
+        ? !data || typeof data !== 'object'
+          ? [data]
+          : this.run(data, context, { above })
+        : data;
       return method(parsedData, context, above, this);
     }
 
@@ -1586,15 +1700,20 @@ export class LogicEngine {
    */
   addMethod(
     name: string,
-    method: ((args: any, context: any, above: any[], engine: LogicEngine) => any) | MethodDefinition,
-    annotations?: { deterministic?: boolean; optimizeUnary?: boolean }
+    method:
+      | ((args: any, context: any, above: any[], engine: LogicEngine) => any)
+      | MethodDefinition,
+    annotations?: { deterministic?: boolean; optimizeUnary?: boolean },
   ): void {
     if (typeof method === 'function') {
       method = { method, lazy: false } as MethodDefinition;
     } else {
       method = {
         ...method,
-        lazy: typeof (method as any).traverse !== 'undefined' ? !(method as any).traverse : (method as any).lazy
+        lazy:
+          typeof (method as any).traverse !== 'undefined'
+            ? !(method as any).traverse
+            : (method as any).lazy,
       };
     }
 
@@ -1634,11 +1753,15 @@ export class LogicEngine {
   addModule(
     name: string,
     obj: Record<string, Function>,
-    annotations?: { deterministic?: boolean; async?: boolean; sync?: boolean }
+    annotations?: { deterministic?: boolean; async?: boolean; sync?: boolean },
   ): void {
     Object.getOwnPropertyNames(obj).forEach((key) => {
       if (typeof obj[key] === 'function' || typeof obj[key] === 'object') {
-        this.addMethod(`${name}${name ? '.' : ''}${key}`, obj[key] as any, annotations);
+        this.addMethod(
+          `${name}${name ? '.' : ''}${key}`,
+          obj[key] as any,
+          annotations,
+        );
       }
     });
   }
@@ -1685,12 +1808,16 @@ export class LogicEngine {
   run<T = unknown, TVars = any>(
     logic: LogicExpr<TVars>,
     data: TVars = {} as TVars,
-    options: { above?: any[] } = {}
+    options: { above?: any[] } = {},
   ): T {
     const { above = [] } = options;
 
     // OPTIMIZER BLOCK //
-    if (!this.disableInterpretedOptimization && typeof logic === 'object' && logic) {
+    if (
+      !this.disableInterpretedOptimization &&
+      typeof logic === 'object' &&
+      logic
+    ) {
       if (this.missesSinceSeen > 500) {
         this.disableInterpretedOptimization = true;
         this.missesSinceSeen = 0;
@@ -1763,7 +1890,7 @@ export class LogicEngine {
    */
   build<TVars = any, TResult = unknown>(
     logic: LogicExpr<TVars>,
-    options: { top?: boolean; above?: any[] } = {}
+    options: { top?: boolean; above?: any[] } = {},
   ): (data: TVars) => TResult {
     const { above = [], top = true } = options;
 

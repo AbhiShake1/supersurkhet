@@ -7,9 +7,9 @@ import {
   useMemo,
   useState,
   forwardRef,
-} from "react";
-import hash from "object-hash";
-import { createPortal } from "react-dom";
+} from 'react';
+import hash from 'object-hash';
+import { createPortal } from 'react-dom';
 
 const styleSelector = 'style, link[rel="stylesheet"]';
 
@@ -36,17 +36,17 @@ const getStyles = (styleSheet?: CSSStyleSheet) => {
     try {
       return Array.from(styleSheet.cssRules)
         .map((rule) => rule.cssText)
-        .join("");
+        .join('');
     } catch (e: any) {
       console.warn(
-        "Access to stylesheet %s is denied. Ignoring…",
+        'Access to stylesheet %s is denied. Ignoring…',
         styleSheet.href,
-        e.message
+        e.message,
       );
     }
   }
 
-  return "";
+  return '';
 };
 
 // Sync attributes from parent window to iFrame
@@ -74,7 +74,7 @@ const CopyHostStyles = ({
 
   useEffect(() => {
     if (!win || !doc) {
-      return () => { };
+      return () => {};
     }
 
     const elements: { original: HTMLElement; mirror: HTMLElement }[] = [];
@@ -86,9 +86,9 @@ const CopyHostStyles = ({
     const mirrorEl = async (el: HTMLElement, inlineStyles = false) => {
       let mirror: HTMLStyleElement;
 
-      if (el.nodeName === "LINK" && inlineStyles) {
-        mirror = document.createElement("style") as HTMLStyleElement;
-        mirror.type = "text/css";
+      if (el.nodeName === 'LINK' && inlineStyles) {
+        mirror = document.createElement('style') as HTMLStyleElement;
+        mirror.type = 'text/css';
 
         let styleSheet = getStyleSheet(el);
 
@@ -96,10 +96,10 @@ const CopyHostStyles = ({
           await new Promise<void>((resolve) => {
             const fn = () => {
               resolve();
-              el.removeEventListener("load", fn);
+              el.removeEventListener('load', fn);
             };
 
-            el.addEventListener("load", fn);
+            el.addEventListener('load', fn);
           });
           styleSheet = getStyleSheet(el);
         }
@@ -109,7 +109,7 @@ const CopyHostStyles = ({
         if (!styles) {
           if (debug) {
             console.warn(
-              `Tried to load styles for link element, but couldn't find them. Skipping...`
+              `Tried to load styles for link element, but couldn't find them. Skipping...`,
             );
           }
 
@@ -118,7 +118,7 @@ const CopyHostStyles = ({
 
         mirror.innerHTML = styles;
 
-        mirror.setAttribute("data-href", el.getAttribute("href")!);
+        mirror.setAttribute('data-href', el.getAttribute('href')!);
       } else {
         mirror = el.cloneNode(true) as HTMLStyleElement;
       }
@@ -131,7 +131,7 @@ const CopyHostStyles = ({
       if (index > -1) {
         if (debug)
           console.log(
-            `Tried to add an element that was already mirrored. Updating instead...`
+            `Tried to add an element that was already mirrored. Updating instead...`,
           );
 
         if (elements[index]?.mirror?.innerText !== el.innerText)
@@ -151,7 +151,7 @@ const CopyHostStyles = ({
       if (hashes[elHash]) {
         if (debug)
           console.log(
-            `iframe already contains element that is being mirrored. Skipping...`
+            `iframe already contains element that is being mirrored. Skipping...`,
           );
 
         return;
@@ -170,7 +170,7 @@ const CopyHostStyles = ({
       if (index === -1) {
         if (debug)
           console.log(
-            `Tried to remove an element that did not exist. Skipping...`
+            `Tried to remove an element that did not exist. Skipping...`,
           );
 
         return;
@@ -186,7 +186,7 @@ const CopyHostStyles = ({
 
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.type === "childList") {
+        if (mutation.type === 'childList') {
           mutation.addedNodes.forEach((node) => {
             if (
               node.nodeType === Node.TEXT_NODE ||
@@ -229,21 +229,21 @@ const CopyHostStyles = ({
     let stylesLoaded = 0;
 
     // Sync attributes for the HTML tag
-    const parentHtml = parentDocument.getElementsByTagName("html")[0];
+    const parentHtml = parentDocument.getElementsByTagName('html')[0];
     syncAttributes(parentHtml, doc.documentElement);
 
     // Sync attributes for the Body tag
-    const parentBody = parentDocument.getElementsByTagName("body")[0];
+    const parentBody = parentDocument.getElementsByTagName('body')[0];
     syncAttributes(parentBody, doc.body);
 
     // Set iframe body background to transparent
-    doc.body.style.backgroundColor = "transparent";
+    doc.body.style.backgroundColor = 'transparent';
 
     // Copy CSS custom properties (variables) from parent html element
     const parentComputedStyle = win.parent.getComputedStyle(parentHtml);
     for (let i = 0; i < parentComputedStyle.length; i++) {
       const property = parentComputedStyle[i];
-      if (property.startsWith("--")) {
+      if (property.startsWith('--')) {
         const value = parentComputedStyle.getPropertyValue(property);
         doc.documentElement.style.setProperty(property, value);
         doc.body.style.setProperty(property, value);
@@ -253,9 +253,9 @@ const CopyHostStyles = ({
     // Copy font-related classes from parent body
     parentBody.classList.forEach((className) => {
       if (
-        className.includes("font-") ||
-        className === "antialiased" ||
-        className.includes("__variable")
+        className.includes('font-') ||
+        className === 'antialiased' ||
+        className.includes('__variable')
       ) {
         doc.body.classList.add(className);
       }
@@ -263,7 +263,7 @@ const CopyHostStyles = ({
 
     Promise.all(
       collectedStyles.map(async (styleNode) => {
-        if (styleNode.nodeName === "LINK") {
+        if (styleNode.nodeName === 'LINK') {
           const linkHref = (styleNode as HTMLLinkElement).href;
 
           // Don't process link elements with identical hrefs more than once
@@ -281,10 +281,10 @@ const CopyHostStyles = ({
         elements.push({ original: styleNode, mirror });
 
         return mirror;
-      })
+      }),
     ).then((mirrorStyles) => {
       const filtered = mirrorStyles.filter(
-        (el) => typeof el !== "undefined"
+        (el) => typeof el !== 'undefined',
       ) as HTMLStyleElement[];
 
       filtered.forEach((mirror) => {
@@ -306,7 +306,7 @@ const CopyHostStyles = ({
       });
 
       // Reset HTML (inside the promise) so in case running twice (i.e. for React Strict mode)
-      doc.head.innerHTML = "";
+      doc.head.innerHTML = '';
 
       // Inject initial values in bulk
       doc.head.append(...filtered);
@@ -348,85 +348,90 @@ export const autoFrameContext = createContext<AutoFrameContext>({});
 
 export const useFrame = () => useContext(autoFrameContext);
 
-const AutoFrame = forwardRef<HTMLIFrameElement, AutoFrameProps>(({
-  children,
-  className,
-  debug,
-  id,
-  onReady = () => { },
-  onNotReady = () => { },
-  style,
-  pointerEventsEnabled = true,
-  ...props
-}, ref) => {
-  const [loaded, setLoaded] = useState(false);
-  const [ctx, setCtx] = useState<AutoFrameContext>({});
-  const [mountTarget, setMountTarget] = useState<HTMLElement | null>();
-  const [stylesLoaded, setStylesLoaded] = useState(false);
+const AutoFrame = forwardRef<HTMLIFrameElement, AutoFrameProps>(
+  (
+    {
+      children,
+      className,
+      debug,
+      id,
+      onReady = () => {},
+      onNotReady = () => {},
+      style,
+      pointerEventsEnabled = true,
+      ...props
+    },
+    ref,
+  ) => {
+    const [loaded, setLoaded] = useState(false);
+    const [ctx, setCtx] = useState<AutoFrameContext>({});
+    const [mountTarget, setMountTarget] = useState<HTMLElement | null>();
+    const [stylesLoaded, setStylesLoaded] = useState(false);
 
-  const handleLoad = useCallback(() => {
-    setLoaded(true);
-  }, []);
+    const handleLoad = useCallback(() => {
+      setLoaded(true);
+    }, []);
 
-  const handleStylesLoaded = useCallback(() => {
-    setStylesLoaded(true);
-  }, []);
+    const handleStylesLoaded = useCallback(() => {
+      setStylesLoaded(true);
+    }, []);
 
-  const iframeStyle = useMemo(
-    () => ({
-      pointerEvents: pointerEventsEnabled
-        ? ("all" as const)
-        : ("none" as const),
-      ...style,
-    }),
-    [pointerEventsEnabled, style]
-  );
+    const iframeStyle = useMemo(
+      () => ({
+        pointerEvents: pointerEventsEnabled
+          ? ('all' as const)
+          : ('none' as const),
+        ...style,
+      }),
+      [pointerEventsEnabled, style],
+    );
 
-  useEffect(() => {
-    if (ref && 'current' in ref && ref.current) {
-      const doc = ref.current.contentDocument;
-      const win = ref.current.contentWindow;
+    useEffect(() => {
+      if (ref && 'current' in ref && ref.current) {
+        const doc = ref.current.contentDocument;
+        const win = ref.current.contentWindow;
 
-      setCtx({
-        document: doc || undefined,
-        window: win || undefined,
-      });
+        setCtx({
+          document: doc || undefined,
+          window: win || undefined,
+        });
 
-      setMountTarget(
-        ref.current.contentDocument?.getElementById("frame-root")
-      );
+        setMountTarget(
+          ref.current.contentDocument?.getElementById('frame-root'),
+        );
 
-      if (doc && win && stylesLoaded) {
-        onReady();
-      } else {
-        onNotReady();
+        if (doc && win && stylesLoaded) {
+          onReady();
+        } else {
+          onNotReady();
+        }
       }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ref, loaded, stylesLoaded]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [ref, loaded, stylesLoaded]);
 
-  return (
-    <iframe
-      {...props}
-      className={className}
-      id={id}
-      data-testid="auto-frame"
-      srcDoc='<!DOCTYPE html><html><head></head><body><div id="frame-root" data-autoform-entry style="display: contents;"></div></body></html>'
-      ref={ref}
-      style={iframeStyle}
-      onLoad={handleLoad}
-    >
-      <autoFrameContext.Provider value={ctx}>
-        {loaded && mountTarget && (
-          <CopyHostStyles debug={debug} onStylesLoaded={handleStylesLoaded}>
-            {createPortal(children, mountTarget)}
-          </CopyHostStyles>
-        )}
-      </autoFrameContext.Provider>
-    </iframe>
-  );
-});
+    return (
+      <iframe
+        {...props}
+        className={className}
+        id={id}
+        data-testid="auto-frame"
+        srcDoc='<!DOCTYPE html><html><head></head><body><div id="frame-root" data-autoform-entry style="display: contents;"></div></body></html>'
+        ref={ref}
+        style={iframeStyle}
+        onLoad={handleLoad}
+      >
+        <autoFrameContext.Provider value={ctx}>
+          {loaded && mountTarget && (
+            <CopyHostStyles debug={debug} onStylesLoaded={handleStylesLoaded}>
+              {createPortal(children, mountTarget)}
+            </CopyHostStyles>
+          )}
+        </autoFrameContext.Provider>
+      </iframe>
+    );
+  },
+);
 
-AutoFrame.displayName = "AutoFrame";
+AutoFrame.displayName = 'AutoFrame';
 
 export default AutoFrame;

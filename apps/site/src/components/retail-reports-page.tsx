@@ -1,30 +1,30 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/select';
 import {
   HoverablePopover,
   HoverablePopoverContent,
   HoverablePopoverTrigger,
-} from "@/components/ui/hoverable-popover";
-import { Info } from "lucide-react";
-import { useBusinessAnalytics } from "@/hooks/use-business-analytics";
-import { api } from "@/lib/api";
+} from '@/components/ui/hoverable-popover';
+import { Info } from 'lucide-react';
+import { useBusinessAnalytics } from '@/hooks/use-business-analytics';
+import { api } from '@/lib/api';
 import {
   exportAnalyticsToCSV,
   exportAnalyticsToJSON,
   generatePrintHTML,
-} from "@/lib/export-analytics";
+} from '@/lib/export-analytics';
 import {
   AlertTriangle,
   Building2,
@@ -38,29 +38,29 @@ import {
   TrendingDown,
   TrendingUp,
   Users,
-} from "lucide-react";
-import { useState } from "react";
+} from 'lucide-react';
+import { useState } from 'react';
 import {
   InventoryStatusChart,
   PaymentMethodsChart,
   SalesTrendsChart,
-} from "./reports-page/charts";
-import { CardDescription } from "./ui/card-hover-effect";
-import { formatCurrency } from "@/lib/intl";
+} from './reports-page/charts';
+import { CardDescription } from './ui/card-hover-effect';
+import { formatCurrency } from '@/lib/intl';
 
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from '@/components/ui/tooltip';
 
 interface ReportsPageProps {
   slug: string;
 }
 
 export function RetailReportsPage({ slug }: ReportsPageProps) {
-  "use memo"
-  const [period, setPeriod] = useState("all");
+  'use memo';
+  const [period, setPeriod] = useState('all');
   const analytics = useBusinessAnalytics(slug, period);
 
   // Get business name for print header
@@ -70,33 +70,33 @@ export function RetailReportsPage({ slug }: ReportsPageProps) {
   });
   const businessName = businesses[0]?.name || slug;
 
-  const handleExport = (format: "csv" | "json" | "print") => {
-    if (format === "csv") {
+  const handleExport = (format: 'csv' | 'json' | 'print') => {
+    if (format === 'csv') {
       const csvContent = exportAnalyticsToCSV(analytics, period);
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", `business-reports-${slug}-${period}.csv`);
-      link.style.visibility = "hidden";
+      link.setAttribute('href', url);
+      link.setAttribute('download', `business-reports-${slug}-${period}.csv`);
+      link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } else if (format === "json") {
+    } else if (format === 'json') {
       const jsonData = exportAnalyticsToJSON(analytics, period);
       const jsonString = JSON.stringify(jsonData, null, 2);
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const link = document.createElement("a");
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const link = document.createElement('a');
       const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", `business-reports-${slug}-${period}.json`);
-      link.style.visibility = "hidden";
+      link.setAttribute('href', url);
+      link.setAttribute('download', `business-reports-${slug}-${period}.json`);
+      link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } else if (format === "print") {
+    } else if (format === 'print') {
       const printHTML = generatePrintHTML(analytics, period, businessName);
-      const printWindow = window.open("", "_blank");
+      const printWindow = window.open('', '_blank');
       if (printWindow) {
         printWindow.document.write(printHTML);
         printWindow.document.close();
@@ -130,7 +130,7 @@ function ReportHeader({
 }: {
   period: string;
   setPeriod: (p: string) => void;
-  onExport: (format: "csv" | "json" | "print") => void;
+  onExport: (format: 'csv' | 'json' | 'print') => void;
 }) {
   return (
     <div className="flex items-center justify-between">
@@ -163,15 +163,15 @@ function ReportHeader({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => onExport("csv")}>
+            <DropdownMenuItem onClick={() => onExport('csv')}>
               <Download className="mr-2 h-4 w-4" />
               Export as CSV
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onExport("json")}>
+            <DropdownMenuItem onClick={() => onExport('json')}>
               <Download className="mr-2 h-4 w-4" />
               Export as JSON
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onExport("print")}>
+            <DropdownMenuItem onClick={() => onExport('print')}>
               <Printer className="mr-2 h-4 w-4" />
               Print Report
             </DropdownMenuItem>
@@ -182,15 +182,15 @@ function ReportHeader({
   );
 }
 
-
-
 function FinancialOverview({
   data,
-}: { data: ReturnType<typeof useBusinessAnalytics> }) {
+}: {
+  data: ReturnType<typeof useBusinessAnalytics>;
+}) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "NPR", // Using NPR as it's a Nepal-focused app
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'NPR', // Using NPR as it's a Nepal-focused app
       minimumFractionDigits: 2,
     }).format(amount);
   };
@@ -198,26 +198,38 @@ function FinancialOverview({
   // Helper function to render revenue breakdown table
   const renderRevenueBreakdown = () => {
     if (!data.revenueBreakdown || data.revenueBreakdown.length === 0) {
-      return <p className="text-muted-foreground text-sm">No revenue transactions recorded</p>;
+      return (
+        <p className="text-muted-foreground text-sm">
+          No revenue transactions recorded
+        </p>
+      );
     }
 
     return (
       <div className="space-y-4">
-        <h4 className="font-semibold text-lg text-emerald-600">Revenue Breakdown</h4>
+        <h4 className="font-semibold text-lg text-emerald-600">
+          Revenue Breakdown
+        </h4>
         <div className="space-y-3">
           {data.revenueBreakdown.map((item, index) => (
-            <div key={item.id || index} className="border rounded-lg p-3 bg-card shadow-sm">
+            <div
+              key={item.id || index}
+              className="border rounded-lg p-3 bg-card shadow-sm"
+            >
               <div className="flex justify-between items-start mb-2">
                 <div className="font-medium text-foreground">
-                  <span className="font-semibold">Customer:</span> {item.customer}
+                  <span className="font-semibold">Customer:</span>{' '}
+                  {item.customer}
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-emerald-600">{formatCurrency(item.totalAmount)}</div>
+                  <div className="text-lg font-bold text-emerald-600">
+                    {formatCurrency(item.totalAmount)}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {new Date(item.date).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
-                      day: 'numeric'
+                      day: 'numeric',
                     })}
                   </div>
                 </div>
@@ -225,16 +237,25 @@ function FinancialOverview({
 
               <div className="grid grid-cols-3 gap-2 text-xs mb-2 pt-2 border-t border-border">
                 <div>
-                  <span className="text-muted-foreground">Total:</span><br />
-                  <span className="font-medium">{formatCurrency(item.totalAmount)}</span>
+                  <span className="text-muted-foreground">Total:</span>
+                  <br />
+                  <span className="font-medium">
+                    {formatCurrency(item.totalAmount)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Paid:</span><br />
-                  <span className="font-medium">{formatCurrency(item.paidAmount)}</span>
+                  <span className="text-muted-foreground">Paid:</span>
+                  <br />
+                  <span className="font-medium">
+                    {formatCurrency(item.paidAmount)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Due:</span><br />
-                  <span className="font-bold text-amber-600">{formatCurrency(item.dueAmount)}</span>
+                  <span className="text-muted-foreground">Due:</span>
+                  <br />
+                  <span className="font-bold text-amber-600">
+                    {formatCurrency(item.dueAmount)}
+                  </span>
                 </div>
               </div>
 
@@ -244,13 +265,29 @@ function FinancialOverview({
                 </div>
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {item.items.map((product, idx) => (
-                    <div key={idx} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
-                      <div className="flex-1 truncate pr-2" title={product.product}>
+                    <div
+                      key={idx}
+                      className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0"
+                    >
+                      <div
+                        className="flex-1 truncate pr-2"
+                        title={product.product}
+                      >
                         {product.product}
                       </div>
                       <div className="text-right">
-                        <div>{product.quantity} {product.unit && <sub className="text-muted-foreground">{product.unit}</sub>} × {formatCurrency(product.unitPrice)}</div>
-                        <div className="text-xs text-muted-foreground">= {formatCurrency(product.total)}</div>
+                        <div>
+                          {product.quantity}{' '}
+                          {product.unit && (
+                            <sub className="text-muted-foreground">
+                              {product.unit}
+                            </sub>
+                          )}{' '}
+                          × {formatCurrency(product.unitPrice)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          = {formatCurrency(product.total)}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -266,7 +303,11 @@ function FinancialOverview({
   // Helper function to render cost breakdown table
   const renderCostBreakdown = () => {
     if (!data.costBreakdown || data.costBreakdown.length === 0) {
-      return <p className="text-muted-foreground text-sm">No cost transactions recorded</p>;
+      return (
+        <p className="text-muted-foreground text-sm">
+          No cost transactions recorded
+        </p>
+      );
     }
 
     return (
@@ -274,17 +315,24 @@ function FinancialOverview({
         <h4 className="font-semibold text-lg text-red-600">Cost Breakdown</h4>
         <div className="space-y-3">
           {data.costBreakdown.map((item, index) => (
-            <div key={item.id || index} className="border rounded-lg p-3 bg-card shadow-sm">
+            <div
+              key={item.id || index}
+              className="border rounded-lg p-3 bg-card shadow-sm"
+            >
               <div className="flex justify-between items-start mb-2">
                 <div className="font-medium text-foreground">
-                  <span className="font-semibold">Supplier:</span> {item.supplier || "Unknown Supplier"}                </div>
+                  <span className="font-semibold">Supplier:</span>{' '}
+                  {item.supplier || 'Unknown Supplier'}{' '}
+                </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-red-600">{formatCurrency(item.totalAmount)}</div>
+                  <div className="text-lg font-bold text-red-600">
+                    {formatCurrency(item.totalAmount)}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {new Date(item.date).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
-                      day: 'numeric'
+                      day: 'numeric',
                     })}
                   </div>
                 </div>
@@ -296,13 +344,24 @@ function FinancialOverview({
                 </div>
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {item.items.map((product, idx) => (
-                    <div key={idx} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
-                      <div className="flex-1 truncate pr-2" title={product.product}>
+                    <div
+                      key={idx}
+                      className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0"
+                    >
+                      <div
+                        className="flex-1 truncate pr-2"
+                        title={product.product}
+                      >
                         {product.product}
                       </div>
                       <div className="text-right">
-                        <div>{product.quantity} × {formatCurrency(product.unitPrice)}</div>
-                        <div className="text-xs text-muted-foreground">= {formatCurrency(product.total)}</div>
+                        <div>
+                          {product.quantity} ×{' '}
+                          {formatCurrency(product.unitPrice)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          = {formatCurrency(product.total)}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -323,7 +382,7 @@ function FinancialOverview({
             Total Revenue
           </CardTitle>
           <Tooltip>
-            <TooltipTrigger >
+            <TooltipTrigger>
               <Info className="size-4 text-muted-foreground " />
             </TooltipTrigger>
             <TooltipContent className="w-96 max-w-[90vw] max-h-[80vh] overflow-y-auto p-4">
@@ -345,7 +404,7 @@ function FinancialOverview({
             Total Costs
           </CardTitle>
           <Tooltip>
-            <TooltipTrigger >
+            <TooltipTrigger>
               <Info className="size-4 text-muted-foreground " />
             </TooltipTrigger>
             <TooltipContent className="w-96 max-w-[90vw] max-h-[80vh] overflow-y-auto p-4">
@@ -367,12 +426,14 @@ function FinancialOverview({
             Net Profit
           </CardTitle>
           <Tooltip>
-            <TooltipTrigger >
+            <TooltipTrigger>
               <Info className="size-4 text-muted-foreground " />
             </TooltipTrigger>
             <TooltipContent className="w-80 p-4">
               <div className="space-y-3">
-                <h4 className="font-semibold border-b pb-1">Profitability Analysis</h4>
+                <h4 className="font-semibold border-b pb-1">
+                  Profitability Analysis
+                </h4>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between text-emerald-600">
                     <span>Total Revenue</span>
@@ -384,7 +445,13 @@ function FinancialOverview({
                   </div>
                   <div className="flex justify-between border-t pt-2 font-bold text-base">
                     <span>Net Profit</span>
-                    <span className={data.netProfit >= 0 ? "text-emerald-600" : "text-red-600"}>
+                    <span
+                      className={
+                        data.netProfit >= 0
+                          ? 'text-emerald-600'
+                          : 'text-red-600'
+                      }
+                    >
                       {formatCurrency(data.netProfit)}
                     </span>
                   </div>
@@ -400,7 +467,7 @@ function FinancialOverview({
         </CardHeader>
         <CardContent>
           <div
-            className={`text-2xl font-bold ${data.netProfit >= 0 ? "text-emerald-500" : "text-red-500"}`}
+            className={`text-2xl font-bold ${data.netProfit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}
           >
             {formatCurrency(data.netProfit)}
           </div>
@@ -412,7 +479,9 @@ function FinancialOverview({
 
 function SalesAndTrendsSection({
   data,
-}: { data: ReturnType<typeof useBusinessAnalytics> }) {
+}: {
+  data: ReturnType<typeof useBusinessAnalytics>;
+}) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card>
@@ -455,7 +524,9 @@ function SalesAndTrendsSection({
 
 function InventorySection({
   data,
-}: { data: ReturnType<typeof useBusinessAnalytics> }) {
+}: {
+  data: ReturnType<typeof useBusinessAnalytics>;
+}) {
   // Calculate inventory counts
   const inStockCount = data.currentInventory.filter(
     (item) => item.currentStock > (item.product.reorderLevel || 5),
@@ -500,7 +571,7 @@ function InventorySection({
                       {item.product.title}
                     </span>
                     <span className="text-sm text-muted-foreground">
-                      {item.currentStock} left (reorder at{" "}
+                      {item.currentStock} left (reorder at{' '}
                       {item.product.reorderLevel || 5})
                     </span>
                   </div>
@@ -567,7 +638,9 @@ function InventorySection({
 
 function CustomerSection({
   data,
-}: { data: ReturnType<typeof useBusinessAnalytics> }) {
+}: {
+  data: ReturnType<typeof useBusinessAnalytics>;
+}) {
   return (
     <div className="grid grid-cols-1 gap-4">
       <Card>
@@ -594,7 +667,7 @@ function CustomerSection({
                   <div className="text-right">
                     <div>{formatCurrency(customer.totalSpent)}</div>
                     <div className="text-sm text-muted-foreground">
-                      Last:{" "}
+                      Last:{' '}
                       {new Date(customer.lastPurchase).toLocaleDateString()}
                     </div>
                   </div>
@@ -612,38 +685,55 @@ function CustomerSection({
 
 function AccountsSection({
   data,
-}: { data: ReturnType<typeof useBusinessAnalytics> }) {
+}: {
+  data: ReturnType<typeof useBusinessAnalytics>;
+}) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "NPR",
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'NPR',
       minimumFractionDigits: 2,
     }).format(amount);
   };
 
   // Helper function to render detailed breakdown table
   const renderReceivableBreakdown = () => {
-    if (!data.accountsReceivableBreakdown || data.accountsReceivableBreakdown.length === 0) {
-      return <p className="text-muted-foreground text-sm">No outstanding receivables</p>;
+    if (
+      !data.accountsReceivableBreakdown ||
+      data.accountsReceivableBreakdown.length === 0
+    ) {
+      return (
+        <p className="text-muted-foreground text-sm">
+          No outstanding receivables
+        </p>
+      );
     }
 
     return (
       <div className="space-y-4">
-        <h4 className="font-semibold text-lg text-amber-600">Outstanding Customer Payments</h4>
+        <h4 className="font-semibold text-lg text-amber-600">
+          Outstanding Customer Payments
+        </h4>
         <div className="space-y-3">
           {data.accountsReceivableBreakdown.map((item, index) => (
-            <div key={item.id || index} className="border rounded-lg p-3 bg-card shadow-sm">
+            <div
+              key={item.id || index}
+              className="border rounded-lg p-3 bg-card shadow-sm"
+            >
               <div className="flex justify-between items-start mb-2">
                 <div className="font-medium text-foreground">
-                  <span className="font-semibold">Customer:</span> {item.customer}
+                  <span className="font-semibold">Customer:</span>{' '}
+                  {item.customer}
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-amber-600">{formatCurrency(item.dueAmount)}</div>
+                  <div className="text-lg font-bold text-amber-600">
+                    {formatCurrency(item.dueAmount)}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {new Date(item.date).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
-                      day: 'numeric'
+                      day: 'numeric',
                     })}
                   </div>
                 </div>
@@ -651,16 +741,25 @@ function AccountsSection({
 
               <div className="grid grid-cols-3 gap-2 text-xs mb-2 pt-2 border-t border-border">
                 <div>
-                  <span className="text-muted-foreground">Total:</span><br />
-                  <span className="font-medium">{formatCurrency(item.totalAmount)}</span>
+                  <span className="text-muted-foreground">Total:</span>
+                  <br />
+                  <span className="font-medium">
+                    {formatCurrency(item.totalAmount)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Paid:</span><br />
-                  <span className="font-medium">{formatCurrency(item.paidAmount)}</span>
+                  <span className="text-muted-foreground">Paid:</span>
+                  <br />
+                  <span className="font-medium">
+                    {formatCurrency(item.paidAmount)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Due:</span><br />
-                  <span className="font-bold text-amber-600">{formatCurrency(item.dueAmount)}</span>
+                  <span className="text-muted-foreground">Due:</span>
+                  <br />
+                  <span className="font-bold text-amber-600">
+                    {formatCurrency(item.dueAmount)}
+                  </span>
                 </div>
               </div>
 
@@ -670,13 +769,29 @@ function AccountsSection({
                 </div>
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {item.items.map((product, idx) => (
-                    <div key={idx} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
-                      <div className="flex-1 truncate pr-2" title={product.product}>
+                    <div
+                      key={idx}
+                      className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0"
+                    >
+                      <div
+                        className="flex-1 truncate pr-2"
+                        title={product.product}
+                      >
                         {product.product}
                       </div>
                       <div className="text-right">
-                        <div>{product.quantity} {product.unit && <sub className="text-muted-foreground">${product.unit}</sub>} × {formatCurrency(product.unitPrice)}</div>
-                        <div className="text-xs text-muted-foreground">= {formatCurrency(product.total)}</div>
+                        <div>
+                          {product.quantity}{' '}
+                          {product.unit && (
+                            <sub className="text-muted-foreground">
+                              ${product.unit}
+                            </sub>
+                          )}{' '}
+                          × {formatCurrency(product.unitPrice)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          = {formatCurrency(product.total)}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -691,27 +806,40 @@ function AccountsSection({
 
   // Helper function to render payable breakdown table
   const renderPayableBreakdown = () => {
-    if (!data.accountsPayableBreakdown || data.accountsPayableBreakdown.length === 0) {
-      return <p className="text-muted-foreground text-sm">No outstanding payables</p>;
+    if (
+      !data.accountsPayableBreakdown ||
+      data.accountsPayableBreakdown.length === 0
+    ) {
+      return (
+        <p className="text-muted-foreground text-sm">No outstanding payables</p>
+      );
     }
 
     return (
       <div className="space-y-4">
-        <h4 className="font-semibold text-lg text-red-600">Outstanding Supplier Payments</h4>
+        <h4 className="font-semibold text-lg text-red-600">
+          Outstanding Supplier Payments
+        </h4>
         <div className="space-y-3">
           {data.accountsPayableBreakdown.map((item, index) => (
-            <div key={item.id || index} className="border rounded-lg p-3 bg-card shadow-sm">
+            <div
+              key={item.id || index}
+              className="border rounded-lg p-3 bg-card shadow-sm"
+            >
               <div className="flex justify-between items-start mb-2">
                 <div className="font-medium text-foreground">
-                  <span className="font-semibold">Supplier:</span> {item.supplier}
+                  <span className="font-semibold">Supplier:</span>{' '}
+                  {item.supplier}
                 </div>
                 <div className="text-right">
-                  <div className="text-lg font-bold text-red-600">{formatCurrency(item.dueAmount)}</div>
+                  <div className="text-lg font-bold text-red-600">
+                    {formatCurrency(item.dueAmount)}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {new Date(item.date).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
-                      day: 'numeric'
+                      day: 'numeric',
                     })}
                   </div>
                 </div>
@@ -719,16 +847,25 @@ function AccountsSection({
 
               <div className="grid grid-cols-3 gap-2 text-xs mb-2 pt-2 border-t border-border">
                 <div>
-                  <span className="text-muted-foreground">Total:</span><br />
-                  <span className="font-medium">{formatCurrency(item.totalAmount)}</span>
+                  <span className="text-muted-foreground">Total:</span>
+                  <br />
+                  <span className="font-medium">
+                    {formatCurrency(item.totalAmount)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Paid:</span><br />
-                  <span className="font-medium">{formatCurrency(item.paidAmount)}</span>
+                  <span className="text-muted-foreground">Paid:</span>
+                  <br />
+                  <span className="font-medium">
+                    {formatCurrency(item.paidAmount)}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">Due:</span><br />
-                  <span className="font-bold text-red-600">{formatCurrency(item.dueAmount)}</span>
+                  <span className="text-muted-foreground">Due:</span>
+                  <br />
+                  <span className="font-bold text-red-600">
+                    {formatCurrency(item.dueAmount)}
+                  </span>
                 </div>
               </div>
 
@@ -738,13 +875,29 @@ function AccountsSection({
                 </div>
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {item.items.map((product, idx) => (
-                    <div key={idx} className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0">
-                      <div className="flex-1 truncate pr-2" title={product.product}>
+                    <div
+                      key={idx}
+                      className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0"
+                    >
+                      <div
+                        className="flex-1 truncate pr-2"
+                        title={product.product}
+                      >
                         {product.product}
                       </div>
                       <div className="text-right">
-                        <div>{product.quantity} {product.unit && <sub className="text-muted-foreground">{product.unit}</sub>} × {formatCurrency(product.unitPrice)}</div>
-                        <div className="text-xs text-muted-foreground">= {formatCurrency(product.total)}</div>
+                        <div>
+                          {product.quantity}{' '}
+                          {product.unit && (
+                            <sub className="text-muted-foreground">
+                              {product.unit}
+                            </sub>
+                          )}{' '}
+                          × {formatCurrency(product.unitPrice)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          = {formatCurrency(product.total)}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -822,11 +975,13 @@ function AccountsSection({
 
 function PerformanceSection({
   data,
-}: { data: ReturnType<typeof useBusinessAnalytics> }) {
+}: {
+  data: ReturnType<typeof useBusinessAnalytics>;
+}) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "NPR",
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'NPR',
       minimumFractionDigits: 2,
     }).format(amount);
   };

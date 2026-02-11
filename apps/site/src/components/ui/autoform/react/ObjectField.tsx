@@ -1,8 +1,8 @@
-import React from "react";
-import { AutoFormField } from "./AutoFormField";
-import { useAutoForm } from "./context";
-import { getLabel, type ParsedField } from "@autoform/core";
-import { formatTestId } from "./utils";
+import React from 'react';
+import { AutoFormField } from './AutoFormField';
+import { useAutoForm } from './context';
+import { getLabel, type ParsedField } from '@autoform/core';
+import { formatTestId } from './utils';
 
 export const ObjectField: React.FC<{
   field: ParsedField;
@@ -19,7 +19,7 @@ export const ObjectField: React.FC<{
     >
       {Object.entries(field.schema!).map(([_key, subField]) => (
         <AutoFormField
-          key={`${path.join(".")}.${subField.key}`}
+          key={`${path.join('.')}.${subField.key}`}
           field={subField}
           path={[...path, subField.key]}
         />

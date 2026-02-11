@@ -1,12 +1,12 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-function scanWifiNetworks() { }
+function scanWifiNetworks() {}
 
-async function connectToWifi() { }
+async function connectToWifi() {}
 
 // Custom hook for WiFi functionality
 export const useWifiNetworks = () => {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   // Query for scanning WiFi networks
   const {
@@ -14,14 +14,14 @@ export const useWifiNetworks = () => {
     error: wifiScanError,
     isLoading: isScanning,
     refetch: scanNetworks,
-    isError: isScanError
+    isError: isScanError,
   } = useQuery({
     queryKey: ['wifi-networks'],
     queryFn: scanWifiNetworks,
     enabled: false, // Don't auto-run, only when requested
     staleTime: 30000, // 30 seconds
-    gcTime: 60000 // 1 minute
-  })
+    gcTime: 60000, // 1 minute
+  });
 
   // Mutation for connecting to WiFi
   const {
@@ -30,14 +30,14 @@ export const useWifiNetworks = () => {
     error: connectError,
     isPending: isConnecting,
     isSuccess: isConnectSuccess,
-    isError: isConnectError
+    isError: isConnectError,
   } = useMutation({
     mutationFn: connectToWifi,
     onSuccess: () => {
       // Invalidate and refetch networks after successful connection
-      queryClient.invalidateQueries({ queryKey: ['wifi-networks'] })
-    }
-  })
+      queryClient.invalidateQueries({ queryKey: ['wifi-networks'] });
+    },
+  });
 
   return {
     // Scan related
@@ -56,6 +56,6 @@ export const useWifiNetworks = () => {
     isConnectError,
 
     // Combined status
-    isLoading: isScanning || isConnecting
-  }
-}
+    isLoading: isScanning || isConnecting,
+  };
+};

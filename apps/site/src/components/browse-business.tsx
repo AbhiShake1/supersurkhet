@@ -1,4 +1,4 @@
-import type React from "react";
+import type React from 'react';
 import {
   Credenza,
   CredenzaBody,
@@ -10,12 +10,15 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
   type CredenzaProps,
-} from "@/components/ui/credenza";
-import { Button } from "./ui/button";
-import { CreateBusiness } from "./create-business";
-import { BusinessList } from "./business-list";
+} from '@/components/ui/credenza';
+import { Button } from './ui/button';
+import { CreateBusiness } from './create-business';
+import { BusinessList } from './business-list';
 
-export function BrowseBusiness({ children, ...props }: { children: React.ReactNode } & CredenzaProps) {
+export function BrowseBusiness({
+  children,
+  ...props
+}: { children: React.ReactNode } & CredenzaProps) {
   return (
     <Credenza>
       <CredenzaTrigger {...props}>{children}</CredenzaTrigger>

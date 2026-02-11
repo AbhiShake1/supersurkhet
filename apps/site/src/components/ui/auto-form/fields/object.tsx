@@ -3,22 +3,22 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { FormField } from "@/components/ui/form";
-import { type useForm, useFormContext } from "react-hook-form";
-import * as z from "zod";
-import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from "../config";
-import type { Dependency, FieldConfig, FieldConfigItem } from "../types";
+} from '@/components/ui/accordion';
+import { FormField } from '@/components/ui/form';
+import { type useForm, useFormContext } from 'react-hook-form';
+import * as z from 'zod';
+import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from '../config';
+import type { Dependency, FieldConfig, FieldConfigItem } from '../types';
 import {
   beautifyObjectName,
   getBaseSchema,
   getBaseType,
   sortFieldsByOrder,
   zodToHtmlInputProps,
-} from "../utils";
-import AutoFormArray from "./array";
-import AutoFormRecord from "./record";
-import resolveDependencies from "../dependencies";
+} from '../utils';
+import AutoFormArray from './array';
+import AutoFormRecord from './record';
+import resolveDependencies from '../dependencies';
 
 function DefaultParent({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
@@ -51,9 +51,9 @@ export default function AutoFormObject<
   }
 
   const handleIfZodNumber = (item: z.ZodAny) => {
-    const isZodNumber = (item as any)._def.typeName === "ZodNumber";
+    const isZodNumber = (item as any)._def.typeName === 'ZodNumber';
     const isInnerZodNumber =
-      (item._def as any).innerType?._def?.typeName === "ZodNumber";
+      (item._def as any).innerType?._def?.typeName === 'ZodNumber';
 
     if (isZodNumber) {
       (item as any)._def.coerce = true;
@@ -73,7 +73,7 @@ export default function AutoFormObject<
         item = handleIfZodNumber(item) as z.ZodAny;
         const zodBaseType = getBaseType(item);
         const itemName = item._def.description ?? beautifyObjectName(name);
-        const key = [...path, name].join(".");
+        const key = [...path, name].join('.');
 
         const {
           isHidden,
@@ -85,7 +85,7 @@ export default function AutoFormObject<
           return null;
         }
 
-        if (zodBaseType === "ZodObject") {
+        if (zodBaseType === 'ZodObject') {
           return (
             <AccordionItem value={name} key={key} className="border-none">
               <AccordionTrigger>{itemName}</AccordionTrigger>
@@ -104,7 +104,7 @@ export default function AutoFormObject<
             </AccordionItem>
           );
         }
-        if (zodBaseType === "ZodArray") {
+        if (zodBaseType === 'ZodArray') {
           return (
             <AutoFormArray
               key={key}
@@ -116,7 +116,7 @@ export default function AutoFormObject<
             />
           );
         }
-        if (zodBaseType === "ZodRecord") {
+        if (zodBaseType === 'ZodRecord') {
           return (
             <AutoFormRecord
               key={key}
@@ -150,10 +150,10 @@ export default function AutoFormObject<
               const inputType =
                 fieldConfigItem.fieldType ??
                 DEFAULT_ZOD_HANDLERS[zodBaseType] ??
-                "fallback";
+                'fallback';
 
               const InputComponent =
-                typeof inputType === "function"
+                typeof inputType === 'function'
                   ? inputType
                   : INPUT_COMPONENTS[inputType];
 
@@ -161,7 +161,7 @@ export default function AutoFormObject<
                 fieldConfigItem.renderParent ?? DefaultParent;
 
               const defaultValue = fieldConfigItem.inputProps?.defaultValue;
-              const value = field.value ?? defaultValue ?? "";
+              const value = field.value ?? defaultValue ?? '';
 
               const fieldProps = {
                 ...zodToHtmlInputProps(item),

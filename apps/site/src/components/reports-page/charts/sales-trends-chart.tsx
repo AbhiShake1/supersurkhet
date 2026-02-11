@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
 
 import {
   Card,
@@ -8,15 +8,15 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp } from "lucide-react";
+} from '@/components/ui/chart';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp } from 'lucide-react';
 
 interface SalesTrendsChartProps {
   data: {
@@ -27,8 +27,8 @@ interface SalesTrendsChartProps {
 
 const chartConfig = {
   revenue: {
-    label: "Revenue",
-    color: "var(--chart-2)",
+    label: 'Revenue',
+    color: 'var(--chart-2)',
   },
 } satisfies ChartConfig;
 
@@ -38,7 +38,8 @@ export function SalesTrendsChart({ data }: SalesTrendsChartProps) {
   if (data.length >= 2) {
     const firstValue = data[0].revenue;
     const lastValue = data[data.length - 1].revenue;
-    growthRate = firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
+    growthRate =
+      firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
   }
 
   return (
@@ -50,12 +51,16 @@ export function SalesTrendsChart({ data }: SalesTrendsChartProps) {
             <Badge
               variant="outline"
               className={`${
-                growthRate > 0 
-                  ? "text-green-500 bg-green-500/10 border-none ml-2" 
-                  : "text-red-500 bg-red-500/10 border-none ml-2"
+                growthRate > 0
+                  ? 'text-green-500 bg-green-500/10 border-none ml-2'
+                  : 'text-red-500 bg-red-500/10 border-none ml-2'
               }`}
             >
-              {growthRate > 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingUp className="h-4 w-4 rotate-180" />}
+              {growthRate > 0 ? (
+                <TrendingUp className="h-4 w-4" />
+              ) : (
+                <TrendingUp className="h-4 w-4 rotate-180" />
+              )}
               <span>{Math.abs(growthRate).toFixed(1)}%</span>
             </Badge>
           )}

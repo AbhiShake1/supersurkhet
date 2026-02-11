@@ -124,7 +124,11 @@ const animations = {
       animate: {
         transformOrigin: 'bottom left',
         rotate: [0, 10, -10, 10, -10, 10, -10, 10, -10, 10, -10, 0],
-        transition: { duration: 0.5, repeat: Number.POSITIVE_INFINITY, repeatType: 'loop' },
+        transition: {
+          duration: 0.5,
+          repeat: Number.POSITIVE_INFINITY,
+          repeatType: 'loop',
+        },
       },
     },
     line2: {
@@ -134,7 +138,11 @@ const animations = {
       animate: {
         transformOrigin: 'top left',
         rotate: [0, 10, -10, 10, -10, 10, -10, 10, -10, 10, -10, 0],
-        transition: { duration: 0.5, repeat: Number.POSITIVE_INFINITY, repeatType: 'loop' },
+        transition: {
+          duration: 0.5,
+          repeat: Number.POSITIVE_INFINITY,
+          repeatType: 'loop',
+        },
       },
     },
     path1: {
@@ -143,7 +151,11 @@ const animations = {
       },
       animate: {
         x: [0, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 0],
-        transition: { duration: 0.5, repeat: Number.POSITIVE_INFINITY, repeatType: 'loop' },
+        transition: {
+          duration: 0.5,
+          repeat: Number.POSITIVE_INFINITY,
+          repeatType: 'loop',
+        },
       },
     },
     path2: {
@@ -152,7 +164,11 @@ const animations = {
       },
       animate: {
         x: [0, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 0],
-        transition: { duration: 0.5, repeat: Number.POSITIVE_INFINITY, repeatType: 'loop' },
+        transition: {
+          duration: 0.5,
+          repeat: Number.POSITIVE_INFINITY,
+          repeatType: 'loop',
+        },
       },
     },
     path3: {},

@@ -1,6 +1,14 @@
-import type { ComponentLayer, ComponentRegistry } from "@/components/ui/ui-builder/types";
-import { commonFieldOverrides } from "./form-field-overrides";
-import { OfferCard, OfferCardSchema, OfferCarousel, OfferCarouselSchema } from '@/components/ui/offer-carousel';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import { commonFieldOverrides } from './form-field-overrides';
+import {
+  OfferCard,
+  OfferCardSchema,
+  OfferCarousel,
+  OfferCarouselSchema,
+} from '@/components/ui/offer-carousel';
 
 export const offerComponentDefinitions: ComponentRegistry = {
   OfferCarousel: {
@@ -8,7 +16,7 @@ export const offerComponentDefinitions: ComponentRegistry = {
     schema: OfferCarouselSchema,
     from: '@/components/ui/offer-carousel',
     fieldOverrides: commonFieldOverrides(),
-    defaultChildren: []
+    defaultChildren: [],
   },
 
   OfferCard: {
@@ -18,4 +26,4 @@ export const offerComponentDefinitions: ComponentRegistry = {
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [],
   },
-}
+};

@@ -1,5 +1,5 @@
-import { type Table as TanstackTable, flexRender } from "@tanstack/react-table";
-import type * as React from "react";
+import { type Table as TanstackTable, flexRender } from '@tanstack/react-table';
+import type * as React from 'react';
 
 import {
   Table,
@@ -8,12 +8,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
-import { getCommonPinningStyles } from "@/lib/data-table";
-import { cn } from "@/lib/utils";
-import { DataTablePagination } from "./data-table-pagination";
+} from '@/components/ui/table';
+import { getCommonPinningStyles } from '@/lib/data-table';
+import { cn } from '@/lib/utils';
+import { DataTablePagination } from './data-table-pagination';
 
-interface DataTableProps<TData> extends React.ComponentProps<"div"> {
+interface DataTableProps<TData> extends React.ComponentProps<'div'> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
 }
@@ -26,10 +26,7 @@ export function DataTable<TData>({
   ...props
 }: DataTableProps<TData>) {
   return (
-    <div
-      className={cn("flex w-full flex-col gap-2.5", className)}
-      {...props}
-    >
+    <div className={cn('flex w-full flex-col gap-2.5', className)} {...props}>
       {children}
       <div className="overflow-x-auto rounded-md border">
         <Table className="min-w-max">
@@ -47,9 +44,9 @@ export function DataTable<TData>({
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -61,7 +58,7 @@ export function DataTable<TData>({
                 <TableRow
                   key={row.id}
                   data-row-id={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

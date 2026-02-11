@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import type React from "react";
-import { type FC, memo, useMemo } from "react";
-import ReactMarkdown, { type Components, type Options } from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import { CodeBlock } from "@/components/ui/ui-builder/components/codeblock";
-import { cn } from "@/lib/utils";
+import type React from 'react';
+import { type FC, memo, useMemo } from 'react';
+import ReactMarkdown, { type Components, type Options } from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import { CodeBlock } from '@/components/ui/ui-builder/components/codeblock';
+import { cn } from '@/lib/utils';
 
 interface MarkdownProps {
   children: string;
@@ -28,7 +28,7 @@ export function Markdown({ children }: MarkdownProps) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(className, "text-blue-500 hover:text-blue-600")}
+            className={cn(className, 'text-blue-500 hover:text-blue-600')}
           >
             {children}
           </a>
@@ -44,25 +44,33 @@ export function Markdown({ children }: MarkdownProps) {
         className: string;
       }) {
         return (
-          <img src={src} alt={alt} className={cn(className, "w-full h-auto")} />
+          <img src={src} alt={alt} className={cn(className, 'w-full h-auto')} />
         );
       },
-      code({ className, children, ...props }: { className: string; children: React.ReactNode;[key: string]: any }) {
-        const match = /language-(\w+)/.exec(className || "");
+      code({
+        className,
+        children,
+        ...props
+      }: {
+        className: string;
+        children: React.ReactNode;
+        [key: string]: any;
+      }) {
+        const match = /language-(\w+)/.exec(className || '');
 
         if (match) {
           return (
             <CodeBlock
               key={Math.random()}
-              language={(match && match[1]) || ""}
-              value={String(children).replace(/\n$/, "")}
+              language={(match && match[1]) || ''}
+              value={String(children).replace(/\n$/, '')}
               {...props}
             />
           );
         }
 
         return (
-          <code className={cn(className, "whitespace-pre-wrap")} {...props}>
+          <code className={cn(className, 'whitespace-pre-wrap')} {...props}>
             {children}
           </code>
         );
@@ -89,7 +97,6 @@ export function Markdown({ children }: MarkdownProps) {
 
 const MemoizedReactMarkdown: FC<Options> = memo(
   ReactMarkdown,
-  (prevProps, nextProps) =>
-    prevProps.children === nextProps.children
+  (prevProps, nextProps) => prevProps.children === nextProps.children,
   // && prevProps.className === nextProps.className
 );

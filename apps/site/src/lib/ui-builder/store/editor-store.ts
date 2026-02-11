@@ -1,15 +1,27 @@
 import { create, type StateCreator } from 'zustand';
-import type { ComponentType as ReactComponentType } from "react";
-import type { RegistryEntry, ComponentRegistry } from '@/components/ui/ui-builder/types';
+import type { ComponentType as ReactComponentType } from 'react';
+import type {
+  RegistryEntry,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
 
 export interface EditorStore {
   previewMode: 'mobile' | 'tablet' | 'desktop' | 'responsive';
-  setPreviewMode: (mode: 'mobile' | 'tablet' | 'desktop' | 'responsive') => void;
+  setPreviewMode: (
+    mode: 'mobile' | 'tablet' | 'desktop' | 'responsive',
+  ) => void;
 
   registry: ComponentRegistry;
 
-  initialize: (registry: ComponentRegistry, persistLayerStoreConfig: boolean, allowPagesCreation: boolean, allowPagesDeletion: boolean) => void;
-  getComponentDefinition: (type: string) => RegistryEntry<ReactComponentType<any>> | undefined;
+  initialize: (
+    registry: ComponentRegistry,
+    persistLayerStoreConfig: boolean,
+    allowPagesCreation: boolean,
+    allowPagesDeletion: boolean,
+  ) => void;
+  getComponentDefinition: (
+    type: string,
+  ) => RegistryEntry<ReactComponentType<any>> | undefined;
 
   persistLayerStoreConfig: boolean;
   setPersistLayerStoreConfig: (shouldPersist: boolean) => void;
@@ -36,23 +48,36 @@ const store: StateCreator<EditorStore, [], []> = (set, get) => ({
 
   registry: {},
 
-  initialize: (registry, persistLayerStoreConfig, allowPagesCreation, allowPagesDeletion) => {
-    set(state => ({ ...state, registry, persistLayerStoreConfig, allowPagesCreation, allowPagesDeletion }));
+  initialize: (
+    registry,
+    persistLayerStoreConfig,
+    allowPagesCreation,
+    allowPagesDeletion,
+  ) => {
+    set((state) => ({
+      ...state,
+      registry,
+      persistLayerStoreConfig,
+      allowPagesCreation,
+      allowPagesDeletion,
+    }));
   },
   getComponentDefinition: (type: string) => {
     const { registry } = get();
     if (!registry) {
-      console.warn("Registry accessed via editor store before initialization.");
+      console.warn('Registry accessed via editor store before initialization.');
       return undefined;
     }
     return registry[type];
   },
 
   persistLayerStoreConfig: true,
-  setPersistLayerStoreConfig: (shouldPersist) => set({ persistLayerStoreConfig: shouldPersist }),
+  setPersistLayerStoreConfig: (shouldPersist) =>
+    set({ persistLayerStoreConfig: shouldPersist }),
 
   revisionCounter: 0,
-  incrementRevision: () => set(state => ({ revisionCounter: state.revisionCounter + 1 })),
+  incrementRevision: () =>
+    set((state) => ({ revisionCounter: state.revisionCounter + 1 })),
 
   allowPagesCreation: true,
   setAllowPagesCreation: (allow) => set({ allowPagesCreation: allow }),

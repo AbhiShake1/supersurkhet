@@ -1,8 +1,8 @@
-import type { IGunInstance } from "gun/types";
-import { mergeOptionsWithDefaults } from "../options";
+import type { IGunInstance } from 'gun/types';
+import { mergeOptionsWithDefaults } from '../options';
 
 export type UseGunOptions = Readonly<{
-  schema: GTAAppConfig["schema"];
+  schema: GTAAppConfig['schema'];
   gun: IGunInstance<any>;
 }>;
 
@@ -27,14 +27,14 @@ export type UseGunHook<F extends AnyFunction> = WithoutMessenger<F> &
 type MessengerFunction<F extends Function> = (messenger: GunHookMessenger) => F;
 
 const useDefaultOptionsMsg =
-  "Please use `setGTADefaultOptions` in your project root outside any component lifecycle.";
+  'Please use `setGTADefaultOptions` in your project root outside any component lifecycle.';
 
 export function createGunHook<F extends Function>(fn: MessengerFunction<F>) {
   const defaultOptions = mergeOptionsWithDefaults({});
   if (!defaultOptions.gun)
-  	throw new Error(`Gun instance not found. ${useDefaultOptionsMsg}`);
+    throw new Error(`Gun instance not found. ${useDefaultOptionsMsg}`);
   if (!defaultOptions.schema)
-  	throw new Error(`Default schema not set. ${useDefaultOptionsMsg}`);
+    throw new Error(`Default schema not set. ${useDefaultOptionsMsg}`);
 
   return Object.assign(fn({ _options: defaultOptions as UseGunOptions }), {
     withOptions: (options: Partial<UseGunOptions>) =>

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import {
   Command,
   CommandEmpty,
@@ -10,13 +10,13 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from '@/components/ui/command';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { ChevronDown, Plus } from "lucide-react";
+} from '@/components/ui/popover';
+import { ChevronDown, Plus } from 'lucide-react';
 
 interface ActionType {
   value: string;
@@ -30,8 +30,8 @@ interface ActionDropdownProps extends React.HTMLAttributes<HTMLDivElement> {
   placeholder?: string;
   triggerText?: string;
   triggerClassName?: string;
-  align?: "start" | "center" | "end";
-  variant?: "default" | "add" | "select";
+  align?: 'start' | 'center' | 'end';
+  variant?: 'default' | 'add' | 'select';
 }
 
 const ActionDropdown = React.forwardRef<HTMLDivElement, ActionDropdownProps>(
@@ -40,27 +40,27 @@ const ActionDropdown = React.forwardRef<HTMLDivElement, ActionDropdownProps>(
       className,
       actionTypes,
       onActionSelect,
-      placeholder = "Search actions...",
-      triggerText = "Select Action",
+      placeholder = 'Search actions...',
+      triggerText = 'Select Action',
       triggerClassName,
-      align = "center",
-      variant = "default",
+      align = 'center',
+      variant = 'default',
       ...props
     },
-    ref
+    ref,
   ) => {
     const [open, setOpen] = React.useState(false);
 
     const getTriggerContent = () => {
       switch (variant) {
-        case "add":
+        case 'add':
           return (
             <>
               <Plus className="mr-2 h-4 w-4" />
               {triggerText}
             </>
           );
-        case "select":
+        case 'select':
           return (
             <>
               {triggerText}
@@ -74,17 +74,21 @@ const ActionDropdown = React.forwardRef<HTMLDivElement, ActionDropdownProps>(
 
     const getTriggerVariant = () => {
       switch (variant) {
-        case "add":
-          return "default";
-        case "select":
-          return "outline";
+        case 'add':
+          return 'default';
+        case 'select':
+          return 'outline';
         default:
-          return "default";
+          return 'default';
       }
     };
 
     return (
-      <div ref={ref} className={cn("flex justify-center", className)} {...props}>
+      <div
+        ref={ref}
+        className={cn('flex justify-center', className)}
+        {...props}
+      >
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
@@ -92,17 +96,17 @@ const ActionDropdown = React.forwardRef<HTMLDivElement, ActionDropdownProps>(
               role="combobox"
               aria-expanded={open}
               className={cn(
-                "justify-between transition-all duration-200 hover:shadow-md",
-                variant === "add" && "w-auto",
-                variant === "select" && "w-full",
-                triggerClassName
+                'justify-between transition-all duration-200 hover:shadow-md',
+                variant === 'add' && 'w-auto',
+                variant === 'select' && 'w-full',
+                triggerClassName,
               )}
             >
               {getTriggerContent()}
             </Button>
           </PopoverTrigger>
-          <PopoverContent 
-            className="w-[280px] p-0 transition-all duration-200" 
+          <PopoverContent
+            className="w-[280px] p-0 transition-all duration-200"
             align={align}
           >
             <Command>
@@ -128,9 +132,11 @@ const ActionDropdown = React.forwardRef<HTMLDivElement, ActionDropdownProps>(
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-medium">{actionType.label}</span>
+                          <span className="font-medium">
+                            {actionType.label}
+                          </span>
                           <span className="text-xs text-muted-foreground">
-                            {actionType.value.replace("_", " ")}
+                            {actionType.value.replace('_', ' ')}
                           </span>
                         </div>
                       </CommandItem>
@@ -143,9 +149,9 @@ const ActionDropdown = React.forwardRef<HTMLDivElement, ActionDropdownProps>(
         </Popover>
       </div>
     );
-  }
+  },
 );
 
-ActionDropdown.displayName = "ActionDropdown";
+ActionDropdown.displayName = 'ActionDropdown';
 
 export { ActionDropdown, type ActionDropdownProps, type ActionType };

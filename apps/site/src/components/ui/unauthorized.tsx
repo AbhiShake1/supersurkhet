@@ -1,18 +1,18 @@
-import { Button } from "@/components/ui/button";
-import { Link, useRouter } from "@tanstack/react-router";
-import { ArrowLeft, Home, Lock } from "lucide-react";
+import { Button } from '@/components/ui/button';
+import { Link, useRouter } from '@tanstack/react-router';
+import { ArrowLeft, Home, Lock } from 'lucide-react';
 
 interface UnauthorizedProps {
   title?: string;
   description?: string;
 }
 
-export function Illustration(props: React.ComponentPropsWithoutRef<"svg">) {
+export function Illustration(props: React.ComponentPropsWithoutRef<'svg'>) {
   return <Lock {...props} />;
 }
 
 export function Unauthorized({
-  title = "Access denied",
+  title = 'Access denied',
   description = "You don't have permission to access this page.",
 }: UnauthorizedProps) {
   const router = useRouter();

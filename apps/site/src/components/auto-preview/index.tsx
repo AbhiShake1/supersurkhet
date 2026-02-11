@@ -1,19 +1,24 @@
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import type { ParsedField } from "@autoform/core";
-import type { ZodObjectOrWrapped } from "@autoform/zod";
-import { CheckCircle2, ExternalLink, FileText, Star, XCircle } from "lucide-react";
-import type { FC, ReactNode } from "react";
-import { z } from "zod";
-import { AutoTable } from "../auto-table";
-import type { fieldConfig } from "../ui/autoform";
-import { Drawer, DrawerContent, DrawerTrigger } from "../ui/drawer";
-import { CredenzaBody } from "../ui/credenza";
-import React from "react";
-import { useDrawer } from "@/contexts/dialog-context";
-import { MapPreview } from "../ui/autoform/components/MapPreview";
-type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]["fieldType"]>;
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import type { ParsedField } from '@autoform/core';
+import type { ZodObjectOrWrapped } from '@autoform/zod';
+import {
+  CheckCircle2,
+  ExternalLink,
+  FileText,
+  Star,
+  XCircle,
+} from 'lucide-react';
+import type { FC, ReactNode } from 'react';
+import { z } from 'zod';
+import { AutoTable } from '../auto-table';
+import type { fieldConfig } from '../ui/autoform';
+import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
+import { CredenzaBody } from '../ui/credenza';
+import { useDrawer } from '@/contexts/dialog-context';
+import { MapPreview } from '../ui/autoform/components/MapPreview';
+type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]['fieldType']>;
 
 export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
   value: T;
@@ -40,7 +45,12 @@ const DatePreview: AutoPreviewComponent<Date> = ({ value }) => {
   if (!value) return <span className="text-muted-foreground">-</span>;
 
   // If value is a string, try to parse it
-  const date = typeof value === 'string' ? new Date(value) : typeof value === 'number' ? new Date(value) : value;
+  const date =
+    typeof value === 'string'
+      ? new Date(value)
+      : typeof value === 'number'
+        ? new Date(value)
+        : value;
 
   if (Number.isNaN(date.getTime())) {
     return <span className="text-muted-foreground">Invalid Date</span>;
@@ -53,7 +63,7 @@ const DatePreview: AutoPreviewComponent<Date> = ({ value }) => {
         month: 'short',
         day: 'numeric',
         hour: '2-digit',
-        minute: '2-digit'
+        minute: '2-digit',
       })}
     </span>
   );
@@ -86,11 +96,11 @@ const SelectPreview: AutoPreviewComponent<string> = ({ value }) => value;
 const StringPreview: AutoPreviewComponent<string> = ({ value }) => <>{value}</>;
 const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
   if (!value) return null;
-  if (!("#" in value)) return null;
-  if (typeof value["#"] !== "string") return null;
+  if (!('#' in value)) return null;
+  if (typeof value['#'] !== 'string') return null;
   const isEffect = schema instanceof z.ZodEffects;
   if (!isEffect) return null;
-  const fullKey = value["#"];
+  const fullKey = value['#'];
   const parsedSchema = schema.innerType()._def.valueType;
   return (
     <Drawer>
@@ -108,23 +118,39 @@ const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
 
 const ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
   if (!value) return null;
-  const fullKey = (value as any)?.["#"] as string;
+  const fullKey = (value as any)?.['#'] as string;
   if (!fullKey) return null;
-  const arraySchema: z.ZodArray<any> = schema instanceof z.ZodEffects ? schema.innerType() : schema;
-  const parsedSchema = arraySchema._def.type || arraySchema._def.innerType
-  const { openDialog } = useDrawer()
+  const arraySchema: z.ZodArray<any> =
+    schema instanceof z.ZodEffects ? schema.innerType() : schema;
+  const parsedSchema = arraySchema._def.type || arraySchema._def.innerType;
+  const { openDialog } = useDrawer();
 
-  return <Button
-    variant="ghost"
-    className="h-auto w-full"
-    onClick={() => openDialog({ children: <AutoTable parsedSchema={parsedSchema} readOnly treatSlugAsAbsolute data={value} /> })}
-  >
-    Click to expand
-  </Button>
-}
+  return (
+    <Button
+      variant="ghost"
+      className="h-auto w-full"
+      onClick={() =>
+        openDialog({
+          children: (
+            <AutoTable
+              parsedSchema={parsedSchema}
+              readOnly
+              treatSlugAsAbsolute
+              data={value}
+            />
+          ),
+        })
+      }
+    >
+      Click to expand
+    </Button>
+  );
+};
 
 const PhonePreview: AutoPreviewComponent<string> = ({ value }) => {
-  return <>{value ? value.replace(/(\d{3})(\d{3})(\d{4})/, "($1) $2-$3") : "-"}</>;
+  return (
+    <>{value ? value.replace(/(\d{3})(\d{3})(\d{4})/, '($1) $2-$3') : '-'}</>
+  );
 };
 
 const UrlPreview: AutoPreviewComponent<string> = ({ value }) => {
@@ -166,7 +192,7 @@ const FilePreview: AutoPreviewComponent<string> = ({ value }) => {
   if (!value) return <span className="text-muted-foreground">-</span>;
 
   // Extract filename from path
-  const fileName = value.split("/").pop() || value;
+  const fileName = value.split('/').pop() || value;
 
   return (
     <div className="flex items-center gap-2">
@@ -185,10 +211,11 @@ const RatingPreview: AutoPreviewComponent<number> = ({ value }) => {
         {Array.from({ length: 5 }).map((_, i) => (
           <Star
             key={i}
-            className={`h-4 w-4 ${i < Math.floor(value)
-              ? "fill-yellow-400 text-yellow-400"
-              : "text-gray-300"
-              }`}
+            className={`h-4 w-4 ${
+              i < Math.floor(value)
+                ? 'fill-yellow-400 text-yellow-400'
+                : 'text-gray-300'
+            }`}
           />
         ))}
       </div>
@@ -242,9 +269,9 @@ const CurrencyPreview: AutoPreviewComponent<number> = ({ value }) => {
 
   return (
     <span className="font-medium">
-      {new Intl.NumberFormat("en-US", {
-        style: "currency",
-        currency: "USD",
+      {new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
       }).format(value)}
     </span>
   );
@@ -259,7 +286,7 @@ const BooleanPreview: AutoPreviewComponent<boolean> = ({ value }) => {
 };
 
 const autoPreviewComponents: Record<
-  FieldType | "fallback",
+  FieldType | 'fallback',
   AutoPreviewComponent<any>
 > = {
   boolean: BooleanPreview,
@@ -270,7 +297,7 @@ const autoPreviewComponents: Record<
   select: SelectPreview,
   string: StringPreview,
   record: RecordPreview,
-  password: () => "********",
+  password: () => '********',
   richText: StringPreview,
   editor: StringPreview,
   color: ColorPreview,
@@ -284,11 +311,12 @@ const autoPreviewComponents: Record<
   timestamp: DatePreview,
   unit: UnitPreview,
   map: MapPreview,
-  permissions: ({ value }) => `${value?.length ?? Object.keys(value).length} Permissions`,
+  permissions: ({ value }) =>
+    `${value?.length ?? Object.keys(value).length} Permissions`,
   fallback: (props) => {
-    if (typeof props.value === "object" && Array.isArray(props.value)) {
-      return <ArrayPreview value={props.value} schema={props.schema} />
+    if (typeof props.value === 'object' && Array.isArray(props.value)) {
+      return <ArrayPreview value={props.value} schema={props.schema} />;
     }
-    return "-"
+    return '-';
   },
 };

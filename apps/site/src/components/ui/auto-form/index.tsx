@@ -1,32 +1,29 @@
-import { Form } from "@/components/ui/form";
-import React from "react";
+import { Form } from '@/components/ui/form';
+import React from 'react';
 import {
   type DefaultValues,
   type FormState,
   useForm,
   type UseFormReturn,
-} from "react-hook-form";
-import type { z } from "zod";
+} from 'react-hook-form';
+import type { z } from 'zod';
 
-import { Button, type ButtonProps } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Button, type ButtonProps } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { zodResolver } from '@hookform/resolvers/zod';
 
-import AutoFormObject from "./fields/object";
-import type { Dependency, FieldConfig } from "./types";
+import AutoFormObject from './fields/object';
+import type { Dependency, FieldConfig } from './types';
 import {
   getDefaultValues,
   getObjectFormSchema,
   type ZodObjectOrWrapped,
-} from "./utils";
+} from './utils';
 
-export function AutoFormSubmit({
-  children,
-  ...props
-}: ButtonProps) {
+export function AutoFormSubmit({ children, ...props }: ButtonProps) {
   return (
     <Button type="submit" {...props}>
-      {children ?? "Submit"}
+      {children ?? 'Submit'}
     </Button>
   );
 }
@@ -46,20 +43,20 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
   values?: Partial<z.infer<SchemaType>>;
   onValuesChange?: (
     values: Partial<z.infer<SchemaType>>,
-    form: UseFormReturn<z.infer<SchemaType>>
+    form: UseFormReturn<z.infer<SchemaType>>,
   ) => void;
   onParsedValuesChange?: (
     values: Partial<z.infer<SchemaType>>,
-    form: UseFormReturn<z.infer<SchemaType>>
+    form: UseFormReturn<z.infer<SchemaType>>,
   ) => void;
   onSubmit?: (
     values: z.infer<SchemaType>,
-    form: UseFormReturn<z.infer<SchemaType>>
+    form: UseFormReturn<z.infer<SchemaType>>,
   ) => void;
   fieldConfig?: FieldConfig<z.infer<SchemaType>>;
   children?:
-  | React.ReactNode
-  | ((formState: FormState<z.infer<SchemaType>>) => React.ReactNode);
+    | React.ReactNode
+    | ((formState: FormState<z.infer<SchemaType>>) => React.ReactNode);
   className?: string;
   dependencies?: Dependency<z.infer<SchemaType>>[];
 }) {
@@ -93,7 +90,7 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
   }, [form, formSchema, onValuesChangeProp, onParsedValuesChange]);
 
   const renderChildren =
-    typeof children === "function"
+    typeof children === 'function'
       ? children(form.formState as FormState<z.infer<SchemaType>>)
       : children;
 
@@ -104,7 +101,7 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
           onSubmit={(e) => {
             form.handleSubmit(onSubmit)(e);
           }}
-          className={cn("space-y-5", className)}
+          className={cn('space-y-5', className)}
         >
           <AutoFormObject
             schema={objectFormSchema}

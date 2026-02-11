@@ -1,9 +1,9 @@
-import { AutoKanban } from "@/components/auto-admin";
-import type { AdminComponent } from ".";
-import type { Order } from "@/lib/schema";
-import { api } from "@/lib/api";
-import { useMemo, useState } from "react";
-import { cn, recordToList, soulToId } from "@/lib/utils";
+import { AutoKanban } from '@/components/auto-admin';
+import type { AdminComponent } from '.';
+import type { Order } from '@/lib/schema';
+import { api } from '@/lib/api';
+import { useMemo, useState } from 'react';
+import { cn, recordToList, soulToId } from '@/lib/utils';
 import {
   Credenza,
   CredenzaBody,
@@ -11,11 +11,11 @@ import {
   CredenzaDescription,
   CredenzaHeader,
   CredenzaTitle,
-} from "../credenza";
-import { AddRowDialog } from "@/components/auto-admin/add-row-dialog";
-import { Plus } from "lucide-react";
-import { formatCurrency } from "@/lib/intl";
-import { Tooltip, TooltipContent, TooltipTrigger } from "../tooltip";
+} from '../credenza';
+import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
+import { Plus } from 'lucide-react';
+import { formatCurrency } from '@/lib/intl';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 
 export const OrderKanban: AdminComponent = ({ slug }) => {
   return (
@@ -34,9 +34,9 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
         groupKey="orderStatus"
         schema="order"
         isItemLocked={(order) =>
-          order.orderStatus === "done" ||
-          order.orderStatus === "completed" ||
-          order.orderStatus === "cancelled"
+          order.orderStatus === 'done' ||
+          order.orderStatus === 'completed' ||
+          order.orderStatus === 'cancelled'
         }
       />
     </div>
@@ -44,14 +44,17 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
 };
 
 function OrderCard({ order, slug }: { order: Order; slug: string }) {
-  const { data: customers = [] } = api.customer.useGet({ keys: [slug] })
+  const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
   const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
-  const customerById = useMemo(() => new Map(customers.map(c => [c._?.soul, c])), []);
+  const customerById = useMemo(
+    () => new Map(customers.map((c) => [c._?.soul, c])),
+    [],
+  );
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
 
   const productById = useMemo(
     () => new Map(products.map((p) => [p._?.soul, p])),
-    [products]
+    [products],
   );
 
   const [open, setOpen] = useState(false);
@@ -60,40 +63,40 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
 
   function getBackgroundProps() {
     switch (order.orderStatus) {
-      case "pending":
+      case 'pending':
         return {
           className:
-            "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300",
+            'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
         };
-      case "preparing":
+      case 'preparing':
         return {
           className:
-            "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+            'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
         };
-      case "ready":
+      case 'ready':
         return {
           className:
-            "bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
+            'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
         };
-      case "served":
+      case 'served':
         return {
           className:
-            "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
+            'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
         };
-      case "cancelled":
+      case 'cancelled':
         return {
-          className: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+          className: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
         };
-      case "confirmed":
+      case 'confirmed':
         return {
           className:
-            "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
+            'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
         };
 
       default:
         return {
-          className: ""
-        }
+          className: '',
+        };
     }
   }
 
@@ -113,9 +116,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <span className="text-right font-semibold">Order ID:</span>
-                <span className="col-span-3">
-                  {soulToId(order._?.soul)}
-                </span>
+                <span className="col-span-3">{soulToId(order._?.soul)}</span>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <span className="text-right font-semibold">Items:</span>
@@ -127,7 +128,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                     return (
                       <div key={item._?.soul} className="flex justify-between">
                         <span>
-                          <span className="font-bold">{item.quantity}x</span>{" "}
+                          <span className="font-bold">{item.quantity}x</span>{' '}
                           {productById.get(item.product)?.title}
                         </span>
                         <span className="font-bold">
@@ -141,7 +142,10 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               {order.customerId && (
                 <div className="grid grid-cols-4 items-center gap-4">
                   <span className="text-right font-semibold">Customer:</span>
-                  <span className="col-span-3">{customerById.get(order.customerId)?.name}</span>                </div>
+                  <span className="col-span-3">
+                    {customerById.get(order.customerId)?.name}
+                  </span>{' '}
+                </div>
               )}
               {order.subTotal && (
                 <div className="grid grid-cols-4 items-center gap-4">
@@ -227,25 +231,31 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
       <div
         className={cn(
           className,
-          "rounded-md border bg-card p-3 shadow-xs flex flex-col gap-2",
+          'rounded-md border bg-card p-3 shadow-xs flex flex-col gap-2',
         )}
         onClick={() => setOpen(true)}
       >
-        <div className={cn("flex items-center justify-between gap-2")}>
+        <div className={cn('flex items-center justify-between gap-2')}>
           <span className="line-clamp-1 font-medium text-sm">
             {orderItems
               .map((i) => menuItems.find((m) => m?._?.soul === i._?.soul))
               .map((m) => m?.name)
               .filter((m) => !!m)
-              .join(", ")}
+              .join(', ')}
           </span>
           <div className="flex items-center justify-between gap-2">
             {/* Truncated items preview */}
             <span className="line-clamp-1 font-medium text-sm">
-              {orderItems.slice(0, 3)
-                .map((i) => `${i.quantity}x ${productById.get(i.product)?.title ?? "Unknown"}`)
-                .join(", ")}
-              {orderItems.length > 3 ? ` ...and ${orderItems.length - 3} more` : ""}
+              {orderItems
+                .slice(0, 3)
+                .map(
+                  (i) =>
+                    `${i.quantity}x ${productById.get(i.product)?.title ?? 'Unknown'}`,
+                )
+                .join(', ')}
+              {orderItems.length > 3
+                ? ` ...and ${orderItems.length - 3} more`
+                : ''}
             </span>
 
             <Tooltip>
@@ -258,12 +268,11 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
               <TooltipContent className="max-w-xs">
                 <div className="flex flex-col gap-2 justify-between w-full">
                   {orderItems.map((item) => (
-                    <div
-                      key={item._?.soul}
-                    >
+                    <div key={item._?.soul}>
                       <div className=" flex justify-between gap-2">
                         <span className="font-medium">
-                          {item.quantity}x {productById.get(item.product)?.title ?? "Unknown"}
+                          {item.quantity}x{' '}
+                          {productById.get(item.product)?.title ?? 'Unknown'}
                         </span>
                         <span className="font-bold">
                           {formatCurrency(item.quantity * item.unitPrice)}
@@ -274,10 +283,9 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                 </div>
               </TooltipContent>
             </Tooltip>
-
           </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 }

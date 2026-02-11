@@ -1,32 +1,34 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus,
   Search,
   Edit,
-  Trash2, Stethoscope,
+  Trash2,
+  Stethoscope,
   User,
-  Calendar, Users,
+  Calendar,
+  Users,
   Star,
   Phone,
   Mail,
   Check,
-  X
-} from "lucide-react";
-import { toast } from "sonner";
-import type { AdminComponent } from "@/components/ui/admin";
+  X,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { AdminComponent } from '@/components/ui/admin';
 
 interface Service {
   id: string;
@@ -66,77 +68,77 @@ interface Appointment {
   serviceId: string;
   serviceName: string;
   dateTime: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   active: boolean;
 }
 
 const mockServices: Service[] = [
   {
-    id: "1",
-    name: "General Consultation",
+    id: '1',
+    name: 'General Consultation',
     description:
-      "Comprehensive health assessment and diagnosis by experienced physicians",
-    department: "General Medicine",
-    duration: "30 mins",
+      'Comprehensive health assessment and diagnosis by experienced physicians',
+    department: 'General Medicine',
+    duration: '30 mins',
     active: true,
   },
   {
-    id: "2",
-    name: "Dental Care",
+    id: '2',
+    name: 'Dental Care',
     description:
-      "Complete dental care including cleaning, filling, and cosmetic dentistry",
-    department: "Dentistry",
-    duration: "45 mins",
+      'Complete dental care including cleaning, filling, and cosmetic dentistry',
+    department: 'Dentistry',
+    duration: '45 mins',
     active: true,
   },
   {
-    id: "3",
-    name: "Diagnostic Imaging",
-    description: "Advanced imaging services including X-ray, CT Scan, and MRI",
-    department: "Radiology",
-    duration: "Varies",
+    id: '3',
+    name: 'Diagnostic Imaging',
+    description: 'Advanced imaging services including X-ray, CT Scan, and MRI',
+    department: 'Radiology',
+    duration: 'Varies',
     active: false,
   },
   {
-    id: "4",
-    name: "Laboratory Services",
-    description: "Comprehensive pathology testing with quick turnaround time",
-    department: "Pathology",
-    duration: "Same day",
+    id: '4',
+    name: 'Laboratory Services',
+    description: 'Comprehensive pathology testing with quick turnaround time',
+    department: 'Pathology',
+    duration: 'Same day',
     active: true,
   },
 ];
 
 const mockDoctors: Doctor[] = [
   {
-    id: "1",
-    name: "Dr. Rajesh K.C.",
-    specialization: "General Physician",
-    experience: "15+ years",
+    id: '1',
+    name: 'Dr. Rajesh K.C.',
+    specialization: 'General Physician',
+    experience: '15+ years',
     rating: 4.9,
     active: true,
   },
   {
-    id: "2",
-    name: "Dr. Sunita Thapa",
-    specialization: "Dentist",
-    experience: "12+ years",
+    id: '2',
+    name: 'Dr. Sunita Thapa',
+    specialization: 'Dentist',
+    experience: '12+ years',
     rating: 4.8,
     active: true,
   },
   {
-    id: "3",
-    name: "Dr. Amit Shah",
-    specialization: "Pediatrician",
-    experience: "10+ years",
+    id: '3',
+    name: 'Dr. Amit Shah',
+    specialization: 'Pediatrician',
+    experience: '10+ years',
     rating: 5.0,
     active: false,
   },
   {
-    id: "4",
-    name: "Dr. Priya Gurung",
-    specialization: "Gynecologist",
-    experience: "8+ years",
+    id: '4',
+    name: 'Dr. Priya Gurung',
+    specialization: 'Gynecologist',
+    experience: '8+ years',
     rating: 4.7,
     active: true,
   },
@@ -144,94 +146,94 @@ const mockDoctors: Doctor[] = [
 
 const mockPatients: Patient[] = [
   {
-    id: "1",
-    name: "Ram Bahadur",
+    id: '1',
+    name: 'Ram Bahadur',
     age: 45,
-    gender: "Male",
-    phone: "+977-98XXXXXXXX",
-    email: "ram@example.com",
-    lastVisit: "2025-08-15",
+    gender: 'Male',
+    phone: '+977-98XXXXXXXX',
+    email: 'ram@example.com',
+    lastVisit: '2025-08-15',
     active: true,
   },
   {
-    id: "2",
-    name: "Sita Kumari",
+    id: '2',
+    name: 'Sita Kumari',
     age: 32,
-    gender: "Female",
-    phone: "+977-98XXXXXXXX",
-    email: "sita@example.com",
-    lastVisit: "2025-08-10",
+    gender: 'Female',
+    phone: '+977-98XXXXXXXX',
+    email: 'sita@example.com',
+    lastVisit: '2025-08-10',
     active: true,
   },
   {
-    id: "3",
-    name: "Hari Prasad",
+    id: '3',
+    name: 'Hari Prasad',
     age: 67,
-    gender: "Male",
-    phone: "+977-98XXXXXXXX",
-    email: "hari@example.com",
-    lastVisit: "2025-07-22",
+    gender: 'Male',
+    phone: '+977-98XXXXXXXX',
+    email: 'hari@example.com',
+    lastVisit: '2025-07-22',
     active: false,
   },
   {
-    id: "4",
-    name: "Gita Devi",
+    id: '4',
+    name: 'Gita Devi',
     age: 28,
-    gender: "Female",
-    phone: "+977-98XXXXXXXX",
-    email: "gita@example.com",
-    lastVisit: "2025-08-18",
+    gender: 'Female',
+    phone: '+977-98XXXXXXXX',
+    email: 'gita@example.com',
+    lastVisit: '2025-08-18',
     active: true,
   },
 ];
 
 const mockAppointments: Appointment[] = [
   {
-    id: "1",
-    patientId: "1",
-    patientName: "Ram Bahadur",
-    doctorId: "1",
-    doctorName: "Dr. Rajesh K.C.",
-    serviceId: "1",
-    serviceName: "General Consultation",
-    dateTime: "2025-08-25T10:00:00",
-    status: "confirmed",
+    id: '1',
+    patientId: '1',
+    patientName: 'Ram Bahadur',
+    doctorId: '1',
+    doctorName: 'Dr. Rajesh K.C.',
+    serviceId: '1',
+    serviceName: 'General Consultation',
+    dateTime: '2025-08-25T10:00:00',
+    status: 'confirmed',
     active: true,
   },
   {
-    id: "2",
-    patientId: "2",
-    patientName: "Sita Kumari",
-    doctorId: "2",
-    doctorName: "Dr. Sunita Thapa",
-    serviceId: "2",
-    serviceName: "Dental Care",
-    dateTime: "2025-08-25T14:00:00",
-    status: "pending",
+    id: '2',
+    patientId: '2',
+    patientName: 'Sita Kumari',
+    doctorId: '2',
+    doctorName: 'Dr. Sunita Thapa',
+    serviceId: '2',
+    serviceName: 'Dental Care',
+    dateTime: '2025-08-25T14:00:00',
+    status: 'pending',
     active: true,
   },
   {
-    id: "3",
-    patientId: "4",
-    patientName: "Gita Devi",
-    doctorId: "4",
-    doctorName: "Dr. Priya Gurung",
-    serviceId: "1",
-    serviceName: "General Consultation",
-    dateTime: "2025-08-26T11:00:00",
-    status: "completed",
+    id: '3',
+    patientId: '4',
+    patientName: 'Gita Devi',
+    doctorId: '4',
+    doctorName: 'Dr. Priya Gurung',
+    serviceId: '1',
+    serviceName: 'General Consultation',
+    dateTime: '2025-08-26T11:00:00',
+    status: 'completed',
     active: true,
   },
   {
-    id: "4",
-    patientId: "3",
-    patientName: "Hari Prasad",
-    doctorId: "1",
-    doctorName: "Dr. Rajesh K.C.",
-    serviceId: "1",
-    serviceName: "General Consultation",
-    dateTime: "2025-08-26T16:00:00",
-    status: "cancelled",
+    id: '4',
+    patientId: '3',
+    patientName: 'Hari Prasad',
+    doctorId: '1',
+    doctorName: 'Dr. Rajesh K.C.',
+    serviceId: '1',
+    serviceName: 'General Consultation',
+    dateTime: '2025-08-26T16:00:00',
+    status: 'cancelled',
     active: false,
   },
 ];
@@ -243,10 +245,10 @@ export const HealthcareManagement: AdminComponent = () => {
       doctors={mockDoctors}
       patients={mockPatients}
       appointments={mockAppointments}
-      onAddService={() => { }}
-      onAddDoctor={() => { }}
-      onAddPatient={() => { }}
-      onAddAppointment={() => { }}
+      onAddService={() => {}}
+      onAddDoctor={() => {}}
+      onAddPatient={() => {}}
+      onAddAppointment={() => {}}
     />
   );
 };
@@ -272,8 +274,8 @@ function _HealthcareManagement({
   patients,
   appointments,
 }: HealthcareManagementProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState("services");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState('services');
 
   const filteredServices = services.filter((service) => {
     return (
@@ -320,47 +322,47 @@ function _HealthcareManagement({
 
   const toggleServiceActive = (id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Service ${active ? "activated" : "deactivated"}`);
+    toast.success(`Service ${active ? 'activated' : 'deactivated'}`);
   };
 
   const toggleDoctorActive = (id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Doctor ${active ? "activated" : "deactivated"}`);
+    toast.success(`Doctor ${active ? 'activated' : 'deactivated'}`);
   };
 
   const togglePatientActive = (id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Patient ${active ? "activated" : "deactivated"}`);
+    toast.success(`Patient ${active ? 'activated' : 'deactivated'}`);
   };
 
   const toggleAppointmentActive = (id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Appointment ${active ? "activated" : "deactivated"}`);
+    toast.success(`Appointment ${active ? 'activated' : 'deactivated'}`);
   };
 
   const deleteService = (id: string) => {
     // In a real implementation, this would delete the service from GunDB
-    toast.success("Service removed");
+    toast.success('Service removed');
   };
 
   const deleteDoctor = (id: string) => {
     // In a real implementation, this would delete the doctor from GunDB
-    toast.success("Doctor removed");
+    toast.success('Doctor removed');
   };
 
   const deletePatient = (id: string) => {
     // In a real implementation, this would delete the patient from GunDB
-    toast.success("Patient removed");
+    toast.success('Patient removed');
   };
 
   const deleteAppointment = (id: string) => {
     // In a real implementation, this would delete the appointment from GunDB
-    toast.success("Appointment removed");
+    toast.success('Appointment removed');
   };
 
   const updateAppointmentStatus = (
     id: string,
-    status: Appointment["status"],
+    status: Appointment['status'],
   ) => {
     // In a real implementation, this would update the appointment status in GunDB
     toast.success(`Appointment ${status}`);
@@ -456,7 +458,7 @@ function _HealthcareManagement({
                   Pending Appointments
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {appointments.filter((a) => a.status === "pending").length}
+                  {appointments.filter((a) => a.status === 'pending').length}
                 </p>
               </div>
               <Calendar className="w-8 h-8 text-purple-500" />
@@ -516,7 +518,7 @@ function _HealthcareManagement({
             {filteredServices.map((service) => (
               <Card
                 key={service.id}
-                className={`${!service.active ? "opacity-60" : ""}`}
+                className={`${!service.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -550,7 +552,7 @@ function _HealthcareManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {service.active ? "Active" : "Inactive"}
+                        {service.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -595,7 +597,7 @@ function _HealthcareManagement({
             {filteredDoctors.map((doctor) => (
               <Card
                 key={doctor.id}
-                className={`${!doctor.active ? "opacity-60" : ""}`}
+                className={`${!doctor.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -614,10 +616,11 @@ function _HealthcareManagement({
                           {[...Array(5)].map((_, i) => (
                             <Star
                               key={i}
-                              className={`w-3 h-3 ${i < Math.floor(doctor.rating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                                }`}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(doctor.rating)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
                             />
                           ))}
                           <span className="text-xs ml-1">{doctor.rating}</span>
@@ -640,7 +643,7 @@ function _HealthcareManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {doctor.active ? "Active" : "Inactive"}
+                        {doctor.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -685,7 +688,7 @@ function _HealthcareManagement({
             {filteredPatients.map((patient) => (
               <Card
                 key={patient.id}
-                className={`${!patient.active ? "opacity-60" : ""}`}
+                className={`${!patient.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -726,7 +729,7 @@ function _HealthcareManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {patient.active ? "Active" : "Inactive"}
+                        {patient.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -771,7 +774,7 @@ function _HealthcareManagement({
             {filteredAppointments.map((appointment) => (
               <Card
                 key={appointment.id}
-                className={`${!appointment.active ? "opacity-60" : ""}`}
+                className={`${!appointment.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -798,38 +801,39 @@ function _HealthcareManagement({
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${appointment.status === "pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : appointment.status === "confirmed"
-                          ? "bg-blue-100 text-blue-800"
-                          : appointment.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        appointment.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : appointment.status === 'confirmed'
+                            ? 'bg-blue-100 text-blue-800'
+                            : appointment.status === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                      }`}
                     >
                       {appointment.status.charAt(0).toUpperCase() +
                         appointment.status.slice(1)}
                     </span>
 
                     <div className="flex items-center gap-1">
-                      {appointment.status === "pending" && (
+                      {appointment.status === 'pending' && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            updateAppointmentStatus(appointment.id, "confirmed")
+                            updateAppointmentStatus(appointment.id, 'confirmed')
                           }
                           className="text-green-600 hover:text-green-700"
                         >
                           <Check className="w-4 h-4" />
                         </Button>
                       )}
-                      {appointment.status === "confirmed" && (
+                      {appointment.status === 'confirmed' && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            updateAppointmentStatus(appointment.id, "completed")
+                            updateAppointmentStatus(appointment.id, 'completed')
                           }
                           className="text-green-600 hover:text-green-700"
                         >
@@ -840,7 +844,7 @@ function _HealthcareManagement({
                         variant="ghost"
                         size="sm"
                         onClick={() =>
-                          updateAppointmentStatus(appointment.id, "cancelled")
+                          updateAppointmentStatus(appointment.id, 'cancelled')
                         }
                         className="text-red-600 hover:text-red-700"
                       >

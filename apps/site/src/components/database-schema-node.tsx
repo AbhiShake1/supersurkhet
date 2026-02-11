@@ -1,11 +1,11 @@
-import React, { type ReactNode } from "react";
+import React, { type ReactNode } from 'react';
 
 import {
   BaseNode,
   BaseNodeContent,
   BaseNodeHeader,
-} from "@/components/base-node";
-import { TableBody, TableRow, TableCell } from "@/components/ui/table";
+} from '@/components/base-node';
+import { TableBody, TableRow, TableCell } from '@/components/ui/table';
 
 /* DATABASE SCHEMA NODE HEADER ------------------------------------------------ */
 /**
@@ -60,7 +60,7 @@ export const DatabaseSchemaTableRow = ({
   className,
 }: DatabaseSchemaTableRowProps) => {
   return (
-    <TableRow className={`relative text-xs ${className || ""}`}>
+    <TableRow className={`relative text-xs ${className || ''}`}>
       {children}
     </TableRow>
   );

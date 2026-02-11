@@ -1,7 +1,8 @@
-import { z } from "zod";
-import type { SchemaKeys } from "..";
-import type { appSchema } from "@/lib/schema";
-import _ from "lodash";
+import { z } from 'zod';
+import { type SchemaKeys } from '..';
+import type { appSchema } from '@/lib/schema';
+import { GUN_PREFIX } from "../utils/mergeKeys";
+import _ from 'lodash';
 
 export type ParseOptions = {
   key: SchemaKeys;
@@ -10,46 +11,47 @@ export type ParseOptions = {
 };
 
 function _parse<P extends ParseOptions>(
-  key: P["key"],
-  obj: P["obj"],
-  schema: P["shape"],
-  parser: (shape: P["shape"], obj: P["obj"]) => any,
+  key: P['key'],
+  obj: P['obj'],
+  schema: P['shape'],
+  parser: (shape: P['shape'], obj: P['obj']) => any,
 ) {
-  const keys = key.split("/");
+  const keys = key.split('/');
 
   const [head, ...tail] = keys;
 
-  const innerSchema = getShape(schema)[head as keyof P["shape"]];
+  const innerSchema = getShape(schema)[head as keyof P['shape']];
 
   if (!head?.length || !innerSchema) return parser(schema, obj);
 
-  return _parse(tail.join("/") as P["key"], obj, innerSchema, parser);
+  return _parse(tail.join('/') as P['key'], obj, innerSchema, parser);
 }
 
 export function parseNestedZodShape<P extends ParseOptions>(
-  key: P["key"],
-  obj: P["obj"],
-  baseSchema: P["shape"],
+  key: P['key'],
+  obj: P['obj'],
+  baseSchema: P['shape'],
 ) {
   return _parse(key, obj, baseSchema, (shape, o) => getShape(shape).parse(o));
 }
 
-type UnwrapObject<S> =
-  S extends z.ZodEffects<
-    z.ZodObject<infer Shape, infer UK, infer Catchall, infer Out, infer In>
-  >
+type UnwrapObject<S> = S extends z.ZodEffects<
+  z.ZodObject<infer Shape, infer UK, infer Catchall, infer Out, infer In>
+>
   ? z.ZodObject<Shape, UK, Catchall, Out, In>
-  : S extends z.ZodObject<infer Shape, infer UK, infer Catchall, infer Out, infer In>
-  ? z.ZodObject<Shape, UK, Catchall, Out, In>
-  : never;
+  : S extends z.ZodObject<
+        infer Shape,
+        infer UK,
+        infer Catchall,
+        infer Out,
+        infer In
+      >
+    ? z.ZodObject<Shape, UK, Catchall, Out, In>
+    : never;
 
-type ObjectLike =
-  | z.ZodObject<any>
-  | z.ZodEffects<z.ZodObject<any>>;
+type ObjectLike = z.ZodObject<any> | z.ZodEffects<z.ZodObject<any>>;
 
-export function getSchema<S extends ObjectLike>(
-  schema: S
-): UnwrapObject<S> {
+export function getSchema<S extends ObjectLike>(schema: S): UnwrapObject<S> {
   if (schema instanceof z.ZodEffects) {
     return schema._def.schema as UnwrapObject<S>;
   }
@@ -61,13 +63,13 @@ export function getShape<S extends ObjectLike>(schema: S) {
 }
 
 export function parseNestedZodType<P extends ParseOptions>(
-  key: P["key"],
-  obj: P["obj"],
-  baseSchema: P["shape"],
+  key: P['key'],
+  obj: P['obj'],
+  baseSchema: P['shape'],
   { isPartial = false } = {},
 ) {
-  if (key.startsWith("root/")) {
-    key = key.slice(5) as SchemaKeys;
+  if (key.startsWith(GUN_PREFIX)) {
+    key = key.slice(GUN_PREFIX.length + 1) as SchemaKeys;
   }
   // schema.shape.business.shape.restaurant.shape.menu._def.innerType.parse([])
   // return _parse(key, obj, (shape, o) => shape._def.innerType.parse(o))
@@ -77,30 +79,38 @@ export function parseNestedZodType<P extends ParseOptions>(
 }
 
 export function getNestedZodShape<P extends ParseOptions>(
-  key: P["key"],
-  schema: P["shape"],
+  key: P['key'],
+  schema: P['shape'],
 ) {
-  const keys = key.split("/");
+  const keys = key.split('/');
   const [head, ...tail] = keys;
 
-  const shape = getShape(schema)
-  const innerSchema = shape[head as keyof P["shape"]];
+  const shape = getShape(schema);
+  const innerSchema = shape[head as keyof P['shape']];
 
   if (!head?.length || !innerSchema) return schema;
 
-  return getNestedZodShape(tail.join("/") as P["key"], innerSchema);
+  return getNestedZodShape(tail.join('/') as P['key'], innerSchema);
 }
 
-type AppSchemaRawShape = typeof appSchema.rawShape
+type AppSchemaRawShape = typeof appSchema.rawShape;
 
 export interface TransformerParserOptions {
   /** The description of this parser for better readability in the future */
   description: string;
-  fn: (response: any, schema: z.ZodObject<any>) => ReturnType<AppSchemaRawShape[keyof AppSchemaRawShape]["schema"]["parseAsync"]>;
+  fn: (
+    response: any,
+    schema: z.ZodObject<any>,
+  ) => ReturnType<
+    AppSchemaRawShape[keyof AppSchemaRawShape]['schema']['parseAsync']
+  >;
 }
 
 /** Recursively walk value *guided by schema* */
-async function transformBySchema(value: any, schema: z.ZodTypeAny): Promise<any> {
+async function transformBySchema(
+  value: any,
+  schema: z.ZodTypeAny,
+): Promise<any> {
   const kind = schema._def.typeName;
 
   if (kind === z.ZodFirstPartyTypeKind.ZodLazy) {
@@ -115,19 +125,19 @@ async function transformBySchema(value: any, schema: z.ZodTypeAny): Promise<any>
     const inner = schema._def.type;
 
     // Convert record-like { "0": x, "1": y } → [x, y]
-    if (value && typeof value === "object" && !Array.isArray(value)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
       const entries = Object.entries(value);
 
       const sorted = entries
         .sort(([a], [b]) => Number(a) - Number(b))
         .map(([, v]) => v);
 
-      return await Promise.all(sorted.map(v => transformBySchema(v, inner)));
+      return await Promise.all(sorted.map((v) => transformBySchema(v, inner)));
     }
 
     // Already an array
     if (Array.isArray(value)) {
-      return Promise.all(value.map(v => transformBySchema(v, inner)));
+      return Promise.all(value.map((v) => transformBySchema(v, inner)));
     }
 
     return value;
@@ -137,7 +147,7 @@ async function transformBySchema(value: any, schema: z.ZodTypeAny): Promise<any>
   // 2. OBJECT — walk ALL KEYS from the input value
   // ------------------------------------------------------------
   if (kind === z.ZodFirstPartyTypeKind.ZodObject) {
-    if (!value || typeof value !== "object") return value;
+    if (!value || typeof value !== 'object') return value;
 
     const shape = schema._def.shape();
     const out: Record<string, any> = {};
@@ -154,7 +164,7 @@ async function transformBySchema(value: any, schema: z.ZodTypeAny): Promise<any>
   // 3. RECORD
   // ------------------------------------------------------------
   if (kind === z.ZodFirstPartyTypeKind.ZodRecord) {
-    if (!value || typeof value !== "object") return value;
+    if (!value || typeof value !== 'object') return value;
 
     const inner = schema._def.valueType;
     const out: Record<string, any> = {};
@@ -169,8 +179,10 @@ async function transformBySchema(value: any, schema: z.ZodTypeAny): Promise<any>
   // ------------------------------------------------------------
   // 4. OPTIONAL / NULLABLE / DEFAULT
   // ------------------------------------------------------------
-  if (kind === z.ZodFirstPartyTypeKind.ZodOptional ||
-    kind === z.ZodFirstPartyTypeKind.ZodNullable) {
+  if (
+    kind === z.ZodFirstPartyTypeKind.ZodOptional ||
+    kind === z.ZodFirstPartyTypeKind.ZodNullable
+  ) {
     return value == null
       ? value
       : transformBySchema(value, schema._def.innerType);
@@ -190,8 +202,7 @@ async function transformBySchema(value: any, schema: z.ZodTypeAny): Promise<any>
           await option.parseAsync(value);
         }
         return await transformBySchema(value, option);
-      } catch {
-      }
+      } catch {}
     }
     return value;
   }
@@ -204,10 +215,10 @@ async function transformBySchema(value: any, schema: z.ZodTypeAny): Promise<any>
     kind === z.ZodFirstPartyTypeKind.ZodUnknown
   ) {
     if (Array.isArray(value)) {
-      return Promise.all(value.map(v => transformBySchema(v, z.any())));
+      return Promise.all(value.map((v) => transformBySchema(v, z.any())));
     }
 
-    if (value && typeof value === "object") {
+    if (value && typeof value === 'object') {
       const out: Record<string, any> = {};
       for (const [k, v] of Object.entries(value)) {
         out[k] = await transformBySchema(v, z.any());
@@ -236,7 +247,7 @@ async function transformRequestBySchema(value: any): Promise<any> {
   }
 
   // 2. Objects → recurse into values
-  if (value && typeof value === "object") {
+  if (value && typeof value === 'object') {
     const out: Record<string, any> = {};
     for (const [k, v] of Object.entries(value)) {
       out[k] = await transformRequestBySchema(v);
@@ -250,45 +261,50 @@ async function transformRequestBySchema(value: any): Promise<any> {
 
 const defaultTransformerResponseParsers: TransformerParserOptions[] = [
   {
-    description: "Transform parts of response from record to array",
+    description: 'Transform parts of response from record to array',
     fn: async (response, schema) => {
       return await transformBySchema(response, schema);
-    }
+    },
   },
-]
+];
 
 const defaultTransformerRequestParsers: TransformerParserOptions[] = [
   {
-    description: "Transform the request from array to record",
-    fn: async (request, schema) => {
+    description: 'Transform the request from array to record',
+    fn: async (request) => {
       return await transformRequestBySchema(request);
     },
   },
 ];
 
 export function getTransformerResponseParsers(): TransformerParserOptions[] {
-  return [...defaultTransformerResponseParsers]
+  return [...defaultTransformerResponseParsers];
 }
 
 export function getTransformerRequestParsers(): TransformerParserOptions[] {
-  return [...defaultTransformerRequestParsers]
+  return [...defaultTransformerRequestParsers];
 }
 
-export async function applyTransformerResponseParsers(obj: any, schema: z.ZodObject<any>) {
-  let _obj = _.cloneDeep(obj)
+export async function applyTransformerResponseParsers(
+  obj: any,
+  schema: z.ZodObject<any>,
+) {
+  let _obj = _.cloneDeep(obj);
   const parsers = getTransformerResponseParsers();
   for (const { fn } of parsers) {
-    _obj = await fn(_obj, schema)
+    _obj = await fn(_obj, schema);
   }
-  return _obj
+  return _obj;
 }
 
-export async function applyTransformerRequestParsers(obj: any, schema: z.ZodObject<any>) {
-  let _obj = _.cloneDeep(obj)
+export async function applyTransformerRequestParsers(
+  obj: any,
+  schema: z.ZodObject<any>,
+) {
+  let _obj = _.cloneDeep(obj);
   const parsers = getTransformerRequestParsers();
   for (const { fn } of parsers) {
-    _obj = await fn(_obj, schema)
+    _obj = await fn(_obj, schema);
   }
-  return _obj
+  return _obj;
 }
-

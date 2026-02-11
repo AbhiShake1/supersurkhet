@@ -16,3 +16,7 @@ apps/site/tests/.data
 
 .gemini/
 gha-creds-*.json
+
+adaptedv1_plan.md
+adapted_plan.md
+zs-to-js.md

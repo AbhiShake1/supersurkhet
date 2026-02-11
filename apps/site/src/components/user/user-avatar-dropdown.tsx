@@ -1,62 +1,60 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { useProfile } from "@/hooks/use-profile";
-import { useRouteContext, Link } from "@tanstack/react-router";
-import { useAuth } from "../auth-provider";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/popover';
+import { useProfile } from '@/hooks/use-profile';
+import { useRouteContext, Link } from '@tanstack/react-router';
+import { useAuth } from '../auth-provider';
+import { cn } from '@/lib/utils';
 
-export interface UserAvatarDropdownProps extends React.ComponentProps<"button"> {
+export interface UserAvatarDropdownProps
+  extends React.ComponentProps<'button'> {
   button: {
     className?: string;
-  }
+  };
 }
 
 export function UserAvatarDropdown(props: UserAvatarDropdownProps) {
-  const { auth } = useRouteContext({ from: "__root__" });
-  const { isAuthenticated } = useAuth()
+  const { auth } = useRouteContext({ from: '__root__' });
+  const { isAuthenticated } = useAuth();
   const user = useProfile();
 
-  return <>
-    {
-      isAuthenticated ? (
+  return (
+    <>
+      {isAuthenticated ? (
         <Popover>
           <PopoverTrigger asChild>
             <button
               type="button"
               {...props}
               className={cn(
-                "flex items-center gap-2 rounded-full border px-2 py-1 hover:bg-muted/50 transition justify-center",
+                'flex items-center gap-2 rounded-full border px-2 py-1 hover:bg-muted/50 transition justify-center',
                 props.className,
               )}
             >
-              {
-                props.children || <Avatar>
-                  <AvatarImage src={user?.avatar} alt={""} />
+              {props.children || (
+                <Avatar>
+                  <AvatarImage src={user?.avatar} alt={''} />
                   <AvatarFallback className="capitalize">
                     {user?.email?.[0]}
                   </AvatarFallback>
                 </Avatar>
-              }
+              )}
             </button>
           </PopoverTrigger>
-          <PopoverContent
-            align="end"
-            className="w-56 p-0 overflow-hidden"
-          >
+          <PopoverContent align="end" className="w-56 p-0 overflow-hidden">
             <div className="flex flex-col items-center gap-2 p-4 border-b">
               <Avatar>
-                <AvatarImage src={user?.avatar} alt={""} />
+                <AvatarImage src={user?.avatar} alt={''} />
                 <AvatarFallback className="capitalize">
                   {user?.email?.[0]}
                 </AvatarFallback>
               </Avatar>
               <div className="text-base font-semibold">
-                {user?.name || user?.email || "User"}
+                {user?.name || user?.email || 'User'}
               </div>
             </div>
             <div className="flex flex-col">
@@ -84,21 +82,17 @@ export function UserAvatarDropdown(props: UserAvatarDropdownProps) {
             size="sm"
             className={cn(props.button.className)}
           >
-            <Link to="/auth" search={{ m: "login" }}>
+            <Link to="/auth" search={{ m: 'login' }}>
               <span>Login</span>
             </Link>
           </Button>
-          <Button
-            asChild
-            size="sm"
-            className={cn(props.button.className)}
-          >
-            <Link to="/auth" search={{ m: "signup" }}>
+          <Button asChild size="sm" className={cn(props.button.className)}>
+            <Link to="/auth" search={{ m: 'signup' }}>
               <span>Sign Up</span>
             </Link>
           </Button>
         </>
-      )
-    }
-  </>
+      )}
+    </>
+  );
 }

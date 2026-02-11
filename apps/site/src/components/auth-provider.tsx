@@ -1,36 +1,42 @@
-import type React from "react";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { useRouteContext } from "@tanstack/react-router";
-import type { User } from "@/lib/schema";
-import { googleLogout } from "@react-oauth/google";
-import { v4 as uuid } from "uuid";
-import { createAvatar } from "@dicebear/core";
-import { pixelArt } from "@dicebear/collection";
-import type { IGunChain } from "gun/types";
-import { getGunRef, mergeKeys } from "@/lib/gun/utils";
-import _ from "lodash";
-import { UserLoading } from "./ui/user-loading";
+import type React from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useRouteContext } from '@tanstack/react-router';
+import type { User } from '@/lib/schema';
+import { googleLogout } from '@react-oauth/google';
+import { v4 as uuid } from 'uuid';
+import { createAvatar } from '@dicebear/core';
+import { pixelArt } from '@dicebear/collection';
+import type { IGunChain, ISEAPair } from 'gun/types';
+import { getGunRef, mergeKeys } from '@/lib/gun/utils';
+import _ from 'lodash';
+import { UserLoading } from './ui/user-loading';
+
+export type AuthUser = Partial<User> & {
+  pub?: string;
+  epub?: string;
+  alias?: string | ISEAPair;
+};
 
 interface AuthContextType {
-  user: User;
-  setUser: (user: User | undefined) => void;
+  user: AuthUser | undefined;
+  setUser: (user: AuthUser | undefined) => void;
   logout: () => void;
   isAuthenticated: boolean;
   refreshUser: () => void;
   anonymousUserId: string | null;
-  linkAnonymousUser: (authenticatedUser: User) => Promise<void>;
+  linkAnonymousUser: (authenticatedUser: AuthUser) => Promise<void>;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const ANONYMOUS_USER_KEY = "supersurkhet_anonymous_user_id";
+const ANONYMOUS_USER_KEY = 'supersurkhet_anonymous_user_id';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { auth } = useRouteContext({ from: "__root__" });
-  const [user, setUser] = useState<User>();
+  const { auth } = useRouteContext({ from: '__root__' });
+  const [user, setUser] = useState<AuthUser>();
   const [refreshState, setRefreshState] = useState(0);
   const [authUser, setAuthUser] =
     useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
@@ -57,8 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Handle Electron deep link auth
   useEffect(() => {
     const handleMessage = async (event: MessageEvent) => {
-      if (event.data?.type === "DEEP_LINK_AUTH" && event.data?.data) {
-        console.log("Received auth data from deep link", event.data.data);
+      if (event.data?.type === 'DEEP_LINK_AUTH' && event.data?.data) {
+        console.log('Received auth data from deep link', event.data.data);
         const userData = event.data.data;
         if (userData) {
           // If we have existing anonymous data, link it
@@ -68,8 +74,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     };
 
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
   }, [anonymousUserId]);
 
   function refreshUser() {
@@ -88,7 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         // If we have an authenticated user, use that
         if (_authUser) {
-          ref = getGunRef(mergeKeys("user"))
+          ref = getGunRef(mergeKeys('user'))
             .get(_authUser.pub)
             .open((data) => {
               setUser({ ..._authUser, ...data });
@@ -97,13 +103,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
           // If no authenticated user but we have an anonymous user ID
           if (anonymousUserId) {
-            ref = getGunRef(mergeKeys("user"))
+            ref = getGunRef(mergeKeys('user'))
               .get(anonymousUserId)
               .open((data) => {
                 setUser({
                   pub: anonymousUserId,
                   email: undefined,
-                  name: "Anonymous User",
+                  name: 'Anonymous User',
                   avatar: createAvatar(pixelArt).toDataUri(),
                   ...data,
                 });
@@ -115,13 +121,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         } else {
           // If no authenticated user but we have an anonymous user ID
           if (anonymousUserId) {
-            ref = getGunRef(mergeKeys("user"))
+            ref = getGunRef(mergeKeys('user'))
               .get(anonymousUserId)
               .open((data) => {
                 setUser({
                   pub: anonymousUserId,
                   email: undefined,
-                  name: "Anonymous User",
+                  name: 'Anonymous User',
                   avatar: createAvatar(pixelArt).toDataUri(),
                   ...data,
                 });
@@ -143,14 +149,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const isAuthenticated = useMemo(() => !!authUser, [authUser]);
 
-  async function linkAnonymousUser(authenticatedUser: User) {
+  async function linkAnonymousUser(authenticatedUser: AuthUser) {
     function saveUser(anonymousData: any, onSaved?: () => void) {
       const mergedData = {
         ...authenticatedUser,
         ...anonymousData,
       };
 
-      getGunRef(mergeKeys("user")).get(authenticatedUser.pub).put(mergedData);
+      const authenticatedPub =
+        authenticatedUser.pub ?? authenticatedUser._?.soul ?? '';
+      if (!authenticatedPub) {
+        setUser(mergedData);
+        onSaved?.();
+        return;
+      }
+
+      getGunRef(mergeKeys('user')).get(authenticatedPub).put(mergedData);
 
       setUser(mergedData);
 
@@ -171,7 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       // Get data from the anonymous user node
-      getGunRef(mergeKeys("user"))
+      getGunRef(mergeKeys('user'))
         .get(anonymousUserId)
         .not(() => {
           saveUser({}, resolve);
@@ -190,7 +204,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }
 
   if (isLoading) {
-    return <UserLoading />
+    return <UserLoading />;
   }
 
   return (
@@ -214,7 +228,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };

@@ -1,5 +1,5 @@
-import type { SVGMotionProps } from "framer-motion";
-import { z } from "zod";
+import type { SVGMotionProps } from 'framer-motion';
+import { z } from 'zod';
 import {
   Accessibility,
   Activity,
@@ -258,7 +258,7 @@ import {
   WifiZero,
   Wifi,
   X,
-} from ".";
+} from '.';
 
 // Define size classes for different icon sizes
 const sizeClasses = {
@@ -555,29 +555,39 @@ function keys<T extends Record<string, any>>(obj: T): Array<keyof T> {
 const iconNames = keys(icons) as [IconName, ...IconName[]];
 
 const AnimatedIconSchema = z.object({
-  name: z.enum(iconNames).default("wifi"),
+  name: z.enum(iconNames).default('wifi'),
   className: z.string().optional(),
   animateOnHover: z.boolean().default(true),
   size: z.enum(['small', 'medium', 'large']).default('medium'),
-  color: z.enum([
-    'accent',
-    'accentForeground',
-    'primary',
-    'primaryForeground',
-    'secondary',
-    'secondaryForeground',
-    'destructive',
-    'destructiveForeground',
-    'muted',
-    'mutedForeground',
-    'background',
-    'foreground',
-  ]).optional(),
+  color: z
+    .enum([
+      'accent',
+      'accentForeground',
+      'primary',
+      'primaryForeground',
+      'secondary',
+      'secondaryForeground',
+      'destructive',
+      'destructiveForeground',
+      'muted',
+      'mutedForeground',
+      'background',
+      'foreground',
+    ])
+    .optional(),
 });
 
-type AnimatedIconProps = z.infer<typeof AnimatedIconSchema> & Omit<SVGMotionProps<SVGSVGElement>, 'animate'>;
+type AnimatedIconProps = z.infer<typeof AnimatedIconSchema> &
+  Omit<SVGMotionProps<SVGSVGElement>, 'animate'>;
 
-const AnimatedIcon = ({ name, size = 'medium', color, animateOnHover = true, className = '', ...props }: AnimatedIconProps) => {
+const AnimatedIcon = ({
+  name,
+  size = 'medium',
+  color,
+  animateOnHover = true,
+  className = '',
+  ...props
+}: AnimatedIconProps) => {
   const IconComponent = icons[name];
 
   if (!IconComponent) {
@@ -586,14 +596,19 @@ const AnimatedIcon = ({ name, size = 'medium', color, animateOnHover = true, cla
   }
 
   const sizeClass = sizeClasses[size];
-  const colorClass = color && typeof color === "string" ? colorClasses[color] : '';
-  const combinedClassName = [
-    sizeClass,
-    colorClass,
-    className
-  ].filter(Boolean).join(' ');
+  const colorClass =
+    color && typeof color === 'string' ? colorClasses[color] : '';
+  const combinedClassName = [sizeClass, colorClass, className]
+    .filter(Boolean)
+    .join(' ');
 
-  return <IconComponent className={combinedClassName} {...props} animateOnHover={animateOnHover} />;
+  return (
+    <IconComponent
+      className={combinedClassName}
+      {...props}
+      animateOnHover={animateOnHover}
+    />
+  );
 };
 
 export { AnimatedIcon, type IconName, AnimatedIconSchema };

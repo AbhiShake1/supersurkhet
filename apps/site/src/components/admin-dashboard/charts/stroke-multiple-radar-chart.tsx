@@ -1,45 +1,45 @@
-"use client";
+'use client';
 
-import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts";
+import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from 'recharts';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp } from "lucide-react";
+} from '@/components/ui/chart';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp } from 'lucide-react';
 
 const chartData = [
-  { month: "January", desktop: 186, mobile: 92 },
-  { month: "February", desktop: 305, mobile: 178 },
-  { month: "March", desktop: 237, mobile: 145 },
-  { month: "April", desktop: 273, mobile: 203 },
-  { month: "May", desktop: 209, mobile: 167 },
-  { month: "June", desktop: 298, mobile: 132 },
-  { month: "July", desktop: 245, mobile: 189 },
-  { month: "August", desktop: 312, mobile: 156 },
-  { month: "September", desktop: 187, mobile: 210 },
-  { month: "October", desktop: 263, mobile: 124 },
-  { month: "November", desktop: 229, mobile: 198 },
-  { month: "December", desktop: 276, mobile: 172 },
+  { month: 'January', desktop: 186, mobile: 92 },
+  { month: 'February', desktop: 305, mobile: 178 },
+  { month: 'March', desktop: 237, mobile: 145 },
+  { month: 'April', desktop: 273, mobile: 203 },
+  { month: 'May', desktop: 209, mobile: 167 },
+  { month: 'June', desktop: 298, mobile: 132 },
+  { month: 'July', desktop: 245, mobile: 189 },
+  { month: 'August', desktop: 312, mobile: 156 },
+  { month: 'September', desktop: 187, mobile: 210 },
+  { month: 'October', desktop: 263, mobile: 124 },
+  { month: 'November', desktop: 229, mobile: 198 },
+  { month: 'December', desktop: 276, mobile: 172 },
 ];
 
 const chartConfig = {
   desktop: {
-    label: "Desktop",
-    color: "var(--chart-1)",
+    label: 'Desktop',
+    color: 'var(--chart-1)',
   },
   mobile: {
-    label: "Mobile",
-    color: "var(--chart-4)",
+    label: 'Mobile',
+    color: 'var(--chart-4)',
   },
 } satisfies ChartConfig;
 

@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Gemini = (props: SVGProps<SVGSVGElement>) => (
   <svg {...props} viewBox="0 0 296 298" fill="none">
@@ -9,7 +9,7 @@ const Gemini = (props: SVGProps<SVGSVGElement>) => (
       x="0"
       y="0"
       maskUnits="userSpaceOnUse"
-      style={{ maskType: "alpha" }}
+      style={{ maskType: 'alpha' }}
     >
       <path
         fill="#3186FF"

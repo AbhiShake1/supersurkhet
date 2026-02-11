@@ -1,4 +1,13 @@
-import React, { type ReactNode, useCallback, useMemo, memo, Suspense, useState, useEffect, useRef } from "react";
+import React, {
+  type ReactNode,
+  useCallback,
+  useMemo,
+  memo,
+  Suspense,
+  useState,
+  useEffect,
+  useRef,
+} from 'react';
 
 import {
   Command,
@@ -7,22 +16,27 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from '@/components/ui/command';
 
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
-import { cn } from "@/lib/utils";
-import LayerRenderer from "@/components/ui/ui-builder/layer-renderer";
-import type { ComponentLayer, ComponentRegistry } from "@/components/ui/ui-builder/types";
-import { createComponentLayer } from "@/lib/ui-builder/store/layer-utils";
+} from '@/components/ui/popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { cn } from '@/lib/utils';
+import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import { createComponentLayer } from '@/lib/ui-builder/store/layer-utils';
 
-const fallback = <div className="w-full h-full bg-muted rounded border animate-pulse" />;
+const fallback = (
+  <div className="w-full h-full bg-muted rounded border animate-pulse" />
+);
 
 // Cache for preview layers to avoid recreation
 const previewLayerCache = new Map<string, ComponentLayer>();
@@ -37,7 +51,7 @@ type AddComponentsPopoverProps = {
     layerType: string;
     parentLayerId: string;
     addPosition?: number;
-    propType: "children" | "props";
+    propType: 'children' | 'props';
     fieldName?: string; // The specific field name (e.g., "leadingIcon", "trailingIcon")
   }) => void;
   optionsFilter?: (k: string) => boolean;
@@ -59,26 +73,27 @@ export function AddComponentsPopover({
   const componentRegistry = useEditorStore((state) => state.registry);
 
   const groupedOptions = useMemo(() => {
-    const keys = Object.keys(componentRegistry)
-    const componentOptions = (optionsFilter ? keys.filter(optionsFilter) : keys)
-      .map((name) => ({
-        value: name,
-        label: name,
-        type: "component",
-        from: componentRegistry[name as keyof typeof componentRegistry].from,
-      }));
+    const keys = Object.keys(componentRegistry);
+    const componentOptions = (
+      optionsFilter ? keys.filter(optionsFilter) : keys
+    ).map((name) => ({
+      value: name,
+      label: name,
+      type: 'component',
+      from: componentRegistry[name as keyof typeof componentRegistry].from,
+    }));
     return componentOptions.reduce(
       (acc, option) => {
-        const fromRoot = option.from?.split("/").slice(0, -1).join("/"); // removes file name from path
+        const fromRoot = option.from?.split('/').slice(0, -1).join('/'); // removes file name from path
 
-        const group = fromRoot || "primitives";
+        const group = fromRoot || 'primitives';
         if (!acc[group]) {
           acc[group] = [];
         }
         acc[group].push(option);
         return acc;
       },
-      {} as Record<string, typeof componentOptions>
+      {} as Record<string, typeof componentOptions>,
     );
   }, [componentRegistry, optionsFilter]);
 
@@ -96,8 +111,8 @@ export function AddComponentsPopover({
           layerType: currentValue,
           parentLayerId,
           addPosition,
-          propType: "children",
-          fieldName  // Pass the field name so the parent knows which prop to add to
+          propType: 'children',
+          fieldName, // Pass the field name so the parent knows which prop to add to
         });
       } else if (
         componentRegistry[currentValue as keyof typeof componentRegistry]
@@ -105,7 +120,7 @@ export function AddComponentsPopover({
         addComponentLayer(
           currentValue as keyof typeof componentRegistry,
           parentLayerId,
-          addPosition
+          addPosition,
         );
       }
       setOpen(false);
@@ -120,7 +135,7 @@ export function AddComponentsPopover({
       onOpenChange,
       onChange,
       fieldName,
-    ]
+    ],
   );
 
   const handleOpenChange = useCallback(
@@ -128,24 +143,37 @@ export function AddComponentsPopover({
       setOpen(open);
       onOpenChange?.(open);
     },
-    [onOpenChange]
+    [onOpenChange],
   );
 
-  const defaultTab = "all";
+  const defaultTab = 'all';
 
   return (
-    <div className={cn("relative flex justify-center", className)}>
+    <div className={cn('relative flex justify-center', className)}>
       <Popover open={open} onOpenChange={handleOpenChange}>
         <PopoverTrigger asChild>{children}</PopoverTrigger>
         <PopoverContent className="w-[280px] p-0" align="start">
           {categories.length > 0 ? (
             <Tabs defaultValue={defaultTab} className="w-full">
-              <TabsList className={cn(categories.length > 1 ? "h-14 w-full rounded-none border-b flex flex-row overflow-x-scroll justify-start" : "hidden")}>
-                <TabsTrigger value="all" className="flex flex-col justify-center items-center overflow-hidden min-w-24 min-h-11 flex-shrink-0">
+              <TabsList
+                className={cn(
+                  categories.length > 1
+                    ? 'h-14 w-full rounded-none border-b flex flex-row overflow-x-scroll justify-start'
+                    : 'hidden',
+                )}
+              >
+                <TabsTrigger
+                  value="all"
+                  className="flex flex-col justify-center items-center overflow-hidden min-w-24 min-h-11 flex-shrink-0"
+                >
                   All
                 </TabsTrigger>
                 {categories.map((category) => (
-                  <TabsTrigger key={category} value={category} className="flex flex-col justify-center items-center overflow-hidden min-w-24 min-h-11 flex-shrink-0">
+                  <TabsTrigger
+                    key={category}
+                    value={category}
+                    className="flex flex-col justify-center items-center overflow-hidden min-w-24 min-h-11 flex-shrink-0"
+                  >
                     {formatCategoryName(category)}
                   </TabsTrigger>
                 ))}
@@ -163,13 +191,15 @@ export function AddComponentsPopover({
                   <CommandList className="max-h-[250px]">
                     <CommandEmpty>No components found</CommandEmpty>
                     <CommandGroup>
-                      {Object.values(groupedOptions).flat().map((component) => (
-                        <GroupedComponentItem
-                          key={component.value}
-                          component={component}
-                          onClick={handleSelect}
-                        />
-                      ))}
+                      {Object.values(groupedOptions)
+                        .flat()
+                        .map((component) => (
+                          <GroupedComponentItem
+                            key={component.value}
+                            component={component}
+                            onClick={handleSelect}
+                          />
+                        ))}
                     </CommandGroup>
                   </CommandList>
                 </Command>
@@ -214,141 +244,154 @@ export function AddComponentsPopover({
   );
 }
 
-const GroupedComponentItem = memo(({
-  component,
-  onClick,
-}: {
-  component: { value: string; label: string };
-  onClick: (value: string) => void;
-}) => {
-  const handleSelect = useCallback(() => {
-    onClick(component.value);
-  }, [onClick, component.value]);
+const GroupedComponentItem = memo(
+  ({
+    component,
+    onClick,
+  }: {
+    component: { value: string; label: string };
+    onClick: (value: string) => void;
+  }) => {
+    const handleSelect = useCallback(() => {
+      onClick(component.value);
+    }, [onClick, component.value]);
 
-  const componentRegistry = useEditorStore((state) => state.registry);
+    const componentRegistry = useEditorStore((state) => state.registry);
 
-  return (
-    <CommandItem
-      key={component.value}
-      onSelect={handleSelect}
-      className="cursor-pointer flex items-center gap-3 py-3"
-    >
-      {/* Component preview */}
-      <div className="flex-shrink-0 w-10 h-8 overflow-hidden">
-        <LazyComponentPreview
-          componentType={component.value}
-          componentRegistry={componentRegistry}
-        />
-      </div>
-      <div className="flex items-center flex-1 min-w-0">
-        <span className="truncate">{component.label}</span>
-      </div>
-    </CommandItem>
-  );
-});
-
-GroupedComponentItem.displayName = "GroupedComponentItem";
-
-const LazyComponentPreview = memo(({
-  componentType,
-  componentRegistry,
-}: {
-  componentType: string;
-  componentRegistry: ComponentRegistry;
-}) => {
-  const [shouldLoad, setShouldLoad] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          // Delay loading slightly to improve tab switching performance
-          setTimeout(() => setShouldLoad(true), 50);
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
-  return (
-    <div ref={ref} className="w-full h-full">
-      {shouldLoad ? (
-        <Suspense fallback={fallback}>
-          <ComponentPreview
-            componentType={componentType}
+    return (
+      <CommandItem
+        key={component.value}
+        onSelect={handleSelect}
+        className="cursor-pointer flex items-center gap-3 py-3"
+      >
+        {/* Component preview */}
+        <div className="flex-shrink-0 w-10 h-8 overflow-hidden">
+          <LazyComponentPreview
+            componentType={component.value}
             componentRegistry={componentRegistry}
           />
-        </Suspense>
-      ) : (
-        <div className="w-full h-full bg-muted rounded border" />
-      )}
-    </div>
-  );
-});
+        </div>
+        <div className="flex items-center flex-1 min-w-0">
+          <span className="truncate">{component.label}</span>
+        </div>
+      </CommandItem>
+    );
+  },
+);
 
-LazyComponentPreview.displayName = "LazyComponentPreview";
+GroupedComponentItem.displayName = 'GroupedComponentItem';
+
+const LazyComponentPreview = memo(
+  ({
+    componentType,
+    componentRegistry,
+  }: {
+    componentType: string;
+    componentRegistry: ComponentRegistry;
+  }) => {
+    const [shouldLoad, setShouldLoad] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+      const element = ref.current;
+      if (!element) return;
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            // Delay loading slightly to improve tab switching performance
+            setTimeout(() => setShouldLoad(true), 50);
+          }
+        },
+        { threshold: 0.1 },
+      );
+
+      observer.observe(element);
+      return () => observer.disconnect();
+    }, []);
+
+    return (
+      <div ref={ref} className="w-full h-full">
+        {shouldLoad ? (
+          <Suspense fallback={fallback}>
+            <ComponentPreview
+              componentType={componentType}
+              componentRegistry={componentRegistry}
+            />
+          </Suspense>
+        ) : (
+          <div className="w-full h-full bg-muted rounded border" />
+        )}
+      </div>
+    );
+  },
+);
+
+LazyComponentPreview.displayName = 'LazyComponentPreview';
 
 /* istanbul ignore next */
 
-const ComponentPreview = memo(({
-  componentType,
-  componentRegistry,
-}: {
-  componentType: string;
-  componentRegistry: ComponentRegistry;
-}) => {
-  const style = { width: '200%', height: '200%' } as const;
+const ComponentPreview = memo(
+  ({
+    componentType,
+    componentRegistry,
+  }: {
+    componentType: string;
+    componentRegistry: ComponentRegistry;
+  }) => {
+    const style = { width: '200%', height: '200%' } as const;
 
-  const previewLayer = useMemo(() => {
-    // Check cache first
-    const cacheKey = `${componentType}-${JSON.stringify(componentRegistry[componentType as keyof typeof componentRegistry]?.schema)}`;
-    if (previewLayerCache.has(cacheKey)) {
-      return previewLayerCache.get(cacheKey)!;
+    const previewLayer = useMemo(() => {
+      // Check cache first
+      const cacheKey = `${componentType}-${JSON.stringify(componentRegistry[componentType as keyof typeof componentRegistry]?.schema)}`;
+      if (previewLayerCache.has(cacheKey)) {
+        return previewLayerCache.get(cacheKey)!;
+      }
+
+      try {
+        // Use the utility function to create the preview layer
+        const layer = createComponentLayer(componentType, componentRegistry, {
+          id: `preview-${componentType}`, // Use stable ID for previews
+        });
+
+        // Cache the layer
+        previewLayerCache.set(cacheKey, layer);
+        return layer;
+      } catch (error) {
+        console.warn(
+          `Failed to create preview for component ${componentType}:`,
+          error,
+        );
+        return null;
+      }
+    }, [componentType, componentRegistry]);
+
+    if (!previewLayer) {
+      return <div className="w-full h-full bg-muted rounded border" />;
     }
 
-    try {
-      // Use the utility function to create the preview layer
-      const layer = createComponentLayer(componentType, componentRegistry, {
-        id: `preview-${componentType}`, // Use stable ID for previews
-      });
+    return (
+      <div
+        className="w-full h-full bg-background rounded border overflow-hidden transform scale-50 origin-top-left"
+        style={style}
+      >
+        <LayerRenderer
+          page={previewLayer}
+          componentRegistry={componentRegistry}
+          className="pointer-events-none"
+        />
+      </div>
+    );
+  },
+);
 
-      // Cache the layer
-      previewLayerCache.set(cacheKey, layer);
-      return layer;
-    } catch (error) {
-      console.warn(`Failed to create preview for component ${componentType}:`, error);
-      return null;
-    }
-  }, [componentType, componentRegistry]);
-
-  if (!previewLayer) {
-    return <div className="w-full h-full bg-muted rounded border" />;
-  }
-
-  return (
-    <div className="w-full h-full bg-background rounded border overflow-hidden transform scale-50 origin-top-left"
-      style={style}>
-      <LayerRenderer
-        page={previewLayer}
-        componentRegistry={componentRegistry}
-        className="pointer-events-none"
-      />
-    </div>
-  );
-});
-
-ComponentPreview.displayName = "ComponentPreview";
+ComponentPreview.displayName = 'ComponentPreview';
 
 // @components/ui/ui-builder becomes Components UI Builder
 function formatCategoryName(name: string) {
-  const words = name.split("/");
+  const words = name.split('/');
   const lastWord = words[words.length - 1];
-  return lastWord.replace(/-/g, " ").replace(/\b\w/g, char => char.toUpperCase());
+  return lastWord
+    .replace(/-/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }

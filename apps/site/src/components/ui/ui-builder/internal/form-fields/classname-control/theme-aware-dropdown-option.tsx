@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { type ReactNode, useMemo } from "react";
-import { cn } from "@/lib/utils";
-import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import { baseColors } from "@/components/ui/ui-builder/internal/utils/base-colors";
-import type { ComponentLayer } from "@/components/ui/ui-builder/types";
+import { type ReactNode, useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { baseColors } from '@/components/ui/ui-builder/internal/utils/base-colors';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 
 // Known prefixes for shadcn theme colors
-const THEME_COLOR_PREFIXES = ["bg-", "text-", "border-", "shadow-"] as const;
+const THEME_COLOR_PREFIXES = ['bg-', 'text-', 'border-', 'shadow-'] as const;
 
 export function ThemeAwareDropdownOption({
   color,
@@ -16,14 +16,13 @@ export function ThemeAwareDropdownOption({
   color?: string;
   children: ReactNode;
 }) {
-  const selectedPageId = useLayerStore(state => state.selectedPageId);
-  const findLayerById = useLayerStore(state => state.findLayerById);
+  const selectedPageId = useLayerStore((state) => state.selectedPageId);
+  const findLayerById = useLayerStore((state) => state.findLayerById);
 
   // Get current theme information
   const selectedPageData = findLayerById(selectedPageId) as ComponentLayer;
-  const currentTheme = selectedPageData?.props?.["data-color-theme"];
-  const currentMode = selectedPageData?.props?.["data-mode"] || "light";
-
+  const currentTheme = selectedPageData?.props?.['data-color-theme'];
+  const currentMode = selectedPageData?.props?.['data-mode'] || 'light';
 
   // Resolve the actual color value
   const getResolvedColor = (colorClass?: string): string | undefined => {
@@ -43,10 +42,12 @@ export function ThemeAwareDropdownOption({
     if (themeColorKey && currentTheme) {
       try {
         // Find the current theme data
-        const themeData = baseColors.find((theme) => theme.name === currentTheme);
+        const themeData = baseColors.find(
+          (theme) => theme.name === currentTheme,
+        );
 
         if (themeData?.cssVars) {
-          const modeColors = themeData.cssVars[currentMode as "light" | "dark"];
+          const modeColors = themeData.cssVars[currentMode as 'light' | 'dark'];
 
           if (modeColors) {
             const colorValue = (modeColors as any)[themeColorKey];
@@ -69,17 +70,19 @@ export function ThemeAwareDropdownOption({
 
   const resolvedColor = getResolvedColor(color);
 
-  const style = useMemo(() => ({ backgroundColor: resolvedColor }), [resolvedColor]);
-
+  const style = useMemo(
+    () => ({ backgroundColor: resolvedColor }),
+    [resolvedColor],
+  );
 
   return (
     <div className="flex flex-row items-center justify-start text-center w-full">
       {color && (
         <span
           className={cn(
-            "inline-block size-[14px] rounded-full border border-border mr-1",
+            'inline-block size-[14px] rounded-full border border-border mr-1',
             // Use resolved color as inline style if available, otherwise fall back to class
-            !resolvedColor && color
+            !resolvedColor && color,
           )}
           style={resolvedColor ? style : undefined}
         />
@@ -87,4 +90,4 @@ export function ThemeAwareDropdownOption({
       <span className="text-xs text-muted-foreground">{children}</span>
     </div>
   );
-} 
+}

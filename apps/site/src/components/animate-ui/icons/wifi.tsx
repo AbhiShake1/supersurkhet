@@ -94,7 +94,7 @@ function IconComponent({ size, ...props }: WifiProps) {
 }
 
 function Wifi(props: WifiProps) {
-  return <IconComponent />
+  return <IconComponent />;
   return <IconWrapper icon={IconComponent} {...props} />;
 }
 

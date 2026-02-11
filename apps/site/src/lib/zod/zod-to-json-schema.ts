@@ -1,4 +1,16 @@
-import { type ZodTypeAny, ZodEnum, ZodArray, ZodObject, ZodOptional, ZodNullable, ZodUnion, ZodLiteral, ZodEffects, ZodDefault, ZodNativeEnum } from 'zod';
+import {
+  type ZodTypeAny,
+  ZodEnum,
+  ZodArray,
+  ZodObject,
+  ZodOptional,
+  ZodNullable,
+  ZodUnion,
+  ZodLiteral,
+  ZodEffects,
+  ZodDefault,
+  ZodNativeEnum,
+} from 'zod';
 
 interface JsonSchemaType {
   type?: string | string[];
@@ -19,7 +31,10 @@ interface JsonSchemaType {
   $defs?: Record<string, JsonSchemaType>;
 }
 
-export function zodToJsonSchema(schema: ZodTypeAny, options: { definitions?: Record<string, JsonSchemaType> } = {}): JsonSchemaType {
+export function zodToJsonSchema(
+  schema: ZodTypeAny,
+  options: { definitions?: Record<string, JsonSchemaType> } = {},
+): JsonSchemaType {
   const definitions = options.definitions || {};
 
   // Handle ZodEffects (transformations, refinements, etc.)
@@ -48,7 +63,7 @@ export function zodToJsonSchema(schema: ZodTypeAny, options: { definitions?: Rec
     const baseJsonSchema = zodToJsonSchema(baseSchema, { definitions });
     // For nullable, we'll represent as a union of the base type and null
     return {
-      oneOf: [baseJsonSchema, { type: 'null' }]
+      oneOf: [baseJsonSchema, { type: 'null' }],
     };
   }
 
@@ -56,7 +71,9 @@ export function zodToJsonSchema(schema: ZodTypeAny, options: { definitions?: Rec
   if (schema._def.typeName === 'ZodUnion') {
     const options = (schema as ZodUnion<any[]>)._def.options;
     return {
-      oneOf: options.map((option: ZodTypeAny) => zodToJsonSchema(option, { definitions }))
+      oneOf: options.map((option: ZodTypeAny) =>
+        zodToJsonSchema(option, { definitions }),
+      ),
     };
   }
 
@@ -64,7 +81,7 @@ export function zodToJsonSchema(schema: ZodTypeAny, options: { definitions?: Rec
   if (schema._def.typeName === 'ZodLiteral') {
     return {
       const: (schema as ZodLiteral<any>)._def.value,
-      type: typeof (schema as ZodLiteral<any>)._def.value
+      type: typeof (schema as ZodLiteral<any>)._def.value,
     };
   }
 
@@ -73,17 +90,19 @@ export function zodToJsonSchema(schema: ZodTypeAny, options: { definitions?: Rec
     const values = (schema as ZodEnum<any>)._def.values;
     return {
       type: 'string',
-      enum: values
+      enum: values,
     };
   }
 
   // Handle ZodNativeEnum
   if (schema._def.typeName === 'ZodNativeEnum') {
     const values = Object.values((schema as ZodNativeEnum<any>)._def.values);
-    const stringValues = values.filter(val => typeof val === 'string') as string[];
+    const stringValues = values.filter(
+      (val) => typeof val === 'string',
+    ) as string[];
     return {
       type: 'string',
-      enum: stringValues
+      enum: stringValues,
     };
   }
 
@@ -107,7 +126,7 @@ export function zodToJsonSchema(schema: ZodTypeAny, options: { definitions?: Rec
       type: 'object',
       properties,
       required: required.length > 0 ? required : undefined,
-      additionalProperties: false
+      additionalProperties: false,
     };
 
     // Extract description if available
@@ -125,7 +144,7 @@ export function zodToJsonSchema(schema: ZodTypeAny, options: { definitions?: Rec
 
     const result: JsonSchemaType = {
       type: 'array',
-      items: elementSchema
+      items: elementSchema,
     };
 
     // Add min/max length constraints if present

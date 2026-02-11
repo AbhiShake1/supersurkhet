@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { CartesianGrid, Line, LineChart, XAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis } from 'recharts';
 
 import {
   Card,
@@ -8,33 +8,33 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
-import { Badge } from "@/components/ui/badge";
-import { TrendingUp } from "lucide-react";
+} from '@/components/ui/chart';
+import { Badge } from '@/components/ui/badge';
+import { TrendingUp } from 'lucide-react';
 
 const chartData = [
-  { month: "January", desktop: 186, mobile: 87 },
-  { month: "February", desktop: 305, mobile: 163 },
-  { month: "March", desktop: 237, mobile: 142 },
-  { month: "April", desktop: 73, mobile: 195 },
-  { month: "May", desktop: 209, mobile: 118 },
-  { month: "June", desktop: 214, mobile: 231 },
+  { month: 'January', desktop: 186, mobile: 87 },
+  { month: 'February', desktop: 305, mobile: 163 },
+  { month: 'March', desktop: 237, mobile: 142 },
+  { month: 'April', desktop: 73, mobile: 195 },
+  { month: 'May', desktop: 209, mobile: 118 },
+  { month: 'June', desktop: 214, mobile: 231 },
 ];
 
 const chartConfig = {
   desktop: {
-    label: "Desktop",
-    color: "var(--chart-2)",
+    label: 'Desktop',
+    color: 'var(--chart-2)',
   },
   mobile: {
-    label: "Mobile",
-    color: "var(--chart-5)",
+    label: 'Mobile',
+    color: 'var(--chart-5)',
   },
 } satisfies ChartConfig;
 

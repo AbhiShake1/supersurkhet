@@ -1,22 +1,29 @@
-import { Card } from "@/components/ui/card";
-import { Map, MapControls, MapMarker, MarkerContent } from "@/components/ui/map";
-import type { Business } from "@/lib/schema";
-import type React from "react";
+import { Card } from '@/components/ui/card';
+import {
+  Map,
+  MapControls,
+  MapMarker,
+  MarkerContent,
+} from '@/components/ui/map';
+import type { Business } from '@/lib/schema';
+import type React from 'react';
 
 interface BusinessLocationMapProps {
   business: Business;
   className?: string;
 }
 
-export const BusinessLocationMap: React.FC<BusinessLocationMapProps> = ({ 
-  business, 
-  className 
+export const BusinessLocationMap: React.FC<BusinessLocationMapProps> = ({
+  business,
+  className,
 }) => {
   if (!business.locationCoordinates) {
     return (
       <div className={className}>
         <Card className="p-4 flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Location not set for this business</p>
+          <p className="text-muted-foreground">
+            Location not set for this business
+          </p>
         </Card>
       </div>
     );
@@ -56,15 +63,9 @@ export const BusinessLocationMap: React.FC<BusinessLocationMapProps> = ({
   return (
     <div className={className}>
       <Card className="h-64 p-0 overflow-hidden relative">
-        <Map
-          center={mapCenter}
-          zoom={13}
-        >
+        <Map center={mapCenter} zoom={13}>
           <MapControls showZoom={true} showLocate={false} />
-          <MapMarker
-            longitude={coordinates[1]}
-            latitude={coordinates[0]}
-          >
+          <MapMarker longitude={coordinates[1]} latitude={coordinates[0]}>
             <MarkerContent />
           </MapMarker>
         </Map>

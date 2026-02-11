@@ -1,7 +1,16 @@
-import type { ComponentLayer, ComponentRegistry } from "@/components/ui/ui-builder/types";
-import z from "zod";
-import { commonFieldOverrides } from "./form-field-overrides";
-import { Credenza, CredenzaBody, CredenzaFooter, CredenzaHeader, CredenzaTrigger } from "@/components/ui/credenza";
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import z from 'zod';
+import { commonFieldOverrides } from './form-field-overrides';
+import {
+  Credenza,
+  CredenzaBody,
+  CredenzaFooter,
+  CredenzaHeader,
+  CredenzaTrigger,
+} from '@/components/ui/credenza';
 
 export const credenzaComponentDefinitions: ComponentRegistry = {
   Credenza: {
@@ -10,36 +19,36 @@ export const credenzaComponentDefinitions: ComponentRegistry = {
       className: z.string().optional(),
       children: z.any().optional(),
     }),
-    from: "@/components/ui/credenza",
+    from: '@/components/ui/credenza',
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [
       {
-        id: "credenza-trigger",
-        type: "CredenzaTrigger",
-        name: "CredenzaTrigger",
+        id: 'credenza-trigger',
+        type: 'CredenzaTrigger',
+        name: 'CredenzaTrigger',
         props: {},
         children: [
           {
-            id: "credenza-trigger-text",
-            type: "span",
-            name: "span",
+            id: 'credenza-trigger-text',
+            type: 'span',
+            name: 'span',
             props: {},
-            children: "Credenza Trigger",
+            children: 'Credenza Trigger',
           } satisfies ComponentLayer,
         ],
       },
       {
-        id: "credenza-content",
-        type: "CredenzaContent",
-        name: "CredenzaContent",
+        id: 'credenza-content',
+        type: 'CredenzaContent',
+        name: 'CredenzaContent',
         props: {},
         children: [
           {
-            id: "credenza-content-text",
-            type: "span",
-            name: "span",
+            id: 'credenza-content-text',
+            type: 'span',
+            name: 'span',
             props: {},
-            children: "Credenza Content",
+            children: 'Credenza Content',
           } satisfies ComponentLayer,
         ],
       },
@@ -52,7 +61,7 @@ export const credenzaComponentDefinitions: ComponentRegistry = {
       children: z.any().optional(),
       asChild: z.boolean().optional(),
     }),
-    from: "@/components/ui/credenza",
+    from: '@/components/ui/credenza',
     fieldOverrides: commonFieldOverrides(),
   },
   CredenzaHeader: {
@@ -61,7 +70,7 @@ export const credenzaComponentDefinitions: ComponentRegistry = {
       className: z.string().optional(),
       children: z.any().optional(),
     }),
-    from: "@/components/ui/credenza",
+    from: '@/components/ui/credenza',
     fieldOverrides: commonFieldOverrides(),
   },
   CredenzaBody: {
@@ -70,7 +79,7 @@ export const credenzaComponentDefinitions: ComponentRegistry = {
       className: z.string().optional(),
       children: z.any().optional(),
     }),
-    from: "@/components/ui/credenza",
+    from: '@/components/ui/credenza',
     fieldOverrides: commonFieldOverrides(),
   },
   CredenzaFooter: {
@@ -79,7 +88,7 @@ export const credenzaComponentDefinitions: ComponentRegistry = {
       className: z.string().optional(),
       children: z.any().optional(),
     }),
-    from: "@/components/ui/credenza",
+    from: '@/components/ui/credenza',
     fieldOverrides: commonFieldOverrides(),
   },
-}
+};

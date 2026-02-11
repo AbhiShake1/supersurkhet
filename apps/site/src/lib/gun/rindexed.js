@@ -1,8 +1,10 @@
-; (function () {
+(function () {
+  if (typeof Gun === 'undefined') {
+    return;
+  }
 
-  if (typeof Gun === 'undefined') { return }
-
-  var noop = function () { }, u;
+  var noop = function () {},
+    u;
 
   // -----------------------------
   // IndexedDB wrapper
@@ -33,7 +35,9 @@
     this.to.next(root);
 
     var opt = root.opt;
-    if (false === opt.indexedDB) { return }
+    if (false === opt.indexedDB) {
+      return;
+    }
 
     opt.prefix = opt.file || 'radata';
 
@@ -83,7 +87,7 @@
             tmp,
             Gun.state.is(data, tmp),
             data[tmp],
-            soul
+            soul,
           );
         }
 
@@ -109,8 +113,12 @@
       var id = msg['#'];
       var ok = msg.ok || {};
 
-      if (!soul.startsWith("~") && !soul.startsWith("root") && !soul.startsWith("/RTC")) {
-        return
+      if (
+        !soul.startsWith('~') &&
+        !soul.startsWith('root') &&
+        !soul.startsWith('/RTC')
+      ) {
+        return;
       }
 
       if (!db) {
@@ -123,7 +131,9 @@
       pending[soul] = pending[soul] || [];
       pending[soul].push({ put: put, msg: msg });
 
-      if (pending[soul].length > 1) { return }
+      if (pending[soul].length > 1) {
+        return;
+      }
 
       flushSoul(soul);
     });
@@ -142,16 +152,14 @@
 
         batch.forEach(function (item) {
           var put = item.put;
-          node = Gun.state.ify(
-            node,
-            put['.'],
-            put['>'],
-            put[':'],
-            soul
-          );
+          node = Gun.state.ify(node, put['.'], put['>'], put[':'], soul);
 
           var msg = item.msg;
-          if (!msg['@'] && (!msg._.via || Math.random() < ((msg.ok || {})['@'] / (msg.ok || {})['/']))) {
+          if (
+            !msg['@'] &&
+            (!msg._.via ||
+              Math.random() < (msg.ok || {})['@'] / (msg.ok || {})['/'])
+          ) {
             acks.push(msg['#']);
           }
         });
@@ -187,15 +195,18 @@
       var list = acks;
       acks = [];
 
-      setTimeout.each(list, function (id) {
-        root.on('in', {
-          '@': id,
-          err: err,
-          ok: err ? 0 : 1
-        });
-      }, 0, 99);
+      setTimeout.each(
+        list,
+        function (id) {
+          root.on('in', {
+            '@': id,
+            err: err,
+            ok: err ? 0 : 1,
+          });
+        },
+        0,
+        99,
+      );
     }
-
   });
-
-}());
+})();

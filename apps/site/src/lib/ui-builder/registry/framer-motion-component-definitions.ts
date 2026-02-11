@@ -1,7 +1,11 @@
 import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import { z } from 'zod';
 import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
-import { commonFieldOverrides, childrenAsTextareaFieldOverrides, classNameFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
+import {
+  commonFieldOverrides,
+  childrenAsTextareaFieldOverrides,
+  classNameFieldOverrides,
+} from '@/lib/ui-builder/registry/form-field-overrides';
 
 // Define Zod schemas for Framer Motion components
 const MotionDivSchema = z.object({
@@ -52,7 +56,7 @@ const MotionButtonSchema = z.object({
 
 const MotionImgSchema = z.object({
   className: z.string().optional(),
-  src: z.string().default("https://placehold.co/200"),
+  src: z.string().default('https://placehold.co/200'),
   alt: z.string().optional(),
   width: z.coerce.number().optional(),
   height: z.coerce.number().optional(),
@@ -205,7 +209,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: {
@@ -276,7 +282,10 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       className: z.string().optional(),
       children: z.any().optional(),
       href: z.string().optional(),
-      target: z.enum(['_blank', '_self', '_parent', '_top']).optional().default('_self'),
+      target: z
+        .enum(['_blank', '_self', '_parent', '_top'])
+        .optional()
+        .default('_self'),
       rel: z.enum(['noopener', 'noreferrer', 'nofollow']).optional(),
       title: z.string().optional(),
       download: z.boolean().optional().default(false),
@@ -296,7 +305,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -323,7 +334,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -349,7 +362,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -375,7 +390,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: {
@@ -390,7 +407,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       className: z.string().optional(),
       value: z.string().optional(),
       placeholder: z.string().optional(),
-      type: z.enum(['text', 'email', 'password', 'number', 'tel', 'url', 'search']).default('text'),
+      type: z
+        .enum(['text', 'email', 'password', 'number', 'tel', 'url', 'search'])
+        .default('text'),
       disabled: z.boolean().optional(),
       animate: z.any().optional(),
       initial: z.any().optional(),
@@ -408,7 +427,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: {
@@ -437,7 +458,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: {
@@ -467,7 +490,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -493,7 +518,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -519,7 +546,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -545,7 +574,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -571,7 +602,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -597,7 +630,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -623,7 +658,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -651,7 +688,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -678,7 +717,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -704,7 +745,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: {
@@ -737,7 +780,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: commonFieldOverrides(),
@@ -768,7 +813,9 @@ export const framerMotionComponentDefinitions: ComponentRegistry = {
       custom: z.any().optional(),
       key: z.string().optional(),
       style: z.any().optional(),
-      variantsType: z.enum(['spring', 'inertia', 'tween', 'keyframes']).optional(),
+      variantsType: z
+        .enum(['spring', 'inertia', 'tween', 'keyframes'])
+        .optional(),
     }),
     from: 'framer-motion',
     fieldOverrides: {

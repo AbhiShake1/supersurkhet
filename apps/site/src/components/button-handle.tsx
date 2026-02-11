@@ -1,14 +1,14 @@
-import { Position, type HandleProps } from "@xyflow/react";
-import { BaseHandle } from "@/components/base-handle";
-import { useState, useRef } from "react";
+import { Position, type HandleProps } from '@xyflow/react';
+import { BaseHandle } from '@/components/base-handle';
+import { useState, useRef } from 'react';
 
 const wrapperClassNames: Record<Position, string> = {
   [Position.Top]:
-    "flex-col-reverse left-1/2 -translate-y-full -translate-x-1/2",
-  [Position.Bottom]: "flex-col left-1/2 translate-y-[10px] -translate-x-1/2",
+    'flex-col-reverse left-1/2 -translate-y-full -translate-x-1/2',
+  [Position.Bottom]: 'flex-col left-1/2 translate-y-[10px] -translate-x-1/2',
   [Position.Left]:
-    "flex-row-reverse top-1/2 -translate-x-full -translate-y-1/2",
-  [Position.Right]: "top-1/2 -translate-y-1/2 translate-x-[10px]",
+    'flex-row-reverse top-1/2 -translate-x-full -translate-y-1/2',
+  [Position.Right]: 'top-1/2 -translate-y-1/2 translate-x-[10px]',
 };
 
 export const ButtonHandle = ({
@@ -19,7 +19,7 @@ export const ButtonHandle = ({
   onDragOver,
   onDragLeave,
   ...props
-}: HandleProps & { 
+}: HandleProps & {
   showButton?: boolean;
   onDrop?: (event: React.DragEvent) => void;
   onDragOver?: (event: React.DragEvent) => void;
@@ -50,29 +50,27 @@ export const ButtonHandle = ({
   // Handle drag leave events
   const handleDragLeave = (event: React.DragEvent) => {
     // Check if we're actually leaving the handle or just moving to a child element
-    if (wrapperRef.current && !wrapperRef.current.contains(event.relatedTarget as Node)) {
+    if (
+      wrapperRef.current &&
+      !wrapperRef.current.contains(event.relatedTarget as Node)
+    ) {
       setIsDragOver(false);
       onDragLeave?.(event);
     }
   };
 
   return (
-    <BaseHandle 
-      position={position} 
-      id={props.id} 
-      {...props}
-      className=""
-    >
+    <BaseHandle position={position} id={props.id} {...props} className="">
       {showButton && (
         <div
           ref={wrapperRef}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          className={`absolute flex items-center ${wrapperClassName} pointer-events-auto ${isDragOver ? "ring-2 ring-accent border-accent rounded-full" : ""}`}
+          className={`absolute flex items-center ${wrapperClassName} pointer-events-auto ${isDragOver ? 'ring-2 ring-accent border-accent rounded-full' : ''}`}
         >
           <div
-            className={`bg-gray-300 ${vertical ? "h-10 w-[1px]" : "h-[1px] w-10"}`}
+            className={`bg-gray-300 ${vertical ? 'h-10 w-[1px]' : 'h-[1px] w-10'}`}
           />
           <div className="nodrag nopan pointer-events-auto">{children}</div>
         </div>
