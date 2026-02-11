@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import WebSocket from 'ws';
 
 // --- Configuration ---
 const FONEPAY_API_BASE_URL_DEV = 'https://dev-merchantapi.fonepay.com/api';
 const FONEPAY_API_BASE_URL_LIVE = 'https://merchantapi.fonepay.com/api';
-const FONEPAY_WEBSOCKET_URL_DEV =
+const _FONEPAY_WEBSOCKET_URL_DEV =
   'wss://dev-ws.fonepay.com/convergent-webSocket-web/merchantEndPoint';
-const FONEPAY_WEBSOCKET_URL_LIVE =
+const _FONEPAY_WEBSOCKET_URL_LIVE =
   'wss://ws.fonepay.com/convergent-webSocket-web/merchantEndPoint';
 
 // Fonepay credentials - Load these from environment variables

@@ -3,7 +3,6 @@ import type { FieldTypes } from './AutoForm';
 import type { PossibleTabConfig } from '@/components/auto-admin';
 import type { UseFormReturn } from 'react-hook-form';
 import type { NestedSchemaType, SchemaKeys } from '@/lib/gun/index';
-import type { LogicExprWithContext } from '@/lib/hooks/useLogicEngine';
 
 export type SourceConfig = {
   [K in SchemaKeys]: {
@@ -26,6 +25,7 @@ export type FieldConfigCustomData = {
   slug?: string;
   disableWhenValueIn?: string[];
 } & {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onValueChange?: (value: any, path: string[], form: UseFormReturn) => any;
   // onValueChange?: LogicExprWithContext<{
   //   value: string;

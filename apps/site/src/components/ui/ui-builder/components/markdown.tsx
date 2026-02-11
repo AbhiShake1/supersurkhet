@@ -54,6 +54,7 @@ export function Markdown({ children }: MarkdownProps) {
       }: {
         className: string;
         children: React.ReactNode;
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         [key: string]: any;
       }) {
         const match = /language-(\w+)/.exec(className || '');
@@ -62,7 +63,7 @@ export function Markdown({ children }: MarkdownProps) {
           return (
             <CodeBlock
               key={Math.random()}
-              language={(match && match[1]) || ''}
+              language={(match?.[1]) || ''}
               value={String(children).replace(/\n$/, '')}
               {...props}
             />

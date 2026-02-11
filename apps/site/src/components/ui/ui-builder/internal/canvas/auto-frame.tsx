@@ -37,6 +37,7 @@ const getStyles = (styleSheet?: CSSStyleSheet) => {
       return Array.from(styleSheet.cssRules)
         .map((rule) => rule.cssText)
         .join('');
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     } catch (e: any) {
       console.warn(
         'Access to stylesheet %s is denied. Ignoring…',
@@ -118,6 +119,7 @@ const CopyHostStyles = ({
 
         mirror.innerHTML = styles;
 
+        // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
         mirror.setAttribute('data-href', el.getAttribute('href')!);
       } else {
         mirror = el.cloneNode(true) as HTMLStyleElement;
@@ -197,7 +199,7 @@ const CopyHostStyles = ({
                   ? node.parentElement
                   : (node as HTMLElement);
 
-              if (el && el.matches(styleSelector)) {
+              if (el?.matches(styleSelector)) {
                 defer(() => addEl(el));
               }
             }
@@ -213,7 +215,7 @@ const CopyHostStyles = ({
                   ? node.parentElement
                   : (node as HTMLElement);
 
-              if (el && el.matches(styleSelector)) {
+              if (el?.matches(styleSelector)) {
                 defer(() => removeEl(el));
               }
             }
@@ -222,7 +224,7 @@ const CopyHostStyles = ({
       });
     });
 
-    const parentDocument = win!.parent.document;
+    const parentDocument = win?.parent.document;
 
     const collectedStyles = collectStyles(parentDocument);
     const hrefs: string[] = [];
@@ -407,7 +409,7 @@ const AutoFrame = forwardRef<HTMLIFrameElement, AutoFrameProps>(
         }
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ref, loaded, stylesLoaded]);
+    }, [ref, stylesLoaded, onNotReady, onReady]);
 
     return (
       <iframe

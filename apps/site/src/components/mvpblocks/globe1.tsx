@@ -2,8 +2,7 @@ import Earth from '@/components/ui/globe';
 
 export default function Globe1() {
   return (
-    <>
-      <div className="bg-background flex flex-col items-center justify-center overflow-hidden">
+    <div className="bg-background flex flex-col items-center justify-center overflow-hidden">
         <article className="border-border relative mx-auto my-8 max-w-[500px] rounded-xl border p-5 text-center">
           <div className="relative z-10">
             <h1 className="text-7xl leading-[100%] font-semibold tracking-tighter">
@@ -18,6 +17,5 @@ export default function Globe1() {
           </div>
         </article>
       </div>
-    </>
   );
 }

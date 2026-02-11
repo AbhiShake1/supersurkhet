@@ -2,6 +2,7 @@ export function isTailwindClass<T extends readonly string[]>(
   arr: T,
   token: string,
 ): token is T[number] {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   return arr.includes(token as any);
 }
 

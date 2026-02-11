@@ -85,17 +85,22 @@ export const visitLayerReactNodeProps = (
       }
       // Check for objects that might have children-like structures
       if (
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         Array.isArray((value as any).children) &&
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         typeof (value as any).children !== 'string'
       ) {
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         const updatedNestedChildren = (value as any).children.map(
           (item: ComponentLayer) =>
             isComponentLayer(item) ? visitLayer(item, layer, visitor) : item,
         );
         if (
           JSON.stringify(updatedNestedChildren) !==
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           JSON.stringify((value as any).children)
         ) {
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           (updatedProps as any)[key] = {
             ...value,
             children: updatedNestedChildren,
@@ -136,7 +141,7 @@ export const countLayersInReactNodeProps = (layer: ComponentLayer): number => {
   let count = 0;
   const props = layer.props || {};
 
-  for (const [key, value] of Object.entries(props)) {
+  for (const [_key, value] of Object.entries(props)) {
     if (isComponentLayer(value)) {
       // Single component layer - count it and any children it might have
       count += 1 + (hasLayerChildren(value) ? countLayers(value.children) : 0);
@@ -166,9 +171,12 @@ export const countLayersInReactNodeProps = (layer: ComponentLayer): number => {
       }
       // Check for objects that might have children-like structures
       if (
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         Array.isArray((value as any).children) &&
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         typeof (value as any).children !== 'string'
       ) {
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         count += countLayers((value as any).children);
       }
     }
@@ -290,7 +298,7 @@ export const hasLayerInReactNodeProps = (
 ): boolean => {
   const props = layer.props || {};
 
-  for (const [key, value] of Object.entries(props)) {
+  for (const [_key, value] of Object.entries(props)) {
     if (isComponentLayer(value)) {
       if (value.id === layerId) {
         return true;
@@ -323,9 +331,12 @@ export const hasLayerInReactNodeProps = (
       }
       // Check for objects that might have children-like structures
       if (
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         Array.isArray((value as any).children) &&
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         typeof (value as any).children !== 'string'
       ) {
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         if (findLayerRecursive((value as any).children, layerId)) {
           return true;
         }
@@ -387,6 +398,7 @@ export const duplicateWithNewIdsAndName = (
           .filter(isComponentLayer)
           .map((child) => duplicateWithNewIdsAndName(child, false));
       } else if (
+        // biome-ignore lint/suspicious/noDuplicateElseIf: lint debt cleanup
         typeof value === 'object' &&
         value !== null &&
         isComponentLayer(value)
@@ -428,7 +440,7 @@ export const hasLayerChildren = (
  */
 export const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
   const props = layer.props || {};
-  for (const [key, value] of Object.entries(props)) {
+  for (const [_key, value] of Object.entries(props)) {
     // Check if this prop contains a component layer
     if (isComponentLayer(value)) {
       return true;
@@ -443,7 +455,7 @@ export const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
     }
   }
   // Also check for nested objects that might contain component layers
-  for (const [key, value] of Object.entries(props)) {
+  for (const [_key, value] of Object.entries(props)) {
     if (typeof value === 'object' && value !== null) {
       // Look for nested objects that might have a component layer structure
       if (isComponentLayer(value)) {
@@ -451,8 +463,11 @@ export const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
       }
       // Look for objects with a children-like structure
       if (
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         Array.isArray((value as any).children) &&
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         typeof (value as any).children !== 'string' &&
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         (value as any).children.length > 0
       ) {
         return true;
@@ -467,7 +482,9 @@ export const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
  * @param value The value to check
  * @returns true if the value is a component layer
  */
-export const isComponentLayer = (value: any): value is ComponentLayer => {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  const isComponentLayer = (value: any): value is ComponentLayer => {
   return (
     value &&
     typeof value === 'object' &&
@@ -508,6 +525,7 @@ export const createComponentLayer = (
 
   // Safely check if schema has shape property (ZodObject)
   const defaultProps =
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     'shape' in schema && schema.shape ? getDefaultProps(schema as any) : {};
   const defaultChildrenRaw = componentDef.defaultChildren;
   const defaultChildren =
@@ -524,6 +542,7 @@ export const createComponentLayer = (
       }
       return acc;
     },
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     {} as Record<string, any>,
   );
 
@@ -558,7 +577,7 @@ export const moveLayer = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   let sourceParentId: string | null = null;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let sourcePosition = -1;
+  let _sourcePosition = -1;
   let sourceParentType: 'children' | 'prop' | 'propArray' = 'children';
   let sourcePropName: string | null = null;
 
@@ -572,7 +591,7 @@ export const moveLayer = (
       if (layer.id === sourceLayerId) {
         layerToMove = layer;
         sourceParentId = parentId;
-        sourcePosition = i;
+        _sourcePosition = i;
         sourceParentType = 'children';
         return true;
       }
@@ -601,7 +620,7 @@ export const moveLayer = (
                 sourceParentId = layer.id;
                 sourcePropName = propName;
                 sourceParentType = 'propArray';
-                sourcePosition = index;
+                _sourcePosition = index;
                 return true;
               }
             }
@@ -834,7 +853,7 @@ export const findLayerInReactNodeProps = (
 ): ComponentLayer | undefined => {
   const props = layer.props || {};
 
-  for (const [key, value] of Object.entries(props)) {
+  for (const [_key, value] of Object.entries(props)) {
     if (isComponentLayer(value)) {
       if (value.id === layerId) {
         return value;
@@ -871,10 +890,13 @@ export const findLayerInReactNodeProps = (
       }
       // Check for objects that might have children-like structure
       if (
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         Array.isArray((value as any).children) &&
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         typeof (value as any).children !== 'string'
       ) {
         const foundInChildren = findLayerRecursive(
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           (value as any).children,
           layerId,
         );

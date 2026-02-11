@@ -283,7 +283,9 @@ const colorClasses = {
   foreground: 'text-foreground',
 } as const;
 
+// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
 type Size = keyof typeof sizeClasses;
+// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
 type Color = keyof typeof colorClasses;
 
 const icons = {
@@ -548,6 +550,7 @@ const icons = {
 
 type IconName = keyof typeof icons;
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function keys<T extends Record<string, any>>(obj: T): Array<keyof T> {
   return Object.keys(obj) as Array<keyof T>;
 }

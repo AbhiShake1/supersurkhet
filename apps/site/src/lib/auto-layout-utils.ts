@@ -16,12 +16,13 @@ export const getLayoutedElements = (
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
 
-  const isHorizontal = direction === 'LR';
+  const _isHorizontal = direction === 'LR';
   dagreGraph.setGraph({ rankdir: direction });
 
   nodes.forEach((node) => {
     // Special handling for different node types
-    let width, height;
+    // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
+        let width, height;
 
     if (node.type === 'condition') {
       width = conditionNodeWidth;
@@ -50,7 +51,8 @@ export const getLayoutedElements = (
     const nodeWithPosition = dagreGraph.node(node.id);
 
     // Special handling for different node types
-    let width, height;
+    // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
+        let width, height;
 
     if (node.type === 'condition') {
       width = conditionNodeWidth;

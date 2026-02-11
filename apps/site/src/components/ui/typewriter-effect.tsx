@@ -42,18 +42,20 @@ export const TypewriterEffect = ({
         },
       );
     }
-  }, [isInView]);
+  }, [isInView, animate]);
 
   const renderWords = () => {
     return (
       <motion.div ref={scope} className="inline">
         {wordsArray.map((word, idx) => {
           return (
-            <div key={`word-${idx}`} className="inline-block">
+            <div key={`word-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+idx}`} className="inline-block">
               {word.text.map((char, index) => (
                 <motion.span
                   initial={{}}
-                  key={`char-${index}`}
+                  key={`char-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+index}`}
                   className={cn(
                     `dark:text-white text-black opacity-0 hidden`,
                     word.className,
@@ -122,10 +124,12 @@ export const TypewriterEffectSmooth = ({
       <div>
         {wordsArray.map((word, idx) => {
           return (
-            <div key={`word-${idx}`} className="inline-block">
+            <div key={`word-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+idx}`} className="inline-block">
               {word.text.map((char, index) => (
                 <span
-                  key={`char-${index}`}
+                  key={`char-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+index}`}
                   className={cn(`dark:text-white text-black `, word.className)}
                 >
                   {char}

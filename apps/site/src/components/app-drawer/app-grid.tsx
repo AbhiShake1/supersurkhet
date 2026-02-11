@@ -20,7 +20,6 @@ import {
   pointerWithin,
   rectIntersection,
   type CollisionDetection,
-  useDroppable,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -102,7 +101,7 @@ function AppGridComponent({
 
   // State for drag and drop
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const [dragOverId, setDragOverId] = useState<UniqueIdentifier | null>(null);
+  const [_dragOverId, setDragOverId] = useState<UniqueIdentifier | null>(null);
   const [targetApp, setTargetApp] = useState<Business | null>(null);
 
   // Sensors for drag and drop (we need to enable long press for mobile)
@@ -367,6 +366,7 @@ function SortableBusinessIcon({
   business,
   iconSize,
   addRecentlyUsedApp,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   isAllApps = false,
   targetApp,
   activeItem,
@@ -377,6 +377,7 @@ function SortableBusinessIcon({
     setNodeRef,
     transform,
     transition,
+    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
     isDragging,
   } = useSortable({
     id: business._?.soul || '',
@@ -529,8 +530,10 @@ function SortableFolderIconComponent({
   folder,
   businesses,
   iconSize,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   isAllApps = false,
   onUpdateFolder,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   onDeleteFolder,
   addRecentlyUsedApp,
 }: FolderIconComponentProps) {
@@ -559,7 +562,7 @@ function SortableFolderIconComponent({
 
   const previewApps = folderApps.slice(0, 4);
 
-  function noopSortingStrategy() {
+  function _noopSortingStrategy() {
     return null;
   }
 

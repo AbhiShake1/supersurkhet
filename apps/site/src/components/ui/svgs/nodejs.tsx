@@ -1,8 +1,10 @@
 import type { SVGProps } from 'react';
 
 const Nodejs = (props: SVGProps<SVGSVGElement>) => (
-  <svg {...props} viewBox="0 0 256 292">
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+<svg {...props} viewBox="0 0 256 292">
     <defs>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <linearGradient
         id="a"
         x1="68.188%"
@@ -16,6 +18,7 @@ const Nodejs = (props: SVGProps<SVGSVGElement>) => (
         <stop offset="93.19%" stop-color="#3FA92D" />
         <stop offset="100%" stop-color="#3FAE2A" />
       </linearGradient>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <linearGradient
         id="c"
         x1="43.277%"
@@ -28,6 +31,7 @@ const Nodejs = (props: SVGProps<SVGSVGElement>) => (
         <stop offset="71.36%" stop-color="#66B848" />
         <stop offset="90.81%" stop-color="#6CC04A" />
       </linearGradient>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <linearGradient
         id="f"
         x1="-4.389%"
@@ -40,10 +44,12 @@ const Nodejs = (props: SVGProps<SVGSVGElement>) => (
         <stop offset="59.68%" stop-color="#54A044" />
         <stop offset="86.24%" stop-color="#41873F" />
       </linearGradient>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <path
         id="b"
         d="M134.923 1.832c-4.344-2.443-9.502-2.443-13.846 0L6.787 67.801C2.443 70.244 0 74.859 0 79.745v132.208c0 4.887 2.715 9.502 6.787 11.945l114.29 65.968c4.344 2.444 9.502 2.444 13.846 0l114.29-65.968c4.344-2.443 6.787-7.058 6.787-11.945V79.745c0-4.886-2.715-9.501-6.787-11.944L134.923 1.832Z"
       />
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <path
         id="e"
         d="M134.923 1.832c-4.344-2.443-9.502-2.443-13.846 0L6.787 67.801C2.443 70.244 0 74.859 0 79.745v132.208c0 4.887 2.715 9.502 6.787 11.945l114.29 65.968c4.344 2.444 9.502 2.444 13.846 0l114.29-65.968c4.344-2.443 6.787-7.058 6.787-11.945V79.745c0-4.886-2.715-9.501-6.787-11.944L134.923 1.832Z"
@@ -53,6 +59,7 @@ const Nodejs = (props: SVGProps<SVGSVGElement>) => (
       fill="url(#a)"
       d="M134.923 1.832c-4.344-2.443-9.502-2.443-13.846 0L6.787 67.801C2.443 70.244 0 74.859 0 79.745v132.208c0 4.887 2.715 9.502 6.787 11.945l114.29 65.968c4.344 2.444 9.502 2.444 13.846 0l114.29-65.968c4.344-2.443 6.787-7.058 6.787-11.945V79.745c0-4.886-2.715-9.501-6.787-11.944L134.923 1.832Z"
     />
+    {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
     <mask id="d" fill="#fff">
       <use />
     </mask>
@@ -61,6 +68,7 @@ const Nodejs = (props: SVGProps<SVGSVGElement>) => (
       d="M249.485 67.8 134.65 1.833c-1.086-.542-2.443-1.085-3.529-1.357L2.443 220.912c1.086 1.357 2.444 2.443 3.8 3.258l114.834 65.968c3.258 1.9 7.059 2.443 10.588 1.357L252.47 70.515c-.815-1.086-1.9-1.9-2.986-2.714Z"
       mask="url(#d)"
     />
+    {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
     <mask id="g" fill="#fff">
       <use />
     </mask>

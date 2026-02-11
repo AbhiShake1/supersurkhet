@@ -41,9 +41,11 @@ export const useGet = createGunHook((messenger) => {
             ? messenger._options.gun.get(keys)
             : getGunRef(keys);
 
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         async function transform(fullData: any) {
           if (!fullData || typeof fullData !== 'object') return;
 
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           const entries = Object.entries(fullData) as [string, any][];
           const newList: NestedSchemaType<T>[] = [];
 

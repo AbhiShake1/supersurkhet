@@ -69,6 +69,7 @@ async function getCurrentUser() {
   const userLocal = await getUser();
   gun.user().auth(userLocal);
   const user = gun.user().recall({ sessionStorage: false }) as
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     | IGunUserInstance<any, any, any, any>
     | undefined;
   if (!user?.is) return null;
@@ -243,7 +244,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     const savedThemeName = await getAppTheme();
     const savedDarkMode = await getAppDarkMode();
     const _savedTheme = await getAppThemeData();
-    const savedTheme = _savedTheme ?? defaultPresets['tangerine'].styles;
+    const savedTheme = _savedTheme ?? defaultPresets.tangerine.styles;
 
     // Generate critical CSS for the current theme to prevent FOUC
     let criticalThemeCSS = '';

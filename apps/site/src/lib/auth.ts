@@ -23,22 +23,20 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
   const backdoor = await getBackdoor();
   if (!backdoor) throw new Error('Google login failed [NO BACKDOOR]');
 
-  // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
-  return new Promise<IGunUserInstance['is']>(async (resolve, reject) => {
+  return new Promise<IGunUserInstance['is']>((resolve, reject) => {
     const alias = email.toLowerCase();
-    const userExists = await new Promise((resolve) => {
-      gun.get(`~@${alias}`).once((data) => resolve(!!data));
-    });
-
-    if (userExists) {
-      gun.user().auth(alias, backdoor, (ack) => {
-        if ('err' in ack && ack.err) return reject(new Error(ack.err));
-        if ('sea' in ack) {
-          setUser({ data: ack.sea });
-        }
-        resolve(gun.user().is);
-      });
-    } else {
+    gun.get(`~@${alias}`).once((data) => {
+      const userExists = !!data;
+      if (userExists) {
+        gun.user().auth(alias, backdoor, (ack) => {
+          if ('err' in ack && ack.err) return reject(new Error(ack.err));
+          if ('sea' in ack) {
+            setUser({ data: ack.sea });
+          }
+          resolve(gun.user().is);
+        });
+        return;
+      }
       gun.user().create(alias, backdoor, (ack) => {
         if ('err' in ack) return reject(new Error(ack.err));
 
@@ -60,6 +58,6 @@ export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
           resolve(gun.user().is);
         });
       });
-    }
+    });
   });
 }

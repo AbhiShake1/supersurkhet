@@ -11,7 +11,7 @@ const numericField = (defaultValue = 0) =>
   z.preprocess((val) => {
     if (val === undefined || val === null) return defaultValue;
     const num = Number(val);
-    return isNaN(num) ? defaultValue : num;
+    return Number.isNaN(num) ? defaultValue : num;
   }, z.number().optional().default(defaultValue));
 
 // Helper for value/defaultValue fields that can be number or array
@@ -23,7 +23,7 @@ const sliderValueField = () =>
     if (Array.isArray(val)) {
       return val.map((v) => {
         const num = Number(v);
-        return isNaN(num) ? 0 : num;
+        return Number.isNaN(num) ? 0 : num;
       });
     }
 
@@ -34,19 +34,19 @@ const sliderValueField = () =>
         if (Array.isArray(parsed)) {
           return parsed.map((v) => {
             const num = Number(v);
-            return isNaN(num) ? 0 : num;
+            return Number.isNaN(num) ? 0 : num;
           });
         }
       } catch {
         // If parsing fails, try to convert the string directly
         const num = Number(val);
-        return isNaN(num) ? undefined : [num];
+        return Number.isNaN(num) ? undefined : [num];
       }
     }
 
     // If it's a single value
     const num = Number(val);
-    return isNaN(num) ? undefined : [num];
+    return Number.isNaN(num) ? undefined : [num];
   }, z.union([z.number(), z.array(z.number())]).optional());
 
 //Schema
@@ -69,6 +69,7 @@ export const sliderSchema = z
 
 export type SliderProps = z.infer<typeof sliderSchema>;
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 const validateSliderProps = (props: any): SliderPrimitive.SliderProps => {
   try {
     const validated = sliderSchema.parse(props);

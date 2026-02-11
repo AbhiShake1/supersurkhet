@@ -190,32 +190,32 @@ function _FinancialFirmManagement({
     );
   });
 
-  const toggleServiceActive = (id: string, active: boolean) => {
+  const toggleServiceActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Service ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleProductActive = (id: string, active: boolean) => {
+  const toggleProductActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Product ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleAdvisorActive = (id: string, active: boolean) => {
+  const toggleAdvisorActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Advisor ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteService = (id: string) => {
+  const deleteService = (_id: string) => {
     // In a real implementation, this would delete the service from GunDB
     toast.success('Service removed');
   };
 
-  const deleteProduct = (id: string) => {
+  const deleteProduct = (_id: string) => {
     // In a real implementation, this would delete the product from GunDB
     toast.success('Product removed');
   };
 
-  const deleteAdvisor = (id: string) => {
+  const deleteAdvisor = (_id: string) => {
     // In a real implementation, this would delete the advisor from GunDB
     toast.success('Advisor removed');
   };
@@ -537,6 +537,7 @@ function _FinancialFirmManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
                               className={`w-3 h-3 ${
                                 i < Math.floor(advisor.rating)

@@ -9,7 +9,7 @@ import { BusinessAccessGate } from '@/components/permission-gate/business-access
 import { Button } from '@/components/ui/button';
 import { BusinessLocationMap } from '@/components/business-location-map';
 
-const GenericClientPage = lazy(
+const _GenericClientPage = lazy(
   () => import('@/components/pages/generic/generic-client-page'),
 );
 

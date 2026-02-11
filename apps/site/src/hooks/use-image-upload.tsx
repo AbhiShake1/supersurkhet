@@ -60,7 +60,7 @@ export function useImageUpload({
       previewRef.current = url;
       onUpload?.(url);
     },
-    [onUpload],
+    [onUpload, uploadImage],
   );
 
   const handleRemove = useCallback(() => {
@@ -70,7 +70,7 @@ export function useImageUpload({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [previewUrl]);
+  }, []);
 
   return {
     previewUrl,

@@ -19,7 +19,6 @@ export const BaseNode = forwardRef<
       '[.react-flow\\_\\_node.selected_&]:shadow-lg',
       className,
     )}
-    tabIndex={0}
     {...props}
   />
 ));

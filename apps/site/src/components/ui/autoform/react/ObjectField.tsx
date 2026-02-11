@@ -17,6 +17,7 @@ export const ObjectField: React.FC<{
       field={field}
       testId={testIdBase}
     >
+      {/** biome-ignore lint/style/noNonNullAssertion: lint debt cleanup */}
       {Object.entries(field.schema!).map(([_key, subField]) => (
         <AutoFormField
           key={`${path.join('.')}.${subField.key}`}

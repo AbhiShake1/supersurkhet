@@ -3,7 +3,7 @@ import type { FilterItemSchema } from '@/lib/parsers';
 import type { ColumnSort, Row, RowData } from '@tanstack/react-table';
 
 declare module '@tanstack/react-table' {
-  interface ColumnMeta<TData extends RowData, TValue> {
+  interface ColumnMeta<_TData extends RowData, _TValue> {
     label?: string;
     placeholder?: string;
     variant?: FilterVariant;

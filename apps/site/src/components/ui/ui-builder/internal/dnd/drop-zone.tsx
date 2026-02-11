@@ -171,8 +171,7 @@ export const DropPlaceholder: React.FC<DropPlaceholderProps> = ({
 
     // Walk up until we find the actual layout container (skip relative wrapper)
     while (
-      parentElement &&
-      parentElement.classList.contains('relative') &&
+      parentElement?.classList.contains('relative') &&
       parentElement.children.length === 2
     ) {
       parentElement = parentElement.parentElement;
@@ -220,7 +219,7 @@ export const DropPlaceholder: React.FC<DropPlaceholderProps> = ({
 
       setLayoutType(detectedLayout);
     }
-  }, [isActive, element, parentId, position, dndContext?.activeLayerId]);
+  }, [isActive, element, dndContext?.activeLayerId]);
 
   // Combine refs
   const combinedRef = React.useCallback(

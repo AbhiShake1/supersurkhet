@@ -88,6 +88,8 @@ export function FileUploadField({
 
       <div className="space-y-3">
         {/* File input area */}
+        {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+        {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
         <div
           className={cn(
             'flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input bg-background px-6 py-8 transition-colors hover:border-accent',

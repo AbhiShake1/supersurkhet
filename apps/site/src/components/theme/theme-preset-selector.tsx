@@ -84,6 +84,7 @@ const DemoCard = ({
 
 const DemoButton = ({
   variant = 'default',
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   className = '',
   themeStyles,
   currentThemeMode,
@@ -135,6 +136,7 @@ const DemoButton = ({
 
   return (
     <Button
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       variant={variant as any}
       className={buttonClassName}
       style={{

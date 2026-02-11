@@ -42,7 +42,7 @@ export function InventoryStatusChart({
   lowStockCount,
   outOfStockCount,
 }: InventoryStatusChartProps) {
-  const total = inStockCount + lowStockCount + outOfStockCount;
+  const _total = inStockCount + lowStockCount + outOfStockCount;
   const data = [
     {
       name: 'In Stock',

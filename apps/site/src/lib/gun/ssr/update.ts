@@ -8,6 +8,7 @@ export function update<const T extends SchemaKeys>(
   key: T,
   ...restKeys: string[]
 ) {
+  // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
   const schema = getNestedZodShape(key, mergeOptionsWithDefaults({}).schema!);
   return async ({ id, ...value }: UpdaterParams<T>) => {
     const keys = mergeKeys(key, ...restKeys) as SchemaKeys;

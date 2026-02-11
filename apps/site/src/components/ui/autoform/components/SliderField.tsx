@@ -33,7 +33,7 @@ export function SliderField({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = Number(e.target.value);
-    if (!isNaN(inputValue)) {
+    if (!Number.isNaN(inputValue)) {
       field.onChange(Math.min(Math.max(inputValue, min), max));
     }
   };

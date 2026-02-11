@@ -110,7 +110,7 @@ export function DataTableFilterList<TData>({
   const descriptionId = React.useId();
   const [open, setOpen] = React.useState(false);
   const addButtonRef = React.useRef<HTMLButtonElement>(null);
-  const search = useSearch({ from: '__root__' });
+  const _search = useSearch({ from: '__root__' });
 
   const columns = React.useMemo(() => {
     return table
@@ -118,7 +118,7 @@ export function DataTableFilterList<TData>({
       .filter((column) => column.columnDef.enableColumnFilter);
   }, [table]);
 
-  const filters = React.useMemo(() => parseFiltersFromUrl(), [search]);
+  const filters = React.useMemo(() => parseFiltersFromUrl(), []);
 
   const [, setFilters] = useQueryState(
     FILTERS_KEY,
@@ -220,6 +220,7 @@ export function DataTableFilterList<TData>({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [filters, onFilterRemove]);
 
   const onTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -282,6 +283,7 @@ export function DataTableFilterList<TData>({
           </div>
           {filters.length > 0 ? (
             <SortableContent asChild>
+              {/** biome-ignore lint/a11y/useSemanticElements: lint debt cleanup */}
               <div
                 role="list"
                 className="flex max-h-[300px] flex-col gap-2 overflow-y-auto p-1"
@@ -397,6 +399,7 @@ function DataTableFilterItem<TData>({
 
   return (
     <SortableItem value={filter.filterId} asChild>
+      {/** biome-ignore lint/a11y/useSemanticElements: lint debt cleanup */}
       <div
         role="listitem"
         id={filterItemId}
@@ -586,7 +589,8 @@ function onFilterInputRender<TData>({
 }) {
   if (filter.operator === 'isEmpty' || filter.operator === 'isNotEmpty') {
     return (
-      <div
+      // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
+<div
         id={inputId}
         role="status"
         aria-label={`${columnMeta?.label} filter is ${

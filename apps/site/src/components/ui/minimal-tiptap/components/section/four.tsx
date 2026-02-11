@@ -16,7 +16,8 @@ const formatActions: ListItem[] = [
     value: 'orderedList',
     label: 'Numbered list',
     icon: (
-      <svg
+      // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+<svg
         xmlns="http://www.w3.org/2000/svg"
         height="20px"
         viewBox="0 -960 960 960"

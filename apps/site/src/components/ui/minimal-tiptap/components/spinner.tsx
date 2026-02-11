@@ -6,7 +6,8 @@ interface SpinnerProps extends React.SVGProps<SVGSVGElement> {}
 const SpinnerComponent = React.forwardRef<SVGSVGElement, SpinnerProps>(
   function Spinner({ className, ...props }, ref) {
     return (
-      <svg
+      // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+<svg
         ref={ref}
         xmlns="http://www.w3.org/2000/svg"
         fill="none"

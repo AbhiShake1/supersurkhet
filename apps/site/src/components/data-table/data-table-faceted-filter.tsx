@@ -72,7 +72,9 @@ export function DataTableFacetedFilter<TData, TValue>({
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="border-dashed">
           {selectedValues?.size > 0 ? (
-            <div
+            // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
+// biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
+<div
               role="button"
               aria-label={`Clear ${title} filter`}
               tabIndex={0}

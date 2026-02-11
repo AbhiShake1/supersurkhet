@@ -4,7 +4,10 @@ type Primitives = string | number | bigint | boolean | null | undefined;
 type JoinWithDot<K extends string, T extends Primitives> = T extends never | ''
   ? K
   : `${K}.${T}`;
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
 type ExtractFromShape<T extends z.ZodObject<any>> = {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   [K in keyof T['shape']]: T['shape'][K] extends z.ZodObject<any>
     ? JoinWithDot<
         // @ts-expect-error if K is number, it will work unless it has nested object shape. if nested, entire object will be removed from type
@@ -19,6 +22,7 @@ type UnwrapEffects<T> = T extends z.ZodEffects<infer Inner>
   : T;
 
 type FindNestedShapeInternal<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   T extends z.ZodObject<any>,
   K extends string,
 > = K extends `${infer Head}.${infer Tail}`

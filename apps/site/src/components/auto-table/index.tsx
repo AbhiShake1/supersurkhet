@@ -46,7 +46,7 @@ import {
   Ellipsis,
   Text,
 } from 'lucide-react';
-import { z, ZodEffects, ZodObject } from 'zod';
+import { z, ZodEffects, } from 'zod';
 import { AutoPreview } from '../auto-preview';
 import { DataTableAdvancedToolbar } from '../data-table/data-table-advanced-toolbar';
 import { DataTableColumnHeader } from '../data-table/data-table-column-header';
@@ -69,6 +69,7 @@ type AggregationType =
   | 'group';
 
 type PreviewOverrides<T extends SchemaKeys> = Partial<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   Record<keyof NestedSchema<T>['shape'], (v: any) => any>
 >;
 
@@ -78,12 +79,14 @@ type EnhancedColumnDef<TData> = ColumnDef<TData> & {
   filterable?: boolean;
   sortable?: boolean;
   exportable?: boolean;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   previewOverrides?: PreviewOverrides<any>;
   readOnly?: boolean;
 };
 
 export type AutoTableProps<T extends SchemaKeys> = {
   className?: string;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   transformer?: (data: any[]) => NestedSchemaType<T>[];
   enableAdvancedFiltering?: boolean;
   enableAdvancedSorting?: boolean;
@@ -121,6 +124,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
       schema: T;
     }
   | {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       parsedSchema: z.ZodObject<any>;
     }
 ) &
@@ -340,6 +344,7 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
   previewOverrides?: PreviewOverrides<T>;
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   setRowAction,
   schema,
@@ -533,6 +538,7 @@ function useAllData(tableName: SchemaKeys) {
 export interface AddDataSuggestionsProps {
   slug: string;
   schemaName: SchemaKeys;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onSelected: (item: any) => void;
 }
 

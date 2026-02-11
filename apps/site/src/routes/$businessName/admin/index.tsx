@@ -24,7 +24,7 @@ export const Route = createFileRoute('/$businessName/admin/')({
       if (!isAuthenticated && !isUserLoading)
         promptLogin({ dismissible: false, showBackgroundContent: false });
       else closeLoginPrompt();
-    }, [isAuthenticated, isLoading]);
+    }, [isAuthenticated, closeLoginPrompt, isUserLoading, promptLogin]);
 
     if (isLoading || isUserLoading) {
       return (

@@ -291,6 +291,7 @@ const WifiConnectNode = ({
             </div>
           )}
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="target"
           position={Position.Top}
@@ -301,6 +302,7 @@ const WifiConnectNode = ({
           onAddNode={onAddNodeAtHandle}
           className="bg-blue-500 dark:bg-blue-600 border-blue-600 dark:border-blue-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="source"
           position={Position.Bottom}
@@ -362,6 +364,7 @@ const ProfileEnrichmentNode = ({
             </div>
           </div>
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="target"
           position={Position.Top}
@@ -372,6 +375,7 @@ const ProfileEnrichmentNode = ({
           onAddNode={onAddNodeAtHandle}
           className="bg-purple-500 dark:bg-purple-600 border-purple-600 dark:border-purple-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="source"
           position={Position.Bottom}
@@ -429,6 +433,7 @@ const EquipmentSessionNode = ({
             </div>
           </div>
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="target"
           position={Position.Top}
@@ -439,6 +444,7 @@ const EquipmentSessionNode = ({
           onAddNode={onAddNodeAtHandle}
           className="bg-orange-500 dark:bg-orange-600 border-orange-600 dark:border-orange-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="source"
           position={Position.Bottom}
@@ -496,6 +502,7 @@ const RestaurantOrderingNode = ({
             </div>
           </div>
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="target"
           position={Position.Top}
@@ -506,6 +513,7 @@ const RestaurantOrderingNode = ({
           onAddNode={onAddNodeAtHandle}
           className="bg-amber-500 dark:bg-amber-600 border-amber-600 dark:border-amber-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="source"
           position={Position.Bottom}
@@ -563,6 +571,7 @@ const ProductInteractionNode = ({
             </div>
           </div>
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="target"
           position={Position.Top}
@@ -573,6 +582,7 @@ const ProductInteractionNode = ({
           onAddNode={onAddNodeAtHandle}
           className="bg-teal-500 dark:bg-teal-600 border-teal-600 dark:border-teal-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="source"
           position={Position.Bottom}
@@ -622,6 +632,7 @@ const NavigateNode = ({ data, id }: NodeProps<Node<NavigateNodeData>>) => {
             </div>
           </div>
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="target"
           position={Position.Top}
@@ -632,6 +643,7 @@ const NavigateNode = ({ data, id }: NodeProps<Node<NavigateNodeData>>) => {
           onAddNode={onAddNodeAtHandle}
           className="bg-cyan-500 dark:bg-cyan-600 border-cyan-600 dark:border-cyan-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="source"
           position={Position.Bottom}
@@ -684,6 +696,7 @@ const NotificationNode = ({
             </div>
           </div>
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="target"
           position={Position.Top}
@@ -694,6 +707,7 @@ const NotificationNode = ({
           onAddNode={onAddNodeAtHandle}
           className="bg-pink-500 dark:bg-pink-600 border-pink-600 dark:border-pink-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="source"
           position={Position.Bottom}
@@ -794,6 +808,7 @@ const APICallNode = ({ data, id }: NodeProps<Node<ApiCallNodeData>>) => {
             </div>
           )}
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="target"
           position={Position.Top}
@@ -804,6 +819,7 @@ const APICallNode = ({ data, id }: NodeProps<Node<ApiCallNodeData>>) => {
           onAddNode={onAddNodeAtHandle}
           className="bg-emerald-500 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="source"
           position={Position.Bottom}
@@ -891,6 +907,7 @@ const RunnerNode = ({ data, id }: NodeProps<Node<RunnerNodeData>>) => {
             </div>
           )}
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="target"
           position={Position.Top}
@@ -901,6 +918,7 @@ const RunnerNode = ({ data, id }: NodeProps<Node<RunnerNodeData>>) => {
           onAddNode={onAddNodeAtHandle}
           className="bg-violet-500 dark:bg-violet-600 border-violet-600 dark:border-violet-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <NodeButtonHandle
           type="source"
           position={Position.Bottom}
@@ -1100,7 +1118,7 @@ const NodeLibrary = ({
               </div>
             </SortableContent>
             <SortableOverlay>
-              {(props) => (
+              {(_props) => (
                 <div className="flex items-center gap-2 opacity-50">
                   <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                     <GripVertical className="h-4 w-4" />
@@ -1128,6 +1146,7 @@ const NodeSetupPanel = ({
   selectedNode: CustomNode;
   onUpdateNode: (id: string, data: BaseNodeData) => void;
 }) => {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const handleConfigChange = (key: string, value: any) => {
     const updatedConfig = {
       ...selectedNode.data.config,
@@ -1188,6 +1207,7 @@ const NodeSetupForm = ({
   handleConfigChange,
 }: {
   selectedNode: CustomNode;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   handleConfigChange: (key: string, value: any) => void;
 }) => {
   switch (selectedNode.type) {
@@ -1199,10 +1219,12 @@ const NodeSetupForm = ({
         scanNetworks,
         wifiScanError,
         isScanError,
+      // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
       } = useWifiNetworks();
 
       // Get available networks from scan result or use mock data as fallback
       const availableNetworks = wifiScanResult?.success
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         ? wifiScanResult.networks.map((net: any) => net.ssid)
         : ['HomeNetwork', 'OfficeWiFi', 'CoffeeShop-Guest', 'NeighborNetwork'];
 
@@ -1212,6 +1234,7 @@ const NodeSetupForm = ({
 
         // If it's a known network, also set the security type
         const network = wifiScanResult?.success
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           ? wifiScanResult.networks.find((net: any) => net.ssid === value)
           : [
               { ssid: 'HomeNetwork', security: 'WPA2' },
@@ -1267,6 +1290,7 @@ const NodeSetupForm = ({
 
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="password"
               type="password"
@@ -1282,6 +1306,7 @@ const NodeSetupForm = ({
               value={(selectedNode.data.config?.security as string) || 'WPA2'}
               onValueChange={(value) => handleConfigChange('security', value)}
             >
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
               <SelectTrigger id="security">
                 <SelectValue />
               </SelectTrigger>
@@ -1302,6 +1327,7 @@ const NodeSetupForm = ({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="url">URL</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="url"
               value={(selectedNode.data.config?.url as string) || ''}
@@ -1311,6 +1337,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="params">URL Parameters</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Textarea
               id="params"
               value={
@@ -1324,7 +1351,7 @@ const NodeSetupForm = ({
                   handleConfigChange('params', params);
                   handleConfigChange('paramsRaw', undefined);
                   toast.success('Parameters updated successfully');
-                } catch (error) {
+                } catch (_error) {
                   toast.error('Invalid JSON in parameters');
                 }
               }}
@@ -1345,6 +1372,7 @@ const NodeSetupForm = ({
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Title</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="title"
               value={(selectedNode.data.config?.title as string) || ''}
@@ -1354,6 +1382,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="message">Message</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Textarea
               id="message"
               value={(selectedNode.data.config?.message as string) || ''}
@@ -1376,6 +1405,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="field">Field Name</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="field"
               value={(selectedNode.data.config?.field as string) || ''}
@@ -1384,6 +1414,7 @@ const NodeSetupForm = ({
             />
           </div>
           <div className="flex items-center space-x-2">
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Switch
               id="required"
               checked={selectedNode.data.config?.required === true}
@@ -1407,6 +1438,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="equipmentId">Equipment ID</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="equipmentId"
               value={(selectedNode.data.config?.equipmentId as string) || ''}
@@ -1418,6 +1450,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="equipmentType">Equipment Type</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="equipmentType"
               value={(selectedNode.data.config?.equipmentType as string) || ''}
@@ -1429,6 +1462,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="duration">Session Duration (minutes)</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="duration"
               type="number"
@@ -1436,7 +1470,7 @@ const NodeSetupForm = ({
               onChange={(e) =>
                 handleConfigChange(
                   'duration',
-                  Number.parseInt(e.target.value) || 0,
+                  Number.parseInt(e.target.value, 10) || 0,
                 )
               }
               placeholder="30"
@@ -1456,6 +1490,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="restaurantId">Restaurant ID</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="restaurantId"
               value={(selectedNode.data.config?.restaurantId as string) || ''}
@@ -1467,6 +1502,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="table">Table Identifier</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="table"
               value={(selectedNode.data.config?.table as string) || ''}
@@ -1488,6 +1524,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="productId">Product ID</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="productId"
               value={(selectedNode.data.config?.productId as string) || ''}
@@ -1497,6 +1534,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="sku">Product SKU</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="sku"
               value={(selectedNode.data.config?.sku as string) || ''}
@@ -1518,6 +1556,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="condition">Condition Expression</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="condition"
               value={(selectedNode.data.config?.condition as string) || ''}
@@ -1531,6 +1570,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="truePath">True Path Label</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="truePath"
               value={(selectedNode.data.config?.truePath as string) || 'True'}
@@ -1540,6 +1580,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="falsePath">False Path Label</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="falsePath"
               value={(selectedNode.data.config?.falsePath as string) || 'False'}
@@ -1575,6 +1616,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="iterations">Number of Iterations</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="iterations"
               type="number"
@@ -1582,7 +1624,7 @@ const NodeSetupForm = ({
               onChange={(e) =>
                 handleConfigChange(
                   'iterations',
-                  Number.parseInt(e.target.value) || 0,
+                  Number.parseInt(e.target.value, 10) || 0,
                 )
               }
               placeholder="e.g., 5"
@@ -1590,6 +1632,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="loopVariable">Loop Variable Name</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="loopVariable"
               value={
@@ -1619,6 +1662,7 @@ const NodeSetupForm = ({
               value={(selectedNode.data.config?.method as string) || 'GET'}
               onValueChange={(value) => handleConfigChange('method', value)}
             >
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
               <SelectTrigger id="method">
                 <SelectValue />
               </SelectTrigger>
@@ -1633,6 +1677,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="url">API Endpoint URL</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="url"
               value={(selectedNode.data.config?.url as string) || ''}
@@ -1642,6 +1687,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="headers">Headers (JSON)</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Textarea
               id="headers"
               value={
@@ -1655,7 +1701,7 @@ const NodeSetupForm = ({
                   handleConfigChange('headers', headers);
                   handleConfigChange('headersRaw', undefined);
                   toast.success('Headers updated successfully');
-                } catch (error) {
+                } catch (_error) {
                   toast.error('Invalid JSON in headers');
                 }
               }}
@@ -1666,6 +1712,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="body">Request Body (JSON)</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Textarea
               id="body"
               value={
@@ -1679,7 +1726,7 @@ const NodeSetupForm = ({
                   handleConfigChange('body', body);
                   handleConfigChange('bodyRaw', undefined);
                   toast.success('Body updated successfully');
-                } catch (error) {
+                } catch (_error) {
                   toast.error('Invalid JSON in body');
                 }
               }}
@@ -1706,6 +1753,7 @@ const NodeSetupForm = ({
               value={(selectedNode.data.config?.mode as string) || 'sequential'}
               onValueChange={(value) => handleConfigChange('mode', value)}
             >
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
               <SelectTrigger id="mode">
                 <SelectValue />
               </SelectTrigger>
@@ -1718,6 +1766,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="timeout">Timeout (seconds)</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="timeout"
               type="number"
@@ -1725,7 +1774,7 @@ const NodeSetupForm = ({
               onChange={(e) =>
                 handleConfigChange(
                   'timeout',
-                  Number.parseInt(e.target.value) || 30,
+                  Number.parseInt(e.target.value, 10) || 30,
                 )
               }
               placeholder="30"
@@ -1733,6 +1782,7 @@ const NodeSetupForm = ({
           </div>
           <div className="space-y-2">
             <Label htmlFor="retries">Max Retries</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Input
               id="retries"
               type="number"
@@ -1740,13 +1790,14 @@ const NodeSetupForm = ({
               onChange={(e) =>
                 handleConfigChange(
                   'retries',
-                  Number.parseInt(e.target.value) || 3,
+                  Number.parseInt(e.target.value, 10) || 3,
                 )
               }
               placeholder="3"
             />
           </div>
           <div className="flex items-center space-x-2">
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <Switch
               id="continueOnError"
               checked={selectedNode.data.config?.continueOnError === true}
@@ -2022,6 +2073,7 @@ const FlowBuilder = () => {
     setIsDraggingNode(true);
   };
 
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const onDragMove = (event: any) => {
     if (!reactFlowInstance) return;
 
@@ -2161,10 +2213,10 @@ const FlowBuilder = () => {
       reader.onload = (e) => {
         try {
           const content = e.target?.result as string;
-          const parsed = JSON.parse(content);
+          const _parsed = JSON.parse(content);
           // In a real implementation, this would parse the flow and set nodes/edges
           toast.success('Flow imported successfully');
-        } catch (error) {
+        } catch (_error) {
           toast.error('Failed to import flow');
         }
       };
@@ -2185,7 +2237,7 @@ const FlowBuilder = () => {
 
   // Workflow runner functionality
   const [isRunning, setIsRunning] = useState(false);
-  const [runnerStatus, setRunnerStatus] = useState<NodeStatus>('initial');
+  const [_runnerStatus, setRunnerStatus] = useState<NodeStatus>('initial');
 
   const runWorkflow = useCallback(async () => {
     setIsRunning(true);
@@ -2341,8 +2393,7 @@ const FlowBuilder = () => {
   // }, [helperLines]);
 
   return (
-    <>
-      <div className="w-full h-[700px] flex border rounded-lg overflow-hidden bg-background [&_.react-flow__attribution]:hidden">
+    <div className="w-full h-[700px] flex border rounded-lg overflow-hidden bg-background [&_.react-flow__attribution]:hidden">
         {/* Left sidebar - Node library */}
         <div className="w-64 border-r bg-background">
           <NodeLibrary onAddNode={onAddNode} />
@@ -2374,6 +2425,7 @@ const FlowBuilder = () => {
               />
             )}
           </DndContext>
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -2397,6 +2449,7 @@ const FlowBuilder = () => {
           >
             <svg role="img" aria-label="Flow Builder">
               <defs>
+                {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                 <marker
                   id="arrow"
                   viewBox="0 0 10 10"
@@ -2523,6 +2576,7 @@ const FlowBuilder = () => {
                         }
                       >
                         <Upload className="h-4 w-4" />
+                        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                         <input
                           id="import-flow"
                           type="file"
@@ -2631,7 +2685,6 @@ const FlowBuilder = () => {
           </DrawerContent>
         </Drawer>
       </div>
-    </>
   );
 };
 

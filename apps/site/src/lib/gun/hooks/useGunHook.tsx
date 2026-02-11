@@ -3,9 +3,11 @@ import { mergeOptionsWithDefaults } from '../options';
 
 export type UseGunOptions = Readonly<{
   schema: GTAAppConfig['schema'];
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   gun: IGunInstance<any>;
 }>;
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 type AnyFunction = (...args: any[]) => any;
 
 export type GunHookMessenger = {
@@ -24,11 +26,13 @@ export type UseGunHook<F extends AnyFunction> = WithoutMessenger<F> &
     withOptions(options: Partial<UseGunOptions>): WithoutMessenger<F>;
   };
 
+// biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
 type MessengerFunction<F extends Function> = (messenger: GunHookMessenger) => F;
 
 const useDefaultOptionsMsg =
   'Please use `setGTADefaultOptions` in your project root outside any component lifecycle.';
 
+// biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
 export function createGunHook<F extends Function>(fn: MessengerFunction<F>) {
   const defaultOptions = mergeOptionsWithDefaults({});
   if (!defaultOptions.gun)

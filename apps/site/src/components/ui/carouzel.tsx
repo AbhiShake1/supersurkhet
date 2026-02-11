@@ -225,6 +225,7 @@ function CarouzelIndicator({
       <div className="flex space-x-2">
         {Array.from({ length: itemsCount }, (_, i) => (
           <button
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
             type="button"
             aria-label={`Go to slide ${i + 1}`}
@@ -280,10 +281,11 @@ function CarouzelContent({
     }, options);
 
     const childNodes = containerRef.current.children;
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: lint debt cleanup
     Array.from(childNodes).forEach((child) => observer.observe(child));
 
     return () => observer.disconnect();
-  }, [children, setItemsCount]);
+  }, []);
 
   useEffect(() => {
     if (!itemsLength) {

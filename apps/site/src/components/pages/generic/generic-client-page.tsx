@@ -53,7 +53,9 @@ interface GenericClientPageProps {
 }
 
 export default function GenericClientPage({
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   slug,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   businessType,
 }: GenericClientPageProps) {
   const [name, setName] = useState('');
@@ -236,7 +238,8 @@ export default function GenericClientPage({
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
                   <Star
-                    key={`business-rating-star-${i}`}
+                    key={`business-rating-star-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+i}`}
                     className={`w-5 h-5 ${
                       i < Math.floor(businessInfo.rating)
                         ? 'fill-yellow-400 text-yellow-400'
@@ -324,7 +327,8 @@ export default function GenericClientPage({
                   <CardContent className="pb-6">
                     <ul className="space-y-3">
                       {service.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start">
+                        // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<li key={idx} className="flex items-start">
                           <CheckCircle className="w-5 h-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                           <span>{feature}</span>
                         </li>
@@ -563,6 +567,7 @@ export default function GenericClientPage({
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label htmlFor="name">Name</Label>
+                        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                         <Input
                           id="name"
                           value={name}
@@ -574,6 +579,7 @@ export default function GenericClientPage({
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
+                        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                         <Input
                           id="email"
                           type="email"
@@ -587,6 +593,7 @@ export default function GenericClientPage({
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="message">Message</Label>
+                      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                       <Input
                         id="message"
                         value={message}

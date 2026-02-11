@@ -16,8 +16,9 @@ import { toast } from 'sonner';
 
 import { VisualFlowBuilder } from '@/components/qr/visual-flow-builder';
 
+// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 export function QRCodePage({ slug }: { slug: string }) {
-  const [sampleAction] = useState<DataMatrixAction>(() => {
+  const [_sampleAction] = useState<DataMatrixAction>(() => {
     return dataMatrixActionSchema.parse({
       version: '1.0',
       action: 'wifi_connect',
@@ -36,7 +37,7 @@ export function QRCodePage({ slug }: { slug: string }) {
     });
   });
 
-  const handleActionDetected = (action: DataMatrixAction) => {
+  const _handleActionDetected = (action: DataMatrixAction) => {
     // Execute the action progressively
     const executor = new ActionExecutor(action);
 

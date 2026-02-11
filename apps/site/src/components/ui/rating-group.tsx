@@ -1,13 +1,15 @@
 'use client';
 
 import { RatingGroup } from '@ark-ui/react/rating-group';
-import { Star, StarHalf, ThumbsUp, Heart, Zap, Sparkles } from 'lucide-react';
+import { Star, ThumbsUp, Heart, Zap, Sparkles } from 'lucide-react';
 import { useState, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { z } from 'zod';
 
 // Safe number helper
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 const safeNumber = (v: any, defaultValue: number) =>
+  Number.
   isNaN(Number(v)) ? defaultValue : Number(v);
 
 //Schema
@@ -192,6 +194,7 @@ export default function EnhancedRating(props: Props) {
       >
         {labels.map((label, index) => (
           <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={index}
             className={`transition-opacity duration-200 ${
               hoveredIndex !== null
@@ -432,6 +435,7 @@ export default function EnhancedRating(props: Props) {
               exit={{ opacity: 0, y: -10 }}
               className="mt-6"
             >
+              {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
               <button
                 onClick={handleSubmit}
                 disabled={config.disabled}

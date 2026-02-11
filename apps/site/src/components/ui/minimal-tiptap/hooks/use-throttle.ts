@@ -1,5 +1,6 @@
 import { useRef, useCallback } from 'react';
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function useThrottle<T extends (...args: any[]) => void>(
   callback: T,
   delay: number,

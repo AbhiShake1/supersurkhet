@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, } from 'react';
 import createGlobe from 'cobe';
 import { cn } from '@/lib/utils';
 
@@ -34,12 +34,14 @@ const Earth: React.FC<EarthProps> = ({
   useEffect(() => {
     let width = 0;
     const onResize = () =>
+      // biome-ignore lint/suspicious/noAssignInExpressions: lint debt cleanup
       canvasRef.current && (width = canvasRef.current.offsetWidth);
     window.addEventListener('resize', onResize);
     onResize();
     let phi = 0;
 
     onResize();
+    // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
     const globe = createGlobe(canvasRef.current!, {
       devicePixelRatio: 2,
       width: width * 2,
@@ -59,6 +61,7 @@ const Earth: React.FC<EarthProps> = ({
       markers: [
         // longitude latitude
       ],
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       onRender: (state: Record<string, any>) => {
         // Called on every animation frame.
         // `state` will be an empty object, return updated params.\
@@ -70,7 +73,7 @@ const Earth: React.FC<EarthProps> = ({
     return () => {
       globe.destroy();
     };
-  }, [dark]);
+  }, [dark, baseColor, diffuse, glowColor, mapBrightness, mapSamples, markerColor, scale, theta]);
 
   return (
     <div

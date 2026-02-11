@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import {
   CONFIG,
   LAYOUT_GROUPS,
@@ -34,12 +34,14 @@ export function ClassNameItemControl({
             ),
           );
           if (parsed.length > 0) {
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             (acc as any)[key] = config.multiple ? parsed : parsed[0];
           }
           return acc;
         },
         Object.fromEntries(Object.keys(CONFIG).map((k) => [k, null])) as Record<
           string,
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           any
         >,
       ) as StateType;
@@ -105,7 +107,7 @@ export function ClassNameItemControl({
     if (unhandledChanged) setUnhandled(parsed.unhandledTokens);
     if (selectedChanged) setSelectedKeys(parsed.initialSelected);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsed]);
+  }, [parsed, selectedKeys, state, unhandled]);
 
   // Helper to build class string from state and unhandled
   const buildClassString = (
@@ -202,10 +204,12 @@ export function ClassNameItemControl({
             if (!config) continue;
             if (config.multiple && Array.isArray(newState[k])) {
               newState[k] = (newState[k] as string[]).filter(
+                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                 (v) => !classesToClear.includes(v as any),
               );
               if (Array.isArray(newState[k]) && newState[k]?.length === 0)
                 newState[k] = null;
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             } else if (classesToClear.includes(newState[k] as any)) {
               newState[k] = null;
             }
@@ -227,7 +231,8 @@ export function ClassNameItemControl({
     const classString = buildClassString(state, unhandled);
     if (onChange) onChange(classString);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, unhandled]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+      }, [state, unhandled, buildClassString, onChange]);
 
   return (
     <div className="w-full" data-testid="classname-item-control">

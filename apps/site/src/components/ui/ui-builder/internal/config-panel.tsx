@@ -35,6 +35,7 @@ export const ConfigPanel = () => {
   const handleUpdateLayerProps = useCallback(
     (
       id: string,
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       props: Record<string, any>,
       rest?: Omit<ComponentLayer, 'props' | 'children'>,
     ) => {
@@ -60,6 +61,7 @@ interface PageLayerFormProps {
   duplicateLayer: (id: string) => void;
   updateLayerProps: (
     id: string,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     props: Record<string, any>,
     rest?: Omit<ComponentLayer, 'props' | 'children'>,
   ) => void;

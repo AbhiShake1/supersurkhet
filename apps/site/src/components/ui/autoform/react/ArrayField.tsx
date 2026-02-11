@@ -18,6 +18,7 @@ export const ArrayField: React.FC<{
   const testIdBase = formatTestId(path);
 
   const subFieldType = field.schema?.[0]?.type;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   let defaultValue: any;
   if (subFieldType === 'object') {
     defaultValue = {};
@@ -44,7 +45,8 @@ export const ArrayField: React.FC<{
           removeTestId={`af-remove-${testIdBase}-${index}`}
         >
           <AutoFormField
-            field={field.schema![0]!}
+            // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
+            field={field.schema?.[0]!}
             path={[...path, index.toString()]}
           />
         </uiComponents.ArrayElementWrapper>

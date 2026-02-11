@@ -216,17 +216,17 @@ function _GymManagement({
     toast.success(`Class schedule ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteEquipment = (g) => {
+  const deleteEquipment = (_g) => {
     // In a real implementation, this would delete the equipment from GunDB
     toast.success('Equipment removed');
   };
 
-  const deleteMembershipPlan = (g) => {
+  const deleteMembershipPlan = (_g) => {
     // In a real implementation, this would delete the membership plan from GunDB
     toast.success('Membership plan removed');
   };
 
-  const deleteClassSchedule = (g) => {
+  const deleteClassSchedule = (_g) => {
     // In a real implementation, this would delete the class schedule from GunDB
     toast.success('Class schedule removed');
   };

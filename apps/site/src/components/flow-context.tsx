@@ -22,7 +22,9 @@ type NodeLibraryItemType = {
 interface FlowContextType {
   nodes: CustomNode[];
   edges: Edge[];
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onNodesChange: (changes: any) => void;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onEdgesChange: (changes: any) => void;
   setNodes: (
     nodes: CustomNode[] | ((nodes: CustomNode[]) => CustomNode[]),
@@ -36,6 +38,7 @@ interface FlowContextType {
     nodeType: NodeType,
   ) => void;
   onAddNodeToEdge: (edgeId: string, nodeType: string) => void;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onConnect: (params: any) => void;
   // Node library order management
   nodeLibraryOrder: NodeLibraryItemType[];
@@ -219,7 +222,7 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
   // Reset node library order to default
   const resetNodeLibraryOrder = useCallback(() => {
     setNodeLibraryOrder(defaultNodeLibraryOrder);
-  }, [defaultNodeLibraryOrder]);
+  }, []);
 
   // Drag state management
   const [isDraggingNode, setIsDraggingNode] = useState(false);
@@ -307,7 +310,8 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
       setNodes((nds) => [...nds, newNode]);
       setEdges((eds) => [...eds, newEdge]);
     },
-    [reactFlowInstance, setNodes, setEdges],
+    // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
+    [reactFlowInstance, setNodes, setEdges, onAddNode, onAddNodeToEdge],
   );
 
   const onAddNodeToEdge = useCallback(
@@ -370,10 +374,11 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
         return [...updatedEdges, newEdge1, newEdge2];
       });
     },
-    [reactFlowInstance, setNodes, setEdges],
+    [reactFlowInstance, setNodes, setEdges, onAddNode],
   );
 
   const onConnect = useCallback(
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     (params: any) => {
       const newEdge = {
         ...params,

@@ -58,9 +58,11 @@ function Calendar({
         ...classNames,
       }}
       components={{
+        // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
         IconLeft: ({ className, ...props }) => (
           <ChevronLeft className={cn('size-4', className)} {...props} />
         ),
+        // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
         IconRight: ({ className, ...props }) => (
           <ChevronRight className={cn('size-4', className)} {...props} />
         ),

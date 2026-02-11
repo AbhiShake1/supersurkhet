@@ -6,6 +6,7 @@
  */
 export function resolveContextualMentions(
   value: string,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   contextData: Record<string, any>,
 ): string {
   if (!contextData) {
@@ -21,7 +22,8 @@ export function resolveContextualMentions(
       const parts = path.split('.');
 
       // Use a safe navigation function to access nested properties
-      let result: any = contextData;
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+            let result: any = contextData;
       for (const part of parts) {
         // Check if result is null or undefined before accessing properties
         if (result == null) {

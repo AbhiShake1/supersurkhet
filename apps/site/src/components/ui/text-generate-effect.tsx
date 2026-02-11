@@ -28,7 +28,7 @@ export const TextGenerateEffect = ({
         delay: stagger(0.2),
       },
     );
-  }, [scope.current]);
+  }, [animate, duration, filter]);
 
   const renderWords = () => {
     return (
@@ -36,6 +36,7 @@ export const TextGenerateEffect = ({
         {wordsArray.map((word, idx) => {
           return (
             <motion.span
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
               key={word + idx}
               className="dark:text-white text-black opacity-0"
               style={{

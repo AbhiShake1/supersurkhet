@@ -280,38 +280,38 @@ function _ServiceManagement({
     );
   });
 
-  const toggleServiceActive = (id: string, active: boolean) => {
+  const toggleServiceActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Service ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleCategoryActive = (id: string, active: boolean) => {
+  const toggleCategoryActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Category ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleProviderActive = (id: string, active: boolean) => {
+  const toggleProviderActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Provider ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteService = (id: string) => {
+  const deleteService = (_id: string) => {
     // In a real implementation, this would delete the service from GunDB
     toast.success('Service removed');
   };
 
-  const deleteCategory = (id: string) => {
+  const deleteCategory = (_id: string) => {
     // In a real implementation, this would delete the category from GunDB
     toast.success('Category removed');
   };
 
-  const deleteProvider = (id: string) => {
+  const deleteProvider = (_id: string) => {
     // In a real implementation, this would delete the provider from GunDB
     toast.success('Provider removed');
   };
 
   const updateAppointmentStatus = (
-    id: string,
+    _id: string,
     status: Appointment['status'],
   ) => {
     // In a real implementation, this would update the appointment status in GunDB
@@ -637,6 +637,7 @@ function _ServiceManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
                               className={`w-3 h-3 ${
                                 i < Math.floor(provider.rating)

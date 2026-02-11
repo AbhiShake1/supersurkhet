@@ -100,6 +100,7 @@ export const ResizableWrapper: React.FC<ResizableWrapperProps> = ({
         }, 0);
       }
     },
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     horizontalDragConfig as any,
   );
 
@@ -131,6 +132,7 @@ export const ResizableWrapper: React.FC<ResizableWrapperProps> = ({
         }, 0);
       }
     },
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     verticalDragConfig as any,
   );
 
@@ -217,7 +219,8 @@ const Resizer = ({
   );
 
   return (
-    <div
+    // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+<div
       data-testid="resizer"
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}

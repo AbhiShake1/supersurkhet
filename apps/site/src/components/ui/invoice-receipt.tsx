@@ -136,6 +136,7 @@ export function InvoiceReceipt({
               <tbody>
                 {invoice.items.map((item, idx) => (
                   <tr
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                     key={idx}
                     className="border-b hover:bg-muted/50 transition-colors"
                   >

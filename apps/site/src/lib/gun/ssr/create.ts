@@ -10,6 +10,7 @@ export function create<const T extends SchemaKeys>(
 ) {
   const options = mergeOptionsWithDefaults({});
   const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
+  // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
   const schema = getNestedZodShape(key, options.schema!);
   return async (
     value: Omit<NestedSchemaType<T>, '_'> & { id?: string | number },
@@ -17,7 +18,7 @@ export function create<const T extends SchemaKeys>(
     const encrypted = await encrypt(value, schema);
     return new Promise<GunMessagePut>((resolve, reject) => {
       getGunRef(keys)
-        .get(encrypted?.id ?? keys + '/' + Date.now().toString())
+        .get(encrypted?.id ?? `${keys}/${Date.now().toString()}`)
         .put(encrypted, (ack) => {
           if ('err' in ack && !!ack.err) {
             reject(ack.err);

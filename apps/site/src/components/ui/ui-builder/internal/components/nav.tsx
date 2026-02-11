@@ -375,7 +375,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <TooltipTrigger asChild>
           <Button
             onClick={() =>
-              window.open(window.location.pathname + '/editor', '_blank')
+              window.open(`${window.location.pathname}/editor`, '_blank')
             }
             variant="secondary"
             size="icon"
@@ -459,7 +459,7 @@ const ResponsiveDropdown: React.FC<ResponsiveDropdownProps> = ({
         <DropdownMenuItem
           className="gap-2"
           onClick={() =>
-            window.open(window.location.pathname + '/editor', '_blank')
+            window.open(`${window.location.pathname}/editor`, '_blank')
           }
         >
           <Maximize className="w-4 h-4" />
@@ -563,7 +563,7 @@ function PagesPopover() {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedPage, setSelectedPage] = useState<string | null>(
+  const [_selectedPage, setSelectedPage] = useState<string | null>(
     selectedPageId,
   );
   const [textInputValue, setTextInputValue] = useState('');
@@ -581,7 +581,7 @@ function PagesPopover() {
       selectPage(pageId);
       setOpen(false);
     },
-    [selectPage, setOpen],
+    [selectPage],
   );
 
   const handleAddPageLayer = useCallback(
@@ -589,7 +589,7 @@ function PagesPopover() {
       addPageLayer(pageName);
       setTextInputValue('');
     },
-    [addPageLayer, setTextInputValue],
+    [addPageLayer],
   );
 
   const handleSubmit = useCallback(
@@ -604,7 +604,7 @@ function PagesPopover() {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setTextInputValue(e.target.value);
     },
-    [setTextInputValue],
+    [],
   );
 
   const handleKeyDown = useCallback(

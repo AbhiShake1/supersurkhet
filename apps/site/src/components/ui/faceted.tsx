@@ -94,6 +94,7 @@ function Faceted<Multiple extends boolean = false>(
 
   const contextValue = React.useMemo<FacetedContextValue<typeof multiple>>(
     () => ({ value, onItemSelect, multiple }),
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
     [value, onItemSelect, multiple],
   );
 

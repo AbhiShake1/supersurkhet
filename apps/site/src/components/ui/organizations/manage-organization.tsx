@@ -46,7 +46,8 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
   const updateBusinessMutation = api.business.useUpdate();
 
   // Handle inviting a new member
-  const handleInviteMember = async (data: any) => {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    const handleInviteMember = async (data: any) => {
     try {
       if (!business) {
         toast.error('Business not found');
@@ -63,13 +64,12 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
         data: {
           from: 'SuperSurkhet <onboarding@surkhet.app>',
           to: data.email,
-          subject: `Invitation to join ${business!.name}`,
+          subject: `Invitation to join ${business?.name}`,
           html: await render(
             <InvitationEmail
               inviterName={user?.name || user?.email || 'A user'}
-              businessName={business!.name}
+              businessName={business?.name}
               inviteeEmail={data.email}
-              role="staff" // Default role, can be changed based on requirements
               invitationUrl={invitationUrl}
             />,
           ),
@@ -77,7 +77,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
       });
 
       await updateBusinessMutation.mutateAsync({
-        id: business!.id,
+        id: business?.id,
         invitations: {
           [invitationToken]: {
             email: data.email,
@@ -97,7 +97,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
   };
 
   // Handle updating member permissions
-  const handleUpdatePermissions = (memberId: string, permissions: string[]) => {
+  const handleUpdatePermissions = (_memberId: string, _permissions: string[]) => {
     // console.log(`Updating permissions for member ${memberId}:`, permissions);
     // // In a real app, this would make an API call
     // setMembers(prevMembers =>
@@ -108,7 +108,7 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
   };
 
   // Handle removing a member
-  const handleRemoveMember = (memberId: string) => {
+  const handleRemoveMember = (_memberId: string) => {
     // console.log(`Removing member with ID: ${memberId}`);
     // // In a real app, this would make an API call
     // setMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
@@ -206,6 +206,7 @@ const MembersTab = ({
   setSearchTerm: (term: string) => void;
   showInviteForm: boolean;
   setShowInviteForm: (show: boolean) => void;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onInviteMember: (data: any) => void;
   onUpdatePermissions: (id: string, permissions: string[]) => void;
   onRemoveMember: (id: string) => void;
@@ -295,7 +296,9 @@ const MembersTab = ({
 // Member Row Component
 const MemberRow = ({
   member: { userId, role, permissions, joinedAt },
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   onUpdatePermissions,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   onRemoveMember,
   searchTerm,
 }: {

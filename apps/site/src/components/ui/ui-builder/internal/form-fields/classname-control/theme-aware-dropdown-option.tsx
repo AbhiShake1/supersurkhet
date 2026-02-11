@@ -50,6 +50,7 @@ export function ThemeAwareDropdownOption({
           const modeColors = themeData.cssVars[currentMode as 'light' | 'dark'];
 
           if (modeColors) {
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             const colorValue = (modeColors as any)[themeColorKey];
 
             if (colorValue) {

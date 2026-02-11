@@ -12,7 +12,7 @@ export function zStringified<T extends z.ZodTypeAny>(schema: T) {
           message: 'String does not match required JSON shape',
         });
       }
-    } catch (err) {
+    } catch (_err) {
       ctx.addIssue({
         code: 'custom',
         message: 'Invalid JSON string',

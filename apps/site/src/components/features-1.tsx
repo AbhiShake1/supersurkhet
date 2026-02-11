@@ -9,6 +9,7 @@ const FeatureItemSchema = z.object({
   icon: z.string().default('Zap'), // Using string instead of React.ElementType for UI builder compatibility
 });
 
+// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
 interface FeatureItem extends z.infer<typeof FeatureItemSchema> {
   icon: React.ElementType; // Original type
 }
@@ -90,7 +91,8 @@ export default function Features({
         </div>
         <div className="@min-4xl:max-w-full @min-4xl:grid-cols-3 mx-auto mt-8 grid max-w-sm gap-6 *:text-center md:mt-16">
           {features.map((feature, index) => (
-            <Card key={index} className="group shadow-zinc-950/5">
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<Card key={index} className="group shadow-zinc-950/5">
               <CardHeader className="pb-3">
                 <CardDecorator>
                   {React.createElement(

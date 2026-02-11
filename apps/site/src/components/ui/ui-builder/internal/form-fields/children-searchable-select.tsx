@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 
 import { X as XIcon, ChevronsUpDown } from 'lucide-react';
 import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
@@ -15,6 +15,7 @@ import {
 
 interface ChildrenSearchableSelectProps {
   layer: ComponentLayer;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onChange: (value: any) => void; // This will be called with the new prop value
   optionsFilter?: (k: string) => boolean;
   fieldName?: string;
@@ -35,6 +36,7 @@ export function ChildrenSearchableSelect({
     updateLayer,
   } = useLayerStore();
 
+  // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
   const layer = findLayerById(selectedLayerId)!;
 
   // Get the component layers from the specific field if it's not 'children'
@@ -69,7 +71,8 @@ export function ChildrenSearchableSelect({
     }) => {
       if (!fieldName || fieldName === 'children') {
         // For the 'children' field, use the default add logic
-        addComponentLayer(layerType as any, parentLayerId, addPosition);
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                addComponentLayer(layerType as any, parentLayerId, addPosition);
       } else {
         // For other ReactNode fields, create the component and add it to the prop
         const { registry } = useEditorStore.getState();
@@ -77,6 +80,7 @@ export function ChildrenSearchableSelect({
 
         // Get the current value of the field and update it with the new component
         const currentPropValue = layer.props?.[fieldName];
+        // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
         let newPropValue;
 
         if (isComponentLayer(currentPropValue)) {
@@ -123,6 +127,7 @@ export function ChildrenSearchableSelect({
       } else {
         // Remove from the specific ReactNode prop and update form
         const currentPropValue = layer.props?.[fieldName];
+        // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
         let newPropValue;
 
         if (
@@ -146,7 +151,7 @@ export function ChildrenSearchableSelect({
         onChange(newPropValue ?? []);
       }
     },
-    [fieldName, layer, onChange, updateLayer],
+    [fieldName, layer, onChange, updateLayer, removeLayer],
   );
 
   return (

@@ -25,6 +25,7 @@ function DefaultParent({ children }: { children: React.ReactNode }) {
 }
 
 export default function AutoFormObject<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   SchemaType extends z.ZodObject<any, any>,
 >({
   schema,
@@ -51,13 +52,17 @@ export default function AutoFormObject<
   }
 
   const handleIfZodNumber = (item: z.ZodAny) => {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const isZodNumber = (item as any)._def.typeName === 'ZodNumber';
     const isInnerZodNumber =
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       (item._def as any).innerType?._def?.typeName === 'ZodNumber';
 
     if (isZodNumber) {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       (item as any)._def.coerce = true;
     } else if (isInnerZodNumber) {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       (item._def as any).innerType._def.coerce = true;
     }
 
@@ -91,6 +96,7 @@ export default function AutoFormObject<
               <AccordionTrigger>{itemName}</AccordionTrigger>
               <AccordionContent className="p-2">
                 <AutoFormObject
+                  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                   schema={item as unknown as z.ZodObject<any, any>}
                   form={form}
                   fieldConfig={
@@ -109,6 +115,7 @@ export default function AutoFormObject<
             <AutoFormArray
               key={key}
               name={name}
+              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
               item={item as unknown as z.ZodArray<any>}
               form={form}
               fieldConfig={fieldConfig?.[name] ?? {}}
@@ -121,6 +128,7 @@ export default function AutoFormObject<
             <AutoFormRecord
               key={key}
               name={name}
+              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
               item={item as unknown as z.ZodRecord<any, any>}
               form={form}
               fieldConfig={fieldConfig?.[name] ?? {}}
@@ -173,6 +181,7 @@ export default function AutoFormObject<
               };
 
               if (InputComponent === undefined) {
+                // biome-ignore lint/complexity/noUselessFragments: lint debt cleanup
                 return <></>;
               }
 

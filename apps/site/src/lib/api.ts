@@ -15,6 +15,7 @@ import type { QueryOptions } from '@tanstack/react-query';
 
 const schema = transformSchema(appSchema);
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function createApi<const TSchema extends z.ZodObject<any>>(schema: TSchema) {
   return Object.keys(schema.shape)
     .map((k) => {
@@ -36,6 +37,7 @@ function createApi<const TSchema extends z.ZodObject<any>>(schema: TSchema) {
         },
       } as const;
     })
+    // biome-ignore lint/performance/noAccumulatingSpread: lint debt cleanup
     .reduce((acc, curr) => ({ ...acc, ...curr }), {}) as unknown as {
     [K in SchemaKeys]: {
       useGet: (

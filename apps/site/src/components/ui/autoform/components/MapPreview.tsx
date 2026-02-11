@@ -1,12 +1,12 @@
 import { Card } from '@/components/ui/card';
 import {
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
   Map,
   MapControls,
   MapMarker,
   MarkerContent,
 } from '@/components/ui/map';
 import type { AutoPreviewComponent } from '../../../auto-preview';
-import type React from 'react';
 
 type GpsCoordinate = [number, number];
 
@@ -20,11 +20,11 @@ export const MapPreview: AutoPreviewComponent<string> = ({ value }) => {
       if (Array.isArray(parsedValue) && parsedValue.length === 2) {
         coordinates = parsedValue as GpsCoordinate;
       }
-    } catch (e) {
+    } catch (_e) {
       // If parsing fails, try to split by comma if it's a string
       if (typeof value === 'string') {
         const coords = value.split(',').map(Number);
-        if (coords.length === 2 && !coords.some(isNaN)) {
+        if (coords.length === 2 && !coords.some(Number.isNaN)) {
           coordinates = coords as GpsCoordinate;
         }
       }

@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -23,15 +22,6 @@ import {
   User,
   Calendar,
   DollarSign,
-  Award,
-  Building,
-  Handshake,
-  FileText,
-  CalendarDays,
-  MapPin,
-  Phone,
-  Mail,
-  Clock,
   Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -312,47 +302,47 @@ function _CooperativeManagement({
     );
   });
 
-  const toggleMemberActive = (id: string, active: boolean) => {
+  const toggleMemberActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Member ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleCommitteeActive = (id: string, active: boolean) => {
+  const toggleCommitteeActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Committee ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleMeetingActive = (id: string, active: boolean) => {
+  const toggleMeetingActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Meeting ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleFinancialReportActive = (id: string, active: boolean) => {
+  const toggleFinancialReportActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Financial report ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteMember = (id: string) => {
+  const deleteMember = (_id: string) => {
     // In a real implementation, this would delete the member from GunDB
     toast.success('Member removed');
   };
 
-  const deleteCommittee = (id: string) => {
+  const deleteCommittee = (_id: string) => {
     // In a real implementation, this would delete the committee from GunDB
     toast.success('Committee removed');
   };
 
-  const deleteMeeting = (id: string) => {
+  const deleteMeeting = (_id: string) => {
     // In a real implementation, this would delete the meeting from GunDB
     toast.success('Meeting removed');
   };
 
-  const deleteFinancialReport = (id: string) => {
+  const deleteFinancialReport = (_id: string) => {
     // In a real implementation, this would delete the financial report from GunDB
     toast.success('Financial report removed');
   };
 
-  const updateMeetingStatus = (id: string, status: Meeting['status']) => {
+  const updateMeetingStatus = (_id: string, status: Meeting['status']) => {
     // In a real implementation, this would update the meeting status in GunDB
     toast.success(`Meeting ${status}`);
   };

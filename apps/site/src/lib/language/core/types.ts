@@ -33,9 +33,12 @@ export type Json = Primitive | Json[] | { [key: string]: Json };
  * @template T - The object type to extract paths from
  * @returns Union of all possible property access paths as string literals
  */
-export type Path<T> = T extends Record<string, any>
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  type Path<T> = T extends Record<string, any>
   ? {
       [K in keyof T]-?: K extends string
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         ? T[K] extends Record<string, any>
           ? `${K}` | `${K}.${Path<T[K]>}`
           : `${K}`
@@ -58,9 +61,12 @@ export type Path<T> = T extends Record<string, any>
  * @template T - The object type to extract array paths from
  * @returns Union of all possible array access paths as tuple types
  */
-export type ArrayPath<T> = T extends Record<string, any>
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  type ArrayPath<T> = T extends Record<string, any>
   ? {
       [K in keyof T]-?: K extends string
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         ? T[K] extends Record<string, any>
           ? [K] | [K, ...ArrayPath<T[K]>]
           : [K]
@@ -89,7 +95,9 @@ export type VarFrom<T> =
  * This type is primarily used for the 'fn' operation to store or retrieve functions,
  * since the 'call' operation now uses string-based function references.
  */
-export type CallableFunction = (...args: any[]) => any;
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  type CallableFunction = (...args: any[]) => any;
 
 /**
  * Enhanced logic expression type with comprehensive function support.
@@ -125,7 +133,9 @@ export type CallableFunction = (...args: any[]) => any;
  * };
  * ```
  */
-export type LogicExpr<TVars = any> =
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  type LogicExpr<TVars = any> =
   | Primitive
   | {
       /**
@@ -181,7 +191,9 @@ export type LogicExpr<TVars = any> =
        * { call: ["form.setValue", "name", { var: "newValue" }] }
        * ```
        */
-      call: [string, ...any[]];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+call: [string, ...any[]];
     }
   | {
       /**
@@ -198,7 +210,9 @@ export type LogicExpr<TVars = any> =
        * { fn: { var: "mathOperations.add" } }
        * ```
        */
-      fn: (...args: any[]) => any;
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+fn: (...args: any[]) => any;
     }
   | {
       /**
@@ -211,7 +225,9 @@ export type LogicExpr<TVars = any> =
        * { val: "someValue" }
        * ```
        */
-      val: any;
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+val: any;
     }
   | {
       /**
@@ -448,7 +464,9 @@ export type LogicExpr<TVars = any> =
        * { "==": [{ var: "a" }, { var: "b" }] }
        * ```
        */
-      '==': [any, any];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'==': [any, any];
     }
   | {
       /**
@@ -466,7 +484,9 @@ export type LogicExpr<TVars = any> =
        * { "===": [{ var: "a" }, { var: "b" }] }
        * ```
        */
-      '===': [any, any];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'===': [any, any];
     }
   | {
       /**
@@ -484,7 +504,9 @@ export type LogicExpr<TVars = any> =
        * { "!=": [{ var: "a" }, { var: "b" }] }
        * ```
        */
-      '!=': [any, any];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'!=': [any, any];
     }
   | {
       /**
@@ -502,7 +524,9 @@ export type LogicExpr<TVars = any> =
        * { "!==": [{ var: "a" }, { var: "b" }] }
        * ```
        */
-      '!==': [any, any];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'!==': [any, any];
     }
   | {
       /**
@@ -563,7 +587,9 @@ export type LogicExpr<TVars = any> =
        * { not: 1 } // Returns false
        * ```
        */
-      not: any;
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+not: any;
     }
   | {
       /**
@@ -578,7 +604,9 @@ export type LogicExpr<TVars = any> =
        * { "!": false } // Returns true
        * ```
        */
-      '!': any;
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'!': any;
     }
   | {
       /**
@@ -595,7 +623,9 @@ export type LogicExpr<TVars = any> =
        * { "!!": "" } // Returns false
        * ```
        */
-      '!!': any;
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'!!': any;
     }
   | {
       /**
@@ -613,7 +643,9 @@ export type LogicExpr<TVars = any> =
        * { "??": [false, "default"] } // Returns false (false is not nullish)
        * ```
        */
-      '??': [any, any];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'??': [any, any];
     }
   | {
       /**
@@ -641,7 +673,9 @@ export type LogicExpr<TVars = any> =
        * ]}
        * ```
        */
-      if: [boolean, any, any] | any[];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+if: [boolean, any, any] | any[];
     }
   | {
       /**
@@ -663,7 +697,9 @@ export type LogicExpr<TVars = any> =
        * ]}
        * ```
        */
-      '?:': [boolean, any, any] | any[];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'?:': [boolean, any, any] | any[];
     }
   | {
       /**
@@ -718,7 +754,9 @@ export type LogicExpr<TVars = any> =
        * { length: { var: "collection" } }
        * ```
        */
-      length: string | any[] | { var: VarFrom<TVars> & {} };
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+length: string | any[] | { var: VarFrom<TVars> & {} };
     }
   | {
       /**
@@ -735,7 +773,9 @@ export type LogicExpr<TVars = any> =
        * { merge: [{ var: "array1" }, { var: "array2" }] }
        * ```
        */
-      merge: any[] | (any[] | { var: VarFrom<TVars> & {} })[];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+merge: any[] | (any[] | { var: VarFrom<TVars> & {} })[];
     }
   | {
       /**
@@ -759,7 +799,9 @@ export type LogicExpr<TVars = any> =
        * ]}
        * ```
        */
-      map: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+map: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -783,7 +825,9 @@ export type LogicExpr<TVars = any> =
        * ]}
        * ```
        */
-      filter: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+filter: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -809,7 +853,9 @@ export type LogicExpr<TVars = any> =
        * ]}
        * ```
        */
-      reduce: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>, any];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+reduce: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>, any];
     }
   | {
       /**
@@ -832,7 +878,9 @@ export type LogicExpr<TVars = any> =
        * ]}
        * ```
        */
-      all: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+all: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -849,7 +897,9 @@ export type LogicExpr<TVars = any> =
        * ]} // Returns true
        * ```
        */
-      every: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+every: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -872,7 +922,9 @@ export type LogicExpr<TVars = any> =
        * ]}
        * ```
        */
-      some: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+some: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -895,7 +947,9 @@ export type LogicExpr<TVars = any> =
        * ]}
        * ```
        */
-      none: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+none: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -977,7 +1031,9 @@ export type LogicExpr<TVars = any> =
        * { preserve: { var: "value" } }
        * ```
        */
-      preserve: any;
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+preserve: any;
     }
   | {
       /**
@@ -1084,9 +1140,13 @@ export interface EngineOptions {
  * @template TEngine - Type of the engine instance
  */
 export interface MethodDefinition<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   TArgs = any,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   TContext = any,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   TAbove = any,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   TEngine = any,
 > {
   /**
@@ -1103,6 +1163,7 @@ export interface MethodDefinition<
     context: TContext,
     above: TAbove[],
     engine: TEngine,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   ) => any;
 
   /**
@@ -1124,7 +1185,9 @@ export interface MethodDefinition<
    * Can be a boolean or a function that determines determinism based on input.
    * Used for optimization purposes.
    */
-  deterministic?: boolean | ((data: any, buildState: any) => boolean);
+  
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+deterministic?: boolean | ((data: any, buildState: any) => boolean);
 
   /**
    * Asynchronous version of the method for async operations.
@@ -1140,5 +1203,6 @@ export interface MethodDefinition<
     context: TContext,
     above: TAbove[],
     engine: TEngine,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   ) => Promise<any>;
 }

@@ -60,6 +60,7 @@ export const ImageEditBlock: React.FC<ImageEditBlockProps> = ({
       <div className="space-y-1">
         <Label htmlFor="image-link">Attach an image link</Label>
         <div className="flex">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <Input
             id="image-link"
             type="url"

@@ -165,6 +165,7 @@ export function DataMatrixScanner({
             <div className="space-y-4">
               <div>
                 <Label htmlFor="manualInput">Action Data (JSON)</Label>
+                {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                 <Textarea
                   id="manualInput"
                   value={manualInput}

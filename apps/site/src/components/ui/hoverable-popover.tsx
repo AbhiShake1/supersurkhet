@@ -13,7 +13,8 @@ const HoverablePopoverContext = React.createContext<{
 const HoverablePopover = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Root>
->(({ children, ...props }, ref) => {
+// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
+>(({ children, ...props }, _ref) => {
   const [open, setOpen] = React.useState(false);
 
   return (
@@ -51,6 +52,7 @@ const HoverablePopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
 >(({ className, align = 'center', sideOffset = 4, ...props }, ref) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { open, setOpen } = React.useContext(HoverablePopoverContext);
 
   return (

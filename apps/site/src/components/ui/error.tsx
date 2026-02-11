@@ -6,7 +6,7 @@ interface ErrorProps {
   description?: string;
 }
 
-export function Illustration(props: React.ComponentPropsWithoutRef<'svg'>) {
+export function Illustration(_props: React.ComponentPropsWithoutRef<'svg'>) {
   return null;
   // return (
   //   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 362 145" {...props}>

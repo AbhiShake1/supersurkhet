@@ -127,6 +127,7 @@ const MemoizedColorPicker = React.memo<{
   >
     {palette.colors.map((color, index) => (
       <MemoizedColorButton
+        // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
         key={index}
         inverse={inverse}
         color={color}
@@ -174,6 +175,7 @@ export const SectionThree: React.FC<SectionThreeProps> = ({
           size={size}
           variant={variant}
         >
+          {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -198,6 +200,7 @@ export const SectionThree: React.FC<SectionThreeProps> = ({
         <div className="space-y-1.5">
           {COLORS.map((palette, index) => (
             <MemoizedColorPicker
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
               key={index}
               palette={palette}
               inverse={palette.inverse}

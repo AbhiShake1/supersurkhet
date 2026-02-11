@@ -1,5 +1,4 @@
 import type {
-  ComponentLayer,
   ComponentRegistry,
 } from '@/components/ui/ui-builder/types';
 import { SvgIcon, SvgIconSchema } from '../SvgIcon';

@@ -14,19 +14,8 @@ import type { SchemaKeys } from '@gta/react-hooks';
 import { Link } from '@tanstack/react-router';
 import {
   Building,
-  Car,
   CheckCircle,
-  CreditCard,
-  Dumbbell,
-  Film,
-  Fuel,
-  Heart,
-  Home,
-  Hotel,
-  School,
   Store,
-  Users,
-  Utensils,
 } from 'lucide-react';
 import { useLayoutEffect, useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
@@ -114,6 +103,7 @@ interface BusinessCreationFormProps {
 export function BusinessCreationForm({
   step,
   form,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   isSubmitting,
   createdBusiness,
 }: BusinessCreationFormProps) {
@@ -189,6 +179,7 @@ export function BusinessCreationForm({
               <FormItem>
                 <FormLabel>Set Location on Map</FormLabel>
                 <FormControl>
+                  {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                   <MapField
                     inputProps={{
                       key: 'locationCoordinates',
@@ -364,6 +355,7 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
     () =>
       similarItems.reduce(
         (acc, item) => ({
+          // biome-ignore lint/performance/noAccumulatingSpread: lint debt cleanup
           ...acc,
           [item['#']]: item.isPreselected,
         }),
@@ -380,7 +372,7 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
         shouldValidate: true,
       });
     }
-  }, [newSimilarItemsValue]);
+  }, [newSimilarItemsValue, form.setValue]);
 
   if (isLoading) {
     return <div>Loading pre-population data...</div>;

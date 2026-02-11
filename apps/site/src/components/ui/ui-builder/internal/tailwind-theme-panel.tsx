@@ -1,5 +1,5 @@
 'use client';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   baseColors,
   type BaseColor,
@@ -157,7 +157,7 @@ function ThemePicker({
           />
         );
       }),
-    [borderRadius, setBorderRadius],
+    [borderRadius],
   );
 
   const modeOptions = useMemo(
@@ -172,7 +172,7 @@ function ThemePicker({
           />
         );
       }),
-    [mode, setMode],
+    [mode],
   );
 
   return (

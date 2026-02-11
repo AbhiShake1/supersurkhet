@@ -6,6 +6,7 @@ import { get as ssrGet } from '../gun/ssr/get';
 import { update as ssrUpdate } from '../gun/ssr/update';
 import { appSchema, transformSchema } from '../schema';
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function createDb<const T extends z.ZodObject<any>>(schema: T) {
   return Object.keys(schema.shape)
     .map((k) => {
@@ -20,6 +21,7 @@ function createDb<const T extends z.ZodObject<any>>(schema: T) {
         },
       };
     })
+    // biome-ignore lint/performance/noAccumulatingSpread: lint debt cleanup
     .reduce((acc, curr) => ({ ...acc, ...curr }), {}) as unknown as {
     [K in SchemaKeys]: {
       get: (

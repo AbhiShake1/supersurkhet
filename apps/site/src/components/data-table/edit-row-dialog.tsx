@@ -23,6 +23,7 @@ interface EditRowDialogProps<T, S> {
   showTrigger?: boolean;
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function EditRowDialog<T, S extends ZodObject<any>>({
   open,
   onOpenChange,
@@ -44,7 +45,7 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
               formProps={{ id: 'edit-row-form' }}
               schema={schema}
               defaultValues={data || {}}
-              onSubmit={(values, form) => {
+              onSubmit={(values, _form) => {
                 onSubmit(values as T);
                 onOpenChange(false);
               }}

@@ -54,12 +54,12 @@ export const CardContainer = ({
     containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
   };
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseEnter = (_e: React.MouseEvent<HTMLDivElement>) => {
     setIsMouseEntered(true);
     if (!containerRef.current) return;
   };
 
-  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseLeave = (_e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
     setIsMouseEntered(false);
     containerRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
@@ -75,6 +75,7 @@ export const CardContainer = ({
           perspective: '1000px',
         }}
       >
+        {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
         <div
           ref={containerRef}
           onMouseEnter={handleMouseEnter}
@@ -135,6 +136,7 @@ export const CardItem = ({
   rotateX?: number | string;
   rotateY?: number | string;
   rotateZ?: number | string;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   [key: string]: any;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -142,7 +144,9 @@ export const CardItem = ({
 
   useEffect(() => {
     handleAnimations();
-  }, [isMouseEntered]);
+  // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    }, [handleAnimations]);
 
   const handleAnimations = () => {
     if (!ref.current) return;

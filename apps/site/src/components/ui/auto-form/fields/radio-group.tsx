@@ -19,6 +19,7 @@ export default function AutoFormRadioGroup({
   fieldProps,
   fieldConfigItem,
 }: AutoFormInputComponentProps) {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const baseValues = (getBaseSchema(zodItem) as unknown as z.ZodEnum<any>)._def
     .values;
 
@@ -42,6 +43,7 @@ export default function AutoFormRadioGroup({
             defaultValue={field.value}
             {...fieldProps}
           >
+            {/** biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup */}
             {values?.map((value: any) => (
               <FormItem
                 key={value}

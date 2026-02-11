@@ -1,6 +1,5 @@
 import { AutoForm as BaseAutoForm, type AutoFormUIComponents } from './react';
 import { ZodProvider, type ZodObjectOrWrapped } from '@autoform/zod';
-import { ZodEffects, ZodObject } from 'zod';
 import { ArrayElementWrapper } from './components/ArrayElementWrapper';
 import { ArrayWrapper } from './components/ArrayWrapper';
 import { BooleanField } from './components/BooleanField';

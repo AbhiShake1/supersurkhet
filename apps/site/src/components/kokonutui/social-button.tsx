@@ -36,7 +36,8 @@ export default function SocialButton({
   };
 
   return (
-    <div
+    // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+<div
       className="relative"
       onMouseEnter={() => setIsVisible(true)}
       onMouseLeave={() => setIsVisible(false)}

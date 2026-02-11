@@ -7,8 +7,6 @@ import {
   Underline,
   List,
   ListOrdered,
-  Link,
-  Image,
   Quote,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -31,10 +29,10 @@ export function EditorField({
   rows = 6,
   ...props
 }: EditorFieldProps) {
-  const [isFocused, setIsFocused] = useState(false);
+  const [_isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const insertMarkdown = (markdown: string, position: number) => {
+  const insertMarkdown = (markdown: string, _position: number) => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 

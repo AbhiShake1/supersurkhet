@@ -49,6 +49,7 @@ export function AppDrawerSettings({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="grid-columns">Grid Columns</Label>
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <Slider
             id="grid-columns"
             min={2}
@@ -73,6 +74,7 @@ export function AppDrawerSettings({
               setTempSettings({ ...tempSettings, iconSize: value })
             }
           >
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <SelectTrigger id="icon-size">
               <SelectValue placeholder="Select icon size" />
             </SelectTrigger>

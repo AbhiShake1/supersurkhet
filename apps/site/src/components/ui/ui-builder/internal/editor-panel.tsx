@@ -233,6 +233,7 @@ interface EditorPanelContentProps {
   allowPagesCreation: boolean;
   allowPagesDeletion: boolean;
   previewMode: string;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   componentRegistry: any;
   autoZoomToSelected?: boolean;
   onSelectElement: (layerId: string) => void;
@@ -355,7 +356,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
       // frameRef: frameRef,
       pointerEventsEnabled: pointerEventsEnabled,
     }),
-    [frameSize.height, widthClass, heightClass, frameRef, pointerEventsEnabled],
+    [frameSize.height, widthClass, heightClass, pointerEventsEnabled],
   );
 
   // Memoize LayerRenderer props
@@ -372,6 +373,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   const renderer = useMemo(
     () => (
       <ResizableWrapper {...resizableProps}>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <div
           id="editor-panel-content"
           className={cn('overflow-visible ', widthClass)}
@@ -401,7 +403,8 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   );
 
   return (
-    <div
+    // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
+<div
       id="editor-panel-container"
       className={cn(
         'flex flex-col relative size-full bg-fixed bg-[radial-gradient(hsl(var(--border))_1px,hsl(var(--primary)/0.05)_1px)] [background-size:16px_16px] will-change-auto',

@@ -20,6 +20,7 @@ export type FieldConfigItem = {
   order?: number;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export type FieldConfig<SchemaType extends z.infer<z.ZodObject<any, any>>> = {
   // If SchemaType.key is an object, create a nested FieldConfig, otherwise FieldConfigItem
   [Key in keyof SchemaType]?: SchemaType[Key] extends object
@@ -34,13 +35,16 @@ export enum DependencyType {
   SETS_OPTIONS = 3,
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 type BaseDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> = {
   sourceField: keyof SchemaType;
   type: DependencyType;
   targetField: keyof SchemaType;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   when: (sourceFieldValue: any, targetFieldValue: any) => boolean;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export type ValueDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
   BaseDependency<SchemaType> & {
     type:
@@ -52,6 +56,7 @@ export type ValueDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
 export type EnumValues = readonly [string, ...string[]];
 
 export type OptionsDependency<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   SchemaType extends z.infer<z.ZodObject<any, any>>,
 > = BaseDependency<SchemaType> & {
   type: DependencyType.SETS_OPTIONS;
@@ -60,6 +65,7 @@ export type OptionsDependency<
   options: EnumValues;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export type Dependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
   | ValueDependency<SchemaType>
   | OptionsDependency<SchemaType>;
@@ -69,10 +75,12 @@ export type Dependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
  */
 export type AutoFormInputComponentProps = {
   zodInputProps: React.InputHTMLAttributes<HTMLInputElement>;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   field: ControllerRenderProps<FieldValues, any>;
   fieldConfigItem: FieldConfigItem;
   label: string;
   isRequired: boolean;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   fieldProps: any;
   zodItem: z.ZodAny;
   className?: string;

@@ -128,13 +128,12 @@ export function AddComponentsPopover({
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      addComponentLayer,
-      parentLayerId,
-      addPosition,
-      setOpen,
-      onOpenChange,
-      onChange,
-      fieldName,
+      addComponentLayer, 
+      parentLayerId, 
+      addPosition, 
+      onOpenChange, 
+      onChange, 
+      fieldName, componentRegistry[currentValue as keyof typeof componentRegistry]
     ],
   );
 
@@ -345,6 +344,7 @@ const ComponentPreview = memo(
       // Check cache first
       const cacheKey = `${componentType}-${JSON.stringify(componentRegistry[componentType as keyof typeof componentRegistry]?.schema)}`;
       if (previewLayerCache.has(cacheKey)) {
+        // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
         return previewLayerCache.get(cacheKey)!;
       }
 

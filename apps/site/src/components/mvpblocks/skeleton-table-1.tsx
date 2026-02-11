@@ -53,6 +53,7 @@ export const ShimmerTable: React.FC<ShimmerTableProps> = ({
         {renderHeading}
         {Array.from({ length: rowCount }).map((_, rowIdx) => (
           <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={rowIdx}
             className={`mb-1 flex h-10 items-center ${
               rowCount - rowIdx === 1 ? 'border-b-0' : 'border-b-2'
@@ -60,9 +61,11 @@ export const ShimmerTable: React.FC<ShimmerTableProps> = ({
           >
             {Array.from({ length: columnCount }).map((_, colIdx) => (
               <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                 key={colIdx}
                 className={`flex h-full items-center ${columnWidthArray ? columnWidthArray[colIdx] : 'w-full'} ${colIdx !== columnCount - 1 && 'border-r-2'}`}
               >
+                {/** biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup */}
                 <ShimmerComponent key={colIdx} className={`mx-2 h-3 w-full`} />
               </div>
             ))}

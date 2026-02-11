@@ -18,6 +18,7 @@ export function RatingField({
   className,
   max = 5,
   allowHalf = false,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   ...props
 }: RatingFieldProps) {
   const [hoverRating, setHoverRating] = useState(0);

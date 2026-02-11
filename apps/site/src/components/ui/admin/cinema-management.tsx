@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -18,7 +17,6 @@ import {
   Search,
   Edit,
   Trash2,
-  Eye,
   Film,
   Popcorn,
   Calendar,
@@ -240,42 +238,42 @@ function _CinemaManagement({
     );
   });
 
-  const toggleMovieActive = (id: string, active: boolean) => {
+  const toggleMovieActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Movie ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleScreenActive = (id: string, active: boolean) => {
+  const toggleScreenActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Screen ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleSnackActive = (id: string, active: boolean) => {
+  const toggleSnackActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Snack ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleShowtimeActive = (id: string, active: boolean) => {
+  const toggleShowtimeActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Showtime ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteMovie = (id: string) => {
+  const deleteMovie = (_id: string) => {
     // In a real implementation, this would delete the movie from GunDB
     toast.success('Movie removed');
   };
 
-  const deleteScreen = (id: string) => {
+  const deleteScreen = (_id: string) => {
     // In a real implementation, this would delete the screen from GunDB
     toast.success('Screen removed');
   };
 
-  const deleteSnack = (id: string) => {
+  const deleteSnack = (_id: string) => {
     // In a real implementation, this would delete the snack from GunDB
     toast.success('Snack removed');
   };
 
-  const deleteShowtime = (id: string) => {
+  const deleteShowtime = (_id: string) => {
     // In a real implementation, this would delete the showtime from GunDB
     toast.success('Showtime removed');
   };

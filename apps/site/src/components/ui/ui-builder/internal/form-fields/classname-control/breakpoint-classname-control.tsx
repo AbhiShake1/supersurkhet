@@ -56,7 +56,7 @@ export const BreakpointClassNameControl = ({
       setClassString(value);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  }, [value, classString]);
 
   // Parse the class string for the tabs
   const { base, md, rest } = parseClassString(classString);
@@ -66,9 +66,8 @@ export const BreakpointClassNameControl = ({
     (newBase: string) => {
       const newClassString = [
         newBase,
-        md &&
-          md
-            .split(' ')
+        md
+            ?.split(' ')
             .map((cls) => `md:${cls}`)
             .join(' '),
         rest,
@@ -192,6 +191,7 @@ export const BreakpointClassNameControl = ({
           >
             Edit All Classes
           </AccordionTrigger>
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <AccordionContent
             data-testid="classes-accordion-content"
             id="accordion-content"

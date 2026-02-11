@@ -320,48 +320,48 @@ function _HealthcareManagement({
     );
   });
 
-  const toggleServiceActive = (id: string, active: boolean) => {
+  const toggleServiceActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Service ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleDoctorActive = (id: string, active: boolean) => {
+  const toggleDoctorActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Doctor ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const togglePatientActive = (id: string, active: boolean) => {
+  const togglePatientActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Patient ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleAppointmentActive = (id: string, active: boolean) => {
+  const _toggleAppointmentActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Appointment ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteService = (id: string) => {
+  const deleteService = (_id: string) => {
     // In a real implementation, this would delete the service from GunDB
     toast.success('Service removed');
   };
 
-  const deleteDoctor = (id: string) => {
+  const deleteDoctor = (_id: string) => {
     // In a real implementation, this would delete the doctor from GunDB
     toast.success('Doctor removed');
   };
 
-  const deletePatient = (id: string) => {
+  const deletePatient = (_id: string) => {
     // In a real implementation, this would delete the patient from GunDB
     toast.success('Patient removed');
   };
 
-  const deleteAppointment = (id: string) => {
+  const _deleteAppointment = (_id: string) => {
     // In a real implementation, this would delete the appointment from GunDB
     toast.success('Appointment removed');
   };
 
   const updateAppointmentStatus = (
-    id: string,
+    _id: string,
     status: Appointment['status'],
   ) => {
     // In a real implementation, this would update the appointment status in GunDB
@@ -615,6 +615,7 @@ function _HealthcareManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
                               className={`w-3 h-3 ${
                                 i < Math.floor(doctor.rating)

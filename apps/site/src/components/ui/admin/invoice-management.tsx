@@ -14,7 +14,6 @@ import {
   Search,
   FileText,
   Calendar,
-  ArrowUpDown,
   DollarSign,
   Loader2,
   AlertCircle,

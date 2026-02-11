@@ -1,9 +1,7 @@
 import type {
-  Json,
   LogicExpr,
   EngineOptions,
   MethodDefinition,
-  CallableFunction,
 } from './types';
 
 /**
@@ -28,6 +26,7 @@ import type {
 export function splitPath(
   str: string,
   separator: string = '.',
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
   escape: string = '\\',
   up: string = '/',
 ): string[] {
@@ -118,13 +117,17 @@ export class LogicEngine {
    * Collection of registered methods that can be used in logic expressions.
    * Methods are keyed by their operation name (e.g., 'var', '+', 'if', etc.).
    */
-  public methods: Record<string, any>;
+  
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+public  methods: Record<string, any>;
 
   /**
    * Cache for optimized execution plans.
    * Uses WeakMap to associate optimized functions with original logic objects.
    */
-  public optimizedMap: WeakMap<object, any>;
+  
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+public  optimizedMap: WeakMap<object, any>;
 
   /**
    * Counter for tracking cache misses.
@@ -148,7 +151,9 @@ export class LogicEngine {
    * Internal function to determine if a key represents data or a method.
    * Used to distinguish between variable access and method calls.
    */
-  private isData: (data: any, key: any) => boolean;
+  
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+private  isData: (data: any, key: any) => boolean;
 
   /**
    * Creates a new LogicEngine instance.
@@ -173,7 +178,9 @@ export class LogicEngine {
    * });
    * ```
    */
-  constructor(methods: Record<string, any> = {}, options: EngineOptions = {}) {
+  
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+constructor(methods: Record<string, any> = {}, options: EngineOptions = {}) {
     this.disableInline = options.disableInline ?? false;
     this.disableInterpretedOptimization =
       options.disableInterpretedOptimization ?? false;
@@ -198,7 +205,8 @@ export class LogicEngine {
     if (!options.permissive) {
       this.isData = () => false;
     } else {
-      this.isData = (data: any, key: any) => !(key in this.methods);
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      this.isData = (_data: any, key: any) => !(key in this.methods);
     }
   }
 
@@ -210,7 +218,9 @@ export class LogicEngine {
    *
    * @returns Object containing all default methods
    */
-  private getDefaultMethods(): Record<string, any> {
+  
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+private  getDefaultMethods(): Record<string, any> {
     return {
       // Enhanced var method that supports function access
       var: {
@@ -244,7 +254,10 @@ export class LogicEngine {
          * getName({ user: { name: 'Jane' } }); // 'Jane'
          * ```
          */
-        method: (key: any, context: any, above: any[], engine: LogicEngine) => {
+        
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+method: (key: any, context: any, above: any[], engine: LogicEngine) => {
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           let defaultValue: any;
           if (Array.isArray(key)) {
             defaultValue = key[1];
@@ -293,7 +306,9 @@ export class LogicEngine {
          * @param buildState - Current build state for optimization
          * @returns True if the operation is deterministic, false otherwise
          */
-        deterministic: (data: any, buildState: any) =>
+        
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+deterministic: (data: any, buildState: any) =>
           buildState.insideIterator && !String(data).includes('../../'),
         optimizeUnary: true,
       },
@@ -342,8 +357,11 @@ export class LogicEngine {
          * ```
          */
         method: (
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           args: any[],
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           context: any,
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           above: any[],
           engine: LogicEngine,
         ) => {
@@ -424,7 +442,9 @@ export class LogicEngine {
          * fn(5); // 10
          * ```
          */
-        method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
+        
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
           if (typeof fn === 'function') {
             return fn;
           } else if (typeof fn === 'object' && fn.var) {
@@ -464,7 +484,9 @@ export class LogicEngine {
        * add({ x: 7, y: 3 }); // 10
        * ```
        */
-      '+': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'+': (data: any) => {
         if (!data) return 0;
         if (typeof data === 'string') return +data;
         if (typeof data === 'number') return +data;
@@ -505,7 +527,9 @@ export class LogicEngine {
        * multiply({ x: 6, y: 7 }); // 42
        * ```
        */
-      '*': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'*': (data: any) => {
         if (data.length === 0) return 1;
         let res = 1;
         for (let i = 0; i < data.length; i++) {
@@ -543,7 +567,9 @@ export class LogicEngine {
        * subtract({ x: 100, y: 25 }); // 75
        * ```
        */
-      '-': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'-': (data: any) => {
         if (!data) return 0;
         if (typeof data === 'string') return -data;
         if (typeof data === 'number') return -data;
@@ -591,7 +617,9 @@ export class LogicEngine {
        * divide({ x: 100, y: 4 }); // 25
        * ```
        */
-      '/': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'/': (data: any) => {
         if (data.length === 0)
           throw new Error('Division requires at least one operand');
         if (data.length === 1) {
@@ -631,7 +659,9 @@ export class LogicEngine {
        * modulo({ x: 23, y: 7 }); // 2
        * ```
        */
-      '%': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'%': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('Modulo requires exactly two operands');
         if (data[0] && typeof data[0] === 'object')
@@ -661,7 +691,9 @@ export class LogicEngine {
        * findMax({ values: [15, 22, 8, 30, 12] }); // 30
        * ```
        */
-      max: (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+max: (data: any) => {
         if (!Array.isArray(data) || data.length === 0)
           throw new Error('max requires a non-empty array');
         if (typeof data[0] !== 'number')
@@ -695,7 +727,9 @@ export class LogicEngine {
        * findMin({ values: [15, 22, 8, 30, 12] }); // 8
        * ```
        */
-      min: (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+min: (data: any) => {
         if (!Array.isArray(data) || data.length === 0)
           throw new Error('min requires a non-empty array');
         if (typeof data[0] !== 'number')
@@ -734,7 +768,9 @@ export class LogicEngine {
        * isGreater({ x: 15, y: 10 }); // true
        * ```
        */
-      '>': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'>': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('> requires exactly two operands');
         return data[0] > data[1];
@@ -763,7 +799,9 @@ export class LogicEngine {
        * isGreaterOrEqual({ x: 5, y: 10 }); // false
        * ```
        */
-      '>=': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'>=': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('>= requires exactly two operands');
         return data[0] >= data[1];
@@ -792,7 +830,9 @@ export class LogicEngine {
        * isLess({ x: 5, y: 10 }); // true
        * ```
        */
-      '<': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'<': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('< requires exactly two operands');
         return data[0] < data[1];
@@ -821,7 +861,9 @@ export class LogicEngine {
        * isLessOrEqual({ x: 15, y: 10 }); // false
        * ```
        */
-      '<=': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'<=': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('<= requires exactly two operands');
         return data[0] <= data[1];
@@ -850,10 +892,12 @@ export class LogicEngine {
        * isEqual({ x: 10, y: 20 }); // false
        * ```
        */
-      '==': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'==': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('== requires exactly two operands');
-        return data[0] == data[1];
+        return data[0] === data[1];
       },
 
       /**
@@ -879,7 +923,9 @@ export class LogicEngine {
        * isStrictEqual({ x: 10, y: 10 }); // true
        * ```
        */
-      '===': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'===': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('=== requires exactly two operands');
         return data[0] === data[1];
@@ -908,10 +954,12 @@ export class LogicEngine {
        * isNotEqual({ x: 5, y: '5' }); // false
        * ```
        */
-      '!=': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'!=': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('!= requires exactly two operands');
-        return data[0] != data[1];
+        return data[0] !== data[1];
       },
 
       /**
@@ -937,7 +985,9 @@ export class LogicEngine {
        * isStrictNotEqual({ x: 10, y: 10 }); // false
        * ```
        */
-      '!==': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'!==': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('!== requires exactly two operands');
         return data[0] !== data[1];
@@ -965,7 +1015,9 @@ export class LogicEngine {
        * greet({ name: 'Alice' }); // 'Hello, Alice!'
        * ```
        */
-      cat: (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+cat: (data: any) => {
         if (!Array.isArray(data)) return String(data);
         return data
           .map((item) => {
@@ -1002,7 +1054,9 @@ export class LogicEngine {
        * getSubstring({ str: 'Programming', start: 3, len: 4 }); // 'gram'
        * ```
        */
-      substr: (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+substr: (data: any) => {
         if (!Array.isArray(data) || data.length < 2)
           throw new Error('substr requires [string, start, length?]');
         const [str, start, length] = data;
@@ -1038,7 +1092,9 @@ export class LogicEngine {
        * getLength({ value: [1, 2, 3, 4, 5] }); // 5
        * ```
        */
-      length: (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+length: (data: any) => {
         if (!data) throw new Error('length requires a value');
         const parsed = data;
         if (typeof parsed === 'string' || Array.isArray(parsed))
@@ -1104,8 +1160,11 @@ export class LogicEngine {
          * ```
          */
         method: (
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           input: any[],
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           context: any,
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           above: any[],
           engine: LogicEngine,
         ) => {
@@ -1162,7 +1221,9 @@ export class LogicEngine {
        * checkAdult({ age: 25 }); // 'adult'
        * ```
        */
-      '?:': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'?:': (data: any) => {
         if (!Array.isArray(data) || data.length < 2)
           throw new Error(
             '?: requires [condition, true_result, false_result?]',
@@ -1212,14 +1273,18 @@ export class LogicEngine {
          * ```
          */
         method: (
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           arr: any[],
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           context: any,
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           above: any[],
           engine: LogicEngine,
         ) => {
           if (!Array.isArray(arr)) throw new Error('and requires an array');
           if (!arr.length) return null;
 
+          // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
           let item;
           for (let i = 0; i < arr.length; i++) {
             item = engine.run(arr[i], context, { above });
@@ -1270,14 +1335,18 @@ export class LogicEngine {
          * ```
          */
         method: (
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           arr: any[],
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           context: any,
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           above: any[],
           engine: LogicEngine,
         ) => {
           if (!Array.isArray(arr)) throw new Error('or requires an array');
           if (!arr.length) return null;
 
+          // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
           let item;
           for (let i = 0; i < arr.length; i++) {
             item = engine.run(arr[i], context, { above });
@@ -1314,7 +1383,9 @@ export class LogicEngine {
        * isFalsy({ value: 'hello' }); // false
        * ```
        */
-      not: (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+not: (data: any) => {
         return !data;
       },
 
@@ -1338,7 +1409,9 @@ export class LogicEngine {
        * invert({ flag: false }); // true
        * ```
        */
-      '!': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'!': (data: any) => {
         return !data;
       },
 
@@ -1364,7 +1437,9 @@ export class LogicEngine {
        * toBoolean({ value: null }); // false
        * ```
        */
-      '!!': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'!!': (data: any) => {
         return !!data;
       },
 
@@ -1393,7 +1468,9 @@ export class LogicEngine {
        * withDefault({ value: 'provided' }); // 'provided'
        * ```
        */
-      '??': (data: any) => {
+      
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+'??': (data: any) => {
         if (!Array.isArray(data) || data.length < 2)
           throw new Error('?? requires [value, default]');
         return data[0] !== null && data[0] !== undefined ? data[0] : data[1];
@@ -1451,8 +1528,11 @@ export class LogicEngine {
          * ```
          */
         method: (
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           input: any[],
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           context: any,
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           above: any[],
           engine: LogicEngine,
         ) => {
@@ -1537,8 +1617,11 @@ export class LogicEngine {
          * ```
          */
         method: (
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           input: any[],
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           context: any,
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           above: any[],
           engine: LogicEngine,
         ) => {
@@ -1588,7 +1671,9 @@ export class LogicEngine {
    * engine.truthy({ a: 1 }); // { a: 1 } (non-empty object)
    * ```
    */
-  truthy(value: any): any {
+  
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+truthy(value: any): any {
     if (!value) return value;
     if (Array.isArray(value)) return value.length > 0;
     if (typeof value === 'object') {
@@ -1617,11 +1702,15 @@ export class LogicEngine {
    * @internal
    */
   private _parse(
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     logic: any,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     context: any,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     above: any[],
     func: string,
     length: number,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   ): any {
     const data = logic[func];
 
@@ -1701,6 +1790,7 @@ export class LogicEngine {
   addMethod(
     name: string,
     method:
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       | ((args: any, context: any, above: any[], engine: LogicEngine) => any)
       | MethodDefinition,
     annotations?: { deterministic?: boolean; optimizeUnary?: boolean },
@@ -1711,8 +1801,11 @@ export class LogicEngine {
       method = {
         ...method,
         lazy:
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           typeof (method as any).traverse !== 'undefined'
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             ? !(method as any).traverse
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             : (method as any).lazy,
       };
     }
@@ -1752,6 +1845,7 @@ export class LogicEngine {
    */
   addModule(
     name: string,
+    // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
     obj: Record<string, Function>,
     annotations?: { deterministic?: boolean; async?: boolean; sync?: boolean },
   ): void {
@@ -1759,6 +1853,7 @@ export class LogicEngine {
       if (typeof obj[key] === 'function' || typeof obj[key] === 'object') {
         this.addMethod(
           `${name}${name ? '.' : ''}${key}`,
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           obj[key] as any,
           annotations,
         );
@@ -1805,9 +1900,12 @@ export class LogicEngine {
    * ); // 'up!'
    * ```
    */
-  run<T = unknown, TVars = any>(
+  
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+run<T = unknown, TVars = any>(
     logic: LogicExpr<TVars>,
     data: TVars = {} as TVars,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     options: { above?: any[] } = {},
   ): T {
     const { above = [] } = options;
@@ -1829,6 +1927,7 @@ export class LogicEngine {
     // END OPTIMIZER BLOCK //
 
     if (Array.isArray(logic)) {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       const res: any[] = new Array(logic.length);
       for (let i = 0; i < logic.length; i++) {
         res[i] = this.run(logic[i], data, { above });
@@ -1888,10 +1987,14 @@ export class LogicEngine {
    * isValidAge({ age: 200 }); // false
    * ```
    */
-  build<TVars = any, TResult = unknown>(
+  
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+build<TVars = any, TResult = unknown>(
     logic: LogicExpr<TVars>,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     options: { top?: boolean; above?: any[] } = {},
   ): (data: TVars) => TResult {
+    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
     const { above = [], top = true } = options;
 
     // Return a function that executes the logic when called

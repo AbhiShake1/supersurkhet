@@ -93,6 +93,7 @@ export function GlowingLineChart() {
               filter="url(#rainbow-line-glow)"
             />
             <defs>
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
               <filter
                 id="rainbow-line-glow"
                 x="-20%"

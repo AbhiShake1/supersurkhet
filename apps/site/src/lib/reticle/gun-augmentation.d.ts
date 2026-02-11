@@ -1,4 +1,4 @@
-import type { IGun, IGunChain, IGunInstanceRoot } from 'gun/types';
+import type { IGunInstanceRoot } from 'gun/types';
 
 declare module 'gun/types/gun/IGun' {
   interface IGun {
@@ -10,6 +10,7 @@ declare module 'gun/types/gun/IGunChain' {
   interface IGunChain<
     TNode,
     TChainParent,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     TGunInstance extends IGunInstanceRoot<any, any>,
     TKey extends string,
   > {

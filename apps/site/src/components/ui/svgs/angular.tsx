@@ -1,8 +1,10 @@
 import type { SVGProps } from 'react';
 
 const Angular = (props: SVGProps<SVGSVGElement>) => (
-  <svg {...props} fill="none" viewBox="0 0 242 256">
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+<svg {...props} fill="none" viewBox="0 0 242 256">
     <g clipPath="url(#a)">
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <mask
         id="b"
         width="242"
@@ -26,6 +28,7 @@ const Angular = (props: SVGProps<SVGSVGElement>) => (
       </g>
     </g>
     <defs>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <linearGradient
         id="c"
         x1="53.2"
@@ -41,6 +44,7 @@ const Angular = (props: SVGProps<SVGSVGElement>) => (
         <stop offset=".7" stop-color="#9717E7" />
         <stop offset="1" stop-color="#6C00F5" />
       </linearGradient>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <linearGradient
         id="d"
         x1="44.5"
@@ -52,6 +56,7 @@ const Angular = (props: SVGProps<SVGSVGElement>) => (
         <stop stop-color="#FF31D9" />
         <stop offset="1" stop-color="#FF5BE1" stop-opacity="0" />
       </linearGradient>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <clipPath id="a">
         <path fill="#fff" d="M0 0h242v256H0z" />
       </clipPath>

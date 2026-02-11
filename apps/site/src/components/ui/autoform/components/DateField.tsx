@@ -17,6 +17,7 @@ export const DateField: React.FC<AutoFormFieldProps> = ({
   id,
   value,
 }) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
 
   return (

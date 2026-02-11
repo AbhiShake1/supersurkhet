@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -42,7 +41,7 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
   });
   // const { mutate: update } = api.paymentTransaction.useUpdate({ keys: [slug] })
 
-  const filteredPayments = payments.filter((payment) => {
+  const _filteredPayments = payments.filter((payment) => {
     const matchesSearch =
       payment.transactionId
         ?.toLowerCase()
@@ -90,6 +89,7 @@ function _PaymentManagement({ slug }: PaymentManagementProps) {
     }
   };
 
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const PaymentCard = ({ payment }: { payment: any }) => {
     return (
       <div className="rounded-md border bg-card p-3 shadow-xs flex flex-col gap-2">

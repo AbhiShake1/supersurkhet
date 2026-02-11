@@ -26,6 +26,7 @@ const EstimatedDateBadge: React.FC<EstimatedDateBadgeProps> = ({
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="space-y-3">
         {/* Main Card */}
+        {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
         <button
           onClick={toggleDetails}
           className="w-full bg-white border-2 border-orange-500 rounded-3xl p-4 text-left transition-all duration-300 hover:shadow-2xl hover:border-orange-600 active:scale-98 group"
@@ -33,6 +34,7 @@ const EstimatedDateBadge: React.FC<EstimatedDateBadgeProps> = ({
           <div className="flex items-start gap-3">
             {/* Clock Icon - Animated */}
             <div className="flex-shrink-0 pt-0.5">
+              {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
               <svg
                 className="w-6 h-6 text-orange-500 stroke-[2.5] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12"
                 fill="none"
@@ -63,6 +65,7 @@ const EstimatedDateBadge: React.FC<EstimatedDateBadgeProps> = ({
               <div className="bg-orange-500 text-white rounded-full px-4 py-1 font-semibold text-xs transition-all duration-300 group-hover:bg-orange-600 group-hover:shadow-lg group-hover:shadow-orange-500/30">
                 {deliveryType}
               </div>
+              {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
               <svg
                 className={`w-4 h-4 text-slate-400 transition-all duration-500 ${
                   isOpen ? 'rotate-180' : 'rotate-0'

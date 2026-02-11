@@ -48,7 +48,8 @@ function IconComponent({ size, ...props }: Axis3DProps) {
   const variants = getVariants(animations);
 
   return (
-    <motion.svg
+    // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+<motion.svg
       xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}

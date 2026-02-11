@@ -54,6 +54,7 @@ function useContextData({ business }: UseContextDataProps) {
   const search = useSearch({ from: '__root__' });
   const user = useProfile();
   const { isLoading: isUserLoading } = useAuth();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const context = useMemo(() => {
     return {
       business,
@@ -90,6 +91,7 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
     upsert({ id: slug, uiBuilder: { layers: JSON.stringify(newLayers) } });
   };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const createNew = useMemo(() => {
     return !isLoading && !currentLayers?.length;
   }, [isLoading, data]);

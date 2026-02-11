@@ -10,7 +10,9 @@ import type { z } from 'zod';
 // const isServer = typeof window === "undefined";
 
 export async function encrypt<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   T extends Record<string, any>,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   TSchema extends z.ZodObject<any> | z.ZodEffects<any>,
 >(_obj: T, schema: TSchema) {
   return applyTransformerRequestParsers(_obj, getSchema(schema));
@@ -31,8 +33,11 @@ export async function encrypt<
 
 export async function decrypt<
   T,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   TSchema extends z.ZodObject<any> | z.ZodEffects<any> =
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     | z.ZodObject<any>
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     | z.ZodEffects<any>,
 >(o: T, schema: TSchema) {
   return applyTransformerResponseParsers(o, getSchema(schema));

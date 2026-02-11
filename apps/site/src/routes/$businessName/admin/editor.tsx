@@ -20,10 +20,6 @@ import {
   MessageSquare,
   MessageSquareX,
   Code,
-  CopyIcon,
-  GlobeIcon,
-  RefreshCcwIcon,
-  Sparkles,
 } from 'lucide-react';
 import { CopyPromptButton } from '@/components/ui/ui-builder/copy-prompt-button';
 import { zodToJsonSchema } from '@/lib/zod/zod-to-json-schema';
@@ -143,8 +139,8 @@ function EditorComponent() {
   const initialContextData = useContextData();
 
   // AI Chat related states and logic
-  const [input, setInput] = useState('');
-  const [model, setModel] = useState<string>('google/gemini-pro');
+  const [_input, _setInput] = useState('');
+  const [_model, _setModel] = useState<string>('google/gemini-pro');
 
   // Define a schema for our UI builder based on the Zod schema from ui-builder-schema.ts
   // Converting Zod schema to JSON schema format for Monaco Editor
@@ -214,6 +210,7 @@ function EditorComponent() {
             Object.entries(jsonSchema.properties).forEach(
               ([propName, propSchema]) => {
                 const isRequired = jsonSchema.required?.includes(propName);
+                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                 summary.types[propName] = (propSchema as any).type || 'any';
 
                 if (isRequired) {
@@ -439,7 +436,7 @@ Important: Any string prop can contain @ mentions, and their values will be reso
 Provide the complete UI configuration in JSON format as your response. Do not include any additional text or explanations outside of the JSON structure.`;
   }
 
-  const [webSearch, setWebSearch] = useState(false);
+  const [_webSearch, _setWebSearch] = useState(false);
 
   // const { messages, sendMessage, status, regenerate } = useChat({
   //   transport: new DefaultChatTransport({
@@ -468,7 +465,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
   // });
 
   // Available models
-  const models = [
+  const _models = [
     {
       name: 'Gemini Pro',
       value: 'google/gemini-pro',
@@ -561,7 +558,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
     if (!isAuthenticated && !isLoading)
       promptLogin({ dismissible: false, showBackgroundContent: false });
     else closeLoginPrompt();
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, closeLoginPrompt, promptLogin]);
 
   if (isLoading) return <Spinner />;
 

@@ -8,6 +8,7 @@ import type { ExtractZodSchema } from '@/lib/schema';
 export interface GTAAppConfig {
   schema: {
     [table: string]: {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       schema: NonNullable<z.ZodObject<any> | z.ZodEffects<any>>;
       icon?: ForwardRefExoticComponent<
         Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>

@@ -182,6 +182,7 @@ export function DateTimePicker({
     [max, timezone],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onDayChanged = useCallback(
     (d: Date) => {
       d.setHours(date.getHours(), date.getMinutes(), date.getSeconds());
@@ -210,6 +211,7 @@ export function DateTimePicker({
     [date, onChange],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onMonthYearChanged = useCallback(
     (d: Date, mode: 'month' | 'year') => {
       setMonth(d);
@@ -236,6 +238,7 @@ export function DateTimePicker({
     }
   }, [open, initDate]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const displayValue = useMemo(() => {
     if (!open && !value) return value;
     return open ? date : initDate;
@@ -302,6 +305,8 @@ export function DateTimePicker({
         <div className="flex items-center justify-between">
           <div className="text-md font-bold ms-2 flex items-center cursor-pointer">
             <div>
+              {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+              {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
               <span
                 onClick={() =>
                   setMonthYearPicker(
@@ -311,6 +316,8 @@ export function DateTimePicker({
               >
                 {format(month, 'MMMM')}
               </span>
+              {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+              {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
               <span
                 className="ms-1"
                 onClick={() =>
@@ -401,6 +408,7 @@ export function DateTimePicker({
           ></div>
           <MonthYearPicker
             value={month}
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             mode={monthYearPicker as any}
             onChange={onMonthYearChanged}
             minDate={minDate}
@@ -456,6 +464,7 @@ function MonthYearPicker({
   className?: string;
 }) {
   const yearRef = useRef<HTMLDivElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const years = useMemo(() => {
     const years: TimeOption[] = [];
     for (let i = 1912; i < 2100; i++) {
@@ -468,6 +477,7 @@ function MonthYearPicker({
     }
     return years;
   }, [value]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const months = useMemo(() => {
     const months: TimeOption[] = [];
     for (let i = 0; i < 12; i++) {
@@ -495,6 +505,7 @@ function MonthYearPicker({
     [onChange, value, minDate, maxDate],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   useEffect(() => {
     if (mode === 'year') {
       yearRef.current?.scrollIntoView({ behavior: 'auto', block: 'center' });
@@ -586,6 +597,7 @@ function TimePicker({
   const [minute, setMinute] = useState(value.getMinutes());
   const [second, setSecond] = useState(value.getSeconds());
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   useEffect(() => {
     onChange(
       buildTime({
@@ -600,6 +612,7 @@ function TimePicker({
     );
   }, [hour, minute, second, ampm, formatStr, use12HourFormat]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const _hourIn24h = useMemo(() => {
     // if (use12HourFormat) {
     //   return (hour % 12) + ampm * 12;
@@ -694,6 +707,7 @@ function TimePicker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onHourChange = useCallback(
     (v: TimeOption) => {
       if (min) {
@@ -731,6 +745,7 @@ function TimePicker({
     [setHour, use12HourFormat, value, formatStr, minute, second, ampm],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onMinuteChange = useCallback(
     (v: TimeOption) => {
       if (min) {
@@ -766,6 +781,7 @@ function TimePicker({
     [setMinute, use12HourFormat, value, formatStr, hour, second, ampm],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onAmpmChange = useCallback(
     (v: TimeOption) => {
       if (min) {

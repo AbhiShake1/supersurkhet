@@ -125,7 +125,8 @@ function AnimatedGroup({
       className={className}
     >
       {Children.map(children, (child, index) => (
-        <MotionChild key={index} variants={itemVariants}>
+        // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<MotionChild key={index} variants={itemVariants}>
           {child}
         </MotionChild>
       ))}

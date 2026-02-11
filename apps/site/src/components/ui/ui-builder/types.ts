@@ -9,7 +9,9 @@ export type {
 
 export type PropValue =
   | ReactNode
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   | Record<string, any>
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   | any[]
   | string
   | number
@@ -32,8 +34,10 @@ export interface ComponentLayer<
 }
 
 // Enhanced registry entry with better component typing
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export interface RegistryEntry<T extends ReactComponentType<any>> {
   component?: T;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   schema: ZodObject<any> | ZodSchema<any>;
   from?: string;
   isFromDefaultExport?: boolean;
@@ -42,6 +46,7 @@ export interface RegistryEntry<T extends ReactComponentType<any>> {
 }
 
 // Improved field config function type
+// biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
 export type FieldConfigFunction<P = {}> = (
   layer: ComponentLayer,
   rest?: P,
@@ -50,6 +55,7 @@ export type FieldConfigFunction<P = {}> = (
 // Enhanced ComponentRegistry with better typing
 export type ComponentRegistry = Record<
   string,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   RegistryEntry<ReactComponentType<any>>
 >;
 

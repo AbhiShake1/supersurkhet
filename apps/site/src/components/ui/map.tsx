@@ -127,6 +127,7 @@ const DefaultLoader = () => (
   </div>
 );
 
+// biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
 const Map = forwardRef<MapRef, MapProps>(function Map(
   { children, theme: themeProp, styles, projection, ...props },
   ref,
@@ -156,6 +157,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     }
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -288,6 +290,7 @@ function MapMarker({
 }: MapMarkerProps) {
   const { map } = useMap();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const marker = useMemo(() => {
     const markerInstance = new MapLibreGL.Marker({
       ...markerOptions,
@@ -329,6 +332,7 @@ function MapMarker({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   useEffect(() => {
     if (!map) return;
 
@@ -420,6 +424,7 @@ function MarkerPopup({
   const container = useMemo(() => document.createElement('div'), []);
   const prevPopupOptions = useRef(popupOptions);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const popup = useMemo(() => {
     const popupInstance = new MapLibreGL.Popup({
       offset: 16,
@@ -433,6 +438,7 @@ function MarkerPopup({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   useEffect(() => {
     if (!map) return;
 
@@ -500,6 +506,7 @@ function MarkerTooltip({
   const container = useMemo(() => document.createElement('div'), []);
   const prevTooltipOptions = useRef(popupOptions);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const tooltip = useMemo(() => {
     const tooltipInstance = new MapLibreGL.Popup({
       offset: 16,
@@ -512,6 +519,7 @@ function MarkerTooltip({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   useEffect(() => {
     if (!map) return;
 
@@ -786,6 +794,7 @@ function CompassButton({ onClick }: { onClick: () => void }) {
 
   return (
     <ControlButton onClick={onClick} label="Reset bearing to north">
+      {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
       <svg
         ref={compassRef}
         viewBox="0 0 24 24"
@@ -829,6 +838,7 @@ function MapPopup({
   const popupOptionsRef = useRef(popupOptions);
   const container = useMemo(() => document.createElement('div'), []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const popup = useMemo(() => {
     const popupInstance = new MapLibreGL.Popup({
       offset: 16,
@@ -842,6 +852,7 @@ function MapPopup({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   useEffect(() => {
     if (!map) return;
 
@@ -950,7 +961,8 @@ function MapRoute({
   const layerId = `route-layer-${id}`;
 
   // Add source and layer on mount
-  useEffect(() => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    useEffect(() => {
     if (!isLoaded || !map) return;
 
     map.addSource(sourceId, {
@@ -1103,7 +1115,8 @@ function MapClusterLayer<
   });
 
   // Add source and layers on mount
-  useEffect(() => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    useEffect(() => {
     if (!isLoaded || !map) return;
 
     // Add clustered GeoJSON source

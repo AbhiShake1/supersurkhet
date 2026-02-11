@@ -12,6 +12,7 @@ interface RolesMatrixProps {
   tabs: PossibleTabConfig[];
 }
 
+// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 export function RolesAndPermissionsPage({ slug, tabs }: RolesMatrixProps) {
   const groupedPermissions = useMemo(() => {
     return generatePermissions(tabs);
@@ -83,6 +84,8 @@ function PermissionGroup({ feature, actions }: PermissionGroupProps) {
 
   return (
     <div className="space-y-1">
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+      {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
       <div
         className="flex items-center space-x-2 cursor-pointer"
         onClick={() => setExpanded(!expanded)}

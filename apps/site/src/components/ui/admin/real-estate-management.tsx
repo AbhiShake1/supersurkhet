@@ -420,17 +420,17 @@ function _RealEstateManagement({
     toast.success(`Client ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteProperty = (g) => {
+  const deleteProperty = (_g) => {
     // In a real implementation, this would delete the property from GunDB
     toast.success('Property removed');
   };
 
-  const deleteAgent = (g) => {
+  const deleteAgent = (_g) => {
     // In a real implementation, this would delete the agent from GunDB
     toast.success('Agent removed');
   };
 
-  const deleteClient = (g) => {
+  const deleteClient = (_g) => {
     // In a real implementation, this would delete the client from GunDB
     toast.success('Client removed');
   };
@@ -734,6 +734,7 @@ function _RealEstateManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
                               className={`w-3 h-3 ${
                                 i < Math.floor(agent.rating)

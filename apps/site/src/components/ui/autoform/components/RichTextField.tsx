@@ -7,6 +7,7 @@ export const RichTextField: React.FC<AutoFormFieldProps> = ({
   error,
   id,
 }) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
 
   return (

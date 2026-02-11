@@ -22,8 +22,10 @@ import type z from 'zod';
 
 const GUN = Gun; //.scope(GUN_PREFIX)
 
+// biome-ignore lint/suspicious/noThenProperty: lint debt cleanup
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
-  var p = new Promise((res, rej) => {
+  var p = new Promise((res, _rej) => {
     this
       .not(() => res([]))
       .once((data, key) => {
@@ -33,7 +35,9 @@ GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
   return cb ? p.then(cb) : p;
 };
 
+// biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
 type ExtratedSchema = {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   [K in keyof BaseAppSchemaType as BaseAppSchemaType[K] extends { schema: any }
     ? K
     : never]: BaseAppSchemaType[K] extends { schema: infer S }

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo, } from 'react';
 import { Position, type HandleProps } from '@xyflow/react';
 import { ButtonHandle } from '@/components/button-handle';
 import { BaseHandle } from '@/components/base-handle';
@@ -7,10 +7,6 @@ import { Plus } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -63,6 +59,7 @@ export const NodeButtonHandle = ({
 
   // Create icon map with actual components
   const iconComponents = {
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Wifi: () => (
       <svg
         role="img"
@@ -84,6 +81,7 @@ export const NodeButtonHandle = ({
         <path d="M8.5 16.429a5 5 0 0 1 7 0" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     User: () => (
       <svg
         role="img"
@@ -103,6 +101,7 @@ export const NodeButtonHandle = ({
         <circle cx="12" cy="7" r="4" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Settings: () => (
       <svg
         role="img"
@@ -122,6 +121,7 @@ export const NodeButtonHandle = ({
         <circle cx="12" cy="12" r="3" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     ShoppingCart: () => (
       <svg
         role="img"
@@ -142,6 +142,7 @@ export const NodeButtonHandle = ({
         <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Database: () => (
       <svg
         role="img"
@@ -162,6 +163,7 @@ export const NodeButtonHandle = ({
         <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Navigation: () => (
       <svg
         role="img"
@@ -180,6 +182,7 @@ export const NodeButtonHandle = ({
         <polygon points="3 11 22 2 13 21 11 13 3 11" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Bell: () => (
       <svg
         role="img"
@@ -199,6 +202,7 @@ export const NodeButtonHandle = ({
         <path d="M13.73 21a2 2 0 0 1-3.46 0" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     GripVertical: () => (
       <svg
         role="img"
@@ -222,6 +226,7 @@ export const NodeButtonHandle = ({
         <circle cx="15" cy="19" r="1" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Repeat: () => (
       <svg
         role="img"
@@ -243,6 +248,7 @@ export const NodeButtonHandle = ({
         <path d="M21 13v1a4 4 0 0 1-4 4H3" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Globe: () => (
       <svg
         role="img"
@@ -263,6 +269,7 @@ export const NodeButtonHandle = ({
         <path d="M2 12h20" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Play: () => (
       <svg
         role="img"
@@ -281,6 +288,7 @@ export const NodeButtonHandle = ({
         <polygon points="5 3 19 12 5 21 5 3" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Circle: () => (
       <svg
         role="img"
@@ -299,6 +307,7 @@ export const NodeButtonHandle = ({
         <circle cx="12" cy="12" r="10" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     ArrowRight: () => (
       <svg
         role="img"
@@ -318,6 +327,7 @@ export const NodeButtonHandle = ({
         <path d="m12 5 7 7-7 7" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     Square: () => (
       <svg
         role="img"
@@ -336,6 +346,7 @@ export const NodeButtonHandle = ({
         <rect width="18" height="18" x="3" y="3" rx="2" />
       </svg>
     ),
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     FileText: () => (
       <svg
         role="img"

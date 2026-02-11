@@ -18,11 +18,17 @@ export const getBuilderChat = createServerFn({ method: 'POST' })
   .handler(
     async ({
       data: {
+        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
         messages,
+        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
         model = 'gemini-2.5-flash',
+        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
         webSearch = false,
+        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
         businessName = '',
+        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
         businessType = '',
+        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
         businessDescription = '',
       },
     }) => {

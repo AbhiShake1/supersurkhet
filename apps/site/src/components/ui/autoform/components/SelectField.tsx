@@ -6,7 +6,7 @@ import { Combobox } from '../../combobox';
 import type { AutoFormFieldProps } from '../react';
 import type { FieldConfigCustomData, SourceConfig } from '../utils';
 import { useQuery } from '@tanstack/react-query';
-import type { SchemaKeys, UseGet } from '@/lib/gun/index';
+import type { UseGet } from '@/lib/gun/index';
 
 const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
   const business = useBusinessSafe();
@@ -15,7 +15,8 @@ const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
   // Map each source to a useGet call
   const queryResults = sources.map((source) => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { data = [], ...rest } = useGet(
+    // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
+        const { data = [], ...rest } = useGet(
       {
         key: source.table || 'business',
         queryOptions: {
@@ -55,7 +56,9 @@ const _SelectField: React.FC<
   AutoFormFieldProps & {
     useGet: UseGet;
   }
+// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 > = ({ field, inputProps, error, id, value, path, useGet }) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
   const customData = field.fieldConfig?.customData as FieldConfigCustomData;
 

@@ -10,24 +10,19 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Bed,
-  Calendar,
   DollarSign,
   Edit,
   Eye,
   FileText,
   Image,
-  MapPin,
-  Percent,
   Plus,
   Search,
   Star,
   Trash2,
-  TrendingUp,
   Users,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -114,12 +109,12 @@ function _HotelManagement({ onAddRoomType, roomTypes }: HotelManagementProps) {
     return matchesSearch;
   });
 
-  const toggleAvailability = (roomId: string, available: boolean) => {
+  const toggleAvailability = (_roomId: string, available: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Room type ${available ? 'enabled' : 'disabled'}`);
   };
 
-  const deleteRoomType = (roomId: string) => {
+  const deleteRoomType = (_roomId: string) => {
     // In a real implementation, this would delete the room type from GunDB
     toast.success('Room type removed');
   };

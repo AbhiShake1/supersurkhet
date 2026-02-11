@@ -282,6 +282,7 @@ const RowOffset = ({ level }: { level: number }) => {
     >
       {arr.map((_, index) => (
         <div
+          // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
           key={index}
           className={cn(
             'w-5 h-full border-l border-dashed border-primary bg-background',

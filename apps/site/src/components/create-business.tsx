@@ -137,7 +137,7 @@ export function CreateBusiness({
         if (!data) return;
         const field = getBusinessTypeDataField(businessData.businessType);
         const keyParts = key.split('/');
-        const indexOfField = keyParts.findIndex((v) => v === field);
+        const indexOfField = keyParts.indexOf(field);
         keyParts[indexOfField + 1] = businessData.name;
         const newKey = keyParts.join('/');
         getGunRef(newKey).put(data, (ack) => {
@@ -206,6 +206,7 @@ export function CreateBusiness({
         <CredenzaBody>
           <ScrollArea className="h-[50vh]">
             <Form {...form}>
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
               <form
                 id="business-creation-form"
                 onSubmit={form.handleSubmit(onSubmit)}

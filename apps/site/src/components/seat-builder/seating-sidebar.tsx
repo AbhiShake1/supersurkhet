@@ -367,6 +367,7 @@ export function SeatingSidebar({
 
             <div className="space-y-2">
               <Label htmlFor="element-label">Label (Optional)</Label>
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
               <Input
                 id="element-label"
                 value={label}
@@ -378,6 +379,7 @@ export function SeatingSidebar({
             <div className="space-y-2">
               <Label htmlFor="element-color">Color (Optional)</Label>
               <div className="flex gap-2">
+                {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                 <Input
                   id="element-color"
                   type="color"
@@ -402,6 +404,7 @@ export function SeatingSidebar({
           <TabsContent value="floor-settings" className="space-y-4 pt-4">
             <div className="space-y-2">
               <Label htmlFor="floor-name">Floor Name</Label>
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
               <Input
                 id="floor-name"
                 value={currentFloor.name}
@@ -413,6 +416,7 @@ export function SeatingSidebar({
             <div className="space-y-2">
               <Label htmlFor="floor-color">Floor Background Color</Label>
               <div className="flex gap-2">
+                {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                 <Input
                   id="floor-color"
                   type="color"

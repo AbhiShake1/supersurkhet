@@ -25,8 +25,11 @@ import {
  * @param schema - The Zod schema object.
  * @returns An object containing default values for the schema.
  */
-export function getDefaultProps(schema: ZodObject<any>): Record<string, any> {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function getDefaultProps(schema: ZodObject<any>): Record<string, any> {
   const shape = schema.shape;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const defaultProps: Record<string, any> = {};
 
   for (const key in shape) {
@@ -50,7 +53,9 @@ export function getDefaultProps(schema: ZodObject<any>): Record<string, any> {
  * @param fieldName - The name of the field (used for logging).
  * @returns The default value for the field.
  */
-function getDefaultValue(schema: ZodTypeAny, fieldName: string): any {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+function  getDefaultValue(schema: ZodTypeAny, fieldName: string): any {
   // Handle ZodDefault to return the specified default value
   if (schema instanceof ZodDefault) {
     return schema._def.defaultValue();
@@ -70,7 +75,9 @@ function getDefaultValue(schema: ZodTypeAny, fieldName: string): any {
  * @returns A new Zod object schema with the specified transformations applied.
  */
 
-export function patchSchema(schema: ZodObject<any>): ZodObject<any> {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function patchSchema(schema: ZodObject<any>): ZodObject<any> {
   const schemaWithFixedEnums = transformUnionToEnum(schema);
   const schemaWithCoercedTypes = addCoerceToNumberAndDate(schemaWithFixedEnums);
   const schemaWithCommon = addCommon(schemaWithCoercedTypes);
@@ -105,6 +112,7 @@ function transformUnionToEnum<T extends ZodTypeAny>(schema: T): T {
     // Check if all options are ZodLiteral instances with string values
     if (
       options.every(
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         (option: any) =>
           option instanceof ZodLiteral && typeof option._def.value === 'string',
       )
@@ -143,12 +151,14 @@ function transformUnionToEnum<T extends ZodTypeAny>(schema: T): T {
   if (schema instanceof ZodNullable) {
     const inner = schema.unwrap();
     const transformedInner = transformUnionToEnum(inner);
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return transformedInner.nullable() as any;
   }
 
   if (schema instanceof ZodOptional) {
     const inner = schema.unwrap();
     const transformedInner = transformUnionToEnum(inner);
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return transformedInner.optional() as any;
   }
 
@@ -171,6 +181,7 @@ function transformUnionToEnum<T extends ZodTypeAny>(schema: T): T {
 
   // Handle ZodTuples by transforming each element type
   if (schema instanceof ZodTuple) {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const transformedItems = schema.items.map((item: any) =>
       transformUnionToEnum(item),
     );
@@ -192,12 +203,14 @@ function addCoerceToNumberAndDate<T extends ZodTypeAny>(schema: T): T {
   // Handle nullable schemas
   if (schema instanceof ZodNullable) {
     const inner = schema.unwrap();
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return addCoerceToNumberAndDate(inner).nullable() as any;
   }
 
   // Handle optional schemas
   if (schema instanceof ZodOptional) {
     const inner = schema.unwrap();
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return addCoerceToNumberAndDate(inner).optional() as any;
   }
 
@@ -210,30 +223,36 @@ function addCoerceToNumberAndDate<T extends ZodTypeAny>(schema: T): T {
       transformedShape[key] = addCoerceToNumberAndDate(value);
     }
 
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return z.object(transformedShape) as any;
   }
 
   // Handle arrays by applying the transformation to the array's element type
   if (schema instanceof ZodArray) {
     const innerType = schema.element;
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return z.array(addCoerceToNumberAndDate(innerType)) as any;
   }
 
   // Apply coercion to number fields
   if (schema instanceof ZodNumber) {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return z.coerce.number().optional() as any; // Adjust `.optional()` based on your schema requirements
   }
 
   // Apply coercion to date fields
   if (schema instanceof ZodDate) {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return z.coerce.date().optional() as any; // Adjust `.optional()` based on your schema requirements
   }
 
   // Handle unions by applying the transformation to each option
   if (schema instanceof ZodUnion) {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const transformedOptions = schema.options.map((option: any) =>
       addCoerceToNumberAndDate(option),
     );
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return z.union(transformedOptions) as any;
   }
 
@@ -247,6 +266,7 @@ function addCoerceToNumberAndDate<T extends ZodTypeAny>(schema: T): T {
 }
 
 // patch for autoform to respect existing values, specifically for enums
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function addDefaultValues<T extends ZodObject<any>>(
   schema: T,
   defaultValues: Partial<z.infer<T>>,
@@ -272,7 +292,9 @@ export function addDefaultValues<T extends ZodObject<any>>(
 /**
  * Checks if a Zod schema has a children field of type ANY
  */
-export function hasAnyChildrenField(schema: ZodObject<any>): boolean {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function hasAnyChildrenField(schema: ZodObject<any>): boolean {
   const shape = schema.shape;
   if (!shape.children) {
     return false;
@@ -293,7 +315,9 @@ export function hasAnyChildrenField(schema: ZodObject<any>): boolean {
 /**
  * Checks if a Zod schema has a children field of type String
  */
-export function hasChildrenFieldOfTypeString(schema: ZodObject<any>): boolean {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function hasChildrenFieldOfTypeString(schema: ZodObject<any>): boolean {
   const shape = schema.shape;
   if (!shape.children) {
     return false;

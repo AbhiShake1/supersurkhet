@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card';
 import {
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
   Map,
   MapControls,
   MapMarker,
@@ -37,11 +38,11 @@ export const BusinessLocationMap: React.FC<BusinessLocationMapProps> = ({
     if (Array.isArray(parsedValue) && parsedValue.length === 2) {
       coordinates = parsedValue as [number, number];
     }
-  } catch (e) {
+  } catch (_e) {
     // If parsing fails, try to split by comma if it's a string
     if (typeof business.locationCoordinates === 'string') {
       const coords = business.locationCoordinates.split(',').map(Number);
-      if (coords.length === 2 && !coords.some(isNaN)) {
+      if (coords.length === 2 && !coords.some(Number.isNaN)) {
         coordinates = coords as [number, number];
       }
     }

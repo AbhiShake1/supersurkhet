@@ -105,7 +105,7 @@ export const ThemeProvider: React.FC<{
     savedDarkMode === undefined || savedDarkMode === 'true',
   );
   const [theme, setTheme] = useState(() => {
-    const theme = savedTheme ?? defaultPresets['tangerine'].styles;
+    const theme = savedTheme ?? defaultPresets.tangerine.styles;
     // applyTheme(theme, isDarkMode, currentThemeName ?? null)
     return theme;
   });

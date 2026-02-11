@@ -52,6 +52,7 @@ export function UnitField({
   // Update the form value when unit or piecesPerUnit changes
   useEffect(() => {
     if (!selectedUnit) return;
+    // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
     let value;
     if (SPECIAL_UNITS.includes(selectedUnit)) {
       // For special units, store as "unit:piecesPerUnit"
@@ -65,7 +66,7 @@ export function UnitField({
 
     // Update the form field with the new value
     form.setValue(fieldName, value);
-  }, [selectedUnit, piecesPerUnit, fieldName, form]);
+  }, [selectedUnit, piecesPerUnit, fieldName, form, field.fieldConfig?.customData?.onValueChange, path]);
 
   const handleUnitChange = (value: string) => {
     setSelectedUnit(value);
@@ -75,7 +76,7 @@ export function UnitField({
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const value = parseInt(e.target.value, 10);
-    if (!isNaN(value) && value > 0) {
+    if (!Number.isNaN(value) && value > 0) {
       setPiecesPerUnit(value);
     }
   };

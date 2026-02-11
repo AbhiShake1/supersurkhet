@@ -39,6 +39,7 @@ export const AutoFormField: React.FC<{
   const inputTestId =
     field.fieldConfig?.inputProps?.['data-testid'] ?? `af-input-${testIdBase}`;
 
+  // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
   let FieldComponent: React.ComponentType<AutoFormFieldProps> = () => (
     <uiComponents.ErrorMessage
       error={`[AutoForm Configuration Error] No component found for type "${field.type}" nor a fallback`}
@@ -50,6 +51,7 @@ export const AutoFormField: React.FC<{
   } else if (field.type === 'object') {
     FieldComponent = ObjectField;
   } else if (field.type in formComponents) {
+    // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
     FieldComponent = formComponents[field.type as keyof typeof formComponents]!;
   } else if ('fallback' in formComponents) {
     FieldComponent = formComponents.fallback;

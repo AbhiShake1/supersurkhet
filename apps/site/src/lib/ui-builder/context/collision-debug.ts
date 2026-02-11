@@ -305,9 +305,13 @@ export const disableCollisionDebug = () => {
 
 // Make debug functions available globally for console access
 if (typeof window !== 'undefined') {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   (window as any).toggleCollisionDebug = toggleCollisionDebug;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   (window as any).enableCollisionDebug = enableCollisionDebug;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   (window as any).disableCollisionDebug = disableCollisionDebug;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   (window as any).clearDebugElements = clearDebugElements;
 }
 
@@ -459,8 +463,10 @@ function createInfoPanel(
 export const debugCollisionDetection = (
   originalPointer: Coordinates,
   adjustedPointer: Coordinates,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   droppableRects: Map<UniqueIdentifier, any>,
   collisions: Collision[],
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   debugInfo?: any,
 ) => {
   if (!DEBUG) return;

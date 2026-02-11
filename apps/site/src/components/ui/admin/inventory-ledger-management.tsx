@@ -24,10 +24,9 @@ import {
 } from 'lucide-react';
 import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
-import _ from 'lodash';
 import { format } from 'date-fns';
 import { AutoTable } from '@/components/auto-table';
-import type { InventoryLedger, Product, Invoice } from '@/lib/schema';
+import type { InventoryLedger, } from '@/lib/schema';
 
 interface InventoryLedgerManagementProps {
   slug: string;
@@ -53,9 +52,9 @@ function _InventoryLedgerManagement({ slug }: InventoryLedgerManagementProps) {
     keys: [slug],
   });
 
-  const createMutation = api.inventoryLedger.useCreate();
-  const updateMutation = api.inventoryLedger.useUpdate();
-  const deleteMutation = api.inventoryLedger.useDelete();
+  const _createMutation = api.inventoryLedger.useCreate();
+  const _updateMutation = api.inventoryLedger.useUpdate();
+  const _deleteMutation = api.inventoryLedger.useDelete();
 
   if (isLoading) {
     return (

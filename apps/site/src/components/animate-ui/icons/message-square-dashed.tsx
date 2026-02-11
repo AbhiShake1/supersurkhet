@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import { motion, type Variants } from 'motion/react';
 
 import {
@@ -67,7 +66,8 @@ function IconComponent({ size, ...props }: MessageSquareDashedProps) {
   const variants = getVariants(animations);
 
   return (
-    <motion.svg
+    // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+<motion.svg
       xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}

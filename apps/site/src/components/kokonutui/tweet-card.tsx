@@ -133,6 +133,7 @@ export default function TweetCard({
           <div className="mt-2">
             {content.map((item, index) => (
               <p
+                // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                 key={index}
                 className="text-black dark:text-white/90 text-base"
               >

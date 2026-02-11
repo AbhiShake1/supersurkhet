@@ -5,7 +5,9 @@ import type { FieldConfig } from './types';
 
 // TODO: This should support recursive ZodEffects but TypeScript doesn't allow circular type definitions.
 export type ZodObjectOrWrapped =
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   | z.ZodObject<any, any>
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   | z.ZodEffects<z.ZodObject<any, any>>;
 
 /**
@@ -49,7 +51,9 @@ export function getBaseType(schema: z.ZodAny): string {
 /**
  * Search for a "ZodDefult" in the Zod stack and return its value.
  */
-export function getDefaultValueInZodStack(schema: z.ZodAny): any {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function getDefaultValueInZodStack(schema: z.ZodAny): any {
   const typedSchema = schema as unknown as z.ZodDefault<
     z.ZodNumber | z.ZodString
   >;
@@ -65,6 +69,7 @@ export function getDefaultValueInZodStack(schema: z.ZodAny): any {
   }
   if ('schema' in typedSchema._def) {
     return getDefaultValueInZodStack(
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       (typedSchema._def as any).schema as z.ZodAny,
     );
   }
@@ -75,7 +80,9 @@ export function getDefaultValueInZodStack(schema: z.ZodAny): any {
 /**
  * Get all default values from a Zod schema.
  */
-export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function getDefaultValues<Schema extends z.ZodObject<any, any>>(
   schema: Schema,
   fieldConfig?: FieldConfig<z.infer<Schema>>,
 ) {
@@ -90,6 +97,7 @@ export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
 
     if (getBaseType(item) === 'ZodObject') {
       const defaultItems = getDefaultValues(
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         getBaseSchema(item) as unknown as z.ZodObject<any, any>,
         fieldConfig?.[key] as FieldConfig<z.infer<Schema>>,
       );
@@ -106,6 +114,7 @@ export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
         (defaultValue === null || defaultValue === '') &&
         fieldConfig?.[key]?.inputProps
       ) {
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         defaultValue = (fieldConfig?.[key]?.inputProps as unknown as any)
           .defaultValue;
       }
@@ -120,11 +129,14 @@ export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
 
 export function getObjectFormSchema(
   schema: ZodObjectOrWrapped,
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): z.ZodObject<any, any> {
   if (schema?._def.typeName === 'ZodEffects') {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const typedSchema = schema as z.ZodEffects<z.ZodObject<any, any>>;
     return getObjectFormSchema(typedSchema._def.schema);
   }
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   return schema as z.ZodObject<any, any>;
 }
 
@@ -137,6 +149,7 @@ export function zodToHtmlInputProps(
     | z.ZodNumber
     | z.ZodString
     | z.ZodOptional<z.ZodNumber | z.ZodString>
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     | any,
 ): React.InputHTMLAttributes<HTMLInputElement> {
   if (['ZodOptional', 'ZodNullable'].includes(schema._def.typeName)) {
@@ -184,7 +197,9 @@ export function zodToHtmlInputProps(
  * If no order is set, the field will be sorted based on the order in the schema.
  */
 
-export function sortFieldsByOrder<SchemaType extends z.ZodObject<any, any>>(
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function sortFieldsByOrder<SchemaType extends z.ZodObject<any, any>>(
   fieldConfig: FieldConfig<z.infer<SchemaType>> | undefined,
   keys: string[],
 ) {

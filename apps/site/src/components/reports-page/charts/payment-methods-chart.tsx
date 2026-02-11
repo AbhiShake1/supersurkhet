@@ -14,9 +14,7 @@ import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
 } from '@/components/ui/chart';
-import { Badge } from '@/components/ui/badge';
 import { CreditCard, Wallet, Banknote, PiggyBank } from 'lucide-react';
 
 interface PaymentMethodsChartProps {
@@ -126,8 +124,9 @@ export function PaymentMethodsChart({ data }: PaymentMethodsChartProps) {
               innerRadius={60}
               strokeWidth={5}
             >
-              {data.map((entry, index) => (
-                <React.Fragment key={`cell-${index}`}>
+              {data.map((_entry, index) => (
+                <React.Fragment key={`cell-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+index}`}>
                   <text
                     x="50%"
                     y="50%"
@@ -165,7 +164,8 @@ export function PaymentMethodsChart({ data }: PaymentMethodsChartProps) {
                 ? ((item.amount / totalAmount) * 100).toFixed(1)
                 : 0;
             return (
-              <div key={index} className="flex items-center gap-2">
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<div key={index} className="flex items-center gap-2">
                 <div
                   className="h-4 w-4 rounded-full"
                   style={{

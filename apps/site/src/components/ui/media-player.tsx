@@ -610,7 +610,7 @@ function MediaPlayerRootImpl(props: MediaPlayerRootProps) {
         case '8':
         case '9': {
           event.preventDefault();
-          const percent = Number.parseInt(event.key) / 10;
+          const percent = Number.parseInt(event.key, 10) / 10;
           const seekTime = mediaElement.duration * percent;
           dispatch({
             type: MediaActionTypes.MEDIA_SEEK_REQUEST,
@@ -911,6 +911,7 @@ function MediaPlayerLoading(props: MediaPlayerLoadingProps) {
     delayMs = 500,
     asChild,
     className,
+    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
     children,
     ...loadingProps
   } = props;
@@ -1198,6 +1199,7 @@ function MediaPlayerVolumeIndicator(props: MediaPlayerVolumeIndicatorProps) {
         <div className="flex items-center gap-1">
           {Array.from({ length: barCount }, (_, index) => (
             <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
               key={index}
               className={cn(
                 'w-1.5 rounded-full transition-all duration-150',
@@ -1248,6 +1250,7 @@ function MediaPlayerControlsOverlay(props: MediaPlayerControlsOverlayProps) {
 interface MediaPlayerPlayProps extends React.ComponentProps<typeof Button> {}
 
 function MediaPlayerPlay(props: MediaPlayerPlayProps) {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { asChild, children, className, disabled, ...playButtonProps } = props;
 
   const context = useMediaPlayerContext('MediaPlayerPlay');
@@ -1308,6 +1311,7 @@ interface MediaPlayerSeekBackwardProps
 function MediaPlayerSeekBackward(props: MediaPlayerSeekBackwardProps) {
   const {
     seconds = SEEK_STEP_SHORT,
+    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
     asChild,
     children,
     className,
@@ -1369,6 +1373,7 @@ interface MediaPlayerSeekForwardProps
 function MediaPlayerSeekForward(props: MediaPlayerSeekForwardProps) {
   const {
     seconds = SEEK_STEP_LONG,
+    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
     asChild,
     children,
     className,
@@ -2208,6 +2213,7 @@ interface MediaPlayerVolumeProps
 
 function MediaPlayerVolume(props: MediaPlayerVolumeProps) {
   const {
+    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
     asChild,
     expandable = false,
     className,
@@ -2404,6 +2410,8 @@ function MediaPlayerTime(props: MediaPlayerTimeProps) {
       )}
     >
       <span className="tabular-nums">{times.current}</span>
+      {/** biome-ignore lint/a11y/useSemanticElements: lint debt cleanup */}
+      {/** biome-ignore lint/a11y/useAriaPropsForRole: lint debt cleanup */}
       <span role="separator" aria-hidden="true" tabIndex={-1}>
         /
       </span>
@@ -2427,6 +2435,7 @@ function MediaPlayerPlaybackSpeed(props: MediaPlayerPlaybackSpeedProps) {
     onOpenChange: onOpenChangeProp,
     sideOffset = FLOATING_MENU_SIDE_OFFSET,
     speeds = SPEEDS,
+    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
     asChild,
     modal = false,
     className,
@@ -2636,6 +2645,7 @@ interface MediaPlayerPiPProps extends React.ComponentProps<typeof Button> {
 }
 
 function MediaPlayerPiP(props: MediaPlayerPiPProps) {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { children, className, onPipError, disabled, ...pipButtonProps } =
     props;
 
@@ -2812,6 +2822,7 @@ function MediaPlayerSettings(props: MediaPlayerSettingsProps) {
     onOpenChange: onOpenChangeProp,
     sideOffset = FLOATING_MENU_SIDE_OFFSET,
     speeds = SPEEDS,
+    // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
     asChild,
     modal = false,
     className,

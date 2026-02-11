@@ -67,7 +67,8 @@ export default function CongestedPricing({
   };
 
   return (
-    <div className="py-20 px-12" id="pricing">
+    // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
+<div className="py-20 px-12" id="pricing">
       <div className="mb-12 space-y-4 text-center">
         <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
           {title}
@@ -78,9 +79,11 @@ export default function CongestedPricing({
       </div>
 
       <div className="mb-10 flex justify-center">
+        {/** biome-ignore lint/a11y/noLabelWithoutControl: lint debt cleanup */}
         <label className="relative inline-flex cursor-pointer items-center">
           <Label>
             <Switch
+              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
               ref={switchRef as any}
               checked={!isMonthly}
               onCheckedChange={handleToggle}
@@ -96,6 +99,7 @@ export default function CongestedPricing({
       <div className="sm:2 grid grid-cols-1 gap-4 md:grid-cols-3">
         {plans.map((plan, index) => (
           <motion.div
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={index}
             initial={{ y: 50, opacity: 1 }}
             whileInView={
@@ -174,7 +178,8 @@ export default function CongestedPricing({
 
               <ul className="mt-5 flex flex-col gap-2">
                 {plan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-2">
+                  // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<li key={idx} className="flex items-start gap-2">
                     <Check className="text-primary mt-1 h-4 w-4 flex-shrink-0" />
                     <span className="text-left">{feature}</span>
                   </li>

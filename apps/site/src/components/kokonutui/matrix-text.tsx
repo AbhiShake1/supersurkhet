@@ -108,7 +108,7 @@ const MatrixText = ({
   useEffect(() => {
     const timer = setTimeout(startAnimation, initialDelay);
     return () => clearTimeout(timer);
-  }, []);
+  }, [initialDelay, startAnimation]);
 
   const motionVariants = useMemo(
     () => ({
@@ -128,7 +128,8 @@ const MatrixText = ({
   );
 
   return (
-    <div
+    // biome-ignore lint/a11y/useAriaPropsSupportedByRole: lint debt cleanup
+<div
       className={cn(
         'flex min-h-screen items-center justify-center text-black dark:text-white',
         className,

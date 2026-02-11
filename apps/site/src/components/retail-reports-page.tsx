@@ -266,6 +266,7 @@ function FinancialOverview({
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {item.items.map((product, idx) => (
                     <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                       key={idx}
                       className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0"
                     >
@@ -345,6 +346,7 @@ function FinancialOverview({
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {item.items.map((product, idx) => (
                     <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                       key={idx}
                       className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0"
                     >
@@ -770,6 +772,7 @@ function AccountsSection({
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {item.items.map((product, idx) => (
                     <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                       key={idx}
                       className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0"
                     >
@@ -876,6 +879,7 @@ function AccountsSection({
                 <div className="space-y-1 max-h-32 overflow-y-auto">
                   {item.items.map((product, idx) => (
                     <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                       key={idx}
                       className="flex justify-between text-sm py-1 border-b border-border/30 last:border-0"
                     >
@@ -918,6 +922,7 @@ function AccountsSection({
             <CardTitle>Accounts Receivable</CardTitle>
             <HoverablePopover>
               <HoverablePopoverTrigger asChild>
+                {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
                 <button className="text-muted-foreground hover:text-foreground">
                   <Info className="h-4 w-4" />
                 </button>
@@ -948,6 +953,7 @@ function AccountsSection({
             <CardTitle>Accounts Payable</CardTitle>
             <HoverablePopover>
               <HoverablePopoverTrigger asChild>
+                {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
                 <button className="text-muted-foreground hover:text-foreground">
                   <Info className="h-4 w-4" />
                 </button>

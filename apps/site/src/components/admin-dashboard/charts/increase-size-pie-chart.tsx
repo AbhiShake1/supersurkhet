@@ -86,7 +86,8 @@ export function IncreaseSizePieChart() {
             />
             {sortedChartData.map((entry, index) => (
               <Pie
-                key={`pie-${index}`}
+                key={`pie-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+index}`}
                 data={[entry]}
                 innerRadius={30}
                 outerRadius={BASE_RADIUS + index * SIZE_INCREMENT}

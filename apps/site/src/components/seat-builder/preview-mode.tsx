@@ -245,7 +245,8 @@ export function PreviewMode({ floor, darkMode }: PreviewModeProps) {
             {Array.from({ length: Math.ceil((floor?.width ?? 50) / 50) }).map(
               (_, i) => (
                 <div
-                  key={`v-${i}`}
+                  key={`v-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+i}`}
                   className={`absolute top-0 bottom-0 border-r ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}
                   style={{ left: `${i * 50}px` }}
                 />
@@ -254,7 +255,8 @@ export function PreviewMode({ floor, darkMode }: PreviewModeProps) {
             {Array.from({ length: Math.ceil((floor?.height ?? 50) / 50) }).map(
               (_, i) => (
                 <div
-                  key={`h-${i}`}
+                  key={`h-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+i}`}
                   className={`absolute left-0 right-0 border-b ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}
                   style={{ top: `${i * 50}px` }}
                 />

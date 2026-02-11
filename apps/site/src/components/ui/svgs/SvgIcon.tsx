@@ -72,6 +72,7 @@ const icons = {
 
 type IconName = keyof typeof icons;
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function keys<T extends Record<string, any>>(obj: T): Array<keyof T> {
   return Object.keys(obj) as Array<keyof T>;
 }

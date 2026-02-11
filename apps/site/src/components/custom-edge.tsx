@@ -1,4 +1,4 @@
-import React from 'react';
+
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -135,9 +135,7 @@ export function CustomEdge({
 
   if (data?.isAddButtonHidden) {
     return (
-      <>
-        <BaseEdge path={edgePath} markerEnd={markerEnd} />
-      </>
+      <BaseEdge path={edgePath} markerEnd={markerEnd} />
     );
   }
 

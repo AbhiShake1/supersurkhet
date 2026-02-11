@@ -140,6 +140,7 @@ export function DataTableSortList<TData>({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [sorting.length, onSortingReset]);
 
   const onTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -202,6 +203,7 @@ export function DataTableSortList<TData>({
           </div>
           {sorting.length > 0 && (
             <SortableContent asChild>
+              {/** biome-ignore lint/a11y/useSemanticElements: lint debt cleanup */}
               <div
                 role="list"
                 className="flex max-h-[300px] flex-col gap-2 overflow-y-auto p-1"
@@ -300,6 +302,7 @@ function DataTableSortItem({
 
   return (
     <SortableItem value={sort.id} asChild>
+      {/** biome-ignore lint/a11y/useSemanticElements: lint debt cleanup */}
       <div
         role="listitem"
         id={sortItemId}

@@ -12,6 +12,7 @@ export interface AutoFormProps<T extends FieldValues> {
   schema: SchemaProvider<T>;
   onSubmit?: (
     values: T,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     form: UseFormReturn<T, any, T>,
   ) => void | Promise<void>;
 
@@ -22,7 +23,9 @@ export interface AutoFormProps<T extends FieldValues> {
   uiComponents: AutoFormUIComponents;
   formComponents: AutoFormFieldComponents;
   withSubmit?: boolean;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onFormInit?: (form: UseFormReturn<T, any, T>) => void;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   formProps?: React.ComponentProps<'form'> | Record<string, any>;
 }
 
@@ -84,10 +87,12 @@ export interface ObjectWrapperProps {
 export interface AutoFormFieldProps {
   label: Renderable<ReactNode>;
   field: ParsedField;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   value: any;
   error?: string;
   id: string;
   path: string[];
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   inputProps: any;
   testId?: string;
 }
@@ -100,6 +105,7 @@ export interface AutoFormContextType {
 
 export type FieldConfig<
   FieldTypes = string,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   CustomData = Record<string, any>,
 > = BaseFieldConfig<
   ReactNode,

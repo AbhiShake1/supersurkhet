@@ -113,7 +113,8 @@ export const createTransformAwareCollisionDetection =
         (iframeRelativeY - transformState.positionY) / transformState.scale;
 
       // 3. Handle coordinate calculation differently for "at top" vs "mid-scroll"
-      let adjustedPointerCoordinates;
+      // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
+            let adjustedPointerCoordinates;
 
       if (isAtTop) {
         // When at the very top, use simpler coordinate calculation
@@ -162,7 +163,9 @@ export const createTransformAwareCollisionDetection =
 
       // Validate adjusted coordinates are reasonable
       if (
+        Number.
         isNaN(adjustedPointerCoordinates.x) ||
+        Number.
         isNaN(adjustedPointerCoordinates.y)
       ) {
         console.warn('Invalid adjusted coordinates, falling back to original');

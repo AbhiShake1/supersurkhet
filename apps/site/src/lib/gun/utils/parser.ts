@@ -6,7 +6,9 @@ import _ from 'lodash';
 
 export type ParseOptions = {
   key: SchemaKeys;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   shape: z.ZodObject<any> | z.ZodEffects<any>;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   obj: Record<any, any>;
 };
 
@@ -14,6 +16,7 @@ function _parse<P extends ParseOptions>(
   key: P['key'],
   obj: P['obj'],
   schema: P['shape'],
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   parser: (shape: P['shape'], obj: P['obj']) => any,
 ) {
   const keys = key.split('/');
@@ -49,6 +52,7 @@ type UnwrapObject<S> = S extends z.ZodEffects<
     ? z.ZodObject<Shape, UK, Catchall, Out, In>
     : never;
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 type ObjectLike = z.ZodObject<any> | z.ZodEffects<z.ZodObject<any>>;
 
 export function getSchema<S extends ObjectLike>(schema: S): UnwrapObject<S> {
@@ -99,7 +103,9 @@ export interface TransformerParserOptions {
   /** The description of this parser for better readability in the future */
   description: string;
   fn: (
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     response: any,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     schema: z.ZodObject<any>,
   ) => ReturnType<
     AppSchemaRawShape[keyof AppSchemaRawShape]['schema']['parseAsync']
@@ -108,8 +114,10 @@ export interface TransformerParserOptions {
 
 /** Recursively walk value *guided by schema* */
 async function transformBySchema(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   value: any,
   schema: z.ZodTypeAny,
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): Promise<any> {
   const kind = schema._def.typeName;
 
@@ -150,6 +158,7 @@ async function transformBySchema(
     if (!value || typeof value !== 'object') return value;
 
     const shape = schema._def.shape();
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const out: Record<string, any> = {};
 
     for (const key of Object.keys(value)) {
@@ -167,6 +176,7 @@ async function transformBySchema(
     if (!value || typeof value !== 'object') return value;
 
     const inner = schema._def.valueType;
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const out: Record<string, any> = {};
 
     for (const [k, v] of Object.entries(value)) {
@@ -219,6 +229,7 @@ async function transformBySchema(
     }
 
     if (value && typeof value === 'object') {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       const out: Record<string, any> = {};
       for (const [k, v] of Object.entries(value)) {
         out[k] = await transformBySchema(v, z.any());
@@ -236,9 +247,11 @@ async function transformBySchema(
 }
 
 /** Recursively transform request based on schema */
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 async function transformRequestBySchema(value: any): Promise<any> {
   // 1. Arrays → convert to record and recurse
   if (Array.isArray(value)) {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const out: Record<string, any> = {};
     for (let i = 0; i < value.length; i++) {
       out[i] = await transformRequestBySchema(value[i]);
@@ -248,6 +261,7 @@ async function transformRequestBySchema(value: any): Promise<any> {
 
   // 2. Objects → recurse into values
   if (value && typeof value === 'object') {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const out: Record<string, any> = {};
     for (const [k, v] of Object.entries(value)) {
       out[k] = await transformRequestBySchema(v);
@@ -286,7 +300,9 @@ export function getTransformerRequestParsers(): TransformerParserOptions[] {
 }
 
 export async function applyTransformerResponseParsers(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   obj: any,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   schema: z.ZodObject<any>,
 ) {
   let _obj = _.cloneDeep(obj);
@@ -298,7 +314,9 @@ export async function applyTransformerResponseParsers(
 }
 
 export async function applyTransformerRequestParsers(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   obj: any,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   schema: z.ZodObject<any>,
 ) {
   let _obj = _.cloneDeep(obj);

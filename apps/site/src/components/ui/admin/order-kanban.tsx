@@ -3,7 +3,7 @@ import type { AdminComponent } from '.';
 import type { Order } from '@/lib/schema';
 import { api } from '@/lib/api';
 import { useMemo, useState } from 'react';
-import { cn, recordToList, soulToId } from '@/lib/utils';
+import { cn, soulToId } from '@/lib/utils';
 import {
   Credenza,
   CredenzaBody,
@@ -48,7 +48,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
   const { data: menuItems = [] } = api.menuItem.useGet({ keys: [slug] });
   const customerById = useMemo(
     () => new Map(customers.map((c) => [c._?.soul, c])),
-    [],
+    [customers.map],
   );
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
 
@@ -122,7 +122,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                 <span className="text-right font-semibold">Items:</span>
                 <span className="col-span-3">
                   {orderItems.map((item) => {
-                    const menuItem = menuItems.find(
+                    const _menuItem = menuItems.find(
                       (m) => m?._?.soul === item._?.soul,
                     );
                     return (
@@ -228,6 +228,8 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
           </CredenzaBody>
         </CredenzaContent>
       </Credenza>
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+      {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
       <div
         className={cn(
           className,

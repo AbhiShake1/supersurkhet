@@ -60,7 +60,7 @@ const DynamicText = ({
     }, 300);
 
     return () => clearInterval(interval);
-  }, [isAnimating]);
+  }, [isAnimating, greetings.length]);
 
   // Animation variants for the text
   const textVariants = {

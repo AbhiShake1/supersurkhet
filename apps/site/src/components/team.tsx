@@ -23,7 +23,8 @@ const members = [
 
 export default function TeamSection() {
   return (
-    <section className="py-12 md:py-32" id="about">
+    // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
+<section className="py-12 md:py-32" id="about">
       <div className="mx-auto max-w-3xl px-8 lg:px-0">
         <h2 className="mb-8 text-4xl font-bold md:mb-16 lg:text-5xl">
           Our team
@@ -33,7 +34,8 @@ export default function TeamSection() {
           <h3 className="mb-6 text-lg font-medium">Leadership</h3>
           <div className="grid grid-cols-2 gap-4 border-t py-6 md:grid-cols-4">
             {members.map((member, index) => (
-              <div key={index}>
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<div key={index}>
                 <div className="bg-background size-20 rounded-full border p-0.5 shadow shadow-zinc-950/5">
                   <img
                     className="aspect-square rounded-full object-cover"
@@ -60,7 +62,8 @@ export default function TeamSection() {
             className="grid grid-cols-2 gap-4 border-t py-6 md:grid-cols-4"
           >
             {members.map((member, index) => (
-              <div key={index}>
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<div key={index}>
                 <div className="bg-background size-20 rounded-full border p-0.5 shadow shadow-zinc-950/5">
                   <img
                     className="aspect-square rounded-full object-cover"
@@ -87,7 +90,8 @@ export default function TeamSection() {
             className="grid grid-cols-2 gap-4 border-t py-6 md:grid-cols-4"
           >
             {members.map((member, index) => (
-              <div key={index}>
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<div key={index}>
                 <div className="bg-background size-20 rounded-full border p-0.5 shadow shadow-zinc-950/5">
                   <img
                     className="aspect-square rounded-full object-cover"

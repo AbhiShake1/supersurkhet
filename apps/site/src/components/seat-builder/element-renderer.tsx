@@ -299,6 +299,7 @@ export function ElementRenderer({
       {isLocked && (
         <div className="absolute inset-0 bg-black/10 flex items-center justify-center rounded-sm">
           <div className="bg-white/80 p-1 rounded-full shadow-sm">
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"

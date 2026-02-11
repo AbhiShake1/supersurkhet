@@ -68,6 +68,7 @@ export function AssistedPasswordConfirmation({
             <div className="z-10 flex h-full items-center justify-center bg-transparent px-0 py-1 tracking-[0.15em]">
               {password.split('').map((_, index) => (
                 <div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                   key={index}
                   className="flex h-full w-4 shrink-0 items-center justify-center"
                 >
@@ -78,6 +79,7 @@ export function AssistedPasswordConfirmation({
             <div className="absolute bottom-0 left-0 top-0 z-0 flex h-full w-full items-center justify-start">
               {password.split('').map((letter, index) => (
                 <motion.div
+                  // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                   key={index}
                   className={`ease absolute h-full w-4 transition-all duration-300 ${getLetterStatus(
                     letter,

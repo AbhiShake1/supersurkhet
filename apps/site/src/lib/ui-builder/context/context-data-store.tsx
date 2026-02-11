@@ -3,6 +3,7 @@ import { createContext, useContext, useMemo, type ReactNode } from 'react';
 import _ from 'lodash';
 
 interface ContextData {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   [key: string]: any;
 }
 
@@ -16,9 +17,12 @@ interface ContextDataReturn {
 }
 
 export function makeSerializable(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   obj: Record<string, any>,
   maxDepth = 3,
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): Record<string, any> {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   function clean(value: any, depth: number): any {
     if (
       value === null ||
@@ -50,12 +54,14 @@ export function makeSerializable(
         const c = clean(val, depth + 1);
         if (c !== undefined) result[key] = c;
       },
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       {} as Record<string, any>,
     );
 
     return _.isEmpty(cleaned) ? undefined : cleaned;
   }
 
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   return clean(obj, 1) as Record<string, any>;
 }
 

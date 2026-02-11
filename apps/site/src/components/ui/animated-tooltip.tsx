@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import { useState, useRef } from 'react';
 import {
   motion,
   useTransform,
@@ -33,6 +33,7 @@ export const AnimatedTooltip = ({
     springConfig,
   );
 
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const handleMouseMove = (event: any) => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
@@ -46,8 +47,9 @@ export const AnimatedTooltip = ({
 
   return (
     <>
-      {items.map((item, idx) => (
-        <div
+      {items.map((item, _idx) => (
+        // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+<div
           className="group relative -mr-4"
           key={item.name}
           onMouseEnter={() => setHoveredIndex(item.id)}

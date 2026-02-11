@@ -15,7 +15,8 @@ export const GlowingStarsBackgroundCard = ({
   const [mouseEnter, setMouseEnter] = useState(false);
 
   return (
-    <div
+    // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+<div
       onMouseEnter={() => {
         setMouseEnter(true);
       }}
@@ -97,7 +98,8 @@ export const Illustration = ({ mouseEnter }: { mouseEnter: boolean }) => {
         const staticDelay = starIdx * 0.01;
         return (
           <div
-            key={`matrix-col-${starIdx}}`}
+            key={`matrix-col-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+starIdx}}`}
             className="relative flex items-center justify-center"
           >
             <Star

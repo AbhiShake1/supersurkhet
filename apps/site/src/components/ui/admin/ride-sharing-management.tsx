@@ -19,6 +19,7 @@ import {
   Trash2,
   Car,
   User,
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
   Map,
   CreditCard,
   TrendingUp,
@@ -232,42 +233,42 @@ function _RideSharingManagement({
     );
   });
 
-  const toggleVehicleTypeActive = (id: string, active: boolean) => {
+  const toggleVehicleTypeActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Vehicle type ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleDriverActive = (id: string, active: boolean) => {
+  const toggleDriverActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Driver ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const togglePricingRuleActive = (id: string, active: boolean) => {
+  const togglePricingRuleActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Pricing rule ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleServiceAreaActive = (id: string, active: boolean) => {
+  const toggleServiceAreaActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Service area ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteVehicleType = (id: string) => {
+  const deleteVehicleType = (_id: string) => {
     // In a real implementation, this would delete the vehicle type from GunDB
     toast.success('Vehicle type removed');
   };
 
-  const deleteDriver = (id: string) => {
+  const deleteDriver = (_id: string) => {
     // In a real implementation, this would delete the driver from GunDB
     toast.success('Driver removed');
   };
 
-  const deletePricingRule = (id: string) => {
+  const deletePricingRule = (_id: string) => {
     // In a real implementation, this would delete the pricing rule from GunDB
     toast.success('Pricing rule removed');
   };
 
-  const deleteServiceArea = (id: string) => {
+  const deleteServiceArea = (_id: string) => {
     // In a real implementation, this would delete the service area from GunDB
     toast.success('Service area removed');
   };
@@ -518,6 +519,7 @@ function _RideSharingManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
                               className={`w-3 h-3 ${
                                 i < Math.floor(driver.rating)

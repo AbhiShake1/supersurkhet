@@ -27,7 +27,6 @@ import { ThemeToggle } from '../theme/theme-toggle';
 import type { PossibleTabConfig } from '../auto-admin';
 import { useDialog } from '@/contexts/dialog-context';
 import { useIsMobile } from '@/hooks/use-mobile';
-import isDeepEqual from 'fast-deep-equal';
 
 export interface CollapsibleSidebarProps {
   businessName?: string;
@@ -65,7 +64,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         try {
           const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
           return regex.test(item.title);
-        } catch (e) {
+        } catch (_e) {
           // If the regex is invalid, fallback to simple string includes
           return item.title.toLowerCase().includes(searchQuery.toLowerCase());
         }
@@ -119,6 +118,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         <div className="space-y-1">
           {ungroupedItems.map((item, index) => (
             <Option
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
               key={index}
               Icon={item.icon || Menu}
               title={item.title}
@@ -141,7 +141,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             <div className="space-y-1">
               {items.map((item, index) => (
                 <Option
-                  key={`${groupName}-${index}`}
+                  key={`${groupName}-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+index}`}
                   Icon={item.icon || Menu}
                   title={item.title}
                   url={item.url}
@@ -313,7 +314,8 @@ const ToggleClose: React.FC<{
   setOpen: (open: boolean) => void;
 }> = ({ open, setOpen }) => {
   return (
-    <button
+    // biome-ignore lint/a11y/useButtonType: lint debt cleanup
+<button
       onClick={() => setOpen(!open)}
       className="w-full border-t border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 backdrop-blur-2xl"
     >

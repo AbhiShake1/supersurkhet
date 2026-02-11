@@ -79,7 +79,9 @@ const segmentConfigs = [
   },
 ];
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 const mergeRefs = (...refs: any) => {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   return (node: any) => {
     for (const ref of refs) {
       if (ref) ref.current = node;
@@ -109,7 +111,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
       if (form?.formState.isSubmitted) {
         setSegments(parseFormat(formatStr, value));
       }
-    }, [form?.formState.isSubmitted]);
+    }, [form?.formState.isSubmitted, formatStr, value]);
     useEffect(() => {
       // console.error('valueChanged', {formatStr, inputStr, value});
       setSegments(parseFormat(formatStr, value));
@@ -129,7 +131,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
         const at = segments?.findIndex((s) => s.index === segment?.index);
         at !== -1 && setSelectedSegmentAt(at);
       },
-      [segments, setSelectedSegmentAt],
+      [segments],
     );
 
     const validSegments = useMemo(
@@ -161,14 +163,15 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
       if (isValid(date) && year > 1900 && year < 2100) {
         return date;
       }
-    }, [validSegments, inputStr, formatStr]);
+    }, [validSegments, inputStr, formatStr, timezone, value]);
     useEffect(() => {
       if (!inputValue) return;
       if (value?.getTime() !== inputValue.getTime()) {
         // console.log('inputValueChanged', {formatStr, inputStr, value, inputValue, });
         options.onChange?.(inputValue);
       }
-    }, [inputValue]);
+    }, [inputValue, // console.log('inputValueChanged', {formatStr, inputStr, value, inputValue, });
+        options.onChange, value?.getTime]);
 
     const onClick = useEventCallback(
       (event: React.MouseEvent<HTMLInputElement>) => {
@@ -187,10 +190,12 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
               s.index + s.symbols.length >= selectionStart,
           );
           !segment &&
+            // biome-ignore lint/suspicious/noAssignInExpressions: lint debt cleanup
             (segment = [...validSegments]
               .reverse()
               .find((s) => s.index <= selectionStart));
           !segment &&
+            // biome-ignore lint/suspicious/noAssignInExpressions: lint debt cleanup
             (segment = validSegments.find((s) => s.index >= selectionStart));
           setCurrentSegment(segment);
           setSelection(inputRef, segment);
@@ -224,7 +229,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
         let shouldNext = false;
         if (segment.type !== 'period') {
           const length = segment.symbols.length;
-          const rawValue = Number.parseInt(segment.value).toString();
+          const rawValue = Number.parseInt(segment.value, 10).toString();
           let newValue = rawValue.length < length ? rawValue + num : num;
           let parsedDate = parse(
             newValue.padStart(length, '0'),
@@ -239,6 +244,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
             s.index === segment.index ? { ...segment, value: newValue } : s,
           );
           setSegments(updatedSegments);
+          // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
           segment = updatedSegments.find((s) => s.index === segment.index)!;
           shouldNext = newValue.length === length;
           if (!shouldNext) {
@@ -285,6 +291,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
             s.index === segment.index ? { ...segment, value: newValue } : s,
           );
           setSegments(updatedSegments);
+          // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
           segment = updatedSegments.find((s) => s.index === segment.index)!;
         }
         setSelection(inputRef, segment);
@@ -299,6 +306,7 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
           s.index === curSegment.index ? { ...curSegment, value: '' } : s,
         );
         setSegments(updatedSegments);
+        // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
         const segment = updatedSegments.find(
           (s) => s.index === curSegment.index,
         )!;
@@ -412,11 +420,13 @@ interface Segment {
 }
 function parseFormat(formatStr: string, value?: Date) {
   const views: Segment[] = [];
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   let lastPattern: any = '';
   let symbols = '';
   let patternIndex = 0;
   let index = 0;
   for (const c of formatStr) {
+    // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
     const pattern = segmentConfigs.find((p) => p.symbols.includes(c))!;
     if (!pattern) continue;
     if (pattern.type !== lastPattern) {
@@ -480,16 +490,20 @@ function safeSetSelection(
     }
   });
 }
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function useEventCallback<T extends (...args: any[]) => any>(
   fn: T,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   deps: any[],
 ) {
   const ref = useRef(fn);
   useIsomorphicLayoutEffect(() => {
     ref.current = fn;
   });
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   return useCallback((...args: any[]) => {
     return ref.current?.(...args);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, deps);
 }
 

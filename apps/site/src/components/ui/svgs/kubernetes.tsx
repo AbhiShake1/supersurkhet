@@ -1,7 +1,8 @@
 import type { SVGProps } from 'react';
 
 const Kubernetes = (props: SVGProps<SVGSVGElement>) => (
-  <svg {...props} viewBox="0 0 722.8 702">
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+<svg {...props} viewBox="0 0 722.8 702">
     <path
       style={{
         fill: '#326ce5',

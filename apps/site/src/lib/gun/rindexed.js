@@ -3,7 +3,7 @@
     return;
   }
 
-  var noop = () => {},
+  var _noop = () => {},
     u;
 
   // -----------------------------
@@ -81,6 +81,7 @@
         var data = req.result || u;
         var tmp;
 
+        // biome-ignore lint/suspicious/noAssignInExpressions: lint debt cleanup
         if (data && (tmp = lex['.']) && !Object.plain(tmp)) {
           data = Gun.state.ify(
             {},
@@ -109,9 +110,9 @@
       if (!put) return;
 
       var soul = put['#'];
-      var key = put['.'];
-      var id = msg['#'];
-      var ok = msg.ok || {};
+      var _key = put['.'];
+      var _id = msg['#'];
+      var _ok = msg.ok || {};
 
       if (
         !soul.startsWith('~') &&
@@ -158,7 +159,7 @@
           if (
             !msg['@'] &&
             (!msg._.via ||
-              Math.random() < (msg.ok || {})['@'] / (msg.ok || {})['/'])
+              Math.random() < msg.ok?.['@'] / msg.ok?.['/'])
           ) {
             acks.push(msg['#']);
           }

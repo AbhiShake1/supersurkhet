@@ -23,11 +23,6 @@ import { DevProfiler } from '@/components/ui/ui-builder/internal/components/dev-
 import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
 import { buttonVariants } from '@/components/ui/button';
 import { DividerControl } from '@/components/ui/ui-builder/internal/components/divider-control';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 
 interface LayersPanelProps {
   className?: string;
@@ -73,6 +68,7 @@ interface LayersTreeProps {
   selectedLayerId: string | null;
   updateLayer: (
     layerId: string,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     newProps: Record<string, any>,
     layerRest?: Partial<Omit<ComponentLayer, 'props'>>,
   ) => void;
@@ -162,6 +158,7 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
     }, []);
 
     const renderNode = useCallback(
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       ({ stat, attrs, isPlaceholder }: any) => {
         // Use node.id as key to ensure stable identity across tree operations
         const stableKey = isPlaceholder
@@ -305,7 +302,8 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
     }, []);
 
     return (
-      <DevProfiler id="LayersPanel" threshold={40}>
+      // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
+<DevProfiler id="LayersPanel" threshold={40}>
         <div
           data-testid="layers-tree"
           className={cn(

@@ -1,6 +1,6 @@
 import { useAuth } from '@/components/auth-provider';
 import { api } from '@/lib/api';
-import { useCreate, useGet, type NestedSchemaType } from '@gta/react-hooks';
+import type { NestedSchemaType } from '@gta/react-hooks';
 import { createContext, useContext, useMemo } from 'react';
 
 export type RecentlyUsedApp = NestedSchemaType<'recentlyUsedApp'>;

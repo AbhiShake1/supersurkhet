@@ -10,7 +10,8 @@ export function applySorting<TData>(
   }
 
   // A comparator function that handles different data types robustly.
-  const compareValues = (a: any, b: any): number => {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    const compareValues = (a: any, b: any): number => {
     // Place null or undefined values at the end of the sorted list.
     if (a == null && b == null) return 0;
     if (a == null) return 1;

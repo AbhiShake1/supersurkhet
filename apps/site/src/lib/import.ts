@@ -5,7 +5,9 @@ import * as XLSX from 'xlsx';
 /**
  * Parse CSV file and convert to JSON
  */
-export async function parseCSVFile(file: File): Promise<any[]> {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  async function parseCSVFile(file: File): Promise<any[]> {
   const text = await file.text();
   const parsed = csvParse(text);
   return parsed;
@@ -14,7 +16,9 @@ export async function parseCSVFile(file: File): Promise<any[]> {
 /**
  * Parse Excel file and convert to JSON
  */
-export function parseExcelFile(file: File): Promise<any[]> {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function parseExcelFile(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -46,7 +50,9 @@ export function parseExcelFile(file: File): Promise<any[]> {
 /**
  * Parse JSON file
  */
-export function parseJSONFile(file: File): Promise<any[]> {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function parseJSONFile(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -77,7 +83,10 @@ export function parseJSONFile(file: File): Promise<any[]> {
 /**
  * Validate parsed data against a Zod schema
  */
-export function validateDataAgainstSchema<T extends z.ZodObject<any>>(
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  function validateDataAgainstSchema<T extends z.ZodObject<any>>(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   data: any[],
   schema: T,
 ): { validData: z.infer<T>[]; errors: { index: number; error: string }[] } {

@@ -67,6 +67,7 @@ export const PixelImage = ({
       );
     };
 
+    // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
     return isValidGrid(customGrid) ? customGrid! : DEFAULT_GRIDS[grid];
   }, [customGrid, grid]);
 
@@ -110,6 +111,7 @@ export const PixelImage = ({
       >
         {pieces.map((piece, index) => (
           <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={index}
             className={cn(
               'absolute inset-0 transition-all ease-out',
@@ -123,6 +125,7 @@ export const PixelImage = ({
           >
             <img
               src={src}
+              // biome-ignore lint/a11y/noRedundantAlt: lint debt cleanup
               alt={`Pixel image piece ${index + 1}`}
               className={cn(
                 'z-1 rounded-[2.5rem] object-cover',

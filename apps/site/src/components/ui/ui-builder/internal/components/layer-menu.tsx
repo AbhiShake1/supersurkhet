@@ -61,8 +61,7 @@ export const LayerMenu: React.FC<MenuProps> = ({
   }, [selectedLayer, componentRegistry]);
 
   return (
-    <>
-      <div
+    <div
         className={cn(
           'flex flex-nowrap overflow-hidden transition-all duration-200 ease-in-out rounded-lg bg-blue-500 text-white',
         )}
@@ -86,7 +85,9 @@ export const LayerMenu: React.FC<MenuProps> = ({
           </AddComponentsPopover>
         )}
         {canDuplicate && (
-          <div
+          // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+// biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
+<div
             className={cn(buttonVariantsValues, buttonClass)}
             onClick={handleDuplicateComponent}
             data-testid="duplicate-button"
@@ -98,7 +99,9 @@ export const LayerMenu: React.FC<MenuProps> = ({
           </div>
         )}
         {canDelete && (
-          <div
+          // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
+// biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+<div
             className={cn(buttonVariantsValues, buttonClass)}
             onClick={handleDeleteComponent}
             data-testid="delete-button"
@@ -110,6 +113,5 @@ export const LayerMenu: React.FC<MenuProps> = ({
           </div>
         )}
       </div>
-    </>
   );
 };

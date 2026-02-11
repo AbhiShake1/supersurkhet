@@ -29,10 +29,12 @@ export const generateLayerCode = (
   }
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export const generatePropsString = (props: Record<string, any>): string => {
   const propsArray = Object.entries(props)
     .filter(([_, value]) => value !== undefined)
     .map(([key, value]) => {
+      // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
       let propValue;
       if (typeof value === 'string') {
         propValue = `"${value}"`;

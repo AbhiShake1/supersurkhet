@@ -34,6 +34,7 @@ export const generateFieldOverrides = (
 
   // Check if we have cached overrides for this exact layer state
   if (fieldOverrideCache.has(cacheKey)) {
+    // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
     return fieldOverrideCache.get(cacheKey)!;
   }
 
@@ -62,6 +63,7 @@ export const generateFieldOverrides = (
 
 //Checking of component type, checked via from property, if undefined or null then its a primitive like <div/>, <img/>, etc
 export function isPrimitiveComponent(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   component: RegistryEntry<ReactComponentType<any>>,
 ): boolean {
   return component.from === undefined || component.from === null;
@@ -69,6 +71,7 @@ export function isPrimitiveComponent(
 
 //Checking of component type, checked via from property, if defined and not null then its a complex component like <Button/>, <Badge/>, etc
 export function isCustomComponent(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   component: RegistryEntry<ReactComponentType<any>>,
 ): boolean {
   return component.from !== undefined && component.from !== null;

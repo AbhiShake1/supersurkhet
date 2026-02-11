@@ -38,7 +38,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         setIsCopied(true);
         onCopy?.();
         setTimeout(() => setIsCopied(false), 2000);
-      } catch (error) {
+      } catch (_error) {
         toast.error('Failed to copy to clipboard');
       }
     };
@@ -58,7 +58,7 @@ const CopyButton = React.forwardRef<HTMLButtonElement, CopyButtonProps>(
         setIsCopied(true);
         onCopy?.();
         setTimeout(() => setIsCopied(false), 2000);
-      } catch (error) {
+      } catch (_error) {
         toast.error('Failed to copy image to clipboard');
       }
     };

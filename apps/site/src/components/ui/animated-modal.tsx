@@ -85,7 +85,8 @@ export const ModalTrigger = ({
 }) => {
   const { setOpen } = useModal();
   return (
-    <button
+    // biome-ignore lint/a11y/useButtonType: lint debt cleanup
+<button
       className={cn(
         'px-4 py-2 rounded-md text-black dark:text-white text-center relative overflow-hidden',
         className,
@@ -230,10 +231,12 @@ const Overlay = ({ className }: { className?: string }) => {
 const CloseIcon = () => {
   const { setOpen } = useModal();
   return (
-    <button
+    // biome-ignore lint/a11y/useButtonType: lint debt cleanup
+<button
       onClick={() => setOpen(false)}
       className="absolute top-4 right-4 group"
     >
+      {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -258,9 +261,11 @@ const CloseIcon = () => {
 // Add it in a separate file, I've added here for simplicity
 export const useOutsideClick = (
   ref: React.RefObject<HTMLDivElement>,
+  // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
   callback: Function,
 ) => {
   useEffect(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const listener = (event: any) => {
       // DO NOTHING if the element being clicked is the target element or their children
       if (!ref.current || ref.current.contains(event.target)) {

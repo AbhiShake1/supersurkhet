@@ -310,42 +310,42 @@ function _EducationManagement({
     );
   });
 
-  const toggleCourseActive = (id: string, active: boolean) => {
+  const toggleCourseActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Course ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleInstructorActive = (id: string, active: boolean) => {
+  const toggleInstructorActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Instructor ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleStudentActive = (id: string, active: boolean) => {
+  const toggleStudentActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Student ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleEnrollmentActive = (id: string, active: boolean) => {
+  const toggleEnrollmentActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Enrollment ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteCourse = (id: string) => {
+  const deleteCourse = (_id: string) => {
     // In a real implementation, this would delete the course from GunDB
     toast.success('Course removed');
   };
 
-  const deleteInstructor = (id: string) => {
+  const deleteInstructor = (_id: string) => {
     // In a real implementation, this would delete the instructor from GunDB
     toast.success('Instructor removed');
   };
 
-  const deleteStudent = (id: string) => {
+  const deleteStudent = (_id: string) => {
     // In a real implementation, this would delete the student from GunDB
     toast.success('Student removed');
   };
 
-  const deleteEnrollment = (id: string) => {
+  const deleteEnrollment = (_id: string) => {
     // In a real implementation, this would delete the enrollment from GunDB
     toast.success('Enrollment removed');
   };
@@ -602,6 +602,7 @@ function _EducationManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
                               className={`w-3 h-3 ${
                                 i < Math.floor(instructor.rating)

@@ -195,6 +195,7 @@ export const PermissionsField: React.FC<PermissionsFieldProps> = ({
 
       <PopoverContent className="w-80">
         <ScrollArea className="h-64 w-full pr-4">
+          {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
           <div className="space-y-2" onBlur={inputProps.onBlur}>
             {Object.entries(groupedPermissions).map(([feature, actions]) => (
               <PermissionGroup

@@ -10,6 +10,7 @@ export const NumberField: React.FC<AutoFormFieldProps> = ({
   field,
   path,
 }) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
   const form = useFormContext();
 

@@ -4,13 +4,11 @@ import { useState } from 'react';
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -135,22 +133,22 @@ function _PetrolPumpManagement({
     );
   });
 
-  const toggleFuelAvailability = (fuelId: string, available: boolean) => {
+  const toggleFuelAvailability = (_fuelId: string, available: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Fuel type ${available ? 'enabled' : 'disabled'}`);
   };
 
-  const toggleServiceAvailability = (serviceId: string, available: boolean) => {
+  const toggleServiceAvailability = (_serviceId: string, available: boolean) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Service ${available ? 'enabled' : 'disabled'}`);
   };
 
-  const deleteFuelType = (fuelId: string) => {
+  const deleteFuelType = (_fuelId: string) => {
     // In a real implementation, this would delete the fuel type from GunDB
     toast.success('Fuel type removed');
   };
 
-  const deleteService = (serviceId: string) => {
+  const deleteService = (_serviceId: string) => {
     // In a real implementation, this would delete the service from GunDB
     toast.success('Service removed');
   };

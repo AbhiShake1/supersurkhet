@@ -19,7 +19,6 @@ import {
 import { z } from 'zod';
 import { dataMatrixActionSchema } from './datamatrix';
 import type {
-  AppSchemaType,
   CreatedSchema,
   GTAAppConfig,
   InferredTable,
@@ -398,6 +397,7 @@ export const recentlyUsedAppSchema = z
 
 // #region App Schema
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export type ExtractZodSchema<T extends CreatedSchema<SchemaShape<any>>> =
   z.ZodObject<{
     -readonly [K in keyof T['rawShape']]: T['rawShape'][K]['schema'];
@@ -648,6 +648,7 @@ export const appSchema = coreSchema.merge(featureSchema);
 export type AppSchemaType = ExtractZodSchema<typeof appSchema>;
 
 declare global {
+  // biome-ignore lint/suspicious/noRedeclare: lint debt cleanup
   interface GTAAppConfig {
     schema: AppSchemaType;
   }

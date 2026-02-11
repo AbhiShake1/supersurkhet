@@ -20,6 +20,7 @@ export function TagsField({
   className,
   placeholder = 'Add a tag...',
   maxTags,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   ...props
 }: TagsFieldProps) {
   const [inputValue, setInputValue] = useState('');
@@ -91,7 +92,9 @@ export function TagsField({
         </Label>
       )}
 
-      <div
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+{/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
+<div
         className={cn(
           'flex flex-wrap items-center gap-2 rounded-md border border-input bg-background px-3 py-2 min-h-10',
           error && 'border-destructive',
@@ -101,6 +104,7 @@ export function TagsField({
       >
         {tags.map((tag, index) => (
           <Badge
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={index}
             variant="secondary"
             className="flex items-center gap-1 pl-2 pr-1 py-1"

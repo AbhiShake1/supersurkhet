@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card';
 import {
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
   Map,
   MapControls,
   MapMarker,
@@ -13,6 +14,7 @@ import { useState, useEffect, useCallback } from 'react';
 type GpsCoordinate = [number, number]; // [latitude, longitude]
 
 const MapClickHandler: React.FC<{
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onMapClick: (e: any) => void;
 }> = ({ onMapClick }) => {
   const { map, isLoaded } = useMap();
@@ -20,6 +22,7 @@ const MapClickHandler: React.FC<{
   useEffect(() => {
     if (!map || !isLoaded) return;
 
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const handleClick = (e: any) => {
       onMapClick(e);
     };
@@ -37,9 +40,11 @@ const MapClickHandler: React.FC<{
 export const MapField: React.FC<AutoFormFieldProps> = ({
   inputProps,
   error,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   id,
   value,
 }) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, onChange, ...props } = inputProps;
 
   // Parse the value from the form state - expecting a stringified array like "[28.597,81.634]"
@@ -55,11 +60,11 @@ export const MapField: React.FC<AutoFormFieldProps> = ({
         if (Array.isArray(parsedValue) && parsedValue.length === 2) {
           setCoordinates(parsedValue as GpsCoordinate);
         }
-      } catch (e) {
+      } catch (_e) {
         // If parsing fails, try to split by comma if it's a string
         if (typeof value === 'string') {
           const coords = value.split(',').map(Number);
-          if (coords.length === 2 && !coords.some(isNaN)) {
+          if (coords.length === 2 && !coords.some(Number.isNaN)) {
             setCoordinates(coords as GpsCoordinate);
           }
         }
@@ -68,6 +73,7 @@ export const MapField: React.FC<AutoFormFieldProps> = ({
   }, [value]);
 
   const handleMapClick = useCallback(
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     (e: any) => {
       // Using 'any' since maplibregl types might not be available here
       const newCoords: GpsCoordinate = [e.lngLat.lat, e.lngLat.lng];

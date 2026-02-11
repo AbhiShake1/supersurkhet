@@ -23,7 +23,8 @@ interface PaymentMethodSelectorProps {
 
 // --- HELPER COMPONENTS ---
 const PlusIcon = ({ className }: { className?: string }) => (
-  <svg
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+<svg
     className={className}
     xmlns="http://www.w3.org/2000/svg"
     width="24"
@@ -83,6 +84,7 @@ export function PaymentMethodSelector({
         <h3 className="text-xl font-semibold leading-none tracking-tight">
           {title}
         </h3>
+        {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
         <button
           onClick={onActionClick}
           className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"

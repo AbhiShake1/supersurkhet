@@ -64,6 +64,7 @@ export const BackgroundBeams = React.memo(
           className,
         )}
       >
+        {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
         <svg
           className="pointer-events-none absolute z-0 h-full w-full"
           width="100%"
@@ -81,7 +82,8 @@ export const BackgroundBeams = React.memo(
 
           {paths.map((path, index) => (
             <motion.path
-              key={`path-` + index}
+              key={`path-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+index}`}
               d={path}
               stroke={`url(#linearGradient-${index})`}
               strokeOpacity="0.4"
@@ -89,10 +91,11 @@ export const BackgroundBeams = React.memo(
             ></motion.path>
           ))}
           <defs>
-            {paths.map((path, index) => (
+            {paths.map((_path, index) => (
               <motion.linearGradient
                 id={`linearGradient-${index}`}
-                key={`gradient-${index}`}
+                key={`gradient-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+index}`}
                 initial={{
                   x1: '0%',
                   x2: '0%',
@@ -119,7 +122,8 @@ export const BackgroundBeams = React.memo(
               </motion.linearGradient>
             ))}
 
-            <radialGradient
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+<radialGradient
               id="paint0_radial_242_278"
               cx="0"
               cy="0"

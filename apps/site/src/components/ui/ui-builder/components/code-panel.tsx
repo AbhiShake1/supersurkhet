@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 
 export function CodePanel({ className }: { className?: string }) {
-  const componentRegistry = useEditorStore((state) => state.registry);
+  const _componentRegistry = useEditorStore((state) => state.registry);
   const selectedPageId = useLayerStore((state) => state.selectedPageId);
   const findLayerById = useLayerStore((state) => state.findLayerById);
 
@@ -19,7 +19,7 @@ export function CodePanel({ className }: { className?: string }) {
         2,
       ),
     };
-  }, [page, componentRegistry]);
+  }, [page]);
 
   return <CodeContent codeBlocks={codeBlocks} className={className} />;
 }

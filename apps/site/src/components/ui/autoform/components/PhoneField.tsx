@@ -64,7 +64,8 @@ export function PhoneField({
       const formatted = formatPhoneNumber(field.value.toString());
       setDisplayValue(formatted);
     }
-  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [field.value, formatPhoneNumber]);
 
   return (
     <div className={cn('space-y-2', className)}>

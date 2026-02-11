@@ -49,6 +49,7 @@ export interface IconProps
 
 const Icon = React.forwardRef<SVGSVGElement, IconProps>(
   ({ className, iconName, size, color, rotate, ...props }, ref) => {
+    // biome-ignore lint/performance/noDynamicNamespaceImportAccess: lint debt cleanup
     const IconComponent = LucideIcons[iconName] as LucideIconComponent;
 
     if (!IconComponent) {

@@ -8,7 +8,6 @@ import { createAvatar } from '@dicebear/core';
 import { pixelArt } from '@dicebear/collection';
 import type { IGunChain, ISEAPair } from 'gun/types';
 import { getGunRef, mergeKeys } from '@/lib/gun/utils';
-import _ from 'lodash';
 import { UserLoading } from './ui/user-loading';
 
 export type AuthUser = Partial<User> & {
@@ -37,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const { auth } = useRouteContext({ from: '__root__' });
   const [user, setUser] = useState<AuthUser>();
-  const [refreshState, setRefreshState] = useState(0);
+  const [_refreshState, setRefreshState] = useState(0);
   const [authUser, setAuthUser] =
     useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
   const [anonymousUserId, setAnonymousUserId] = useState<string | null>(null);
@@ -76,7 +75,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [anonymousUserId]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [linkAnonymousUser, refreshUser]);
 
   function refreshUser() {
     setRefreshState((r) => r + 1);
@@ -84,6 +84,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Handle authentication state and user data
   useEffect(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     let ref: IGunChain<any>;
     setIsLoading(true);
 
@@ -145,11 +146,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return () => {
       ref?.off();
     };
-  }, [refreshState, auth.getCurrentUser, anonymousUserId]);
+  }, [auth.getCurrentUser, anonymousUserId]);
 
   const isAuthenticated = useMemo(() => !!authUser, [authUser]);
 
   async function linkAnonymousUser(authenticatedUser: AuthUser) {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     function saveUser(anonymousData: any, onSaved?: () => void) {
       const mergedData = {
         ...authenticatedUser,

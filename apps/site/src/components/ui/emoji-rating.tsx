@@ -55,7 +55,7 @@ export function RatingInteraction({
   };
 
   const displayRating = hoverRating || rating;
-  const activeData = displayRating > 0 ? ratingData[displayRating - 1] : null;
+  const _activeData = displayRating > 0 ? ratingData[displayRating - 1] : null;
 
   return (
     <div className={cn('flex flex-col items-center gap-6', className)}>
@@ -64,10 +64,11 @@ export function RatingInteraction({
         {ratingData.map((item, i) => {
           const value = i + 1;
           const isActive = value <= displayRating;
-          const isExact = value === displayRating;
+          const _isExact = value === displayRating;
 
           return (
-            <button
+            // biome-ignore lint/a11y/useButtonType: lint debt cleanup
+<button
               key={value}
               onClick={() => handleClick(value)}
               onMouseEnter={() => setHoverRating(value)}
@@ -116,6 +117,7 @@ export function RatingInteraction({
         {/* Rating labels with blur in/out effect */}
         {ratingData.map((item, i) => (
           <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
             className={cn(
               'absolute inset-0 flex items-center justify-center transition-all duration-300 ease-out',

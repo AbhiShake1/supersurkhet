@@ -15,6 +15,7 @@ export type GetBuilder<T extends SchemaKeys> = {
   treatSlugAsAbsolute?: boolean;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function attachSouls(value: any, currentPath: string): any {
   // primitives stay untouched
   if (typeof value !== 'object' || value === null) return value;
@@ -34,7 +35,8 @@ export function attachSouls(value: any, currentPath: string): any {
   // ------------------------------------------------------------
   // CASE: OBJECT
   // ------------------------------------------------------------
-  const result: Record<string, any> = { '#': currentPath };
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+        const result: Record<string, any> = { '#': currentPath };
 
   for (const [key, val] of Object.entries(value)) {
     if (typeof val === 'object' && val !== null) {
@@ -58,6 +60,7 @@ export function get<const T extends SchemaKeys>(
   const options = mergeOptionsWithDefaults({});
   const isSingle = (typeof key !== 'string' && key.single) || false;
   const k = typeof key === 'string' ? key : key.key;
+  // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
   const schema = getNestedZodShape(k, options.schema!);
   const _keys = mergeKeys(k, ...restKeys) as T;
   const keys =

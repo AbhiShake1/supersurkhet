@@ -1,6 +1,6 @@
 'use client';
 import { useMotionValue } from 'motion/react';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useMotionTemplate, motion } from 'motion/react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +21,7 @@ export const EvervaultCard = ({
     setRandomString(str);
   }, []);
 
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   function onMouseMove({ currentTarget, clientX, clientY }: any) {
     const { left, top } = currentTarget.getBoundingClientRect();
     mouseX.set(clientX - left);
@@ -37,6 +38,7 @@ export const EvervaultCard = ({
         className,
       )}
     >
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         onMouseMove={onMouseMove}
         className="group/card rounded-3xl w-full relative overflow-hidden bg-transparent flex items-center justify-center h-full"
@@ -57,6 +59,7 @@ export const EvervaultCard = ({
   );
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function CardPattern({ mouseX, mouseY, randomString }: any) {
   const maskImage = useMotionTemplate`radial-gradient(250px at ${mouseX}px ${mouseY}px, white, transparent)`;
   const style = { maskImage, WebkitMaskImage: maskImage };
@@ -90,9 +93,11 @@ export const generateRandomString = (length: number) => {
   return result;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export const Icon = ({ className, ...rest }: any) => {
   return (
-    <svg
+    // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+<svg
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

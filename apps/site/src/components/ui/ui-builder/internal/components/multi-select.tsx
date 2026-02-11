@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 const EMPTY_ARRAY: any[] = [];
 
 export interface Option {
@@ -278,7 +279,8 @@ const MultipleSelector = React.forwardRef<
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('touchend', handleClickOutside);
       };
-    }, [open]);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    }, [open, handleClickOutside]);
 
     useEffect(() => {
       if (value) {
@@ -298,7 +300,7 @@ const MultipleSelector = React.forwardRef<
       if (JSON.stringify(newOption) !== JSON.stringify(options)) {
         setOptions(newOption);
       }
-    }, [arrayDefaultOptions, arrayOptions, groupBy, onSearch, options]);
+    }, [arrayOptions, groupBy, onSearch, options]);
 
     useEffect(() => {
       /** sync search */
@@ -322,7 +324,7 @@ const MultipleSelector = React.forwardRef<
 
       void exec();
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus]);
+    }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus, onSearchSync]);
 
     useEffect(() => {
       /** async search */
@@ -348,7 +350,7 @@ const MultipleSelector = React.forwardRef<
 
       void exec();
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus]);
+    }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus, onSearch]);
 
     const handleCommandKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -389,6 +391,7 @@ const MultipleSelector = React.forwardRef<
       [maxSelected, onMaxSelected, selected, onChange],
     );
 
+    // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
     const CreatableItem = () => {
       if (!creatable) return undefined;
       if (
@@ -541,6 +544,8 @@ const MultipleSelector = React.forwardRef<
         } // When onSearch is provided, we don't want to filter the options. You can still override it.
         filter={commandFilter()}
       >
+        {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
+        {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
         <div
           className={cn(
             'min-h-10 rounded-md border border-input text-sm ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2',
@@ -613,7 +618,7 @@ const MultipleSelector = React.forwardRef<
               onMouseUp={handleCommandListMouseUp}
             >
               {isLoading ? (
-                <>{loadingIndicator}</>
+                loadingIndicator
               ) : (
                 <>
                   {EmptyItem()}
@@ -627,8 +632,7 @@ const MultipleSelector = React.forwardRef<
                       heading={key}
                       className="h-full overflow-auto"
                     >
-                      <>
-                        {dropdowns.map((option) => {
+                      {dropdowns.map((option) => {
                           return (
                             <CommandGroupItem
                               key={option.value}
@@ -638,7 +642,6 @@ const MultipleSelector = React.forwardRef<
                             />
                           );
                         })}
-                      </>
                     </CommandGroup>
                   ))}
                 </>
@@ -698,6 +701,7 @@ const OptionBadge = ({
       data-disabled={disabled || undefined}
     >
       {option.label}
+      {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
       <button
         className={cn(
           'ml-1 rounded-full outline-none ring-offset-background focus:ring-2 focus:ring-ring focus:ring-offset-2',

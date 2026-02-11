@@ -46,6 +46,7 @@ function omitDefaultFields(schema: ParsedSchema): ParsedSchema {
   };
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function AutoForm<T extends Record<string, any>>({
   schema,
   onSubmit = () => {},
@@ -85,6 +86,7 @@ export function AutoForm<T extends Record<string, any>>({
       validationResult.errors?.forEach((error) => {
         const path = error.path.join('.');
         methods.setError(
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           path as any,
           {
             type: 'custom',
@@ -98,6 +100,7 @@ export function AutoForm<T extends Record<string, any>>({
         // For some custom errors, zod adds the final element twice for some reason
         const correctedPath = error.path?.slice?.(0, -1);
         if (correctedPath?.length > 0) {
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           methods.setError(correctedPath.join('.') as any, {
             type: 'custom',
             message: error.message,

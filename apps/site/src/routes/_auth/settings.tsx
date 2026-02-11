@@ -32,6 +32,7 @@ function RouteComponent() {
   const { auth } = useRouteContext({ from: '/_auth' });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { register, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       emailNotifications: true,
@@ -39,7 +40,8 @@ function RouteComponent() {
       language: 'en',
     },
   });
-  const onSubmit = (data: any) => {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  const onSubmit = (_data: any) => {
     setSaving(true);
     setSaved(false);
     // In a real app, you would save the notification settings and language

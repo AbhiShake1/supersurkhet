@@ -1,6 +1,6 @@
 import type { DataMatrixAction } from '@/lib/datamatrix';
 import { cn } from '@/lib/utils';
-import { BakeryColor, BakeryFont } from '@barcode-bakery/barcode-react';
+import { BakeryColor, } from '@barcode-bakery/barcode-react';
 import { BakeryDatamatrix } from '@barcode-bakery/barcode-react/datamatrix';
 import { toDataURL } from 'qrcode';
 import { forwardRef, useState, useEffect } from 'react';

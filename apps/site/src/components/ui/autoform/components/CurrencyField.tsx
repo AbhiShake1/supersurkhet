@@ -27,7 +27,7 @@ export function CurrencyField({
 
   // Initialize with existing value
   useEffect(() => {
-    if (field.value && !isNaN(Number(field.value))) {
+    if (field.value && !Number.isNaN(Number(field.value))) {
       const formatted = new Intl.NumberFormat(locale, {
         style: 'currency',
         currency,
@@ -47,13 +47,13 @@ export function CurrencyField({
     const parts = numericValue.split('.');
     let cleanedValue = parts[0];
     if (parts.length > 1) {
-      cleanedValue += '.' + parts.slice(1).join('').substring(0, 2);
+      cleanedValue += `.${parts.slice(1).join('').substring(0, 2)}`;
     }
 
     // Limit to 2 decimal places
     if (cleanedValue.includes('.')) {
       const [integer, decimal] = cleanedValue.split('.');
-      cleanedValue = integer + '.' + decimal.substring(0, 2);
+      cleanedValue = `${integer}.${decimal.substring(0, 2)}`;
     }
 
     setRawValue(cleanedValue);
@@ -61,7 +61,7 @@ export function CurrencyField({
     // Format for display
     if (cleanedValue) {
       const numberValue = Number.parseFloat(cleanedValue);
-      if (!isNaN(numberValue)) {
+      if (!Number.isNaN(numberValue)) {
         const formatted = new Intl.NumberFormat(locale, {
           style: 'currency',
           currency,
@@ -82,7 +82,7 @@ export function CurrencyField({
     // Format the final value when losing focus
     if (rawValue) {
       const numberValue = Number.parseFloat(rawValue);
-      if (!isNaN(numberValue)) {
+      if (!Number.isNaN(numberValue)) {
         const formatted = new Intl.NumberFormat(locale, {
           style: 'currency',
           currency,

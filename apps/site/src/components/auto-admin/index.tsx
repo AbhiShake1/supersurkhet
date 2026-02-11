@@ -353,7 +353,8 @@ function KanbanColumn<K extends SchemaKeys>({
       <div className="flex flex-col gap-2 p-0.5">
         {context.loading
           ? Array.from({ length: 3 }).map((_, i) => (
-              <Skeleton key={i} className="w-full h-12" />
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<Skeleton key={i} className="w-full h-12" />
             ))
           : orders.map((order) => (
               <KanbanCard

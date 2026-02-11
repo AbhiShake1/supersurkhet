@@ -124,6 +124,7 @@ function composeEventHandlers<E extends React.SyntheticEvent<unknown>>(
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 type AnyProps = Record<string, any>;
 
 function AnimateIcon({
@@ -213,7 +214,7 @@ function AnimateIcon({
     if (animate) startAnimation(animate as TriggerProp);
     else stopAnimation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [animate]);
+  }, [animate, animation, startAnimation, stopAnimation]);
 
   React.useEffect(() => {
     return () => {
@@ -372,7 +373,7 @@ function AnimateIcon({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localAnimate, controls]);
+  }, [localAnimate, completeOnStop, initialOnAnimateEnd, loop, loopDelay, persistOnAnimateEnd, startAnim, status]);
 
   const childProps = (
     React.isValidElement(children) ? (children as React.ReactElement).props : {}

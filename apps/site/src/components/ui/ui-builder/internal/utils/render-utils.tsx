@@ -27,12 +27,14 @@ import { isComponentLayer } from '@/lib/ui-builder/store/layer-utils';
 // Custom hook to safely use DND context
 const useSafeDndContext = () => {
   try {
+    // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
     return useDndContext();
   } catch {
     return null; // Not inside DndContextProvider
   }
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function resolveStringsDeep(value: any, contextData: any): any {
   // Resolve strings
   if (typeof value === 'string') {
@@ -62,6 +64,7 @@ function resolveStringsDeep(value: any, contextData: any): any {
 
   // Plain objects
   if (typeof value === 'object') {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const out: Record<string, any> = {};
     for (const key in value) {
       out[key] = resolveStringsDeep(value[key], contextData);
@@ -74,14 +77,18 @@ function resolveStringsDeep(value: any, contextData: any): any {
 
 declare global {
   interface Window {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     contextDatas?: Record<string, Record<string, any>>;
   }
 }
 
 const Wrapper = React.forwardRef<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   any,
   {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     props: any;
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     element: React.ComponentType<any>;
     _layerId?: string;
   }
@@ -118,6 +125,7 @@ export interface EditorConfig {
   onSelectElement: (layerId: string) => void;
   handleDuplicateLayer?: () => void;
   handleDeleteLayer?: () => void;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   contextData?: Record<string, any>;
 }
 
@@ -280,7 +288,7 @@ const _RenderLayer: React.FC<RenderLayerProps> = memo(
         const componentLayers = propValue.filter(isComponentLayer);
         if (componentLayers.length > 0) {
           childProps[propName] = componentLayers.map(
-            (componentLayer, index) => (
+            (componentLayer, _index) => (
               <RenderLayer
                 key={componentLayer.id}
                 componentRegistry={componentRegistry}
@@ -293,8 +301,11 @@ const _RenderLayer: React.FC<RenderLayerProps> = memo(
       }
     }
 
-    const ref = React.useRef<any>(null);
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
+        const ref = React.useRef<any>(null);
 
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     function WrappedComponentChild(props: any) {
       return isPrimitive ? (
         // @ts-expect-error

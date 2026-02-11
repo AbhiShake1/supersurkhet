@@ -7,6 +7,7 @@ export const PasswordField: React.FC<AutoFormFieldProps> = ({
   id,
   error,
 }) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
 
   return (

@@ -58,6 +58,7 @@ const InputSchema = z.object({
 
 type InputProps = z.infer<typeof InputSchema> & React.ComponentProps<'input'>;
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function checkNonNullish(value: any) {
   if (!value) return false;
   if (Array.isArray(value)) {

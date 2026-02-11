@@ -5,7 +5,6 @@ import {
   Head,
   Html,
   Img,
-  Link,
   Preview,
   Section,
   Text,
@@ -106,6 +105,6 @@ const button = {
   padding: '14px 7px',
 };
 
-const anchor = {
+const _anchor = {
   textDecoration: 'underline',
 };

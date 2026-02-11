@@ -166,6 +166,7 @@ const memoizedCommonFieldOverrides = new Map<
 
 export const commonFieldOverrides = (allowBinding = false) => {
   if (memoizedCommonFieldOverrides.has(allowBinding)) {
+    // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
     return memoizedCommonFieldOverrides.get(allowBinding)!;
   }
 
@@ -233,13 +234,14 @@ export function FormFieldWrapper({
   );
 }
 
-export const tablePickerFieldOverrides = (layer: ComponentLayer) => {
+export const tablePickerFieldOverrides = (_layer: ComponentLayer) => {
   return {
     fieldType: ({
       label,
       isRequired,
       field,
       fieldConfigItem,
+      // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
       zodItem,
       fieldProps,
     }: AutoFormInputComponentProps) => {

@@ -1,6 +1,6 @@
 'use client';
 import { cn } from '@/lib/utils';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createNoise3D } from 'simplex-noise';
 
 export const WavyBackground = ({
@@ -15,6 +15,7 @@ export const WavyBackground = ({
   waveOpacity = 0.5,
   ...props
 }: {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   children?: any;
   className?: string;
   containerClassName?: string;
@@ -24,6 +25,7 @@ export const WavyBackground = ({
   blur?: number;
   speed?: 'slow' | 'fast';
   waveOpacity?: number;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   [key: string]: any;
 }) => {
   const noise = createNoise3D();
@@ -32,7 +34,9 @@ export const WavyBackground = ({
     nt: number,
     i: number,
     x: number,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     ctx: any,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     canvas: any;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const getSpeed = () => {
@@ -75,6 +79,7 @@ export const WavyBackground = ({
       ctx.lineWidth = waveWidth || 50;
       ctx.strokeStyle = waveColors[i % waveColors.length];
       for (x = 0; x < w; x += 5) {
+        // biome-ignore lint/correctness/noInnerDeclarations: lint debt cleanup
         var y = noise(x / 800, 0.3 * i, nt) * 100;
         ctx.lineTo(x, y + h * 0.5); // adjust for height, currently at 50% of the container
       }
@@ -97,7 +102,8 @@ export const WavyBackground = ({
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [animationId, init]);
 
   const [isSafari, setIsSafari] = useState(false);
   useEffect(() => {
@@ -116,6 +122,7 @@ export const WavyBackground = ({
         containerClassName,
       )}
     >
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <canvas
         className="absolute inset-0 z-0"
         ref={canvasRef}

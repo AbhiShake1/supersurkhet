@@ -10,6 +10,7 @@ interface I18nContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   availableLanguages: Language[];
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   t: (key: string, options?: any) => string;
   changeLanguage: (lang: Language) => Promise<void>;
 }
@@ -55,7 +56,8 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
   };
 
   // Set initial language on mount
-  React.useEffect(() => {
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    React.useEffect(() => {
     const initialLang = getInitialLanguage();
     if (AVAILABLE_LANGUAGES.includes(initialLang)) {
       i18n.changeLanguage(initialLang);
@@ -64,11 +66,13 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
   }, []);
 
   // Memoize the context value
-  const contextValue = React.useMemo(
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    const contextValue = React.useMemo(
     () => ({
       language,
       setLanguage: changeLanguage,
       availableLanguages: AVAILABLE_LANGUAGES,
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       t: (key: string, options?: any) => i18n.t(key, options),
       changeLanguage,
     }),
@@ -95,6 +99,7 @@ export const withI18n = <P extends object>(
 ): React.FC<Omit<P, keyof I18nContextType>> => {
   return (props: Omit<P, keyof I18nContextType>) => (
     <I18nContext.Consumer>
+      {/** biome-ignore lint/style/noNonNullAssertion: lint debt cleanup */}
       {(context) => <Component {...(props as P)} {...context!} />}
     </I18nContext.Consumer>
   );

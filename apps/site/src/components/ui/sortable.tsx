@@ -162,6 +162,7 @@ function Sortable<T>(props: SortableProps<T>) {
 
   const items = React.useMemo(() => {
     return value.map((item) => getItemValue(item));
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [value, getItemValue]);
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -256,6 +257,7 @@ function Sortable<T>(props: SortableProps<T>) {
       config.modifiers,
       config.strategy,
       activeId,
+      // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
       getItemValue,
       flatCursor,
     ],

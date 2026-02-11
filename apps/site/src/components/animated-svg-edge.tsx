@@ -1,4 +1,4 @@
-import React, { type FC } from 'react';
+import type { FC } from 'react';
 import type { Edge, EdgeProps, Position } from '@xyflow/react';
 import {
   BaseEdge,

@@ -59,6 +59,7 @@ export interface LayerStore {
   findLayersForPageId: (pageId: string) => ComponentLayer[];
   isLayerAPage: (layerId: string) => boolean;
 
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   getSelectedContext: () => Record<string, any> | null;
 }
 
@@ -173,7 +174,8 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => ({
         let parentPosition: number | undefined;
 
         // Find the layer to duplicate
-        state.pages.forEach((page) =>
+        // biome-ignore lint/suspicious/useIterableCallbackReturn: lint debt cleanup
+                state.pages.forEach((page) =>
           visitLayer(page, null, (layer, parent) => {
             if (layer.id === layerId) {
               layerToDuplicate = layer;

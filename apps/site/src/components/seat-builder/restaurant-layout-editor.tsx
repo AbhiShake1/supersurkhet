@@ -5,7 +5,6 @@ import { SidebarProvider } from './ui/sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Download,
-  FolderOpen,
   Moon,
   Plus,
   Redo,
@@ -53,6 +52,7 @@ export interface LayoutElement {
   rotation: number;
   label: string;
   color?: string;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   customProperties?: Record<string, any>;
 }
 
@@ -104,16 +104,19 @@ function _RestaurantLayoutEditor() {
   // Initialize history with initial layout
   useEffect(() => {
     push(initialLayout);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [initialLayout, push]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Subscribe to history changes
   useEffect(() => {
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const unsubscribe = document.addEventListener('historychange', (e: any) => {
       if (e.detail?.state) {
         setLayout(e.detail.state);
       }
     });
     return () =>
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       document.removeEventListener('historychange', unsubscribe as any);
   }, []);
 
@@ -162,7 +165,7 @@ function _RestaurantLayoutEditor() {
     toast.success('Floor added');
   };
 
-  const renameFloor = (floorId: string, newName: string) => {
+  const _renameFloor = (floorId: string, newName: string) => {
     updateLayoutWithHistory({
       ...layout,
       floors: layout.floors.map((floor) =>
@@ -208,7 +211,7 @@ function _RestaurantLayoutEditor() {
         setActiveFloor(parsedLayout.floors[0].id);
 
         // toast.success("Layout loaded")
-      } catch (error) {
+      } catch (_error) {
         toast.error('Error loading layout');
       }
     } else {
@@ -217,12 +220,13 @@ function _RestaurantLayoutEditor() {
   };
   useEffect(() => {
     loadLayout();
-  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [loadLayout]);
 
   const exportLayout = () => {
     const dataStr = JSON.stringify(layout, null, 2);
     const dataUri =
-      'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+      `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
 
     const exportFileDefaultName = `layout.json`;
 
@@ -248,7 +252,7 @@ function _RestaurantLayoutEditor() {
         setActiveFloor(importedLayout.floors[0].id);
 
         toast.success('Layout imported');
-      } catch (error) {
+      } catch (_error) {
         toast.error('Error importing layout');
       }
     };

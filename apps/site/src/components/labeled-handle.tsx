@@ -1,4 +1,4 @@
-import React, { forwardRef, type HTMLAttributes } from 'react';
+import { forwardRef, type HTMLAttributes } from 'react';
 import type { HandleProps } from '@xyflow/react';
 
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ export const LabeledHandle = forwardRef<
       )}
     >
       <BaseHandle position={position} className={handleClassName} {...props} />
+      {/** biome-ignore lint/a11y/noLabelWithoutControl: lint debt cleanup */}
       <label className={cn('px-3 text-foreground', labelClassName)}>
         {title}
       </label>

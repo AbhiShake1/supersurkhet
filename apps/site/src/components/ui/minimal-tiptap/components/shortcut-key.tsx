@@ -15,7 +15,8 @@ export const ShortcutKey = React.forwardRef<HTMLSpanElement, ShortcutKeyProps>(
       .join(' + ');
 
     return (
-      <span
+      // biome-ignore lint/a11y/useAriaPropsSupportedByRole: lint debt cleanup
+<span
         aria-label={ariaLabel}
         className={cn('inline-flex items-center gap-0.5', className)}
         {...props}

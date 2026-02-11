@@ -12,13 +12,17 @@ import { beautifyObjectName } from '../utils';
 import AutoFormObject from './object';
 
 function isZodArray(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   item: z.ZodArray<any> | z.ZodDefault<any>,
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): item is z.ZodArray<any> {
   return item instanceof z.ZodArray;
 }
 
 function isZodDefault(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   item: z.ZodArray<any> | z.ZodDefault<any>,
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): item is z.ZodDefault<any> {
   return item instanceof z.ZodDefault;
 }
@@ -31,9 +35,11 @@ export default function AutoFormArray({
   fieldConfig,
 }: {
   name: string;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   item: z.ZodArray<any> | z.ZodDefault<any>;
   form: ReturnType<typeof useForm>;
   path?: string[];
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   fieldConfig?: any;
 }) {
   const { fields, append, remove } = useFieldArray({
@@ -58,6 +64,7 @@ export default function AutoFormArray({
           return (
             <div className="mt-4 flex flex-col" key={`${key}`}>
               <AutoFormObject
+                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                 schema={itemDefType as z.ZodObject<any, any>}
                 form={form}
                 fieldConfig={fieldConfig}

@@ -207,6 +207,7 @@ export default function ShapeHero({
         <div className="max-w-3xl mx-auto text-center">
           <motion.div
             custom={1}
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             variants={fadeUpVariants as any}
             initial="hidden"
             animate="visible"
@@ -227,6 +228,7 @@ export default function ShapeHero({
           </motion.div>
           <motion.div
             custom={2}
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             variants={fadeUpVariants as any}
             initial="hidden"
             animate="visible"

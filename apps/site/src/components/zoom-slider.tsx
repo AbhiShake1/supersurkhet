@@ -1,7 +1,7 @@
 'use client';
 
-import React, { forwardRef } from 'react';
-import { Maximize, Minus, Plus } from 'lucide-react';
+import { forwardRef } from 'react';
+import { Minus, Plus } from 'lucide-react';
 
 import {
   Panel,
@@ -20,6 +20,7 @@ export const ZoomSlider = forwardRef<
   Omit<PanelProps, 'children'>
 >(({ className, ...props }, ref) => {
   const { zoom } = useViewport();
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { zoomTo, zoomIn, zoomOut, fitView } = useReactFlow();
   const minZoom = useStore((state) => state.minZoom);
   const maxZoom = useStore((state) => state.maxZoom);

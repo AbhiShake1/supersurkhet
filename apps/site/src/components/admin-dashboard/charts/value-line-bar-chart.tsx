@@ -115,6 +115,7 @@ export function ValueLineBarChart() {
                   <Cell
                     className="duration-200"
                     opacity={index === maxValueIndex.index ? 1 : 0.2}
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                     key={index}
                     onMouseEnter={() => setActiveIndex(index)}
                   />

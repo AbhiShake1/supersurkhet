@@ -94,6 +94,7 @@ type LoopNodeData = {
 // Diamond-shaped node for conditions
 export const ConditionNode = ({
   data,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   id,
 }: NodeProps<Node<ConditionNodeData>>) => {
   return (
@@ -134,6 +135,7 @@ export const ConditionNode = ({
         </div>
 
         {/* Handles */}
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <BaseHandle
           type="target"
           position={Position.Top}
@@ -145,6 +147,7 @@ export const ConditionNode = ({
             transform: 'translateX(-50%)',
           }}
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <BaseHandle
           type="source"
           position={Position.Left}
@@ -156,6 +159,7 @@ export const ConditionNode = ({
             transform: 'translateY(-50%)',
           }}
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <BaseHandle
           type="source"
           position={Position.Right}
@@ -182,6 +186,7 @@ type IO_NodeData = {
 };
 
 // Parallelogram node for input/output
+// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 export const IO_Node = ({ data, id }: NodeProps<Node<IO_NodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
@@ -208,6 +213,7 @@ export const IO_Node = ({ data, id }: NodeProps<Node<IO_NodeData>>) => {
           )}
         </div>
         <div className="absolute -top-3 left-1/3 transform -translate-x-1/2">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <BaseHandle
             type="target"
             position={Position.Top}
@@ -216,6 +222,7 @@ export const IO_Node = ({ data, id }: NodeProps<Node<IO_NodeData>>) => {
           />
         </div>
         <div className="absolute -bottom-3 right-1/3 transform translate-x-1/2">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <BaseHandle
             type="source"
             position={Position.Bottom}
@@ -259,12 +266,14 @@ export const ProcessNode = ({ data, id }: NodeProps<Node<ProcessNodeData>>) => {
             </div>
           </div>
         </BaseNodeContent>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <BaseHandle
           type="target"
           position={Position.Top}
           id="process-input"
           className="bg-purple-500 dark:bg-purple-600 border-purple-600 dark:border-purple-700"
         />
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <BaseHandle
           type="source"
           position={Position.Bottom}
@@ -289,6 +298,7 @@ type PredefinedProcessNodeData = {
 // Rounded rectangle node for predefined process
 export const PredefinedProcessNode = ({
   data,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   id,
 }: NodeProps<Node<PredefinedProcessNodeData>>) => {
   return (
@@ -312,6 +322,7 @@ export const PredefinedProcessNode = ({
           )}
         </div>
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <BaseHandle
             type="target"
             position={Position.Top}
@@ -320,6 +331,7 @@ export const PredefinedProcessNode = ({
           />
         </div>
         <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <BaseHandle
             type="source"
             position={Position.Bottom}
@@ -345,6 +357,7 @@ type DocumentNodeData = {
 // Document node (rectangle with wavy bottom)
 export const DocumentNode = ({
   data,
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   id,
 }: NodeProps<Node<DocumentNodeData>>) => {
   return (
@@ -378,6 +391,7 @@ export const DocumentNode = ({
           }}
         />
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <BaseHandle
             type="target"
             position={Position.Top}
@@ -386,6 +400,7 @@ export const DocumentNode = ({
           />
         </div>
         <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <BaseHandle
             type="source"
             position={Position.Bottom}
@@ -399,6 +414,7 @@ export const DocumentNode = ({
 };
 
 // Loop node (hexagon)
+// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 export const LoopNode = ({ data, id }: NodeProps<Node<LoopNodeData>>) => {
   return (
     <NodeStatusIndicator status={data.status}>
@@ -423,6 +439,7 @@ export const LoopNode = ({ data, id }: NodeProps<Node<LoopNodeData>>) => {
           )}
         </div>
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <BaseHandle
             type="target"
             position={Position.Top}
@@ -431,6 +448,7 @@ export const LoopNode = ({ data, id }: NodeProps<Node<LoopNodeData>>) => {
           />
         </div>
         <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <BaseHandle
             type="source"
             position={Position.Bottom}
@@ -439,6 +457,7 @@ export const LoopNode = ({ data, id }: NodeProps<Node<LoopNodeData>>) => {
           />
         </div>
         <div className="absolute -right-3 top-1/2 transform -translate-y-1/2">
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <BaseHandle
             type="source"
             position={Position.Right}

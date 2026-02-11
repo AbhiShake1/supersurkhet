@@ -39,6 +39,7 @@ export default function FooterSection() {
         <div className="my-8 flex flex-wrap justify-center gap-6 text-sm">
           {links.map((link, index) => (
             <Link
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
               key={index}
               to={link.href}
               className="text-muted-foreground hover:text-primary block duration-150"
@@ -55,6 +56,7 @@ export default function FooterSection() {
             aria-label="X/Twitter"
             className="text-muted-foreground hover:text-primary block"
           >
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
             <svg
               className="size-6"
               xmlns="http://www.w3.org/2000/svg"
@@ -75,6 +77,7 @@ export default function FooterSection() {
             aria-label="LinkedIn"
             className="text-muted-foreground hover:text-primary block"
           >
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
             <svg
               className="size-6"
               xmlns="http://www.w3.org/2000/svg"
@@ -95,6 +98,7 @@ export default function FooterSection() {
             aria-label="Facebook"
             className="text-muted-foreground hover:text-primary block"
           >
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
             <svg
               className="size-6"
               xmlns="http://www.w3.org/2000/svg"
@@ -115,6 +119,7 @@ export default function FooterSection() {
             aria-label="Threads"
             className="text-muted-foreground hover:text-primary block"
           >
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
             <svg
               className="size-6"
               xmlns="http://www.w3.org/2000/svg"
@@ -140,6 +145,7 @@ export default function FooterSection() {
             aria-label="Instagram"
             className="text-muted-foreground hover:text-primary block"
           >
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
             <svg
               className="size-6"
               xmlns="http://www.w3.org/2000/svg"
@@ -160,6 +166,7 @@ export default function FooterSection() {
             aria-label="TikTok"
             className="text-muted-foreground hover:text-primary block"
           >
+            {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
             <svg
               className="size-6"
               xmlns="http://www.w3.org/2000/svg"

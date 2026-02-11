@@ -1,5 +1,4 @@
 import type {
-  ComponentLayer,
   ComponentRegistry,
 } from '@/components/ui/ui-builder/types';
 import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';

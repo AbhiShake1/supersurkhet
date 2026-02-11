@@ -44,7 +44,8 @@ export function DataTableSkeleton({
         <div className="flex flex-1 items-center gap-2">
           {filterCount > 0
             ? Array.from({ length: filterCount }).map((_, i) => (
-                <Skeleton key={i} className="h-7 w-[4.5rem] border-dashed" />
+                // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<Skeleton key={i} className="h-7 w-[4.5rem] border-dashed" />
               ))
             : null}
         </div>
@@ -56,9 +57,11 @@ export function DataTableSkeleton({
         <Table>
           <TableHeader>
             {Array.from({ length: 1 }).map((_, i) => (
-              <TableRow key={i} className="hover:bg-transparent">
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<TableRow key={i} className="hover:bg-transparent">
                 {Array.from({ length: columnCount }).map((_, j) => (
                   <TableHead
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                     key={j}
                     style={{
                       width: cozyCellWidths[j],
@@ -73,7 +76,8 @@ export function DataTableSkeleton({
           </TableHeader>
           <TableBody>
             {Array.from({ length: rowCount }).map((_, i) => (
-              <TableRow key={i} className="hover:bg-transparent">
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+<TableRow key={i} className="hover:bg-transparent">
                 {Array.from({ length: columnCount }).map((_, j) => (
                   <TableCell
                     key={j.toString()}

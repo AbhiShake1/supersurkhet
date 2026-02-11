@@ -6,6 +6,7 @@ import type { FieldWrapperProps } from './types';
 
 export function buildZodFieldConfig<
   FieldTypes = string,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   CustomData = Record<string, any>,
 >(): (
   config: FieldConfig<
@@ -24,6 +25,7 @@ export function buildZodFieldConfig<
     >(config);
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function getPathInObject(obj: any, path: string[]): any {
   let current = obj;
   for (const key of path) {

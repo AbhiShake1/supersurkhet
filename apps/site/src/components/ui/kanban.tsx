@@ -596,6 +596,7 @@ function Kanban<T>(props: KanbanProps<T>) {
     [value, getColumn, getItemValue],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const contextValue = React.useMemo<KanbanContextValue<T>>(
     () => ({
       id,

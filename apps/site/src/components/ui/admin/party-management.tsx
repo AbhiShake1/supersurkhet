@@ -25,7 +25,6 @@ import {
 } from 'lucide-react';
 import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
-import _ from 'lodash';
 import { format } from 'date-fns';
 import { AutoTable } from '@/components/auto-table';
 import type { Party } from '@/lib/schema';
@@ -48,9 +47,9 @@ function _PartyManagement({ slug }: PartyManagementProps) {
     keys: [slug],
   });
 
-  const createMutation = api.party.useCreate();
-  const updateMutation = api.party.useUpdate();
-  const deleteMutation = api.party.useDelete();
+  const _createMutation = api.party.useCreate();
+  const _updateMutation = api.party.useUpdate();
+  const _deleteMutation = api.party.useDelete();
 
   if (isLoading) {
     return (

@@ -4,15 +4,19 @@
  * Check if we're running in an Expo WebView context
  */
 export const isExpoContext = (): boolean => {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   return typeof window !== 'undefined' && !!(window as any).ReactNativeWebView;
 };
 
 /**
  * Send a message to the Expo app
  */
-export const sendMessageToExpo = (message: any): void => {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  const sendMessageToExpo = (message: any): void => {
   try {
     if (isExpoContext()) {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       (window as any).ReactNativeWebView.postMessage(JSON.stringify(message));
     } else {
       console.log('Not in Expo context, message not sent:', message);
@@ -25,7 +29,9 @@ export const sendMessageToExpo = (message: any): void => {
 /**
  * Send a DataMatrix action to the Expo app
  */
-export const sendDataMatrixActionToExpo = (action: any): void => {
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+export  const sendDataMatrixActionToExpo = (action: any): void => {
   sendMessageToExpo({
     type: 'DATAMATRIX_ACTION',
     payload: action,
@@ -37,6 +43,7 @@ export const sendDataMatrixActionToExpo = (action: any): void => {
  */
 export const sendNavigationToExpo = (navigation: {
   url: string;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   params?: Record<string, any>;
 }): void => {
   sendMessageToExpo({

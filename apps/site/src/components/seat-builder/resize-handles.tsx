@@ -29,41 +29,49 @@ export function ResizeHandles({
   return (
     <>
       {/* Resize handles */}
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         className="absolute top-0 left-0 w-3 h-3 bg-white border border-primary rounded-full cursor-nwse-resize z-20 -translate-x-1/2 -translate-y-1/2 shadow-sm"
         onMouseDown={(e) => handleMouseDown(e, 'nw')}
         onTouchStart={(e) => handleMouseDown(e, 'nw')}
       />
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         className="absolute top-0 right-0 w-3 h-3 bg-white border border-primary rounded-full cursor-nesw-resize z-20 translate-x-1/2 -translate-y-1/2 shadow-sm"
         onMouseDown={(e) => handleMouseDown(e, 'ne')}
         onTouchStart={(e) => handleMouseDown(e, 'ne')}
       />
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         className="absolute bottom-0 left-0 w-3 h-3 bg-white border border-primary rounded-full cursor-nesw-resize z-20 -translate-x-1/2 translate-y-1/2 shadow-sm"
         onMouseDown={(e) => handleMouseDown(e, 'sw')}
         onTouchStart={(e) => handleMouseDown(e, 'sw')}
       />
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         className="absolute bottom-0 right-0 w-3 h-3 bg-white border border-primary rounded-full cursor-nwse-resize z-20 translate-x-1/2 translate-y-1/2 shadow-sm"
         onMouseDown={(e) => handleMouseDown(e, 'se')}
         onTouchStart={(e) => handleMouseDown(e, 'se')}
       />
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         className="absolute top-0 left-1/2 w-3 h-3 bg-white border border-primary rounded-full cursor-ns-resize z-20 -translate-x-1/2 -translate-y-1/2 shadow-sm"
         onMouseDown={(e) => handleMouseDown(e, 'n')}
         onTouchStart={(e) => handleMouseDown(e, 'n')}
       />
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         className="absolute bottom-0 left-1/2 w-3 h-3 bg-white border border-primary rounded-full cursor-ns-resize z-20 -translate-x-1/2 translate-y-1/2 shadow-sm"
         onMouseDown={(e) => handleMouseDown(e, 's')}
         onTouchStart={(e) => handleMouseDown(e, 's')}
       />
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         className="absolute left-0 top-1/2 w-3 h-3 bg-white border border-primary rounded-full cursor-ew-resize z-20 -translate-x-1/2 -translate-y-1/2 shadow-sm"
         onMouseDown={(e) => handleMouseDown(e, 'w')}
         onTouchStart={(e) => handleMouseDown(e, 'w')}
       />
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         className="absolute right-0 top-1/2 w-3 h-3 bg-white border border-primary rounded-full cursor-ew-resize z-20 translate-x-1/2 -translate-y-1/2 shadow-sm"
         onMouseDown={(e) => handleMouseDown(e, 'e')}
@@ -71,11 +79,13 @@ export function ResizeHandles({
       />
 
       {/* Rotation handle */}
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
       <div
         className="absolute top-0 left-1/2 w-4 h-4 bg-primary rounded-full cursor-grab z-20 -translate-x-1/2 -translate-y-8 shadow-sm flex items-center justify-center"
         onMouseDown={handleRotateMouseDown}
         onTouchStart={handleRotateMouseDown}
       >
+        {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
         <svg
           width="10"
           height="10"

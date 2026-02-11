@@ -1,7 +1,9 @@
 import type { SVGProps } from 'react';
 
 const GithubWordmarkDark = (props: SVGProps<SVGSVGElement>) => (
-  <svg
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
+// biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
+<svg
     {...props}
     version="1.1"
     id="Layer_1"

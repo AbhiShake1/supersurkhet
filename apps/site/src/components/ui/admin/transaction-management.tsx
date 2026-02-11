@@ -25,10 +25,9 @@ import {
 } from 'lucide-react';
 import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
-import _ from 'lodash';
 import { format } from 'date-fns';
 import { AutoTable } from '@/components/auto-table';
-import type { Transaction, Party, Invoice } from '@/lib/schema';
+import type { Transaction, } from '@/lib/schema';
 
 interface TransactionManagementProps {
   slug: string;
@@ -54,9 +53,9 @@ function _TransactionManagement({ slug }: TransactionManagementProps) {
     keys: [slug],
   });
 
-  const createMutation = api.transaction.useCreate();
-  const updateMutation = api.transaction.useUpdate();
-  const deleteMutation = api.transaction.useDelete();
+  const _createMutation = api.transaction.useCreate();
+  const _updateMutation = api.transaction.useUpdate();
+  const _deleteMutation = api.transaction.useDelete();
 
   if (isLoading) {
     return (

@@ -221,6 +221,7 @@ const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
         {...props}
       >
         {/* Left Scroll Button */}
+        {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
         <button
           onClick={() => scroll('left')}
           className="absolute top-1/2 -translate-y-1/2 left-0 z-10 w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-background/80 disabled:opacity-0"
@@ -245,6 +246,7 @@ const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
         </div>
 
         {/* Right Scroll Button */}
+        {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
         <button
           onClick={() => scroll('right')}
           className="absolute top-1/2 -translate-y-1/2 right-0 z-10 w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm border border-border flex items-center justify-center text-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-background/80 disabled:opacity-0"

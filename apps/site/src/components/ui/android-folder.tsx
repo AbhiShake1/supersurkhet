@@ -141,7 +141,9 @@ const AndroidFolderTrigger = React.forwardRef<
   );
 
   return (
-    <div
+    // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+// biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
+<div
       ref={setRefs}
       onClick={handleFolderClick}
       className={cn(className)}

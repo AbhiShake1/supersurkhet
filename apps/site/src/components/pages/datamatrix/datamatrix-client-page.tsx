@@ -16,7 +16,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 
 export function DataMatrixClientPage() {
-  const [isScannerActive, setIsScannerActive] = useState(true);
+  const [_isScannerActive, _setIsScannerActive] = useState(true);
   const [executionState, setExecutionState] = useState<
     'idle' | 'executing' | 'completed' | 'error'
   >('idle');

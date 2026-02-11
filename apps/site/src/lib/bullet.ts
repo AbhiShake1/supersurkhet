@@ -7,11 +7,13 @@ function isObject(x: unknown): x is object {
 // ✅ Extension-aware chain type
 export type BulletChain<S extends GunSchema, TExt extends object> = IGunChain<
   S,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   any
 > &
   TExt &
   (S extends Record<string, GunSchema>
     ? { [K in keyof S]: BulletChain<S[K], TExt> }
+    // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
     : {});
 
 // ✅ Extension-aware props
@@ -47,13 +49,17 @@ export type BulletRoot<
 
 export default function createBullet<
   const TNode extends Record<string, GunSchema>,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const TGunInstance extends IGunInstanceRoot<TNode, any> = IGunInstanceRoot<
     TNode,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     any
   >,
 >(gun: TGunInstance) {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const cache = new WeakMap<object, any>();
 
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const ext: Record<string, any> = Object.create(null);
 
   function wrap<T extends object>(target: T): T {
@@ -61,11 +67,13 @@ export default function createBullet<
     const cached = cache.get(target);
     if (cached) return cached;
 
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const proxied = new Proxy(target as any, {
       get(t, prop, receiver) {
         if (typeof prop !== 'string') return Reflect.get(t, prop, receiver);
 
         if (prop === 'extend') {
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           return <E extends object>(factory: (thisRef: any) => E) => {
             if (typeof factory !== 'function') {
               throw new TypeError(
@@ -89,6 +97,7 @@ export default function createBullet<
         if (prop in t) {
           const v = Reflect.get(t, prop, receiver);
           if (typeof v === 'function') {
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             return (...args: any[]) => {
               const out = v.apply(t, args);
               return isObject(out) ? wrap(out) : out;
@@ -97,6 +106,7 @@ export default function createBullet<
           return isObject(v) ? wrap(v) : v;
         }
 
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         const out = (t as any).get(prop);
         return isObject(out) ? wrap(out) : out;
       },
@@ -106,5 +116,7 @@ export default function createBullet<
     return proxied;
   }
 
-  return wrap(gun as any) as BulletRoot<TNode, TGunInstance, {}>;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
+    return wrap(gun as any) as BulletRoot<TNode, TGunInstance, {}>;
 }

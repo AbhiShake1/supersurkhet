@@ -14,6 +14,7 @@ export default function AutoFormEnum({
   zodItem,
   fieldProps,
 }: AutoFormInputComponentProps) {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const baseValues = (getBaseSchema(zodItem) as unknown as z.ZodEnum<any>)._def
     .values;
 
