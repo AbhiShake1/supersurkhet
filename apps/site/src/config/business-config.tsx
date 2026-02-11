@@ -525,8 +525,6 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
   const { data: products = [] } = api.product.useGet({
     keys: [slug],
   })
-  const { mutate: updateProduct } = api.product.useUpdate({ keys: [slug] })
-  const { mutate: createInvoice } = api.invoice.useCreate({ keys: [slug] });
   const { data: customers = [] } = api.customer.useGet({ keys: [slug] });
   const { data: orders = [] } = api.order.useGet({ keys: [slug] });
   const productsBySoul = new Map(
@@ -626,9 +624,7 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
                         );
 
                         if (product.unit) {
-                          const [unitType, piecesPerUnit] =
-                            product.unit.split(":");
-                          if (piecesPerUnit) {
+                          const [unitType, piecesPerUnit] =product.unit.split(":");
                             setUnitField(
                               z
                                 .string()
@@ -637,27 +633,12 @@ export function useSalesConfig({ slug }: { slug: string }): AutoTableTab<"sale">
                                   fieldConfig({
                                     fieldType: "unit",
                                     customData: {
-                                      onlyAllow: [unitType, "piece"],
+                                      onlyAllow: [unitType, piecesPerUnit ? "piece" : undefined].filter(Boolean),
                                       configDisabled: true,
                                     },
                                   }),
                                 ),
                             );
-                          } else {
-                            setUnitField(
-                              z
-                                .string()
-                                .describe("Unit")
-                                .superRefine(
-                                  fieldConfig({
-                                    fieldType: "unit",
-                                    customData: {
-                                      onlyAllow: [unitType],
-                                    },
-                                  }),
-                                ),
-                            );
-                          }
                           form.setValue(
                             [itemsKey, index, "unit"].join("."),
                             product.unit,
@@ -1010,29 +991,6 @@ export function useOrderConfig({
                   }),
                 ),
             })
-<<<<<<< ours
-        })
-        .describe("Items Ordered"),
-    orderStatus: z.enum(["pending", "done", "cancelled"]).describe("Order Status").superRefine(fieldConfig({
-      fieldType: "select",
-      customData: {
-        options: [
-          ["pending", "Pending"],
-          ["done", "Done"],
-          ["cancelled", "Cancelled"],
-        ],
-        disableWhenValueIn: ["done", "cancelled"],
-      }
-    })).default("pending"),
-  })
-      .superRefine((order, ctx) => {
-    if (!order.paidAmount) return
-    const totalCost = order.items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unitPrice || 0)), 0)
-    if (order.paidAmount > totalCost) ctx.addIssue({
-      code: "custom",
-      message: `Paid amount cannot be greater than total cost (${totalCost})`,
-      path: ["paidAmount"],
-=======
             .array()
             .min(1, { message: "Please add at least one item." })
             .describe("Items Ordered"),
@@ -1063,8 +1021,7 @@ export function useOrderConfig({
                             let adjustedQuantity = item.quantity;
                             if (
                               product.unit &&
-                              product.unit.includes(":"))
-                            {
+                              product.unit.includes(":")) {
                               const [unitType, piecesPerUnit] =
                                 product.unit.split(":");
                               if (item.unit === unitType) {
@@ -1085,23 +1042,22 @@ export function useOrderConfig({
                 },
               }),
             ),
->>>>>>> theirs
-    })
-      .superRefine((order, ctx) => {
-        if (!order.paidAmount) return;
-        const totalCost = order.items.reduce(
-          (sum, item) =>
-            sum + Number(item.quantity || 0) * Number(item.unitPrice || 0),
-          0,
-        );
-        if (order.paidAmount > totalCost)
-          ctx.addIssue({
-            code: "custom",
-            message: `Paid amount cannot be greater than total cost (${totalCost})`,
-            path: ["paidAmount"],
-          });
-      }),
-      async onCreate(_, variables) {
+        })
+        .superRefine((order, ctx) => {
+          if (!order.paidAmount) return;
+          const totalCost = order.items.reduce(
+            (sum, item) =>
+              sum + Number(item.quantity || 0) * Number(item.unitPrice || 0),
+            0,
+          );
+          if (order.paidAmount > totalCost)
+            ctx.addIssue({
+              code: "custom",
+              message: `Paid amount cannot be greater than total cost (${totalCost})`,
+              path: ["paidAmount"],
+            });
+        }),
+    async onCreate(_, variables) {
       const products = await db.product.get({ keys: [slug] });
       const productsBySoul = new Map(
         products
@@ -1109,7 +1065,6 @@ export function useOrderConfig({
           .map((item) => [item._!.soul!, item]),
       );
       if (variables.orderStatus === "done") {
-<<<<<<< ours
         const itemsByProductIdWithQuantity = variables.items?.reduce((a, item) => {
           const product = productsBySoul.get(item.product);
           let adjustedQuantity = item.quantity;
@@ -1126,18 +1081,15 @@ export function useOrderConfig({
         Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
           const product = productsBySoul.get(productId);
           if (!product?._?.soul) return;
-          updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - quantity });
+          db.product.update(slug)({
+            id: product._.soul,
+            stockQuantity: product.stockQuantity - quantity,
+          })
         });
 
         const invoiceItems = variables.items?.map((item) => {
           const productInfo = productsBySoul.get(item.product);
           let adjustedQuantity = item.quantity;
-=======
-        const invoiceItems =
-          variables.items?.map((item) => {
-            const productInfo = productsBySoul.get(item.product);
-            let adjustedQuantity = item.quantity;
->>>>>>> theirs
 
           if (productInfo?.unit && productInfo.unit.includes(":")) {
             const [unitType, piecesPerUnit] = productInfo.unit.split(":");
@@ -1173,7 +1125,6 @@ export function useOrderConfig({
         });
       }
     },
-<<<<<<< ours
     onUpdate(_, variables) {
       if (variables.orderStatus !== "done") return;
       const currentOrder = ordersBySoul.get(variables.id);
@@ -1196,7 +1147,10 @@ export function useOrderConfig({
       Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(([productId, quantity]) => {
         const product = productsBySoul.get(productId);
         if (!product?._?.soul) return;
-        updateProduct({ id: product._.soul, stockQuantity: product.stockQuantity - quantity });
+        db.product.update(slug)({
+          id: product._.soul,
+          stockQuantity: product.stockQuantity - quantity,
+        })
       });
 
       const invoiceItems = order.items?.map((item: any) => {
@@ -1223,7 +1177,7 @@ export function useOrderConfig({
         0
       ) ?? 0;
 
-      createInvoice({
+      db.invoice.create(slug)({
         type: "sale",
         partyId: order.customerId,
         issuedAt: new Date().toISOString(),
@@ -1234,10 +1188,6 @@ export function useOrderConfig({
         paymentStatus: order.paymentStatus || "pending" as any,
         fiscalYear: calculateFiscalYear()
       });
-=======
-    onUpdate() {
-      return;
->>>>>>> theirs
     },
   };
 }
@@ -1276,7 +1226,6 @@ export function useInvoicesConfig({
       );
     },
     previewOverrides: {
-<<<<<<< ours
       partyId: (id) => partiesBySoul.get(id)?.name || customersBySoul.get(id)?.name || "-",
       vehicleId: (id) => vehiclesBySoul.get(id)?.name || "-",
       tripId: (id) => {
@@ -1296,29 +1245,6 @@ export function useInvoicesConfig({
         month: "short",
         day: "numeric"
       }) : "-",
-=======
-      partyId: (id) => id || "-",
-      vehicleId: (id) => id || "-",
-      tripId: (id) => id || "-",
-      issuedAt: (date) =>
-        date
-          ? new Date(date).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "-",
-      dueDate: (date) =>
-        date
-          ? new Date(date).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })
-          : "-",
->>>>>>> theirs
       items: (items) => {
         const mapped = items?.map((item: SalesItem) => ({
           ...item,

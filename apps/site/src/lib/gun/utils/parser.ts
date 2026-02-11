@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { SchemaKeys } from "..";
+import { GUN_PREFIX, type SchemaKeys } from "..";
 import type { appSchema } from "@/lib/schema";
 import _ from "lodash";
 
@@ -66,8 +66,8 @@ export function parseNestedZodType<P extends ParseOptions>(
   baseSchema: P["shape"],
   { isPartial = false } = {},
 ) {
-  if (key.startsWith("root/")) {
-    key = key.slice(5) as SchemaKeys;
+  if (key.startsWith(GUN_PREFIX)) {
+    key = key.slice(GUN_PREFIX.length + 1) as SchemaKeys;
   }
   // schema.shape.business.shape.restaurant.shape.menu._def.innerType.parse([])
   // return _parse(key, obj, (shape, o) => shape._def.innerType.parse(o))
@@ -260,7 +260,7 @@ const defaultTransformerResponseParsers: TransformerParserOptions[] = [
 const defaultTransformerRequestParsers: TransformerParserOptions[] = [
   {
     description: "Transform the request from array to record",
-    fn: async (request, schema) => {
+    fn: async (request) => {
       return await transformRequestBySchema(request);
     },
   },

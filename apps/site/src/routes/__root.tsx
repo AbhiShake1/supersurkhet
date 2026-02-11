@@ -1,5 +1,6 @@
 import "@/lib/monkey-patches";
 import { VibeKanbanWebCompanion } from "vibe-kanban-web-companion";
+import { Agentation } from "agentation";
 import {
   HeadContent,
   Outlet,
@@ -231,10 +232,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     p: z.string().optional().catch(undefined),
   }).optional(),
   loader: async () => {
-    // const { api } = await import("@/lib/api");
-    // setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
-    // const bGet = await api.business.get({ keys: ["anjal-store"], single: true })
-    // console.log({ bGet })
     const savedThemeName = await getAppTheme();
     const savedDarkMode = await getAppDarkMode();
     const _savedTheme = await getAppThemeData();
@@ -278,12 +275,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   pendingComponent: () => <UserLoading />,
   shellComponent: () => {
     const loaderData = Route.useLoaderData()
-    // console.log({ loaderData })
-
-    // import("@/lib/api").then(({ api }) => {
-    //   setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
-    //   api.business.get().then(business => console.log({ business }))
-    // })
     return <RootDocument>
       <style>
         {loaderData.criticalThemeCSS}
@@ -477,6 +468,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             </I18nProvider>
           </NuqsAdapter>
           <Scripts />
+          {import.meta.env.DEV ? <Agentation /> : null}
         </div>
       </body>
     </html>

@@ -88,7 +88,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   async function getComponents() {
     if (!canGetComponents) return null;
     if (!!currentItem && "schema" in currentItem) {
-      const currentSchema = appSchema[currentItem.schema];
+      const currentSchema = appSchema[currentItem.schema as SchemaKeys];
       if ("components" in currentSchema) {
         const components = await currentSchema.components();
         const mappedNodes = components.map(async (c) => ({

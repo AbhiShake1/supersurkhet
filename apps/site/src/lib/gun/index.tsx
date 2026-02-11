@@ -38,7 +38,8 @@ type FindNestedShape<
   K extends string,
 > = FindNestedShapeInternal<T, K>;
 
-export type SchemaKeys = ExtractFromShape<GTAAppConfig["schema"]>;
+export type SchemaKeys = keyof GTAAppConfig["schema"]["shape"];
+// export type SchemaKeys = ExtractFromShape<GTAAppConfig["schema"]>;
 export type NestedSchema<K extends SchemaKeys> = FindNestedShape<
   GTAAppConfig["schema"],
   K

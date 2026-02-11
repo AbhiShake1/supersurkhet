@@ -8,11 +8,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { appSchema } from "@/lib/schema";
 import {
   type SchemaKeys,
+  type NestedSchemaType,
   getNestedZodShape,
   getSchema,
   useCreate,
 } from "@gta/react-hooks";
 import { ZodEffects } from "zod";
+import type { ZodType } from "zod";
 import {
   ArrowBigUpDash,
   FileJson,
@@ -42,7 +44,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { AutoTableProps } from "../auto-table";
 import type { ZodObjectOrWrapped } from "@autoform/zod";
-import { ZodObject } from "zod/v4";
 
 export type AddRowDialogProps<T extends SchemaKeys> = Pick<
   AutoTableProps<T>,
@@ -66,10 +67,9 @@ export function AddRowDialog<T extends SchemaKeys>({
   buttonIcon = <Plus className="size-4" />,
 }: AddRowDialogProps<T>) {
   "use memo"
-  const [formValues, setFormValues] = React.useState<Record<string, any>>({});
+  const [formValues, setFormValues] = React.useState<Record<string, unknown>>({});
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const { user } = useAuth();
-  const [file, setFile] = React.useState<File | null>(null);
   const [isImportPending, setIsImportPending] = React.useState(false);
 
   const createMutation = useCreate({
@@ -90,17 +90,22 @@ export function AddRowDialog<T extends SchemaKeys>({
     return schema;
   }
   const finalSchema = getFinalSchema();
-  const finalSchemaObject = finalSchema instanceof ZodEffects ? finalSchema.innerType() : finalSchema;
+  const finalSchemaObject =
+    finalSchema instanceof ZodEffects ? finalSchema.innerType() : finalSchema;
+  type SchemaRecord = Omit<NestedSchemaType<T>, "_"> & {
+    id?: string | number;
+  };
+  const typedSchema = finalSchemaObject as ZodType<SchemaRecord>;
 
-  const handleFileUpload = async (e: any, format: 'csv' | 'excel' | 'json') => {
-    const selectedFile = e.target.files?.[0];
+  const handleFileUpload = async (
+    selectedFile: File | null,
+    format: "csv" | "excel" | "json",
+  ) => {
     if (!selectedFile) return;
-
-    setFile(selectedFile);
     setIsImportPending(true);
 
     try {
-      let parsedData: any[] = [];
+      let parsedData: unknown[] = [];
 
       if (format === 'csv') {
         parsedData = await parseCSVFile(selectedFile);
@@ -111,7 +116,10 @@ export function AddRowDialog<T extends SchemaKeys>({
       }
 
       // Validate the parsed data against the schema
-      const { validData, errors } = validateDataAgainstSchema(parsedData, finalSchemaObject);
+      const { validData, errors } = validateDataAgainstSchema<SchemaRecord>(
+        parsedData,
+        typedSchema,
+      );
 
       if (errors.length > 0) {
         // Show validation errors to user
@@ -122,17 +130,15 @@ export function AddRowDialog<T extends SchemaKeys>({
 
       // Create all records
       for (const record of validData) {
-        createMutation.mutate({
+        const payload = typedSchema.parse({
           ...record,
-          // created_by: user?._?.soul ?? "anon",
           timestamp: Date.now(),
         });
+        createMutation.mutate(payload);
       }
 
       // Reset file input
-      if (e.target) {
-        e.target.value = '';
-      }
+      // file input value reset handled in handleFileImport
     } catch (error) {
       console.error(`Error parsing ${format} file:`, error);
       alert(`Error parsing ${format} file: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -141,14 +147,19 @@ export function AddRowDialog<T extends SchemaKeys>({
     }
   };
 
-  const handleFileImport = (acceptedFormats: string, fileType: 'csv' | 'excel' | 'json') => {
-    const input = document.createElement("input")
-    input.type = "file"
-    input.accept = acceptedFormats
-    input.onchange = e => {
-      handleFileUpload(e, fileType)
-    }
-    input.click()
+  const handleFileImport = (
+    acceptedFormats: string,
+    fileType: "csv" | "excel" | "json",
+  ) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = acceptedFormats;
+    input.onchange = () => {
+      handleFileUpload(input.files?.[0] ?? null, fileType).finally(() => {
+        input.value = "";
+      });
+    };
+    input.click();
   };
 
   if (readOnly) {
@@ -180,7 +191,14 @@ export function AddRowDialog<T extends SchemaKeys>({
                 <AutoForm
                   values={formValues}
                   schema={finalSchema}
-                  onSubmit={(b) => createMutation.mutate({ ...b, created_by: user?._?.soul ?? "anon", timestamp: Date.now() })}
+                  onSubmit={(b) => {
+                    const payload = typedSchema.parse({
+                      ...b,
+                      created_by: user?._?.soul ?? "anon",
+                      timestamp: Date.now(),
+                    });
+                    createMutation.mutate(payload);
+                  }}
                   formProps={{ id: "auto-table-add-form" }}
                 />
               </ScrollArea>
@@ -255,8 +273,10 @@ function AddRowImportMenu({ onImport, isImportPending }: AddRowImportMenuProps) 
 export interface AddDataSuggestionsProps {
   slug: string;
   schemaName: SchemaKeys;
-  onSelected: (item: any) => void;
+  onSelected: (item: SuggestionItem) => void;
 }
+
+type SuggestionItem = Record<string, unknown> & { business: string | undefined };
 
 export function AddDataSuggestions({ schemaName, slug, onSelected }: AddDataSuggestionsProps) {
   const { data, isLoading } = useAllData(schemaName);
@@ -267,7 +287,20 @@ export function AddDataSuggestions({ schemaName, slug, onSelected }: AddDataSugg
     if (!data?.length) return []
     const othersData = data.filter(d => d?.business !== slug)
 
-    const uniqueData = Object.values(Object.fromEntries(othersData.map(d => [d?.title || d?.name || d?.label || d?.text || d?.displayName || d?.heading || "", d])))
+    const getLabel = (item: SuggestionItem) => {
+      const labelKeys = ["title", "name", "label", "text", "displayName", "heading"];
+      for (const key of labelKeys) {
+        const value = item[key];
+        if (typeof value === "string" && value.length > 0) return value;
+      }
+      return "";
+    };
+
+    const uniqueData = Object.values(
+      Object.fromEntries(
+        othersData.map((item, index) => [getLabel(item) || `item-${index}`, item]),
+      ),
+    );
     return uniqueData
   }
 
@@ -281,12 +314,20 @@ export function AddDataSuggestions({ schemaName, slug, onSelected }: AddDataSugg
 function useAllData(tableName: SchemaKeys) {
   const { data: allItems, ...rest } = api[tableName].useGet();
 
-  const data = allItems?.flatMap(d => {
-    const business = d._?.soul;
-    return Object.values(d).map(d =>
-      !d || typeof d !== "object" ? null : ({ ...d, business })
-    );
-  }).filter(d => !!d && typeof d === "object" && !("soul" in d))
+  const isSuggestionItem = (
+    value: SuggestionItem | null,
+  ): value is SuggestionItem =>
+    !!value && typeof value === "object" && !("soul" in value);
+
+  const data = allItems
+    ?.flatMap((item) => {
+      const business = item._?.soul;
+      return Object.values(item).map((entry) => {
+        if (!entry || typeof entry !== "object") return null;
+        return { ...(entry as Record<string, unknown>), business };
+      });
+    })
+    .filter(isSuggestionItem);
 
   return { data, ...rest };
 }

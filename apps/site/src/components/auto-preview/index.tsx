@@ -10,7 +10,6 @@ import { AutoTable } from "../auto-table";
 import type { fieldConfig } from "../ui/autoform";
 import { Drawer, DrawerContent, DrawerTrigger } from "../ui/drawer";
 import { CredenzaBody } from "../ui/credenza";
-import React from "react";
 import { useDrawer } from "@/contexts/dialog-context";
 import { MapPreview } from "../ui/autoform/components/MapPreview";
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]["fieldType"]>;

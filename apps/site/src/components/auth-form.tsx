@@ -11,7 +11,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useAuth } from "./auth-provider";
+import { useAuth, type AuthUser } from "./auth-provider";
 import { cn } from "@/lib/utils";
 import { sendMail } from "@/emails/send-mail";
 import AccountVerifyEmail from "@/emails/account-verify";
@@ -25,7 +25,6 @@ import {
 	CredenzaContent,
 	CredenzaHeader,
 	CredenzaTitle,
-	CredenzaTrigger,
 } from "./ui/credenza";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "./ui/input-otp";
 import { Loader2 } from "lucide-react";
@@ -84,9 +83,9 @@ function verifyOTP({
 			})
 			.once(async (otpData: unknown) => {
 				const { otp: otpInDb, _ } = otpData as OTP;
-				const createdAtStr = _?.[">"]?.["otp"];
-				if (otpInDb === otp && !!createdAtStr) {
-					const createdAt = new Date(createdAtStr);
+				const createdAtValue = _?.[">"]?.otp;
+				if (otpInDb === otp && createdAtValue != null) {
+					const createdAt = new Date(createdAtValue);
 					const wasCreatedWithinLast10Minutes =
 						Date.now() - createdAt.getTime() < 10 * 60 * 1000;
 					if (!wasCreatedWithinLast10Minutes) {
@@ -134,6 +133,8 @@ export function AuthForm({
 	const { refreshUser } = useAuth();
 
 	const { linkAnonymousUser } = useAuth();
+	const isAuthUser = (value: unknown): value is AuthUser =>
+		!!value && typeof value === "object";
 
 	const signupMutation = useMutation({
 		mutationFn: async ({ email, password }: z.infer<typeof signupSchema>) => {
@@ -204,7 +205,7 @@ export function AuthForm({
 		},
 		onSuccess: async (user) => {
 			// Link anonymous user data to the existing account if exists
-			if (user) {
+			if (isAuthUser(user)) {
 				// The user object from GunDB authentication will be passed to linkAnonymousUser
 				await linkAnonymousUser(user);
 			}
@@ -232,7 +233,10 @@ export function AuthForm({
 			// Link anonymous user data to the Google account if exists
 			if (user) {
 				// The user object from googleLogin will be passed to linkAnonymousUser
-				await linkAnonymousUser({ ...variables, ...user });
+				const mergedUser = { ...variables, ...user };
+				if (isAuthUser(mergedUser)) {
+					await linkAnonymousUser(mergedUser);
+				}
 			}
 			refreshUser();
 			onAuthSuccess?.(user);
@@ -367,7 +371,9 @@ export function AuthForm({
 		onSuccess: async (ack) => {
 			// Link anonymous user data to the new account if exists
 			// The user object from GunDB will be passed to linkAnonymousUser
-			await linkAnonymousUser(ack);
+			if (isAuthUser(ack)) {
+				await linkAnonymousUser(ack);
+			}
 			refreshUser();
 			setError("");
 			setShowOTPModal(false);

@@ -1,10 +1,9 @@
-import type { AdminComponent } from "@/components/ui/admin";
 import { fieldConfig } from "@/components/ui/autoform";
 import { IconMoneybag } from "@tabler/icons-react";
-import { Building, Car, Clock, DollarSign, Folder, List, Lock, LucideUser, MapIcon, Package, QrCode, ShoppingCart, Users, Users2, type LucideIcon, type LucideProps } from "lucide-react";
-import type { ForwardRefExoticComponent, RefAttributes } from "react";
+import { Building, Car, Clock, DollarSign, Folder, List, Lock, LucideUser, MapIcon, Package, QrCode, ShoppingCart, Users, Users2 } from "lucide-react";
 import { z } from "zod";
 import { dataMatrixActionSchema } from "./datamatrix";
+import type { AppSchemaType, CreatedSchema, GTAAppConfig, InferredTable, SchemaShape } from "./schemas/core/types";
 import { folderSchema } from "./schemas/folder-schema";
 import {
   menuItemSchema,
@@ -22,23 +21,6 @@ function getPermissions() {
 
 export type Permission = keyof ReturnType<typeof getPermissions>;
 const permissionEnum = z.string()
-
-export interface GTAAppConfig {
-  schema: {
-    [table: string]: {
-      schema: NonNullable<z.ZodObject<any> | z.ZodEffects<any>>;
-      icon?: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
-      group?: string,
-      components?: () => Promise<
-        Array<{
-          name: string;
-          icon?: LucideIcon;
-          component: AdminComponent;
-        }>
-      >;
-    };
-  };
-}
 
 export const permissionSchema = withLabel(
   z.record(permissionEnum, z.boolean()),
@@ -81,7 +63,7 @@ export const otpSchema = z.object({
   otp: z.string().length(6).describe("OTP"),
 }).extend(table)
 
-export type OTP = z.infer<typeof otpSchema>
+export type OTP = InferredTable<"otp">
 
 export const businessMemberSchema = z.object({
   role: z.enum(["owner", "staff"]),
@@ -100,7 +82,7 @@ export const businessInvitationSchema = z.object({
 })
 
 
-export type BusinessInvitation = z.infer<typeof businessInvitationSchema>;
+export type BusinessInvitation = NonNullable<InferredTable<"business">["invitations"]>[string]
 
 export const businessTypeSchema = z
   .enum([
@@ -108,7 +90,7 @@ export const businessTypeSchema = z
   ])
   .describe("The primary category of the business")
 
-export type BusinessType = z.infer<typeof businessTypeSchema>
+export type BusinessType = InferredTable<"business">["businessType"]
 
 export const businessSchema = z
   .object({
@@ -157,11 +139,11 @@ export const partySchema = z.object({
   notes: z.string().optional().describe("Notes for the party").superRefine(fieldConfig({ fieldType: "richText" })),
 }).extend(table);
 
-export type Party = z.infer<typeof partySchema>
+export type Party = InferredTable<"party">
 
 export const customerSchema = partySchema.extend({})
 
-export type Customer = z.infer<typeof customerSchema>
+export type Customer = InferredTable<"customer">
 
 export const invoiceSchema = z.object({
   type: z.enum(["purchase", "sale"]),
@@ -232,22 +214,20 @@ export const invoiceSchema = z.object({
 //   }
 // });
 
-export type Invoice = z.infer<typeof invoiceSchema>
-
-export const vehicleIdSchema: z.ZodEffects<z.ZodString> = z.string().describe("Vehicle").superRefine(fieldConfig({
-  fieldType: "select",
-  customData: {
-    sources: [{
-      table: "vehicle",
-      displayKeys: ["name", "licensePlate"],
-      separator: " (",
-      suffix: ")"
-    }],
-  },
-}))
+export type Invoice = InferredTable<"invoice">
 
 export const tripSchema = z.object({
-  vehicleId: vehicleIdSchema,
+  vehicleId: z.string().describe("Vehicle").superRefine(fieldConfig({
+    fieldType: "select",
+    customData: {
+      sources: [{
+        table: "vehicle",
+        displayKeys: ["name", "licensePlate"],
+        separator: " (",
+        suffix: ")"
+      }],
+    },
+  })),
   dispatchTime: z.string()
     .datetime({ offset: true })
     // .datetime()
@@ -269,7 +249,7 @@ export const tripSchema = z.object({
     .describe("Products Returned from Trip"),
 }).extend(table)
 
-export type Trip = z.infer<typeof tripSchema>
+export type Trip = InferredTable<"trip">
 
 export const membershipSchema = z
   .object({
@@ -329,21 +309,6 @@ export const recentlyUsedAppSchema = z
 // #endregion
 
 // #region App Schema
-export type SchemaShape<T extends GTAAppConfig["schema"]> = {
-  [key in keyof T]: T[key]["schema"];
-};
-
-export type CreatedSchema<T extends GTAAppConfig["schema"]> = T & {
-  rawShape: T;
-  schemaShape: z.ZodObject<SchemaShape<T>>;
-  extend<const TOtherSchema extends GTAAppConfig["schema"]>(
-    otherSchema: TOtherSchema,
-  ): CreatedSchema<T & TOtherSchema>;
-  merge<const TOtherSchema extends GTAAppConfig["schema"]>(
-    otherSchema: CreatedSchema<TOtherSchema>,
-  ): CreatedSchema<T & TOtherSchema>;
-};
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ExtractZodSchema<T extends CreatedSchema<SchemaShape<any>>> =
   z.ZodObject<{
@@ -586,6 +551,7 @@ export const featureSchema = createSchema({
 // A composite schema that brings together all the individual schemas.
 // This is useful for type inference and for providing a single entry point to all data models.
 export const appSchema = coreSchema.merge(featureSchema);
+
 export type AppSchemaType = ExtractZodSchema<typeof appSchema>;
 
 declare global {
@@ -596,9 +562,9 @@ declare global {
 // #endregion
 
 // #region Type Exports
-export type User = z.infer<typeof userSchema>;
-export type Business = z.infer<typeof businessSchema>;
-export type Order = z.infer<typeof orderSchema>;
+export type User = InferredTable<"user">;
+export type Business = InferredTable<"business">;
+export type Order = InferredTable<"order">;
 // #endregion
 
 export function transformSchema<const TSchema extends typeof appSchema>(
@@ -611,5 +577,7 @@ export function transformSchema<const TSchema extends typeof appSchema>(
         value.schema,
       ]),
     ),
-  ) as AppSchemaType;
+  ) as unknown as AppSchemaType;
 }
+
+export default appSchema;

@@ -6,19 +6,25 @@ import { googleLogout } from "@react-oauth/google";
 import { v4 as uuid } from "uuid";
 import { createAvatar } from "@dicebear/core";
 import { pixelArt } from "@dicebear/collection";
-import type { IGunChain } from "gun/types";
+import type { IGunChain, ISEAPair } from "gun/types";
 import { getGunRef, mergeKeys } from "@/lib/gun/utils";
 import _ from "lodash";
 import { UserLoading } from "./ui/user-loading";
 
+export type AuthUser = Partial<User> & {
+  pub?: string;
+  epub?: string;
+  alias?: string | ISEAPair;
+};
+
 interface AuthContextType {
-  user: User;
-  setUser: (user: User | undefined) => void;
+  user: AuthUser | undefined;
+  setUser: (user: AuthUser | undefined) => void;
   logout: () => void;
   isAuthenticated: boolean;
   refreshUser: () => void;
   anonymousUserId: string | null;
-  linkAnonymousUser: (authenticatedUser: User) => Promise<void>;
+  linkAnonymousUser: (authenticatedUser: AuthUser) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -30,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { auth } = useRouteContext({ from: "__root__" });
-  const [user, setUser] = useState<User>();
+  const [user, setUser] = useState<AuthUser>();
   const [refreshState, setRefreshState] = useState(0);
   const [authUser, setAuthUser] =
     useState<Awaited<ReturnType<typeof auth.getCurrentUser>>>();
@@ -143,14 +149,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const isAuthenticated = useMemo(() => !!authUser, [authUser]);
 
-  async function linkAnonymousUser(authenticatedUser: User) {
+  async function linkAnonymousUser(authenticatedUser: AuthUser) {
     function saveUser(anonymousData: any, onSaved?: () => void) {
       const mergedData = {
         ...authenticatedUser,
         ...anonymousData,
       };
 
-      getGunRef(mergeKeys("user")).get(authenticatedUser.pub).put(mergedData);
+      const authenticatedPub =
+        authenticatedUser.pub ?? authenticatedUser._?.soul ?? "";
+      if (!authenticatedPub) {
+        setUser(mergedData);
+        onSaved?.();
+        return;
+      }
+
+      getGunRef(mergeKeys("user")).get(authenticatedPub).put(mergedData);
 
       setUser(mergedData);
 
