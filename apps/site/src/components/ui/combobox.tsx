@@ -70,6 +70,7 @@ export function Combobox({
           }}
         >
           <Button
+            type="button"
             variant="outline"
             role="combobox"
             aria-expanded={open}
