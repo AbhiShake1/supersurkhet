@@ -183,39 +183,43 @@ export function useStockImportsConfig({
                         if (product.unit) {
                           const [unitType, piecesPerUnit] =
                             product.unit.split(':');
-                          if (piecesPerUnit) {
-                            setUnitField(
-                              z
-                                .string()
-                                .describe('Unit')
-                                .superRefine(
-                                  fieldConfig({
-                                    fieldType: 'unit',
-                                    customData: {
-                                      onlyAllow: [unitType, 'piece'],
-                                      configDisabled: true,
-                                      onValueChange(value, path, form) {
-                                        const [, productQuantityPerUnit] =
-                                          product.unit?.split(':') ?? [];
-                                        const [, quantityPerUnit] =
-                                          value?.split(':') ?? [];
-                                        const [itemsKey, index] = path;
+                          const onlyAllow = [
+                            unitType,
+                            piecesPerUnit ? 'piece' : undefined,
+                          ].filter(Boolean);
+                          const configDisabled = Boolean(piecesPerUnit);
+                          setUnitField(
+                            z
+                              .string()
+                              .describe('Unit')
+                              .superRefine(
+                                fieldConfig({
+                                  fieldType: 'unit',
+                                  customData: {
+                                    onlyAllow,
+                                    ...(configDisabled
+                                      ? {
+                                        configDisabled,
+                                        onValueChange(value, path, form) {
+                                          const [, productQuantityPerUnit] =
+                                            product.unit?.split(':') ?? [];
+                                          const [, quantityPerUnit] =
+                                            value?.split(':') ?? [];
+                                          const [itemsKey, index] = path;
 
-                                        if (quantityPerUnit) {
-                                          if (product.costPrice)
-                                            form.setValue(
-                                              [
-                                                itemsKey,
-                                                index,
-                                                'unitPrice',
-                                              ].join('.'),
-                                              product.costPrice,
-                                            );
-                                        } else {
-                                          if (
+                                          if (quantityPerUnit) {
+                                            if (product.costPrice)
+                                              form.setValue(
+                                                [
+                                                  itemsKey,
+                                                  index,
+                                                  'unitPrice',
+                                                ].join('.'),
+                                                product.costPrice,
+                                              );
+                                          } else if (
                                             productQuantityPerUnit &&
                                             product.costPrice &&
-                                            productQuantityPerUnit &&
                                             !Number.isNaN(
                                               Number(productQuantityPerUnit),
                                             )
@@ -227,30 +231,16 @@ export function useStockImportsConfig({
                                                 'unitPrice',
                                               ].join('.'),
                                               product.costPrice /
-                                              Number(productQuantityPerUnit),
+                                                Number(productQuantityPerUnit),
                                             );
                                           }
-                                        }
-                                      },
-                                    },
-                                  }),
-                                ),
-                            );
-                          } else {
-                            setUnitField(
-                              z
-                                .string()
-                                .describe('Unit')
-                                .superRefine(
-                                  fieldConfig({
-                                    fieldType: 'unit',
-                                    customData: {
-                                      onlyAllow: [unitType],
-                                    },
-                                  }),
-                                ),
-                            );
-                          }
+                                        },
+                                      }
+                                      : {}),
+                                  },
+                                }),
+                              ),
+                          );
                           form.setValue(
                             [itemsKey, index, 'unit'].join('.'),
                             product.unit,
@@ -605,6 +595,10 @@ export function useSalesConfig({
                         if (product.unit) {
                           const [unitType, piecesPerUnit] =
                             product.unit.split(':');
+                          const onlyAllow = [
+                            unitType,
+                            piecesPerUnit ? 'piece' : undefined,
+                          ].filter(Boolean);
                           setUnitField(
                             z
                               .string()
@@ -613,10 +607,7 @@ export function useSalesConfig({
                                 fieldConfig({
                                   fieldType: 'unit',
                                   customData: {
-                                    onlyAllow: [
-                                      unitType,
-                                      piecesPerUnit ? 'piece' : undefined,
-                                    ].filter(Boolean),
+                                    onlyAllow,
                                     configDisabled: true,
                                   },
                                 }),
@@ -872,36 +863,27 @@ export function useOrderConfig({
                         if (product.unit) {
                           const [unitType, piecesPerUnit] =
                             product.unit.split(':');
-                          if (piecesPerUnit) {
-                            setUnitField(
-                              z
-                                .string()
-                                .describe('Unit')
-                                .superRefine(
-                                  fieldConfig({
-                                    fieldType: 'unit',
-                                    customData: {
-                                      onlyAllow: [unitType, 'piece'],
-                                      configDisabled: true,
-                                    },
-                                  }),
-                                ),
-                            );
-                          } else {
-                            setUnitField(
-                              z
-                                .string()
-                                .describe('Unit')
-                                .superRefine(
-                                  fieldConfig({
-                                    fieldType: 'unit',
-                                    customData: {
-                                      onlyAllow: [unitType],
-                                    },
-                                  }),
-                                ),
-                            );
-                          }
+                          const onlyAllow = [
+                            unitType,
+                            piecesPerUnit ? 'piece' : undefined,
+                          ].filter(Boolean);
+                          const configDisabled = Boolean(piecesPerUnit);
+                          setUnitField(
+                            z
+                              .string()
+                              .describe('Unit')
+                              .superRefine(
+                                fieldConfig({
+                                  fieldType: 'unit',
+                                  customData: {
+                                    onlyAllow,
+                                    ...(configDisabled
+                                      ? { configDisabled }
+                                      : {}),
+                                  },
+                                }),
+                              ),
+                          );
                           form.setValue(
                             [itemsKey, index, 'unit'].join('.'),
                             product.unit,
@@ -1344,64 +1326,54 @@ export function useTripConfig({
 
                 if (product.unit) {
                   const [unitType, piecesPerUnit] = product.unit.split(':');
-                  if (piecesPerUnit) {
-                    setReturnedUnitField(
-                      z
-                        .string()
-                        .describe('Unit')
-                        .superRefine(
-                          fieldConfig({
-                            fieldType: 'unit',
-                            customData: {
-                              onlyAllow: [unitType, 'piece'],
-                              configDisabled: true,
-                              onValueChange(value, path, form) {
-                                const [, productQuantityPerUnit] =
-                                  product.unit?.split(':') ?? [];
-                                const [, quantityPerUnit] =
-                                  value?.split(':') ?? [];
-                                const [itemsKey, index] = path;
+                  const onlyAllow = [
+                    unitType,
+                    piecesPerUnit ? 'piece' : undefined,
+                  ].filter(Boolean);
+                  const configDisabled = Boolean(piecesPerUnit);
+                  setReturnedUnitField(
+                    z
+                      .string()
+                      .describe('Unit')
+                      .superRefine(
+                        fieldConfig({
+                          fieldType: 'unit',
+                          customData: {
+                            onlyAllow,
+                            ...(configDisabled
+                              ? {
+                                configDisabled,
+                                onValueChange(value, path, form) {
+                                  const [, productQuantityPerUnit] =
+                                    product.unit?.split(':') ?? [];
+                                  const [, quantityPerUnit] =
+                                    value?.split(':') ?? [];
+                                  const [itemsKey, index] = path;
 
-                                if (quantityPerUnit) {
-                                  if (product.sellingPrice)
-                                    form.setValue(
-                                      [itemsKey, index, 'unitPrice'].join('.'),
-                                      product.sellingPrice,
-                                    );
-                                } else {
-                                  if (
+                                  if (quantityPerUnit) {
+                                    if (product.sellingPrice)
+                                      form.setValue(
+                                        [itemsKey, index, 'unitPrice'].join('.'),
+                                        product.sellingPrice,
+                                      );
+                                  } else if (
                                     productQuantityPerUnit &&
                                     product.sellingPrice &&
-                                    productQuantityPerUnit &&
                                     !Number.isNaN(Number(productQuantityPerUnit))
                                   ) {
                                     form.setValue(
                                       [itemsKey, index, 'unitPrice'].join('.'),
                                       product.sellingPrice /
-                                      Number(productQuantityPerUnit),
+                                        Number(productQuantityPerUnit),
                                     );
                                   }
-                                }
-                              },
-                            },
-                          }),
-                        ),
-                    );
-                  } else {
-                    setReturnedUnitField(
-                      z
-                        .string()
-                        .describe('Unit')
-                        .superRefine(
-                          fieldConfig({
-                            fieldType: 'unit',
-                            customData: {
-                              onlyAllow: [unitType],
-                            },
-                          }),
-                        ),
-                    );
-                  }
+                                },
+                              }
+                              : {}),
+                          },
+                        }),
+                      ),
+                  );
                   form.setValue(
                     [itemsKey, index, 'unit'].join('.'),
                     product.unit,
@@ -1538,68 +1510,60 @@ export function useTripConfig({
                       if (product.unit) {
                         const [unitType, piecesPerUnit] =
                           product.unit.split(':');
-                        if (piecesPerUnit) {
-                          setUnitField(
-                            z
-                              .string()
-                              .describe('Unit')
-                              .superRefine(
-                                fieldConfig({
-                                  fieldType: 'unit',
-                                  customData: {
-                                    onlyAllow: [unitType, 'piece'],
-                                    configDisabled: true,
-                                    onValueChange(value, path, form) {
-                                      const [, productQuantityPerUnit] =
-                                        product.unit?.split(':') ?? [];
-                                      const [, quantityPerUnit] =
-                                        value?.split(':') ?? [];
-                                      const [itemsKey, index] = path;
+                        const onlyAllow = [
+                          unitType,
+                          piecesPerUnit ? 'piece' : undefined,
+                        ].filter(Boolean);
+                        const configDisabled = Boolean(piecesPerUnit);
+                        setUnitField(
+                          z
+                            .string()
+                            .describe('Unit')
+                            .superRefine(
+                              fieldConfig({
+                                fieldType: 'unit',
+                                customData: {
+                                  onlyAllow,
+                                  ...(configDisabled
+                                    ? {
+                                      configDisabled,
+                                      onValueChange(value, path, form) {
+                                        const [, productQuantityPerUnit] =
+                                          product.unit?.split(':') ?? [];
+                                        const [, quantityPerUnit] =
+                                          value?.split(':') ?? [];
+                                        const [itemsKey, index] = path;
 
-                                      if (quantityPerUnit) {
-                                        if (product.sellingPrice)
-                                          form.setValue(
-                                            [itemsKey, index, 'unitPrice'].join(
-                                              '.',
-                                            ),
-                                            product.sellingPrice,
-                                          );
-                                      } else {
-                                        if (
+                                        if (quantityPerUnit) {
+                                          if (product.sellingPrice)
+                                            form.setValue(
+                                              [itemsKey, index, 'unitPrice'].join(
+                                                '.',
+                                              ),
+                                              product.sellingPrice,
+                                            );
+                                        } else if (
                                           productQuantityPerUnit &&
                                           product.sellingPrice &&
-                                          productQuantityPerUnit &&
-                                          !Number.isNaN(Number(productQuantityPerUnit))
+                                          !Number.isNaN(
+                                            Number(productQuantityPerUnit),
+                                          )
                                         ) {
                                           form.setValue(
                                             [itemsKey, index, 'unitPrice'].join(
                                               '.',
                                             ),
                                             product.sellingPrice /
-                                            Number(productQuantityPerUnit),
+                                              Number(productQuantityPerUnit),
                                           );
                                         }
-                                      }
-                                    },
-                                  },
-                                }),
-                              ),
-                          );
-                        } else {
-                          setUnitField(
-                            z
-                              .string()
-                              .describe('Unit')
-                              .superRefine(
-                                fieldConfig({
-                                  fieldType: 'unit',
-                                  customData: {
-                                    onlyAllow: [unitType],
-                                  },
-                                }),
-                              ),
-                          );
-                        }
+                                      },
+                                    }
+                                    : {}),
+                                },
+                              }),
+                            ),
+                        );
                         form.setValue(
                           [itemsKey, index, 'unit'].join('.'),
                           product.unit,
