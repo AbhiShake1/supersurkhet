@@ -33,12 +33,15 @@ import type { UseFormReturn } from "react-hook-form";
 import { z } from "zod";
 import { Button } from "./ui/button";
 import { Card, CardHeader, CardTitle } from "./ui/card";
+import { MapField } from "./ui/autoform/components/MapField";
 
 const businessCreationSchema = businessSchema
   .pick({
     name: true,
     businessType: true,
     features: true,
+    location: true,
+    locationCoordinates: true,
   })
   .extend({
     prepopulateData: z.record(z.string(), z.boolean()).optional(),
@@ -161,6 +164,39 @@ export function BusinessCreationForm({
                 <FormLabel>Business Name</FormLabel>
                 <FormControl>
                   <Input placeholder="e.g., Aangan Restaurant" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="location"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Business Location</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Surkhet, Nepal" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="locationCoordinates"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Set Location on Map</FormLabel>
+                <FormControl>
+                  <MapField
+                    inputProps={{
+                      key: "locationCoordinates",
+                      onChange: field.onChange,
+                      value: field.value,
+                    }}
+                    id="locationCoordinates"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -30,6 +30,8 @@ const businessCreationSchema = businessSchema
   .pick({
     name: true,
     businessType: true,
+    location: true,
+    locationCoordinates: true,
   })
   .extend({
     prepopulateData: z.record(z.string(), z.boolean().default(false)).optional(),
@@ -68,6 +70,8 @@ export function CreateBusiness({ children, ...props }: { children: React.ReactNo
     defaultValues: {
       name: "",
       businessType: "other",
+      location: "",
+      locationCoordinates: "",
     },
   });
 

@@ -12,7 +12,7 @@ import { Drawer, DrawerContent, DrawerTrigger } from "../ui/drawer";
 import { CredenzaBody } from "../ui/credenza";
 import React from "react";
 import { useDrawer } from "@/contexts/dialog-context";
-
+import { MapPreview } from "../ui/autoform/components/MapPreview";
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]["fieldType"]>;
 
 export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
@@ -283,6 +283,7 @@ const autoPreviewComponents: Record<
   url: UrlPreview,
   timestamp: DatePreview,
   unit: UnitPreview,
+  map: MapPreview,
   permissions: ({ value }) => `${value?.length ?? Object.keys(value).length} Permissions`,
   fallback: (props) => {
     if (typeof props.value === "object" && Array.isArray(props.value)) {
