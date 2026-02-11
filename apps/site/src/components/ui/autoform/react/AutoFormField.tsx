@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useAutoForm } from './context';
 import { getLabel, type ParsedField } from '@autoform/core';

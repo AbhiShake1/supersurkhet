@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { type SchemaKeys } from '..';
+import type { SchemaKeys } from '..';
 import type { appSchema } from '@/lib/schema';
 import { GUN_PREFIX } from "../utils/mergeKeys";
 import _ from 'lodash';

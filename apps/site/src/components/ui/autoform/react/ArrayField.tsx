@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 import { AutoFormField } from './AutoFormField';
 import { useAutoForm } from './context';

@@ -24,7 +24,7 @@ const animations = {
         animate: {
           opacity: [0, 1],
           scale: [0.8, 1],
-          x: [4 * Math.pow(-1, i + 1), 0],
+          x: [4 * (-1) ** (i + 1), 0],
           transition: {
             type: 'spring',
             stiffness: 150,
@@ -69,7 +69,7 @@ const animations = {
         initial: { opacity: 1, transform: 'translateX(0) scale(1)' },
         animate: {
           opacity: 0,
-          transform: `translateX(${8 * Math.pow(-1, i + 1)}px) scale(0)`,
+          transform: `translateX(${8 * (-1) ** (i + 1)}px) scale(0)`,
           transition: {
             transform: {
               duration: 0.2,

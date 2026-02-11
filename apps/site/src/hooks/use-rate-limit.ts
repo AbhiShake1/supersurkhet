@@ -16,7 +16,7 @@ export const checkRateLimit = (
   const { lastSent, attempts } = JSON.parse(stored);
   const now = Date.now();
   const baseDelay = 30 * 1000; // 30 seconds base delay
-  const exponentialDelay = baseDelay * Math.pow(2, attempts - 1); // 30s, 60s, 120s, etc.
+  const exponentialDelay = baseDelay * 2 ** (attempts - 1); // 30s, 60s, 120s, etc.
   const nextAllowedTime = lastSent + exponentialDelay;
   const timeLeft = nextAllowedTime - now;
 

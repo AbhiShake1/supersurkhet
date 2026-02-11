@@ -24,6 +24,6 @@ export const calculateScrollSpeed = (distanceFromEdge: number): number => {
   // Calculate speed as a proportion - closer to edge = faster
   const speedRatio =
     (AUTO_SCROLL_THRESHOLD - distanceFromEdge) / AUTO_SCROLL_THRESHOLD;
-  const easedRatio = Math.pow(speedRatio, 2);
+  const easedRatio = speedRatio ** 2;
   return MIN_SCROLL_SPEED + (MAX_SCROLL_SPEED - MIN_SCROLL_SPEED) * easedRatio;
 };

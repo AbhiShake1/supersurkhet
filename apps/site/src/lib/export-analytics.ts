@@ -1,4 +1,4 @@
-import { useBusinessAnalytics } from '@/hooks/use-business-analytics';
+import type { useBusinessAnalytics } from '@/hooks/use-business-analytics';
 
 // Export analytics data to CSV format
 export function exportAnalyticsToCSV(

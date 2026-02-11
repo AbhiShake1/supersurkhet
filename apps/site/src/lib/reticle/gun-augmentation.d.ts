@@ -18,5 +18,3 @@ declare module 'gun/types/gun/IGunChain' {
     ): IGunChain<TNode, TChainParent, TGunInstance, TKey>;
   }
 }
-
-export {};

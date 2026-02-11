@@ -17,17 +17,16 @@ import 'gun/lib/then';
 import 'gun/lib/unset';
 import './gun/rindexed';
 import type { IGunInstance } from 'gun/types';
-import z from 'zod';
+import type z from 'zod';
 // import createBullet from "./bullet";
 
 const GUN = Gun; //.scope(GUN_PREFIX)
 
 GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
-  var gun = this;
   var p = new Promise((res, rej) => {
-    gun
+    this
       .not(() => res([]))
-      .once(function (data, key) {
+      .once((data, key) => {
         res(data, key);
       });
   });

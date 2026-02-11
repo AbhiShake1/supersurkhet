@@ -1,9 +1,9 @@
-(function () {
+(() => {
   if (typeof Gun === 'undefined') {
     return;
   }
 
-  var noop = function () {},
+  var noop = () => {},
     u;
 
   // -----------------------------
@@ -12,18 +12,18 @@
   function openDB(opt, cb) {
     var req = indexedDB.open(opt.prefix, 1);
 
-    req.onupgradeneeded = function (e) {
+    req.onupgradeneeded = (e) => {
       var db = e.target.result;
       if (!db.objectStoreNames.contains('radata')) {
         db.createObjectStore('radata');
       }
     };
 
-    req.onsuccess = function () {
+    req.onsuccess = () => {
       cb(null, req.result);
     };
 
-    req.onerror = function (e) {
+    req.onerror = (e) => {
       cb(e || 'indexeddb.open.error');
     };
   }
@@ -46,7 +46,7 @@
     var to, stop;
     var pending = Object.create(null);
 
-    openDB(opt, function (err, _db) {
+    openDB(opt, (err, _db) => {
       if (err) {
         Gun.log(err);
         return;
@@ -68,7 +68,7 @@
 
       if (!db) {
         // wait until db ready
-        return setTimeout(function () {
+        return setTimeout(() => {
           root.on('get', msg);
         }, 9);
       }
@@ -77,7 +77,7 @@
       var store = tx.objectStore('radata');
       var req = store.get(soul);
 
-      req.onsuccess = function () {
+      req.onsuccess = () => {
         var data = req.result || u;
         var tmp;
 
@@ -94,7 +94,7 @@
         Gun.on.get.ack(msg, data);
       };
 
-      req.onerror = function () {
+      req.onerror = () => {
         Gun.on.get.ack(msg, u);
       };
     });
@@ -122,7 +122,7 @@
       }
 
       if (!db) {
-        return setTimeout(function () {
+        return setTimeout(() => {
           root.on('put', msg);
         }, 9);
       }
@@ -147,10 +147,10 @@
 
       var req = store.get(soul);
 
-      req.onsuccess = function () {
+      req.onsuccess = () => {
         var node = req.result || {};
 
-        batch.forEach(function (item) {
+        batch.forEach((item) => {
           var put = item.put;
           node = Gun.state.ify(node, put['.'], put['>'], put[':'], soul);
 
@@ -167,12 +167,12 @@
         store.put(node, soul);
       };
 
-      tx.oncomplete = function () {
+      tx.oncomplete = () => {
         delete pending[soul];
         scheduleAck();
       };
 
-      tx.onerror = function (e) {
+      tx.onerror = (e) => {
         stop = e || 'indexeddb.tx.error';
         delete pending[soul];
         scheduleAck();
@@ -197,7 +197,7 @@
 
       setTimeout.each(
         list,
-        function (id) {
+        (id) => {
           root.on('in', {
             '@': id,
             err: err,

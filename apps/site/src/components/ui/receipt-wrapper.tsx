@@ -31,7 +31,7 @@ if (typeof window !== 'undefined') {
     document.body.appendChild(myframe);
     // @ts-expect-error
     myframe.contentDocument.write(this.innerHTML);
-    setTimeout(function () {
+    setTimeout(() => {
       myframe.focus();
       // @ts-expect-error
       myframe.contentWindow.print();

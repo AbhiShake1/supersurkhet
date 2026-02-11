@@ -82,7 +82,7 @@ function calculateTotalAmountForItem(
   index: number,
   form: UseFormReturn,
 ) {
-  if (items && items[index]) {
+  if (items?.[index]) {
     const quantity = Number(items[index].quantity) || 0;
     const unitPrice = Number(items[index].unitPrice) || 0;
     const totalAmount = quantity * unitPrice;
@@ -213,7 +213,7 @@ export function useStockImportsConfig({
                                             productQuantityPerUnit &&
                                             product.costPrice &&
                                             productQuantityPerUnit &&
-                                            !isNaN(
+                                            !Number.isNaN(
                                               Number(productQuantityPerUnit),
                                             )
                                           ) {
@@ -267,7 +267,7 @@ export function useStockImportsConfig({
                   fieldConfig({
                     fieldType: 'number',
                     customData: {
-                      onValueChange: (value, path, form) => {
+                      onValueChange: (_, path, form) => {
                         const [itemsKey, index] = path;
                         const items = form.getValues('items');
 
@@ -289,7 +289,7 @@ export function useStockImportsConfig({
                   fieldConfig({
                     fieldType: 'number',
                     customData: {
-                      onValueChange: (value, path, form) => {
+                      onValueChange: (_, path, form) => {
                         const [itemsKey, index] = path;
                         const items = form.getValues('items');
 
@@ -328,7 +328,7 @@ export function useStockImportsConfig({
       const productsBySoul = new Map(
         products
           .filter((item) => item?._?.soul)
-          .map((item) => [item._!.soul!, item]),
+          .map((item) => [item._.soul, item]),
       );
       const itemsByProductIdWithQuantity = variables.items?.reduce(
         (a, { product, quantity, unit }) => {
@@ -336,7 +336,7 @@ export function useStockImportsConfig({
           if (!productInfo) return a;
 
           let adjustedQuantity = quantity;
-          if (productInfo.unit && productInfo.unit.includes(':')) {
+          if (productInfo.unit?.includes(':')) {
             const [unitType, piecesPerUnit] = productInfo.unit.split(':');
 
             if (unit === unitType) {
@@ -366,7 +366,7 @@ export function useStockImportsConfig({
           const productInfo = productsBySoul.get(item.product);
           let adjustedQuantity = item.quantity;
 
-          if (productInfo?.unit && productInfo.unit.includes(':')) {
+          if (productInfo?.unit?.includes(':')) {
             const [unitType, piecesPerUnit] = productInfo.unit.split(':');
 
             if (item.unit === unitType) {
@@ -651,7 +651,7 @@ export function useSalesConfig({
                         );
 
                         return value;
-                      }) as any,
+                      }),
                     },
                   }),
                 ),
@@ -702,7 +702,7 @@ export function useSalesConfig({
       const productsBySoul = new Map(
         products
           .filter((item) => item?._?.soul)
-          .map((item) => [item._!.soul!, item]),
+          .map((item) => [item._.soul, item]),
       );
       const itemsByProductIdWithQuantity = variables.items?.reduce(
         (a, { product, quantity, unit }) => {
@@ -710,7 +710,7 @@ export function useSalesConfig({
           if (!productInfo) return a;
 
           let adjustedQuantity = quantity;
-          if (productInfo.unit && productInfo.unit.includes(':')) {
+          if (productInfo.unit?.includes(':')) {
             const [unitType, piecesPerUnit] = productInfo.unit.split(':');
 
             if (unit === unitType) {
@@ -1144,7 +1144,7 @@ export function useOrderConfig({
           const productInfo = productsBySoul.get(item.product);
           let adjustedQuantity = item.quantity;
 
-          if (productInfo?.unit && productInfo.unit.includes(':')) {
+          if (productInfo?.unit?.includes(':')) {
             const [unitType, piecesPerUnit] = productInfo.unit.split(':');
             if (item.unit === unitType) {
               adjustedQuantity = item.quantity * parseInt(piecesPerUnit, 10);
@@ -1360,7 +1360,7 @@ export function useTripConfig({
                                     productQuantityPerUnit &&
                                     product.sellingPrice &&
                                     productQuantityPerUnit &&
-                                    !isNaN(Number(productQuantityPerUnit))
+                                    !Number.isNaN(Number(productQuantityPerUnit))
                                   ) {
                                     form.setValue(
                                       [itemsKey, index, 'unitPrice'].join('.'),
@@ -1420,7 +1420,7 @@ export function useTripConfig({
                 );
 
                 return value;
-              }) as any,
+              }),
             },
           }),
         ),
@@ -1555,7 +1555,7 @@ export function useTripConfig({
                                           productQuantityPerUnit &&
                                           product.sellingPrice &&
                                           productQuantityPerUnit &&
-                                          !isNaN(Number(productQuantityPerUnit))
+                                          !Number.isNaN(Number(productQuantityPerUnit))
                                         ) {
                                           form.setValue(
                                             [itemsKey, index, 'unitPrice'].join(
@@ -1666,7 +1666,7 @@ export function useTripConfig({
       const productsBySoul = new Map(
         products
           .filter((item) => item?._?.soul)
-          .map((item) => [item._!.soul!, item]),
+          .map((item) => [item._.soul, item]),
       );
 
       const itemsByProductIdWithQuantity = variables.products?.reduce(
@@ -1675,7 +1675,7 @@ export function useTripConfig({
           if (!productInfo) return a;
 
           let adjustedQuantity = quantity;
-          if (productInfo.unit && productInfo.unit.includes(':')) {
+          if (productInfo.unit?.includes(':')) {
             const [unitType, piecesPerUnit] = productInfo.unit.split(':');
 
             if (unit === unitType) {
@@ -1713,6 +1713,7 @@ export function useTripConfig({
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
             <button
+              type="button"
               className="w-full"
               onClick={() =>
                 openDialog({
@@ -1729,10 +1730,10 @@ export function useTripConfig({
                           <div className="text-center">Sent</div>
                           <div className="text-center">Returned</div>
                         </div>
-                        {row.original.products?.map((product, idx: number) => {
+                        {row.original.products?.map((product) => {
                           return (
                             <div
-                              key={idx}
+                              key={product._?.soul ?? ""}
                               className="grid grid-cols-3 gap-2 text-sm"
                             >
                               <div>{product?.title || 'Unknown Product'}</div>
@@ -1777,7 +1778,7 @@ export function useTripConfig({
                                 quantity: Math.max(0, soldQty),
                               };
                             })
-                            .filter((sp: any) => sp.quantity > 0);
+                            .filter((sp) => sp.quantity > 0);
 
                           void db.trip.update(slug)({
                             id: row.original._?.soul ?? '',
@@ -1798,7 +1799,7 @@ export function useTripConfig({
 
                             let adjustedQuantity = returnedProduct.quantity;
 
-                            if (product.unit && product.unit.includes(':')) {
+                            if (product.unit?.includes(':')) {
                               const [unitType, piecesPerUnit] =
                                 product.unit.split(':');
                               if (returnedProduct.unit === unitType) {
@@ -1872,7 +1873,7 @@ export function useTripConfig({
                               const product = productsBySoul.get(
                                 soldProduct.productId,
                               );
-                              if (product && product._?.soul) {
+                              if (product?._?.soul) {
                                 void db.product.update(slug)({
                                   id: product._.soul,
                                   stockQuantity:

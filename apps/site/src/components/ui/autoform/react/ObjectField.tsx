@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { AutoFormField } from './AutoFormField';
 import { useAutoForm } from './context';
 import { getLabel, type ParsedField } from '@autoform/core';

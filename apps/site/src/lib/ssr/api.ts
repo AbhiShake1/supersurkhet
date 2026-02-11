@@ -1,4 +1,4 @@
-import { type SchemaKeys, type UseGetBuilder } from '@gta/react-hooks';
+import type { SchemaKeys, UseGetBuilder } from '@gta/react-hooks';
 import type z from 'zod';
 import { create as ssrCreate } from '../gun/ssr/create';
 import { remove as ssrDelete } from '../gun/ssr/delete';

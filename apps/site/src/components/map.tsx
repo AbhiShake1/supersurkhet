@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 // Fix for the missing marker icon issue
 if (typeof window !== 'undefined') {
   import('leaflet').then((L) => {
-    // @ts-ignore
+    // @ts-expect-error
     delete L.Icon.Default.prototype._getIconUrl;
     L.Icon.Default.mergeOptions({
       iconRetinaUrl:

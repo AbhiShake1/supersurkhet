@@ -66,7 +66,7 @@ export default function createBullet<
         if (typeof prop !== 'string') return Reflect.get(t, prop, receiver);
 
         if (prop === 'extend') {
-          return function <E extends object>(factory: (thisRef: any) => E) {
+          return <E extends object>(factory: (thisRef: any) => E) => {
             if (typeof factory !== 'function') {
               throw new TypeError(
                 'extend(...) expects a function: (thisRef) => extensionObject',

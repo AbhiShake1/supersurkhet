@@ -2,7 +2,7 @@ import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
 import { decrypt } from '../utils/sea';
 import type { NestedSchemaType, SchemaKeys } from '..';
 import { mergeOptionsWithDefaults } from '../options';
-import { type QueryObserverOptions } from '@tanstack/react-query';
+import type { QueryObserverOptions } from '@tanstack/react-query';
 
 export type GetBuilder<T extends SchemaKeys> = {
   separator?: string;

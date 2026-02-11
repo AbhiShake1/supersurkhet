@@ -1,6 +1,7 @@
 import type { FieldConfig } from '@autoform/core';
 import { fieldConfig as zodBaseFieldConfig } from '@autoform/zod';
-import React, { type ReactNode } from 'react';
+import type React from 'react';
+import type { ReactNode } from 'react';
 import type { FieldWrapperProps } from './types';
 
 export function buildZodFieldConfig<

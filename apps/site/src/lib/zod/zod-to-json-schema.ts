@@ -1,5 +1,5 @@
-import {
-  type ZodTypeAny,
+import type {
+  ZodTypeAny,
   ZodEnum,
   ZodArray,
   ZodObject,
