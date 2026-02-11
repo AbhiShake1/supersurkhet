@@ -175,7 +175,7 @@ const store: StateCreator<LayerStore, [], []> = (set, get) => ({
 
         // Find the layer to duplicate
         // biome-ignore lint/suspicious/useIterableCallbackReturn: lint debt cleanup
-                state.pages.forEach((page) =>
+        state.pages.forEach((page) =>
           visitLayer(page, null, (layer, parent) => {
             if (layer.id === layerId) {
               layerToDuplicate = layer;

@@ -209,7 +209,7 @@ export function ClassNameItemControl({
               );
               if (Array.isArray(newState[k]) && newState[k]?.length === 0)
                 newState[k] = null;
-            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             } else if (classesToClear.includes(newState[k] as any)) {
               newState[k] = null;
             }
@@ -231,8 +231,8 @@ export function ClassNameItemControl({
     const classString = buildClassString(state, unhandled);
     if (onChange) onChange(classString);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-      }, [state, unhandled, buildClassString, onChange]);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [state, unhandled, buildClassString, onChange]);
 
   return (
     <div className="w-full" data-testid="classname-item-control">

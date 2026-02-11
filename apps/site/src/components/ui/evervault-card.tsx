@@ -97,7 +97,7 @@ export const generateRandomString = (length: number) => {
 export const Icon = ({ className, ...rest }: any) => {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg
+    <svg
       xmlns="http://www.w3.org/2000/svg"
       fill="none"
       viewBox="0 0 24 24"

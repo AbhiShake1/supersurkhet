@@ -53,7 +53,7 @@ export function getBaseType(schema: z.ZodAny): string {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function getDefaultValueInZodStack(schema: z.ZodAny): any {
+export function getDefaultValueInZodStack(schema: z.ZodAny): any {
   const typedSchema = schema as unknown as z.ZodDefault<
     z.ZodNumber | z.ZodString
   >;
@@ -82,7 +82,7 @@ export  function getDefaultValueInZodStack(schema: z.ZodAny): any {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function getDefaultValues<Schema extends z.ZodObject<any, any>>(
+export function getDefaultValues<Schema extends z.ZodObject<any, any>>(
   schema: Schema,
   fieldConfig?: FieldConfig<z.infer<Schema>>,
 ) {
@@ -129,7 +129,7 @@ export  function getDefaultValues<Schema extends z.ZodObject<any, any>>(
 
 export function getObjectFormSchema(
   schema: ZodObjectOrWrapped,
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): z.ZodObject<any, any> {
   if (schema?._def.typeName === 'ZodEffects') {
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
@@ -197,9 +197,8 @@ export function zodToHtmlInputProps(
  * If no order is set, the field will be sorted based on the order in the schema.
  */
 
-
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function sortFieldsByOrder<SchemaType extends z.ZodObject<any, any>>(
+export function sortFieldsByOrder<SchemaType extends z.ZodObject<any, any>>(
   fieldConfig: FieldConfig<z.infer<SchemaType>> | undefined,
   keys: string[],
 ) {

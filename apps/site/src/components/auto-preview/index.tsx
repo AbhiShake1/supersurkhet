@@ -238,7 +238,7 @@ const TagsPreview: AutoPreviewComponent<string[]> = ({ value }) => {
     <div className="flex flex-wrap gap-1">
       {value.slice(0, 3).map((tag, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<Badge key={i} variant="secondary" className="text-xs px-1.5 py-0.5">
+        <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0.5">
           {tag}
         </Badge>
       ))}

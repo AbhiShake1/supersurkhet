@@ -82,8 +82,10 @@ export const BackgroundBeams = React.memo(
 
           {paths.map((path, index) => (
             <motion.path
-              key={`path-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-index}`}
+              key={`path-${
+                // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                index
+              }`}
               d={path}
               stroke={`url(#linearGradient-${index})`}
               strokeOpacity="0.4"
@@ -94,8 +96,10 @@ index}`}
             {paths.map((_path, index) => (
               <motion.linearGradient
                 id={`linearGradient-${index}`}
-                key={`gradient-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-index}`}
+                key={`gradient-${
+                  // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                  index
+                }`}
                 initial={{
                   x1: '0%',
                   x2: '0%',
@@ -123,7 +127,7 @@ index}`}
             ))}
 
             {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
-<radialGradient
+            <radialGradient
               id="paint0_radial_242_278"
               cx="0"
               cy="0"

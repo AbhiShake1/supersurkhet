@@ -28,7 +28,7 @@ const LayerRenderer = React.memo<LayerRendererProps>(function LayerRenderer({
 }) {
   return (
     // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
-<DevProfiler id="LayerRenderer" threshold={30}>
+    <DevProfiler id="LayerRenderer" threshold={30}>
       <div className={className}>
         <RenderLayer
           layer={page}

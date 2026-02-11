@@ -92,7 +92,7 @@ export default function Features({
         <div className="@min-4xl:max-w-full @min-4xl:grid-cols-3 mx-auto mt-8 grid max-w-sm gap-6 *:text-center md:mt-16">
           {features.map((feature, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<Card key={index} className="group shadow-zinc-950/5">
+            <Card key={index} className="group shadow-zinc-950/5">
               <CardHeader className="pb-3">
                 <CardDecorator>
                   {React.createElement(

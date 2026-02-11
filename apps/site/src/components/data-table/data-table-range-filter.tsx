@@ -48,7 +48,7 @@ export function DataTableRangeFilter<TData>({
   const value = React.useMemo(() => {
     if (Array.isArray(filter.value)) return filter.value.map(formatValue);
     return [formatValue(filter.value), ''];
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [filter.value, formatValue]);
 
   const onRangeValueChange = (value: string, isMin?: boolean) => {

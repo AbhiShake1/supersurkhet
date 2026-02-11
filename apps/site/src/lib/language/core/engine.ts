@@ -1,8 +1,4 @@
-import type {
-  LogicExpr,
-  EngineOptions,
-  MethodDefinition,
-} from './types';
+import type { LogicExpr, EngineOptions, MethodDefinition } from './types';
 
 /**
  * Splits a path string into an array of parts, supporting escaped characters.
@@ -117,17 +113,17 @@ export class LogicEngine {
    * Collection of registered methods that can be used in logic expressions.
    * Methods are keyed by their operation name (e.g., 'var', '+', 'if', etc.).
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-public  methods: Record<string, any>;
+
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  public methods: Record<string, any>;
 
   /**
    * Cache for optimized execution plans.
    * Uses WeakMap to associate optimized functions with original logic objects.
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-public  optimizedMap: WeakMap<object, any>;
+
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  public optimizedMap: WeakMap<object, any>;
 
   /**
    * Counter for tracking cache misses.
@@ -151,9 +147,9 @@ public  optimizedMap: WeakMap<object, any>;
    * Internal function to determine if a key represents data or a method.
    * Used to distinguish between variable access and method calls.
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-private  isData: (data: any, key: any) => boolean;
+
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  private isData: (data: any, key: any) => boolean;
 
   /**
    * Creates a new LogicEngine instance.
@@ -178,9 +174,9 @@ private  isData: (data: any, key: any) => boolean;
    * });
    * ```
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-constructor(methods: Record<string, any> = {}, options: EngineOptions = {}) {
+
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  constructor(methods: Record<string, any> = {}, options: EngineOptions = {}) {
     this.disableInline = options.disableInline ?? false;
     this.disableInterpretedOptimization =
       options.disableInterpretedOptimization ?? false;
@@ -218,9 +214,9 @@ constructor(methods: Record<string, any> = {}, options: EngineOptions = {}) {
    *
    * @returns Object containing all default methods
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-private  getDefaultMethods(): Record<string, any> {
+
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  private getDefaultMethods(): Record<string, any> {
     return {
       // Enhanced var method that supports function access
       var: {
@@ -254,9 +250,9 @@ private  getDefaultMethods(): Record<string, any> {
          * getName({ user: { name: 'Jane' } }); // 'Jane'
          * ```
          */
-        
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-method: (key: any, context: any, above: any[], engine: LogicEngine) => {
+
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+        method: (key: any, context: any, above: any[], engine: LogicEngine) => {
           // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           let defaultValue: any;
           if (Array.isArray(key)) {
@@ -306,9 +302,9 @@ method: (key: any, context: any, above: any[], engine: LogicEngine) => {
          * @param buildState - Current build state for optimization
          * @returns True if the operation is deterministic, false otherwise
          */
-        
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-deterministic: (data: any, buildState: any) =>
+
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+        deterministic: (data: any, buildState: any) =>
           buildState.insideIterator && !String(data).includes('../../'),
         optimizeUnary: true,
       },
@@ -442,9 +438,9 @@ deterministic: (data: any, buildState: any) =>
          * fn(5); // 10
          * ```
          */
-        
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
+
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+        method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
           if (typeof fn === 'function') {
             return fn;
           } else if (typeof fn === 'object' && fn.var) {
@@ -484,9 +480,9 @@ method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
        * add({ x: 7, y: 3 }); // 10
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'+': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '+': (data: any) => {
         if (!data) return 0;
         if (typeof data === 'string') return +data;
         if (typeof data === 'number') return +data;
@@ -527,9 +523,9 @@ method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
        * multiply({ x: 6, y: 7 }); // 42
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'*': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '*': (data: any) => {
         if (data.length === 0) return 1;
         let res = 1;
         for (let i = 0; i < data.length; i++) {
@@ -567,9 +563,9 @@ method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
        * subtract({ x: 100, y: 25 }); // 75
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'-': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '-': (data: any) => {
         if (!data) return 0;
         if (typeof data === 'string') return -data;
         if (typeof data === 'number') return -data;
@@ -617,9 +613,9 @@ method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
        * divide({ x: 100, y: 4 }); // 25
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'/': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '/': (data: any) => {
         if (data.length === 0)
           throw new Error('Division requires at least one operand');
         if (data.length === 1) {
@@ -659,9 +655,9 @@ method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
        * modulo({ x: 23, y: 7 }); // 2
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'%': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '%': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('Modulo requires exactly two operands');
         if (data[0] && typeof data[0] === 'object')
@@ -691,9 +687,9 @@ method: (fn: any, context: any, above: any[], engine: LogicEngine) => {
        * findMax({ values: [15, 22, 8, 30, 12] }); // 30
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-max: (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      max: (data: any) => {
         if (!Array.isArray(data) || data.length === 0)
           throw new Error('max requires a non-empty array');
         if (typeof data[0] !== 'number')
@@ -727,9 +723,9 @@ max: (data: any) => {
        * findMin({ values: [15, 22, 8, 30, 12] }); // 8
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-min: (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      min: (data: any) => {
         if (!Array.isArray(data) || data.length === 0)
           throw new Error('min requires a non-empty array');
         if (typeof data[0] !== 'number')
@@ -768,9 +764,9 @@ min: (data: any) => {
        * isGreater({ x: 15, y: 10 }); // true
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'>': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '>': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('> requires exactly two operands');
         return data[0] > data[1];
@@ -799,9 +795,9 @@ min: (data: any) => {
        * isGreaterOrEqual({ x: 5, y: 10 }); // false
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'>=': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '>=': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('>= requires exactly two operands');
         return data[0] >= data[1];
@@ -830,9 +826,9 @@ min: (data: any) => {
        * isLess({ x: 5, y: 10 }); // true
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'<': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '<': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('< requires exactly two operands');
         return data[0] < data[1];
@@ -861,9 +857,9 @@ min: (data: any) => {
        * isLessOrEqual({ x: 15, y: 10 }); // false
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'<=': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '<=': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('<= requires exactly two operands');
         return data[0] <= data[1];
@@ -892,9 +888,9 @@ min: (data: any) => {
        * isEqual({ x: 10, y: 20 }); // false
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'==': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '==': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('== requires exactly two operands');
         return data[0] === data[1];
@@ -923,9 +919,9 @@ min: (data: any) => {
        * isStrictEqual({ x: 10, y: 10 }); // true
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'===': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '===': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('=== requires exactly two operands');
         return data[0] === data[1];
@@ -954,9 +950,9 @@ min: (data: any) => {
        * isNotEqual({ x: 5, y: '5' }); // false
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'!=': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '!=': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('!= requires exactly two operands');
         return data[0] !== data[1];
@@ -985,9 +981,9 @@ min: (data: any) => {
        * isStrictNotEqual({ x: 10, y: 10 }); // false
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'!==': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '!==': (data: any) => {
         if (!Array.isArray(data) || data.length !== 2)
           throw new Error('!== requires exactly two operands');
         return data[0] !== data[1];
@@ -1015,9 +1011,9 @@ min: (data: any) => {
        * greet({ name: 'Alice' }); // 'Hello, Alice!'
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-cat: (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      cat: (data: any) => {
         if (!Array.isArray(data)) return String(data);
         return data
           .map((item) => {
@@ -1054,9 +1050,9 @@ cat: (data: any) => {
        * getSubstring({ str: 'Programming', start: 3, len: 4 }); // 'gram'
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-substr: (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      substr: (data: any) => {
         if (!Array.isArray(data) || data.length < 2)
           throw new Error('substr requires [string, start, length?]');
         const [str, start, length] = data;
@@ -1092,9 +1088,9 @@ substr: (data: any) => {
        * getLength({ value: [1, 2, 3, 4, 5] }); // 5
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-length: (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      length: (data: any) => {
         if (!data) throw new Error('length requires a value');
         const parsed = data;
         if (typeof parsed === 'string' || Array.isArray(parsed))
@@ -1221,9 +1217,9 @@ length: (data: any) => {
        * checkAdult({ age: 25 }); // 'adult'
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'?:': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '?:': (data: any) => {
         if (!Array.isArray(data) || data.length < 2)
           throw new Error(
             '?: requires [condition, true_result, false_result?]',
@@ -1383,9 +1379,9 @@ length: (data: any) => {
        * isFalsy({ value: 'hello' }); // false
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-not: (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      not: (data: any) => {
         return !data;
       },
 
@@ -1409,9 +1405,9 @@ not: (data: any) => {
        * invert({ flag: false }); // true
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'!': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '!': (data: any) => {
         return !data;
       },
 
@@ -1437,9 +1433,9 @@ not: (data: any) => {
        * toBoolean({ value: null }); // false
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'!!': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '!!': (data: any) => {
         return !!data;
       },
 
@@ -1468,9 +1464,9 @@ not: (data: any) => {
        * withDefault({ value: 'provided' }); // 'provided'
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'??': (data: any) => {
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '??': (data: any) => {
         if (!Array.isArray(data) || data.length < 2)
           throw new Error('?? requires [value, default]');
         return data[0] !== null && data[0] !== undefined ? data[0] : data[1];
@@ -1671,9 +1667,9 @@ not: (data: any) => {
    * engine.truthy({ a: 1 }); // { a: 1 } (non-empty object)
    * ```
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-truthy(value: any): any {
+
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  truthy(value: any): any {
     if (!value) return value;
     if (Array.isArray(value)) return value.length > 0;
     if (typeof value === 'object') {
@@ -1710,7 +1706,7 @@ truthy(value: any): any {
     above: any[],
     func: string,
     length: number,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   ): any {
     const data = logic[func];
 
@@ -1789,8 +1785,7 @@ truthy(value: any): any {
    */
   addMethod(
     name: string,
-    method:
-      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    method: // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       | ((args: any, context: any, above: any[], engine: LogicEngine) => any)
       | MethodDefinition,
     annotations?: { deterministic?: boolean; optimizeUnary?: boolean },
@@ -1803,10 +1798,10 @@ truthy(value: any): any {
         lazy:
           // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           typeof (method as any).traverse !== 'undefined'
-            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-            ? !(method as any).traverse
-            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-            : (method as any).lazy,
+            ? // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+              !(method as any).traverse
+            : // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+              (method as any).lazy,
       };
     }
 
@@ -1900,9 +1895,9 @@ truthy(value: any): any {
    * ); // 'up!'
    * ```
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-run<T = unknown, TVars = any>(
+
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  run<T = unknown, TVars = any>(
     logic: LogicExpr<TVars>,
     data: TVars = {} as TVars,
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
@@ -1987,9 +1982,9 @@ run<T = unknown, TVars = any>(
    * isValidAge({ age: 200 }); // false
    * ```
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-build<TVars = any, TResult = unknown>(
+
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  build<TVars = any, TResult = unknown>(
     logic: LogicExpr<TVars>,
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     options: { top?: boolean; above?: any[] } = {},

@@ -134,11 +134,11 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
       }
     }
   }, [
-    layerStore, 
-    editorStore, 
-    initialLayers, 
-    layerStoreInitialized, 
-    createNew
+    layerStore,
+    editorStore,
+    initialLayers,
+    layerStoreInitialized,
+    createNew,
   ]);
 
   // Effect 3: Handle onChange callback when pages change
@@ -225,7 +225,8 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
   const handlePanelClickById = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
       const panelIndex = Number.parseInt(
-        e.currentTarget.dataset.panelIndex || '0', 10
+        e.currentTarget.dataset.panelIndex || '0',
+        10,
       );
       setSelectedPanel(mainPanels[panelIndex]);
     },

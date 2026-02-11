@@ -962,7 +962,7 @@ function MapRoute({
 
   // Add source and layer on mount
   // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-    useEffect(() => {
+  useEffect(() => {
     if (!isLoaded || !map) return;
 
     map.addSource(sourceId, {
@@ -1116,7 +1116,7 @@ function MapClusterLayer<
 
   // Add source and layers on mount
   // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-    useEffect(() => {
+  useEffect(() => {
     if (!isLoaded || !map) return;
 
     // Add clustered GeoJSON source

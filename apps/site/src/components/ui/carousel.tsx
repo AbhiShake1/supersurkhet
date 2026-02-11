@@ -139,7 +139,7 @@ const CarouselControl = ({
 }: CarouselControlProps) => {
   return (
     // biome-ignore lint/a11y/useButtonType: lint debt cleanup
-<button
+    <button
       className={`w-10 h-10 flex items-center mx-2 justify-center bg-neutral-200 dark:bg-neutral-800 border-3 border-transparent rounded-full focus:border-[#6D64F7] focus:outline-none hover:-translate-y-0.5 active:translate-y-0.5 transition duration-200 ${
         type === 'previous' ? 'rotate-180' : ''
       }`}
@@ -209,7 +209,7 @@ export function Carousel({ slides: originalSlides }: CarouselProps) {
 
   return (
     // biome-ignore lint/a11y/useAriaPropsSupportedByRole: lint debt cleanup
-<div
+    <div
       className="relative w-full h-[40vh] max-h-[400px] mx-auto touch-pan-y"
       aria-labelledby={`carousel-heading-${id}`}
     >

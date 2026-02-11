@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 
 const GithubDark = (props: SVGProps<SVGSVGElement>) => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg {...props} viewBox="0 0 1024 1024" fill="none">
+  <svg {...props} viewBox="0 0 1024 1024" fill="none">
     <path
       fillRule="evenodd"
       clipRule="evenodd"

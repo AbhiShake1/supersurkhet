@@ -33,7 +33,7 @@ function IconComponent({ size, ...props }: PanelBottomProps) {
 
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<motion.svg
+    <motion.svg
       xmlns="http://www.w3.org/2000/svg"
       width={size}
       height={size}

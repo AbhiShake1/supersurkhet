@@ -34,8 +34,9 @@ export async function encrypt<
 export async function decrypt<
   T,
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  TSchema extends z.ZodObject<any> | z.ZodEffects<any> =
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  TSchema extends
+    | z.ZodObject<any>
+    | z.ZodEffects<any> = // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     | z.ZodObject<any>
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     | z.ZodEffects<any>,

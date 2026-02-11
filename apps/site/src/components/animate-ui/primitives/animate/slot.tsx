@@ -18,7 +18,7 @@ type WithAsChild<Base extends object> =
 type SlotProps<T extends HTMLElement = HTMLElement> = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    children?: any;
+  children?: any;
 } & DOMMotionProps<T>;
 
 function mergeRefs<T>(

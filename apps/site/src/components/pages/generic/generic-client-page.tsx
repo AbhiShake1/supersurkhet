@@ -238,8 +238,10 @@ export default function GenericClientPage({
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
                   <Star
-                    key={`business-rating-star-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-i}`}
+                    key={`business-rating-star-${
+                      // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                      i
+                    }`}
                     className={`w-5 h-5 ${
                       i < Math.floor(businessInfo.rating)
                         ? 'fill-yellow-400 text-yellow-400'
@@ -328,7 +330,7 @@ i}`}
                     <ul className="space-y-3">
                       {service.features.map((feature, idx) => (
                         // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<li key={idx} className="flex items-start">
+                        <li key={idx} className="flex items-start">
                           <CheckCircle className="w-5 h-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                           <span>{feature}</span>
                         </li>

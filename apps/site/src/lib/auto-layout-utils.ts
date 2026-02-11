@@ -22,7 +22,7 @@ export const getLayoutedElements = (
   nodes.forEach((node) => {
     // Special handling for different node types
     // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
-        let width, height;
+    let width, height;
 
     if (node.type === 'condition') {
       width = conditionNodeWidth;
@@ -52,7 +52,7 @@ export const getLayoutedElements = (
 
     // Special handling for different node types
     // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
-        let width, height;
+    let width, height;
 
     if (node.type === 'condition') {
       width = conditionNodeWidth;

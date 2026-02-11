@@ -341,7 +341,7 @@ export const Home = () => {
               <ScrollArea className="flex-grow h-screen pb-36">
                 {contactList.map((contact, index) => (
                   // biome-ignore lint/a11y/useButtonType: lint debt cleanup
-<button
+                  <button
                     // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                     key={index}
                     onClick={() => setCurrentChat(contact)}

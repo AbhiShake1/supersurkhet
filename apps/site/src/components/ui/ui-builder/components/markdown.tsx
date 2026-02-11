@@ -63,7 +63,7 @@ export function Markdown({ children }: MarkdownProps) {
           return (
             <CodeBlock
               key={Math.random()}
-              language={(match?.[1]) || ''}
+              language={match?.[1] || ''}
               value={String(children).replace(/\n$/, '')}
               {...props}
             />

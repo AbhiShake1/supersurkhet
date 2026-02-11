@@ -137,8 +137,8 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({
 
       {boundingRect && (
         // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-// biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-<div
+        // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
+        <div
           onClick={handleClick}
           onMouseDown={handlePointerEvent}
           onMouseUp={handlePointerEvent}
@@ -221,7 +221,7 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
 
   // Get dragging context to respond to ResizableWrapper changes
   // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-    const { dragging } = useContext(DragHandleContext);
+  const { dragging } = useContext(DragHandleContext);
 
   // Get iframe context if we're running inside an AutoFrame
   const frameContext = useFrame();
@@ -462,7 +462,7 @@ export const MeasureRange: React.FC<MeasureRangeProps> = ({
 
       // Clean up all scroll listeners
       // biome-ignore lint/suspicious/useIterableCallbackReturn: lint debt cleanup
-            scrollListeners.forEach((cleanup) => cleanup());
+      scrollListeners.forEach((cleanup) => cleanup());
 
       // Clean up mutation observer
       if (mutationObserver) {

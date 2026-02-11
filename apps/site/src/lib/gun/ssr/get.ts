@@ -36,7 +36,7 @@ export function attachSouls(value: any, currentPath: string): any {
   // CASE: OBJECT
   // ------------------------------------------------------------
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-        const result: Record<string, any> = { '#': currentPath };
+  const result: Record<string, any> = { '#': currentPath };
 
   for (const [key, val] of Object.entries(value)) {
     if (typeof val === 'object' && val !== null) {

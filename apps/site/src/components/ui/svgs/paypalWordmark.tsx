@@ -2,8 +2,8 @@ import type { SVGProps } from 'react';
 
 const PaypalWordmark = (props: SVGProps<SVGSVGElement>) => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-// biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
-<svg {...props} id="Layer_1" viewBox="0 0 404.65 98.18">
+  // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
+  <svg {...props} id="Layer_1" viewBox="0 0 404.65 98.18">
     <g>
       <path
         d="M311.63,21.96h-22.25c-1.52,0-2.82,1.11-3.05,2.61l-9,57.05c-.18,1.13.69,2.14,1.83,2.14h11.42c1.06,0,1.97-.77,2.14-1.83l2.55-16.17c.24-1.5,1.53-2.61,3.05-2.61h7.04c14.66,0,23.11-7.09,25.32-21.15.99-6.15.04-10.98-2.84-14.36-3.16-3.72-8.77-5.68-16.22-5.68ZM314.2,42.79c-1.22,7.99-7.32,7.99-13.22,7.99h-3.36l2.35-14.91c.14-.9.92-1.57,1.83-1.57h1.54c4.02,0,7.81,0,9.77,2.29,1.17,1.37,1.52,3.4,1.08,6.2Z"

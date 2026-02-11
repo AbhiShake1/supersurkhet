@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 
 const Vue = (props: SVGProps<SVGSVGElement>) => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg {...props} viewBox="0 0 256 221" preserveAspectRatio="xMidYMid">
+  <svg {...props} viewBox="0 0 256 221" preserveAspectRatio="xMidYMid">
     <path
       d="M204.8 0H256L128 220.8 0 0h97.92L128 51.2 157.44 0h47.36Z"
       fill="#41B883"

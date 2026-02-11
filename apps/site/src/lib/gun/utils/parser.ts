@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import type { SchemaKeys } from '..';
 import type { appSchema } from '@/lib/schema';
-import { GUN_PREFIX } from "../utils/mergeKeys";
+import { GUN_PREFIX } from '../utils/mergeKeys';
 import _ from 'lodash';
 
 export type ParseOptions = {
@@ -117,7 +117,7 @@ async function transformBySchema(
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   value: any,
   schema: z.ZodTypeAny,
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): Promise<any> {
   const kind = schema._def.typeName;
 

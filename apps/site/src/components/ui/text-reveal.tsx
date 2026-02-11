@@ -29,8 +29,10 @@ export const TextReveal = ({
     <div>
       {segments.map((c, index) => (
         <motion.span
-          key={`${c}-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-index}`}
+          key={`${c}-${
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+            index
+          }`}
           initial={{
             opacity: 0,
             y: from === 'bottom' ? '50%' : '-50%',

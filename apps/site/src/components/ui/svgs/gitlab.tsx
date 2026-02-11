@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 
 const Gitlab = (props: SVGProps<SVGSVGElement>) => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg
+  <svg
     {...props}
     viewBox="0 0 32 32"
     fill="none"

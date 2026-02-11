@@ -220,7 +220,7 @@ const Resizer = ({
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-<div
+    <div
       data-testid="resizer"
       onMouseDown={handleMouseDown}
       onTouchStart={handleTouchStart}

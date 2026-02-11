@@ -23,7 +23,7 @@ export function resolveContextualMentions(
 
       // Use a safe navigation function to access nested properties
       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-            let result: any = contextData;
+      let result: any = contextData;
       for (const part of parts) {
         // Check if result is null or undefined before accessing properties
         if (result == null) {

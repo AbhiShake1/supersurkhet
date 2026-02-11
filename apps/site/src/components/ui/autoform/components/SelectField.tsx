@@ -16,7 +16,7 @@ const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
   const queryResults = sources.map((source) => {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
-        const { data = [], ...rest } = useGet(
+    const { data = [], ...rest } = useGet(
       {
         key: source.table || 'business',
         queryOptions: {
@@ -56,7 +56,7 @@ const _SelectField: React.FC<
   AutoFormFieldProps & {
     useGet: UseGet;
   }
-// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 > = ({ field, inputProps, error, id, value, path, useGet }) => {
   // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;

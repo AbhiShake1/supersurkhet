@@ -67,7 +67,7 @@ export function HistoryProvider({
         present: previous,
         future: [currentHistory.present, ...currentHistory.future].filter(
           Boolean,
-        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         ) as any[],
       };
 
@@ -86,7 +86,7 @@ export function HistoryProvider({
       return {
         past: [...currentHistory.past, currentHistory.present].filter(
           Boolean,
-        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         ) as any[],
         present: next,
         future: newFuture,

@@ -768,8 +768,14 @@ export function LayoutCanvas({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-  }, [selectedElementId, deleteElement, duplicateElement, rotateElement, toggleLockElement]);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [
+    selectedElementId,
+    deleteElement,
+    duplicateElement,
+    rotateElement,
+    toggleLockElement,
+  ]);
 
   const selectedElement = selectedElementId
     ? floor.elements.find((element) => element.id === selectedElementId)
@@ -801,8 +807,8 @@ export function LayoutCanvas({
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-// biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-<div
+    // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+    <div
       ref={containerRef}
       className={cn(
         'relative flex-1 overflow-hidden border',
@@ -860,8 +866,10 @@ export function LayoutCanvas({
           <div className="absolute inset-0">
             {Array.from({ length: Math.ceil(floor.width / 50) }).map((_, i) => (
               <div
-                key={`v-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-i}`}
+                key={`v-${
+                  // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                  i
+                }`}
                 className={cn(
                   'absolute top-0 bottom-0 border-r',
                   darkMode ? 'border-gray-700' : 'border-gray-200',
@@ -872,8 +880,10 @@ i}`}
             {Array.from({ length: Math.ceil(floor.height / 50) }).map(
               (_, i) => (
                 <div
-                  key={`h-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-i}`}
+                  key={`h-${
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                    i
+                  }`}
                   className={cn(
                     'absolute left-0 right-0 border-b',
                     darkMode ? 'border-gray-700' : 'border-gray-200',
@@ -887,8 +897,8 @@ i}`}
           {/* Elements */}
           {floor.elements.map((element) => (
             // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-// biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-<div
+            // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+            <div
               key={element.id}
               className={cn(
                 'absolute transition-shadow',

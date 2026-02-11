@@ -12,11 +12,7 @@ import { businessSchema, featureSchema } from '@/lib/schema';
 import { cn } from '@/lib/utils';
 import type { SchemaKeys } from '@gta/react-hooks';
 import { Link } from '@tanstack/react-router';
-import {
-  Building,
-  CheckCircle,
-  Store,
-} from 'lucide-react';
+import { Building, CheckCircle, Store } from 'lucide-react';
 import { useLayoutEffect, useMemo } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';

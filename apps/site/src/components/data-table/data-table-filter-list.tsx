@@ -220,7 +220,7 @@ export function DataTableFilterList<TData>({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [filters, onFilterRemove]);
 
   const onTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
@@ -590,7 +590,7 @@ function onFilterInputRender<TData>({
   if (filter.operator === 'isEmpty' || filter.operator === 'isNotEmpty') {
     return (
       // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
-<div
+      <div
         id={inputId}
         role="status"
         aria-label={`${columnMeta?.label} filter is ${

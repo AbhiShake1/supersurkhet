@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 export function HugIcon({ className }: { className?: string }) {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className={cn('!size-6', className)} fill="none" viewBox="0 0 24 24">
+    <svg className={cn('!size-6', className)} fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -17,7 +17,7 @@ export function HugIcon({ className }: { className?: string }) {
 export function FillIcon({ className }: { className?: string }) {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className={cn('!size-6', className)} fill="none" viewBox="0 0 24 24">
+    <svg className={cn('!size-6', className)} fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -31,7 +31,7 @@ export function FillIcon({ className }: { className?: string }) {
 export function FixedIcon({ className }: { className?: string }) {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className={cn('!size-6', className)} fill="none" viewBox="0 0 24 24">
+    <svg className={cn('!size-6', className)} fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -45,7 +45,7 @@ export function FixedIcon({ className }: { className?: string }) {
 export function PaddingIcon() {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className="!size-6" fill="none" viewBox="0 0 24 24">
+    <svg className="!size-6" fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -63,7 +63,7 @@ export function PaddingSideIcon({
 }) {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg
+    <svg
       className={cn(
         '!size-6',
         side === 'left' && 'rotate-0',
@@ -87,7 +87,7 @@ export function PaddingSideIcon({
 export function PaddingAxisIcon({ axis }: { axis: 'x' | 'y' }) {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg
+    <svg
       className={cn(
         '!size-6',
         axis === 'x' && 'rotate-0',
@@ -109,7 +109,7 @@ export function PaddingAxisIcon({ axis }: { axis: 'x' | 'y' }) {
 export function OpacityIcon() {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className="!size-6" fill="none" viewBox="0 0 24 24">
+    <svg className="!size-6" fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -123,7 +123,7 @@ export function OpacityIcon() {
 export function CornerRadiusIcon() {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className="!size-6" fill="none" viewBox="0 0 24 24">
+    <svg className="!size-6" fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -137,7 +137,7 @@ export function CornerRadiusIcon() {
 export function BorderWidthIcon() {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className="!size-6" fill="none" viewBox="0 0 24 24">
+    <svg className="!size-6" fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -151,7 +151,7 @@ export function BorderWidthIcon() {
 export function ShadowIcon() {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className="!size-6" fill="none" viewBox="0 0 24 24">
+    <svg className="!size-6" fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         d="M16.204 6.01A2 2 0 0 1 18 8v8l-.01.204a2 2 0 0 1-1.786 1.785L16 18H8l-.204-.01a2 2 0 0 1-1.785-1.786L6 16V8a2 2 0 0 1 1.796-1.99L8 6h8zM8 7a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"
@@ -168,7 +168,7 @@ export function ShadowIcon() {
 export function LineHeightIcon() {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className="!size-6" fill="none" viewBox="0 0 24 24">
+    <svg className="!size-6" fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"
@@ -182,7 +182,7 @@ export function LineHeightIcon() {
 export function LetterSpacingIcon() {
   return (
     // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg className="!size-6" fill="none" viewBox="0 0 24 24">
+    <svg className="!size-6" fill="none" viewBox="0 0 24 24">
       <path
         fill="currentColor"
         fillRule="evenodd"

@@ -82,7 +82,7 @@ const SidebarProvider = React.forwardRef<
 
       // This sets the cookie to keep the sidebar state.
       // biome-ignore lint/suspicious/noDocumentCookie: lint debt cleanup
-            document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+      document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
     };
 
     // Helper to toggle the sidebar.
@@ -106,7 +106,7 @@ const SidebarProvider = React.forwardRef<
 
       window.addEventListener('keydown', handleKeyDown);
       return () => window.removeEventListener('keydown', handleKeyDown);
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+      // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
     }, [toggleSidebar]);
 
     // We add a state so that we can do data-state="expanded" or "collapsed".

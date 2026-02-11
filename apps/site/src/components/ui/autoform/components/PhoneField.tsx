@@ -64,7 +64,7 @@ export function PhoneField({
       const formatted = formatPhoneNumber(field.value.toString());
       setDisplayValue(formatted);
     }
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [field.value, formatPhoneNumber]);
 
   return (

@@ -133,7 +133,7 @@ const DataList = React.forwardRef<HTMLDivElement, DataListProps>(
           <>
             {[...Array(8)].map((_, index) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<Skeleton key={index} className="h-80 w-full rounded-xl" />
+              <Skeleton key={index} className="h-80 w-full rounded-xl" />
             ))}
           </>
         );
@@ -142,7 +142,7 @@ const DataList = React.forwardRef<HTMLDivElement, DataListProps>(
         <div ref={ref} className={cn(className)} {...props}>
           {[...Array(8)].map((_, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<Skeleton key={index} className="h-80 w-full rounded-xl" />
+            <Skeleton key={index} className="h-80 w-full rounded-xl" />
           ))}
         </div>
       );

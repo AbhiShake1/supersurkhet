@@ -49,7 +49,7 @@ export function BusinessList(props: BusinessListProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {Array.from({ length: 10 }).map((_, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<Skeleton key={i} className="w-full h-32" />
+              <Skeleton key={i} className="w-full h-32" />
             ))}
           </div>
         ) : filteredBusinesses.length === 0 ? (

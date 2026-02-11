@@ -14,7 +14,7 @@ import AutoFormObject from './object';
 function isZodArray(
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   item: z.ZodArray<any> | z.ZodDefault<any>,
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): item is z.ZodArray<any> {
   return item instanceof z.ZodArray;
 }
@@ -22,7 +22,7 @@ function isZodArray(
 function isZodDefault(
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   item: z.ZodArray<any> | z.ZodDefault<any>,
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): item is z.ZodDefault<any> {
   return item instanceof z.ZodDefault;
 }

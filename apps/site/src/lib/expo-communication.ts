@@ -13,7 +13,7 @@ export const isExpoContext = (): boolean => {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  const sendMessageToExpo = (message: any): void => {
+export const sendMessageToExpo = (message: any): void => {
   try {
     if (isExpoContext()) {
       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
@@ -31,7 +31,7 @@ export  const sendMessageToExpo = (message: any): void => {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  const sendDataMatrixActionToExpo = (action: any): void => {
+export const sendDataMatrixActionToExpo = (action: any): void => {
   sendMessageToExpo({
     type: 'DATAMATRIX_ACTION',
     payload: action,

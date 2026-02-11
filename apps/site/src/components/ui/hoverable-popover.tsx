@@ -13,7 +13,7 @@ const HoverablePopoverContext = React.createContext<{
 const HoverablePopover = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Root>
-// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 >(({ children, ...props }, _ref) => {
   const [open, setOpen] = React.useState(false);
 

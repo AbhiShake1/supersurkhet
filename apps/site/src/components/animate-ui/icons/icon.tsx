@@ -373,7 +373,16 @@ function AnimateIcon({
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [localAnimate, completeOnStop, initialOnAnimateEnd, loop, loopDelay, persistOnAnimateEnd, startAnim, status]);
+  }, [
+    localAnimate,
+    completeOnStop,
+    initialOnAnimateEnd,
+    loop,
+    loopDelay,
+    persistOnAnimateEnd,
+    startAnim,
+    status,
+  ]);
 
   const childProps = (
     React.isValidElement(children) ? (children as React.ReactElement).props : {}

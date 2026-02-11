@@ -158,8 +158,7 @@
           var msg = item.msg;
           if (
             !msg['@'] &&
-            (!msg._.via ||
-              Math.random() < msg.ok?.['@'] / msg.ok?.['/'])
+            (!msg._.via || Math.random() < msg.ok?.['@'] / msg.ok?.['/'])
           ) {
             acks.push(msg['#']);
           }

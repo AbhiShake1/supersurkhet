@@ -83,7 +83,7 @@ function Field({
 }: React.ComponentProps<'div'> & VariantProps<typeof fieldVariants>) {
   return (
     // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
-<div
+    <div
       role="group"
       data-slot="field"
       data-orientation={orientation}

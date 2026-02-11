@@ -50,7 +50,7 @@ export default function MultiStepForm({
     handleSubmit,
     formState: { errors },
     reset,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   } = useForm<any>({
     resolver: zodResolver(currentStepSchema),
     defaultValues: formData,
@@ -61,7 +61,7 @@ export default function MultiStepForm({
 
   // Handle next step
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const handleNextStep = (data: any) => {
+  const handleNextStep = (data: any) => {
     const updatedData = { ...formData, ...data };
     setFormData(updatedData);
 

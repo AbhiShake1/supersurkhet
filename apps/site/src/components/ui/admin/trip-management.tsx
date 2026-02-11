@@ -55,12 +55,12 @@ export function TripManagement({ slug }: { slug: string }) {
 
   // Handle opening the return dialog
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const handleMarkReturn = (trip: any) => {
+  const handleMarkReturn = (trip: any) => {
     setCurrentTrip(trip);
 
     // Pre-populate with products that were sent
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-        const initialReturnedProducts = trip.products.map((p: any) => ({
+    const initialReturnedProducts = trip.products.map((p: any) => ({
       productId: p.productId,
       quantity: 0, // Start with 0 returned
     }));

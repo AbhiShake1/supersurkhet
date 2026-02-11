@@ -65,7 +65,7 @@ export const Header = ({ children }: React.PropsWithChildren) => {
                 <ul className="space-y-6 text-base">
                   {menuItems.map((item, index) => (
                     // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<li key={index}>
+                    <li key={index}>
                       <Link
                         to={item.href}
                         className="text-muted-foreground hover:text-accent-foreground block duration-150"
@@ -98,7 +98,7 @@ export const HeroHeader = () => {
         <ul className="flex gap-8 text-sm">
           {menuItems.map((item, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<li key={index}>
+            <li key={index}>
               <Link
                 to={item.href}
                 className="text-muted-foreground hover:text-accent-foreground block duration-150"

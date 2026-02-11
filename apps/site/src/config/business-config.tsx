@@ -117,7 +117,8 @@ export function useStockImportsConfig({
       );
   }
 
-  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField);
+  const [unitField, setUnitField] =
+    useState<z.ZodType<any>>(getDefaultUnitField);
 
   function getQuantityDescription() {
     return 'Quantity';
@@ -199,43 +200,45 @@ export function useStockImportsConfig({
                                     onlyAllow,
                                     ...(configDisabled
                                       ? {
-                                        configDisabled,
-                                        onValueChange(value, path, form) {
-                                          const [, productQuantityPerUnit] =
-                                            product.unit?.split(':') ?? [];
-                                          const [, quantityPerUnit] =
-                                            value?.split(':') ?? [];
-                                          const [itemsKey, index] = path;
+                                          configDisabled,
+                                          onValueChange(value, path, form) {
+                                            const [, productQuantityPerUnit] =
+                                              product.unit?.split(':') ?? [];
+                                            const [, quantityPerUnit] =
+                                              value?.split(':') ?? [];
+                                            const [itemsKey, index] = path;
 
-                                          if (quantityPerUnit) {
-                                            if (product.costPrice)
+                                            if (quantityPerUnit) {
+                                              if (product.costPrice)
+                                                form.setValue(
+                                                  [
+                                                    itemsKey,
+                                                    index,
+                                                    'unitPrice',
+                                                  ].join('.'),
+                                                  product.costPrice,
+                                                );
+                                            } else if (
+                                              productQuantityPerUnit &&
+                                              product.costPrice &&
+                                              !Number.isNaN(
+                                                Number(productQuantityPerUnit),
+                                              )
+                                            ) {
                                               form.setValue(
                                                 [
                                                   itemsKey,
                                                   index,
                                                   'unitPrice',
                                                 ].join('.'),
-                                                product.costPrice,
+                                                product.costPrice /
+                                                  Number(
+                                                    productQuantityPerUnit,
+                                                  ),
                                               );
-                                          } else if (
-                                            productQuantityPerUnit &&
-                                            product.costPrice &&
-                                            !Number.isNaN(
-                                              Number(productQuantityPerUnit),
-                                            )
-                                          ) {
-                                            form.setValue(
-                                              [
-                                                itemsKey,
-                                                index,
-                                                'unitPrice',
-                                              ].join('.'),
-                                              product.costPrice /
-                                                Number(productQuantityPerUnit),
-                                            );
-                                          }
-                                        },
-                                      }
+                                            }
+                                          },
+                                        }
                                       : {}),
                                   },
                                 }),
@@ -532,7 +535,8 @@ export function useSalesConfig({
       );
   }
 
-  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField);
+  const [unitField, setUnitField] =
+    useState<z.ZodType<any>>(getDefaultUnitField);
 
   return {
     schema: 'sale',
@@ -634,7 +638,7 @@ export function useSalesConfig({
                   fieldConfig({
                     fieldType: 'number',
                     customData: {
-                      onValueChange: ((value: string, path: string[], form) => {
+                      onValueChange: (value: string, path: string[], form) => {
                         refreshPaidAmount(form);
                         const items = form.getValues('items');
                         const [itemsKey, index] = path;
@@ -646,7 +650,7 @@ export function useSalesConfig({
                         );
 
                         return value;
-                      }),
+                      },
                     },
                   }),
                 ),
@@ -799,7 +803,8 @@ export function useOrderConfig({
       );
   }
 
-  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField);
+  const [unitField, setUnitField] =
+    useState<z.ZodType<any>>(getDefaultUnitField);
 
   return {
     schema: 'order',
@@ -1227,20 +1232,20 @@ export function useInvoicesConfig({
       issuedAt: (date) =>
         date
           ? new Date(date).toLocaleString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            })
           : '-',
       dueDate: (date) =>
         date
           ? new Date(date).toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+            })
           : '-',
       items: (items) => {
         const mapped = items?.map((item: SalesItem) => ({
@@ -1294,9 +1299,11 @@ export function useTripConfig({
       );
   }
 
-  const [unitField, setUnitField] = useState<z.ZodType<any>>(getDefaultUnitField);
+  const [unitField, setUnitField] =
+    useState<z.ZodType<any>>(getDefaultUnitField);
 
-  const [returnedUnitField, setReturnedUnitField] = useState<z.ZodType<any>>(getDefaultUnitField);
+  const [returnedUnitField, setReturnedUnitField] =
+    useState<z.ZodType<any>>(getDefaultUnitField);
 
   const returnedProductsSchema = salesItemSchema
     .extend({
@@ -1342,33 +1349,39 @@ export function useTripConfig({
                             onlyAllow,
                             ...(configDisabled
                               ? {
-                                configDisabled,
-                                onValueChange(value, path, form) {
-                                  const [, productQuantityPerUnit] =
-                                    product.unit?.split(':') ?? [];
-                                  const [, quantityPerUnit] =
-                                    value?.split(':') ?? [];
-                                  const [itemsKey, index] = path;
+                                  configDisabled,
+                                  onValueChange(value, path, form) {
+                                    const [, productQuantityPerUnit] =
+                                      product.unit?.split(':') ?? [];
+                                    const [, quantityPerUnit] =
+                                      value?.split(':') ?? [];
+                                    const [itemsKey, index] = path;
 
-                                  if (quantityPerUnit) {
-                                    if (product.sellingPrice)
-                                      form.setValue(
-                                        [itemsKey, index, 'unitPrice'].join('.'),
-                                        product.sellingPrice,
-                                      );
-                                  } else if (
-                                    productQuantityPerUnit &&
-                                    product.sellingPrice &&
-                                    !Number.isNaN(Number(productQuantityPerUnit))
-                                  ) {
-                                    form.setValue(
-                                      [itemsKey, index, 'unitPrice'].join('.'),
-                                      product.sellingPrice /
+                                    if (quantityPerUnit) {
+                                      if (product.sellingPrice)
+                                        form.setValue(
+                                          [itemsKey, index, 'unitPrice'].join(
+                                            '.',
+                                          ),
+                                          product.sellingPrice,
+                                        );
+                                    } else if (
+                                      productQuantityPerUnit &&
+                                      product.sellingPrice &&
+                                      !Number.isNaN(
                                         Number(productQuantityPerUnit),
-                                    );
-                                  }
-                                },
-                              }
+                                      )
+                                    ) {
+                                      form.setValue(
+                                        [itemsKey, index, 'unitPrice'].join(
+                                          '.',
+                                        ),
+                                        product.sellingPrice /
+                                          Number(productQuantityPerUnit),
+                                      );
+                                    }
+                                  },
+                                }
                               : {}),
                           },
                         }),
@@ -1394,7 +1407,7 @@ export function useTripConfig({
           fieldConfig({
             fieldType: 'number',
             customData: {
-              onValueChange: ((value: string, path: string[], form) => {
+              onValueChange: (value: string, path: string[], form) => {
                 const items = form.getValues('returnedProducts');
                 const [itemsKey, index] = path;
                 calculateTotalAmountForItem(
@@ -1405,7 +1418,7 @@ export function useTripConfig({
                 );
 
                 return value;
-              }),
+              },
             },
           }),
         ),
@@ -1524,42 +1537,38 @@ export function useTripConfig({
                                 fieldType: 'unit',
                                 customData: {
                                   onlyAllow,
-                                  ...(configDisabled
-                                    ? {
-                                      configDisabled,
-                                      onValueChange(value, path, form) {
-                                        const [, productQuantityPerUnit] =
-                                          product.unit?.split(':') ?? [];
-                                        const [, quantityPerUnit] =
-                                          value?.split(':') ?? [];
-                                        const [itemsKey, index] = path;
+                                  configDisabled,
+                                  onValueChange(value, path, form) {
+                                    const [, productQuantityPerUnit] =
+                                      product.unit?.split(':') ?? [];
+                                    const [, quantityPerUnit] =
+                                      value?.split(':') ?? [];
+                                    const [itemsKey, index] = path;
 
-                                        if (quantityPerUnit) {
-                                          if (product.sellingPrice)
-                                            form.setValue(
-                                              [itemsKey, index, 'unitPrice'].join(
-                                                '.',
-                                              ),
-                                              product.sellingPrice,
-                                            );
-                                        } else if (
-                                          productQuantityPerUnit &&
-                                          product.sellingPrice &&
-                                          !Number.isNaN(
-                                            Number(productQuantityPerUnit),
-                                          )
-                                        ) {
-                                          form.setValue(
-                                            [itemsKey, index, 'unitPrice'].join(
-                                              '.',
-                                            ),
-                                            product.sellingPrice /
-                                              Number(productQuantityPerUnit),
-                                          );
-                                        }
-                                      },
+                                    if (quantityPerUnit) {
+                                      if (product.sellingPrice)
+                                        form.setValue(
+                                          [itemsKey, index, 'unitPrice'].join(
+                                            '.',
+                                          ),
+                                          product.sellingPrice,
+                                        );
+                                    } else if (
+                                      productQuantityPerUnit &&
+                                      product.sellingPrice &&
+                                      !Number.isNaN(
+                                        Number(productQuantityPerUnit),
+                                      )
+                                    ) {
+                                      form.setValue(
+                                        [itemsKey, index, 'unitPrice'].join(
+                                          '.',
+                                        ),
+                                        product.sellingPrice /
+                                          Number(productQuantityPerUnit),
+                                      );
                                     }
-                                    : {}),
+                                  },
                                 },
                               }),
                             ),
@@ -1713,7 +1722,7 @@ export function useTripConfig({
                         {row.original.products?.map((product) => {
                           return (
                             <div
-                              key={product._?.soul ?? ""}
+                              key={product._?.soul ?? ''}
                               className="grid grid-cols-3 gap-2 text-sm"
                             >
                               <div>{product?.title || 'Unknown Product'}</div>
@@ -1823,8 +1832,8 @@ export function useTripConfig({
                               (sum: number, item: any) =>
                                 sum +
                                 item.quantity *
-                                (productsBySoul.get(item.productId)
-                                  ?.sellingPrice || 0),
+                                  (productsBySoul.get(item.productId)
+                                    ?.sellingPrice || 0),
                               0,
                             );
 

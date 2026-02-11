@@ -404,7 +404,7 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
 
   return (
     // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
-<div
+    <div
       id="editor-panel-container"
       className={cn(
         'flex flex-col relative size-full bg-fixed bg-[radial-gradient(hsl(var(--border))_1px,hsl(var(--primary)/0.05)_1px)] [background-size:16px_16px] will-change-auto',

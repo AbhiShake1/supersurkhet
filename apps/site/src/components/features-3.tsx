@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 export default function Features() {
   return (
     // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
-<section
+    <section
       className="bg-zinc-50 py-16 md:py-32 dark:bg-transparent"
       id="features"
     >

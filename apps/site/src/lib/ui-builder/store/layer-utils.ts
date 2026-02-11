@@ -484,7 +484,7 @@ export const hasLayerReactNodeProps = (layer: ComponentLayer): boolean => {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  const isComponentLayer = (value: any): value is ComponentLayer => {
+export const isComponentLayer = (value: any): value is ComponentLayer => {
   return (
     value &&
     typeof value === 'object' &&

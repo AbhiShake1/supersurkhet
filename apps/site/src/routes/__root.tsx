@@ -71,8 +71,7 @@ async function getCurrentUser() {
   gun.user().auth(userLocal);
   const user = gun.user().recall({ sessionStorage: false }) as
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    | IGunUserInstance<any, any, any, any>
-    | undefined;
+    IGunUserInstance<any, any, any, any> | undefined;
   if (!user?.is) return null;
   return {
     pub: user.is.pub,

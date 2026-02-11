@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 function InputGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
-<div
+    <div
       data-slot="input-group"
       role="group"
       className={cn(
@@ -65,8 +65,8 @@ function InputGroupAddon({
 }: React.ComponentProps<'div'> & VariantProps<typeof inputGroupAddonVariants>) {
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-// biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
-<div
+    // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
+    <div
       role="group"
       data-slot="input-group-addon"
       data-align={align}

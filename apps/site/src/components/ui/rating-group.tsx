@@ -9,8 +9,7 @@ import { z } from 'zod';
 // Safe number helper
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 const safeNumber = (v: any, defaultValue: number) =>
-  Number.
-  isNaN(Number(v)) ? defaultValue : Number(v);
+  Number.isNaN(Number(v)) ? defaultValue : Number(v);
 
 //Schema
 export const RatingSchema = z.object({

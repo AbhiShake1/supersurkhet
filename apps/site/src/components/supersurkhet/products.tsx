@@ -111,7 +111,7 @@ const ProductList = React.forwardRef<HTMLDivElement, ProductListProps>(
         >
           {[...Array(8)].map((_, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<Skeleton key={index} className="h-80 w-full rounded-xl" />
+            <Skeleton key={index} className="h-80 w-full rounded-xl" />
           ))}
         </div>
       );

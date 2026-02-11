@@ -267,8 +267,7 @@ export function AuthForm({
 
   const handleGoogleClick = () => {
     // Detect Electron via UserAgent (set in main.ts)
-    const isDesktop =
-      navigator?.userAgent.includes('SuperSurkhetDesktop');
+    const isDesktop = navigator?.userAgent.includes('SuperSurkhetDesktop');
 
     if (isDesktop) {
       // Open in system browser

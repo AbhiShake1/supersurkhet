@@ -1,6 +1,4 @@
-import type {
-  ComponentRegistry,
-} from '@/components/ui/ui-builder/types';
+import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import z from 'zod';
 import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
 

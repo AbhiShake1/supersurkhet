@@ -142,7 +142,7 @@ export function PasswordInput({
       <ul className="space-y-1.5" aria-label="Password requirements">
         {strength.map((req, index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<li key={index} className="flex items-center gap-2">
+          <li key={index} className="flex items-center gap-2">
             {req.met ? (
               <CheckIcon
                 size={16}

@@ -133,8 +133,8 @@ export function ImageUploadItem({
 
       {!previewUrl ? (
         // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-// biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-<div
+        // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
+        <div
           onClick={handleThumbnailClick}
           onDragOver={handleDragOver}
           onDragEnter={handleDragEnter}

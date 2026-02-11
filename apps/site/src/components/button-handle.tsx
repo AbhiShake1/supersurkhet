@@ -63,7 +63,7 @@ export const ButtonHandle = ({
     <BaseHandle position={position} id={props.id} {...props} className="">
       {showButton && (
         // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-<div
+        <div
           ref={wrapperRef}
           onDrop={handleDrop}
           onDragOver={handleDragOver}

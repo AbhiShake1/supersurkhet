@@ -354,7 +354,7 @@ function KanbanColumn<K extends SchemaKeys>({
         {context.loading
           ? Array.from({ length: 3 }).map((_, i) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<Skeleton key={i} className="w-full h-12" />
+              <Skeleton key={i} className="w-full h-12" />
             ))
           : orders.map((order) => (
               <KanbanCard

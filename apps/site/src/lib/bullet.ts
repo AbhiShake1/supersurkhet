@@ -13,8 +13,8 @@ export type BulletChain<S extends GunSchema, TExt extends object> = IGunChain<
   TExt &
   (S extends Record<string, GunSchema>
     ? { [K in keyof S]: BulletChain<S[K], TExt> }
-    // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
-    : {});
+    : // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
+      {});
 
 // ✅ Extension-aware props
 export type BulletPropsDeep<
@@ -118,5 +118,5 @@ export default function createBullet<
 
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
-    return wrap(gun as any) as BulletRoot<TNode, TGunInstance, {}>;
+  return wrap(gun as any) as BulletRoot<TNode, TGunInstance, {}>;
 }

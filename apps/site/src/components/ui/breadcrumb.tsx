@@ -52,8 +52,8 @@ function BreadcrumbLink({
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {
   return (
     // biome-ignore lint/a11y/useFocusableInteractive: lint debt cleanup
-// biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
-<span
+    // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
+    <span
       data-slot="breadcrumb-page"
       role="link"
       aria-disabled="true"

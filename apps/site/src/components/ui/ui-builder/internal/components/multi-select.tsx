@@ -279,7 +279,7 @@ const MultipleSelector = React.forwardRef<
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('touchend', handleClickOutside);
       };
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+      // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
     }, [open, handleClickOutside]);
 
     useEffect(() => {
@@ -324,7 +324,13 @@ const MultipleSelector = React.forwardRef<
 
       void exec();
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus, onSearchSync]);
+    }, [
+      debouncedSearchTerm,
+      groupBy,
+      open,
+      triggerSearchOnFocus,
+      onSearchSync,
+    ]);
 
     useEffect(() => {
       /** async search */
@@ -633,15 +639,15 @@ const MultipleSelector = React.forwardRef<
                       className="h-full overflow-auto"
                     >
                       {dropdowns.map((option) => {
-                          return (
-                            <CommandGroupItem
-                              key={option.value}
-                              option={option}
-                              onSelect={handleCommandGroupItemSelect}
-                              onMouseDown={handleCommandGroupItemMouseDown}
-                            />
-                          );
-                        })}
+                        return (
+                          <CommandGroupItem
+                            key={option.value}
+                            option={option}
+                            onSelect={handleCommandGroupItemSelect}
+                            onMouseDown={handleCommandGroupItemMouseDown}
+                          />
+                        );
+                      })}
                     </CommandGroup>
                   ))}
                 </>

@@ -61,7 +61,7 @@ export type { LogicExpr };
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function createLogicFn<TVars = any, TResult = unknown>(
+export function createLogicFn<TVars = any, TResult = unknown>(
   logic: LogicExpr<TVars>,
 ): (data: TVars) => TResult {
   return logicEngine.build<TVars, TResult>(logic);
@@ -100,7 +100,7 @@ export  function createLogicFn<TVars = any, TResult = unknown>(
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function defineLogic<TVars = any, TResult = unknown>(
+export function defineLogic<TVars = any, TResult = unknown>(
   logic: LogicExpr<TVars>,
 ) {
   return {

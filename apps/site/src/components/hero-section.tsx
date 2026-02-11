@@ -35,7 +35,7 @@ const transitionVariants = {
 export default function HeroSection() {
   return (
     // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
-<section id="hero">
+    <section id="hero">
       <HeroHeader />
       <main className="overflow-hidden">
         <div

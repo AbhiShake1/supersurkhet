@@ -114,7 +114,7 @@ export const createTransformAwareCollisionDetection =
 
       // 3. Handle coordinate calculation differently for "at top" vs "mid-scroll"
       // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
-            let adjustedPointerCoordinates;
+      let adjustedPointerCoordinates;
 
       if (isAtTop) {
         // When at the very top, use simpler coordinate calculation
@@ -163,10 +163,8 @@ export const createTransformAwareCollisionDetection =
 
       // Validate adjusted coordinates are reasonable
       if (
-        Number.
-        isNaN(adjustedPointerCoordinates.x) ||
-        Number.
-        isNaN(adjustedPointerCoordinates.y)
+        Number.isNaN(adjustedPointerCoordinates.x) ||
+        Number.isNaN(adjustedPointerCoordinates.y)
       ) {
         console.warn('Invalid adjusted coordinates, falling back to original');
         // Use original coordinates as fallback

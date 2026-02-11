@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 
 const Gemini = (props: SVGProps<SVGSVGElement>) => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg {...props} viewBox="0 0 296 298" fill="none">
+  <svg {...props} viewBox="0 0 296 298" fill="none">
     {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
     <mask
       id="gemini__a"

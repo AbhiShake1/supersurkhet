@@ -7,7 +7,7 @@ import * as XLSX from 'xlsx';
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  async function parseCSVFile(file: File): Promise<any[]> {
+export async function parseCSVFile(file: File): Promise<any[]> {
   const text = await file.text();
   const parsed = csvParse(text);
   return parsed;
@@ -18,7 +18,7 @@ export  async function parseCSVFile(file: File): Promise<any[]> {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function parseExcelFile(file: File): Promise<any[]> {
+export function parseExcelFile(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -52,7 +52,7 @@ export  function parseExcelFile(file: File): Promise<any[]> {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function parseJSONFile(file: File): Promise<any[]> {
+export function parseJSONFile(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -85,7 +85,7 @@ export  function parseJSONFile(file: File): Promise<any[]> {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function validateDataAgainstSchema<T extends z.ZodObject<any>>(
+export function validateDataAgainstSchema<T extends z.ZodObject<any>>(
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   data: any[],
   schema: T,

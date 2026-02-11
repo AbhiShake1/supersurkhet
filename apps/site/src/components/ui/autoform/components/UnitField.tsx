@@ -66,7 +66,14 @@ export function UnitField({
 
     // Update the form field with the new value
     form.setValue(fieldName, value);
-  }, [selectedUnit, piecesPerUnit, fieldName, form, field.fieldConfig?.customData?.onValueChange, path]);
+  }, [
+    selectedUnit,
+    piecesPerUnit,
+    fieldName,
+    form,
+    field.fieldConfig?.customData?.onValueChange,
+    path,
+  ]);
 
   const handleUnitChange = (value: string) => {
     setSelectedUnit(value);

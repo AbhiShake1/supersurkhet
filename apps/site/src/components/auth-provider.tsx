@@ -75,7 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [linkAnonymousUser, refreshUser]);
 
   function refreshUser() {

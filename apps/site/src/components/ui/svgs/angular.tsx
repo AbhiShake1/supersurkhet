@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 
 const Angular = (props: SVGProps<SVGSVGElement>) => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg {...props} fill="none" viewBox="0 0 242 256">
+  <svg {...props} fill="none" viewBox="0 0 242 256">
     <g clipPath="url(#a)">
       {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <mask

@@ -125,8 +125,12 @@ export function PaymentMethodsChart({ data }: PaymentMethodsChartProps) {
               strokeWidth={5}
             >
               {data.map((_entry, index) => (
-                <React.Fragment key={`cell-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-index}`}>
+                <React.Fragment
+                  key={`cell-${
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                    index
+                  }`}
+                >
                   <text
                     x="50%"
                     y="50%"
@@ -165,7 +169,7 @@ index}`}>
                 : 0;
             return (
               // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<div key={index} className="flex items-center gap-2">
+              <div key={index} className="flex items-center gap-2">
                 <div
                   className="h-4 w-4 rounded-full"
                   style={{

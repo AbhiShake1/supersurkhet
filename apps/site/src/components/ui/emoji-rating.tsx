@@ -68,7 +68,7 @@ export function RatingInteraction({
 
           return (
             // biome-ignore lint/a11y/useButtonType: lint debt cleanup
-<button
+            <button
               key={value}
               onClick={() => handleClick(value)}
               onMouseEnter={() => setHoverRating(value)}

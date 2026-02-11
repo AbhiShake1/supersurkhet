@@ -37,7 +37,7 @@ const getStyles = (styleSheet?: CSSStyleSheet) => {
       return Array.from(styleSheet.cssRules)
         .map((rule) => rule.cssText)
         .join('');
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     } catch (e: any) {
       console.warn(
         'Access to stylesheet %s is denied. Ignoring…',

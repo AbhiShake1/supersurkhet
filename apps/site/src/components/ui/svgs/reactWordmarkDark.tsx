@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 
 const ReactWordmarkDark = (props: SVGProps<SVGSVGElement>) => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg {...props} viewBox="0 0 600 180.766722">
+  <svg {...props} viewBox="0 0 600 180.766722">
     <g fill="none" fillRule="evenodd">
       <g transform="translate(0, 0)" fillRule="nonzero">
         {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}

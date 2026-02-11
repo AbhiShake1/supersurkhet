@@ -144,9 +144,9 @@ export const CardItem = ({
 
   useEffect(() => {
     handleAnimations();
-  // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-    }, [handleAnimations]);
+    // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [handleAnimations]);
 
   const handleAnimations = () => {
     if (!ref.current) return;

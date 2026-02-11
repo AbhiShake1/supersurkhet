@@ -26,11 +26,9 @@ const GUN = Gun; //.scope(GUN_PREFIX)
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
   var p = new Promise((res, _rej) => {
-    this
-      .not(() => res([]))
-      .once((data, key) => {
-        res(data, key);
-      });
+    this.not(() => res([])).once((data, key) => {
+      res(data, key);
+    });
   });
   return cb ? p.then(cb) : p;
 };

@@ -1,4 +1,3 @@
-
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -134,9 +133,7 @@ export function CustomEdge({
   };
 
   if (data?.isAddButtonHidden) {
-    return (
-      <BaseEdge path={edgePath} markerEnd={markerEnd} />
-    );
+    return <BaseEdge path={edgePath} markerEnd={markerEnd} />;
   }
 
   return (

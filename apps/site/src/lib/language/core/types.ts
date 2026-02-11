@@ -35,11 +35,11 @@ export type Json = Primitive | Json[] | { [key: string]: Json };
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  type Path<T> = T extends Record<string, any>
+export type Path<T> = T extends Record<string, any>
   ? {
       [K in keyof T]-?: K extends string
-        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-        ? T[K] extends Record<string, any>
+        ? // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+          T[K] extends Record<string, any>
           ? `${K}` | `${K}.${Path<T[K]>}`
           : `${K}`
         : never;
@@ -63,11 +63,11 @@ export  type Path<T> = T extends Record<string, any>
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  type ArrayPath<T> = T extends Record<string, any>
+export type ArrayPath<T> = T extends Record<string, any>
   ? {
       [K in keyof T]-?: K extends string
-        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-        ? T[K] extends Record<string, any>
+        ? // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+          T[K] extends Record<string, any>
           ? [K] | [K, ...ArrayPath<T[K]>]
           : [K]
         : never;
@@ -97,7 +97,7 @@ export type VarFrom<T> =
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  type CallableFunction = (...args: any[]) => any;
+export type CallableFunction = (...args: any[]) => any;
 
 /**
  * Enhanced logic expression type with comprehensive function support.
@@ -135,7 +135,7 @@ export  type CallableFunction = (...args: any[]) => any;
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  type LogicExpr<TVars = any> =
+export type LogicExpr<TVars = any> =
   | Primitive
   | {
       /**
@@ -191,9 +191,9 @@ export  type LogicExpr<TVars = any> =
        * { call: ["form.setValue", "name", { var: "newValue" }] }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-call: [string, ...any[]];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      call: [string, ...any[]];
     }
   | {
       /**
@@ -210,9 +210,9 @@ call: [string, ...any[]];
        * { fn: { var: "mathOperations.add" } }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-fn: (...args: any[]) => any;
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      fn: (...args: any[]) => any;
     }
   | {
       /**
@@ -225,9 +225,9 @@ fn: (...args: any[]) => any;
        * { val: "someValue" }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-val: any;
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      val: any;
     }
   | {
       /**
@@ -464,9 +464,9 @@ val: any;
        * { "==": [{ var: "a" }, { var: "b" }] }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'==': [any, any];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '==': [any, any];
     }
   | {
       /**
@@ -484,9 +484,9 @@ val: any;
        * { "===": [{ var: "a" }, { var: "b" }] }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'===': [any, any];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '===': [any, any];
     }
   | {
       /**
@@ -504,9 +504,9 @@ val: any;
        * { "!=": [{ var: "a" }, { var: "b" }] }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'!=': [any, any];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '!=': [any, any];
     }
   | {
       /**
@@ -524,9 +524,9 @@ val: any;
        * { "!==": [{ var: "a" }, { var: "b" }] }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'!==': [any, any];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '!==': [any, any];
     }
   | {
       /**
@@ -587,9 +587,9 @@ val: any;
        * { not: 1 } // Returns false
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-not: any;
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      not: any;
     }
   | {
       /**
@@ -604,9 +604,9 @@ not: any;
        * { "!": false } // Returns true
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'!': any;
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '!': any;
     }
   | {
       /**
@@ -623,9 +623,9 @@ not: any;
        * { "!!": "" } // Returns false
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'!!': any;
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '!!': any;
     }
   | {
       /**
@@ -643,9 +643,9 @@ not: any;
        * { "??": [false, "default"] } // Returns false (false is not nullish)
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'??': [any, any];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '??': [any, any];
     }
   | {
       /**
@@ -673,9 +673,9 @@ not: any;
        * ]}
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-if: [boolean, any, any] | any[];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      if: [boolean, any, any] | any[];
     }
   | {
       /**
@@ -697,9 +697,9 @@ if: [boolean, any, any] | any[];
        * ]}
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-'?:': [boolean, any, any] | any[];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      '?:': [boolean, any, any] | any[];
     }
   | {
       /**
@@ -754,9 +754,9 @@ if: [boolean, any, any] | any[];
        * { length: { var: "collection" } }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-length: string | any[] | { var: VarFrom<TVars> & {} };
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      length: string | any[] | { var: VarFrom<TVars> & {} };
     }
   | {
       /**
@@ -773,9 +773,9 @@ length: string | any[] | { var: VarFrom<TVars> & {} };
        * { merge: [{ var: "array1" }, { var: "array2" }] }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-merge: any[] | (any[] | { var: VarFrom<TVars> & {} })[];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      merge: any[] | (any[] | { var: VarFrom<TVars> & {} })[];
     }
   | {
       /**
@@ -799,9 +799,9 @@ merge: any[] | (any[] | { var: VarFrom<TVars> & {} })[];
        * ]}
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-map: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      map: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -825,9 +825,9 @@ map: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
        * ]}
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-filter: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      filter: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -853,9 +853,9 @@ filter: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
        * ]}
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-reduce: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>, any];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      reduce: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>, any];
     }
   | {
       /**
@@ -878,9 +878,9 @@ reduce: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>, any];
        * ]}
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-all: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      all: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -897,9 +897,9 @@ all: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
        * ]} // Returns true
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-every: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      every: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -922,9 +922,9 @@ every: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
        * ]}
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-some: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      some: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -947,9 +947,9 @@ some: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
        * ]}
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-none: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      none: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
     }
   | {
       /**
@@ -1031,9 +1031,9 @@ none: [any[] | { var: VarFrom<TVars> & {} }, LogicExpr<TVars>];
        * { preserve: { var: "value" } }
        * ```
        */
-      
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-preserve: any;
+
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      preserve: any;
     }
   | {
       /**
@@ -1163,7 +1163,7 @@ export interface MethodDefinition<
     context: TContext,
     above: TAbove[],
     engine: TEngine,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   ) => any;
 
   /**
@@ -1185,9 +1185,9 @@ export interface MethodDefinition<
    * Can be a boolean or a function that determines determinism based on input.
    * Used for optimization purposes.
    */
-  
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-deterministic?: boolean | ((data: any, buildState: any) => boolean);
+
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  deterministic?: boolean | ((data: any, buildState: any) => boolean);
 
   /**
    * Asynchronous version of the method for async operations.
@@ -1203,6 +1203,6 @@ deterministic?: boolean | ((data: any, buildState: any) => boolean);
     context: TContext,
     above: TAbove[],
     engine: TEngine,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   ) => Promise<any>;
 }

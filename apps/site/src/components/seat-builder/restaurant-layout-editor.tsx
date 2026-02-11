@@ -104,7 +104,7 @@ function _RestaurantLayoutEditor() {
   // Initialize history with initial layout
   useEffect(() => {
     push(initialLayout);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [initialLayout, push]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Subscribe to history changes
@@ -220,13 +220,12 @@ function _RestaurantLayoutEditor() {
   };
   useEffect(() => {
     loadLayout();
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [loadLayout]);
 
   const exportLayout = () => {
     const dataStr = JSON.stringify(layout, null, 2);
-    const dataUri =
-      `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
+    const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
 
     const exportFileDefaultName = `layout.json`;
 

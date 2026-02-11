@@ -73,8 +73,8 @@ export function DataTableFacetedFilter<TData, TValue>({
         <Button variant="outline" size="sm" className="border-dashed">
           {selectedValues?.size > 0 ? (
             // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-// biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
-<div
+            // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
+            <div
               role="button"
               aria-label={`Clear ${title} filter`}
               tabIndex={0}

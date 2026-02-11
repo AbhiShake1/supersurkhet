@@ -129,7 +129,7 @@ const MatrixText = ({
 
   return (
     // biome-ignore lint/a11y/useAriaPropsSupportedByRole: lint debt cleanup
-<div
+    <div
       className={cn(
         'flex min-h-screen items-center justify-center text-black dark:text-white',
         className,

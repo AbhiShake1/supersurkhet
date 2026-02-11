@@ -28,7 +28,7 @@ function ButtonGroup({
 }: React.ComponentProps<'div'> & VariantProps<typeof buttonGroupVariants>) {
   return (
     // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
-<div
+    <div
       role="group"
       data-slot="button-group"
       data-orientation={orientation}

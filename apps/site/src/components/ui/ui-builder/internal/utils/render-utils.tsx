@@ -303,7 +303,7 @@ const _RenderLayer: React.FC<RenderLayerProps> = memo(
 
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
-        const ref = React.useRef<any>(null);
+    const ref = React.useRef<any>(null);
 
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     function WrappedComponentChild(props: any) {

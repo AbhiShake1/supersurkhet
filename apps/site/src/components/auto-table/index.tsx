@@ -46,7 +46,7 @@ import {
   Ellipsis,
   Text,
 } from 'lucide-react';
-import { z, ZodEffects, } from 'zod';
+import { z, ZodEffects } from 'zod';
 import { AutoPreview } from '../auto-preview';
 import { DataTableAdvancedToolbar } from '../data-table/data-table-advanced-toolbar';
 import { DataTableColumnHeader } from '../data-table/data-table-column-header';

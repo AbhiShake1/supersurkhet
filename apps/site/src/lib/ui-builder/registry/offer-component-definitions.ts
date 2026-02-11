@@ -1,6 +1,4 @@
-import type {
-  ComponentRegistry,
-} from '@/components/ui/ui-builder/types';
+import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import { commonFieldOverrides } from './form-field-overrides';
 import {
   OfferCard,

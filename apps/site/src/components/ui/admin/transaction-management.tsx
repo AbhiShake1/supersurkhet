@@ -27,7 +27,7 @@ import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
 import { format } from 'date-fns';
 import { AutoTable } from '@/components/auto-table';
-import type { Transaction, } from '@/lib/schema';
+import type { Transaction } from '@/lib/schema';
 
 interface TransactionManagementProps {
   slug: string;

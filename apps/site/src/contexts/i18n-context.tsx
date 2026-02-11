@@ -57,7 +57,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
 
   // Set initial language on mount
   // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-    React.useEffect(() => {
+  React.useEffect(() => {
     const initialLang = getInitialLanguage();
     if (AVAILABLE_LANGUAGES.includes(initialLang)) {
       i18n.changeLanguage(initialLang);
@@ -67,7 +67,7 @@ export const I18nProvider: React.FC<I18nProviderProps> = ({ children }) => {
 
   // Memoize the context value
   // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-    const contextValue = React.useMemo(
+  const contextValue = React.useMemo(
     () => ({
       language,
       setLanguage: changeLanguage,

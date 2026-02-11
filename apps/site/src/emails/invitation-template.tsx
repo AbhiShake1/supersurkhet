@@ -1,5 +1,3 @@
-
-
 interface InvitationEmailProps {
   inviterName: string;
   businessName: string;

@@ -303,7 +303,7 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
 
     return (
       // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
-<DevProfiler id="LayersPanel" threshold={40}>
+      <DevProfiler id="LayersPanel" threshold={40}>
         <div
           data-testid="layers-tree"
           className={cn(

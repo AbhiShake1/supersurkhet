@@ -21,7 +21,7 @@ export interface EditorStore {
   ) => void;
   getComponentDefinition: (
     type: string,
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   ) => RegistryEntry<ReactComponentType<any>> | undefined;
 
   persistLayerStoreConfig: boolean;

@@ -27,7 +27,7 @@ import {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function getDefaultProps(schema: ZodObject<any>): Record<string, any> {
+export function getDefaultProps(schema: ZodObject<any>): Record<string, any> {
   const shape = schema.shape;
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const defaultProps: Record<string, any> = {};
@@ -55,7 +55,7 @@ export  function getDefaultProps(schema: ZodObject<any>): Record<string, any> {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-function  getDefaultValue(schema: ZodTypeAny, fieldName: string): any {
+function getDefaultValue(schema: ZodTypeAny, fieldName: string): any {
   // Handle ZodDefault to return the specified default value
   if (schema instanceof ZodDefault) {
     return schema._def.defaultValue();
@@ -75,9 +75,8 @@ function  getDefaultValue(schema: ZodTypeAny, fieldName: string): any {
  * @returns A new Zod object schema with the specified transformations applied.
  */
 
-
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function patchSchema(schema: ZodObject<any>): ZodObject<any> {
+export function patchSchema(schema: ZodObject<any>): ZodObject<any> {
   const schemaWithFixedEnums = transformUnionToEnum(schema);
   const schemaWithCoercedTypes = addCoerceToNumberAndDate(schemaWithFixedEnums);
   const schemaWithCommon = addCommon(schemaWithCoercedTypes);
@@ -294,7 +293,7 @@ export function addDefaultValues<T extends ZodObject<any>>(
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function hasAnyChildrenField(schema: ZodObject<any>): boolean {
+export function hasAnyChildrenField(schema: ZodObject<any>): boolean {
   const shape = schema.shape;
   if (!shape.children) {
     return false;
@@ -317,7 +316,7 @@ export  function hasAnyChildrenField(schema: ZodObject<any>): boolean {
  */
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export  function hasChildrenFieldOfTypeString(schema: ZodObject<any>): boolean {
+export function hasChildrenFieldOfTypeString(schema: ZodObject<any>): boolean {
   const shape = schema.shape;
   if (!shape.children) {
     return false;

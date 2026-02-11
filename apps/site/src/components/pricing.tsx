@@ -68,7 +68,7 @@ export default function CongestedPricing({
 
   return (
     // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
-<div className="py-20 px-12" id="pricing">
+    <div className="py-20 px-12" id="pricing">
       <div className="mb-12 space-y-4 text-center">
         <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
           {title}
@@ -179,7 +179,7 @@ export default function CongestedPricing({
               <ul className="mt-5 flex flex-col gap-2">
                 {plan.features.map((feature, idx) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-<li key={idx} className="flex items-start gap-2">
+                  <li key={idx} className="flex items-start gap-2">
                     <Check className="text-primary mt-1 h-4 w-4 flex-shrink-0" />
                     <span className="text-left">{feature}</span>
                   </li>

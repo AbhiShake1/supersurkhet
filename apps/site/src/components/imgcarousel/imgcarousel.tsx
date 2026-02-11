@@ -453,7 +453,7 @@ export const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
         return () =>
           container.removeEventListener('scroll', updateScrollProgress);
       }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+      // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
     }, [updateScrollProgress]);
 
     const scroll = (direction: 'left' | 'right') => {
@@ -547,7 +547,7 @@ export const Carousel = React.forwardRef<HTMLDivElement, CarouselProps>(
             <div className="flex justify-center gap-1">
               {getItemsToRender.map((_, index) => (
                 // biome-ignore lint/a11y/useButtonType: lint debt cleanup
-<button
+                <button
                   // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                   key={index}
                   onClick={() => scrollToIndex(index)}

@@ -1,7 +1,7 @@
 'use client';
 
 import type React from 'react';
-import { useEffect, useRef, } from 'react';
+import { useEffect, useRef } from 'react';
 import createGlobe from 'cobe';
 import { cn } from '@/lib/utils';
 
@@ -73,7 +73,17 @@ const Earth: React.FC<EarthProps> = ({
     return () => {
       globe.destroy();
     };
-  }, [dark, baseColor, diffuse, glowColor, mapBrightness, mapSamples, markerColor, scale, theta]);
+  }, [
+    dark,
+    baseColor,
+    diffuse,
+    glowColor,
+    mapBrightness,
+    mapSamples,
+    markerColor,
+    scale,
+    theta,
+  ]);
 
   return (
     <div

@@ -72,7 +72,7 @@ export function ChildrenSearchableSelect({
       if (!fieldName || fieldName === 'children') {
         // For the 'children' field, use the default add logic
         // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                addComponentLayer(layerType as any, parentLayerId, addPosition);
+        addComponentLayer(layerType as any, parentLayerId, addPosition);
       } else {
         // For other ReactNode fields, create the component and add it to the prop
         const { registry } = useEditorStore.getState();

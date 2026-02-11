@@ -1,4 +1,4 @@
-import { useState, useMemo, } from 'react';
+import { useState, useMemo } from 'react';
 import { Position, type HandleProps } from '@xyflow/react';
 import { ButtonHandle } from '@/components/button-handle';
 import { BaseHandle } from '@/components/base-handle';

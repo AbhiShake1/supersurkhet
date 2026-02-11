@@ -97,7 +97,7 @@ const SidebarProvider = React.forwardRef<
 
         // This sets the cookie to keep the sidebar state.
         // biome-ignore lint/suspicious/noDocumentCookie: lint debt cleanup
-                document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`;
       },
       [setOpenProp, open],
     );
@@ -139,14 +139,7 @@ const SidebarProvider = React.forwardRef<
         setOpenMobile,
         toggleSidebar,
       }),
-      [
-        state, 
-        open, 
-        setOpen, 
-        isMobile, 
-        openMobile, 
-        toggleSidebar
-      ],
+      [state, open, setOpen, isMobile, openMobile, toggleSidebar],
     );
 
     return (

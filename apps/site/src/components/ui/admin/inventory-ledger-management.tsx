@@ -26,7 +26,7 @@ import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
 import { format } from 'date-fns';
 import { AutoTable } from '@/components/auto-table';
-import type { InventoryLedger, } from '@/lib/schema';
+import type { InventoryLedger } from '@/lib/schema';
 
 interface InventoryLedgerManagementProps {
   slug: string;

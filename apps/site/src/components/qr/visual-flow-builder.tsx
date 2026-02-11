@@ -1219,13 +1219,13 @@ const NodeSetupForm = ({
         scanNetworks,
         wifiScanError,
         isScanError,
-      // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
+        // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
       } = useWifiNetworks();
 
       // Get available networks from scan result or use mock data as fallback
       const availableNetworks = wifiScanResult?.success
-        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-        ? wifiScanResult.networks.map((net: any) => net.ssid)
+        ? // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+          wifiScanResult.networks.map((net: any) => net.ssid)
         : ['HomeNetwork', 'OfficeWiFi', 'CoffeeShop-Guest', 'NeighborNetwork'];
 
       // Handle network selection from dropdown or direct input
@@ -1234,8 +1234,8 @@ const NodeSetupForm = ({
 
         // If it's a known network, also set the security type
         const network = wifiScanResult?.success
-          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-          ? wifiScanResult.networks.find((net: any) => net.ssid === value)
+          ? // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+            wifiScanResult.networks.find((net: any) => net.ssid === value)
           : [
               { ssid: 'HomeNetwork', security: 'WPA2' },
               { ssid: 'OfficeWiFi', security: 'WPA3' },
@@ -2394,297 +2394,297 @@ const FlowBuilder = () => {
 
   return (
     <div className="w-full h-[700px] flex border rounded-lg overflow-hidden bg-background [&_.react-flow__attribution]:hidden">
-        {/* Left sidebar - Node library */}
-        <div className="w-64 border-r bg-background">
-          <NodeLibrary onAddNode={onAddNode} />
-        </div>
-
-        {/* Main flow area */}
-        <div className="flex-1 relative" ref={reactFlowWrapper}>
-          <DndContext
-            sensors={sensors}
-            onDragStart={onDragStart}
-            onDragMove={onDragMove}
-            onDragEnd={onDragEnd}
-          >
-            <DragOverlay>
-              {activeDragType && (
-                <div className="opacity-80 pointer-events-none">
-                  {renderNodePreview(activeDragType as NodeType)}
-                </div>
-              )}
-            </DragOverlay>
-            {dragPreviewPosition && (
-              <div
-                className="absolute w-48 h-24 border-2 border-dashed border-blue-500 rounded-md bg-blue-500/10 pointer-events-none"
-                style={{
-                  left: dragPreviewPosition.x,
-                  top: dragPreviewPosition.y,
-                  transform: 'translate(-50%, -50%)',
-                }}
-              />
-            )}
-          </DndContext>
-          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={isLocked ? undefined : onNodesChange}
-            onEdgesChange={isLocked ? undefined : onEdgesChange}
-            onConnect={isLocked ? undefined : onConnect}
-            onNodeClick={(_, node) => {
-              setSelectedNodeId(node.id);
-              setIsDrawerOpen(true);
-            }}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
-            fitView
-            className="react-flow-theme-dark bg-background"
-            id="flow-canvas"
-            nodesDraggable={!isLocked}
-            nodesConnectable={!isLocked}
-            elementsSelectable={!isLocked}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-          >
-            <svg role="img" aria-label="Flow Builder">
-              <defs>
-                {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
-                <marker
-                  id="arrow"
-                  viewBox="0 0 10 10"
-                  refX="5"
-                  refY="5"
-                  markerWidth="6"
-                  markerHeight="6"
-                  orient="auto-start-reverse"
-                >
-                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
-                </marker>
-              </defs>
-            </svg>
-            <Background
-              variant={BackgroundVariant.Dots}
-              gap={12}
-              size={1}
-              color="#94a3b8"
-            />
-            <ZoomSlider />
-            <Panel position="top-right" className="flex gap-2">
-              <TooltipProvider>
-                <div className="flex flex-col rounded-md border overflow-hidden">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-none border-0 border-b last:border-b-0"
-                        onClick={() => reactFlowInstance.fitView()}
-                      >
-                        <Maximize className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>Fit View</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-none border-0 border-b last:border-b-0"
-                        onClick={onLayout}
-                      >
-                        <svg
-                          role="img"
-                          aria-label="Auto Layout"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <rect
-                            x="3"
-                            y="3"
-                            width="18"
-                            height="18"
-                            rx="2"
-                            ry="2"
-                          />
-                          <line x1="3" y1="9" x2="21" y2="9" />
-                          <line x1="9" y1="21" x2="9" y2="9" />
-                        </svg>
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>Auto Layout</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-none border-0 border-b last:border-b-0"
-                        onClick={runWorkflow}
-                        disabled={isRunning}
-                      >
-                        {isRunning ? (
-                          <LoaderCircle className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Play className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>Run Workflow</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-none border-0 border-b last:border-b-0"
-                        onClick={exportFlow}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>Export Flow</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-none border-0 border-b last:border-b-0"
-                        onClick={() =>
-                          document.getElementById('import-flow')?.click()
-                        }
-                      >
-                        <Upload className="h-4 w-4" />
-                        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
-                        <input
-                          id="import-flow"
-                          type="file"
-                          accept=".json"
-                          className="hidden"
-                          onChange={importFlow}
-                        />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>Import Flow</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="rounded-none border-0 border-b last:border-b-0"
-                        onClick={() => {
-                          setNodes([]);
-                          setEdges([]);
-                          setSelectedNodeId(null);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>Clear Canvas</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={isLocked ? 'default' : 'outline'}
-                        size="icon"
-                        className="rounded-none border-0 border-b last:border-b-0"
-                        onClick={() => {
-                          setSelectedNodeId(null);
-                          setIsDrawerOpen(true);
-                        }}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>Preview</p>
-                    </TooltipContent>
-                  </Tooltip>
-
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant={isLocked ? 'default' : 'outline'}
-                        size="icon"
-                        className="rounded-none border-0 border-b last:border-b-0"
-                        onClick={toggleLock}
-                      >
-                        {isLocked ? (
-                          <Lock className="h-4 w-4" />
-                        ) : (
-                          <Unlock className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>{isLocked ? 'Unlock Workflow' : 'Lock Workflow'}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </TooltipProvider>
-            </Panel>
-          </ReactFlow>
-        </div>
-
-        {/* Drawer for node configuration */}
-        <Drawer
-          open={isDrawerOpen}
-          onOpenChange={setIsDrawerOpen}
-          direction="right"
-        >
-          <DrawerContent className="max-w-[100vw] sm:max-w-sm ml-auto">
-            <DrawerHeader className="flex items-center justify-between">
-              <DrawerTitle>
-                {selectedNode ? selectedNode.data.label : 'Configuration'}
-              </DrawerTitle>
-              <DrawerClose asChild>
-                <Button variant="ghost" size="icon">
-                  <X className="h-4 w-4" />
-                </Button>
-              </DrawerClose>
-            </DrawerHeader>
-            <div className="flex-1 overflow-y-auto p-4">
-              {selectedNode ? (
-                <NodeSetupPanel
-                  selectedNode={selectedNode}
-                  onUpdateNode={onUpdateNode}
-                />
-              ) : (
-                <PreviewPanel action={previewAction} />
-              )}
-            </div>
-          </DrawerContent>
-        </Drawer>
+      {/* Left sidebar - Node library */}
+      <div className="w-64 border-r bg-background">
+        <NodeLibrary onAddNode={onAddNode} />
       </div>
+
+      {/* Main flow area */}
+      <div className="flex-1 relative" ref={reactFlowWrapper}>
+        <DndContext
+          sensors={sensors}
+          onDragStart={onDragStart}
+          onDragMove={onDragMove}
+          onDragEnd={onDragEnd}
+        >
+          <DragOverlay>
+            {activeDragType && (
+              <div className="opacity-80 pointer-events-none">
+                {renderNodePreview(activeDragType as NodeType)}
+              </div>
+            )}
+          </DragOverlay>
+          {dragPreviewPosition && (
+            <div
+              className="absolute w-48 h-24 border-2 border-dashed border-blue-500 rounded-md bg-blue-500/10 pointer-events-none"
+              style={{
+                left: dragPreviewPosition.x,
+                top: dragPreviewPosition.y,
+                transform: 'translate(-50%, -50%)',
+              }}
+            />
+          )}
+        </DndContext>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={isLocked ? undefined : onNodesChange}
+          onEdgesChange={isLocked ? undefined : onEdgesChange}
+          onConnect={isLocked ? undefined : onConnect}
+          onNodeClick={(_, node) => {
+            setSelectedNodeId(node.id);
+            setIsDrawerOpen(true);
+          }}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          className="react-flow-theme-dark bg-background"
+          id="flow-canvas"
+          nodesDraggable={!isLocked}
+          nodesConnectable={!isLocked}
+          elementsSelectable={!isLocked}
+          onDrop={onDrop}
+          onDragOver={onDragOver}
+        >
+          <svg role="img" aria-label="Flow Builder">
+            <defs>
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+              <marker
+                id="arrow"
+                viewBox="0 0 10 10"
+                refX="5"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8" />
+              </marker>
+            </defs>
+          </svg>
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={12}
+            size={1}
+            color="#94a3b8"
+          />
+          <ZoomSlider />
+          <Panel position="top-right" className="flex gap-2">
+            <TooltipProvider>
+              <div className="flex flex-col rounded-md border overflow-hidden">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-none border-0 border-b last:border-b-0"
+                      onClick={() => reactFlowInstance.fitView()}
+                    >
+                      <Maximize className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Fit View</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-none border-0 border-b last:border-b-0"
+                      onClick={onLayout}
+                    >
+                      <svg
+                        role="img"
+                        aria-label="Auto Layout"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="3"
+                          y="3"
+                          width="18"
+                          height="18"
+                          rx="2"
+                          ry="2"
+                        />
+                        <line x1="3" y1="9" x2="21" y2="9" />
+                        <line x1="9" y1="21" x2="9" y2="9" />
+                      </svg>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Auto Layout</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-none border-0 border-b last:border-b-0"
+                      onClick={runWorkflow}
+                      disabled={isRunning}
+                    >
+                      {isRunning ? (
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Play className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Run Workflow</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-none border-0 border-b last:border-b-0"
+                      onClick={exportFlow}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Export Flow</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-none border-0 border-b last:border-b-0"
+                      onClick={() =>
+                        document.getElementById('import-flow')?.click()
+                      }
+                    >
+                      <Upload className="h-4 w-4" />
+                      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+                      <input
+                        id="import-flow"
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={importFlow}
+                      />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Import Flow</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="rounded-none border-0 border-b last:border-b-0"
+                      onClick={() => {
+                        setNodes([]);
+                        setEdges([]);
+                        setSelectedNodeId(null);
+                      }}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Clear Canvas</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isLocked ? 'default' : 'outline'}
+                      size="icon"
+                      className="rounded-none border-0 border-b last:border-b-0"
+                      onClick={() => {
+                        setSelectedNodeId(null);
+                        setIsDrawerOpen(true);
+                      }}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Preview</p>
+                  </TooltipContent>
+                </Tooltip>
+
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={isLocked ? 'default' : 'outline'}
+                      size="icon"
+                      className="rounded-none border-0 border-b last:border-b-0"
+                      onClick={toggleLock}
+                    >
+                      {isLocked ? (
+                        <Lock className="h-4 w-4" />
+                      ) : (
+                        <Unlock className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>{isLocked ? 'Unlock Workflow' : 'Lock Workflow'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+            </TooltipProvider>
+          </Panel>
+        </ReactFlow>
+      </div>
+
+      {/* Drawer for node configuration */}
+      <Drawer
+        open={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        direction="right"
+      >
+        <DrawerContent className="max-w-[100vw] sm:max-w-sm ml-auto">
+          <DrawerHeader className="flex items-center justify-between">
+            <DrawerTitle>
+              {selectedNode ? selectedNode.data.label : 'Configuration'}
+            </DrawerTitle>
+            <DrawerClose asChild>
+              <Button variant="ghost" size="icon">
+                <X className="h-4 w-4" />
+              </Button>
+            </DrawerClose>
+          </DrawerHeader>
+          <div className="flex-1 overflow-y-auto p-4">
+            {selectedNode ? (
+              <NodeSetupPanel
+                selectedNode={selectedNode}
+                onUpdateNode={onUpdateNode}
+              />
+            ) : (
+              <PreviewPanel action={previewAction} />
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+    </div>
   );
 };
 

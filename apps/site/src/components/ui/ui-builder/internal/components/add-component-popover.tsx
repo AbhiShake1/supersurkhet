@@ -128,12 +128,13 @@ export function AddComponentsPopover({
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      addComponentLayer, 
-      parentLayerId, 
-      addPosition, 
-      onOpenChange, 
-      onChange, 
-      fieldName, componentRegistry[currentValue as keyof typeof componentRegistry]
+      addComponentLayer,
+      parentLayerId,
+      addPosition,
+      onOpenChange,
+      onChange,
+      fieldName,
+      componentRegistry[currentValue as keyof typeof componentRegistry],
     ],
   );
 

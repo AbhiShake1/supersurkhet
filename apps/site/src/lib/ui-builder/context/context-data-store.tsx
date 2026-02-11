@@ -20,7 +20,7 @@ export function makeSerializable(
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   obj: Record<string, any>,
   maxDepth = 3,
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 ): Record<string, any> {
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   function clean(value: any, depth: number): any {

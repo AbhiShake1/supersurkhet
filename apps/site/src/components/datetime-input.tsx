@@ -170,8 +170,11 @@ const DateTimeInput = React.forwardRef<HTMLInputElement, DateTimeInputProps>(
         // console.log('inputValueChanged', {formatStr, inputStr, value, inputValue, });
         options.onChange?.(inputValue);
       }
-    }, [inputValue, // console.log('inputValueChanged', {formatStr, inputStr, value, inputValue, });
-        options.onChange, value?.getTime]);
+    }, [
+      inputValue, // console.log('inputValueChanged', {formatStr, inputStr, value, inputValue, });
+      options.onChange,
+      value?.getTime,
+    ]);
 
     const onClick = useEventCallback(
       (event: React.MouseEvent<HTMLInputElement>) => {
@@ -503,7 +506,7 @@ export function useEventCallback<T extends (...args: any[]) => any>(
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   return useCallback((...args: any[]) => {
     return ref.current?.(...args);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, deps);
 }
 

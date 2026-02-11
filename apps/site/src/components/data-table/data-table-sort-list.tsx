@@ -140,7 +140,7 @@ export function DataTableSortList<TData>({
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [sorting.length, onSortingReset]);
 
   const onTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {

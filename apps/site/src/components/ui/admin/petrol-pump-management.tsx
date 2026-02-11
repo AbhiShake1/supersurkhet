@@ -1,12 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -138,7 +133,10 @@ function _PetrolPumpManagement({
     toast.success(`Fuel type ${available ? 'enabled' : 'disabled'}`);
   };
 
-  const toggleServiceAvailability = (_serviceId: string, available: boolean) => {
+  const toggleServiceAvailability = (
+    _serviceId: string,
+    available: boolean,
+  ) => {
     // In a real implementation, this would update the data in GunDB
     toast.success(`Service ${available ? 'enabled' : 'disabled'}`);
   };

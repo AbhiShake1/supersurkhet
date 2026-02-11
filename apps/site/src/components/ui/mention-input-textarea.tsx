@@ -169,7 +169,7 @@ export function MentionInputTextarea({
     },
     // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
     // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-        [contextData, flatContextData, fuzzyMatch, fuzzyMatchScore],
+    [contextData, flatContextData, fuzzyMatch, fuzzyMatchScore],
   );
 
   // Fuzzy matching function
@@ -399,8 +399,8 @@ export function MentionInputTextarea({
           >
             {suggestions.map((suggestion, index) => (
               // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-// biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-<div
+              // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
+              <div
                 key={suggestion.id}
                 className={`p-2 cursor-pointer rounded-sm hover:bg-accent hover:text-accent-foreground ${
                   index === activeSuggestionIndex

@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 
 const Nodejs = (props: SVGProps<SVGSVGElement>) => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg {...props} viewBox="0 0 256 292">
+  <svg {...props} viewBox="0 0 256 292">
     <defs>
       {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <linearGradient

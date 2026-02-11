@@ -12,9 +12,9 @@ function AutoFormLabel({
 }) {
   return (
     <FormLabel className={cn(className)}>
-        {label}
-        {isRequired && <span className="text-destructive"> *</span>}
-      </FormLabel>
+      {label}
+      {isRequired && <span className="text-destructive"> *</span>}
+    </FormLabel>
   );
 }
 

@@ -67,9 +67,9 @@ export const BreakpointClassNameControl = ({
       const newClassString = [
         newBase,
         md
-            ?.split(' ')
-            .map((cls) => `md:${cls}`)
-            .join(' '),
+          ?.split(' ')
+          .map((cls) => `md:${cls}`)
+          .join(' '),
         rest,
       ]
         .filter(Boolean)

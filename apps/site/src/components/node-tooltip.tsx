@@ -71,7 +71,7 @@ export const NodeTooltipTrigger = forwardRef<
 
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-<div
+    <div
       ref={ref}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}

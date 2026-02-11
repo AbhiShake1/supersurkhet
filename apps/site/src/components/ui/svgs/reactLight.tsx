@@ -2,7 +2,7 @@ import type { SVGProps } from 'react';
 
 const ReactLight = (props: SVGProps<SVGSVGElement>) => (
   // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
-<svg {...props} viewBox="0 0 569 512">
+  <svg {...props} viewBox="0 0 569 512">
     <g fill="none" fillRule="evenodd">
       <g fill="#087EA4" fillRule="nonzero">
         {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}

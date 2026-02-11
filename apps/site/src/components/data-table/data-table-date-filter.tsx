@@ -164,7 +164,7 @@ export function DataTableDateFilter<TData>({
         )}
       </span>
     );
-  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [selectedDates, multiple, formatDateRange, title]);
 
   return (
@@ -173,8 +173,8 @@ export function DataTableDateFilter<TData>({
         <Button variant="outline" size="sm" className="border-dashed">
           {hasValue ? (
             // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-// biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
-<div
+            // biome-ignore lint/a11y/useSemanticElements: lint debt cleanup
+            <div
               role="button"
               aria-label={`Clear ${title} filter`}
               tabIndex={0}

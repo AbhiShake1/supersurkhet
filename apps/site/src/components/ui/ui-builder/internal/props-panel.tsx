@@ -173,14 +173,14 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
 
       // Preserve variable references by merging with original props
       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-            const preservedProps: Record<string, any> = {};
+      const preservedProps: Record<string, any> = {};
       if (selectedLayer) {
         // Start with all original props to preserve any that aren't in the form update
         Object.assign(preservedProps, selectedLayer.props);
 
         // Then update only the props that came from the form, preserving variable references
         // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                for (const key of Object.keys(dataProps as Record<string, any>)) {
+        for (const key of Object.keys(dataProps as Record<string, any>)) {
           // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           const newValue = (dataProps as Record<string, any>)[key];
           const fieldDef =

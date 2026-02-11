@@ -41,7 +41,7 @@ export function useLogicEngine<T extends Record<string, any>>(
       ...logicEngine,
       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       // biome-ignore lint/complexity/noBannedTypes: lint debt cleanup
-            build<T extends Record<string, any> = {}>(
+      build<T extends Record<string, any> = {}>(
         param: Parameters<typeof logicEngine.build<T & typeof context>>[0],
       ) {
         const result = logicEngine.build<T & typeof context>(param);

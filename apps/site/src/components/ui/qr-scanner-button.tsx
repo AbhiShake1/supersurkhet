@@ -43,7 +43,7 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
 
     // Load position from localStorage on mount
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
-        React.useEffect(() => {
+    React.useEffect(() => {
       const savedPosition = localStorage.getItem('qrScannerButtonPosition');
       if (savedPosition) {
         try {
@@ -58,12 +58,12 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
         }
       }
       // If no saved position, component will use the default position from useState
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-          }, [getDefaultPosition]);
+      // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+    }, [getDefaultPosition]);
 
     // Save position to localStorage with debounce
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
-        React.useEffect(() => {
+    React.useEffect(() => {
       const timer = setTimeout(() => {
         localStorage.setItem(
           'qrScannerButtonPosition',
@@ -76,7 +76,7 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
 
     // Handle window resize
     // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
-        React.useEffect(() => {
+    React.useEffect(() => {
       const handleResize = () => {
         setPosition((prev) => {
           // Keep button within viewport bounds
@@ -194,7 +194,7 @@ const QRScannerButton = React.forwardRef<HTMLDivElement, QRScannerButtonProps>(
         {/* Full-screen QR Scanner Overlay */}
         {isOpen && (
           // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-<div
+          <div
             className="fixed inset-0 z-[100] bg-background flex flex-col"
             onKeyDown={(e) => {
               if (e.target === e.currentTarget) {

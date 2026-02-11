@@ -93,8 +93,8 @@ export function TagsField({
       )}
 
       {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
-{/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
-<div
+      {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
+      <div
         className={cn(
           'flex flex-wrap items-center gap-2 rounded-md border border-input bg-background px-3 py-2 min-h-10',
           error && 'border-destructive',

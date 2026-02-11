@@ -141,8 +141,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             <div className="space-y-1">
               {items.map((item, index) => (
                 <Option
-                  key={`${groupName}-${// biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-index}`}
+                  key={`${groupName}-${
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                    index
+                  }`}
                   Icon={item.icon || Menu}
                   title={item.title}
                   url={item.url}
@@ -315,7 +317,7 @@ const ToggleClose: React.FC<{
 }> = ({ open, setOpen }) => {
   return (
     // biome-ignore lint/a11y/useButtonType: lint debt cleanup
-<button
+    <button
       onClick={() => setOpen(!open)}
       className="w-full border-t border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 backdrop-blur-2xl"
     >

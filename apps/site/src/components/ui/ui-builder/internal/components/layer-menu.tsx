@@ -62,56 +62,56 @@ export const LayerMenu: React.FC<MenuProps> = ({
 
   return (
     <div
-        className={cn(
-          'flex flex-nowrap overflow-hidden transition-all duration-200 ease-in-out rounded-lg bg-blue-500 text-white',
-        )}
-      >
-        {canRenderAddChild && (
-          <AddComponentsPopover
-            parentLayerId={layerId}
-            className="flex-shrink w-min inline-flex"
-            onOpenChange={setPopoverOpen}
+      className={cn(
+        'flex flex-nowrap overflow-hidden transition-all duration-200 ease-in-out rounded-lg bg-blue-500 text-white',
+      )}
+    >
+      {canRenderAddChild && (
+        <AddComponentsPopover
+          parentLayerId={layerId}
+          className="flex-shrink w-min inline-flex"
+          onOpenChange={setPopoverOpen}
+        >
+          <div
+            className={cn(
+              buttonVariantsValues,
+              buttonClass,
+              popoverOpen ? 'bg-white text-black' : '',
+            )}
           >
-            <div
-              className={cn(
-                buttonVariantsValues,
-                buttonClass,
-                popoverOpen ? 'bg-white text-black' : '',
-              )}
-            >
-              <span className="sr-only">Add Component</span>
-              <Plus className="size-3" />
-            </div>
-          </AddComponentsPopover>
-        )}
-        {canDuplicate && (
-          // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-// biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-<div
-            className={cn(buttonVariantsValues, buttonClass)}
-            onClick={handleDuplicateComponent}
-            data-testid="duplicate-button"
-          >
-            <span className="sr-only">
-              Duplicate {isLayerAPage ? 'Page' : 'Component'}
-            </span>
-            <Copy className="size-3" data-testid="duplicate-icon" />
+            <span className="sr-only">Add Component</span>
+            <Plus className="size-3" />
           </div>
-        )}
-        {canDelete && (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
-// biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
-<div
-            className={cn(buttonVariantsValues, buttonClass)}
-            onClick={handleDeleteComponent}
-            data-testid="delete-button"
-          >
-            <span className="sr-only">
-              Delete {isLayerAPage ? 'Page' : 'Component'}
-            </span>
-            <Trash className="size-3" data-testid="delete-icon" />
-          </div>
-        )}
-      </div>
+        </AddComponentsPopover>
+      )}
+      {canDuplicate && (
+        // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+        // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
+        <div
+          className={cn(buttonVariantsValues, buttonClass)}
+          onClick={handleDuplicateComponent}
+          data-testid="duplicate-button"
+        >
+          <span className="sr-only">
+            Duplicate {isLayerAPage ? 'Page' : 'Component'}
+          </span>
+          <Copy className="size-3" data-testid="duplicate-icon" />
+        </div>
+      )}
+      {canDelete && (
+        // biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup
+        // biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup
+        <div
+          className={cn(buttonVariantsValues, buttonClass)}
+          onClick={handleDeleteComponent}
+          data-testid="delete-button"
+        >
+          <span className="sr-only">
+            Delete {isLayerAPage ? 'Page' : 'Component'}
+          </span>
+          <Trash className="size-3" data-testid="delete-icon" />
+        </div>
+      )}
+    </div>
   );
 };
