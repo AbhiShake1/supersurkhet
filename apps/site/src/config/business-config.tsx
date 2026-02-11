@@ -1,22 +1,3 @@
-import type { AutoTableTab } from '@/components/auto-admin';
-import { AutoFormSubmit } from '@/components/ui/auto-form';
-import { AutoForm, fieldConfig } from '@/components/ui/autoform';
-import { Button } from '@/components/ui/button';
-import {
-  Credenza,
-  CredenzaContent,
-  CredenzaTrigger,
-} from '@/components/ui/credenza';
-import {
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import { ReceiptWrapper } from '@/components/ui/receipt-wrapper';
-import { useDialog } from '@/contexts/dialog-context';
-import { formatCurrency } from '@/lib/intl';
-import type { BusinessType } from '@/lib/schema';
-import { db } from '@/lib/ssr/api';
-import { type SalesItem, salesItemSchema } from '@/lib/schemas/sales';
 import type { SchemaKeys } from '@gta/react-hooks';
 import {
   Car,
@@ -29,10 +10,32 @@ import {
   Users2,
 } from 'lucide-react';
 import NepaliDate from 'nepali-datetime';
-import { useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import z from 'zod';
+import type { AutoTableTab } from '@/components/auto-admin';
+import { AutoFormSubmit } from '@/components/ui/auto-form';
+import {
+  AutoForm,
+  fieldConfig,
+  withSourceCustomData,
+} from '@/components/ui/autoform';
+import { Button } from '@/components/ui/button';
+import {
+  Credenza,
+  CredenzaContent,
+  CredenzaTrigger,
+} from '@/components/ui/credenza';
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { ReceiptWrapper } from '@/components/ui/receipt-wrapper';
+import { useDialog } from '@/contexts/dialog-context';
 import { api } from '@/lib/api';
+import { formatCurrency } from '@/lib/intl';
+import type { BusinessType } from '@/lib/schema';
+import { type SalesItem, salesItemSchema } from '@/lib/schemas/sales';
+import { db } from '@/lib/ssr/api';
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoTableTab<K>;
@@ -101,25 +104,6 @@ export function useStockImportsConfig({
 }): AutoTableTab<'stockImport'> {
   'use memo';
 
-  function getDefaultUnitField() {
-    return z
-      .string()
-      .optional()
-      .describe('Unit')
-      .superRefine(
-        fieldConfig({
-          inputProps: {
-            disabled: true,
-            placeholder: 'Select product for unit',
-            className: 'border-none',
-          },
-        }),
-      );
-  }
-
-  const [unitField, setUnitField] =
-    useState<z.ZodType<any>>(getDefaultUnitField);
-
   function getQuantityDescription() {
     return 'Quantity';
   }
@@ -153,7 +137,75 @@ export function useStockImportsConfig({
             ),
           items: salesItemSchema
             .extend({
-              unit: unitField,
+              unit: z
+                .string()
+                .optional()
+                .describe('Unit')
+                .superRefine(
+                  fieldConfig({
+                    fieldType: 'unit',
+                    inputProps: {
+                      disabled: true,
+                      placeholder: 'Select product for unit',
+                      className: 'border-none',
+                    },
+                    customData: withSourceCustomData({
+                      slug,
+                      source: {
+                        table: 'product',
+                        displayKey: 'title',
+                        key: 'product',
+                      },
+                      derive: async ({ sourceRow }) => {
+                        if (!sourceRow?.unit) return null;
+                        const [unitType, piecesPerUnit] = String(
+                          sourceRow.unit,
+                        ).split(':');
+                        const configDisabled = Boolean(piecesPerUnit);
+
+                        return {
+                          customData: {
+                            onlyAllow: [
+                              unitType,
+                              piecesPerUnit ? 'piece' : undefined,
+                            ].filter(Boolean),
+                            configDisabled,
+                            onValueChange(value, path, form) {
+                              const [, productQuantityPerUnit] = String(
+                                sourceRow.unit,
+                              ).split(':');
+                              const [, quantityPerUnit] =
+                                value?.split(':') ?? [];
+                              const [itemsKey, index] = path;
+                              const costPrice = Number(
+                                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                                (sourceRow as any).costPrice,
+                              );
+
+                              if (quantityPerUnit) {
+                                if (costPrice) {
+                                  form.setValue(
+                                    [itemsKey, index, 'unitPrice'].join('.'),
+                                    costPrice,
+                                  );
+                                }
+                              } else if (
+                                productQuantityPerUnit &&
+                                costPrice &&
+                                !Number.isNaN(Number(productQuantityPerUnit))
+                              ) {
+                                form.setValue(
+                                  [itemsKey, index, 'unitPrice'].join('.'),
+                                  costPrice / Number(productQuantityPerUnit),
+                                );
+                              }
+                            },
+                          },
+                        };
+                      },
+                    }),
+                  }),
+                ),
               product: z
                 .string()
                 .describe('Product')
@@ -182,68 +234,6 @@ export function useStockImportsConfig({
                           product.costPrice,
                         );
                         if (product.unit) {
-                          const [unitType, piecesPerUnit] =
-                            product.unit.split(':');
-                          const onlyAllow = [
-                            unitType,
-                            piecesPerUnit ? 'piece' : undefined,
-                          ].filter(Boolean);
-                          const configDisabled = Boolean(piecesPerUnit);
-                          setUnitField(
-                            z
-                              .string()
-                              .describe('Unit')
-                              .superRefine(
-                                fieldConfig({
-                                  fieldType: 'unit',
-                                  customData: {
-                                    onlyAllow,
-                                    ...(configDisabled
-                                      ? {
-                                          configDisabled,
-                                          onValueChange(value, path, form) {
-                                            const [, productQuantityPerUnit] =
-                                              product.unit?.split(':') ?? [];
-                                            const [, quantityPerUnit] =
-                                              value?.split(':') ?? [];
-                                            const [itemsKey, index] = path;
-
-                                            if (quantityPerUnit) {
-                                              if (product.costPrice)
-                                                form.setValue(
-                                                  [
-                                                    itemsKey,
-                                                    index,
-                                                    'unitPrice',
-                                                  ].join('.'),
-                                                  product.costPrice,
-                                                );
-                                            } else if (
-                                              productQuantityPerUnit &&
-                                              product.costPrice &&
-                                              !Number.isNaN(
-                                                Number(productQuantityPerUnit),
-                                              )
-                                            ) {
-                                              form.setValue(
-                                                [
-                                                  itemsKey,
-                                                  index,
-                                                  'unitPrice',
-                                                ].join('.'),
-                                                product.costPrice /
-                                                  Number(
-                                                    productQuantityPerUnit,
-                                                  ),
-                                              );
-                                            }
-                                          },
-                                        }
-                                      : {}),
-                                  },
-                                }),
-                              ),
-                          );
                           form.setValue(
                             [itemsKey, index, 'unit'].join('.'),
                             product.unit,
@@ -519,24 +509,6 @@ export function useSalesConfig({
   slug: string;
 }): AutoTableTab<'sale'> {
   'use memo';
-  function getDefaultUnitField() {
-    return z
-      .string()
-      .optional()
-      .describe('Unit')
-      .superRefine(
-        fieldConfig({
-          inputProps: {
-            disabled: true,
-            placeholder: 'Select product for unit',
-            className: 'border-none',
-          },
-        }),
-      );
-  }
-
-  const [unitField, setUnitField] =
-    useState<z.ZodType<any>>(getDefaultUnitField);
 
   return {
     schema: 'sale',
@@ -567,6 +539,74 @@ export function useSalesConfig({
             ),
           items: salesItemSchema
             .extend({
+              unit: z
+                .string()
+                .optional()
+                .describe('Unit')
+                .superRefine(
+                  fieldConfig({
+                    fieldType: 'unit',
+                    inputProps: {
+                      disabled: true,
+                      placeholder: 'Select product for unit',
+                      className: 'border-none',
+                    },
+                    customData: withSourceCustomData({
+                      slug,
+                      source: {
+                        table: 'product',
+                        displayKey: 'title',
+                        key: 'product',
+                      },
+                      derive: async ({ sourceRow }) => {
+                        if (!sourceRow?.unit) return null;
+                        const [unitType, piecesPerUnit] = String(
+                          sourceRow.unit,
+                        ).split(':');
+                        const configDisabled = Boolean(piecesPerUnit);
+                        return {
+                          customData: {
+                            onlyAllow: [
+                              unitType,
+                              piecesPerUnit ? 'piece' : undefined,
+                            ].filter(Boolean),
+                            configDisabled,
+                            onValueChange(value, path, form) {
+                              const [, productQuantityPerUnit] = String(
+                                sourceRow.unit,
+                              ).split(':');
+                              const [, quantityPerUnit] =
+                                value?.split(':') ?? [];
+                              const [itemsKey, index] = path;
+                              const sellingPrice = Number(
+                                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                                (sourceRow as any).sellingPrice,
+                              );
+
+                              if (quantityPerUnit) {
+                                if (sellingPrice) {
+                                  form.setValue(
+                                    [itemsKey, index, 'unitPrice'].join('.'),
+                                    sellingPrice,
+                                  );
+                                }
+                              } else if (
+                                productQuantityPerUnit &&
+                                sellingPrice &&
+                                !Number.isNaN(Number(productQuantityPerUnit))
+                              ) {
+                                form.setValue(
+                                  [itemsKey, index, 'unitPrice'].join('.'),
+                                  sellingPrice / Number(productQuantityPerUnit),
+                                );
+                              }
+                            },
+                          },
+                        };
+                      },
+                    }),
+                  }),
+                ),
               product: z
                 .string()
                 .describe('Product')
@@ -597,26 +637,6 @@ export function useSalesConfig({
                         );
 
                         if (product.unit) {
-                          const [unitType, piecesPerUnit] =
-                            product.unit.split(':');
-                          const onlyAllow = [
-                            unitType,
-                            piecesPerUnit ? 'piece' : undefined,
-                          ].filter(Boolean);
-                          setUnitField(
-                            z
-                              .string()
-                              .describe('Unit')
-                              .superRefine(
-                                fieldConfig({
-                                  fieldType: 'unit',
-                                  customData: {
-                                    onlyAllow,
-                                    configDisabled: true,
-                                  },
-                                }),
-                              ),
-                          );
                           form.setValue(
                             [itemsKey, index, 'unit'].join('.'),
                             product.unit,
@@ -628,7 +648,6 @@ export function useSalesConfig({
                     },
                   }),
                 ),
-              unit: unitField,
               quantity: z
                 .number({ coerce: true })
                 .int()
@@ -787,25 +806,6 @@ export function useOrderConfig({
 }): AutoTableTab<'order'> {
   'use memo';
 
-  function getDefaultUnitField() {
-    return z
-      .string()
-      .optional()
-      .describe('Unit')
-      .superRefine(
-        fieldConfig({
-          inputProps: {
-            disabled: true,
-            placeholder: 'Select product for unit',
-            className: 'border-none',
-          },
-        }),
-      );
-  }
-
-  const [unitField, setUnitField] =
-    useState<z.ZodType<any>>(getDefaultUnitField);
-
   return {
     schema: 'order',
     title: 'Orders',
@@ -835,6 +835,75 @@ export function useOrderConfig({
             ),
           items: salesItemSchema
             .extend({
+              unit: z
+                .string()
+                .optional()
+                .describe('Unit')
+                .superRefine(
+                  fieldConfig({
+                    fieldType: 'unit',
+                    inputProps: {
+                      disabled: true,
+                      placeholder: 'Select product for unit',
+                      className: 'border-none',
+                    },
+                    customData: withSourceCustomData({
+                      slug,
+                      source: {
+                        table: 'product',
+                        displayKey: 'title',
+                        key: 'product',
+                      },
+                      derive: async ({ sourceRow }) => {
+                        if (!sourceRow?.unit) return null;
+                        const [unitType, piecesPerUnit] = String(
+                          sourceRow.unit,
+                        ).split(':');
+                        const configDisabled = Boolean(piecesPerUnit);
+
+                        return {
+                          customData: {
+                            onlyAllow: [
+                              unitType,
+                              piecesPerUnit ? 'piece' : undefined,
+                            ].filter(Boolean),
+                            configDisabled,
+                            onValueChange(value, path, form) {
+                              const [, productQuantityPerUnit] = String(
+                                sourceRow.unit,
+                              ).split(':');
+                              const [, quantityPerUnit] =
+                                value?.split(':') ?? [];
+                              const [itemsKey, index] = path;
+                              const sellingPrice = Number(
+                                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                                (sourceRow as any).sellingPrice,
+                              );
+
+                              if (quantityPerUnit) {
+                                if (sellingPrice) {
+                                  form.setValue(
+                                    [itemsKey, index, 'unitPrice'].join('.'),
+                                    sellingPrice,
+                                  );
+                                }
+                              } else if (
+                                productQuantityPerUnit &&
+                                sellingPrice &&
+                                !Number.isNaN(Number(productQuantityPerUnit))
+                              ) {
+                                form.setValue(
+                                  [itemsKey, index, 'unitPrice'].join('.'),
+                                  sellingPrice / Number(productQuantityPerUnit),
+                                );
+                              }
+                            },
+                          },
+                        };
+                      },
+                    }),
+                  }),
+                ),
               product: z
                 .string()
                 .describe('Product')
@@ -866,29 +935,6 @@ export function useOrderConfig({
                         );
 
                         if (product.unit) {
-                          const [unitType, piecesPerUnit] =
-                            product.unit.split(':');
-                          const onlyAllow = [
-                            unitType,
-                            piecesPerUnit ? 'piece' : undefined,
-                          ].filter(Boolean);
-                          const configDisabled = Boolean(piecesPerUnit);
-                          setUnitField(
-                            z
-                              .string()
-                              .describe('Unit')
-                              .superRefine(
-                                fieldConfig({
-                                  fieldType: 'unit',
-                                  customData: {
-                                    onlyAllow,
-                                    ...(configDisabled
-                                      ? { configDisabled }
-                                      : {}),
-                                  },
-                                }),
-                              ),
-                          );
                           form.setValue(
                             [itemsKey, index, 'unit'].join('.'),
                             product.unit,
@@ -900,7 +946,6 @@ export function useOrderConfig({
                     },
                   }),
                 ),
-              unit: unitField,
               quantity: z
                 .number({ coerce: true })
                 .int()
@@ -1283,28 +1328,6 @@ export function useTripConfig({
   'use memo';
   const { openDialog } = useDialog();
 
-  function getDefaultUnitField() {
-    return z
-      .string()
-      .optional()
-      .describe('Unit')
-      .superRefine(
-        fieldConfig({
-          inputProps: {
-            disabled: true,
-            placeholder: 'Select product for unit',
-            className: 'border-none',
-          },
-        }),
-      );
-  }
-
-  const [unitField, setUnitField] =
-    useState<z.ZodType<any>>(getDefaultUnitField);
-
-  const [returnedUnitField, setReturnedUnitField] =
-    useState<z.ZodType<any>>(getDefaultUnitField);
-
   const returnedProductsSchema = salesItemSchema
     .extend({
       product: z
@@ -1332,61 +1355,6 @@ export function useTripConfig({
                 );
 
                 if (product.unit) {
-                  const [unitType, piecesPerUnit] = product.unit.split(':');
-                  const onlyAllow = [
-                    unitType,
-                    piecesPerUnit ? 'piece' : undefined,
-                  ].filter(Boolean);
-                  const configDisabled = Boolean(piecesPerUnit);
-                  setReturnedUnitField(
-                    z
-                      .string()
-                      .describe('Unit')
-                      .superRefine(
-                        fieldConfig({
-                          fieldType: 'unit',
-                          customData: {
-                            onlyAllow,
-                            ...(configDisabled
-                              ? {
-                                  configDisabled,
-                                  onValueChange(value, path, form) {
-                                    const [, productQuantityPerUnit] =
-                                      product.unit?.split(':') ?? [];
-                                    const [, quantityPerUnit] =
-                                      value?.split(':') ?? [];
-                                    const [itemsKey, index] = path;
-
-                                    if (quantityPerUnit) {
-                                      if (product.sellingPrice)
-                                        form.setValue(
-                                          [itemsKey, index, 'unitPrice'].join(
-                                            '.',
-                                          ),
-                                          product.sellingPrice,
-                                        );
-                                    } else if (
-                                      productQuantityPerUnit &&
-                                      product.sellingPrice &&
-                                      !Number.isNaN(
-                                        Number(productQuantityPerUnit),
-                                      )
-                                    ) {
-                                      form.setValue(
-                                        [itemsKey, index, 'unitPrice'].join(
-                                          '.',
-                                        ),
-                                        product.sellingPrice /
-                                          Number(productQuantityPerUnit),
-                                      );
-                                    }
-                                  },
-                                }
-                              : {}),
-                          },
-                        }),
-                      ),
-                  );
                   form.setValue(
                     [itemsKey, index, 'unit'].join('.'),
                     product.unit,
@@ -1397,7 +1365,78 @@ export function useTripConfig({
             },
           }),
         ),
-      unit: returnedUnitField,
+      unit: z
+        .string()
+        .optional()
+        .describe('Unit')
+        .superRefine(
+          fieldConfig({
+            fieldType: 'unit',
+            inputProps: {
+              disabled: true,
+              placeholder: 'Select product for unit',
+              className: 'border-none',
+            },
+            customData: withSourceCustomData({
+              slug,
+              source: {
+                table: 'product',
+                displayKey: 'title',
+                key: 'product',
+              },
+              derive: async ({ sourceRow }) => {
+                if (!sourceRow?.unit) return null;
+                const [unitType, piecesPerUnit] = String(sourceRow.unit).split(
+                  ':',
+                );
+                const configDisabled = Boolean(piecesPerUnit);
+
+                return {
+                  customData: {
+                    onlyAllow: [
+                      unitType,
+                      piecesPerUnit ? 'piece' : undefined,
+                    ].filter(Boolean),
+                    ...(configDisabled
+                      ? {
+                          configDisabled,
+                          onValueChange(value, path, form) {
+                            const [, productQuantityPerUnit] = String(
+                              sourceRow.unit,
+                            ).split(':');
+                            const [, quantityPerUnit] = value?.split(':') ?? [];
+                            const [itemsKey, index] = path;
+                            const sellingPrice = Number(
+                              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                              (sourceRow as any).sellingPrice,
+                            );
+
+                            if (quantityPerUnit) {
+                              if (sellingPrice) {
+                                form.setValue(
+                                  [itemsKey, index, 'unitPrice'].join('.'),
+                                  sellingPrice,
+                                );
+                              }
+                            } else if (
+                              productQuantityPerUnit &&
+                              sellingPrice &&
+                              !Number.isNaN(Number(productQuantityPerUnit))
+                            ) {
+                              form.setValue(
+                                [itemsKey, index, 'unitPrice'].join('.'),
+                                sellingPrice / Number(productQuantityPerUnit),
+                              );
+                            }
+                          },
+                        }
+                      : {}),
+                  },
+                };
+              },
+            }),
+          }),
+        ),
       quantity: z
         .number({ coerce: true })
         .int()
@@ -1521,58 +1560,6 @@ export function useTripConfig({
                       );
 
                       if (product.unit) {
-                        const [unitType, piecesPerUnit] =
-                          product.unit.split(':');
-                        const onlyAllow = [
-                          unitType,
-                          piecesPerUnit ? 'piece' : undefined,
-                        ].filter(Boolean);
-                        const configDisabled = Boolean(piecesPerUnit);
-                        setUnitField(
-                          z
-                            .string()
-                            .describe('Unit')
-                            .superRefine(
-                              fieldConfig({
-                                fieldType: 'unit',
-                                customData: {
-                                  onlyAllow,
-                                  configDisabled,
-                                  onValueChange(value, path, form) {
-                                    const [, productQuantityPerUnit] =
-                                      product.unit?.split(':') ?? [];
-                                    const [, quantityPerUnit] =
-                                      value?.split(':') ?? [];
-                                    const [itemsKey, index] = path;
-
-                                    if (quantityPerUnit) {
-                                      if (product.sellingPrice)
-                                        form.setValue(
-                                          [itemsKey, index, 'unitPrice'].join(
-                                            '.',
-                                          ),
-                                          product.sellingPrice,
-                                        );
-                                    } else if (
-                                      productQuantityPerUnit &&
-                                      product.sellingPrice &&
-                                      !Number.isNaN(
-                                        Number(productQuantityPerUnit),
-                                      )
-                                    ) {
-                                      form.setValue(
-                                        [itemsKey, index, 'unitPrice'].join(
-                                          '.',
-                                        ),
-                                        product.sellingPrice /
-                                          Number(productQuantityPerUnit),
-                                      );
-                                    }
-                                  },
-                                },
-                              }),
-                            ),
-                        );
                         form.setValue(
                           [itemsKey, index, 'unit'].join('.'),
                           product.unit,
@@ -1583,7 +1570,84 @@ export function useTripConfig({
                   },
                 }),
               ),
-            unit: unitField,
+            unit: z
+              .string()
+              .optional()
+              .describe('Unit')
+              .superRefine(
+                fieldConfig({
+                  fieldType: 'unit',
+                  inputProps: {
+                    disabled: true,
+                    placeholder: 'Select product for unit',
+                    className: 'border-none',
+                  },
+                  customData: withSourceCustomData({
+                    slug,
+                    source: {
+                      table: 'product',
+                      displayKey: 'title',
+                      key: 'product',
+                    },
+                    derive: async ({ sourceRow }) => {
+                      if (!sourceRow?.unit) return null;
+                      const [unitType, piecesPerUnit] = String(
+                        sourceRow.unit,
+                      ).split(':');
+                      const configDisabled = Boolean(piecesPerUnit);
+
+                      return {
+                        customData: {
+                          onlyAllow: [
+                            unitType,
+                            piecesPerUnit ? 'piece' : undefined,
+                          ].filter(Boolean),
+                          configDisabled,
+                          ...(configDisabled
+                            ? {
+                                onValueChange(value, path, form) {
+                                  const [, productQuantityPerUnit] = String(
+                                    sourceRow.unit,
+                                  ).split(':');
+                                  const [, quantityPerUnit] =
+                                    value?.split(':') ?? [];
+                                  const [itemsKey, index] = path;
+                                  const sellingPrice = Number(
+                                    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                                    (sourceRow as any).sellingPrice,
+                                  );
+
+                                  if (quantityPerUnit) {
+                                    if (sellingPrice) {
+                                      form.setValue(
+                                        [itemsKey, index, 'unitPrice'].join(
+                                          '.',
+                                        ),
+                                        sellingPrice,
+                                      );
+                                    }
+                                  } else if (
+                                    productQuantityPerUnit &&
+                                    sellingPrice &&
+                                    !Number.isNaN(
+                                      Number(productQuantityPerUnit),
+                                    )
+                                  ) {
+                                    form.setValue(
+                                      [itemsKey, index, 'unitPrice'].join('.'),
+                                      sellingPrice /
+                                        Number(productQuantityPerUnit),
+                                    );
+                                  }
+                                },
+                              }
+                            : {}),
+                        },
+                      };
+                    },
+                  }),
+                }),
+              ),
             quantity: z
               .number({ coerce: true })
               .int()

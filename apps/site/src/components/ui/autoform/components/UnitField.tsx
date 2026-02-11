@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -7,8 +9,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { useState, useEffect } from 'react';
-import { useFormContext } from 'react-hook-form';
 import type { AutoFormFieldProps } from '../react';
 
 export interface UnitFieldProps extends AutoFormFieldProps {
@@ -45,34 +45,45 @@ export function UnitField({
   const selectedUnit = _selectedUnit ?? initialSelectedUnit;
   const piecesPerUnit = _piecesPerUnit ?? initialPiecesPerUnit;
   const fieldName = path.join('.');
+  const pathKey = path.join('.');
   const form = useFormContext();
+  const onDerivedValueChange = field.fieldConfig?.customData?.onValueChange;
 
   const ALL_UNITS = onlyAllow ?? [...REGULAR_UNITS, ...SPECIAL_UNITS];
+
+  // Sync UI state with external form value updates (e.g. product selection).
+  useEffect(() => {
+    const [nextUnit, nextPiecesPerUnit] = value?.split(':') ?? [];
+    if (typeof nextUnit !== 'undefined') setSelectedUnit(nextUnit);
+    if (nextPiecesPerUnit) setPiecesPerUnit(nextPiecesPerUnit);
+  }, [value]);
 
   // Update the form value when unit or piecesPerUnit changes
   useEffect(() => {
     if (!selectedUnit) return;
     // biome-ignore lint/suspicious/noImplicitAnyLet: lint debt cleanup
-    let value;
+    let nextValue;
     if (SPECIAL_UNITS.includes(selectedUnit)) {
       // For special units, store as "unit:piecesPerUnit"
-      value = `${selectedUnit}:${piecesPerUnit}`;
+      nextValue = `${selectedUnit}:${piecesPerUnit}`;
     } else {
       // For regular units, store as just the unit
-      value = selectedUnit;
+      nextValue = selectedUnit;
     }
 
-    field.fieldConfig?.customData?.onValueChange?.(value, path, form);
+    const currentValue = form.getValues(fieldName);
+    if (currentValue === nextValue) return;
 
-    // Update the form field with the new value
-    form.setValue(fieldName, value);
+    onDerivedValueChange?.(nextValue, pathKey.split('.'), form);
+    // Update the form field with the new value only when it changed.
+    form.setValue(fieldName, nextValue);
   }, [
     selectedUnit,
     piecesPerUnit,
     fieldName,
     form,
-    field.fieldConfig?.customData?.onValueChange,
-    path,
+    onDerivedValueChange,
+    pathKey,
   ]);
 
   const handleUnitChange = (value: string) => {

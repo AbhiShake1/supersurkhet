@@ -1,12 +1,12 @@
-import { useBusinessSafe } from '@/contexts/business-context';
+import { useQuery } from '@tanstack/react-query';
 import type React from 'react';
 import { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { useBusinessSafe } from '@/contexts/business-context';
+import type { UseGet } from '@/lib/gun/index';
 import { Combobox } from '../../combobox';
 import type { AutoFormFieldProps } from '../react';
 import type { FieldConfigCustomData, SourceConfig } from '../utils';
-import { useQuery } from '@tanstack/react-query';
-import type { UseGet } from '@/lib/gun/index';
 
 const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
   const business = useBusinessSafe();
@@ -63,7 +63,11 @@ const _SelectField: React.FC<
   const customData = field.fieldConfig?.customData as FieldConfigCustomData;
 
   const sources =
-    customData && 'sources' in customData ? customData.sources || [] : [];
+    customData && 'sources' in customData
+      ? customData.sources || (customData.source ? [customData.source] : [])
+      : customData?.source
+        ? [customData.source]
+        : [];
 
   const { options: fetchedOptions } = useMultiSourceOptions(sources, useGet);
 
