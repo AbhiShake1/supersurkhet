@@ -39,11 +39,10 @@ const config = defineConfig({
     }),
     tailwindcss(),
     tanstackStart(),
-    // @ts-expect-error
-    zodTypegen({
-      entry: fileURLToPath(new URL('./src/lib/schema.ts', import.meta.url)),
-      output: fileURLToPath(new URL('./src/types/db.d.ts', import.meta.url)),
-    }),
+    // zodTypegen({
+    //   entry: fileURLToPath(new URL('./src/lib/schema.ts', import.meta.url)),
+    //   output: fileURLToPath(new URL('./src/types/db.d.ts', import.meta.url)),
+    // }),
     viteReact({
       babel: {
         plugins: [
