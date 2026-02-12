@@ -3,11 +3,11 @@
  * Check out the live demo at https://shadcn-datetime-picker-pro.vercel.app/
  * Find the latest source code at https://github.com/huybuidac/shadcn-datetime-picker
  */
-"use client";
+'use client';
 
-import * as React from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CalendarIcon } from "@radix-ui/react-icons";
+import type * as React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { CalendarIcon } from '@radix-ui/react-icons';
 import {
   endOfHour,
   endOfMinute,
@@ -33,7 +33,7 @@ import {
   subHours,
   startOfDay,
   endOfDay,
-} from "date-fns";
+} from 'date-fns';
 import {
   CheckIcon,
   ChevronDownIcon,
@@ -42,21 +42,21 @@ import {
   ChevronUpIcon,
   Clock,
   XCircle,
-} from "lucide-react";
-import { DayPicker, type Matcher, TZDate } from "react-day-picker";
+} from 'lucide-react';
+import { DayPicker, type Matcher, TZDate } from 'react-day-picker';
 
-import { cn } from "@/lib/utils";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from '@/lib/utils';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
+} from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export type CalendarProps = Omit<
   React.ComponentProps<typeof DayPicker>,
-  "mode"
+  'mode'
 >;
 
 const AM_VALUE = 0;
@@ -160,7 +160,7 @@ export function DateTimePicker({
 }: DateTimePickerProps & CalendarProps) {
   const [open, setOpen] = useState(false);
   const [monthYearPicker, setMonthYearPicker] = useState<
-    "month" | "year" | false
+    'month' | 'year' | false
   >(false);
   const initDate = useMemo(
     () => new TZDate(value || new Date(), timezone),
@@ -182,6 +182,7 @@ export function DateTimePicker({
     [max, timezone],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onDayChanged = useCallback(
     (d: Date) => {
       d.setHours(date.getHours(), date.getMinutes(), date.getSeconds());
@@ -199,19 +200,23 @@ export function DateTimePicker({
     onChange(new Date(date));
     setOpen(false);
   }, [date, onChange]);
-  
-  const handleOpenChange = useCallback((newOpen: boolean) => {
-    if (!newOpen) {      
-      onChange(new Date(date));
-    }
-    setOpen(newOpen);
-  }, [date, onChange]);
 
+  const handleOpenChange = useCallback(
+    (newOpen: boolean) => {
+      if (!newOpen) {
+        onChange(new Date(date));
+      }
+      setOpen(newOpen);
+    },
+    [date, onChange],
+  );
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onMonthYearChanged = useCallback(
-    (d: Date, mode: "month" | "year") => {
+    (d: Date, mode: 'month' | 'year') => {
       setMonth(d);
-      if (mode === "year") {
-        setMonthYearPicker("month");
+      if (mode === 'year') {
+        setMonthYearPicker('month');
       } else {
         setMonthYearPicker(false);
       }
@@ -233,16 +238,17 @@ export function DateTimePicker({
     }
   }, [open, initDate]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const displayValue = useMemo(() => {
     if (!open && !value) return value;
     return open ? date : initDate;
   }, [date, value, open]);
 
   const dislayFormat = useMemo(() => {
-    if (!displayValue) return "Pick a date";
+    if (!displayValue) return 'Pick a date';
     return format(
       displayValue,
-      `${!hideTime ? "MMM" : "MMMM"} d, yyyy${!hideTime ? (use12HourFormat ? " hh:mm:ss a" : " HH:mm:ss") : ""}`,
+      `${!hideTime ? 'MMM' : 'MMMM'} d, yyyy${!hideTime ? (use12HourFormat ? ' hh:mm:ss a' : ' HH:mm:ss') : ''}`,
     );
   }, [displayValue, hideTime, use12HourFormat]);
 
@@ -262,10 +268,10 @@ export function DateTimePicker({
           <button
             type="button"
             className={cn(
-              "flex w-full cursor-pointer items-center h-9 ps-3 pe-1 font-normal border border-input rounded-md text-sm shadow-sm bg-transparent",
-              !displayValue && "text-muted-foreground",
-              (!clearable || !value) && "pe-3",
-              disabled && "opacity-50 cursor-not-allowed",
+              'flex w-full cursor-pointer items-center h-9 ps-3 pe-1 font-normal border border-input rounded-md text-sm shadow-sm bg-transparent',
+              !displayValue && 'text-muted-foreground',
+              (!clearable || !value) && 'pe-3',
+              disabled && 'opacity-50 cursor-not-allowed',
               classNames?.trigger,
             )}
             onClick={() => !disabled && setOpen(!open)}
@@ -299,38 +305,46 @@ export function DateTimePicker({
         <div className="flex items-center justify-between">
           <div className="text-md font-bold ms-2 flex items-center cursor-pointer">
             <div>
+              {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+              {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
               <span
                 onClick={() =>
                   setMonthYearPicker(
-                    monthYearPicker === "month" ? false : "month",
+                    monthYearPicker === 'month' ? false : 'month',
                   )
                 }
               >
-                {format(month, "MMMM")}
+                {format(month, 'MMMM')}
               </span>
+              {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+              {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
               <span
                 className="ms-1"
                 onClick={() =>
                   setMonthYearPicker(
-                    monthYearPicker === "year" ? false : "year",
+                    monthYearPicker === 'year' ? false : 'year',
                   )
                 }
               >
-                {format(month, "yyyy")}
+                {format(month, 'yyyy')}
               </span>
             </div>
             <Button
               variant="ghost"
               size="icon"
               onClick={() =>
-                setMonthYearPicker(monthYearPicker ? false : "year")
+                setMonthYearPicker(monthYearPicker ? false : 'year')
               }
             >
-              {monthYearPicker ? <ChevronUpIcon className="size-4" /> : <ChevronDownIcon className="size-4" />}
+              {monthYearPicker ? (
+                <ChevronUpIcon className="size-4" />
+              ) : (
+                <ChevronDownIcon className="size-4" />
+              )}
             </Button>
           </div>
           <div
-            className={cn("flex space-x-2", monthYearPicker ? "hidden" : "")}
+            className={cn('flex space-x-2', monthYearPicker ? 'hidden' : '')}
           >
             <Button variant="ghost" size="icon" onClick={onPrevMonth}>
               <ChevronLeftIcon className="size-4" />
@@ -356,51 +370,52 @@ export function DateTimePicker({
             }
             onMonthChange={setMonth}
             classNames={{
-              dropdowns: "flex w-full gap-2",
-              months: "flex w-full h-fit",
-              month: "flex flex-col w-full",
-              month_caption: "hidden",
-              button_previous: "hidden",
-              button_next: "hidden",
-              month_grid: "w-full border-collapse",
-              weekdays: "flex justify-between mt-2",
+              dropdowns: 'flex w-full gap-2',
+              months: 'flex w-full h-fit',
+              month: 'flex flex-col w-full',
+              month_caption: 'hidden',
+              button_previous: 'hidden',
+              button_next: 'hidden',
+              month_grid: 'w-full border-collapse',
+              weekdays: 'flex justify-between mt-2',
               weekday:
-                "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
-              week: "flex w-full justify-between mt-2",
-              day: "h-9 w-9 text-center text-sm p-0 relative flex items-center justify-center [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1",
+                'text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]',
+              week: 'flex w-full justify-between mt-2',
+              day: 'h-9 w-9 text-center text-sm p-0 relative flex items-center justify-center [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20 rounded-1',
               day_button: cn(
-                buttonVariants({ variant: "ghost" }),
-                "size-9 rounded-md p-0 font-normal aria-selected:opacity-100",
+                buttonVariants({ variant: 'ghost' }),
+                'size-9 rounded-md p-0 font-normal aria-selected:opacity-100',
               ),
-              range_end: "day-range-end",
+              range_end: 'day-range-end',
               selected:
-                "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-l-md rounded-r-md",
-              today: "bg-accent text-accent-foreground",
+                'bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground rounded-l-md rounded-r-md',
+              today: 'bg-accent text-accent-foreground',
               outside:
-                "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
-              disabled: "text-muted-foreground opacity-50",
+                'day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30',
+              disabled: 'text-muted-foreground opacity-50',
               range_middle:
-                "aria-selected:bg-accent aria-selected:text-accent-foreground",
-              hidden: "invisible",
+                'aria-selected:bg-accent aria-selected:text-accent-foreground',
+              hidden: 'invisible',
             }}
             showOutsideDays={true}
             {...props}
           />
           <div
             className={cn(
-              "absolute top-0 left-0 bottom-0 right-0",
-              monthYearPicker ? "bg-popover" : "hidden",
+              'absolute top-0 left-0 bottom-0 right-0',
+              monthYearPicker ? 'bg-popover' : 'hidden',
             )}
           ></div>
           <MonthYearPicker
             value={month}
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             mode={monthYearPicker as any}
             onChange={onMonthYearChanged}
             minDate={minDate}
             maxDate={maxDate}
             className={cn(
-              "absolute top-0 left-0 bottom-0 right-0",
-              monthYearPicker ? "" : "hidden",
+              'absolute top-0 left-0 bottom-0 right-0',
+              monthYearPicker ? '' : 'hidden',
             )}
           />
         </div>
@@ -437,18 +452,19 @@ function MonthYearPicker({
   value,
   minDate,
   maxDate,
-  mode = "month",
+  mode = 'month',
   onChange,
   className,
 }: {
   value: Date;
-  mode: "month" | "year";
+  mode: 'month' | 'year';
   minDate?: Date;
   maxDate?: Date;
-  onChange: (value: Date, mode: "month" | "year") => void;
+  onChange: (value: Date, mode: 'month' | 'year') => void;
   className?: string;
 }) {
   const yearRef = useRef<HTMLDivElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const years = useMemo(() => {
     const years: TimeOption[] = [];
     for (let i = 1912; i < 2100; i++) {
@@ -461,6 +477,7 @@ function MonthYearPicker({
     }
     return years;
   }, [value]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const months = useMemo(() => {
     const months: TimeOption[] = [];
     for (let i = 0; i < 12; i++) {
@@ -469,7 +486,7 @@ function MonthYearPicker({
       const endM = endOfMonth(setMonthFns(value, i));
       if (minDate && endM < minDate) disabled = true;
       if (maxDate && startM > maxDate) disabled = true;
-      months.push({ value: i, label: format(new Date(0, i), "MMM"), disabled });
+      months.push({ value: i, label: format(new Date(0, i), 'MMM'), disabled });
     }
     return months;
   }, [value]);
@@ -483,20 +500,21 @@ function MonthYearPicker({
       if (maxDate && newDate > maxDate) {
         newDate = setMonthFns(newDate, getMonth(maxDate));
       }
-      onChange(newDate, "year");
+      onChange(newDate, 'year');
     },
     [onChange, value, minDate, maxDate],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   useEffect(() => {
-    if (mode === "year") {
-      yearRef.current?.scrollIntoView({ behavior: "auto", block: "center" });
+    if (mode === 'year') {
+      yearRef.current?.scrollIntoView({ behavior: 'auto', block: 'center' });
     }
   }, [mode, value]);
   return (
     <div className={cn(className)}>
       <ScrollArea className="h-full">
-        {mode === "year" && (
+        {mode === 'year' && (
           <div className="grid grid-cols-4">
             {years.map((year) => (
               <div
@@ -505,7 +523,7 @@ function MonthYearPicker({
               >
                 <Button
                   disabled={year.disabled}
-                  variant={getYear(value) === year.value ? "default" : "ghost"}
+                  variant={getYear(value) === year.value ? 'default' : 'ghost'}
                   className="rounded-full"
                   onClick={() => onYearChange(year)}
                 >
@@ -515,17 +533,17 @@ function MonthYearPicker({
             ))}
           </div>
         )}
-        {mode === "month" && (
+        {mode === 'month' && (
           <div className="grid grid-cols-3 gap-4">
             {months.map((month) => (
               <Button
                 key={month.value}
                 size="lg"
                 disabled={month.disabled}
-                variant={getMonth(value) === month.value ? "default" : "ghost"}
+                variant={getMonth(value) === month.value ? 'default' : 'ghost'}
                 className="rounded-full"
                 onClick={() =>
-                  onChange(setMonthFns(value, month.value), "month")
+                  onChange(setMonthFns(value, month.value), 'month')
                 }
               >
                 {month.label}
@@ -558,7 +576,7 @@ function TimePicker({
   onChange: (date: Date) => void;
   min?: Date;
   max?: Date;
-  timePicker?: DateTimePickerProps["timePicker"];
+  timePicker?: DateTimePickerProps['timePicker'];
   modal?: boolean;
 }) {
   // hours24h = HH
@@ -566,19 +584,20 @@ function TimePicker({
   const formatStr = useMemo(
     () =>
       use12HourFormat
-        ? "yyyy-MM-dd hh:mm:ss.SSS a xxxx"
-        : "yyyy-MM-dd HH:mm:ss.SSS xxxx",
+        ? 'yyyy-MM-dd hh:mm:ss.SSS a xxxx'
+        : 'yyyy-MM-dd HH:mm:ss.SSS xxxx',
     [use12HourFormat],
   );
   const [ampm, setAmpm] = useState(
-    format(value, "a") === "AM" ? AM_VALUE : PM_VALUE,
+    format(value, 'a') === 'AM' ? AM_VALUE : PM_VALUE,
   );
   const [hour, setHour] = useState(
-    use12HourFormat ? +format(value, "hh") : value.getHours(),
+    use12HourFormat ? +format(value, 'hh') : value.getHours(),
   );
   const [minute, setMinute] = useState(value.getMinutes());
   const [second, setSecond] = useState(value.getSeconds());
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   useEffect(() => {
     onChange(
       buildTime({
@@ -593,6 +612,7 @@ function TimePicker({
     );
   }, [hour, minute, second, ampm, formatStr, use12HourFormat]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const _hourIn24h = useMemo(() => {
     // if (use12HourFormat) {
     //   return (hour % 12) + ampm * 12;
@@ -612,7 +632,7 @@ function TimePicker({
         if (max && hStart > max) disabled = true;
         return {
           value: hourValue,
-          label: hourValue.toString().padStart(2, "0"),
+          label: hourValue.toString().padStart(2, '0'),
           disabled,
         };
       }),
@@ -629,7 +649,7 @@ function TimePicker({
       if (max && mStart > max) disabled = true;
       return {
         value: i,
-        label: i.toString().padStart(2, "0"),
+        label: i.toString().padStart(2, '0'),
         disabled,
       };
     });
@@ -648,7 +668,7 @@ function TimePicker({
       if (_max && sDate > _max) disabled = true;
       return {
         value: i,
-        label: i.toString().padStart(2, "0"),
+        label: i.toString().padStart(2, '0'),
         disabled,
       };
     });
@@ -657,8 +677,8 @@ function TimePicker({
     const startD = startOfDay(value);
     const endD = endOfDay(value);
     return [
-      { value: AM_VALUE, label: "AM" },
-      { value: PM_VALUE, label: "PM" },
+      { value: AM_VALUE, label: 'AM' },
+      { value: PM_VALUE, label: 'PM' },
     ].map((v) => {
       let disabled = false;
       const start = addHours(startD, v.value * 12);
@@ -678,19 +698,20 @@ function TimePicker({
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (open) {
-        hourRef.current?.scrollIntoView({ behavior: "auto" });
-        minuteRef.current?.scrollIntoView({ behavior: "auto" });
-        secondRef.current?.scrollIntoView({ behavior: "auto" });
+        hourRef.current?.scrollIntoView({ behavior: 'auto' });
+        minuteRef.current?.scrollIntoView({ behavior: 'auto' });
+        secondRef.current?.scrollIntoView({ behavior: 'auto' });
       }
     }, 1);
     return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onHourChange = useCallback(
     (v: TimeOption) => {
       if (min) {
-        let newTime = buildTime({
+        const newTime = buildTime({
           use12HourFormat,
           value,
           formatStr,
@@ -705,7 +726,7 @@ function TimePicker({
         }
       }
       if (max) {
-        let newTime = buildTime({
+        const newTime = buildTime({
           use12HourFormat,
           value,
           formatStr,
@@ -724,10 +745,11 @@ function TimePicker({
     [setHour, use12HourFormat, value, formatStr, minute, second, ampm],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onMinuteChange = useCallback(
     (v: TimeOption) => {
       if (min) {
-        let newTime = buildTime({
+        const newTime = buildTime({
           use12HourFormat,
           value,
           formatStr,
@@ -741,7 +763,7 @@ function TimePicker({
         }
       }
       if (max) {
-        let newTime = buildTime({
+        const newTime = buildTime({
           use12HourFormat,
           value,
           formatStr,
@@ -759,10 +781,11 @@ function TimePicker({
     [setMinute, use12HourFormat, value, formatStr, hour, second, ampm],
   );
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const onAmpmChange = useCallback(
     (v: TimeOption) => {
       if (min) {
-        let newTime = buildTime({
+        const newTime = buildTime({
           use12HourFormat,
           value,
           formatStr,
@@ -779,7 +802,7 @@ function TimePicker({
         }
       }
       if (max) {
-        let newTime = buildTime({
+        const newTime = buildTime({
           use12HourFormat,
           value,
           formatStr,
@@ -811,17 +834,17 @@ function TimePicker({
   );
 
   const display = useMemo(() => {
-    let arr = [];
-    for (const element of ["hour", "minute", "second"]) {
+    const arr = [];
+    for (const element of ['hour', 'minute', 'second']) {
       if (!timePicker || timePicker[element as keyof typeof timePicker]) {
-        if (element === "hour") {
-          arr.push(use12HourFormat ? "hh" : "HH");
+        if (element === 'hour') {
+          arr.push(use12HourFormat ? 'hh' : 'HH');
         } else {
-          arr.push(element === "minute" ? "mm" : "ss");
+          arr.push(element === 'minute' ? 'mm' : 'ss');
         }
       }
     }
-    return format(value, arr.join(":") + (use12HourFormat ? " a" : ""));
+    return format(value, arr.join(':') + (use12HourFormat ? ' a' : ''));
   }, [value, use12HourFormat, timePicker]);
 
   return (
@@ -940,7 +963,7 @@ const TimeItem = ({
   return (
     <Button
       variant="ghost"
-      className={cn("flex justify-center px-1 pe-2 ps-1", className)}
+      className={cn('flex justify-center px-1 pe-2 ps-1', className)}
       onClick={() => onSelect(option)}
       disabled={disabled}
     >
@@ -972,19 +995,19 @@ function buildTime(options: BuildTimeOptions) {
     // 2024-10-14 01:20:07.524 AM GMT+00:00
     let dateStr =
       dateStrRaw.slice(0, 11) +
-      hour.toString().padStart(2, "0") +
+      hour.toString().padStart(2, '0') +
       dateStrRaw.slice(13);
     dateStr =
       dateStr.slice(0, 14) +
-      minute.toString().padStart(2, "0") +
+      minute.toString().padStart(2, '0') +
       dateStr.slice(16);
     dateStr =
       dateStr.slice(0, 17) +
-      second.toString().padStart(2, "0") +
+      second.toString().padStart(2, '0') +
       dateStr.slice(19);
     dateStr =
       dateStr.slice(0, 24) +
-      (ampm === AM_VALUE ? "AM" : "PM") +
+      (ampm === AM_VALUE ? 'AM' : 'PM') +
       dateStr.slice(26);
     date = parse(dateStr, formatStr, value);
   } else {

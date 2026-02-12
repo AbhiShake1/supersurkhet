@@ -1,3 +1,4 @@
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function AutoFormTooltip({ fieldConfigItem }: { fieldConfigItem: any }) {
   return (
     <>

@@ -1,5 +1,5 @@
-import { FormLabel } from "@/components/ui/form";
-import { cn } from "@/lib/utils";
+import { FormLabel } from '@/components/ui/form';
+import { cn } from '@/lib/utils';
 
 function AutoFormLabel({
   label,
@@ -11,12 +11,10 @@ function AutoFormLabel({
   className?: string;
 }) {
   return (
-    <>
-      <FormLabel className={cn(className)}>
-        {label}
-        {isRequired && <span className="text-destructive"> *</span>}
-      </FormLabel>
-    </>
+    <FormLabel className={cn(className)}>
+      {label}
+      {isRequired && <span className="text-destructive"> *</span>}
+    </FormLabel>
   );
 }
 

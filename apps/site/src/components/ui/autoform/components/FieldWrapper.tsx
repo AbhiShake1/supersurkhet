@@ -1,18 +1,22 @@
-import type React from "react";
-import { Label } from "@/components/ui/label";
-import type { FieldWrapperProps } from "../react";
+import type React from 'react';
+import { Label } from '@/components/ui/label';
+import type { FieldWrapperProps } from '../react';
 
-const DISABLED_LABELS = ["boolean", "object", "array"];
+const DISABLED_LABELS = ['boolean', 'object', 'array'];
 
-export type { FieldWrapperProps }
+export type { FieldWrapperProps };
 
 export const FieldWrapperWithoutLabel: React.FC<FieldWrapperProps> = ({
   children,
   field,
   error,
+  testId,
 }) => {
   return (
-    <div className="space-y-2">
+    <div
+      className="space-y-2"
+      data-testid={testId ? `af-field-${testId}` : undefined}
+    >
       {children}
       {field.fieldConfig?.description && (
         <p className="text-sm text-muted-foreground">
@@ -30,11 +34,15 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
   id,
   field,
   error,
+  testId,
 }) => {
   const isDisabled = DISABLED_LABELS.includes(field.type);
 
   return (
-    <div className="space-y-2">
+    <div
+      className="space-y-2"
+      data-testid={testId ? `af-field-${testId}` : undefined}
+    >
       {!isDisabled && (
         <Label htmlFor={id}>
           {label}

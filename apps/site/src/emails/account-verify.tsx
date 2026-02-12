@@ -16,7 +16,7 @@ interface AccountVerifyEmailProps {
   verificationCode?: string;
 }
 
-const baseUrl = "https://surkhet.app";
+const baseUrl = 'https://surkhet.app';
 
 export default function AccountVerifyEmail({
   verificationCode,
@@ -43,13 +43,15 @@ export default function AccountVerifyEmail({
             <Heading style={heading}>Verify Your Email Address</Heading>
 
             <Text style={paragraph}>
-              Thank you for creating a SuperSurkhet account. We're excited to have you on board
-              and help you digitally empower your business in Surkhet.
+              Thank you for creating a SuperSurkhet account. We're excited to
+              have you on board and help you digitally empower your business in
+              Surkhet.
             </Text>
 
             <Text style={paragraph}>
-              Please enter the following verification code when prompted to complete your
-              registration and gain access to our tools designed to transform your business operations.
+              Please enter the following verification code when prompted to
+              complete your registration and gain access to our tools designed
+              to transform your business operations.
             </Text>
 
             {/* Verification code card */}
@@ -69,19 +71,28 @@ export default function AccountVerifyEmail({
           {/* Footer */}
           <Section style={footerSection}>
             <Text style={footerText}>
-              SuperSurkhet will never email you asking for your password, credit card,
-              or banking information.
+              SuperSurkhet will never email you asking for your password, credit
+              card, or banking information.
             </Text>
             <Hr style={footerDivider} />
             <Text style={footerCopyright}>
-              © 2025 SuperSurkhet. Digitally empowering businesses in Surkhet, Nepal.
+              © 2025 SuperSurkhet. Digitally empowering businesses in Surkhet,
+              Nepal.
             </Text>
             <Text style={footerLinks}>
-              <Link href="https://surkhet.app/privacy" target="_blank" style={footerLink}>
+              <Link
+                href="https://surkhet.app/privacy"
+                target="_blank"
+                style={footerLink}
+              >
                 Privacy Policy
-              </Link>
-              {' '} | {' '}
-              <Link href="https://surkhet.app/terms" target="_blank" style={footerLink}>
+              </Link>{' '}
+              |{' '}
+              <Link
+                href="https://surkhet.app/terms"
+                target="_blank"
+                style={footerLink}
+              >
                 Terms of Service
               </Link>
             </Text>
@@ -99,7 +110,8 @@ AccountVerifyEmail.PreviewProps = {
 // Styles
 const main = {
   backgroundColor: '#f6f9fc',
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
 };
 
 const container = {

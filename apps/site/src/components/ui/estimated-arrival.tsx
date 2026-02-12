@@ -1,31 +1,32 @@
-import type React from "react"
+import type React from 'react';
 
-import { useState } from "react"
-import z from "zod"
+import { useState } from 'react';
+import z from 'zod';
 
 export const EstimatedDateBadgeSchema = z.object({
   estimatedDate: z.string().optional(),
   dayOfWeek: z.string().optional(),
   deliveryType: z.string().optional(),
-})
+});
 
-export type EstimatedDateBadgeProps = z.infer<typeof EstimatedDateBadgeSchema>
+export type EstimatedDateBadgeProps = z.infer<typeof EstimatedDateBadgeSchema>;
 
 const EstimatedDateBadge: React.FC<EstimatedDateBadgeProps> = ({
-  estimatedDate = "September 28",
-  dayOfWeek = "Friday delivery",
-  deliveryType = "Free",
+  estimatedDate = 'September 28',
+  dayOfWeek = 'Friday delivery',
+  deliveryType = 'Free',
 }) => {
-  const [isOpen, setIsOpen] = useState<boolean>(false)
+  const [isOpen, setIsOpen] = useState<boolean>(false);
 
   const toggleDetails = (): void => {
-    setIsOpen(!isOpen)
-  }
+    setIsOpen(!isOpen);
+  };
 
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="space-y-3">
         {/* Main Card */}
+        {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
         <button
           onClick={toggleDetails}
           className="w-full bg-white border-2 border-orange-500 rounded-3xl p-4 text-left transition-all duration-300 hover:shadow-2xl hover:border-orange-600 active:scale-98 group"
@@ -33,6 +34,7 @@ const EstimatedDateBadge: React.FC<EstimatedDateBadgeProps> = ({
           <div className="flex items-start gap-3">
             {/* Clock Icon - Animated */}
             <div className="flex-shrink-0 pt-0.5">
+              {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
               <svg
                 className="w-6 h-6 text-orange-500 stroke-[2.5] transition-transform duration-300 group-hover:scale-110 group-hover:rotate-12"
                 fill="none"
@@ -63,14 +65,21 @@ const EstimatedDateBadge: React.FC<EstimatedDateBadgeProps> = ({
               <div className="bg-orange-500 text-white rounded-full px-4 py-1 font-semibold text-xs transition-all duration-300 group-hover:bg-orange-600 group-hover:shadow-lg group-hover:shadow-orange-500/30">
                 {deliveryType}
               </div>
+              {/** biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup */}
               <svg
-                className={`w-4 h-4 text-slate-400 transition-all duration-500 ${isOpen ? "rotate-180" : "rotate-0"
-                  } group-hover:text-slate-600`}
+                className={`w-4 h-4 text-slate-400 transition-all duration-500 ${
+                  isOpen ? 'rotate-180' : 'rotate-0'
+                } group-hover:text-slate-600`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </div>
           </div>
@@ -78,8 +87,11 @@ const EstimatedDateBadge: React.FC<EstimatedDateBadgeProps> = ({
 
         {/* Details Section - Staggered Animation */}
         <div
-          className={`overflow-hidden transition-all duration-500 ease-out ${isOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 pointer-events-none"
-            }`}
+          className={`overflow-hidden transition-all duration-500 ease-out ${
+            isOpen
+              ? 'max-h-96 opacity-100'
+              : 'max-h-0 opacity-0 pointer-events-none'
+          }`}
         >
           <div className="bg-white border-2 border-slate-200 rounded-3xl p-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-500">
             {/* Delivery Time */}
@@ -110,19 +122,19 @@ const EstimatedDateBadge: React.FC<EstimatedDateBadgeProps> = ({
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
 const DetailItem: React.FC<{
-  number: number
-  title: string
-  description: string
-  delay: string
-  hasBorder?: boolean
+  number: number;
+  title: string;
+  description: string;
+  delay: string;
+  hasBorder?: boolean;
 }> = ({ number, title, description, delay, hasBorder }) => {
   return (
     <div
-      className={`transition-all duration-500 ease-out hover:pl-2 ${hasBorder ? "border-b border-slate-200 pb-4" : ""}`}
+      className={`transition-all duration-500 ease-out hover:pl-2 ${hasBorder ? 'border-b border-slate-200 pb-4' : ''}`}
       style={{
         animation: `slideInDetail 0.5s ease-out ${Number(delay) * 100}ms both`,
       }}
@@ -147,11 +159,13 @@ const DetailItem: React.FC<{
           <h4 className="text-base font-bold text-slate-900 transition-colors duration-300 hover:text-orange-600">
             {title}
           </h4>
-          <p className="text-sm text-slate-600 mt-1 leading-relaxed">{description}</p>
+          <p className="text-sm text-slate-600 mt-1 leading-relaxed">
+            {description}
+          </p>
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default EstimatedDateBadge
+export default EstimatedDateBadge;

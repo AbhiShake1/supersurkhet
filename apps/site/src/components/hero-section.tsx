@@ -1,30 +1,30 @@
-import { HeroHeader } from "@/components/hero5-header";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
-import { BrowseBusiness } from "./browse-business";
-import { CreateBusiness } from "./create-business";
-import { RainbowButton } from "./magicui/rainbow-button";
-import { AnimatedGroup } from "./ui/animated-group";
-import Earth from "./ui/globe";
-import { Spotlight } from "./ui/spotlight";
-import { TextEffect } from "./ui/text-effect";
-import { TextReveal } from "./ui/text-reveal";
+import { HeroHeader } from '@/components/hero5-header';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Link } from '@tanstack/react-router';
+import { ArrowRight } from 'lucide-react';
+import { BrowseBusiness } from './browse-business';
+import { CreateBusiness } from './create-business';
+import { RainbowButton } from './magicui/rainbow-button';
+import { AnimatedGroup } from './ui/animated-group';
+import Earth from './ui/globe';
+import { Spotlight } from './ui/spotlight';
+import { TextEffect } from './ui/text-effect';
+import { TextReveal } from './ui/text-reveal';
 
 const transitionVariants = {
   item: {
     hidden: {
       opacity: 0,
-      filter: "blur(12px)",
+      filter: 'blur(12px)',
       y: 12,
     },
     visible: {
       opacity: 1,
-      filter: "blur(0px)",
+      filter: 'blur(0px)',
       y: 0,
       transition: {
-        type: "spring",
+        type: 'spring',
         bounce: 0.3,
         duration: 1.5,
       },
@@ -34,6 +34,7 @@ const transitionVariants = {
 
 export default function HeroSection() {
   return (
+    // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
     <section id="hero">
       <HeroHeader />
       <main className="overflow-hidden">
@@ -70,7 +71,7 @@ export default function HeroSection() {
                     opacity: 1,
                     y: 0,
                     transition: {
-                      type: "spring",
+                      type: 'spring',
                       bounce: 0.3,
                       duration: 2,
                     },

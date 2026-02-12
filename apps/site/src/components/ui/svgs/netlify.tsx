@@ -1,6 +1,7 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Netlify = (props: SVGProps<SVGSVGElement>) => (
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
   <svg {...props} viewBox="0 0 256 226" preserveAspectRatio="xMidYMid">
     <path
       fill="#05BDBA"

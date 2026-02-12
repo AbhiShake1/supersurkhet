@@ -2,23 +2,25 @@ import {
   AccordionItem,
   AccordionTrigger,
   AccordionContent,
-} from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { Plus, Trash } from "lucide-react";
-import { useWatch } from "react-hook-form";
-import * as z from "zod";
+} from '@/components/ui/accordion';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Plus, Trash } from 'lucide-react';
+import { useWatch } from 'react-hook-form';
+import * as z from 'zod';
 
-import { beautifyObjectName, getBaseType } from "../utils";
-import AutoFormObject from "./object";
-import AutoFormInput from "./input";
-import type { FieldConfig } from "../types";
-import { FormField } from "../../form";
+import { beautifyObjectName, getBaseType } from '../utils';
+import AutoFormObject from './object';
+import AutoFormInput from './input';
+import type { FieldConfig } from '../types';
+import { FormField } from '../../form';
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function getRecordSchema(item: z.ZodRecord<any, any>) {
   const keyType = item._def.keyType;
   if (keyType) return [keyType, item._def.valueType] as const;
-  if ("innerType" in item._def)
+  if ('innerType' in item._def)
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     return getRecordSchema(item._def.innerType as z.ZodRecord<any, any>);
   return [z.string(), z.string()] as const;
 }
@@ -31,14 +33,17 @@ export default function AutoFormRecord({
   fieldConfig,
 }: {
   name: string;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   item: z.ZodRecord<any, any>;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   form: any;
   path?: string[];
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   fieldConfig?: FieldConfig<any>;
 }) {
   const title = item._def.description ?? beautifyObjectName(name);
 
-  const [keySchema, valueSchema] = getRecordSchema(item);
+  const [_keySchema, valueSchema] = getRecordSchema(item);
 
   const valueBaseType = getBaseType(valueSchema);
 
@@ -70,7 +75,7 @@ export default function AutoFormRecord({
 
   const addItem = () => {
     const clone = { ...record };
-    clone[crypto.randomUUID()] = ""; // temporary internal key
+    clone[crypto.randomUUID()] = ''; // temporary internal key
     setValue(name, clone);
   };
 
@@ -103,6 +108,7 @@ export default function AutoFormRecord({
                         fieldConfigItem={fieldConfig?.key}
                         fieldProps={{
                           value: field.value ?? internalKey,
+                          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                           onChange: (e: any) =>
                             updateKey(internalKey, e.target.value),
                         }}
@@ -123,8 +129,9 @@ export default function AutoFormRecord({
 
               {/* VALUE INPUT */}
               <div>
-                {valueBaseType === "ZodObject" ? (
+                {valueBaseType === 'ZodObject' ? (
                   <AutoFormObject
+                    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                     schema={valueSchema as z.ZodObject<any, any>}
                     form={form}
                     fieldConfig={fieldConfig}
@@ -139,13 +146,15 @@ export default function AutoFormRecord({
                         ...field,
                         value: record[field.value.__key],
                       };
-                      return <AutoFormInput
-                        label="Value"
-                        isRequired
-                        field={field}
-                        fieldConfigItem={fieldConfig?.value}
-                        fieldProps={field}
-                      />
+                      return (
+                        <AutoFormInput
+                          label="Value"
+                          isRequired
+                          field={field}
+                          fieldConfigItem={fieldConfig?.value}
+                          fieldProps={field}
+                        />
+                      );
                     }}
                   />
                 )}

@@ -1,30 +1,32 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus,
   Search,
   Edit,
-  Trash2, Wrench,
+  Trash2,
+  Wrench,
   User,
-  Calendar, Tag,
+  Calendar,
+  Tag,
   Star,
   Check,
-  X
-} from "lucide-react";
-import { toast } from "sonner";
-import type { AdminComponent } from "@/components/ui/admin";
+  X,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { AdminComponent } from '@/components/ui/admin';
 
 interface Service {
   id: string;
@@ -60,93 +62,93 @@ interface Appointment {
   providerId: string;
   providerName: string;
   dateTime: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled";
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
 }
 
 const mockServices: Service[] = [
   {
-    id: "1",
-    name: "Plumbing Service",
-    description: "Professional plumbing solutions for your home or business",
+    id: '1',
+    name: 'Plumbing Service',
+    description: 'Professional plumbing solutions for your home or business',
     price: 500,
     duration: 120,
-    categoryId: "1",
+    categoryId: '1',
     active: true,
   },
   {
-    id: "2",
-    name: "Electrical Repair",
-    description: "Expert electrical work and maintenance services",
+    id: '2',
+    name: 'Electrical Repair',
+    description: 'Expert electrical work and maintenance services',
     price: 600,
     duration: 90,
-    categoryId: "1",
+    categoryId: '1',
     active: true,
   },
   {
-    id: "3",
-    name: "AC Maintenance",
-    description: "Complete air conditioning maintenance and repair",
+    id: '3',
+    name: 'AC Maintenance',
+    description: 'Complete air conditioning maintenance and repair',
     price: 800,
     duration: 180,
-    categoryId: "1",
+    categoryId: '1',
     active: false,
   },
   {
-    id: "4",
-    name: "Business Consulting",
-    description: "Strategic business advice and planning services",
+    id: '4',
+    name: 'Business Consulting',
+    description: 'Strategic business advice and planning services',
     price: 2000,
     duration: 90,
-    categoryId: "2",
+    categoryId: '2',
     active: true,
   },
 ];
 
 const mockServiceCategories: ServiceCategory[] = [
   {
-    id: "1",
-    name: "Home Services",
+    id: '1',
+    name: 'Home Services',
     active: true,
   },
   {
-    id: "2",
-    name: "Business Services",
+    id: '2',
+    name: 'Business Services',
     active: true,
   },
   {
-    id: "3",
-    name: "Repair Services",
+    id: '3',
+    name: 'Repair Services',
     active: true,
   },
   {
-    id: "4",
-    name: "Consulting",
+    id: '4',
+    name: 'Consulting',
     active: false,
   },
 ];
 
 const mockServiceProviders: ServiceProvider[] = [
   {
-    id: "1",
-    name: "Rajesh K.C.",
-    specialization: "Plumbing & Electrical",
-    experience: "10+ years",
+    id: '1',
+    name: 'Rajesh K.C.',
+    specialization: 'Plumbing & Electrical',
+    experience: '10+ years',
     rating: 4.9,
     active: true,
   },
   {
-    id: "2",
-    name: "Sunita Thapa",
-    specialization: "AC Specialist",
-    experience: "8+ years",
+    id: '2',
+    name: 'Sunita Thapa',
+    specialization: 'AC Specialist',
+    experience: '8+ years',
     rating: 4.8,
     active: true,
   },
   {
-    id: "3",
-    name: "Amit Shah",
-    specialization: "Business Consultant",
-    experience: "12+ years",
+    id: '3',
+    name: 'Amit Shah',
+    specialization: 'Business Consultant',
+    experience: '12+ years',
     rating: 4.7,
     active: false,
   },
@@ -154,48 +156,48 @@ const mockServiceProviders: ServiceProvider[] = [
 
 const mockAppointments: Appointment[] = [
   {
-    id: "1",
-    serviceId: "1",
-    serviceName: "Plumbing Service",
-    customerId: "cust1",
-    customerName: "John Doe",
-    providerId: "1",
-    providerName: "Rajesh K.C.",
-    dateTime: "2025-08-25T10:00:00",
-    status: "confirmed",
+    id: '1',
+    serviceId: '1',
+    serviceName: 'Plumbing Service',
+    customerId: 'cust1',
+    customerName: 'John Doe',
+    providerId: '1',
+    providerName: 'Rajesh K.C.',
+    dateTime: '2025-08-25T10:00:00',
+    status: 'confirmed',
   },
   {
-    id: "2",
-    serviceId: "2",
-    serviceName: "Electrical Repair",
-    customerId: "cust2",
-    customerName: "Jane Smith",
-    providerId: "1",
-    providerName: "Rajesh K.C.",
-    dateTime: "2025-08-25T14:00:00",
-    status: "pending",
+    id: '2',
+    serviceId: '2',
+    serviceName: 'Electrical Repair',
+    customerId: 'cust2',
+    customerName: 'Jane Smith',
+    providerId: '1',
+    providerName: 'Rajesh K.C.',
+    dateTime: '2025-08-25T14:00:00',
+    status: 'pending',
   },
   {
-    id: "3",
-    serviceId: "4",
-    serviceName: "Business Consulting",
-    customerId: "cust3",
-    customerName: "ABC Corporation",
-    providerId: "3",
-    providerName: "Amit Shah",
-    dateTime: "2025-08-26T11:00:00",
-    status: "completed",
+    id: '3',
+    serviceId: '4',
+    serviceName: 'Business Consulting',
+    customerId: 'cust3',
+    customerName: 'ABC Corporation',
+    providerId: '3',
+    providerName: 'Amit Shah',
+    dateTime: '2025-08-26T11:00:00',
+    status: 'completed',
   },
   {
-    id: "4",
-    serviceId: "1",
-    serviceName: "Plumbing Service",
-    customerId: "cust4",
-    customerName: "Sita Gurung",
-    providerId: "1",
-    providerName: "Rajesh K.C.",
-    dateTime: "2025-08-26T16:00:00",
-    status: "cancelled",
+    id: '4',
+    serviceId: '1',
+    serviceName: 'Plumbing Service',
+    customerId: 'cust4',
+    customerName: 'Sita Gurung',
+    providerId: '1',
+    providerName: 'Rajesh K.C.',
+    dateTime: '2025-08-26T16:00:00',
+    status: 'cancelled',
   },
 ];
 
@@ -206,10 +208,10 @@ export const ServiceManagement: AdminComponent = () => {
       categories={mockServiceCategories}
       providers={mockServiceProviders}
       appointments={mockAppointments}
-      onAddService={() => { }}
-      onAddCategory={() => { }}
-      onAddProvider={() => { }}
-      onAddAppointment={() => { }}
+      onAddService={() => {}}
+      onAddCategory={() => {}}
+      onAddProvider={() => {}}
+      onAddAppointment={() => {}}
     />
   );
 };
@@ -235,8 +237,8 @@ function _ServiceManagement({
   providers,
   appointments,
 }: ServiceManagementProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState("services");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState('services');
 
   const filteredServices = services.filter((service) => {
     return (
@@ -278,39 +280,39 @@ function _ServiceManagement({
     );
   });
 
-  const toggleServiceActive = (id: string, active: boolean) => {
+  const toggleServiceActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Service ${active ? "activated" : "deactivated"}`);
+    toast.success(`Service ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleCategoryActive = (id: string, active: boolean) => {
+  const toggleCategoryActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Category ${active ? "activated" : "deactivated"}`);
+    toast.success(`Category ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleProviderActive = (id: string, active: boolean) => {
+  const toggleProviderActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Provider ${active ? "activated" : "deactivated"}`);
+    toast.success(`Provider ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteService = (id: string) => {
+  const deleteService = (_id: string) => {
     // In a real implementation, this would delete the service from GunDB
-    toast.success("Service removed");
+    toast.success('Service removed');
   };
 
-  const deleteCategory = (id: string) => {
+  const deleteCategory = (_id: string) => {
     // In a real implementation, this would delete the category from GunDB
-    toast.success("Category removed");
+    toast.success('Category removed');
   };
 
-  const deleteProvider = (id: string) => {
+  const deleteProvider = (_id: string) => {
     // In a real implementation, this would delete the provider from GunDB
-    toast.success("Provider removed");
+    toast.success('Provider removed');
   };
 
   const updateAppointmentStatus = (
-    id: string,
-    status: Appointment["status"],
+    _id: string,
+    status: Appointment['status'],
   ) => {
     // In a real implementation, this would update the appointment status in GunDB
     toast.success(`Appointment ${status}`);
@@ -406,7 +408,7 @@ function _ServiceManagement({
                   Pending Appointments
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {appointments.filter((a) => a.status === "pending").length}
+                  {appointments.filter((a) => a.status === 'pending').length}
                 </p>
               </div>
               <Calendar className="w-8 h-8 text-purple-500" />
@@ -466,7 +468,7 @@ function _ServiceManagement({
             {filteredServices.map((service) => (
               <Card
                 key={service.id}
-                className={`${!service.active ? "opacity-60" : ""}`}
+                className={`${!service.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -502,7 +504,7 @@ function _ServiceManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {service.active ? "Active" : "Inactive"}
+                        {service.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -547,7 +549,7 @@ function _ServiceManagement({
             {filteredCategories.map((category) => (
               <Card
                 key={category.id}
-                className={`${!category.active ? "opacity-60" : ""}`}
+                className={`${!category.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -572,7 +574,7 @@ function _ServiceManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {category.active ? "Active" : "Inactive"}
+                        {category.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -617,7 +619,7 @@ function _ServiceManagement({
             {filteredProviders.map((provider) => (
               <Card
                 key={provider.id}
-                className={`${!provider.active ? "opacity-60" : ""}`}
+                className={`${!provider.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -635,11 +637,13 @@ function _ServiceManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
-                              className={`w-3 h-3 ${i < Math.floor(provider.rating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                                }`}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(provider.rating)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
                             />
                           ))}
                           <span className="text-xs ml-1">
@@ -664,7 +668,7 @@ function _ServiceManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {provider.active ? "Active" : "Inactive"}
+                        {provider.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -709,8 +713,7 @@ function _ServiceManagement({
             {filteredAppointments.map((appointment) => (
               <Card
                 key={appointment.id}
-                className={`${appointment.status === "cancelled" ? "opacity-60" : ""
-                  }`}
+                className={`${appointment.status === 'cancelled' ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -737,38 +740,39 @@ function _ServiceManagement({
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${appointment.status === "pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : appointment.status === "confirmed"
-                          ? "bg-blue-100 text-blue-800"
-                          : appointment.status === "completed"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        appointment.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : appointment.status === 'confirmed'
+                            ? 'bg-blue-100 text-blue-800'
+                            : appointment.status === 'completed'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                      }`}
                     >
                       {appointment.status.charAt(0).toUpperCase() +
                         appointment.status.slice(1)}
                     </span>
 
                     <div className="flex items-center gap-1">
-                      {appointment.status === "pending" && (
+                      {appointment.status === 'pending' && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            updateAppointmentStatus(appointment.id, "confirmed")
+                            updateAppointmentStatus(appointment.id, 'confirmed')
                           }
                           className="text-green-600 hover:text-green-700"
                         >
                           <Check className="w-4 h-4" />
                         </Button>
                       )}
-                      {appointment.status === "confirmed" && (
+                      {appointment.status === 'confirmed' && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            updateAppointmentStatus(appointment.id, "completed")
+                            updateAppointmentStatus(appointment.id, 'completed')
                           }
                           className="text-green-600 hover:text-green-700"
                         >
@@ -779,7 +783,7 @@ function _ServiceManagement({
                         variant="ghost"
                         size="sm"
                         onClick={() =>
-                          updateAppointmentStatus(appointment.id, "cancelled")
+                          updateAppointmentStatus(appointment.id, 'cancelled')
                         }
                         className="text-red-600 hover:text-red-700"
                       >

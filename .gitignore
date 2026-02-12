@@ -9,6 +9,14 @@ dist-ssr
 .wrangler
 .env
 apps/relay/.dev.vars
+playwright-report
+test-results
+apps/site/tests/.auth
+apps/site/tests/.data
 
 .gemini/
 gha-creds-*.json
+
+adaptedv1_plan.md
+adapted_plan.md
+zs-to-js.md

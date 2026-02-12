@@ -1,10 +1,10 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { Upload, X, FileText, Image as ImageIcon, File } from "lucide-react";
-import type { FieldWrapperProps } from "./FieldWrapper";
-import { useState, useRef } from "react";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Upload, X, FileText, Image as ImageIcon, File } from 'lucide-react';
+import type { FieldWrapperProps } from './FieldWrapper';
+import { useState, useRef } from 'react';
 
 export interface FileUploadFieldProps extends FieldWrapperProps {
   placeholder?: string;
@@ -19,7 +19,7 @@ export function FileUploadField({
   description,
   error,
   className,
-  placeholder = "Choose file...",
+  placeholder = 'Choose file...',
   accept,
   multiple = false,
   ...props
@@ -36,7 +36,7 @@ export function FileUploadField({
       setFileType(file.type);
 
       // Create preview for images
-      if (file.type.startsWith("image/")) {
+      if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (event) => {
           setFilePreview(event.target?.result as string);
@@ -60,35 +60,40 @@ export function FileUploadField({
     setFilePreview(null);
     setFileType(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
     field.onChange(null);
   };
 
   const getFileIcon = () => {
-    if (fileType?.startsWith("image/")) {
+    if (fileType?.startsWith('image/')) {
       return <ImageIcon className="h-4 w-4" />;
     }
-    if (fileType?.includes("pdf")) {
+    if (fileType?.includes('pdf')) {
       return <FileText className="h-4 w-4" />;
     }
     return <File className="h-4 w-4" />;
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {label && (
-        <Label htmlFor={field.name} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        <Label
+          htmlFor={field.name}
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
           {label}
         </Label>
       )}
 
       <div className="space-y-3">
         {/* File input area */}
+        {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+        {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
         <div
           className={cn(
-            "flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input bg-background px-6 py-8 transition-colors hover:border-accent",
-            error && "border-destructive"
+            'flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-input bg-background px-6 py-8 transition-colors hover:border-accent',
+            error && 'border-destructive',
           )}
           onClick={() => fileInputRef.current?.click()}
         >
@@ -125,7 +130,7 @@ export function FileUploadField({
                 <p className="text-sm font-medium text-foreground truncate max-w-[200px]">
                   {fileName}
                 </p>
-                {filePreview && fileType?.startsWith("image/") && (
+                {filePreview && fileType?.startsWith('image/') && (
                   <img
                     src={filePreview}
                     alt="Preview"
@@ -147,8 +152,12 @@ export function FileUploadField({
         )}
       </div>
 
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
-      {error && <p className="text-sm font-medium text-destructive">{error.message}</p>}
+      {description && (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
+      {error && (
+        <p className="text-sm font-medium text-destructive">{error.message}</p>
+      )}
     </div>
   );
 }

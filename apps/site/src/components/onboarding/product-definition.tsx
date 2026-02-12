@@ -1,32 +1,42 @@
-import * as React from "react";
-import { motion } from "framer-motion";
-import { z } from "zod";
-import { cn } from "@/lib/utils";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Sparkles as SparklesIcon, CheckCircle as CheckCircleIcon } from "lucide-react";
-
+import * as React from 'react';
+import { motion } from 'framer-motion';
+import { z } from 'zod';
+import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import {
+  Sparkles as SparklesIcon,
+  CheckCircle as CheckCircleIcon,
+} from 'lucide-react';
 
 // Zod Schema
 export const ProductOnboardingCardSchema = z.object({
-  mainIcon: z.object({
-    children: z.any(), // accepts JSX
-  }).default({ children: <SparklesIcon className="text-white" size={32} /> }),
-  title: z.string().optional().default("Welcome to Our Product"),
-  description: z.string().optional().default("Get started with our amazing features"),
-  cardIcon: z.object({ children: z.any() }).optional().default({ children: <CheckCircleIcon size={20} /> }),
-  cardHeaderLabel: z.string().optional().default("FEATURE"),
-  cardTitle: z.string().optional().default("First Steps"),
-  cardDescription: z.string().optional().default("get started"),
-  buttonText: z.string().optional().default("Get Started"),
-  buttonVariant: z.string().optional().default("default"),
+  mainIcon: z
+    .object({
+      children: z.any(), // accepts JSX
+    })
+    .default({ children: <SparklesIcon className="text-white" size={32} /> }),
+  title: z.string().optional().default('Welcome to Our Product'),
+  description: z
+    .string()
+    .optional()
+    .default('Get started with our amazing features'),
+  cardIcon: z
+    .object({ children: z.any() })
+    .optional()
+    .default({ children: <CheckCircleIcon size={20} /> }),
+  cardHeaderLabel: z.string().optional().default('FEATURE'),
+  cardTitle: z.string().optional().default('First Steps'),
+  cardDescription: z.string().optional().default('get started'),
+  buttonText: z.string().optional().default('Get Started'),
+  buttonVariant: z.string().optional().default('default'),
   onButtonClick: z.function().args().returns(z.void()).optional(),
   className: z.string().optional(),
   disableAnimation: z.boolean().optional(),
 });
 
-
-export type ProductOnboardingCardProps = z.infer<typeof ProductOnboardingCardSchema>;
-
+export type ProductOnboardingCardProps = z.infer<
+  typeof ProductOnboardingCardSchema
+>;
 
 // Component
 export const ProductOnboardingCard = React.forwardRef<
@@ -55,13 +65,20 @@ export const ProductOnboardingCard = React.forwardRef<
 
   const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 12 } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: 'spring', stiffness: 100, damping: 12 },
+    },
   };
 
   return (
     <motion.div
       ref={ref}
-      className={cn("flex flex-col items-center justify-center gap-6 text-center max-w-md w-full p-4", className)}
+      className={cn(
+        'flex flex-col items-center justify-center gap-6 text-center max-w-md w-full p-4',
+        className,
+      )}
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -75,13 +92,19 @@ export const ProductOnboardingCard = React.forwardRef<
       </motion.div>
 
       {/* Main Title */}
-      <motion.h2 variants={itemVariants} className="text-3xl font-bold text-foreground">
+      <motion.h2
+        variants={itemVariants}
+        className="text-3xl font-bold text-foreground"
+      >
         {title}
       </motion.h2>
 
       {/* Main Description */}
       {description && (
-        <motion.p variants={itemVariants} className="text-muted-foreground max-w-xs">
+        <motion.p
+          variants={itemVariants}
+          className="text-muted-foreground max-w-xs"
+        >
           {description}
         </motion.p>
       )}
@@ -98,7 +121,9 @@ export const ProductOnboardingCard = React.forwardRef<
             )}
           </CardHeader>
           <CardContent>
-            <h3 className="text-lg font-semibold text-card-foreground">{cardTitle}</h3>
+            <h3 className="text-lg font-semibold text-card-foreground">
+              {cardTitle}
+            </h3>
             {cardDescription && (
               <p className="text-sm text-muted-foreground">{cardDescription}</p>
             )}
@@ -118,4 +143,4 @@ export const ProductOnboardingCard = React.forwardRef<
   );
 });
 
-ProductOnboardingCard.displayName = "ProductOnboardingCard";
+ProductOnboardingCard.displayName = 'ProductOnboardingCard';

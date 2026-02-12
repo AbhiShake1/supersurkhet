@@ -1,6 +1,7 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const OpenAI = (props: SVGProps<SVGSVGElement>) => (
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
   <svg {...props} preserveAspectRatio="xMidYMid" viewBox="0 0 256 260">
     <path
       fill="#fff"

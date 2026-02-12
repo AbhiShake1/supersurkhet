@@ -1,12 +1,13 @@
-import { defineConfig } from 'vite'
-import { devtools } from '@tanstack/devtools-vite'
-import { tanstackStart } from '@tanstack/react-start/plugin/vite'
-import viteReact from '@vitejs/plugin-react'
-import viteTsConfigPaths from 'vite-tsconfig-paths'
-import { fileURLToPath, URL } from 'url'
+import { defineConfig } from 'vite';
+import { devtools } from '@tanstack/devtools-vite';
+import { tanstackStart } from '@tanstack/react-start/plugin/vite';
+import viteReact from '@vitejs/plugin-react';
+import viteTsConfigPaths from 'vite-tsconfig-paths';
+import { fileURLToPath, URL } from 'node:url';
 
-import tailwindcss from '@tailwindcss/vite'
-import { nitro } from 'nitro/vite'
+import tailwindcss from '@tailwindcss/vite';
+import { nitro } from 'nitro/vite';
+import { zodTypegen } from '@supersurkhet/vite-plugin-zod-typegen';
 
 const config = defineConfig({
   resolve: {
@@ -23,14 +24,14 @@ const config = defineConfig({
         nodeCompat: true,
         wrangler: {
           compatibility_date: '2026-01-21',
-          compatibility_flags: ["nodejs_compat"],
+          compatibility_flags: ['nodejs_compat'],
           keep_vars: true,
           observability: {
             enabled: true,
             logs: { enabled: true },
           },
-        }
-      }
+        },
+      },
     }),
     // this is the plugin that enables path aliases
     viteTsConfigPaths({
@@ -38,6 +39,11 @@ const config = defineConfig({
     }),
     tailwindcss(),
     tanstackStart(),
+    // @ts-expect-error
+    zodTypegen({
+      entry: fileURLToPath(new URL('./src/lib/schema.ts', import.meta.url)),
+      output: fileURLToPath(new URL('./src/types/db.d.ts', import.meta.url)),
+    }),
     viteReact({
       babel: {
         plugins: [
@@ -52,6 +58,6 @@ const config = defineConfig({
       },
     }),
   ],
-})
+});
 
-export default config
+export default config;

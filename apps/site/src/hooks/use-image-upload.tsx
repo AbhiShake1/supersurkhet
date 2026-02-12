@@ -1,6 +1,6 @@
-import { useMutation } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { useMutation } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 function toBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -32,7 +32,7 @@ export function useImageUpload({
     //   toast.success("Image uploaded successfully" + JSON.stringify(d, null, 2))
     // },
     onError() {
-      toast.error("Failed to upload image");
+      toast.error('Failed to upload image');
     },
   });
   const previewRef = useRef<string | null>(null);
@@ -41,10 +41,10 @@ export function useImageUpload({
     defaultValue ?? null,
   );
   useEffect(() => {
-    setFileName("Image")
-    setPreviewUrl(value ?? null)
-    previewRef.current = value ?? null
-  }, [value])
+    setFileName('Image');
+    setPreviewUrl(value ?? null);
+    previewRef.current = value ?? null;
+  }, [value]);
   const [fileName, setFileName] = useState<string | null>(null);
 
   const handleThumbnailClick = useCallback(() => {
@@ -60,7 +60,7 @@ export function useImageUpload({
       previewRef.current = url;
       onUpload?.(url);
     },
-    [onUpload],
+    [onUpload, uploadImage],
   );
 
   const handleRemove = useCallback(() => {
@@ -68,9 +68,9 @@ export function useImageUpload({
     setFileName(null);
     previewRef.current = null;
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
-  }, [previewUrl]);
+  }, []);
 
   return {
     previewUrl,

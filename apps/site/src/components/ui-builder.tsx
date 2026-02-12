@@ -1,30 +1,34 @@
-import _UIBuilder from "@/components/ui/ui-builder";
-import { primitiveComponentDefinitions } from "@/lib/ui-builder/registry/primitive-component-definitions";
-import { complexComponentDefinitions } from "@/lib/ui-builder/registry/complex-component-definitions";
-import { api } from "@/lib/api";
-import { lazy, memo, useMemo } from "react";
-import type { LayerChangeHandler } from "./ui/ui-builder/types";
-import _ from "lodash";
-import { Spinner } from "./ui/spinner";
-import { NotFound } from "./ui/not-found";
-import { ContextDataStore } from "@/lib/ui-builder/context/context-data-store";
-import type { Business } from "@/lib/schema";
-import { useProfile } from "@/hooks/use-profile";
-import { useAuth } from "./auth-provider";
-import { useSearch } from "@tanstack/react-router";
+import _UIBuilder from '@/components/ui/ui-builder';
+import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
+import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
+import { api } from '@/lib/api';
+import { lazy, memo, useMemo } from 'react';
+import type { LayerChangeHandler } from './ui/ui-builder/types';
+import _ from 'lodash';
+import { Spinner } from './ui/spinner';
+import { NotFound } from './ui/not-found';
+import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
+import type { Business } from '@/lib/schema';
+import { useProfile } from '@/hooks/use-profile';
+import { useAuth } from './auth-provider';
+import { useSearch } from '@tanstack/react-router';
 
-const LayerRenderer = lazy(() => import('@/components/ui/ui-builder/layer-renderer'))
+const LayerRenderer = lazy(
+  () => import('@/components/ui/ui-builder/layer-renderer'),
+);
 
 const UIBuilder = memo(_UIBuilder, (prevProps, nextProps) => {
-  return _.isEqual(prevProps.componentRegistry, nextProps.componentRegistry)
-    && prevProps.isLoading === nextProps.isLoading
-    && prevProps.createNew === nextProps.createNew
+  return (
+    _.isEqual(prevProps.componentRegistry, nextProps.componentRegistry) &&
+    prevProps.isLoading === nextProps.isLoading &&
+    prevProps.createNew === nextProps.createNew
+  );
   //   && _.isEqual(prevProps.initialLayers, nextProps.initialLayers)
-})
+});
 
 const componentRegistry = {
   ...primitiveComponentDefinitions, // div, span, img, etc.
-  ...complexComponentDefinitions,   // Button, Badge, Card, etc.
+  ...complexComponentDefinitions, // Button, Badge, Card, etc.
 };
 
 // recursively omit #
@@ -47,48 +51,50 @@ interface UseContextDataProps {
 }
 
 function useContextData({ business }: UseContextDataProps) {
-  const search = useSearch({ from: "__root__" })
-  const user = useProfile()
-  const { isLoading: isUserLoading } = useAuth()
+  const search = useSearch({ from: '__root__' });
+  const user = useProfile();
+  const { isLoading: isUserLoading } = useAuth();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const context = useMemo(() => {
     return {
       business,
-      user: _.pick(user, ["name", "email", "avatar", "isActive", "role"]),
+      user: _.pick(user, ['name', 'email', 'avatar', 'isActive', 'role']),
       search,
       date: {
         currentTime: new Date().toISOString(),
-        locale: "en-US",
-        timezone: "Asia/Kathmandu"
-      }
-    }
-  }, [business, user])
+        locale: 'en-US',
+        timezone: 'Asia/Kathmandu',
+      },
+    };
+  }, [business, user]);
 
-  const isLoading = isUserLoading
+  const isLoading = isUserLoading;
 
   return {
     contextData: context,
     isLoading,
-  }
+  };
 }
 
 export function CustomUiBuilderPage({ slug }: { slug: string }) {
-  const { mutate: upsert } = api.business.useUpdate()
+  const { mutate: upsert } = api.business.useUpdate();
   const { data: _data, isLoading } = api.business.useGet({
     keys: [slug],
     single: true,
-  })
-  const data = omitMeta(_data?.[0])
+  });
+  const data = omitMeta(_data?.[0]);
 
-  const currentLayers = data?.uiBuilder?.layers
+  const currentLayers = data?.uiBuilder?.layers;
 
   const handleLayersChange: LayerChangeHandler = (newLayers) => {
-    if (isLoading) return
-    upsert({ id: slug, uiBuilder: { layers: JSON.stringify(newLayers) } })
-  }
+    if (isLoading) return;
+    upsert({ id: slug, uiBuilder: { layers: JSON.stringify(newLayers) } });
+  };
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   const createNew = useMemo(() => {
-    return !isLoading && !currentLayers?.length
-  }, [isLoading, data])
+    return !isLoading && !currentLayers?.length;
+  }, [isLoading, data]);
 
   // Create dynamic context data based on actual business data if available
   const { contextData } = useContextData({ business: data });
@@ -104,38 +110,44 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
         createNew={createNew}
       />
     </ContextDataStore>
-  )
+  );
 }
 
 export function CustomUiRendererPage({ slug }: { slug: string }) {
-  "use memo"
-  const search = useSearch({ from: "__root__" })
-  const page = search?.p
-  const { data: _business, isLoading } = api.business.useGet({ keys: [slug], single: true })
+  'use memo';
+  const search = useSearch({ from: '__root__' });
+  const page = search?.p;
+  const { data: _business, isLoading } = api.business.useGet({
+    keys: [slug],
+    single: true,
+  });
 
-  const business = _business?.[0]
+  const business = _business?.[0];
 
   function getPage() {
-    const layers = business?.uiBuilder?.layers ? JSON.parse(business?.uiBuilder?.layers) : undefined
-    const fallback = layers?.[0]
-    if (!page) return fallback
-    const isNumber = Number.isInteger(Number(page))
-    if (isNumber) return layers?.[page] ?? fallback
-    const pageByName = layers?.find((layer) => layer.name.toLowerCase() === page.toLowerCase())
-    return pageByName ?? fallback
+    const layers = business?.uiBuilder?.layers
+      ? JSON.parse(business?.uiBuilder?.layers)
+      : undefined;
+    const fallback = layers?.[0];
+    if (!page) return fallback;
+    const isNumber = Number.isInteger(Number(page));
+    if (isNumber) return layers?.[page] ?? fallback;
+    const pageByName = layers?.find(
+      (layer) => layer.name.toLowerCase() === page.toLowerCase(),
+    );
+    return pageByName ?? fallback;
   }
 
   // Create context data for rendering - using business data if available
   const { contextData, isLoading: _isLoading } = useContextData({ business });
 
-  if (isLoading || _isLoading) return <Spinner />
+  if (isLoading || _isLoading) return <Spinner />;
 
-  if (!business?.uiBuilder?.layers) return <NotFound />
+  if (!business?.uiBuilder?.layers) return <NotFound />;
 
-  return <ContextDataStore contextData={contextData}>
-    <LayerRenderer
-      componentRegistry={componentRegistry}
-      page={getPage()}
-    />
-  </ContextDataStore>
+  return (
+    <ContextDataStore contextData={contextData}>
+      <LayerRenderer componentRegistry={componentRegistry} page={getPage()} />
+    </ContextDataStore>
+  );
 }

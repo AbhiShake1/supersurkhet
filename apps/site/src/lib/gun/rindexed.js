@@ -1,8 +1,10 @@
-; (function () {
+(() => {
+  if (typeof Gun === 'undefined') {
+    return;
+  }
 
-  if (typeof Gun === 'undefined') { return }
-
-  var noop = function () { }, u;
+  var _noop = () => {},
+    u;
 
   // -----------------------------
   // IndexedDB wrapper
@@ -10,18 +12,18 @@
   function openDB(opt, cb) {
     var req = indexedDB.open(opt.prefix, 1);
 
-    req.onupgradeneeded = function (e) {
+    req.onupgradeneeded = (e) => {
       var db = e.target.result;
       if (!db.objectStoreNames.contains('radata')) {
         db.createObjectStore('radata');
       }
     };
 
-    req.onsuccess = function () {
+    req.onsuccess = () => {
       cb(null, req.result);
     };
 
-    req.onerror = function (e) {
+    req.onerror = (e) => {
       cb(e || 'indexeddb.open.error');
     };
   }
@@ -33,7 +35,9 @@
     this.to.next(root);
 
     var opt = root.opt;
-    if (false === opt.indexedDB) { return }
+    if (false === opt.indexedDB) {
+      return;
+    }
 
     opt.prefix = opt.file || 'radata';
 
@@ -42,7 +46,7 @@
     var to, stop;
     var pending = Object.create(null);
 
-    openDB(opt, function (err, _db) {
+    openDB(opt, (err, _db) => {
       if (err) {
         Gun.log(err);
         return;
@@ -64,7 +68,7 @@
 
       if (!db) {
         // wait until db ready
-        return setTimeout(function () {
+        return setTimeout(() => {
           root.on('get', msg);
         }, 9);
       }
@@ -73,24 +77,25 @@
       var store = tx.objectStore('radata');
       var req = store.get(soul);
 
-      req.onsuccess = function () {
+      req.onsuccess = () => {
         var data = req.result || u;
         var tmp;
 
+        // biome-ignore lint/suspicious/noAssignInExpressions: lint debt cleanup
         if (data && (tmp = lex['.']) && !Object.plain(tmp)) {
           data = Gun.state.ify(
             {},
             tmp,
             Gun.state.is(data, tmp),
             data[tmp],
-            soul
+            soul,
           );
         }
 
         Gun.on.get.ack(msg, data);
       };
 
-      req.onerror = function () {
+      req.onerror = () => {
         Gun.on.get.ack(msg, u);
       };
     });
@@ -105,16 +110,20 @@
       if (!put) return;
 
       var soul = put['#'];
-      var key = put['.'];
-      var id = msg['#'];
-      var ok = msg.ok || {};
+      var _key = put['.'];
+      var _id = msg['#'];
+      var _ok = msg.ok || {};
 
-      if (!soul.startsWith("~") && !soul.startsWith("root") && !soul.startsWith("/RTC")) {
-        return
+      if (
+        !soul.startsWith('~') &&
+        !soul.startsWith('root') &&
+        !soul.startsWith('/RTC')
+      ) {
+        return;
       }
 
       if (!db) {
-        return setTimeout(function () {
+        return setTimeout(() => {
           root.on('put', msg);
         }, 9);
       }
@@ -123,7 +132,9 @@
       pending[soul] = pending[soul] || [];
       pending[soul].push({ put: put, msg: msg });
 
-      if (pending[soul].length > 1) { return }
+      if (pending[soul].length > 1) {
+        return;
+      }
 
       flushSoul(soul);
     });
@@ -137,21 +148,18 @@
 
       var req = store.get(soul);
 
-      req.onsuccess = function () {
+      req.onsuccess = () => {
         var node = req.result || {};
 
-        batch.forEach(function (item) {
+        batch.forEach((item) => {
           var put = item.put;
-          node = Gun.state.ify(
-            node,
-            put['.'],
-            put['>'],
-            put[':'],
-            soul
-          );
+          node = Gun.state.ify(node, put['.'], put['>'], put[':'], soul);
 
           var msg = item.msg;
-          if (!msg['@'] && (!msg._.via || Math.random() < ((msg.ok || {})['@'] / (msg.ok || {})['/']))) {
+          if (
+            !msg['@'] &&
+            (!msg._.via || Math.random() < msg.ok?.['@'] / msg.ok?.['/'])
+          ) {
             acks.push(msg['#']);
           }
         });
@@ -159,12 +167,12 @@
         store.put(node, soul);
       };
 
-      tx.oncomplete = function () {
+      tx.oncomplete = () => {
         delete pending[soul];
         scheduleAck();
       };
 
-      tx.onerror = function (e) {
+      tx.onerror = (e) => {
         stop = e || 'indexeddb.tx.error';
         delete pending[soul];
         scheduleAck();
@@ -187,15 +195,18 @@
       var list = acks;
       acks = [];
 
-      setTimeout.each(list, function (id) {
-        root.on('in', {
-          '@': id,
-          err: err,
-          ok: err ? 0 : 1
-        });
-      }, 0, 99);
+      setTimeout.each(
+        list,
+        (id) => {
+          root.on('in', {
+            '@': id,
+            err: err,
+            ok: err ? 0 : 1,
+          });
+        },
+        0,
+        99,
+      );
     }
-
   });
-
-}());
+})();

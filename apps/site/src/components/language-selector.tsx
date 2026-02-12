@@ -1,6 +1,11 @@
-import React from 'react';
+import type React from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useI18n } from '@/contexts/i18n-context';
 import { Languages } from 'lucide-react';
 
@@ -9,8 +14,8 @@ export const LanguageSelector: React.FC = () => {
 
   // Language display names
   const languageNames: Record<string, string> = {
-    'en': 'English',
-    'ne': 'नेपाली ',
+    en: 'English',
+    ne: 'नेपाली ',
   };
 
   return (
@@ -18,7 +23,9 @@ export const LanguageSelector: React.FC = () => {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2 w-24">
           <Languages className="h-4 w-4" />
-          <span className="hidden sm:inline-block">{languageNames[language] || language}</span>
+          <span className="hidden sm:inline-block">
+            {languageNames[language] || language}
+          </span>
           <span className="sm:hidden">{language.toUpperCase()}</span>
         </Button>
       </DropdownMenuTrigger>

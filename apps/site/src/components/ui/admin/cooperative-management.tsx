@@ -1,18 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus,
   Search,
@@ -23,19 +22,10 @@ import {
   User,
   Calendar,
   DollarSign,
-  Award,
-  Building,
-  Handshake,
-  FileText,
-  CalendarDays,
-  MapPin,
-  Phone,
-  Mail,
-  Clock,
   Check,
-} from "lucide-react";
-import { toast } from "sonner";
-import type { AdminComponent } from "@/components/ui/admin";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { AdminComponent } from '@/components/ui/admin';
 
 interface Member {
   id: string;
@@ -66,7 +56,7 @@ interface Meeting {
   time: string;
   agenda: string[];
   minutes?: string;
-  status: "upcoming" | "completed" | "cancelled";
+  status: 'upcoming' | 'completed' | 'cancelled';
   active: boolean;
 }
 
@@ -82,133 +72,133 @@ interface FinancialReport {
 
 const mockMembers: Member[] = [
   {
-    id: "1",
-    name: "Rajesh K.C.",
-    membershipNumber: "CVS-001",
-    joinDate: "2020-01-15",
+    id: '1',
+    name: 'Rajesh K.C.',
+    membershipNumber: 'CVS-001',
+    joinDate: '2020-01-15',
     sharesOwned: 100,
-    position: "Chairperson",
-    email: "rajesh@example.com",
-    phone: "+977-98XXXXXXXX",
-    address: "Birendranagar, Surkhet",
+    position: 'Chairperson',
+    email: 'rajesh@example.com',
+    phone: '+977-98XXXXXXXX',
+    address: 'Birendranagar, Surkhet',
     active: true,
   },
   {
-    id: "2",
-    name: "Sunita Thapa",
-    membershipNumber: "CVS-002",
-    joinDate: "2020-02-20",
+    id: '2',
+    name: 'Sunita Thapa',
+    membershipNumber: 'CVS-002',
+    joinDate: '2020-02-20',
     sharesOwned: 75,
-    position: "Vice-Chairperson",
-    email: "sunita@example.com",
-    phone: "+977-98XXXXXXXX",
-    address: "Birendranagar, Surkhet",
+    position: 'Vice-Chairperson',
+    email: 'sunita@example.com',
+    phone: '+977-98XXXXXXXX',
+    address: 'Birendranagar, Surkhet',
     active: true,
   },
   {
-    id: "3",
-    name: "Amit Shah",
-    membershipNumber: "CVS-003",
-    joinDate: "2020-03-10",
+    id: '3',
+    name: 'Amit Shah',
+    membershipNumber: 'CVS-003',
+    joinDate: '2020-03-10',
     sharesOwned: 50,
-    position: "Secretary",
-    email: "amit@example.com",
-    phone: "+977-98XXXXXXXX",
-    address: "Birendranagar, Surkhet",
+    position: 'Secretary',
+    email: 'amit@example.com',
+    phone: '+977-98XXXXXXXX',
+    address: 'Birendranagar, Surkhet',
     active: false,
   },
   {
-    id: "4",
-    name: "Priya Gurung",
-    membershipNumber: "CVS-004",
-    joinDate: "2020-04-05",
+    id: '4',
+    name: 'Priya Gurung',
+    membershipNumber: 'CVS-004',
+    joinDate: '2020-04-05',
     sharesOwned: 60,
-    position: "Treasurer",
-    email: "priya@example.com",
-    phone: "+977-98XXXXXXXX",
-    address: "Birendranagar, Surkhet",
+    position: 'Treasurer',
+    email: 'priya@example.com',
+    phone: '+977-98XXXXXXXX',
+    address: 'Birendranagar, Surkhet',
     active: true,
   },
 ];
 
 const mockCommittees: Committee[] = [
   {
-    id: "1",
-    name: "Finance Committee",
-    description: "Oversees financial operations and budgeting",
-    chairperson: "Amit Shah",
-    members: ["Rajesh K.C.", "Sunita Thapa", "Priya Gurung"],
+    id: '1',
+    name: 'Finance Committee',
+    description: 'Oversees financial operations and budgeting',
+    chairperson: 'Amit Shah',
+    members: ['Rajesh K.C.', 'Sunita Thapa', 'Priya Gurung'],
     active: true,
   },
   {
-    id: "2",
-    name: "Membership Committee",
-    description: "Manages member relations and recruitment",
-    chairperson: "Sunita Thapa",
-    members: ["Rajesh K.C.", "Amit Shah", "Priya Gurung"],
+    id: '2',
+    name: 'Membership Committee',
+    description: 'Manages member relations and recruitment',
+    chairperson: 'Sunita Thapa',
+    members: ['Rajesh K.C.', 'Amit Shah', 'Priya Gurung'],
     active: true,
   },
   {
-    id: "3",
-    name: "Operations Committee",
-    description: "Supervises daily operations and services",
-    chairperson: "Priya Gurung",
-    members: ["Rajesh K.C.", "Sunita Thapa", "Amit Shah"],
+    id: '3',
+    name: 'Operations Committee',
+    description: 'Supervises daily operations and services',
+    chairperson: 'Priya Gurung',
+    members: ['Rajesh K.C.', 'Sunita Thapa', 'Amit Shah'],
     active: false,
   },
 ];
 
 const mockMeetings: Meeting[] = [
   {
-    id: "1",
-    title: "Monthly General Meeting",
-    date: "2025-09-15",
-    time: "10:00 AM",
+    id: '1',
+    title: 'Monthly General Meeting',
+    date: '2025-09-15',
+    time: '10:00 AM',
     agenda: [
-      "Review of monthly financial report",
-      "Discussion on new member applications",
-      "Planning for upcoming community events",
+      'Review of monthly financial report',
+      'Discussion on new member applications',
+      'Planning for upcoming community events',
     ],
-    status: "upcoming",
+    status: 'upcoming',
     active: true,
   },
   {
-    id: "2",
-    title: "Annual General Meeting",
-    date: "2025-08-20",
-    time: "9:00 AM",
+    id: '2',
+    title: 'Annual General Meeting',
+    date: '2025-08-20',
+    time: '9:00 AM',
     agenda: [
-      "Presentation of annual financial report",
-      "Election of board members",
-      "Approval of annual budget",
-      "Discussion on expansion plans",
+      'Presentation of annual financial report',
+      'Election of board members',
+      'Approval of annual budget',
+      'Discussion on expansion plans',
     ],
     minutes:
-      "Meeting concluded successfully with election of new board members and approval of budget.",
-    status: "completed",
+      'Meeting concluded successfully with election of new board members and approval of budget.',
+    status: 'completed',
     active: true,
   },
   {
-    id: "3",
-    title: "Emergency Board Meeting",
-    date: "2025-08-05",
-    time: "2:00 PM",
+    id: '3',
+    title: 'Emergency Board Meeting',
+    date: '2025-08-05',
+    time: '2:00 PM',
     agenda: [
-      "Urgent discussion on water supply issues",
-      "Allocation of emergency funds",
-      "Coordination with local authorities",
+      'Urgent discussion on water supply issues',
+      'Allocation of emergency funds',
+      'Coordination with local authorities',
     ],
     minutes:
-      "Resolved water supply issues through coordination with local authorities and allocation of emergency funds.",
-    status: "completed",
+      'Resolved water supply issues through coordination with local authorities and allocation of emergency funds.',
+    status: 'completed',
     active: false,
   },
 ];
 
 const mockFinancialReports: FinancialReport[] = [
   {
-    id: "1",
-    period: "July 2025",
+    id: '1',
+    period: 'July 2025',
     revenue: 1250000,
     expenses: 850000,
     profit: 400000,
@@ -216,8 +206,8 @@ const mockFinancialReports: FinancialReport[] = [
     active: true,
   },
   {
-    id: "2",
-    period: "June 2025",
+    id: '2',
+    period: 'June 2025',
     revenue: 1100000,
     expenses: 780000,
     profit: 320000,
@@ -225,8 +215,8 @@ const mockFinancialReports: FinancialReport[] = [
     active: true,
   },
   {
-    id: "3",
-    period: "May 2025",
+    id: '3',
+    period: 'May 2025',
     revenue: 1350000,
     expenses: 920000,
     profit: 430000,
@@ -242,10 +232,10 @@ export const CooperativeManagement: AdminComponent = () => {
       committees={mockCommittees}
       meetings={mockMeetings}
       financialReports={mockFinancialReports}
-      onAddMember={() => { }}
-      onAddCommittee={() => { }}
-      onAddMeeting={() => { }}
-      onAddFinancialReport={() => { }}
+      onAddMember={() => {}}
+      onAddCommittee={() => {}}
+      onAddMeeting={() => {}}
+      onAddFinancialReport={() => {}}
     />
   );
 };
@@ -271,8 +261,8 @@ function _CooperativeManagement({
   meetings,
   financialReports,
 }: CooperativeManagementProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState("members");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState('members');
 
   const filteredMembers = members.filter((member) => {
     return (
@@ -312,47 +302,47 @@ function _CooperativeManagement({
     );
   });
 
-  const toggleMemberActive = (id: string, active: boolean) => {
+  const toggleMemberActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Member ${active ? "activated" : "deactivated"}`);
+    toast.success(`Member ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleCommitteeActive = (id: string, active: boolean) => {
+  const toggleCommitteeActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Committee ${active ? "activated" : "deactivated"}`);
+    toast.success(`Committee ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleMeetingActive = (id: string, active: boolean) => {
+  const toggleMeetingActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Meeting ${active ? "activated" : "deactivated"}`);
+    toast.success(`Meeting ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleFinancialReportActive = (id: string, active: boolean) => {
+  const toggleFinancialReportActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Financial report ${active ? "activated" : "deactivated"}`);
+    toast.success(`Financial report ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteMember = (id: string) => {
+  const deleteMember = (_id: string) => {
     // In a real implementation, this would delete the member from GunDB
-    toast.success("Member removed");
+    toast.success('Member removed');
   };
 
-  const deleteCommittee = (id: string) => {
+  const deleteCommittee = (_id: string) => {
     // In a real implementation, this would delete the committee from GunDB
-    toast.success("Committee removed");
+    toast.success('Committee removed');
   };
 
-  const deleteMeeting = (id: string) => {
+  const deleteMeeting = (_id: string) => {
     // In a real implementation, this would delete the meeting from GunDB
-    toast.success("Meeting removed");
+    toast.success('Meeting removed');
   };
 
-  const deleteFinancialReport = (id: string) => {
+  const deleteFinancialReport = (_id: string) => {
     // In a real implementation, this would delete the financial report from GunDB
-    toast.success("Financial report removed");
+    toast.success('Financial report removed');
   };
 
-  const updateMeetingStatus = (id: string, status: Meeting["status"]) => {
+  const updateMeetingStatus = (_id: string, status: Meeting['status']) => {
     // In a real implementation, this would update the meeting status in GunDB
     toast.success(`Meeting ${status}`);
   };
@@ -431,7 +421,7 @@ function _CooperativeManagement({
                   Upcoming Meetings
                 </p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {meetings.filter((m) => m.status === "upcoming").length}
+                  {meetings.filter((m) => m.status === 'upcoming').length}
                 </p>
               </div>
               <Calendar className="w-8 h-8 text-blue-500" />
@@ -507,7 +497,7 @@ function _CooperativeManagement({
             {filteredMembers.map((member) => (
               <Card
                 key={member.id}
-                className={`${!member.active ? "opacity-60" : ""}`}
+                className={`${!member.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -524,7 +514,7 @@ function _CooperativeManagement({
                           {member.membershipNumber}
                         </CardDescription>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Joined:{" "}
+                          Joined:{' '}
                           {new Date(member.joinDate).toLocaleDateString()}
                         </p>
                         <p className="text-sm text-muted-foreground">
@@ -550,7 +540,7 @@ function _CooperativeManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {member.active ? "Active" : "Inactive"}
+                        {member.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -595,7 +585,7 @@ function _CooperativeManagement({
             {filteredCommittees.map((committee) => (
               <Card
                 key={committee.id}
-                className={`${!committee.active ? "opacity-60" : ""}`}
+                className={`${!committee.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -632,7 +622,7 @@ function _CooperativeManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {committee.active ? "Active" : "Inactive"}
+                        {committee.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -677,7 +667,7 @@ function _CooperativeManagement({
             {filteredMeetings.map((meeting) => (
               <Card
                 key={meeting.id}
-                className={`${!meeting.active ? "opacity-60" : ""}`}
+                className={`${!meeting.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -691,19 +681,20 @@ function _CooperativeManagement({
                           {meeting.title}
                         </CardTitle>
                         <CardDescription>
-                          {new Date(meeting.date).toLocaleDateString()} at{" "}
+                          {new Date(meeting.date).toLocaleDateString()} at{' '}
                           {meeting.time}
                         </CardDescription>
                         <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                          {meeting.agenda.join(", ")}
+                          {meeting.agenda.join(', ')}
                         </p>
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${meeting.status === "upcoming"
-                            ? "bg-blue-100 text-blue-800"
-                            : meeting.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                            }`}
+                          className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${
+                            meeting.status === 'upcoming'
+                              ? 'bg-blue-100 text-blue-800'
+                              : meeting.status === 'completed'
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                          }`}
                         >
                           {meeting.status.charAt(0).toUpperCase() +
                             meeting.status.slice(1)}
@@ -723,17 +714,17 @@ function _CooperativeManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {meeting.active ? "Active" : "Inactive"}
+                        {meeting.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
                     <div className="flex items-center gap-1">
-                      {meeting.status === "upcoming" && (
+                      {meeting.status === 'upcoming' && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            updateMeetingStatus(meeting.id, "completed")
+                            updateMeetingStatus(meeting.id, 'completed')
                           }
                           className="text-green-600 hover:text-green-700"
                         >
@@ -777,7 +768,7 @@ function _CooperativeManagement({
             {filteredFinancialReports.map((report) => (
               <Card
                 key={report.id}
-                className={`${!report.active ? "opacity-60" : ""}`}
+                className={`${!report.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -814,7 +805,7 @@ function _CooperativeManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {report.active ? "Active" : "Inactive"}
+                        {report.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 

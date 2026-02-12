@@ -1,7 +1,10 @@
 import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
-import type { ComponentLayer, RegistryEntry } from '@/components/ui/ui-builder/types';
-import type { FieldConfigItem } from "@/components/ui/auto-form/types";
-import type { ComponentType as ReactComponentType } from "react";
+import type {
+  ComponentLayer,
+  RegistryEntry,
+} from '@/components/ui/ui-builder/types';
+import type { FieldConfigItem } from '@/components/ui/auto-form/types';
+import type { ComponentType as ReactComponentType } from 'react';
 
 // Cache for field overrides to avoid regenerating them
 const fieldOverrideCache = new Map<string, Record<string, FieldConfigItem>>();
@@ -13,7 +16,10 @@ const createCacheKey = (layer: ComponentLayer): string => {
   return `${layer.type}-${layer.id}-${propsHash}`;
 };
 
-export const generateFieldOverrides = (registry: ComponentRegistry, layer: ComponentLayer): Record<string, FieldConfigItem> => {
+export const generateFieldOverrides = (
+  registry: ComponentRegistry,
+  layer: ComponentLayer,
+): Record<string, FieldConfigItem> => {
   const componentDefinition = registry[layer.type];
   if (!componentDefinition) {
     return {};
@@ -28,12 +34,13 @@ export const generateFieldOverrides = (registry: ComponentRegistry, layer: Compo
 
   // Check if we have cached overrides for this exact layer state
   if (fieldOverrideCache.has(cacheKey)) {
+    // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
     return fieldOverrideCache.get(cacheKey)!;
   }
 
   // Generate field overrides
   const fieldOverrides: Record<string, FieldConfigItem> = {};
-  Object.keys(componentDefinition.fieldOverrides).forEach(key => {
+  Object.keys(componentDefinition.fieldOverrides).forEach((key) => {
     const override = componentDefinition.fieldOverrides?.[key];
     if (override) {
       fieldOverrides[key] = override(layer);
@@ -52,14 +59,20 @@ export const generateFieldOverrides = (registry: ComponentRegistry, layer: Compo
   }
 
   return fieldOverrides;
-}
+};
 
 //Checking of component type, checked via from property, if undefined or null then its a primitive like <div/>, <img/>, etc
-export function isPrimitiveComponent(component: RegistryEntry<ReactComponentType<any>>): boolean {
+export function isPrimitiveComponent(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  component: RegistryEntry<ReactComponentType<any>>,
+): boolean {
   return component.from === undefined || component.from === null;
 }
 
 //Checking of component type, checked via from property, if defined and not null then its a complex component like <Button/>, <Badge/>, etc
-export function isCustomComponent(component: RegistryEntry<ReactComponentType<any>>): boolean {
+export function isCustomComponent(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  component: RegistryEntry<ReactComponentType<any>>,
+): boolean {
   return component.from !== undefined && component.from !== null;
 }

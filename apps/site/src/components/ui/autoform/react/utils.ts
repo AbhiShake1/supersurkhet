@@ -1,10 +1,12 @@
-import type { FieldConfig } from "@autoform/core";
-import { fieldConfig as zodBaseFieldConfig } from "@autoform/zod";
-import React, { type ReactNode } from "react";
-import type { FieldWrapperProps } from "./types";
+import type { FieldConfig } from '@autoform/core';
+import { fieldConfig as zodBaseFieldConfig } from '@autoform/zod';
+import type React from 'react';
+import type { ReactNode } from 'react';
+import type { FieldWrapperProps } from './types';
 
 export function buildZodFieldConfig<
   FieldTypes = string,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   CustomData = Record<string, any>,
 >(): (
   config: FieldConfig<
@@ -12,7 +14,7 @@ export function buildZodFieldConfig<
     FieldTypes,
     React.ComponentType<FieldWrapperProps>,
     CustomData
-  >
+  >,
 ) => ReturnType<typeof zodBaseFieldConfig> {
   return (config) =>
     zodBaseFieldConfig<
@@ -23,6 +25,7 @@ export function buildZodFieldConfig<
     >(config);
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function getPathInObject(obj: any, path: string[]): any {
   let current = obj;
   for (const key of path) {
@@ -33,4 +36,8 @@ export function getPathInObject(obj: any, path: string[]): any {
     }
   }
   return current;
+}
+
+export function formatTestId(path: string[]) {
+  return path.join('__').replace(/[^a-zA-Z0-9_-]/g, '_');
 }

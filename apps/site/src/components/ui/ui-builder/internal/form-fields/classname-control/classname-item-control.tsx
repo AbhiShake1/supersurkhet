@@ -1,15 +1,23 @@
-import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { CONFIG, LAYOUT_GROUPS, LAYOUT_ORDER, type StateType } from "@/components/ui/ui-builder/internal/form-fields/classname-control/config";
-import { ClassNameGroupControl } from "@/components/ui/ui-builder/internal/form-fields/classname-control/classname-group-control";
-import { cn } from "@/lib/utils";
-import { isTailwindClass } from "@/components/ui/ui-builder/internal/form-fields/classname-control/utils";
+import { useMemo, useState, useEffect, useCallback } from 'react';
+import {
+  CONFIG,
+  LAYOUT_GROUPS,
+  LAYOUT_ORDER,
+  type StateType,
+} from '@/components/ui/ui-builder/internal/form-fields/classname-control/config';
+import { ClassNameGroupControl } from '@/components/ui/ui-builder/internal/form-fields/classname-control/classname-group-control';
+import { cn } from '@/lib/utils';
+import { isTailwindClass } from '@/components/ui/ui-builder/internal/form-fields/classname-control/utils';
 
 interface ClassNameItemControlProps {
   value: string;
   onChange: (value: string) => void;
 }
 
-export function ClassNameItemControl({ value, onChange }: ClassNameItemControlProps) {
+export function ClassNameItemControl({
+  value,
+  onChange,
+}: ClassNameItemControlProps) {
   // Memoize parsing for performance
   const parsed = useMemo(() => {
     if (value) {
@@ -17,16 +25,25 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
       // Parse all keys
       const parsedState = Object.entries(CONFIG).reduce(
         (acc, [key, config]) => {
-          const parsed = tokens.filter((token) => isTailwindClass(config.possibleTypes.filter((type): type is string => type !== null), token));
+          const parsed = tokens.filter((token) =>
+            isTailwindClass(
+              config.possibleTypes.filter(
+                (type): type is string => type !== null,
+              ),
+              token,
+            ),
+          );
           if (parsed.length > 0) {
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             (acc as any)[key] = config.multiple ? parsed : parsed[0];
           }
           return acc;
         },
         Object.fromEntries(Object.keys(CONFIG).map((k) => [k, null])) as Record<
           string,
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           any
-        >
+        >,
       ) as StateType;
       // For each group, only allow one key to be active at a time
       const initialSelected: { [groupLabel: string]: string } = {};
@@ -42,17 +59,17 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
               parsedState[key] = null;
             }
           }
-        };
+        }
         if (!found) initialSelected[group.label] = group.keys[0];
-      };
+      }
       // Find handled tokens
       const handledTokens = new Set(
         Object.values(parsedState).flatMap((v) =>
-          Array.isArray(v) ? v : v ? [v] : []
-        )
+          Array.isArray(v) ? v : v ? [v] : [],
+        ),
       );
       const unhandledTokens = tokens.filter(
-        (token) => !handledTokens.has(token)
+        (token) => !handledTokens.has(token),
       );
       return {
         parsedState,
@@ -64,7 +81,7 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
     const initialSelected: { [groupLabel: string]: string } = {};
     for (const group of LAYOUT_GROUPS) {
       initialSelected[group.label] = group.keys[0];
-    };
+    }
     return {
       parsedState: {} as StateType,
       unhandledTokens: [],
@@ -90,12 +107,12 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
     if (unhandledChanged) setUnhandled(parsed.unhandledTokens);
     if (selectedChanged) setSelectedKeys(parsed.initialSelected);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [parsed]);
+  }, [parsed, selectedKeys, state, unhandled]);
 
   // Helper to build class string from state and unhandled
   const buildClassString = (
     customState: StateType = state,
-    customUnhandled: string[] = unhandled
+    customUnhandled: string[] = unhandled,
   ) => {
     const classes: string[] = [];
     for (const key in customState) {
@@ -108,61 +125,62 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
         }
       }
     }
-    return [...classes, ...customUnhandled].join(" ").trim();
+    return [...classes, ...customUnhandled].join(' ').trim();
   };
 
   // Handler for UI changes (toggles, dropdowns, etc.)
-  const handleStateChange = useCallback((
-    key: keyof StateType,
-    value: string | string[] | null
-  ) => {
-    setState((prev) => {
-      const newState = { ...prev, [key]: value };
-      // If this key is part of a group, update selectedKeys and clear other keys in the group
-      const group = LAYOUT_GROUPS.find((g) => g.keys.includes(key as string));
-      if (group) {
-        setSelectedKeys((prevSel) => ({
-          ...prevSel,
-          [group.label]: key as string,
-        }));
-        // Clear other keys in the group
-        for (const k of group.keys) {
-          if (k !== key) newState[k] = null;
-        };
-        // Also clear from unhandled
-        if (typeof group.clearState === "function") {
-          const classesToClear = group.clearState(key as string, newState);
-          setUnhandled((prevUnhandled) =>
-            prevUnhandled.filter((token) => !classesToClear.includes(token))
-          );
-        }
-      }
-
-      // if visibility changes from visible to invisible null the value for that key in the newState
-      const layoutOrderItemsInvisible = LAYOUT_ORDER.filter(
-        (item) => item.isVisible && !item.isVisible(newState)
-      );
-      for (const item of layoutOrderItemsInvisible) {
-        if (item.type === "item") {
-          newState[item.key] = null;
-        } else if (item.type === "group") {
-          const group = LAYOUT_GROUPS.find((g) => g.label === item.label);
-          if (group) {
-            for (const key of group.keys) {
-              newState[key] = null;
-            };
+  const handleStateChange = useCallback(
+    (key: keyof StateType, value: string | string[] | null) => {
+      setState((prev) => {
+        const newState = { ...prev, [key]: value };
+        // If this key is part of a group, update selectedKeys and clear other keys in the group
+        const group = LAYOUT_GROUPS.find((g) => g.keys.includes(key as string));
+        if (group) {
+          setSelectedKeys((prevSel) => ({
+            ...prevSel,
+            [group.label]: key as string,
+          }));
+          // Clear other keys in the group
+          for (const k of group.keys) {
+            if (k !== key) newState[k] = null;
+          }
+          // Also clear from unhandled
+          if (typeof group.clearState === 'function') {
+            const classesToClear = group.clearState(key as string, newState);
+            setUnhandled((prevUnhandled) =>
+              prevUnhandled.filter((token) => !classesToClear.includes(token)),
+            );
           }
         }
-      };
 
-      return newState;
-    });
-  }, []);
+        // if visibility changes from visible to invisible null the value for that key in the newState
+        const layoutOrderItemsInvisible = LAYOUT_ORDER.filter(
+          (item) => item.isVisible && !item.isVisible(newState),
+        );
+        for (const item of layoutOrderItemsInvisible) {
+          if (item.type === 'item') {
+            newState[item.key] = null;
+          } else if (item.type === 'group') {
+            const group = LAYOUT_GROUPS.find((g) => g.label === item.label);
+            if (group) {
+              for (const key of group.keys) {
+                newState[key] = null;
+              }
+            }
+          }
+        }
+
+        return newState;
+      });
+    },
+    [],
+  );
 
   // Helper to create bound change handlers
-  const createChangeHandler = useCallback((key: keyof StateType) =>
-    (value: string | string[] | null) => handleStateChange(key, value),
-    [handleStateChange]
+  const createChangeHandler = useCallback(
+    (key: keyof StateType) => (value: string | string[] | null) =>
+      handleStateChange(key, value),
+    [handleStateChange],
   );
 
   // Handler for group key selection
@@ -176,7 +194,7 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
       let classesToClear: string[] = [];
       setState((prevState) => {
         const newState = { ...prevState };
-        if (typeof group.clearState === "function") {
+        if (typeof group.clearState === 'function') {
           classesToClear = group.clearState(key, newState);
         }
         // Remove all classes in classesToClear from state for all keys in the group except the selected one
@@ -186,10 +204,12 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
             if (!config) continue;
             if (config.multiple && Array.isArray(newState[k])) {
               newState[k] = (newState[k] as string[]).filter(
-                (v) => !classesToClear.includes(v as any)
+                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                (v) => !classesToClear.includes(v as any),
               );
               if (Array.isArray(newState[k]) && newState[k]?.length === 0)
                 newState[k] = null;
+              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             } else if (classesToClear.includes(newState[k] as any)) {
               newState[k] = null;
             }
@@ -197,7 +217,7 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
         }
         // Remove from unhandled synchronously
         setUnhandled((prevUnhandled) =>
-          prevUnhandled.filter((token) => !classesToClear.includes(token))
+          prevUnhandled.filter((token) => !classesToClear.includes(token)),
         );
         // Set the selected key's value to null if it was not previously set
         if (!newState[key]) newState[key] = null;
@@ -211,13 +231,14 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
     const classString = buildClassString(state, unhandled);
     if (onChange) onChange(classString);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, unhandled]);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [state, unhandled, buildClassString, onChange]);
 
   return (
     <div className="w-full" data-testid="classname-item-control">
       <div className="flex flex-wrap gap-y-1 px-4 pt-2 pb-4">
         {LAYOUT_ORDER.map((entry) => {
-          if (entry.type === "group") {
+          if (entry.type === 'group') {
             const group = LAYOUT_GROUPS.find((g) => g.label === entry.label);
             if (!group) return null;
             const keys = group.keys.map(String);
@@ -226,7 +247,11 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
             const groupConfig = CONFIG[selectedKey as keyof typeof CONFIG];
 
             return (
-              <div key={group.label} className={cn("w-full", entry.className)} data-testid={`group-${group.label.toLowerCase().replace(/\s+/g, '-')}`}>
+              <div
+                key={group.label}
+                className={cn('w-full', entry.className)}
+                data-testid={`group-${group.label.toLowerCase().replace(/\s+/g, '-')}`}
+              >
                 <ClassNameGroupControl
                   groupConfig={groupConfig}
                   group={group}
@@ -238,15 +263,19 @@ export function ClassNameItemControl({ value, onChange }: ClassNameItemControlPr
               </div>
             );
           }
-          if (entry.type === "item") {
+          if (entry.type === 'item') {
             if (entry.isVisible && !entry.isVisible(state)) return null;
             const configKey = entry.key;
             const ungroupedConfig = CONFIG[configKey];
             return (
-              <div key={configKey} className={cn("w-full", entry.className)} data-testid={`item-${configKey}`}>
+              <div
+                key={configKey}
+                className={cn('w-full', entry.className)}
+                data-testid={`item-${configKey}`}
+              >
                 <ungroupedConfig.component
                   {...ungroupedConfig}
-                  {...("multiple" in ungroupedConfig
+                  {...('multiple' in ungroupedConfig
                     ? { multiple: ungroupedConfig.multiple }
                     : {})}
                   value={state[configKey]}

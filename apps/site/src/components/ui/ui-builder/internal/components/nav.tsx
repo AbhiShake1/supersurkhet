@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { forwardRef, useCallback, useMemo, useState } from "react";
+import { forwardRef, useCallback, useMemo, useState } from 'react';
 import {
   Eye,
   FileUp,
@@ -16,8 +16,8 @@ import {
   MoreVertical,
   PanelLeft,
   PanelRight,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -27,21 +27,21 @@ import {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import LayerRenderer from "@/components/ui/ui-builder/layer-renderer";
+} from '@/components/ui/dialog';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -51,29 +51,29 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "@/components/ui/command";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { CodePanel } from "@/components/ui/ui-builder/components/code-panel";
+} from '@/components/ui/command';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { CodePanel } from '@/components/ui/ui-builder/components/code-panel';
 import {
   type EditorStore,
   useEditorStore,
-} from "@/lib/ui-builder/store/editor-store";
+} from '@/lib/ui-builder/store/editor-store';
 import type {
   ComponentRegistry,
   ComponentLayer,
-} from "@/components/ui/ui-builder/types";
+} from '@/components/ui/ui-builder/types';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/tooltip';
 import {
   type KeyCombination,
   useKeyboardShortcuts,
-} from "@/hooks/use-keyboard-shortcuts";
-import { useStore } from "zustand";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+} from '@/hooks/use-keyboard-shortcuts';
+import { useStore } from 'zustand';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
 const Z_INDEX = 40;
 
@@ -92,11 +92,11 @@ export function NavBar() {
   // Fix: Subscribe to temporal state changes using useStoreWithEqualityFn
   const pastStates = useStore(
     useLayerStore.temporal,
-    (state) => state.pastStates
+    (state) => state.pastStates,
   );
   const futureStates = useStore(
     useLayerStore.temporal,
-    (state) => state.futureStates
+    (state) => state.futureStates,
   );
   const { undo, redo } = useLayerStore.temporal.getState();
 
@@ -125,36 +125,36 @@ export function NavBar() {
     () => [
       {
         keys: { metaKey: true, shiftKey: false },
-        key: "z",
+        key: 'z',
         handler: handleUndo,
       },
       {
         keys: { metaKey: true, shiftKey: true },
-        key: "z",
+        key: 'z',
         handler: handleRedo,
       },
       {
         keys: { metaKey: true, shiftKey: true },
-        key: "9",
+        key: '9',
         handler: () => {
-          const elements = document.querySelectorAll("*");
+          const elements = document.querySelectorAll('*');
           elements.forEach((element) => {
-            element.classList.add("animate-spin", "origin-center");
+            element.classList.add('animate-spin', 'origin-center');
           });
         },
       },
       {
         keys: { metaKey: true, shiftKey: true },
-        key: "0",
+        key: '0',
         handler: () => {
-          const elements = document.querySelectorAll("*");
+          const elements = document.querySelectorAll('*');
           elements.forEach((element) => {
-            element.classList.remove("animate-spin", "origin-center");
+            element.classList.remove('animate-spin', 'origin-center');
           });
         },
       },
     ],
-    [handleUndo, handleRedo]
+    [handleUndo, handleRedo],
   );
 
   useKeyboardShortcuts(keyCombinations);
@@ -187,7 +187,7 @@ export function NavBar() {
             <TooltipTrigger asChild>
               <Button
                 onClick={handleToggleLeftPanel}
-                variant={showLeftPanel ? "secondary" : "outline"}
+                variant={showLeftPanel ? 'secondary' : 'outline'}
                 size="icon"
                 className="flex flex-col justify-center"
               >
@@ -196,7 +196,7 @@ export function NavBar() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {showLeftPanel ? "Hide" : "Show"} Left Panel
+              {showLeftPanel ? 'Hide' : 'Show'} Left Panel
             </TooltipContent>
           </Tooltip>
 
@@ -204,7 +204,7 @@ export function NavBar() {
             <TooltipTrigger asChild>
               <Button
                 onClick={handleToggleRightPanel}
-                variant={showRightPanel ? "secondary" : "outline"}
+                variant={showRightPanel ? 'secondary' : 'outline'}
                 size="icon"
                 className="flex flex-col justify-center"
               >
@@ -213,7 +213,7 @@ export function NavBar() {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {showRightPanel ? "Hide" : "Show"} Right Panel
+              {showRightPanel ? 'Hide' : 'Show'} Right Panel
             </TooltipContent>
           </Tooltip>
         </div>
@@ -374,7 +374,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            onClick={() => window.open(window.location.pathname + '/editor', '_blank')}
+            onClick={() =>
+              window.open(`${window.location.pathname}/editor`, '_blank')
+            }
             variant="secondary"
             size="icon"
             className="flex flex-col justify-center"
@@ -456,7 +458,9 @@ const ResponsiveDropdown: React.FC<ResponsiveDropdownProps> = ({
         </DropdownMenuItem>
         <DropdownMenuItem
           className="gap-2"
-          onClick={() => window.open(window.location.pathname + '/editor', '_blank')}
+          onClick={() =>
+            window.open(`${window.location.pathname}/editor`, '_blank')
+          }
         >
           <Maximize className="w-4 h-4" />
           Open Editor
@@ -501,9 +505,7 @@ const PreviewDialog: React.FC<PreviewDialogProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger />
-      <DialogContentWithZIndex
-        className="max-w-[calc(100dvw)] max-h-[calc(100dvh)] overflow-auto p-0 gap-0"
-      >
+      <DialogContentWithZIndex className="max-w-[calc(100dvw)] max-h-[calc(100dvh)] overflow-auto p-0 gap-0">
         <DialogHeader>
           <DialogTitle className="py-3 bg-yellow-600 text-center">
             <span className="text-lg font-semibold">Page Preview</span>
@@ -546,9 +548,7 @@ const CodeDialog: React.FC<CodeDialogProps> = ({ isOpen, onOpenChange }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogTrigger />
-      <DialogContentWithZIndex
-        className="sm:max-w-[625px] max-h-[625px]"
-      >
+      <DialogContentWithZIndex className="sm:max-w-[625px] max-h-[625px]">
         <DialogHeader>
           <DialogTitle>Generated Code</DialogTitle>
         </DialogHeader>
@@ -561,14 +561,14 @@ const CodeDialog: React.FC<CodeDialogProps> = ({ isOpen, onOpenChange }) => {
 function PagesPopover() {
   const { pages, selectedPageId, addPageLayer, selectPage } = useLayerStore();
   const [open, setOpen] = useState(false);
-  const [inputValue, setInputValue] = useState("");
+  const [inputValue, setInputValue] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [selectedPage, setSelectedPage] = useState<string | null>(
-    selectedPageId
+  const [_selectedPage, setSelectedPage] = useState<string | null>(
+    selectedPageId,
   );
-  const [textInputValue, setTextInputValue] = useState("");
+  const [textInputValue, setTextInputValue] = useState('');
   const allowPagesCreation = useEditorStore(
-    (state) => state.allowPagesCreation
+    (state) => state.allowPagesCreation,
   );
 
   const selectedPageData = useMemo(() => {
@@ -581,15 +581,15 @@ function PagesPopover() {
       selectPage(pageId);
       setOpen(false);
     },
-    [selectPage, setOpen]
+    [selectPage],
   );
 
   const handleAddPageLayer = useCallback(
     (pageName: string) => {
       addPageLayer(pageName);
-      setTextInputValue("");
+      setTextInputValue('');
     },
-    [addPageLayer, setTextInputValue]
+    [addPageLayer],
   );
 
   const handleSubmit = useCallback(
@@ -597,24 +597,24 @@ function PagesPopover() {
       e.preventDefault();
       handleAddPageLayer(textInputValue);
     },
-    [handleAddPageLayer, textInputValue]
+    [handleAddPageLayer, textInputValue],
   );
 
   const handleTextInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setTextInputValue(e.target.value);
     },
-    [setTextInputValue]
+    [],
   );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         handleAddPageLayer(textInputValue);
       }
     },
-    [handleAddPageLayer, textInputValue]
+    [handleAddPageLayer, textInputValue],
   );
 
   const style = useMemo(() => ({ zIndex: Z_INDEX + 1 }), []);
@@ -641,10 +641,7 @@ function PagesPopover() {
         <Tooltip>
           <PopoverTrigger asChild>
             <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                className="whitespace-nowrap"
-              >
+              <Button variant="outline" className="whitespace-nowrap">
                 {selectedPageData?.name}
               </Button>
             </TooltipTrigger>
@@ -702,7 +699,7 @@ const PageItem = ({
     <CommandItem
       value={page.name}
       onSelect={handleSelect}
-      className={cn(selectedPageId === page.id && "font-bold")}
+      className={cn(selectedPageId === page.id && 'font-bold')}
     >
       {selectedPageId === page.id ? (
         <CheckIcon className="w-4 h-4 mr-2" />
@@ -723,8 +720,8 @@ const DialogContentWithZIndex = forwardRef<
       <DialogContent
         ref={ref}
         className={cn(
-          "fixed left-[50%] top-[50%] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
-          className
+          'fixed left-[50%] top-[50%] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg',
+          className,
         )}
         {...props}
       >
@@ -738,14 +735,17 @@ const DialogContentWithZIndex = forwardRef<
   );
 });
 
-DialogContentWithZIndex.displayName = "DialogContentWithZIndex";
+DialogContentWithZIndex.displayName = 'DialogContentWithZIndex';
 
 const PreviewModeToggle = () => {
   const { previewMode, setPreviewMode } = useEditorStore();
 
-  const handleSelect = useCallback((mode: EditorStore["previewMode"]) => {
-    setPreviewMode(mode);
-  }, [setPreviewMode]);
+  const handleSelect = useCallback(
+    (mode: EditorStore['previewMode']) => {
+      setPreviewMode(mode);
+    },
+    [setPreviewMode],
+  );
 
   const style = useMemo(() => ({ zIndex: Z_INDEX + 1 }), []);
 
@@ -759,16 +759,16 @@ const PreviewModeToggle = () => {
   }, [previewMode]);
 
   const handleSelectMobile = useCallback(() => {
-    handleSelect("mobile");
+    handleSelect('mobile');
   }, [handleSelect]);
   const handleSelectTablet = useCallback(() => {
-    handleSelect("tablet");
+    handleSelect('tablet');
   }, [handleSelect]);
   const handleSelectDesktop = useCallback(() => {
-    handleSelect("desktop");
+    handleSelect('desktop');
   }, [handleSelect]);
   const handleSelectResponsive = useCallback(() => {
-    handleSelect("responsive");
+    handleSelect('responsive');
   }, [handleSelect]);
 
   return (
@@ -788,9 +788,9 @@ const PreviewModeToggle = () => {
         <DropdownMenuItem
           onSelect={handleSelectMobile}
           className={
-            previewMode === "mobile"
-              ? "bg-secondary text-secondary-foreground"
-              : ""
+            previewMode === 'mobile'
+              ? 'bg-secondary text-secondary-foreground'
+              : ''
           }
         >
           <Smartphone className="mr-2 h-4 w-4" />
@@ -799,9 +799,9 @@ const PreviewModeToggle = () => {
         <DropdownMenuItem
           onSelect={handleSelectTablet}
           className={
-            previewMode === "tablet"
-              ? "bg-secondary text-secondary-foreground"
-              : ""
+            previewMode === 'tablet'
+              ? 'bg-secondary text-secondary-foreground'
+              : ''
           }
         >
           <Tablet className="mr-2 h-4 w-4" />
@@ -810,9 +810,9 @@ const PreviewModeToggle = () => {
         <DropdownMenuItem
           onSelect={handleSelectDesktop}
           className={
-            previewMode === "desktop"
-              ? "bg-secondary text-secondary-foreground"
-              : ""
+            previewMode === 'desktop'
+              ? 'bg-secondary text-secondary-foreground'
+              : ''
           }
         >
           <Monitor className="mr-2 h-4 w-4" />
@@ -821,9 +821,9 @@ const PreviewModeToggle = () => {
         <DropdownMenuItem
           onSelect={handleSelectResponsive}
           className={
-            previewMode === "responsive"
-              ? "bg-secondary text-secondary-foreground"
-              : ""
+            previewMode === 'responsive'
+              ? 'bg-secondary text-secondary-foreground'
+              : ''
           }
         >
           <Maximize className="mr-2 h-4 w-4" />

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * @author: @dorian_baffier
@@ -10,32 +10,32 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { useRef, useState, useEffect } from "react";
-import { motion, type Variants } from "motion/react";
-import { cn } from "@/lib/utils";
-import z from "zod";
+import { useRef, useState, useEffect } from 'react';
+import { motion, type Variants } from 'motion/react';
+import { cn } from '@/lib/utils';
+import z from 'zod';
 
 export const ScrollTextSchema = z.object({
   texts: z.string().array().optional(),
   className: z.string().optional(),
-})
+});
 
 export type ScrollTextProps = z.infer<typeof ScrollTextSchema>;
 
 export default function ScrollText({
   texts = [
-    "TailwindCSS",
-    "Kokonut UI",
-    "shadcn/ui",
-    "Next.js",
-    "Vercel",
-    "Motion",
-    "React",
-    "Resend",
-    "TypeScript",
-    "Fumadocs",
-    "Supabase",
-    "Vercel"
+    'TailwindCSS',
+    'Kokonut UI',
+    'shadcn/ui',
+    'Next.js',
+    'Vercel',
+    'Motion',
+    'React',
+    'Resend',
+    'TypeScript',
+    'Fumadocs',
+    'Supabase',
+    'Vercel',
   ],
   className,
 }: ScrollTextProps) {
@@ -54,9 +54,7 @@ export default function ScrollText({
   const handleIntersection = (entries: IntersectionObserverEntry[]) => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
-        const index = itemsRef.current.findIndex(
-          (item) => item === entry.target
-        );
+        const index = itemsRef.current.indexOf(entry.target);
         setActiveIndex(index);
       }
     });
@@ -68,14 +66,11 @@ export default function ScrollText({
       itemsRef.current[index] = element;
 
       if (!observerRef.current) {
-        observerRef.current = new IntersectionObserver(
-          handleIntersection,
-          {
-            threshold: 0.7,
-            root: containerRef.current,
-            rootMargin: "-45% 0px -45% 0px",
-          }
-        );
+        observerRef.current = new IntersectionObserver(handleIntersection, {
+          threshold: 0.7,
+          root: containerRef.current,
+          rootMargin: '-45% 0px -45% 0px',
+        });
       }
 
       observerRef.current.observe(element);
@@ -104,7 +99,7 @@ export default function ScrollText({
       x: 0,
       rotate: 0,
       transition: {
-        type: "spring",
+        type: 'spring',
         stiffness: 100,
         damping: 15,
         duration: 0.5,
@@ -113,13 +108,13 @@ export default function ScrollText({
   };
 
   return (
-    <div className={cn("w-full max-w-3xl mx-auto", className)}>
+    <div className={cn('w-full max-w-3xl mx-auto', className)}>
       <div
         ref={containerRef}
         className={cn(
-          "h-[300px] overflow-y-auto scrollbar-none",
-          "relative flex flex-col items-center",
-          "[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          'h-[300px] overflow-y-auto scrollbar-none',
+          'relative flex flex-col items-center',
+          '[&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]',
         )}
       >
         <div className="h-[150px]" />
@@ -139,14 +134,14 @@ export default function ScrollText({
               whileInView="visible"
               viewport={{
                 once: false,
-                margin: "-20% 0px -20% 0px"
+                margin: '-20% 0px -20% 0px',
               }}
               className={cn(
-                "text-5xl font-bold py-8 px-4 whitespace-nowrap",
-                "transition-colors duration-300",
+                'text-5xl font-bold py-8 px-4 whitespace-nowrap',
+                'transition-colors duration-300',
                 activeIndex === index
-                  ? "text-black dark:text-white"
-                  : "text-neutral-500/50 dark:text-neutral-600"
+                  ? 'text-black dark:text-white'
+                  : 'text-neutral-500/50 dark:text-neutral-600',
               )}
             >
               {text}

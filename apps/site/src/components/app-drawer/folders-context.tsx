@@ -1,9 +1,9 @@
-import { useAuth } from "@/components/auth-provider";
-import { api } from "@/lib/api";
-import type { NestedSchemaType } from "@gta/react-hooks";
-import { createContext, useContext, useMemo } from "react";
+import { useAuth } from '@/components/auth-provider';
+import { api } from '@/lib/api';
+import type { NestedSchemaType } from '@gta/react-hooks';
+import { createContext, useContext, useMemo } from 'react';
 
-export type Folder = NestedSchemaType<"folder">;
+export type Folder = NestedSchemaType<'folder'>;
 
 interface FoldersContextType {
   folders: Folder[];
@@ -21,7 +21,7 @@ export function FoldersProvider({ children }: { children: React.ReactNode }) {
   const userId = user?._?.soul?.split('.')[1] || '';
 
   const { data: fetchedFolders = [], isLoading } = api.folder.useGet({
-    keys: [userId]
+    keys: [userId],
   });
 
   const createFolderMutation = api.folder.useCreate({ keys: [userId] });
@@ -31,26 +31,29 @@ export function FoldersProvider({ children }: { children: React.ReactNode }) {
   // Filter folders by current user
   const userFolders = useMemo(() => {
     if (!fetchedFolders?.length) return [];
-    return fetchedFolders.filter(folder => folder.userId === userId);
+    return fetchedFolders.filter((folder) => folder.userId === userId);
   }, [fetchedFolders, userId]);
 
   const createFolder = async (name: string, appIds: string[]) => {
     if (!userId) return;
 
-    const apps = appIds.reduce((acc, appId) => {
-      acc[appId] = true;
-      return acc;
-    }, {} as Record<string, boolean>);
+    const apps = appIds.reduce(
+      (acc, appId) => {
+        acc[appId] = true;
+        return acc;
+      },
+      {} as Record<string, boolean>,
+    );
 
     try {
       await createFolderMutation.mutateAsync({
         name,
         apps,
         userId,
-        created_by: user?._?.soul ?? "anon",
+        created_by: user?._?.soul ?? 'anon',
       });
     } catch (error) {
-      console.error("Error creating folder:", error);
+      console.error('Error creating folder:', error);
     }
   };
 
@@ -61,7 +64,7 @@ export function FoldersProvider({ children }: { children: React.ReactNode }) {
         ...updates,
       });
     } catch (error) {
-      console.error("Error updating folder:", error);
+      console.error('Error updating folder:', error);
     }
   };
 
@@ -69,7 +72,7 @@ export function FoldersProvider({ children }: { children: React.ReactNode }) {
     try {
       await deleteFolderMutation.mutateAsync(folderId);
     } catch (error) {
-      console.error("Error deleting folder:", error);
+      console.error('Error deleting folder:', error);
     }
   };
 
@@ -91,7 +94,7 @@ export function FoldersProvider({ children }: { children: React.ReactNode }) {
 export function useFolders() {
   const context = useContext(FoldersContext);
   if (context === undefined) {
-    throw new Error("useFolders must be used within a FoldersProvider");
+    throw new Error('useFolders must be used within a FoldersProvider');
   }
   return context;
 }

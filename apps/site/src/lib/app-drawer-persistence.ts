@@ -1,21 +1,21 @@
-import { gun } from "./gun";
+import { gun } from './gun';
 
 export interface AppGroup {
-	id: string;
-	name: string;
-	appIds: string[];
-	createdAt: number;
-	updatedAt: number;
+  id: string;
+  name: string;
+  appIds: string[];
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface AppDrawerData {
-	groups: Record<string, AppGroup>;
-	settings: {
-		gridColumns: number;
-		iconSize: "sm" | "md" | "lg";
-		viewMode: "grid" | "list" | "group";
-	};
-	appOrder: string[]; // Order of apps in the drawer
+  groups: Record<string, AppGroup>;
+  settings: {
+    gridColumns: number;
+    iconSize: 'sm' | 'md' | 'lg';
+    viewMode: 'grid' | 'list' | 'group';
+  };
+  appOrder: string[]; // Order of apps in the drawer
 }
 
 /**
@@ -24,34 +24,34 @@ export interface AppDrawerData {
  * @returns Promise<AppDrawerData>
  */
 export async function getUserAppDrawerData(
-	userId: string,
+  userId: string,
 ): Promise<AppDrawerData | null> {
-	return new Promise((resolve) => {
-		if (!userId) {
-			resolve(null);
-			return;
-		}
+  return new Promise((resolve) => {
+    if (!userId) {
+      resolve(null);
+      return;
+    }
 
-		gun
-			.get("appDrawer")
-			.get(userId)
-			.once((data: AppDrawerData | null) => {
-				if (!data) {
-					// If no data exists, return default
-					resolve({
-						groups: {},
-						settings: {
-							gridColumns: 4,
-							iconSize: "md",
-							viewMode: "grid",
-						},
-						appOrder: [],
-					});
-					return;
-				}
-				resolve(data);
-			});
-	});
+    gun
+      .get('appDrawer')
+      .get(userId)
+      .once((data: AppDrawerData | null) => {
+        if (!data) {
+          // If no data exists, return default
+          resolve({
+            groups: {},
+            settings: {
+              gridColumns: 4,
+              iconSize: 'md',
+              viewMode: 'grid',
+            },
+            appOrder: [],
+          });
+          return;
+        }
+        resolve(data);
+      });
+  });
 }
 
 /**
@@ -61,22 +61,22 @@ export async function getUserAppDrawerData(
  * @returns Promise<void>
  */
 export async function saveUserAppDrawerData(
-	userId: string,
-	data: AppDrawerData,
+  userId: string,
+  data: AppDrawerData,
 ): Promise<void> {
-	return new Promise((resolve) => {
-		if (!userId) {
-			resolve();
-			return;
-		}
+  return new Promise((resolve) => {
+    if (!userId) {
+      resolve();
+      return;
+    }
 
-		gun
-			.get("appDrawer")
-			.get(userId)
-			.put(data, () => {
-				resolve();
-			});
-	});
+    gun
+      .get('appDrawer')
+      .get(userId)
+      .put(data, () => {
+        resolve();
+      });
+  });
 }
 
 /**
@@ -88,31 +88,31 @@ export async function saveUserAppDrawerData(
  * @returns Promise<void>
  */
 export async function createAppGroup(
-	userId: string,
-	groupId: string,
-	name: string,
-	appIds: string[],
+  userId: string,
+  groupId: string,
+  name: string,
+  appIds: string[],
 ): Promise<void> {
-	const data = await getUserAppDrawerData(userId);
-	if (!data) return;
+  const data = await getUserAppDrawerData(userId);
+  if (!data) return;
 
-	const newGroup: AppGroup = {
-		id: groupId,
-		name,
-		appIds,
-		createdAt: Date.now(),
-		updatedAt: Date.now(),
-	};
+  const newGroup: AppGroup = {
+    id: groupId,
+    name,
+    appIds,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
 
-	const updatedData = {
-		...data,
-		groups: {
-			...data.groups,
-			[groupId]: newGroup,
-		},
-	};
+  const updatedData = {
+    ...data,
+    groups: {
+      ...data.groups,
+      [groupId]: newGroup,
+    },
+  };
 
-	await saveUserAppDrawerData(userId, updatedData);
+  await saveUserAppDrawerData(userId, updatedData);
 }
 
 /**
@@ -123,29 +123,29 @@ export async function createAppGroup(
  * @returns Promise<void>
  */
 export async function updateAppGroup(
-	userId: string,
-	groupId: string,
-	updatedGroup: Partial<AppGroup>,
+  userId: string,
+  groupId: string,
+  updatedGroup: Partial<AppGroup>,
 ): Promise<void> {
-	const data = await getUserAppDrawerData(userId);
-	if (!data || !data.groups[groupId]) return;
+  const data = await getUserAppDrawerData(userId);
+  if (!data || !data.groups[groupId]) return;
 
-	const existingGroup = data.groups[groupId];
-	const updatedGroupData = {
-		...existingGroup,
-		...updatedGroup,
-		updatedAt: Date.now(),
-	};
+  const existingGroup = data.groups[groupId];
+  const updatedGroupData = {
+    ...existingGroup,
+    ...updatedGroup,
+    updatedAt: Date.now(),
+  };
 
-	const updatedData = {
-		...data,
-		groups: {
-			...data.groups,
-			[groupId]: updatedGroupData,
-		},
-	};
+  const updatedData = {
+    ...data,
+    groups: {
+      ...data.groups,
+      [groupId]: updatedGroupData,
+    },
+  };
 
-	await saveUserAppDrawerData(userId, updatedData);
+  await saveUserAppDrawerData(userId, updatedData);
 }
 
 /**
@@ -155,21 +155,21 @@ export async function updateAppGroup(
  * @returns Promise<void>
  */
 export async function deleteAppGroup(
-	userId: string,
-	groupId: string,
+  userId: string,
+  groupId: string,
 ): Promise<void> {
-	const data = await getUserAppDrawerData(userId);
-	if (!data || !data.groups[groupId]) return;
+  const data = await getUserAppDrawerData(userId);
+  if (!data || !data.groups[groupId]) return;
 
-	const updatedGroups = { ...data.groups };
-	delete updatedGroups[groupId];
+  const updatedGroups = { ...data.groups };
+  delete updatedGroups[groupId];
 
-	const updatedData = {
-		...data,
-		groups: updatedGroups,
-	};
+  const updatedData = {
+    ...data,
+    groups: updatedGroups,
+  };
 
-	await saveUserAppDrawerData(userId, updatedData);
+  await saveUserAppDrawerData(userId, updatedData);
 }
 
 /**
@@ -179,18 +179,18 @@ export async function deleteAppGroup(
  * @returns Promise<void>
  */
 export async function updateAppOrder(
-	userId: string,
-	appOrder: string[],
+  userId: string,
+  appOrder: string[],
 ): Promise<void> {
-	const data = await getUserAppDrawerData(userId);
-	if (!data) return;
+  const data = await getUserAppDrawerData(userId);
+  if (!data) return;
 
-	const updatedData = {
-		...data,
-		appOrder,
-	};
+  const updatedData = {
+    ...data,
+    appOrder,
+  };
 
-	await saveUserAppDrawerData(userId, updatedData);
+  await saveUserAppDrawerData(userId, updatedData);
 }
 
 /**
@@ -200,19 +200,19 @@ export async function updateAppOrder(
  * @returns Promise<void>
  */
 export async function updateAppDrawerSettings(
-	userId: string,
-	settings: Partial<AppDrawerData["settings"]>,
+  userId: string,
+  settings: Partial<AppDrawerData['settings']>,
 ): Promise<void> {
-	const data = await getUserAppDrawerData(userId);
-	if (!data) return;
+  const data = await getUserAppDrawerData(userId);
+  if (!data) return;
 
-	const updatedData = {
-		...data,
-		settings: {
-			...data.settings,
-			...settings,
-		},
-	};
+  const updatedData = {
+    ...data,
+    settings: {
+      ...data.settings,
+      ...settings,
+    },
+  };
 
-	await saveUserAppDrawerData(userId, updatedData);
+  await saveUserAppDrawerData(userId, updatedData);
 }

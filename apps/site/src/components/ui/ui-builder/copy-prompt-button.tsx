@@ -7,7 +7,9 @@ interface CopyPromptButtonProps {
   onGeneratePrompt: () => string;
 }
 
-export const CopyPromptButton = ({ onGeneratePrompt }: CopyPromptButtonProps) => {
+export const CopyPromptButton = ({
+  onGeneratePrompt,
+}: CopyPromptButtonProps) => {
   const [buttonState, setButtonState] = useState<'idle' | 'success'>('idle');
 
   const copyMutation = useMutation({
@@ -17,7 +19,7 @@ export const CopyPromptButton = ({ onGeneratePrompt }: CopyPromptButtonProps) =>
         // Modern clipboard API
         await navigator.clipboard.writeText(promptText);
         return { success: true };
-      } catch (err) {
+      } catch (_err) {
         // Fallback for older browsers or when clipboard permissions are denied
         const textArea = document.createElement('textarea');
         textArea.value = promptText;

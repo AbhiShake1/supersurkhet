@@ -1,27 +1,33 @@
-import * as Kanban from "@/components/ui/kanban";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import CollapsibleSidebar from "@/components/ui/collapsible-sidebar";
-import { api } from "@/lib/api";
-import { appSchema } from "@/lib/schema";
-import { cn } from "@/lib/utils";
-import type { NestedSchemaType, SchemaKeys } from "@gta/react-hooks";
-import { getNestedZodShape } from "@gta/react-hooks";
-import { useQuery } from "@tanstack/react-query";
-import { useLocation } from "@tanstack/react-router";
-import _ from "lodash";
-import { GripVertical, QrCodeIcon, BarChart3, type LucideIcon, Sigma } from "lucide-react";
-import type { ReactNode } from "react";
-import { AutoTable, type AutoTableProps } from "../auto-table";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import { Skeleton } from "../ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { AdminDashboard } from "../admin-dashboard";
-import { QRCodePage } from "../qr-code-page";
-import Card from "../ui/minimal-card";
-import { NotFound } from "../ui/not-found";
-import { CustomUiBuilderPage } from "../ui-builder";
-import { LanguageSelector } from "../language-selector";
+import * as Kanban from '@/components/ui/kanban';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
+import { api } from '@/lib/api';
+import { appSchema } from '@/lib/schema';
+import { cn } from '@/lib/utils';
+import type { NestedSchemaType, SchemaKeys } from '@gta/react-hooks';
+import { getNestedZodShape } from '@gta/react-hooks';
+import { useQuery } from '@tanstack/react-query';
+import { useLocation } from '@tanstack/react-router';
+import _ from 'lodash';
+import {
+  GripVertical,
+  QrCodeIcon,
+  BarChart3,
+  type LucideIcon,
+  Sigma,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
+import { AutoTable, type AutoTableProps } from '../auto-table';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Skeleton } from '../ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { AdminDashboard } from '../admin-dashboard';
+import { QRCodePage } from '../qr-code-page';
+import Card from '../ui/minimal-card';
+import { NotFound } from '../ui/not-found';
+import { CustomUiBuilderPage } from '../ui-builder';
+import { LanguageSelector } from '../language-selector';
 
 export interface AutoAdminProps {
   tabs: PossibleTabConfig[];
@@ -36,16 +42,16 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
   title: string;
   icon?: LucideIcon;
 } & (
-    | {
+  | {
       children: ReactNode;
     }
-    | AutoTableProps<K extends SchemaKeys ? K : never>
-  );
+  | AutoTableProps<K extends SchemaKeys ? K : never>
+);
 
 export function AutoAdmin({ tabs }: AutoAdminProps) {
-  "use memo"
+  'use memo';
   const { search, pathname: currentPathname } = useLocation();
-  const [basePath] = currentPathname.split("/").filter((i) => !!i.length);
+  const [basePath] = currentPathname.split('/').filter((i) => !!i.length);
 
   const { data: allBusinesses = [] } = api.business.useGet({
     keys: [basePath],
@@ -55,29 +61,32 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
   const tabsWithHome = [
     {
-      title: "Dashboard",
+      title: 'Dashboard',
       icon: BarChart3,
-      children: <AdminDashboard slug={basePath} businessType={business.businessType} />,
+      children: (
+        <AdminDashboard slug={basePath} businessType={business.businessType} />
+      ),
     },
     ...tabs,
     {
-      title: "QR Management",
+      title: 'QR Management',
       icon: QrCodeIcon,
       children: <QRCodePage slug={basePath} />,
-      group: "System Configuration"
+      group: 'System Configuration',
     },
     {
-      title: "Website UI",
+      title: 'Website UI',
       icon: Sigma,
       children: <CustomUiBuilderPage slug={basePath} />,
-      group: "System Configuration"
-    }
-  ]
+      group: 'System Configuration',
+    },
+  ];
 
   // @ts-expect-error
   const tab = (search.tab as string) ?? tabsWithHome[0].title;
 
-  const currentItem = tabsWithHome.find((t) => t.title === tab) ?? tabsWithHome?.[0];
+  const currentItem =
+    tabsWithHome.find((t) => t.title === tab) ?? tabsWithHome?.[0];
 
   function _canGetComponents() {
     return !!currentItem;
@@ -87,9 +96,9 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
   async function getComponents() {
     if (!canGetComponents) return null;
-    if (!!currentItem && "schema" in currentItem) {
-      const currentSchema = appSchema[currentItem.schema];
-      if ("components" in currentSchema) {
+    if (!!currentItem && 'schema' in currentItem) {
+      const currentSchema = appSchema[currentItem.schema as SchemaKeys];
+      if ('components' in currentSchema) {
         const components = await currentSchema.components();
         const mappedNodes = components.map(async (c) => ({
           ...c,
@@ -105,22 +114,28 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
     enabled: canGetComponents,
     queryFn: getComponents,
     queryKey: [
-      "schema",
-      (!!currentItem && "slug" in currentItem && currentItem.slug) ?? basePath,
-      !!currentItem && "schema" in currentItem && currentItem.schema,
+      'schema',
+      (!!currentItem && 'slug' in currentItem && currentItem.slug) ?? basePath,
+      !!currentItem && 'schema' in currentItem && currentItem.schema,
     ],
   });
 
   if (!currentItem) {
-    return <NotFound />
+    return <NotFound />;
   }
 
   return (
     <SidebarProvider>
-      <CollapsibleSidebar tabs={tabsWithHome} businessName={business?.name} slug={business?.basePath} />
+      <CollapsibleSidebar
+        tabs={tabsWithHome}
+        businessName={business?.name}
+        slug={business?.basePath}
+      />
       <SidebarInset className="min-w-0 flex flex-col">
         <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-12 sm:h-16 shrink-0 items-center gap-0.5 sm:gap-2 border-b transition-[width,height] ease-linear px-0.5 sm:px-4">
-          <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">{currentItem.title}</h1>
+          <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">
+            {currentItem.title}
+          </h1>
 
           {/* Search and Action Bar */}
           <div className="ml-auto flex items-center gap-0.5 sm:gap-2 px-2">
@@ -131,12 +146,12 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
 
         <section
           className={cn(
-            "flex-1 overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6",
+            'flex-1 overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6',
           )}
         >
-          {"children" in currentItem ? (
+          {'children' in currentItem ? (
             currentItem.children
-          ) : "parsedSchema" in currentItem ? (
+          ) : 'parsedSchema' in currentItem ? (
             <AutoTable
               {...currentItem}
               slug={currentItem.slug ?? basePath}
@@ -154,11 +169,9 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
               defaultValue={
                 localStorage.getItem(`tab-#${basePath}-${tab}`) ??
                 components[0]?.name ??
-                "table"
+                'table'
               }
-              className={cn(
-                "flex flex-1 flex-col",
-              )}
+              className={cn('flex flex-1 flex-col')}
               onValueChange={(value) => {
                 localStorage.setItem(`tab-#${basePath}-${tab}`, value);
               }}
@@ -171,9 +184,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                   </TabsTrigger>
                 ))}
               </TabsList>
-              <TabsContent value="table" className={cn(
-                "flex-1 mt-1 sm:mt-4",
-              )}>
+              <TabsContent value="table" className={cn('flex-1 mt-1 sm:mt-4')}>
                 <Card className="border rounded-lg shadow-sm overflow-hidden">
                   <div className="p-0.5 sm:p-4">
                     <AutoTable
@@ -185,11 +196,13 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                 </Card>
               </TabsContent>
               {components.map(({ component, name }) => (
-                <TabsContent value={name} key={name} className="flex-1 mt-1 sm:mt-4">
+                <TabsContent
+                  value={name}
+                  key={name}
+                  className="flex-1 mt-1 sm:mt-4"
+                >
                   <Card className="border rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-0.5 sm:p-4">
-                      {component}
-                    </div>
+                    <div className="p-0.5 sm:p-4">{component}</div>
                   </Card>
                 </TabsContent>
               ))}
@@ -239,10 +252,13 @@ export function AutoKanban<K extends SchemaKeys>({
         }
       }}
       // @ts-expect-error
-      getItemValue={(item) => item._?.soul ?? ""}
+      getItemValue={(item) => item._?.soul ?? ''}
     >
       <Kanban.Board className="grid auto-rows-fr grid-cols-3">
-        {Object.keys(schema.shape[groupKey].Values ?? schema.shape[groupKey]._def.innerType.Values).map((status) => (
+        {Object.keys(
+          schema.shape[groupKey].Values ??
+            schema.shape[groupKey]._def.innerType.Values,
+        ).map((status) => (
           <KanbanColumn
             key={status}
             value={status}
@@ -254,7 +270,7 @@ export function AutoKanban<K extends SchemaKeys>({
       </Kanban.Board>
       <Kanban.Overlay>
         {({ value, variant }) => {
-          if (variant === "column") {
+          if (variant === 'column') {
             const orders = columns[value] ?? [];
 
             // @ts-expect-error
@@ -275,9 +291,9 @@ export function AutoKanban<K extends SchemaKeys>({
 }
 
 interface KanbanCardProps<K extends SchemaKeys>
-  extends Omit<React.ComponentProps<typeof Kanban.Item>, "value"> {
+  extends Omit<React.ComponentProps<typeof Kanban.Item>, 'value'> {
   order: NestedSchemaType<K>;
-  cardBuilder: AutoKanbanProps<K>["cardBuilder"];
+  cardBuilder: AutoKanbanProps<K>['cardBuilder'];
 }
 
 function KanbanCard<K extends SchemaKeys>({
@@ -288,7 +304,7 @@ function KanbanCard<K extends SchemaKeys>({
   return (
     <Kanban.Item
       key={order._?.soul}
-      value={order._?.soul ?? ""}
+      value={order._?.soul ?? ''}
       // asChild
       {...props}
     >
@@ -298,10 +314,10 @@ function KanbanCard<K extends SchemaKeys>({
 }
 
 interface KanbanColumnProps<K extends SchemaKeys>
-  extends Omit<React.ComponentProps<typeof Kanban.Column>, "children"> {
+  extends Omit<React.ComponentProps<typeof Kanban.Column>, 'children'> {
   orders: NestedSchemaType<K>[];
-  cardBuilder: AutoKanbanProps<K>["cardBuilder"];
-  isItemLocked?: AutoKanbanProps<K>["isItemLocked"];
+  cardBuilder: AutoKanbanProps<K>['cardBuilder'];
+  isItemLocked?: AutoKanbanProps<K>['isItemLocked'];
 }
 
 function KanbanColumn<K extends SchemaKeys>({
@@ -311,7 +327,7 @@ function KanbanColumn<K extends SchemaKeys>({
   isItemLocked,
   ...props
 }: KanbanColumnProps<K>) {
-  const context = Kanban.useKanbanContext("KanbanColumn");
+  const context = Kanban.useKanbanContext('KanbanColumn');
   return (
     <Kanban.Column value={value} {...props}>
       <div className="flex items-center justify-between">
@@ -322,7 +338,7 @@ function KanbanColumn<K extends SchemaKeys>({
           ) : (
             <Badge
               variant="secondary"
-              className={cn("pointer-events-none rounded-sm")}
+              className={cn('pointer-events-none rounded-sm')}
             >
               {orders.length}
             </Badge>
@@ -337,16 +353,17 @@ function KanbanColumn<K extends SchemaKeys>({
       <div className="flex flex-col gap-2 p-0.5">
         {context.loading
           ? Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="w-full h-12" />
-          ))
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+              <Skeleton key={i} className="w-full h-12" />
+            ))
           : orders.map((order) => (
-            <KanbanCard
-              key={order._?.soul}
-              order={order}
-              cardBuilder={cardBuilder}
-              asHandle={!(isItemLocked?.(order) ?? false)}
-            />
-          ))}
+              <KanbanCard
+                key={order._?.soul}
+                order={order}
+                cardBuilder={cardBuilder}
+                asHandle={!(isItemLocked?.(order) ?? false)}
+              />
+            ))}
       </div>
     </Kanban.Column>
   );

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { forwardRef } from "react";
-import { Maximize, Minus, Plus } from "lucide-react";
+import { forwardRef } from 'react';
+import { Minus, Plus } from 'lucide-react';
 
 import {
   Panel,
@@ -9,17 +9,18 @@ import {
   useStore,
   useReactFlow,
   type PanelProps,
-} from "@xyflow/react";
+} from '@xyflow/react';
 
-import { Slider } from "@/components/ui/slider";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Slider } from '@/components/ui/slider';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export const ZoomSlider = forwardRef<
   HTMLDivElement,
-  Omit<PanelProps, "children">
+  Omit<PanelProps, 'children'>
 >(({ className, ...props }, ref) => {
   const { zoom } = useViewport();
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { zoomTo, zoomIn, zoomOut, fitView } = useReactFlow();
   const minZoom = useStore((state) => state.minZoom);
   const maxZoom = useStore((state) => state.maxZoom);
@@ -27,7 +28,7 @@ export const ZoomSlider = forwardRef<
   return (
     <Panel
       className={cn(
-        "flex gap-1 rounded-md bg-background p-1 text-foreground border",
+        'flex gap-1 rounded-md bg-background p-1 text-foreground border',
         className,
       )}
       ref={ref}
@@ -73,4 +74,4 @@ export const ZoomSlider = forwardRef<
   );
 });
 
-ZoomSlider.displayName = "ZoomSlider";
+ZoomSlider.displayName = 'ZoomSlider';

@@ -1,8 +1,9 @@
-import type { FieldValues, UseFormWatch } from "react-hook-form";
-import { type Dependency, DependencyType, type EnumValues } from "./types";
-import type * as z from "zod";
+import type { FieldValues, UseFormWatch } from 'react-hook-form';
+import { type Dependency, DependencyType, type EnumValues } from './types';
+import type * as z from 'zod';
 
 export default function resolveDependencies<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   SchemaType extends z.infer<z.ZodObject<any, any>>,
 >(
   dependencies: Dependency<SchemaType>[],

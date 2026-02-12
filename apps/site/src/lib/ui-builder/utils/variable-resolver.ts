@@ -4,7 +4,11 @@
  * @param contextData - Contextual data like user info, business info, etc.
  * @returns String with contextual mentions resolved
  */
-export function resolveContextualMentions(value: string, contextData: Record<string, any>): string {
+export function resolveContextualMentions(
+  value: string,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  contextData: Record<string, any>,
+): string {
   if (!contextData) {
     return value;
   }
@@ -18,6 +22,7 @@ export function resolveContextualMentions(value: string, contextData: Record<str
       const parts = path.split('.');
 
       // Use a safe navigation function to access nested properties
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       let result: any = contextData;
       for (const part of parts) {
         // Check if result is null or undefined before accessing properties
@@ -43,4 +48,3 @@ export function resolveContextualMentions(value: string, contextData: Record<str
     }
   });
 }
-

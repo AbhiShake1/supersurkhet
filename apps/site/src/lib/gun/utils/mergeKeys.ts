@@ -1,27 +1,28 @@
-import { gun } from "@/lib/gun";
-
-export const GUN_PREFIX = "root"
+import { gun } from '@/lib/gun';
 
 const env = process.env.NODE_ENV;
 
-const PREFIX = `${GUN_PREFIX}/${env}/`
+export const GUN_PREFIX = `root/${env}/`;
 
 export function mergeKeys<T extends string>(key: T, ...restKeys: string[]) {
-  const initialKeys = key?.length ? key.split("/") : [];
-  const nonNamespacedKey = initialKeys.concat(restKeys).filter(Boolean).join("/");
-  if (nonNamespacedKey.startsWith(PREFIX)) return nonNamespacedKey
-  return `${PREFIX}${nonNamespacedKey}`;
+  const initialKeys = key?.length ? key.split('/') : [];
+  const nonNamespacedKey = initialKeys
+    .concat(restKeys)
+    .filter(Boolean)
+    .join('/');
+  if (nonNamespacedKey.startsWith(GUN_PREFIX)) return nonNamespacedKey;
+  return `${GUN_PREFIX}${nonNamespacedKey}`;
 }
 
 export function trimKey(key: string) {
-  const lastIndexOfPrefix = key.lastIndexOf(PREFIX);
+  const lastIndexOfPrefix = key.lastIndexOf(GUN_PREFIX);
   if (lastIndexOfPrefix === -1) return key;
-  return key.slice(lastIndexOfPrefix + PREFIX.length);
+  return key.slice(lastIndexOfPrefix + GUN_PREFIX.length);
 }
 
 export function getGunRef(key: string) {
   // const gunRef = gun.get(key);
-  const [head, ...tail] = key.split("/");
+  const [head, ...tail] = key.split('/');
   let gunRef = gun.get(head);
   for (const k of tail) {
     gunRef = gunRef.get(k);
@@ -29,7 +30,7 @@ export function getGunRef(key: string) {
   return gunRef;
 }
 
-if (import.meta.env.DEV && typeof window !== "undefined") {
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   // @ts-expect-error
   window.getGunRef = getGunRef;
 }

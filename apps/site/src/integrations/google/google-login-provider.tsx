@@ -1,12 +1,16 @@
-import { useAuth } from "@/components/auth-provider";
-import { googleLogin } from "@/lib/auth";
-import { GoogleOAuthProvider, useGoogleOneTapLogin } from "@react-oauth/google";
-import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
+import { useAuth } from '@/components/auth-provider';
+import { googleLogin } from '@/lib/auth';
+import { GoogleOAuthProvider, useGoogleOneTapLogin } from '@react-oauth/google';
+import { useMutation } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export function GoogleLoginProvider({ children }: React.PropsWithChildren) {
   return (
-    <GoogleOAuthProvider clientId={"44631945419-mpg4kk5it6o0ijnsrdougrthsmpft026.apps.googleusercontent.com"}>
+    <GoogleOAuthProvider
+      clientId={
+        '44631945419-mpg4kk5it6o0ijnsrdougrthsmpft026.apps.googleusercontent.com'
+      }
+    >
       {children}
     </GoogleOAuthProvider>
   );
@@ -49,7 +53,7 @@ function _OneTapLoginProvider({ children }: React.PropsWithChildren) {
       });
     },
     onError: () => {
-      toast.error("Login Failed");
+      toast.error('Login Failed');
     },
   });
 

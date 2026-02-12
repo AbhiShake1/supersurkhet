@@ -1,13 +1,13 @@
-import { Button } from "@/components/ui/button";
-import { ReloadIcon } from "@radix-ui/react-icons";
+import { Button } from '@/components/ui/button';
+import { ReloadIcon } from '@radix-ui/react-icons';
 
 interface ErrorProps {
   title?: string;
   description?: string;
 }
 
-export function Illustration(props: React.ComponentPropsWithoutRef<"svg">) {
-  return null
+export function Illustration(_props: React.ComponentPropsWithoutRef<'svg'>) {
+  return null;
   // return (
   //   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 362 145" {...props}>
   //     <path
@@ -19,8 +19,8 @@ export function Illustration(props: React.ComponentPropsWithoutRef<"svg">) {
 }
 
 export function ErrorComponent({
-  title = "Something went wrong",
-  description = "An error occurred. Please try again.",
+  title = 'Something went wrong',
+  description = 'An error occurred. Please try again.',
 }: ErrorProps) {
   const handleReload = () => {
     window.location.reload();

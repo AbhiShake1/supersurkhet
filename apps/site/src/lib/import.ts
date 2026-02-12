@@ -1,10 +1,12 @@
-import { z } from "zod";
-import { csvParse } from "d3-dsv";
-import * as XLSX from "xlsx";
+import { z } from 'zod';
+import { csvParse } from 'd3-dsv';
+import * as XLSX from 'xlsx';
 
 /**
  * Parse CSV file and convert to JSON
  */
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export async function parseCSVFile(file: File): Promise<any[]> {
   const text = await file.text();
   const parsed = csvParse(text);
@@ -14,6 +16,8 @@ export async function parseCSVFile(file: File): Promise<any[]> {
 /**
  * Parse Excel file and convert to JSON
  */
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function parseExcelFile(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -21,7 +25,7 @@ export function parseExcelFile(file: File): Promise<any[]> {
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer);
-        const workbook = XLSX.read(data, { type: "array" });
+        const workbook = XLSX.read(data, { type: 'array' });
 
         // Get the first worksheet
         const firstSheetName = workbook.SheetNames[0];
@@ -36,7 +40,7 @@ export function parseExcelFile(file: File): Promise<any[]> {
     };
 
     reader.onerror = () => {
-      reject(new Error("Error reading Excel file"));
+      reject(new Error('Error reading Excel file'));
     };
 
     reader.readAsArrayBuffer(file);
@@ -46,6 +50,8 @@ export function parseExcelFile(file: File): Promise<any[]> {
 /**
  * Parse JSON file
  */
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function parseJSONFile(file: File): Promise<any[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -67,7 +73,7 @@ export function parseJSONFile(file: File): Promise<any[]> {
     };
 
     reader.onerror = () => {
-      reject(new Error("Error reading JSON file"));
+      reject(new Error('Error reading JSON file'));
     };
 
     reader.readAsText(file);
@@ -77,10 +83,13 @@ export function parseJSONFile(file: File): Promise<any[]> {
 /**
  * Validate parsed data against a Zod schema
  */
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function validateDataAgainstSchema<T extends z.ZodObject<any>>(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   data: any[],
-  schema: T
-): { validData: z.infer<T>[], errors: { index: number; error: string }[] } {
+  schema: T,
+): { validData: z.infer<T>[]; errors: { index: number; error: string }[] } {
   const validData: z.infer<T>[] = [];
   const errors: { index: number; error: string }[] = [];
 
@@ -92,12 +101,14 @@ export function validateDataAgainstSchema<T extends z.ZodObject<any>>(
       if (error instanceof z.ZodError) {
         errors.push({
           index,
-          error: error.errors.map(e => `${e.path.join('.')}: ${e.message}`).join(', ')
+          error: error.errors
+            .map((e) => `${e.path.join('.')}: ${e.message}`)
+            .join(', '),
         });
       } else {
         errors.push({
           index,
-          error: 'Unknown validation error'
+          error: 'Unknown validation error',
         });
       }
     }

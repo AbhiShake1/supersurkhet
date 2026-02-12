@@ -1,5 +1,5 @@
-import type { SVGProps } from "react";
-import { z } from "zod";
+import type { SVGProps } from 'react';
+import { z } from 'zod';
 import {
   Angular,
   Docker,
@@ -33,7 +33,7 @@ import {
   OpenAI,
   ClaudeAI,
   Gemini,
-} from ".";
+} from '.';
 
 const icons = {
   angular: Angular,
@@ -72,6 +72,7 @@ const icons = {
 
 type IconName = keyof typeof icons;
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 function keys<T extends Record<string, any>>(obj: T): Array<keyof T> {
   return Object.keys(obj) as Array<keyof T>;
 }
@@ -111,7 +112,13 @@ type IconProps = {
   className?: string;
 } & SVGProps<SVGSVGElement>;
 
-const SvgIcon = ({ name, size = 'medium', color, className = '', ...props }: IconProps) => {
+const SvgIcon = ({
+  name,
+  size = 'medium',
+  color,
+  className = '',
+  ...props
+}: IconProps) => {
   const IconComponent = icons[name];
 
   if (!IconComponent) {
@@ -121,17 +128,15 @@ const SvgIcon = ({ name, size = 'medium', color, className = '', ...props }: Ico
 
   const sizeClass = sizeClasses[size];
   const colorClass = color ? colorClasses[color] : '';
-  const combinedClassName = [
-    sizeClass,
-    colorClass,
-    className
-  ].filter(Boolean).join(' ');
+  const combinedClassName = [sizeClass, colorClass, className]
+    .filter(Boolean)
+    .join(' ');
 
   return <IconComponent {...props} className={combinedClassName} />;
 };
 
 const SvgIconSchema = z.object({
-  name: z.enum(iconNames).default("firebase"),
+  name: z.enum(iconNames).default('firebase'),
   className: z.string().optional(),
   width: z.union([z.number(), z.string()]).optional(),
   height: z.union([z.number(), z.string()]).optional(),
@@ -140,20 +145,22 @@ const SvgIconSchema = z.object({
   strokeWidth: z.union([z.number(), z.string()]).optional(),
   viewBox: z.string().optional(),
   size: z.enum(['small', 'medium', 'large']).default('medium'),
-  color: z.enum([
-    'accent',
-    'accentForeground',
-    'primary',
-    'primaryForeground',
-    'secondary',
-    'secondaryForeground',
-    'destructive',
-    'destructiveForeground',
-    'muted',
-    'mutedForeground',
-    'background',
-    'foreground',
-  ]).optional(),
+  color: z
+    .enum([
+      'accent',
+      'accentForeground',
+      'primary',
+      'primaryForeground',
+      'secondary',
+      'secondaryForeground',
+      'destructive',
+      'destructiveForeground',
+      'muted',
+      'mutedForeground',
+      'background',
+      'foreground',
+    ])
+    .optional(),
 });
 
 export { SvgIcon, type IconName, SvgIconSchema };

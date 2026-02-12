@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * @author: @dorian_baffier
@@ -10,33 +10,35 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import z from "zod";
+import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import z from 'zod';
 
 export const DynamicTextGreetingSchema = z.object({
   text: z.string().optional(),
   language: z.string().optional(),
-})
+});
 
 // type Greeting = z.infer<typeof DynamicTextGreetingSchema>;
 
 export const DynamicTextSchema = z.object({
   greetings: z.array(DynamicTextGreetingSchema).optional(),
-})
+});
 
 export type DynamicTextProps = z.infer<typeof DynamicTextSchema>;
 
-const DynamicText = ({ greetings = [
-  { text: "Hello", language: "English" },
-  { text: "こんにちは", language: "Japanese" },
-  { text: "Bonjour", language: "French" },
-  { text: "Hola", language: "Spanish" },
-  { text: "안녕하세요", language: "Korean" },
-  { text: "Ciao", language: "Italian" },
-  { text: "Hallo", language: "German" },
-  { text: "こんにちは", language: "Japanese" },
-] }: DynamicTextProps) => {
+const DynamicText = ({
+  greetings = [
+    { text: 'Hello', language: 'English' },
+    { text: 'こんにちは', language: 'Japanese' },
+    { text: 'Bonjour', language: 'French' },
+    { text: 'Hola', language: 'Spanish' },
+    { text: '안녕하세요', language: 'Korean' },
+    { text: 'Ciao', language: 'Italian' },
+    { text: 'Hallo', language: 'German' },
+    { text: 'こんにちは', language: 'Japanese' },
+  ],
+}: DynamicTextProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(true);
 
@@ -58,7 +60,7 @@ const DynamicText = ({ greetings = [
     }, 300);
 
     return () => clearInterval(interval);
-  }, [isAnimating]);
+  }, [isAnimating, greetings.length]);
 
   // Animation variants for the text
   const textVariants = {
@@ -82,7 +84,7 @@ const DynamicText = ({ greetings = [
               initial={textVariants.hidden}
               animate={textVariants.visible}
               exit={textVariants.exit}
-              transition={{ duration: 0.2, ease: "easeOut" }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
             >
               <div
                 className="h-2 w-2 rounded-full bg-black dark:bg-white"

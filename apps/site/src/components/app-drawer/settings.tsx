@@ -1,24 +1,24 @@
-import { useState } from "react";
-import { Button } from "../ui/button";
-import { Label } from "../ui/label";
-import { Slider } from "../ui/slider";
+import { useState } from 'react';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
+import { Slider } from '../ui/slider';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "../ui/select";
+} from '../ui/select';
 
 interface AppDrawerSettingsProps {
   settings: {
     gridColumns: number;
-    iconSize: "sm" | "md" | "lg";
+    iconSize: 'sm' | 'md' | 'lg';
   };
   onSettingsChange: (
     newSettings: Partial<{
       gridColumns: number;
-      iconSize: "sm" | "md" | "lg";
+      iconSize: 'sm' | 'md' | 'lg';
     }>,
   ) => void;
   onClose: () => void;
@@ -40,7 +40,7 @@ export function AppDrawerSettings({
     setTempSettings((prev) => ({
       ...prev,
       gridColumns: 4,
-      iconSize: "md",
+      iconSize: 'md',
     }));
   };
 
@@ -49,6 +49,7 @@ export function AppDrawerSettings({
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="grid-columns">Grid Columns</Label>
+          {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
           <Slider
             id="grid-columns"
             min={2}
@@ -69,10 +70,11 @@ export function AppDrawerSettings({
           <Label htmlFor="icon-size">Icon Size</Label>
           <Select
             value={tempSettings.iconSize}
-            onValueChange={(value: "sm" | "md" | "lg") =>
+            onValueChange={(value: 'sm' | 'md' | 'lg') =>
               setTempSettings({ ...tempSettings, iconSize: value })
             }
           >
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
             <SelectTrigger id="icon-size">
               <SelectValue placeholder="Select icon size" />
             </SelectTrigger>

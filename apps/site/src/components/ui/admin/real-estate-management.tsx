@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus,
   Search,
@@ -29,16 +29,16 @@ import {
   Star,
   Check,
   X,
-} from "lucide-react";
-import { toast } from "sonner";
-import type { AdminComponent } from "@/components/ui/admin";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { AdminComponent } from '@/components/ui/admin';
 
 interface Property {
   id: string;
   title: string;
   description: string;
-  type: "residential" | "commercial" | "industrial" | "land";
-  status: "available" | "sold" | "leased" | "under_contract";
+  type: 'residential' | 'commercial' | 'industrial' | 'land';
+  status: 'available' | 'sold' | 'leased' | 'under_contract';
   price: number;
   area: number;
   bedrooms?: number;
@@ -73,7 +73,7 @@ interface Client {
   phone: string;
   email: string;
   interestedProperties: string[];
-  status: "prospect" | "buyer" | "seller" | "past_client";
+  status: 'prospect' | 'buyer' | 'seller' | 'past_client';
   active: boolean;
 }
 
@@ -85,138 +85,138 @@ interface Transaction {
   clientName: string;
   agentId: string;
   agentName: string;
-  type: "sale" | "lease" | "rental";
+  type: 'sale' | 'lease' | 'rental';
   price: number;
   date: string;
-  status: "pending" | "completed" | "cancelled";
+  status: 'pending' | 'completed' | 'cancelled';
   active: boolean;
 }
 
 const mockProperties: Property[] = [
   {
-    id: "1",
-    title: "Modern Family Home",
+    id: '1',
+    title: 'Modern Family Home',
     description:
-      "Beautiful 3-bedroom family home with spacious backyard and modern amenities",
-    type: "residential",
-    status: "available",
+      'Beautiful 3-bedroom family home with spacious backyard and modern amenities',
+    type: 'residential',
+    status: 'available',
     price: 4500000,
     area: 2500,
     bedrooms: 3,
     bathrooms: 2,
     parkingSpaces: 2,
     yearBuilt: 2018,
-    features: ["Garden", "Garage", "Central AC", "Security System"],
+    features: ['Garden', 'Garage', 'Central AC', 'Security System'],
     location: {
-      address: "Peaceful Lane 123",
-      city: "Birendranagar",
-      state: "Surkhet",
-      zipCode: "21900",
+      address: 'Peaceful Lane 123',
+      city: 'Birendranagar',
+      state: 'Surkhet',
+      zipCode: '21900',
     },
-    agentId: "1",
-    agentName: "Rajesh K.C.",
+    agentId: '1',
+    agentName: 'Rajesh K.C.',
     active: true,
   },
   {
-    id: "2",
-    title: "Downtown Commercial Space",
+    id: '2',
+    title: 'Downtown Commercial Space',
     description:
-      "Prime commercial space in downtown area with high foot traffic and excellent visibility",
-    type: "commercial",
-    status: "available",
+      'Prime commercial space in downtown area with high foot traffic and excellent visibility',
+    type: 'commercial',
+    status: 'available',
     price: 8500000,
     area: 4200,
     parkingSpaces: 15,
     yearBuilt: 2015,
-    features: ["High Visibility", "Parking", "Elevator", "Security"],
+    features: ['High Visibility', 'Parking', 'Elevator', 'Security'],
     location: {
-      address: "Main Street 456",
-      city: "Birendranagar",
-      state: "Surkhet",
-      zipCode: "21900",
+      address: 'Main Street 456',
+      city: 'Birendranagar',
+      state: 'Surkhet',
+      zipCode: '21900',
     },
-    agentId: "2",
-    agentName: "Sunita Thapa",
+    agentId: '2',
+    agentName: 'Sunita Thapa',
     active: true,
   },
   {
-    id: "3",
-    title: "Industrial Warehouse",
+    id: '3',
+    title: 'Industrial Warehouse',
     description:
-      "Large industrial warehouse with loading dock and high ceilings, perfect for manufacturing",
-    type: "industrial",
-    status: "leased",
+      'Large industrial warehouse with loading dock and high ceilings, perfect for manufacturing',
+    type: 'industrial',
+    status: 'leased',
     price: 12000000,
     area: 15000,
     parkingSpaces: 25,
     yearBuilt: 2010,
-    features: ["Loading Dock", "High Ceilings", "Security", "HVAC"],
+    features: ['Loading Dock', 'High Ceilings', 'Security', 'HVAC'],
     location: {
-      address: "Industrial Zone 789",
-      city: "Birendranagar",
-      state: "Surkhet",
-      zipCode: "21900",
+      address: 'Industrial Zone 789',
+      city: 'Birendranagar',
+      state: 'Surkhet',
+      zipCode: '21900',
     },
-    agentId: "3",
-    agentName: "Amit Shah",
+    agentId: '3',
+    agentName: 'Amit Shah',
     active: false,
   },
   {
-    id: "4",
-    title: "Scenic Land Parcel",
+    id: '4',
+    title: 'Scenic Land Parcel',
     description:
-      "Large scenic land parcel perfect for development or agricultural use",
-    type: "land",
-    status: "available",
+      'Large scenic land parcel perfect for development or agricultural use',
+    type: 'land',
+    status: 'available',
     price: 3200000,
     area: 12000,
-    features: ["Scenic Views", "Water Access", "Utilities", "Road Access"],
+    features: ['Scenic Views', 'Water Access', 'Utilities', 'Road Access'],
     location: {
-      address: "Mountain View Road",
-      city: "Birendranagar",
-      state: "Surkhet",
-      zipCode: "21900",
+      address: 'Mountain View Road',
+      city: 'Birendranagar',
+      state: 'Surkhet',
+      zipCode: '21900',
     },
-    agentId: "4",
-    agentName: "Priya Gurung",
+    agentId: '4',
+    agentName: 'Priya Gurung',
     active: true,
   },
 ];
 
 const mockAgents: Agent[] = [
   {
-    id: "1",
-    name: "Rajesh K.C.",
-    phone: "+977-98XXXXXXXX",
-    email: "rajesh@surkhetvalleyrealty.com.np",
-    experience: "12+ years",
+    id: '1',
+    name: 'Rajesh K.C.',
+    phone: '+977-98XXXXXXXX',
+    email: 'rajesh@surkhetvalleyrealty.com.np',
+    experience: '12+ years',
     rating: 4.9,
     active: true,
   },
   {
-    id: "2",
-    name: "Sunita Thapa",
-    phone: "+977-98XXXXXXXX",
-    email: "sunita@surkhetvalleyrealty.com.np",
-    experience: "10+ years",
+    id: '2',
+    name: 'Sunita Thapa',
+    phone: '+977-98XXXXXXXX',
+    email: 'sunita@surkhetvalleyrealty.com.np',
+    experience: '10+ years',
     rating: 4.8,
     active: true,
   },
   {
-    id: "3",
-    name: "Amit Shah",
-    phone: "+977-98XXXXXXXX",
-    email: "amit@surkhetvalleyrealty.com.np",
-    experience: "8+ years",
+    id: '3',
+    name: 'Amit Shah',
+    phone: '+977-98XXXXXXXX',
+    email: 'amit@surkhetvalleyrealty.com.np',
+    experience: '8+ years',
     rating: 4.7,
     active: false,
   },
   {
-    id: "4",
-    name: "Priya Gurung",
-    phone: "+977-98XXXXXXXX",
-    email: "priya@surkhetvalleyrealty.com.np",
-    experience: "6+ years",
+    id: '4',
+    name: 'Priya Gurung',
+    phone: '+977-98XXXXXXXX',
+    email: 'priya@surkhetvalleyrealty.com.np',
+    experience: '6+ years',
     rating: 4.6,
     active: true,
   },
@@ -224,98 +224,98 @@ const mockAgents: Agent[] = [
 
 const mockClients: Client[] = [
   {
-    id: "1",
-    name: "Ram Bahadur Thapa",
-    phone: "+977-98XXXXXXXX",
-    email: "ram@example.com",
-    interestedProperties: ["1", "3"],
-    status: "prospect",
+    id: '1',
+    name: 'Ram Bahadur Thapa',
+    phone: '+977-98XXXXXXXX',
+    email: 'ram@example.com',
+    interestedProperties: ['1', '3'],
+    status: 'prospect',
     active: true,
   },
   {
-    id: "2",
-    name: "Sita Kumari Shah",
-    phone: "+977-98XXXXXXXX",
-    email: "sita@example.com",
-    interestedProperties: ["2"],
-    status: "buyer",
+    id: '2',
+    name: 'Sita Kumari Shah',
+    phone: '+977-98XXXXXXXX',
+    email: 'sita@example.com',
+    interestedProperties: ['2'],
+    status: 'buyer',
     active: true,
   },
   {
-    id: "3",
-    name: "Hari Prasad",
-    phone: "+977-98XXXXXXXX",
-    email: "hari@example.com",
-    interestedProperties: ["4"],
-    status: "seller",
+    id: '3',
+    name: 'Hari Prasad',
+    phone: '+977-98XXXXXXXX',
+    email: 'hari@example.com',
+    interestedProperties: ['4'],
+    status: 'seller',
     active: false,
   },
   {
-    id: "4",
-    name: "Gita Devi",
-    phone: "+977-98XXXXXXXX",
-    email: "gita@example.com",
+    id: '4',
+    name: 'Gita Devi',
+    phone: '+977-98XXXXXXXX',
+    email: 'gita@example.com',
     interestedProperties: [],
-    status: "past_client",
+    status: 'past_client',
     active: true,
   },
 ];
 
 const mockTransactions: Transaction[] = [
   {
-    id: "1",
-    propertyId: "1",
-    propertyName: "Modern Family Home",
-    clientId: "2",
-    clientName: "Sita Kumari Shah",
-    agentId: "1",
-    agentName: "Rajesh K.C.",
-    type: "sale",
+    id: '1',
+    propertyId: '1',
+    propertyName: 'Modern Family Home',
+    clientId: '2',
+    clientName: 'Sita Kumari Shah',
+    agentId: '1',
+    agentName: 'Rajesh K.C.',
+    type: 'sale',
     price: 4500000,
-    date: "2025-08-15",
-    status: "completed",
+    date: '2025-08-15',
+    status: 'completed',
     active: true,
   },
   {
-    id: "2",
-    propertyId: "2",
-    propertyName: "Downtown Commercial Space",
-    clientId: "1",
-    clientName: "Ram Bahadur Thapa",
-    agentId: "2",
-    agentName: "Sunita Thapa",
-    type: "lease",
+    id: '2',
+    propertyId: '2',
+    propertyName: 'Downtown Commercial Space',
+    clientId: '1',
+    clientName: 'Ram Bahadur Thapa',
+    agentId: '2',
+    agentName: 'Sunita Thapa',
+    type: 'lease',
     price: 8500000,
-    date: "2025-08-20",
-    status: "pending",
+    date: '2025-08-20',
+    status: 'pending',
     active: true,
   },
   {
-    id: "3",
-    propertyId: "3",
-    propertyName: "Industrial Warehouse",
-    clientId: "3",
-    clientName: "Hari Prasad",
-    agentId: "3",
-    agentName: "Amit Shah",
-    type: "rental",
+    id: '3',
+    propertyId: '3',
+    propertyName: 'Industrial Warehouse',
+    clientId: '3',
+    clientName: 'Hari Prasad',
+    agentId: '3',
+    agentName: 'Amit Shah',
+    type: 'rental',
     price: 12000000,
-    date: "2025-07-22",
-    status: "completed",
+    date: '2025-07-22',
+    status: 'completed',
     active: false,
   },
   {
-    id: "4",
-    propertyId: "4",
-    propertyName: "Scenic Land Parcel",
-    clientId: "4",
-    clientName: "Gita Devi",
-    agentId: "4",
-    agentName: "Priya Gurung",
-    type: "sale",
+    id: '4',
+    propertyId: '4',
+    propertyName: 'Scenic Land Parcel',
+    clientId: '4',
+    clientName: 'Gita Devi',
+    agentId: '4',
+    agentName: 'Priya Gurung',
+    type: 'sale',
     price: 3200000,
-    date: "2025-08-18",
-    status: "cancelled",
+    date: '2025-08-18',
+    status: 'cancelled',
     active: true,
   },
 ];
@@ -327,10 +327,10 @@ export const RealEstateManagement: AdminComponent = () => {
       agents={mockAgents}
       clients={mockClients}
       transactions={mockTransactions}
-      onAddProperty={() => { }}
-      onAddAgent={() => { }}
-      onAddClient={() => { }}
-      onAddTransaction={() => { }}
+      onAddProperty={() => {}}
+      onAddAgent={() => {}}
+      onAddClient={() => {}}
+      onAddTransaction={() => {}}
     />
   );
 };
@@ -356,8 +356,8 @@ function _RealEstateManagement({
   clients,
   transactions,
 }: RealEstateManagementProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState("properties");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState('properties');
 
   const filteredProperties = properties.filter((property) => {
     return (
@@ -407,71 +407,69 @@ function _RealEstateManagement({
 
   const togglePropertyActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Property ${active ? "activated" : "deactivated"}`);
+    toast.success(`Property ${active ? 'activated' : 'deactivated'}`);
   };
 
   const toggleAgentActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Agent ${active ? "activated" : "deactivated"}`);
+    toast.success(`Agent ${active ? 'activated' : 'deactivated'}`);
   };
 
   const toggleClientActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Client ${active ? "activated" : "deactivated"}`);
+    toast.success(`Client ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteProperty = (g) => {
+  const deleteProperty = (_g) => {
     // In a real implementation, this would delete the property from GunDB
-    toast.success("Property removed");
+    toast.success('Property removed');
   };
 
-  const deleteAgent = (g) => {
+  const deleteAgent = (_g) => {
     // In a real implementation, this would delete the agent from GunDB
-    toast.success("Agent removed");
+    toast.success('Agent removed');
   };
 
-  const deleteClient = (g) => {
+  const deleteClient = (_g) => {
     // In a real implementation, this would delete the client from GunDB
-    toast.success("Client removed");
+    toast.success('Client removed');
   };
-
 
   const updateTransactionStatus = (
     _id: string,
-    status: Transaction["status"],
+    status: Transaction['status'],
   ) => {
     // In a real implementation, this would update the transaction status in GunDB
     toast.success(`Transaction ${status}`);
   };
 
-  const getPropertyIcon = (type: Property["type"]) => {
+  const getPropertyIcon = (type: Property['type']) => {
     switch (type) {
-      case "residential":
+      case 'residential':
         return Home;
-      case "commercial":
+      case 'commercial':
         return Building;
-      case "industrial":
+      case 'industrial':
         return Landmark;
-      case "land":
+      case 'land':
         return Ruler;
       default:
         return Home;
     }
   };
 
-
-  const getClientStatusColor = (status: Client["status"]) => {
+  const getClientStatusColor = (status: Client['status']) => {
     switch (status) {
-      case "prospect":
-        return "bg-yellow-100 text-yellow-800";
-      case "buyer":
-        return "bg-green-100 text-green-800";
-      case "seller":
-        return "bg-blue-100 text-blue-800";
-      case "past_client":
-        return "bg-purple-100 text-purple-800";
+      case 'prospect':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'buyer':
+        return 'bg-green-100 text-green-800';
+      case 'seller':
+        return 'bg-blue-100 text-blue-800';
+      case 'past_client':
+        return 'bg-purple-100 text-purple-800';
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -565,7 +563,7 @@ function _RealEstateManagement({
                   Pending Transactions
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
-                  {transactions.filter((t) => t.status === "pending").length}
+                  {transactions.filter((t) => t.status === 'pending').length}
                 </p>
               </div>
               <DollarSign className="w-8 h-8 text-purple-500" />
@@ -631,7 +629,7 @@ function _RealEstateManagement({
               return (
                 <Card
                   key={property.id}
-                  className={`${!property.active ? "opacity-60" : ""}`}
+                  className={`${!property.active ? 'opacity-60' : ''}`}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
@@ -655,7 +653,7 @@ function _RealEstateManagement({
                           <div className="flex items-center text-sm mt-1">
                             <MapPin className="w-4 h-4 mr-1" />
                             <span>
-                              {property.location.city},{" "}
+                              {property.location.city},{' '}
                               {property.location.state}
                             </span>
                           </div>
@@ -674,7 +672,7 @@ function _RealEstateManagement({
                           }
                         />
                         <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {property.active ? "Active" : "Inactive"}
+                          {property.active ? 'Active' : 'Inactive'}
                         </span>
                       </div>
 
@@ -720,7 +718,7 @@ function _RealEstateManagement({
             {filteredAgents.map((agent) => (
               <Card
                 key={agent.id}
-                className={`${!agent.active ? "opacity-60" : ""}`}
+                className={`${!agent.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -736,11 +734,13 @@ function _RealEstateManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
-                              className={`w-3 h-3 ${i < Math.floor(agent.rating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                                }`}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(agent.rating)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
                             />
                           ))}
                           <span className="text-xs ml-1">{agent.rating}</span>
@@ -763,7 +763,7 @@ function _RealEstateManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {agent.active ? "Active" : "Inactive"}
+                        {agent.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -808,7 +808,7 @@ function _RealEstateManagement({
             {filteredClients.map((client) => (
               <Card
                 key={client.id}
-                className={`${!client.active ? "opacity-60" : ""}`}
+                className={`${!client.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -830,7 +830,7 @@ function _RealEstateManagement({
                           )}`}
                         >
                           {client.status.charAt(0).toUpperCase() +
-                            client.status.slice(1).replace("_", " ")}
+                            client.status.slice(1).replace('_', ' ')}
                         </span>
                       </div>
                     </div>
@@ -847,7 +847,7 @@ function _RealEstateManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {client.active ? "Active" : "Inactive"}
+                        {client.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -892,7 +892,7 @@ function _RealEstateManagement({
             {filteredTransactions.map((transaction) => (
               <Card
                 key={transaction.id}
-                className={`${!transaction.active ? "opacity-60" : ""}`}
+                className={`${!transaction.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -924,24 +924,25 @@ function _RealEstateManagement({
                 <CardContent className="pt-0">
                   <div className="flex items-center justify-between">
                     <span
-                      className={`px-2 py-1 text-xs rounded-full ${transaction.status === "pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : transaction.status === "completed"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-red-100 text-red-800"
-                        }`}
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        transaction.status === 'pending'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : transaction.status === 'completed'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                      }`}
                     >
                       {transaction.status.charAt(0).toUpperCase() +
                         transaction.status.slice(1)}
                     </span>
 
                     <div className="flex items-center gap-1">
-                      {transaction.status === "pending" && (
+                      {transaction.status === 'pending' && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            updateTransactionStatus(transaction.id, "completed")
+                            updateTransactionStatus(transaction.id, 'completed')
                           }
                           className="text-green-600 hover:text-green-700"
                         >
@@ -952,7 +953,7 @@ function _RealEstateManagement({
                         variant="ghost"
                         size="sm"
                         onClick={() =>
-                          updateTransactionStatus(transaction.id, "cancelled")
+                          updateTransactionStatus(transaction.id, 'cancelled')
                         }
                         className="text-red-600 hover:text-red-700"
                       >

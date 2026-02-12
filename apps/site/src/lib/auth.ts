@@ -1,11 +1,11 @@
-import { pixelArt } from "@dicebear/collection";
-import { createAvatar } from "@dicebear/core";
-import type { IGunUserInstance } from "gun/types";
-import { z } from "zod";
-import { gun } from "./gun";
-import { setUser } from "@/server-functions/user";
-import { getGunRef, mergeKeys } from "@/lib/gun/utils";
-import { createServerFn } from "@tanstack/react-start";
+import { pixelArt } from '@dicebear/collection';
+import { createAvatar } from '@dicebear/core';
+import type { IGunUserInstance } from 'gun/types';
+import { z } from 'zod';
+import { gun } from './gun';
+import { setUser } from '@/server-functions/user';
+import { getGunRef, mergeKeys } from '@/lib/gun/utils';
+import { createServerFn } from '@tanstack/react-start';
 
 export const googleLoginSchema = z.object({
   email: z.string().email(),
@@ -15,58 +15,49 @@ export const googleLoginSchema = z.object({
 
 export type GoogleLoginSchema = z.infer<typeof googleLoginSchema>;
 
-const getBackdoor = createServerFn()
-  .handler(() => {
-    return process.env.GOOGLE_LOGIN_BACKDOOR
-  })
+const getBackdoor = createServerFn().handler(() => {
+  return process.env.GOOGLE_LOGIN_BACKDOOR;
+});
 
 export async function googleLogin({ email, name, avatar }: GoogleLoginSchema) {
-  const backdoor = await getBackdoor()
-  if (!backdoor) throw new Error("Google login failed [NO BACKDOOR]")
+  const backdoor = await getBackdoor();
+  if (!backdoor) throw new Error('Google login failed [NO BACKDOOR]');
 
-  // biome-ignore lint/suspicious/noAsyncPromiseExecutor: <explanation>
-  return new Promise<IGunUserInstance["is"]>(async (resolve, reject) => {
+  return new Promise<IGunUserInstance['is']>((resolve, reject) => {
     const alias = email.toLowerCase();
-    const userExists = await new Promise((resolve) => {
-      gun.get(`~@${alias}`).once((data) => resolve(!!data));
-    });
-
-    if (userExists) {
-      gun
-        .user()
-        .auth(alias, backdoor, (ack) => {
-          if ("err" in ack && ack.err) return reject(new Error(ack.err));
-          if ("sea" in ack) {
-            setUser({ data: ack.sea })
+    gun.get(`~@${alias}`).once((data) => {
+      const userExists = !!data;
+      if (userExists) {
+        gun.user().auth(alias, backdoor, (ack) => {
+          if ('err' in ack && ack.err) return reject(new Error(ack.err));
+          if ('sea' in ack) {
+            setUser({ data: ack.sea });
           }
           resolve(gun.user().is);
         });
-    } else {
-      gun
-        .user()
-        .create(alias, backdoor, (ack) => {
-          if ("err" in ack) return reject(new Error(ack.err));
+        return;
+      }
+      gun.user().create(alias, backdoor, (ack) => {
+        if ('err' in ack) return reject(new Error(ack.err));
 
-          const userProfile = {
-            email: alias,
-            name,
-            role: "user",
-            isActive: true,
-            avatar: avatar || createAvatar(pixelArt).toDataUri(),
-            phone: "",
-            permissions: {},
-          };
-          getGunRef(mergeKeys("user")).get(ack.pub).put(userProfile);
-          gun
-            .user()
-            .auth(alias, backdoor, (ack) => {
-              if ("err" in ack && ack.err) return reject(new Error(ack.err));
-              if ("sea" in ack) {
-                setUser({ data: ack.sea })
-              }
-              resolve(gun.user().is);
-            });
+        const userProfile = {
+          email: alias,
+          name,
+          role: 'user',
+          isActive: true,
+          avatar: avatar || createAvatar(pixelArt).toDataUri(),
+          phone: '',
+          permissions: {},
+        };
+        getGunRef(mergeKeys('user')).get(ack.pub).put(userProfile);
+        gun.user().auth(alias, backdoor, (ack) => {
+          if ('err' in ack && ack.err) return reject(new Error(ack.err));
+          if ('sea' in ack) {
+            setUser({ data: ack.sea });
+          }
+          resolve(gun.user().is);
         });
-    }
+      });
+    });
   });
 }

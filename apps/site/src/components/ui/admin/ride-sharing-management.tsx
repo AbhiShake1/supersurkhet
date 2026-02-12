@@ -1,30 +1,32 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus,
   Search,
   Edit,
-  Trash2, Car,
+  Trash2,
+  Car,
   User,
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: lint debt cleanup
   Map,
   CreditCard,
   TrendingUp,
-  Star
-} from "lucide-react";
-import { toast } from "sonner";
-import type { AdminComponent } from "@/components/ui/admin";
+  Star,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { AdminComponent } from '@/components/ui/admin';
 
 interface VehicleType {
   id: string;
@@ -61,22 +63,22 @@ interface ServiceArea {
 
 const mockVehicleTypes: VehicleType[] = [
   {
-    id: "1",
-    name: "Economy",
+    id: '1',
+    name: 'Economy',
     baseFare: 50,
     perKmRate: 15,
     active: true,
   },
   {
-    id: "2",
-    name: "Comfort",
+    id: '2',
+    name: 'Comfort',
     baseFare: 75,
     perKmRate: 20,
     active: true,
   },
   {
-    id: "3",
-    name: "Premium",
+    id: '3',
+    name: 'Premium',
     baseFare: 100,
     perKmRate: 25,
     active: false,
@@ -85,28 +87,28 @@ const mockVehicleTypes: VehicleType[] = [
 
 const mockDrivers: Driver[] = [
   {
-    id: "1",
-    name: "Rajesh K.C.",
-    vehicle: "Toyota Corolla - BA 2 KHA 1234",
-    license: "DL-2020-12345",
+    id: '1',
+    name: 'Rajesh K.C.',
+    vehicle: 'Toyota Corolla - BA 2 KHA 1234',
+    license: 'DL-2020-12345',
     rating: 4.9,
     trips: 1240,
     active: true,
   },
   {
-    id: "2",
-    name: "Sunita Thapa",
-    vehicle: "Honda City - BA 3 CHA 5678",
-    license: "DL-2021-67890",
+    id: '2',
+    name: 'Sunita Thapa',
+    vehicle: 'Honda City - BA 3 CHA 5678',
+    license: 'DL-2021-67890',
     rating: 4.8,
     trips: 980,
     active: true,
   },
   {
-    id: "3",
-    name: "Amit Shah",
-    vehicle: "Hyundai Elantra - BA 5 DHA 9012",
-    license: "DL-2019-54321",
+    id: '3',
+    name: 'Amit Shah',
+    vehicle: 'Hyundai Elantra - BA 5 DHA 9012',
+    license: 'DL-2019-54321',
     rating: 4.7,
     trips: 756,
     active: false,
@@ -115,24 +117,24 @@ const mockDrivers: Driver[] = [
 
 const mockPricingRules: PricingRule[] = [
   {
-    id: "1",
-    name: "Short Distance (0-5 km)",
+    id: '1',
+    name: 'Short Distance (0-5 km)',
     distanceFrom: 0,
     distanceTo: 5,
     ratePerKm: 15,
     active: true,
   },
   {
-    id: "2",
-    name: "Medium Distance (5-15 km)",
+    id: '2',
+    name: 'Medium Distance (5-15 km)',
     distanceFrom: 5,
     distanceTo: 15,
     ratePerKm: 12,
     active: true,
   },
   {
-    id: "3",
-    name: "Long Distance (15+ km)",
+    id: '3',
+    name: 'Long Distance (15+ km)',
     distanceFrom: 15,
     distanceTo: 100,
     ratePerKm: 10,
@@ -142,23 +144,23 @@ const mockPricingRules: PricingRule[] = [
 
 const mockServiceAreas: ServiceArea[] = [
   {
-    id: "1",
-    name: "Birendranagar Central",
+    id: '1',
+    name: 'Birendranagar Central',
     active: true,
   },
   {
-    id: "2",
-    name: "District Hospital Area",
+    id: '2',
+    name: 'District Hospital Area',
     active: true,
   },
   {
-    id: "3",
-    name: "Airport Road",
+    id: '3',
+    name: 'Airport Road',
     active: true,
   },
   {
-    id: "4",
-    name: "Surkhet Valley",
+    id: '4',
+    name: 'Surkhet Valley',
     active: false,
   },
 ];
@@ -170,10 +172,10 @@ export const RideSharingManagement: AdminComponent = () => {
       drivers={mockDrivers}
       pricingRules={mockPricingRules}
       serviceAreas={mockServiceAreas}
-      onAddVehicleType={() => { }}
-      onAddDriver={() => { }}
-      onAddPricingRule={() => { }}
-      onAddServiceArea={() => { }}
+      onAddVehicleType={() => {}}
+      onAddDriver={() => {}}
+      onAddPricingRule={() => {}}
+      onAddServiceArea={() => {}}
     />
   );
 };
@@ -199,8 +201,8 @@ function _RideSharingManagement({
   pricingRules,
   serviceAreas,
 }: RideSharingManagementProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState("vehicles");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState('vehicles');
 
   const filteredVehicleTypes = vehicleTypes.filter((vehicle) => {
     return (
@@ -231,44 +233,44 @@ function _RideSharingManagement({
     );
   });
 
-  const toggleVehicleTypeActive = (id: string, active: boolean) => {
+  const toggleVehicleTypeActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Vehicle type ${active ? "activated" : "deactivated"}`);
+    toast.success(`Vehicle type ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleDriverActive = (id: string, active: boolean) => {
+  const toggleDriverActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Driver ${active ? "activated" : "deactivated"}`);
+    toast.success(`Driver ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const togglePricingRuleActive = (id: string, active: boolean) => {
+  const togglePricingRuleActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Pricing rule ${active ? "activated" : "deactivated"}`);
+    toast.success(`Pricing rule ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleServiceAreaActive = (id: string, active: boolean) => {
+  const toggleServiceAreaActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Service area ${active ? "activated" : "deactivated"}`);
+    toast.success(`Service area ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteVehicleType = (id: string) => {
+  const deleteVehicleType = (_id: string) => {
     // In a real implementation, this would delete the vehicle type from GunDB
-    toast.success("Vehicle type removed");
+    toast.success('Vehicle type removed');
   };
 
-  const deleteDriver = (id: string) => {
+  const deleteDriver = (_id: string) => {
     // In a real implementation, this would delete the driver from GunDB
-    toast.success("Driver removed");
+    toast.success('Driver removed');
   };
 
-  const deletePricingRule = (id: string) => {
+  const deletePricingRule = (_id: string) => {
     // In a real implementation, this would delete the pricing rule from GunDB
-    toast.success("Pricing rule removed");
+    toast.success('Pricing rule removed');
   };
 
-  const deleteServiceArea = (id: string) => {
+  const deleteServiceArea = (_id: string) => {
     // In a real implementation, this would delete the service area from GunDB
-    toast.success("Service area removed");
+    toast.success('Service area removed');
   };
 
   return (
@@ -421,7 +423,7 @@ function _RideSharingManagement({
             {filteredVehicleTypes.map((vehicle) => (
               <Card
                 key={vehicle.id}
-                className={`${!vehicle.active ? "opacity-60" : ""}`}
+                className={`${!vehicle.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -454,7 +456,7 @@ function _RideSharingManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {vehicle.active ? "Active" : "Inactive"}
+                        {vehicle.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -499,7 +501,7 @@ function _RideSharingManagement({
             {filteredDrivers.map((driver) => (
               <Card
                 key={driver.id}
-                className={`${!driver.active ? "opacity-60" : ""}`}
+                className={`${!driver.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -517,11 +519,13 @@ function _RideSharingManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
-                              className={`w-3 h-3 ${i < Math.floor(driver.rating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                                }`}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(driver.rating)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
                             />
                           ))}
                           <span className="text-xs ml-1">{driver.rating}</span>
@@ -544,7 +548,7 @@ function _RideSharingManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {driver.active ? "Active" : "Inactive"}
+                        {driver.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -589,7 +593,7 @@ function _RideSharingManagement({
             {filteredPricingRules.map((rule) => (
               <Card
                 key={rule.id}
-                className={`${!rule.active ? "opacity-60" : ""}`}
+                className={`${!rule.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -620,7 +624,7 @@ function _RideSharingManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {rule.active ? "Active" : "Inactive"}
+                        {rule.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -665,7 +669,7 @@ function _RideSharingManagement({
             {filteredServiceAreas.map((area) => (
               <Card
                 key={area.id}
-                className={`${!area.active ? "opacity-60" : ""}`}
+                className={`${!area.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -690,7 +694,7 @@ function _RideSharingManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {area.active ? "Active" : "Inactive"}
+                        {area.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 

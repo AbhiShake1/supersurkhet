@@ -1,2 +1,2 @@
-export * from "./mergeKeys";
-export * from "./parser";
+export * from './mergeKeys';
+export * from './parser';

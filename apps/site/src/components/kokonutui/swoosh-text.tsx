@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * @author: @dorian_baffier
@@ -10,33 +10,35 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { cn } from "@/lib/utils";
-import { motion } from "motion/react";
-import z from "zod";
+import { cn } from '@/lib/utils';
+import { motion } from 'motion/react';
+import z from 'zod';
 
 export const SwooshTextSchema = z.object({
   text: z.string().optional(),
   className: z.string().optional(),
-  shadowColors: z.object({
-    first: z.string().optional(),
-    second: z.string().optional(),
-    third: z.string().optional(),
-    fourth: z.string().optional(),
-    glow: z.string().optional(),
-  }).optional(),
-})
+  shadowColors: z
+    .object({
+      first: z.string().optional(),
+      second: z.string().optional(),
+      third: z.string().optional(),
+      fourth: z.string().optional(),
+      glow: z.string().optional(),
+    })
+    .optional(),
+});
 
 export type SwooshTextProps = z.infer<typeof SwooshTextSchema>;
 
 export default function SwooshText({
-  text = "Hover Me",
-  className = "",
+  text = 'Hover Me',
+  className = '',
   shadowColors = {
-    first: "#07bccc",
-    second: "#e601c0",
-    third: "#e9019a",
-    fourth: "#f40468",
-    glow: "#f40468",
+    first: '#07bccc',
+    second: '#e601c0',
+    third: '#e9019a',
+    fourth: '#f40468',
+    glow: '#f40468',
   },
 }: SwooshTextProps) {
   const textShadowStyle = {
@@ -48,18 +50,18 @@ export default function SwooshText({
   };
 
   const noShadowStyle = {
-    textShadow: "none",
+    textShadow: 'none',
   };
 
   return (
     <div className="w-full text-center">
       <motion.div
         className={cn(
-          "w-full text-center cursor-pointer text-3xl font-bold",
-          "transition-all duration-200 ease-in-out tracking-widest",
-          "text-black dark:text-white italic",
-          "stroke-[#d6f4f4]",
-          className
+          'w-full text-center cursor-pointer text-3xl font-bold',
+          'transition-all duration-200 ease-in-out tracking-widest',
+          'text-black dark:text-white italic',
+          'stroke-[#d6f4f4]',
+          className,
         )}
         style={textShadowStyle}
         whileHover={noShadowStyle}

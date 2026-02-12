@@ -1,10 +1,10 @@
-import { FormControl, FormItem, FormMessage } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Trash2 } from "lucide-react";
-import { type ChangeEvent, useState } from "react";
-import AutoFormLabel from "../common/label";
-import AutoFormTooltip from "../common/tooltip";
-import type { AutoFormInputComponentProps } from "../types";
+import { FormControl, FormItem, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Trash2 } from 'lucide-react';
+import { type ChangeEvent, useState } from 'react';
+import AutoFormLabel from '../common/label';
+import AutoFormTooltip from '../common/tooltip';
+import type { AutoFormInputComponentProps } from '../types';
 export default function AutoFormFile({
   label,
   isRequired,
@@ -48,13 +48,14 @@ export default function AutoFormFile({
             type="file"
             {...fieldPropsWithoutShowLabel}
             onChange={handleFileChange}
-            value={""}
+            value={''}
           />
         </FormControl>
       )}
       {file && (
         <div className="flex h-[40px] w-full flex-row items-center justify-between space-x-2 rounded-sm border p-2 text-black focus-visible:ring-0 focus-visible:ring-offset-0 dark:bg-white dark:text-black dark:focus-visible:ring-0 dark:focus-visible:ring-offset-0">
           <p>{fileName}</p>
+          {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
           <button onClick={handleRemoveClick} aria-label="Remove image">
             <Trash2 size={16} />
           </button>

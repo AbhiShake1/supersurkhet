@@ -1,18 +1,19 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 import type {
   ParsedField,
   ParsedSchema,
   Renderable,
   SchemaProvider,
   FieldConfig as BaseFieldConfig,
-} from "@autoform/core";
-import type { FieldValues, UseFormReturn } from "react-hook-form";
+} from '@autoform/core';
+import type { FieldValues, UseFormReturn } from 'react-hook-form';
 
 export interface AutoFormProps<T extends FieldValues> {
   schema: SchemaProvider<T>;
   onSubmit?: (
     values: T,
-    form: UseFormReturn<T, any, T>
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    form: UseFormReturn<T, any, T>,
   ) => void | Promise<void>;
 
   defaultValues?: Partial<T>;
@@ -22,20 +23,22 @@ export interface AutoFormProps<T extends FieldValues> {
   uiComponents: AutoFormUIComponents;
   formComponents: AutoFormFieldComponents;
   withSubmit?: boolean;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   onFormInit?: (form: UseFormReturn<T, any, T>) => void;
-  formProps?: React.ComponentProps<"form"> | Record<string, any>;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  formProps?: React.ComponentProps<'form'> | Record<string, any>;
 }
 
 export type ExtendableAutoFormProps<T extends FieldValues> = Omit<
   AutoFormProps<T>,
-  "uiComponents" | "formComponents"
+  'uiComponents' | 'formComponents'
 > & {
   uiComponents?: Partial<AutoFormUIComponents>;
   formComponents?: Partial<AutoFormFieldComponents>;
 };
 
 export interface AutoFormUIComponents {
-  Form: React.ComponentType<React.ComponentProps<"form">>;
+  Form: React.ComponentType<React.ComponentProps<'form'>>;
   FieldWrapper: React.ComponentType<FieldWrapperProps>;
   ErrorMessage: React.ComponentType<{ error: string }>;
   SubmitButton: React.ComponentType<{ children: ReactNode }>;
@@ -54,6 +57,7 @@ export interface FieldWrapperProps {
   children: ReactNode;
   id: string;
   field: ParsedField;
+  testId?: string;
 }
 
 export interface ArrayWrapperProps {
@@ -61,28 +65,36 @@ export interface ArrayWrapperProps {
   children: ReactNode;
   field: ParsedField;
   onAddItem: () => void;
+  testId?: string;
+  addTestId?: string;
 }
 
 export interface ArrayElementWrapperProps {
   children: ReactNode;
   onRemove: () => void;
   index: number;
+  testId?: string;
+  removeTestId?: string;
 }
 
 export interface ObjectWrapperProps {
   label: Renderable<ReactNode>;
   children: ReactNode;
   field: ParsedField;
+  testId?: string;
 }
 
 export interface AutoFormFieldProps {
   label: Renderable<ReactNode>;
   field: ParsedField;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   value: any;
   error?: string;
   id: string;
   path: string[];
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   inputProps: any;
+  testId?: string;
 }
 
 export interface AutoFormContextType {
@@ -93,6 +105,7 @@ export interface AutoFormContextType {
 
 export type FieldConfig<
   FieldTypes = string,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   CustomData = Record<string, any>,
 > = BaseFieldConfig<
   ReactNode,

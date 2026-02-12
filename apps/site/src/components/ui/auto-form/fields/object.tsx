@@ -3,28 +3,29 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { FormField } from "@/components/ui/form";
-import { type useForm, useFormContext } from "react-hook-form";
-import * as z from "zod";
-import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from "../config";
-import type { Dependency, FieldConfig, FieldConfigItem } from "../types";
+} from '@/components/ui/accordion';
+import { FormField } from '@/components/ui/form';
+import { type useForm, useFormContext } from 'react-hook-form';
+import * as z from 'zod';
+import { DEFAULT_ZOD_HANDLERS, INPUT_COMPONENTS } from '../config';
+import type { Dependency, FieldConfig, FieldConfigItem } from '../types';
 import {
   beautifyObjectName,
   getBaseSchema,
   getBaseType,
   sortFieldsByOrder,
   zodToHtmlInputProps,
-} from "../utils";
-import AutoFormArray from "./array";
-import AutoFormRecord from "./record";
-import resolveDependencies from "../dependencies";
+} from '../utils';
+import AutoFormArray from './array';
+import AutoFormRecord from './record';
+import resolveDependencies from '../dependencies';
 
 function DefaultParent({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
 export default function AutoFormObject<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   SchemaType extends z.ZodObject<any, any>,
 >({
   schema,
@@ -51,13 +52,17 @@ export default function AutoFormObject<
   }
 
   const handleIfZodNumber = (item: z.ZodAny) => {
-    const isZodNumber = (item as any)._def.typeName === "ZodNumber";
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+    const isZodNumber = (item as any)._def.typeName === 'ZodNumber';
     const isInnerZodNumber =
-      (item._def as any).innerType?._def?.typeName === "ZodNumber";
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      (item._def as any).innerType?._def?.typeName === 'ZodNumber';
 
     if (isZodNumber) {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       (item as any)._def.coerce = true;
     } else if (isInnerZodNumber) {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       (item._def as any).innerType._def.coerce = true;
     }
 
@@ -73,7 +78,7 @@ export default function AutoFormObject<
         item = handleIfZodNumber(item) as z.ZodAny;
         const zodBaseType = getBaseType(item);
         const itemName = item._def.description ?? beautifyObjectName(name);
-        const key = [...path, name].join(".");
+        const key = [...path, name].join('.');
 
         const {
           isHidden,
@@ -85,12 +90,13 @@ export default function AutoFormObject<
           return null;
         }
 
-        if (zodBaseType === "ZodObject") {
+        if (zodBaseType === 'ZodObject') {
           return (
             <AccordionItem value={name} key={key} className="border-none">
               <AccordionTrigger>{itemName}</AccordionTrigger>
               <AccordionContent className="p-2">
                 <AutoFormObject
+                  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                   schema={item as unknown as z.ZodObject<any, any>}
                   form={form}
                   fieldConfig={
@@ -104,11 +110,12 @@ export default function AutoFormObject<
             </AccordionItem>
           );
         }
-        if (zodBaseType === "ZodArray") {
+        if (zodBaseType === 'ZodArray') {
           return (
             <AutoFormArray
               key={key}
               name={name}
+              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
               item={item as unknown as z.ZodArray<any>}
               form={form}
               fieldConfig={fieldConfig?.[name] ?? {}}
@@ -116,11 +123,12 @@ export default function AutoFormObject<
             />
           );
         }
-        if (zodBaseType === "ZodRecord") {
+        if (zodBaseType === 'ZodRecord') {
           return (
             <AutoFormRecord
               key={key}
               name={name}
+              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
               item={item as unknown as z.ZodRecord<any, any>}
               form={form}
               fieldConfig={fieldConfig?.[name] ?? {}}
@@ -150,10 +158,10 @@ export default function AutoFormObject<
               const inputType =
                 fieldConfigItem.fieldType ??
                 DEFAULT_ZOD_HANDLERS[zodBaseType] ??
-                "fallback";
+                'fallback';
 
               const InputComponent =
-                typeof inputType === "function"
+                typeof inputType === 'function'
                   ? inputType
                   : INPUT_COMPONENTS[inputType];
 
@@ -161,7 +169,7 @@ export default function AutoFormObject<
                 fieldConfigItem.renderParent ?? DefaultParent;
 
               const defaultValue = fieldConfigItem.inputProps?.defaultValue;
-              const value = field.value ?? defaultValue ?? "";
+              const value = field.value ?? defaultValue ?? '';
 
               const fieldProps = {
                 ...zodToHtmlInputProps(item),
@@ -173,6 +181,7 @@ export default function AutoFormObject<
               };
 
               if (InputComponent === undefined) {
+                // biome-ignore lint/complexity/noUselessFragments: lint debt cleanup
                 return <></>;
               }
 

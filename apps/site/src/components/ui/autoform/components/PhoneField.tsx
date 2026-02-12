@@ -1,8 +1,8 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import type { FieldWrapperProps } from "./FieldWrapper";
-import { useState, useEffect } from "react";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
+import type { FieldWrapperProps } from './FieldWrapper';
+import { useState, useEffect } from 'react';
 
 export interface PhoneFieldProps extends FieldWrapperProps {
   placeholder?: string;
@@ -16,22 +16,24 @@ export function PhoneField({
   description,
   error,
   className,
-  placeholder = "(555) 123-4567",
-  country = "US",
+  placeholder = '(555) 123-4567',
+  country = 'US',
   ...props
 }: PhoneFieldProps) {
-  const [displayValue, setDisplayValue] = useState(field.value?.toString() || "");
+  const [displayValue, setDisplayValue] = useState(
+    field.value?.toString() || '',
+  );
 
   // Format phone number as user types
   const formatPhoneNumber = (value: string): string => {
     // Remove all non-digit characters
     const digits = value.replace(/\D/g, '');
-    
+
     // Handle US phone numbers
-    if (country === "US") {
+    if (country === 'US') {
       // Limit to 10 digits
       const limitedDigits = digits.substring(0, 10);
-      
+
       // Format as (XXX) XXX-XXXX
       if (limitedDigits.length <= 3) {
         return limitedDigits;
@@ -41,7 +43,7 @@ export function PhoneField({
         return `(${limitedDigits.substring(0, 3)}) ${limitedDigits.substring(3, 6)}-${limitedDigits.substring(6, 10)}`;
       }
     }
-    
+
     // For other countries, just limit digits
     return digits.substring(0, 15);
   };
@@ -50,7 +52,7 @@ export function PhoneField({
     const rawValue = e.target.value;
     const formattedValue = formatPhoneNumber(rawValue);
     setDisplayValue(formattedValue);
-    
+
     // Extract just the digits for the actual value
     const digits = formattedValue.replace(/\D/g, '');
     field.onChange(digits);
@@ -62,16 +64,20 @@ export function PhoneField({
       const formatted = formatPhoneNumber(field.value.toString());
       setDisplayValue(formatted);
     }
-  }, []);
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [field.value, formatPhoneNumber]);
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {label && (
-        <Label htmlFor={field.name} className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+        <Label
+          htmlFor={field.name}
+          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        >
           {label}
         </Label>
       )}
-      
+
       <div className="relative">
         <Input
           id={field.name}
@@ -80,8 +86,8 @@ export function PhoneField({
           onChange={handleChange}
           placeholder={placeholder}
           className={cn(
-            "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-            error && "border-destructive"
+            'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+            error && 'border-destructive',
           )}
           {...props}
         />
@@ -89,9 +95,13 @@ export function PhoneField({
           <span className="text-muted-foreground">+1</span>
         </div>
       </div>
-      
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
-      {error && <p className="text-sm font-medium text-destructive">{error.message}</p>}
+
+      {description && (
+        <p className="text-sm text-muted-foreground">{description}</p>
+      )}
+      {error && (
+        <p className="text-sm font-medium text-destructive">{error.message}</p>
+      )}
     </div>
   );
 }

@@ -1,6 +1,9 @@
 import { useEffect } from 'react';
 
-export const useKeyboardShortcutsDnd = (activeLayerId: string | null, handleDragCancel: () => void) => {
+export const useKeyboardShortcutsDnd = (
+  activeLayerId: string | null,
+  handleDragCancel: () => void,
+) => {
   // Handle escape key to cancel drag operations
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -19,4 +22,4 @@ export const useKeyboardShortcutsDnd = (activeLayerId: string | null, handleDrag
       };
     }
   }, [activeLayerId, handleDragCancel]);
-}; 
+};

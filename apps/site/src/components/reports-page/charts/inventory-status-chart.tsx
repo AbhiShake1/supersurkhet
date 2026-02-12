@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { RadialBar, RadialBarChart } from "recharts";
+import { RadialBar, RadialBarChart } from 'recharts';
 
 import {
   Card,
@@ -8,13 +8,13 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   type ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-} from "@/components/ui/chart";
+} from '@/components/ui/chart';
 
 interface InventoryStatusChartProps {
   inStockCount: number;
@@ -24,40 +24,40 @@ interface InventoryStatusChartProps {
 
 const chartConfig = {
   inStock: {
-    label: "In Stock",
-    color: "var(--chart-2)",
+    label: 'In Stock',
+    color: 'var(--chart-2)',
   },
   lowStock: {
-    label: "Low Stock",
-    color: "var(--chart-3)",
+    label: 'Low Stock',
+    color: 'var(--chart-3)',
   },
   outOfStock: {
-    label: "Out of Stock",
-    color: "var(--chart-4)",
+    label: 'Out of Stock',
+    color: 'var(--chart-4)',
   },
 } satisfies ChartConfig;
 
-export function InventoryStatusChart({ 
-  inStockCount, 
-  lowStockCount, 
-  outOfStockCount 
+export function InventoryStatusChart({
+  inStockCount,
+  lowStockCount,
+  outOfStockCount,
 }: InventoryStatusChartProps) {
-  const total = inStockCount + lowStockCount + outOfStockCount;
+  const _total = inStockCount + lowStockCount + outOfStockCount;
   const data = [
-    { 
-      name: "In Stock", 
-      value: inStockCount, 
-      fill: "var(--color-inStock)" 
+    {
+      name: 'In Stock',
+      value: inStockCount,
+      fill: 'var(--color-inStock)',
     },
-    { 
-      name: "Low Stock", 
-      value: lowStockCount, 
-      fill: "var(--color-lowStock)" 
+    {
+      name: 'Low Stock',
+      value: lowStockCount,
+      fill: 'var(--color-lowStock)',
     },
-    { 
-      name: "Out of Stock", 
-      value: outOfStockCount, 
-      fill: "var(--color-outOfStock)" 
+    {
+      name: 'Out of Stock',
+      value: outOfStockCount,
+      fill: 'var(--color-outOfStock)',
     },
   ];
 
@@ -72,9 +72,9 @@ export function InventoryStatusChart({
           config={chartConfig}
           className="mx-auto aspect-square max-h-[250px]"
         >
-          <RadialBarChart 
-            data={data} 
-            startAngle={180} 
+          <RadialBarChart
+            data={data}
+            startAngle={180}
             endAngle={0}
             innerRadius="30%"
             outerRadius="100%"
@@ -83,11 +83,7 @@ export function InventoryStatusChart({
               cursor={false}
               content={<ChartTooltipContent nameKey="name" hideLabel />}
             />
-            <RadialBar
-              dataKey="value"
-              background
-              cornerRadius={10}
-            />
+            <RadialBar dataKey="value" background cornerRadius={10} />
           </RadialBarChart>
         </ChartContainer>
         <div className="mt-4 flex flex-wrap justify-center gap-4">

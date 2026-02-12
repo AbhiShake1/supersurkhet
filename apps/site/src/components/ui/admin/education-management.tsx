@@ -1,29 +1,31 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus,
   Search,
   Edit,
-  Trash2, BookOpen,
-  User, GraduationCap,
+  Trash2,
+  BookOpen,
+  User,
+  GraduationCap,
   Users,
   CreditCard,
-  Star
-} from "lucide-react";
-import { toast } from "sonner";
-import type { AdminComponent } from "@/components/ui/admin";
+  Star,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { AdminComponent } from '@/components/ui/admin';
 
 interface Course {
   id: string;
@@ -51,7 +53,7 @@ interface Student {
   courseId: string;
   courseName: string;
   enrollmentDate: string;
-  status: "active" | "graduated" | "dropped";
+  status: 'active' | 'graduated' | 'dropped';
   active: boolean;
 }
 
@@ -62,87 +64,87 @@ interface Enrollment {
   courseId: string;
   courseName: string;
   enrollmentDate: string;
-  paymentStatus: "pending" | "paid" | "overdue";
+  paymentStatus: 'pending' | 'paid' | 'overdue';
   active: boolean;
 }
 
 const mockCourses: Course[] = [
   {
-    id: "1",
-    name: "Bachelor of Science (BSc)",
+    id: '1',
+    name: 'Bachelor of Science (BSc)',
     description:
-      "Comprehensive science program covering physics, chemistry, and mathematics",
-    duration: "4 Years",
+      'Comprehensive science program covering physics, chemistry, and mathematics',
+    duration: '4 Years',
     fees: 120000,
-    instructorId: "1",
+    instructorId: '1',
     active: true,
   },
   {
-    id: "2",
-    name: "Bachelor of Arts (BA)",
+    id: '2',
+    name: 'Bachelor of Arts (BA)',
     description:
-      "Liberal arts program focusing on humanities, social sciences, and literature",
-    duration: "4 Years",
+      'Liberal arts program focusing on humanities, social sciences, and literature',
+    duration: '4 Years',
     fees: 100000,
-    instructorId: "2",
+    instructorId: '2',
     active: true,
   },
   {
-    id: "3",
-    name: "Master of Business Administration (MBA)",
+    id: '3',
+    name: 'Master of Business Administration (MBA)',
     description:
-      "Advanced business management program with focus on entrepreneurship and leadership",
-    duration: "2 Years",
+      'Advanced business management program with focus on entrepreneurship and leadership',
+    duration: '2 Years',
     fees: 200000,
-    instructorId: "3",
+    instructorId: '3',
     active: false,
   },
   {
-    id: "4",
-    name: "Computer Science Engineering",
+    id: '4',
+    name: 'Computer Science Engineering',
     description:
-      "Modern computer science program covering programming, algorithms, and software development",
-    duration: "4 Years",
+      'Modern computer science program covering programming, algorithms, and software development',
+    duration: '4 Years',
     fees: 150000,
-    instructorId: "4",
+    instructorId: '4',
     active: true,
   },
 ];
 
 const mockInstructors: Instructor[] = [
   {
-    id: "1",
-    name: "Dr. Rajesh K.C.",
-    qualification: "Ph.D. in Physics",
-    experience: "15+ years",
-    specialization: "Quantum Mechanics",
+    id: '1',
+    name: 'Dr. Rajesh K.C.',
+    qualification: 'Ph.D. in Physics',
+    experience: '15+ years',
+    specialization: 'Quantum Mechanics',
     rating: 4.9,
     active: true,
   },
   {
-    id: "2",
-    name: "Prof. Sunita Thapa",
-    qualification: "M.A. in Literature",
-    experience: "12+ years",
-    specialization: "English Literature",
+    id: '2',
+    name: 'Prof. Sunita Thapa',
+    qualification: 'M.A. in Literature',
+    experience: '12+ years',
+    specialization: 'English Literature',
     rating: 4.8,
     active: true,
   },
   {
-    id: "3",
-    name: "Dr. Amit Shah",
-    qualification: "MBA, Ph.D. in Management",
-    experience: "18+ years",
-    specialization: "Entrepreneurship",
+    id: '3',
+    name: 'Dr. Amit Shah',
+    qualification: 'MBA, Ph.D. in Management',
+    experience: '18+ years',
+    specialization: 'Entrepreneurship',
     rating: 5.0,
     active: false,
   },
   {
-    id: "4",
-    name: "Er. Priya Gurung",
-    qualification: "B.E. Computer Engineering",
-    experience: "10+ years",
-    specialization: "Software Development",
+    id: '4',
+    name: 'Er. Priya Gurung',
+    qualification: 'B.E. Computer Engineering',
+    experience: '10+ years',
+    specialization: 'Software Development',
     rating: 4.7,
     active: true,
   },
@@ -150,82 +152,82 @@ const mockInstructors: Instructor[] = [
 
 const mockStudents: Student[] = [
   {
-    id: "1",
-    name: "Ram Bahadur",
-    courseId: "1",
-    courseName: "Bachelor of Science (BSc)",
-    enrollmentDate: "2025-08-01",
-    status: "active",
+    id: '1',
+    name: 'Ram Bahadur',
+    courseId: '1',
+    courseName: 'Bachelor of Science (BSc)',
+    enrollmentDate: '2025-08-01',
+    status: 'active',
     active: true,
   },
   {
-    id: "2",
-    name: "Sita Kumari",
-    courseId: "2",
-    courseName: "Bachelor of Arts (BA)",
-    enrollmentDate: "2025-08-01",
-    status: "active",
+    id: '2',
+    name: 'Sita Kumari',
+    courseId: '2',
+    courseName: 'Bachelor of Arts (BA)',
+    enrollmentDate: '2025-08-01',
+    status: 'active',
     active: true,
   },
   {
-    id: "3",
-    name: "Hari Prasad",
-    courseId: "4",
-    courseName: "Computer Science Engineering",
-    enrollmentDate: "2025-08-01",
-    status: "graduated",
+    id: '3',
+    name: 'Hari Prasad',
+    courseId: '4',
+    courseName: 'Computer Science Engineering',
+    enrollmentDate: '2025-08-01',
+    status: 'graduated',
     active: false,
   },
   {
-    id: "4",
-    name: "Gita Devi",
-    courseId: "1",
-    courseName: "Bachelor of Science (BSc)",
-    enrollmentDate: "2025-08-01",
-    status: "active",
+    id: '4',
+    name: 'Gita Devi',
+    courseId: '1',
+    courseName: 'Bachelor of Science (BSc)',
+    enrollmentDate: '2025-08-01',
+    status: 'active',
     active: true,
   },
 ];
 
 const mockEnrollments: Enrollment[] = [
   {
-    id: "1",
-    studentId: "1",
-    studentName: "Ram Bahadur",
-    courseId: "1",
-    courseName: "Bachelor of Science (BSc)",
-    enrollmentDate: "2025-08-01",
-    paymentStatus: "paid",
+    id: '1',
+    studentId: '1',
+    studentName: 'Ram Bahadur',
+    courseId: '1',
+    courseName: 'Bachelor of Science (BSc)',
+    enrollmentDate: '2025-08-01',
+    paymentStatus: 'paid',
     active: true,
   },
   {
-    id: "2",
-    studentId: "2",
-    studentName: "Sita Kumari",
-    courseId: "2",
-    courseName: "Bachelor of Arts (BA)",
-    enrollmentDate: "2025-08-01",
-    paymentStatus: "pending",
+    id: '2',
+    studentId: '2',
+    studentName: 'Sita Kumari',
+    courseId: '2',
+    courseName: 'Bachelor of Arts (BA)',
+    enrollmentDate: '2025-08-01',
+    paymentStatus: 'pending',
     active: true,
   },
   {
-    id: "3",
-    studentId: "3",
-    studentName: "Hari Prasad",
-    courseId: "4",
-    courseName: "Computer Science Engineering",
-    enrollmentDate: "2025-07-15",
-    paymentStatus: "paid",
+    id: '3',
+    studentId: '3',
+    studentName: 'Hari Prasad',
+    courseId: '4',
+    courseName: 'Computer Science Engineering',
+    enrollmentDate: '2025-07-15',
+    paymentStatus: 'paid',
     active: false,
   },
   {
-    id: "4",
-    studentId: "4",
-    studentName: "Gita Devi",
-    courseId: "1",
-    courseName: "Bachelor of Science (BSc)",
-    enrollmentDate: "2025-08-01",
-    paymentStatus: "overdue",
+    id: '4',
+    studentId: '4',
+    studentName: 'Gita Devi',
+    courseId: '1',
+    courseName: 'Bachelor of Science (BSc)',
+    enrollmentDate: '2025-08-01',
+    paymentStatus: 'overdue',
     active: true,
   },
 ];
@@ -237,10 +239,10 @@ export const EducationManagement: AdminComponent = () => {
       instructors={mockInstructors}
       students={mockStudents}
       enrollments={mockEnrollments}
-      onAddCourse={() => { }}
-      onAddInstructor={() => { }}
-      onAddStudent={() => { }}
-      onAddEnrollment={() => { }}
+      onAddCourse={() => {}}
+      onAddInstructor={() => {}}
+      onAddStudent={() => {}}
+      onAddEnrollment={() => {}}
     />
   );
 };
@@ -266,8 +268,8 @@ function _EducationManagement({
   students,
   enrollments,
 }: EducationManagementProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState("courses");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState('courses');
 
   const filteredCourses = courses.filter((course) => {
     return (
@@ -308,44 +310,44 @@ function _EducationManagement({
     );
   });
 
-  const toggleCourseActive = (id: string, active: boolean) => {
+  const toggleCourseActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Course ${active ? "activated" : "deactivated"}`);
+    toast.success(`Course ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleInstructorActive = (id: string, active: boolean) => {
+  const toggleInstructorActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Instructor ${active ? "activated" : "deactivated"}`);
+    toast.success(`Instructor ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleStudentActive = (id: string, active: boolean) => {
+  const toggleStudentActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Student ${active ? "activated" : "deactivated"}`);
+    toast.success(`Student ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const toggleEnrollmentActive = (id: string, active: boolean) => {
+  const toggleEnrollmentActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Enrollment ${active ? "activated" : "deactivated"}`);
+    toast.success(`Enrollment ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteCourse = (id: string) => {
+  const deleteCourse = (_id: string) => {
     // In a real implementation, this would delete the course from GunDB
-    toast.success("Course removed");
+    toast.success('Course removed');
   };
 
-  const deleteInstructor = (id: string) => {
+  const deleteInstructor = (_id: string) => {
     // In a real implementation, this would delete the instructor from GunDB
-    toast.success("Instructor removed");
+    toast.success('Instructor removed');
   };
 
-  const deleteStudent = (id: string) => {
+  const deleteStudent = (_id: string) => {
     // In a real implementation, this would delete the student from GunDB
-    toast.success("Student removed");
+    toast.success('Student removed');
   };
 
-  const deleteEnrollment = (id: string) => {
+  const deleteEnrollment = (_id: string) => {
     // In a real implementation, this would delete the enrollment from GunDB
-    toast.success("Enrollment removed");
+    toast.success('Enrollment removed');
   };
 
   return (
@@ -439,7 +441,7 @@ function _EducationManagement({
                 </p>
                 <p className="text-2xl font-bold text-purple-600">
                   {
-                    enrollments.filter((e) => e.paymentStatus === "pending")
+                    enrollments.filter((e) => e.paymentStatus === 'pending')
                       .length
                   }
                 </p>
@@ -501,7 +503,7 @@ function _EducationManagement({
             {filteredCourses.map((course) => (
               <Card
                 key={course.id}
-                className={`${!course.active ? "opacity-60" : ""}`}
+                className={`${!course.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -537,7 +539,7 @@ function _EducationManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {course.active ? "Active" : "Inactive"}
+                        {course.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -582,7 +584,7 @@ function _EducationManagement({
             {filteredInstructors.map((instructor) => (
               <Card
                 key={instructor.id}
-                className={`${!instructor.active ? "opacity-60" : ""}`}
+                className={`${!instructor.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -600,11 +602,13 @@ function _EducationManagement({
                         <div className="flex items-center gap-1 mt-1">
                           {[...Array(5)].map((_, i) => (
                             <Star
+                              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                               key={i}
-                              className={`w-3 h-3 ${i < Math.floor(instructor.rating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                                }`}
+                              className={`w-3 h-3 ${
+                                i < Math.floor(instructor.rating)
+                                  ? 'fill-yellow-400 text-yellow-400'
+                                  : 'text-gray-300'
+                              }`}
                             />
                           ))}
                           <span className="text-xs ml-1">
@@ -635,7 +639,7 @@ function _EducationManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {instructor.active ? "Active" : "Inactive"}
+                        {instructor.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -680,7 +684,7 @@ function _EducationManagement({
             {filteredStudents.map((student) => (
               <Card
                 key={student.id}
-                className={`${!student.active ? "opacity-60" : ""}`}
+                className={`${!student.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -697,12 +701,13 @@ function _EducationManagement({
                           Enrolled: {student.enrollmentDate}
                         </p>
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${student.status === "active"
-                            ? "bg-green-100 text-green-800"
-                            : student.status === "graduated"
-                              ? "bg-blue-100 text-blue-800"
-                              : "bg-red-100 text-red-800"
-                            }`}
+                          className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${
+                            student.status === 'active'
+                              ? 'bg-green-100 text-green-800'
+                              : student.status === 'graduated'
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-red-100 text-red-800'
+                          }`}
                         >
                           {student.status.charAt(0).toUpperCase() +
                             student.status.slice(1)}
@@ -722,7 +727,7 @@ function _EducationManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {student.active ? "Active" : "Inactive"}
+                        {student.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -767,7 +772,7 @@ function _EducationManagement({
             {filteredEnrollments.map((enrollment) => (
               <Card
                 key={enrollment.id}
-                className={`${!enrollment.active ? "opacity-60" : ""}`}
+                className={`${!enrollment.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -784,12 +789,13 @@ function _EducationManagement({
                           Enrolled: {enrollment.enrollmentDate}
                         </p>
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${enrollment.paymentStatus === "paid"
-                            ? "bg-green-100 text-green-800"
-                            : enrollment.paymentStatus === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-red-100 text-red-800"
-                            }`}
+                          className={`inline-block px-2 py-1 text-xs rounded-full mt-2 ${
+                            enrollment.paymentStatus === 'paid'
+                              ? 'bg-green-100 text-green-800'
+                              : enrollment.paymentStatus === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-red-100 text-red-800'
+                          }`}
                         >
                           {enrollment.paymentStatus.charAt(0).toUpperCase() +
                             enrollment.paymentStatus.slice(1)}
@@ -812,7 +818,7 @@ function _EducationManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {enrollment.active ? "Active" : "Inactive"}
+                        {enrollment.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 

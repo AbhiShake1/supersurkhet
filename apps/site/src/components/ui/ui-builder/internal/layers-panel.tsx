@@ -4,30 +4,25 @@ import React, {
   useMemo,
   useRef,
   useState,
-} from "react";
-import isDeepEqual from "fast-deep-equal";
-import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import type { ComponentLayer } from "@/components/ui/ui-builder/types";
-import { cn } from "@/lib/utils";
+} from 'react';
+import isDeepEqual from 'fast-deep-equal';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import { cn } from '@/lib/utils';
 import {
   findAllParentLayersRecursive,
   hasLayerChildren,
-} from "@/lib/ui-builder/store/layer-utils";
-import { Plus } from "lucide-react";
-import { useHeTree, type Id } from "he-tree-react";
+} from '@/lib/ui-builder/store/layer-utils';
+import { Plus } from 'lucide-react';
+import { useHeTree, type Id } from 'he-tree-react';
 import {
   TreeRowNode,
   TreeRowPlaceholder,
-} from "@/components/ui/ui-builder/internal/components/tree-row-node";
-import { DevProfiler } from "@/components/ui/ui-builder/internal/components/dev-profiler";
-import { AddComponentsPopover } from "@/components/ui/ui-builder/internal/components/add-component-popover";
-import { buttonVariants } from "@/components/ui/button";
-import { DividerControl } from "@/components/ui/ui-builder/internal/components/divider-control";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from '@/components/ui/ui-builder/internal/components/tree-row-node';
+import { DevProfiler } from '@/components/ui/ui-builder/internal/components/dev-profiler';
+import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
+import { buttonVariants } from '@/components/ui/button';
+import { DividerControl } from '@/components/ui/ui-builder/internal/components/divider-control';
 
 interface LayersPanelProps {
   className?: string;
@@ -73,8 +68,9 @@ interface LayersTreeProps {
   selectedLayerId: string | null;
   updateLayer: (
     layerId: string,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     newProps: Record<string, any>,
-    layerRest?: Partial<Omit<ComponentLayer, "props">>
+    layerRest?: Partial<Omit<ComponentLayer, 'props'>>,
   ) => void;
   selectLayer: (layerId: string) => void;
   removeLayer: (layerId: string) => void;
@@ -112,10 +108,14 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
           const updatedPageLayer = newLayers[0] as ComponentLayer;
 
           // Validate the layer structure before updating
-          if (!updatedPageLayer || !updatedPageLayer.id || updatedPageLayer.id !== selectedPageId) {
+          if (
+            !updatedPageLayer ||
+            !updatedPageLayer.id ||
+            updatedPageLayer.id !== selectedPageId
+          ) {
             console.error(
-              "LayersTree onChange: Invalid layer structure - ID mismatch",
-              { updatedPageLayer, selectedPageId }
+              'LayersTree onChange: Invalid layer structure - ID mismatch',
+              { updatedPageLayer, selectedPageId },
             );
             return;
           }
@@ -126,19 +126,21 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
 
           // Only update if children actually changed
           const currentLayer = layers[0];
-          const currentChildren = hasLayerChildren(currentLayer) ? currentLayer.children || [] : [];
+          const currentChildren = hasLayerChildren(currentLayer)
+            ? currentLayer.children || []
+            : [];
 
           if (!isDeepEqual(currentChildren, updatedChildren)) {
             updateLayer(selectedPageId, {}, { children: updatedChildren });
           }
         } else {
           console.error(
-            "LayersTree onChange: Invalid newLayers structure received",
-            newLayers
+            'LayersTree onChange: Invalid newLayers structure received',
+            newLayers,
           );
         }
       },
-      [updateLayer, selectedPageId, layers]
+      [updateLayer, selectedPageId, layers],
     );
 
     const handleDragOpen = useCallback(
@@ -147,7 +149,7 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
           handleNodeToggle(stat.id, true);
         }
       },
-      [handleNodeToggle]
+      [handleNodeToggle],
     );
 
     const canNodeDrop = useCallback((layer: { node: ComponentLayer }) => {
@@ -156,21 +158,22 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
     }, []);
 
     const renderNode = useCallback(
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       ({ stat, attrs, isPlaceholder }: any) => {
         // Use node.id as key to ensure stable identity across tree operations
-        const stableKey = isPlaceholder ? `placeholder-${attrs.key}` : stat.node.id;
+        const stableKey = isPlaceholder
+          ? `placeholder-${attrs.key}`
+          : stat.node.id;
 
         if (isPlaceholder) {
-          return (
-            <TreeRowPlaceholder
-              key={stableKey}
-              nodeAttributes={attrs}
-            />
-          );
+          return <TreeRowPlaceholder key={stableKey} nodeAttributes={attrs} />;
         }
 
         // Find the original layer data (not processed) to preserve text children info
-        const findOriginalLayer = (layers: ComponentLayer[], id: string): ComponentLayer | null => {
+        const findOriginalLayer = (
+          layers: ComponentLayer[],
+          id: string,
+        ): ComponentLayer | null => {
           for (const layer of layers) {
             if (layer.id === id) return layer;
             if (hasLayerChildren(layer)) {
@@ -181,7 +184,8 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
           return null;
         };
 
-        const originalNode = findOriginalLayer(layers, stat.node.id) || stat.node;
+        const originalNode =
+          findOriginalLayer(layers, stat.node.id) || stat.node;
 
         return (
           <TreeRowNode
@@ -209,7 +213,7 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
         duplicateLayer,
         updateLayer,
         layers,
-      ]
+      ],
     );
 
     // Preprocess layers to ensure all nodes appear in tree, even those with string children
@@ -238,8 +242,8 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
     const data = useMemo(() => {
       return {
         data: processedLayers,
-        dataType: "tree" as const,
-        childrenKey: "children",
+        dataType: 'tree' as const,
+        childrenKey: 'children',
         openIds: openIdsArray,
         dragOpen: true,
         onChange: handleChange,
@@ -262,7 +266,7 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
       if (selectedLayerId) {
         const parentLayers = findAllParentLayersRecursive(
           layers,
-          selectedLayerId
+          selectedLayerId,
         );
         const parentIds = parentLayers.map((layer) => layer.id);
         setOpenIdsArray((prevOpenIds) => {
@@ -292,18 +296,19 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
 
     const buttonClass = useMemo(() => {
       return cn(
-        buttonVariants({ variant: "default", size: "sm" }),
-        "cursor-pointer w-full"
+        buttonVariants({ variant: 'default', size: 'sm' }),
+        'cursor-pointer w-full',
       );
     }, []);
 
     return (
+      // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
       <DevProfiler id="LayersPanel" threshold={40}>
         <div
           data-testid="layers-tree"
           className={cn(
             className,
-            "flex flex-col size-full overflow-x-auto pl-4"
+            'flex flex-col size-full overflow-x-auto pl-4',
           )}
         >
           {layers.length > 0 ? (
@@ -327,9 +332,7 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
               parentLayerId={selectedPageId}
               className="w-full mt-4"
             >
-              <div
-                className={buttonClass}
-              >
+              <div className={buttonClass}>
                 <span className="sr-only">Add Component</span>
                 <Plus className="h-5 w-5" />
                 <span>Add Component</span>
@@ -347,9 +350,9 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
       prevProps.selectedLayerId === nextProps.selectedLayerId &&
       prevProps.className === nextProps.className
     );
-  }
+  },
 );
 
-LayersTree.displayName = "LayersTree";
+LayersTree.displayName = 'LayersTree';
 
 export default LayersPanel;

@@ -1,28 +1,28 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
-import LayersPanel from "@/components/ui/ui-builder/internal/layers-panel";
-import EditorPanel from "@/components/ui/ui-builder/internal/editor-panel";
-import PropsPanel from "@/components/ui/ui-builder/internal/props-panel";
-import { NavBar } from "@/components/ui/ui-builder/internal/components/nav";
-import { ThemeProvider } from "next-themes";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import LayersPanel from '@/components/ui/ui-builder/internal/layers-panel';
+import EditorPanel from '@/components/ui/ui-builder/internal/editor-panel';
+import PropsPanel from '@/components/ui/ui-builder/internal/props-panel';
+import { NavBar } from '@/components/ui/ui-builder/internal/components/nav';
+import { ThemeProvider } from 'next-themes';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   ResizablePanel,
   ResizableHandle,
   ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import { Button } from "@/components/ui/button";
-import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import { useStore } from "@/hooks/use-store";
-import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
+} from '@/components/ui/resizable';
+import { Button } from '@/components/ui/button';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { useStore } from '@/hooks/use-store';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
 import type {
   ComponentRegistry,
   ComponentLayer,
   LayerChangeHandler,
-} from "@/components/ui/ui-builder/types";
-import { TailwindThemePanel } from "@/components/ui/ui-builder/internal/tailwind-theme-panel";
-import { ConfigPanel } from "@/components/ui/ui-builder/internal/config-panel";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/ui-builder/types';
+import { TailwindThemePanel } from '@/components/ui/ui-builder/internal/tailwind-theme-panel';
+import { ConfigPanel } from '@/components/ui/ui-builder/internal/config-panel';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 /**
  * TabsContentConfig defines the structure for the content of the page config panel tabs.
@@ -46,7 +46,9 @@ interface PanelConfig {
 /**
  * UIBuilderProps defines the props for the UIBuilder component with enhanced type safety.
  */
-export interface UIBuilderProps<TRegistry extends ComponentRegistry = ComponentRegistry> {
+export interface UIBuilderProps<
+  TRegistry extends ComponentRegistry = ComponentRegistry,
+> {
   initialLayers?: ComponentLayer[];
   onChange?: LayerChangeHandler<TRegistry>;
   componentRegistry: TRegistry;
@@ -80,15 +82,20 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   const [editorStoreInitialized, setEditorStoreInitialized] = useState(false);
   const [layerStoreInitialized, setLayerStoreInitialized] = useState(false);
 
-  const memoizedDefaultTabsContent = useMemo(() => defaultConfigTabsContent(), []);
+  const memoizedDefaultTabsContent = useMemo(
+    () => defaultConfigTabsContent(),
+    [],
+  );
 
   const currentPanelConfig = useMemo(() => {
-    const effectiveTabsContent = userPanelConfig?.pageConfigPanelTabsContent || memoizedDefaultTabsContent;
+    const effectiveTabsContent =
+      userPanelConfig?.pageConfigPanelTabsContent || memoizedDefaultTabsContent;
     const defaultPanels = getDefaultPanelConfigValues(effectiveTabsContent);
 
     return {
       navBar: userPanelConfig?.navBar ?? defaultPanels.navBar,
-      pageConfigPanel: userPanelConfig?.pageConfigPanel ?? defaultPanels.pageConfigPanel,
+      pageConfigPanel:
+        userPanelConfig?.pageConfigPanel ?? defaultPanels.pageConfigPanel,
       editorPanel: userPanelConfig?.editorPanel ?? defaultPanels.editorPanel,
       propsPanel: userPanelConfig?.propsPanel ?? defaultPanels.propsPanel,
     };
@@ -97,7 +104,12 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   // Effect 1: Initialize Editor Store with registry and page form props
   useEffect(() => {
     if (editorStore && componentRegistry && !editorStoreInitialized) {
-      editorStore.initialize(componentRegistry, persistLayerStore, allowPagesCreation, allowPagesDeletion);
+      editorStore.initialize(
+        componentRegistry,
+        persistLayerStore,
+        allowPagesCreation,
+        allowPagesDeletion,
+      );
       setEditorStoreInitialized(true);
     }
   }, [
@@ -124,7 +136,6 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   }, [
     layerStore,
     editorStore,
-    componentRegistry,
     initialLayers,
     layerStoreInitialized,
     createNew,
@@ -152,9 +163,7 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
       enableSystem
       disableTransitionOnChange
     >
-      <TooltipProvider>
-        {layout}
-      </TooltipProvider>
+      <TooltipProvider>{layout}</TooltipProvider>
     </ThemeProvider>
   );
 };
@@ -168,21 +177,26 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
 
     if (showLeftPanel) {
       panels.push({
-        title: "Page Config",
+        title: 'Page Config',
         content: panelConfig.pageConfigPanel,
         defaultSize: showRightPanel ? 25 : 33,
       });
     }
 
     panels.push({
-      title: "UI Editor",
+      title: 'UI Editor',
       content: panelConfig.editorPanel,
-      defaultSize: showLeftPanel && showRightPanel ? 50 : (showLeftPanel || showRightPanel ? 67 : 100),
+      defaultSize:
+        showLeftPanel && showRightPanel
+          ? 50
+          : showLeftPanel || showRightPanel
+            ? 67
+            : 100,
     });
 
     if (showRightPanel) {
       panels.push({
-        title: "Props",
+        title: 'Props',
         content: panelConfig.propsPanel,
         defaultSize: showLeftPanel ? 25 : 33,
       });
@@ -192,24 +206,32 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
   }, [panelConfig, showLeftPanel, showRightPanel]);
 
   const [selectedPanel, setSelectedPanel] = useState(() => {
-    const editorPanel = mainPanels.find(panel => panel.title === "UI Editor");
+    const editorPanel = mainPanels.find((panel) => panel.title === 'UI Editor');
     return editorPanel || mainPanels[0];
   });
 
   // Update selected panel when panels change
   useEffect(() => {
-    const editorPanel = mainPanels.find(panel => panel.title === "UI Editor");
-    const currentPanel = mainPanels.find(panel => panel.title === selectedPanel.title);
+    const editorPanel = mainPanels.find((panel) => panel.title === 'UI Editor');
+    const currentPanel = mainPanels.find(
+      (panel) => panel.title === selectedPanel.title,
+    );
 
     if (!currentPanel) {
       setSelectedPanel(editorPanel || mainPanels[0]);
     }
   }, [mainPanels, selectedPanel.title]);
 
-  const handlePanelClickById = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
-    const panelIndex = Number.parseInt(e.currentTarget.dataset.panelIndex || "0");
-    setSelectedPanel(mainPanels[panelIndex]);
-  }, [mainPanels]);
+  const handlePanelClickById = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      const panelIndex = Number.parseInt(
+        e.currentTarget.dataset.panelIndex || '0',
+        10,
+      );
+      setSelectedPanel(mainPanels[panelIndex]);
+    },
+    [mainPanels],
+  );
 
   return (
     <div
@@ -246,7 +268,7 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
               <Button
                 key={panel.title}
                 variant={
-                  selectedPanel.title !== panel.title ? "default" : "secondary"
+                  selectedPanel.title !== panel.title ? 'default' : 'secondary'
                 }
                 size="sm"
                 className="flex-1"
@@ -288,15 +310,13 @@ export function PageConfigPanel({
     >
       <TabsList className="w-full">
         <TabsTrigger value="layers">{layers.title}</TabsTrigger>
-        {appearance && <TabsTrigger value="appearance">{appearance.title}</TabsTrigger>}
+        {appearance && (
+          <TabsTrigger value="appearance">{appearance.title}</TabsTrigger>
+        )}
       </TabsList>
-      <TabsContent value="layers">
-        {layers.content}
-      </TabsContent>
+      <TabsContent value="layers">{layers.content}</TabsContent>
       {appearance && (
-        <TabsContent value="appearance">
-          {appearance.content}
-        </TabsContent>
+        <TabsContent value="appearance">{appearance.content}</TabsContent>
       )}
     </Tabs>
   );
@@ -310,16 +330,17 @@ export function PageConfigPanel({
  */
 export function defaultConfigTabsContent() {
   return {
-    layers: { title: "Layers", content: <LayersPanel /> },
+    layers: { title: 'Layers', content: <LayersPanel /> },
     appearance: {
-      title: "Appearance", content: (
+      title: 'Appearance',
+      content: (
         <div className="py-2 px-4 gap-2 flex flex-col overflow-y-auto overflow-x-auto">
           <ConfigPanel />
           <TailwindThemePanel />
         </div>
       ),
     },
-  }
+  };
 }
 
 /**
@@ -353,13 +374,12 @@ export const getDefaultPanelConfigValues = (tabsContent: TabsContentConfig) => {
   return {
     navBar: <NavBar />,
     pageConfigPanel: (
-      <PageConfigPanel className="pt-4 pb-20 md:pb-4 overflow-y-auto relative size-full" tabsContent={tabsContent} />
-    ),
-    editorPanel: (
-      <EditorPanel
-        className="pb-20 md:pb-0 overflow-y-auto"
+      <PageConfigPanel
+        className="pt-4 pb-20 md:pb-4 overflow-y-auto relative size-full"
+        tabsContent={tabsContent}
       />
     ),
+    editorPanel: <EditorPanel className="pb-20 md:pb-0 overflow-y-auto" />,
     propsPanel: (
       <PropsPanel className="px-4 pt-4 pb-20 md:pb-4 overflow-y-auto relative size-full" />
     ),

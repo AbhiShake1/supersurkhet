@@ -1,45 +1,52 @@
-import { useBusinessAnalytics } from "@/hooks/use-business-analytics";
+import type { useBusinessAnalytics } from '@/hooks/use-business-analytics';
 
 // Export analytics data to CSV format
-export function exportAnalyticsToCSV(analytics: ReturnType<typeof useBusinessAnalytics>, period: string) {
+export function exportAnalyticsToCSV(
+  analytics: ReturnType<typeof useBusinessAnalytics>,
+  period: string,
+) {
   // Create CSV content for sales trends
-  let csvContent = "Sales Trends Report\n";
+  let csvContent = 'Sales Trends Report\n';
   csvContent += `Period: ${period}\n\n`;
 
-  csvContent += "Date,Revenue\n";
-  analytics.salesTrends.forEach(trend => {
+  csvContent += 'Date,Revenue\n';
+  analytics.salesTrends.forEach((trend) => {
     csvContent += `${trend.date},${trend.revenue}\n`;
   });
 
-  csvContent += "\n\nPayment Methods Report\n";
-  csvContent += "Method,Amount\n";
-  analytics.paymentMethods.forEach(method => {
+  csvContent += '\n\nPayment Methods Report\n';
+  csvContent += 'Method,Amount\n';
+  analytics.paymentMethods.forEach((method) => {
     csvContent += `${method.method},${method.amount}\n`;
   });
 
-  csvContent += "\n\nCurrent Inventory Report\n";
-  csvContent += "Product,Current Stock,Reorder Level,Status\n";
-  analytics.currentInventory.forEach(item => {
-    const status = item.currentStock <= 0 ? 'Out of Stock' :
-      item.currentStock <= (item.product.reorderLevel || 5) ? 'Low Stock' : 'In Stock';
+  csvContent += '\n\nCurrent Inventory Report\n';
+  csvContent += 'Product,Current Stock,Reorder Level,Status\n';
+  analytics.currentInventory.forEach((item) => {
+    const status =
+      item.currentStock <= 0
+        ? 'Out of Stock'
+        : item.currentStock <= (item.product.reorderLevel || 5)
+          ? 'Low Stock'
+          : 'In Stock';
     csvContent += `"${item.product.title}",${item.currentStock},${item.product.reorderLevel || 5},${status}\n`;
   });
 
-  csvContent += "\n\nTop Customers Report\n";
-  csvContent += "Customer,Total Spent,Purchase Count,Last Purchase\n";
-  analytics.customerPurchaseHistory?.forEach(customer => {
+  csvContent += '\n\nTop Customers Report\n';
+  csvContent += 'Customer,Total Spent,Purchase Count,Last Purchase\n';
+  analytics.customerPurchaseHistory?.forEach((customer) => {
     csvContent += `"${customer.name}",${customer.totalSpent},${customer.purchaseCount},${customer.lastPurchase}\n`;
   });
 
-  csvContent += "\n\nTop Suppliers Report\n";
-  csvContent += "Supplier,Total Amount\n";
-  analytics.topSuppliers.forEach(supplier => {
+  csvContent += '\n\nTop Suppliers Report\n';
+  csvContent += 'Supplier,Total Amount\n';
+  analytics.topSuppliers.forEach((supplier) => {
     csvContent += `"${supplier.name}",${supplier.total}\n`;
   });
 
-  csvContent += "\n\nTop Products Report\n";
-  csvContent += "Product,Revenue\n";
-  analytics.topProducts.forEach(product => {
+  csvContent += '\n\nTop Products Report\n';
+  csvContent += 'Product,Revenue\n';
+  analytics.topProducts.forEach((product) => {
     csvContent += `"${product.name}",${product.revenue}\n`;
   });
 
@@ -47,7 +54,10 @@ export function exportAnalyticsToCSV(analytics: ReturnType<typeof useBusinessAna
 }
 
 // Export analytics data to JSON format
-export function exportAnalyticsToJSON(analytics: ReturnType<typeof useBusinessAnalytics>, period: string) {
+export function exportAnalyticsToJSON(
+  analytics: ReturnType<typeof useBusinessAnalytics>,
+  period: string,
+) {
   return {
     period,
     timestamp: new Date().toISOString(),
@@ -71,17 +81,21 @@ export function exportAnalyticsToJSON(analytics: ReturnType<typeof useBusinessAn
     performance: {
       topSuppliers: analytics.topSuppliers,
       topProducts: analytics.topProducts,
-    }
+    },
   };
 }
 
 // Generate HTML for printing
-export function generatePrintHTML(analytics: ReturnType<typeof useBusinessAnalytics>, period: string, businessName: string) {
+export function generatePrintHTML(
+  analytics: ReturnType<typeof useBusinessAnalytics>,
+  period: string,
+  businessName: string,
+) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "NPR",
-      minimumFractionDigits: 2
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'NPR',
+      minimumFractionDigits: 2,
     }).format(amount);
   };
 
@@ -143,7 +157,7 @@ export function generatePrintHTML(analytics: ReturnType<typeof useBusinessAnalyt
           <tbody>
   `;
 
-  analytics.salesTrends.forEach(trend => {
+  analytics.salesTrends.forEach((trend) => {
     htmlContent += `<tr><td>${trend.date}</td><td>${formatCurrency(trend.revenue)}</td></tr>`;
   });
 
@@ -161,7 +175,7 @@ export function generatePrintHTML(analytics: ReturnType<typeof useBusinessAnalyt
           <tbody>
   `;
 
-  analytics.paymentMethods.forEach(method => {
+  analytics.paymentMethods.forEach((method) => {
     htmlContent += `<tr><td>${method.method}</td><td>${formatCurrency(method.amount)}</td></tr>`;
   });
 
@@ -179,9 +193,13 @@ export function generatePrintHTML(analytics: ReturnType<typeof useBusinessAnalyt
           <tbody>
   `;
 
-  analytics.currentInventory.forEach(item => {
-    const status = item.currentStock <= 0 ? 'Out of Stock' :
-      item.currentStock <= (item.product.reorderLevel || 5) ? 'Low Stock' : 'In Stock';
+  analytics.currentInventory.forEach((item) => {
+    const status =
+      item.currentStock <= 0
+        ? 'Out of Stock'
+        : item.currentStock <= (item.product.reorderLevel || 5)
+          ? 'Low Stock'
+          : 'In Stock';
     htmlContent += `<tr>
       <td>${item.product.title}</td>
       <td>${item.currentStock}</td>
@@ -204,7 +222,7 @@ export function generatePrintHTML(analytics: ReturnType<typeof useBusinessAnalyt
           <tbody>
   `;
 
-  analytics.customerPurchaseHistory.forEach(customer => {
+  analytics.customerPurchaseHistory.forEach((customer) => {
     htmlContent += `<tr>
       <td>${customer.name}</td>
       <td>${formatCurrency(customer.totalSpent)}</td>
@@ -227,7 +245,7 @@ export function generatePrintHTML(analytics: ReturnType<typeof useBusinessAnalyt
           <tbody>
   `;
 
-  analytics.topSuppliers.forEach(supplier => {
+  analytics.topSuppliers.forEach((supplier) => {
     htmlContent += `<tr><td>${supplier.name}</td><td>${formatCurrency(supplier.total)}</td></tr>`;
   });
 
@@ -245,7 +263,7 @@ export function generatePrintHTML(analytics: ReturnType<typeof useBusinessAnalyt
           <tbody>
   `;
 
-  analytics.topProducts.forEach(product => {
+  analytics.topProducts.forEach((product) => {
     htmlContent += `<tr><td>${product.name}</td><td>${formatCurrency(product.revenue)}</td></tr>`;
   });
 

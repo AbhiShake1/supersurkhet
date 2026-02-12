@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import * as React from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- TYPES ---
 type PaymentMethod = {
@@ -23,6 +23,7 @@ interface PaymentMethodSelectorProps {
 
 // --- HELPER COMPONENTS ---
 const PlusIcon = ({ className }: { className?: string }) => (
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
   <svg
     className={className}
     xmlns="http://www.w3.org/2000/svg"
@@ -51,7 +52,7 @@ export function PaymentMethodSelector({
   className,
 }: PaymentMethodSelectorProps) {
   const [selectedId, setSelectedId] = React.useState(
-    defaultSelectedId ?? (methods.length > 0 ? methods[0].id : null)
+    defaultSelectedId ?? (methods.length > 0 ? methods[0].id : null),
   );
 
   const handleSelect = (id: string | number) => {
@@ -73,7 +74,7 @@ export function PaymentMethodSelector({
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 },
   };
-  
+
   const cardClasses = `w-full max-w-md rounded-xl border bg-card text-card-foreground shadow-sm p-6 ${className || ''}`;
 
   return (
@@ -83,6 +84,7 @@ export function PaymentMethodSelector({
         <h3 className="text-xl font-semibold leading-none tracking-tight">
           {title}
         </h3>
+        {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
         <button
           onClick={onActionClick}
           className="flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
@@ -107,11 +109,17 @@ export function PaymentMethodSelector({
               key={method.id}
               variants={itemVariants}
               onClick={() => handleSelect(method.id)}
-              onKeyDown={(e) => (e.key === ' ' || e.key === 'Enter') && handleSelect(method.id)}
+              onKeyDown={(e) =>
+                (e.key === ' ' || e.key === 'Enter') && handleSelect(method.id)
+              }
               className="flex items-center p-4 rounded-lg border cursor-pointer transition-all duration-300 hover:bg-muted/50"
               style={{
-                borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-                boxShadow: isSelected ? '0 0 0 2px hsl(var(--primary))' : 'none',
+                borderColor: isSelected
+                  ? 'hsl(var(--primary))'
+                  : 'hsl(var(--border))',
+                boxShadow: isSelected
+                  ? '0 0 0 2px hsl(var(--primary))'
+                  : 'none',
               }}
               role="radio"
               aria-checked={isSelected}
@@ -119,12 +127,19 @@ export function PaymentMethodSelector({
             >
               <div className="flex-shrink-0">{method.icon}</div>
               <div className="ml-4 flex-grow">
-                <p className="font-medium text-card-foreground">{method.label}</p>
-                <p className="text-sm text-muted-foreground">{method.description}</p>
+                <p className="font-medium text-card-foreground">
+                  {method.label}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {method.description}
+                </p>
               </div>
-              <div className="ml-4 flex h-6 w-6 items-center justify-center rounded-full border-2"
+              <div
+                className="ml-4 flex h-6 w-6 items-center justify-center rounded-full border-2"
                 style={{
-                  borderColor: isSelected ? 'hsl(var(--primary))' : 'hsl(var(--border))',
+                  borderColor: isSelected
+                    ? 'hsl(var(--primary))'
+                    : 'hsl(var(--border))',
                 }}
               >
                 <AnimatePresence>

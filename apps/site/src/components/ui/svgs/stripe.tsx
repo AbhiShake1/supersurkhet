@@ -1,6 +1,7 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Stripe = (props: SVGProps<SVGSVGElement>) => (
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
   <svg {...props} viewBox="0 0 512 214">
     <path
       fill="#635BFF"

@@ -1,0 +1,51 @@
+import type { ForwardRefExoticComponent, RefAttributes } from 'react';
+import type { AdminComponent } from '@/components/ui/admin';
+import type z from 'zod';
+import type { LucideIcon, LucideProps } from 'lucide-react';
+import type { SchemaKeys } from '@gta/react-hooks';
+import type { ExtractZodSchema } from '@/lib/schema';
+
+export interface GTAAppConfig {
+  schema: {
+    [table: string]: {
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+      schema: NonNullable<z.ZodObject<any> | z.ZodEffects<any>>;
+      icon?: ForwardRefExoticComponent<
+        Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
+      >;
+      group?: string;
+      components?: () => Promise<
+        Array<{
+          name: string;
+          icon?: LucideIcon;
+          component: AdminComponent;
+        }>
+      >;
+    };
+  };
+}
+
+declare global {
+  interface GTAAppConfig {
+    schema: AppSchemaType;
+  }
+}
+
+export type AppSchemaType = ExtractZodSchema<BaseAppSchemaType>;
+
+export type SchemaShape<T extends GTAAppConfig['schema']> = {
+  [key in keyof T]: T[key]['schema'];
+};
+
+export type CreatedSchema<T extends GTAAppConfig['schema']> = T & {
+  rawShape: T;
+  schemaShape: z.ZodObject<SchemaShape<T>>;
+  extend<const TOtherSchema extends GTAAppConfig['schema']>(
+    otherSchema: TOtherSchema,
+  ): CreatedSchema<T & TOtherSchema>;
+  merge<const TOtherSchema extends GTAAppConfig['schema']>(
+    otherSchema: CreatedSchema<TOtherSchema>,
+  ): CreatedSchema<T & TOtherSchema>;
+};
+
+export type InferredTable<K extends SchemaKeys> = z.infer<AppSchemaType>[K];

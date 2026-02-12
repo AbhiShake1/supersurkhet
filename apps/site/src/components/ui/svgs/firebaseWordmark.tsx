@@ -1,6 +1,7 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const FirebaseWordmark = (props: SVGProps<SVGSVGElement>) => (
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
   <svg {...props} fill="none" viewBox="0 0 749 205">
     <path
       fill="#5E5E5E"

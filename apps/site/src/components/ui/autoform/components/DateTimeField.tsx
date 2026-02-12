@@ -1,8 +1,8 @@
-import { DateTimeInput } from "@/components/datetime-input";
-import { DateTimePicker } from "@/components/datetime-picker";
-import type { AutoFormFieldProps } from "../react";
-import React from "react";
-import { cn } from "@/lib/utils";
+import { DateTimeInput } from '@/components/datetime-input';
+import { DateTimePicker } from '@/components/datetime-picker';
+import type { AutoFormFieldProps } from '../react';
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 export const DateTimeField: React.FC<AutoFormFieldProps> = ({
   inputProps,
@@ -10,6 +10,7 @@ export const DateTimeField: React.FC<AutoFormFieldProps> = ({
   id,
   value,
 }) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
   const [date, setDate] = React.useState<Date | undefined>(
     value ? new Date(value) : undefined,
@@ -20,7 +21,7 @@ export const DateTimeField: React.FC<AutoFormFieldProps> = ({
     const syntheticEvent = {
       target: {
         name: inputProps.name,
-        value: newDate ? newDate.toISOString() : "",
+        value: newDate ? newDate.toISOString() : '',
       },
     } as React.ChangeEvent<HTMLInputElement>;
     inputProps.onChange(syntheticEvent);
@@ -40,7 +41,7 @@ export const DateTimeField: React.FC<AutoFormFieldProps> = ({
             onChange={handleDateChange}
             onCalendarClick={() => setOpen(true)}
             disabled={inputProps.disabled}
-            className={cn(error && "border-destructive")}
+            className={cn(error && 'border-destructive')}
             clearable
           />
         )}

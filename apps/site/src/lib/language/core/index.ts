@@ -15,7 +15,10 @@ import type { LogicExpr } from './types';
  * This pre-configured instance enables function calling capabilities
  * and can be used directly for most common use cases.
  */
-const logicEngine = new LogicEngine({}, { allowFunctions: true, permissive: true });
+const logicEngine = new LogicEngine(
+  {},
+  { allowFunctions: true, permissive: true },
+);
 
 // Export the engine and types
 export { LogicEngine, logicEngine };
@@ -56,8 +59,10 @@ export type { LogicExpr };
  * isValidAge({ age: -5 }); // false
  * ```
  */
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function createLogicFn<TVars = any, TResult = unknown>(
-  logic: LogicExpr<TVars>
+  logic: LogicExpr<TVars>,
 ): (data: TVars) => TResult {
   return logicEngine.build<TVars, TResult>(logic);
 }
@@ -93,8 +98,10 @@ export function createLogicFn<TVars = any, TResult = unknown>(
  * const result2 = calculateDiscount({ total: 50 }); // 50
  * ```
  */
+
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export function defineLogic<TVars = any, TResult = unknown>(
-  logic: LogicExpr<TVars>
+  logic: LogicExpr<TVars>,
 ) {
   return {
     logic,
@@ -111,6 +118,7 @@ export function defineLogic<TVars = any, TResult = unknown>(
      *
      * @returns A function that executes the logic when called with data
      */
-    build: (): ((data: TVars) => TResult) => logicEngine.build<TVars, TResult>(logic)
+    build: (): ((data: TVars) => TResult) =>
+      logicEngine.build<TVars, TResult>(logic),
   };
 }

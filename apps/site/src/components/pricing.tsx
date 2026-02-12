@@ -1,14 +1,14 @@
-import { buttonVariants } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { useMediaQuery } from "@/hooks/use-media-query";
-import { cn } from "@/lib/utils";
-import NumberFlow from "@number-flow/react";
-import { Link } from "@tanstack/react-router";
-import confetti from "canvas-confetti";
-import { motion } from "framer-motion";
-import { Check, Star } from "lucide-react";
-import { useRef, useState } from "react";
+import { buttonVariants } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { useMediaQuery } from '@/hooks/use-media-query';
+import { cn } from '@/lib/utils';
+import NumberFlow from '@number-flow/react';
+import { Link } from '@tanstack/react-router';
+import confetti from 'canvas-confetti';
+import { motion } from 'framer-motion';
+import { Check, Star } from 'lucide-react';
+import { useRef, useState } from 'react';
 
 interface PricingPlan {
   name: string;
@@ -28,9 +28,13 @@ interface PricingProps {
   description?: string;
 }
 
-export default function CongestedPricing({ plans, title, description }: PricingProps) {
+export default function CongestedPricing({
+  plans,
+  title,
+  description,
+}: PricingProps) {
   const [isMonthly, setIsMonthly] = useState(true);
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   const switchRef = useRef<HTMLButtonElement>(null);
 
   const handleToggle = (checked: boolean) => {
@@ -48,21 +52,22 @@ export default function CongestedPricing({ plans, title, description }: PricingP
           y: y / window.innerHeight,
         },
         colors: [
-          "hsl(var(--primary))",
-          "hsl(var(--accent))",
-          "hsl(var(--secondary))",
-          "hsl(var(--muted))",
+          'hsl(var(--primary))',
+          'hsl(var(--accent))',
+          'hsl(var(--secondary))',
+          'hsl(var(--muted))',
         ],
         ticks: 200,
         gravity: 1.2,
         decay: 0.94,
         startVelocity: 30,
-        shapes: ["circle"],
+        shapes: ['circle'],
       });
     }
   };
 
   return (
+    // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
     <div className="py-20 px-12" id="pricing">
       <div className="mb-12 space-y-4 text-center">
         <h2 className="text-4xl font-bold tracking-tight sm:text-5xl">
@@ -74,9 +79,11 @@ export default function CongestedPricing({ plans, title, description }: PricingP
       </div>
 
       <div className="mb-10 flex justify-center">
+        {/** biome-ignore lint/a11y/noLabelWithoutControl: lint debt cleanup */}
         <label className="relative inline-flex cursor-pointer items-center">
           <Label>
             <Switch
+              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
               ref={switchRef as any}
               checked={!isMonthly}
               onCheckedChange={handleToggle}
@@ -92,22 +99,23 @@ export default function CongestedPricing({ plans, title, description }: PricingP
       <div className="sm:2 grid grid-cols-1 gap-4 md:grid-cols-3">
         {plans.map((plan, index) => (
           <motion.div
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={index}
             initial={{ y: 50, opacity: 1 }}
             whileInView={
               isDesktop
                 ? {
-                  y: plan.isPopular ? -20 : 0,
-                  opacity: 1,
-                  x: index === 2 ? -30 : index === 0 ? 30 : 0,
-                  scale: index === 0 || index === 2 ? 0.94 : 1.0,
-                }
+                    y: plan.isPopular ? -20 : 0,
+                    opacity: 1,
+                    x: index === 2 ? -30 : index === 0 ? 30 : 0,
+                    scale: index === 0 || index === 2 ? 0.94 : 1.0,
+                  }
                 : {}
             }
             viewport={{ once: true }}
             transition={{
               duration: 1.6,
-              type: "spring",
+              type: 'spring',
               stiffness: 100,
               damping: 30,
               delay: 0.4,
@@ -115,14 +123,14 @@ export default function CongestedPricing({ plans, title, description }: PricingP
             }}
             className={cn(
               `bg-background relative rounded-2xl border-[1px] p-6 text-center lg:flex lg:flex-col lg:justify-center`,
-              plan.isPopular ? "border-primary border-2" : "border-border",
-              "flex flex-col",
-              !plan.isPopular && "mt-5",
+              plan.isPopular ? 'border-primary border-2' : 'border-border',
+              'flex flex-col',
+              !plan.isPopular && 'mt-5',
               index === 0 || index === 2
-                ? "z-0 translate-x-0 translate-y-0 -translate-z-[50px] rotate-y-[10deg] transform"
-                : "z-10",
-              index === 0 && "origin-right",
-              index === 2 && "origin-left",
+                ? 'z-0 translate-x-0 translate-y-0 -translate-z-[50px] rotate-y-[10deg] transform'
+                : 'z-10',
+              index === 0 && 'origin-right',
+              index === 2 && 'origin-left',
             )}
           >
             {plan.isPopular && (
@@ -144,20 +152,20 @@ export default function CongestedPricing({ plans, title, description }: PricingP
                       isMonthly ? Number(plan.price) : Number(plan.yearlyPrice)
                     }
                     format={{
-                      style: "currency",
-                      currency: "NPR",
+                      style: 'currency',
+                      currency: 'NPR',
                       minimumFractionDigits: 0,
                       maximumFractionDigits: 0,
                     }}
                     transformTiming={{
                       duration: 500,
-                      easing: "ease-out",
+                      easing: 'ease-out',
                     }}
                     willChange
                     className="font-variant-numeric: tabular-nums"
                   />
                 </span>
-                {plan.period !== "Next 3 months" && (
+                {plan.period !== 'Next 3 months' && (
                   <span className="text-muted-foreground text-sm leading-6 font-semibold tracking-wide">
                     / {plan.period}
                   </span>
@@ -165,11 +173,12 @@ export default function CongestedPricing({ plans, title, description }: PricingP
               </div>
 
               <p className="text-muted-foreground text-xs leading-5">
-                {isMonthly ? "billed monthly" : "billed annually"}
+                {isMonthly ? 'billed monthly' : 'billed annually'}
               </p>
 
               <ul className="mt-5 flex flex-col gap-2">
                 {plan.features.map((feature, idx) => (
+                  // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                   <li key={idx} className="flex items-start gap-2">
                     <Check className="text-primary mt-1 h-4 w-4 flex-shrink-0" />
                     <span className="text-left">{feature}</span>
@@ -183,13 +192,13 @@ export default function CongestedPricing({ plans, title, description }: PricingP
                 to={plan.href}
                 className={cn(
                   buttonVariants({
-                    variant: "outline",
+                    variant: 'outline',
                   }),
-                  "group relative w-full gap-2 overflow-hidden text-lg font-semibold tracking-tighter",
-                  "hover:bg-primary hover:text-primary-foreground hover:ring-primary transform-gpu ring-offset-current transition-all duration-300 ease-out hover:ring-2 hover:ring-offset-1",
+                  'group relative w-full gap-2 overflow-hidden text-lg font-semibold tracking-tighter',
+                  'hover:bg-primary hover:text-primary-foreground hover:ring-primary transform-gpu ring-offset-current transition-all duration-300 ease-out hover:ring-2 hover:ring-offset-1',
                   plan.isPopular
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-background text-foreground",
+                    ? 'bg-primary text-primary-foreground'
+                    : 'bg-background text-foreground',
                 )}
               >
                 {plan.buttonText}

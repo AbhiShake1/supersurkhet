@@ -1,7 +1,9 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Gemini = (props: SVGProps<SVGSVGElement>) => (
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
   <svg {...props} viewBox="0 0 296 298" fill="none">
+    {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
     <mask
       id="gemini__a"
       width="296"
@@ -9,7 +11,7 @@ const Gemini = (props: SVGProps<SVGSVGElement>) => (
       x="0"
       y="0"
       maskUnits="userSpaceOnUse"
-      style={{ maskType: "alpha" }}
+      style={{ maskType: 'alpha' }}
     >
       <path
         fill="#3186FF"
@@ -52,6 +54,7 @@ const Gemini = (props: SVGProps<SVGSVGElement>) => (
       </g>
     </g>
     <defs>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <filter
         id="gemini__b"
         width="464"
@@ -68,6 +71,7 @@ const Gemini = (props: SVGProps<SVGSVGElement>) => (
           stdDeviation="18"
         />
       </filter>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <filter
         id="gemini__c"
         width="265"
@@ -84,6 +88,7 @@ const Gemini = (props: SVGProps<SVGSVGElement>) => (
           stdDeviation="32"
         />
       </filter>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <filter
         id="gemini__d"
         width="265"
@@ -100,6 +105,7 @@ const Gemini = (props: SVGProps<SVGSVGElement>) => (
           stdDeviation="32"
         />
       </filter>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <filter
         id="gemini__e"
         width="299.5"
@@ -116,6 +122,7 @@ const Gemini = (props: SVGProps<SVGSVGElement>) => (
           stdDeviation="32"
         />
       </filter>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <filter
         id="gemini__f"
         width="299.5"
@@ -132,6 +139,7 @@ const Gemini = (props: SVGProps<SVGSVGElement>) => (
           stdDeviation="32"
         />
       </filter>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <filter
         id="gemini__g"
         width="299.5"
@@ -148,6 +156,7 @@ const Gemini = (props: SVGProps<SVGSVGElement>) => (
           stdDeviation="32"
         />
       </filter>
+      {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
       <filter
         id="gemini__h"
         width="299.5"

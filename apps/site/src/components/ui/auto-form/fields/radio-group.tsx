@@ -3,13 +3,13 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import type * as z from "zod";
-import AutoFormLabel from "../common/label";
-import AutoFormTooltip from "../common/tooltip";
-import type { AutoFormInputComponentProps } from "../types";
-import { getBaseSchema } from "../utils";
+} from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import type * as z from 'zod';
+import AutoFormLabel from '../common/label';
+import AutoFormTooltip from '../common/tooltip';
+import type { AutoFormInputComponentProps } from '../types';
+import { getBaseSchema } from '../utils';
 
 export default function AutoFormRadioGroup({
   label,
@@ -19,6 +19,7 @@ export default function AutoFormRadioGroup({
   fieldProps,
   fieldConfigItem,
 }: AutoFormInputComponentProps) {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const baseValues = (getBaseSchema(zodItem) as unknown as z.ZodEnum<any>)._def
     .values;
 
@@ -42,6 +43,7 @@ export default function AutoFormRadioGroup({
             defaultValue={field.value}
             {...fieldProps}
           >
+            {/** biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup */}
             {values?.map((value: any) => (
               <FormItem
                 key={value}

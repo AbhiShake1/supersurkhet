@@ -1,5 +1,5 @@
-import type { Collision, UniqueIdentifier } from "@dnd-kit/core";
-import type { Coordinates } from "@dnd-kit/utilities";
+import type { Collision, UniqueIdentifier } from '@dnd-kit/core';
+import type { Coordinates } from '@dnd-kit/utilities';
 import { getIframeElements } from '@/lib/ui-builder/context/dnd-utils';
 
 // Enable/disable debug visualization
@@ -16,7 +16,17 @@ let timeout: NodeJS.Timeout;
 export const collisionDebug = (
   pointerCoordinates: Coordinates,
   adjustedPointerCoordinates: Coordinates,
-  droppableRects: Map<UniqueIdentifier, { top: number; left: number; bottom: number; right: number; width: number; height: number }>,
+  droppableRects: Map<
+    UniqueIdentifier,
+    {
+      top: number;
+      left: number;
+      bottom: number;
+      right: number;
+      width: number;
+      height: number;
+    }
+  >,
   collisions: Collision[],
   options: {
     showPointer?: boolean;
@@ -24,7 +34,7 @@ export const collisionDebug = (
     showCollisions?: boolean;
     autoHide?: boolean;
     hideDelay?: number;
-  } = {}
+  } = {},
 ) => {
   if (!DEBUG) return;
 
@@ -33,10 +43,10 @@ export const collisionDebug = (
     showRects = true,
     showCollisions = true,
     autoHide = true,
-    hideDelay = 2000
+    hideDelay = 2000,
   } = options;
 
-  const debugId = "collision-debug";
+  const debugId = 'collision-debug';
 
   // Clear previous timeout
   clearTimeout(timeout);
@@ -66,31 +76,31 @@ export const collisionDebug = (
       y: iframeWindow.pageYOffset || iframeWindow.scrollY || 0,
     };
 
-    const svgNs = "http://www.w3.org/2000/svg";
-    const svg = document.createElementNS(svgNs, "svg");
+    const svgNs = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNs, 'svg');
     const elements: SVGElement[] = [];
 
     // Setup SVG container positioned inside iframe to cover the entire content area
-    svg.setAttribute("id", debugId);
+    svg.setAttribute('id', debugId);
     svg.setAttribute(
-      "style",
-      `position: absolute; height: 100%; width: 100%; pointer-events: none; top: 0px; left: 0px; z-index: 9999; overflow: visible;`
+      'style',
+      `position: absolute; height: 100%; width: 100%; pointer-events: none; top: 0px; left: 0px; z-index: 9999; overflow: visible;`,
     );
 
     // Convert coordinates to iframe content positioning
     const originalPointerRelative = {
       x: pointerCoordinates.x,
-      y: pointerCoordinates.y
+      y: pointerCoordinates.y,
     };
-    
+
     // The adjustedPointerCoordinates should already be in content coordinates
     // but let's make sure we're displaying them correctly
     const adjustedPointerRelative = {
       x: adjustedPointerCoordinates.x + iframeRect.left,
-      y: adjustedPointerCoordinates.y + iframeRect.top
+      y: adjustedPointerCoordinates.y + iframeRect.top,
     };
 
-    // Debug: log the coordinate spaces to console  
+    // Debug: log the coordinate spaces to console
     console.log('🎯 Debug Coordinates:', {
       original: pointerCoordinates,
       originalRelative: originalPointerRelative,
@@ -99,36 +109,57 @@ export const collisionDebug = (
       iframeRect,
       iframeScrollOffset,
       // Show first few rectangles for comparison (before and after conversion)
-      sampleRects: Array.from(droppableRects.entries()).slice(0, 2).map(([id, rect]) => ({
-        id,
-        original: rect,
-        converted: {
-          left: rect.left + iframeRect.left,
-          top: rect.top + iframeRect.top,
-          width: rect.width,
-          height: rect.height
-        }
-      }))
+      sampleRects: Array.from(droppableRects.entries())
+        .slice(0, 2)
+        .map(([id, rect]) => ({
+          id,
+          original: rect,
+          converted: {
+            left: rect.left + iframeRect.left,
+            top: rect.top + iframeRect.top,
+            width: rect.width,
+            height: rect.height,
+          },
+        })),
     });
 
     // Show pointer positions
     if (showPointer) {
       // Original pointer (relative to iframe)
-      const originalPointer = createCircle(originalPointerRelative.x, originalPointerRelative.y, 6, "red", "Original Pointer");
+      const originalPointer = createCircle(
+        originalPointerRelative.x,
+        originalPointerRelative.y,
+        6,
+        'red',
+        'Original Pointer',
+      );
       elements.push(originalPointer);
       svg.appendChild(originalPointer);
 
       // Adjusted pointer (relative to iframe content)
-      const adjustedPointer = createCircle(adjustedPointerRelative.x, adjustedPointerRelative.y, 6, "blue", "Adjusted Pointer");
+      const adjustedPointer = createCircle(
+        adjustedPointerRelative.x,
+        adjustedPointerRelative.y,
+        6,
+        'blue',
+        'Adjusted Pointer',
+      );
       elements.push(adjustedPointer);
       svg.appendChild(adjustedPointer);
 
       // Line connecting original and adjusted pointers
-      if (originalPointerRelative.x !== adjustedPointerRelative.x || originalPointerRelative.y !== adjustedPointerRelative.y) {
+      if (
+        originalPointerRelative.x !== adjustedPointerRelative.x ||
+        originalPointerRelative.y !== adjustedPointerRelative.y
+      ) {
         const connectionLine = createLine(
-          originalPointerRelative.x, originalPointerRelative.y,
-          adjustedPointerRelative.x, adjustedPointerRelative.y,
-          "purple", 2, "dashed"
+          originalPointerRelative.x,
+          originalPointerRelative.y,
+          adjustedPointerRelative.x,
+          adjustedPointerRelative.y,
+          'purple',
+          2,
+          'dashed',
         );
         elements.push(connectionLine);
         svg.appendChild(connectionLine);
@@ -138,24 +169,37 @@ export const collisionDebug = (
     // Show droppable rectangles
     if (showRects) {
       droppableRects.forEach((rect, id) => {
-        const isColliding = collisions.some(c => c.id === id);
-        const color = isColliding ? "lime" : "orange";
-        const opacity = isColliding ? "0.3" : "0.1";
-        
+        const isColliding = collisions.some((c) => c.id === id);
+        const color = isColliding ? 'lime' : 'orange';
+        const opacity = isColliding ? '0.3' : '0.1';
+
         // Convert rectangle coordinates to iframe-relative coordinates
         const rectRelative = {
           left: rect.left + iframeRect.left,
           top: rect.top + iframeRect.top,
           width: rect.width,
-          height: rect.height
+          height: rect.height,
         };
-        
-        const rectElement = createRect(rectRelative.left, rectRelative.top, rectRelative.width, rectRelative.height, color, opacity);
+
+        const rectElement = createRect(
+          rectRelative.left,
+          rectRelative.top,
+          rectRelative.width,
+          rectRelative.height,
+          color,
+          opacity,
+        );
         elements.push(rectElement);
         svg.appendChild(rectElement);
 
         // Add label for the rectangle
-        const label = createText(rectRelative.left + 2, rectRelative.top + 12, String(id), "black", "10px");
+        const label = createText(
+          rectRelative.left + 2,
+          rectRelative.top + 12,
+          String(id),
+          'black',
+          '10px',
+        );
         elements.push(label);
         svg.appendChild(label);
       });
@@ -171,26 +215,33 @@ export const collisionDebug = (
             left: rect.left + iframeRect.left,
             top: rect.top + iframeRect.top,
             width: rect.width,
-            height: rect.height
+            height: rect.height,
           };
-          
+
           // Draw line from adjusted pointer to collision center
           const centerX = rectRelative.left + rectRelative.width / 2;
           const centerY = rectRelative.top + rectRelative.height / 2;
-          
+
           const collisionLine = createLine(
-            adjustedPointerRelative.x, adjustedPointerRelative.y,
-            centerX, centerY,
-            "lime", 3, "solid"
+            adjustedPointerRelative.x,
+            adjustedPointerRelative.y,
+            centerX,
+            centerY,
+            'lime',
+            3,
+            'solid',
           );
           elements.push(collisionLine);
           svg.appendChild(collisionLine);
 
           // Add collision info text
           const collisionText = createText(
-            centerX, centerY - 5,
+            centerX,
+            centerY - 5,
             `Collision: ${String(collision.id)}`,
-            "lime", "12px", "bold"
+            'lime',
+            '12px',
+            'bold',
           );
           elements.push(collisionText);
           svg.appendChild(collisionText);
@@ -199,11 +250,16 @@ export const collisionDebug = (
     }
 
     // Add debug info panel with detailed coordinate info
-    const infoPanel = createInfoPanel(originalPointerRelative, adjustedPointerRelative, collisions.length, {
-      iframeScrollOffset,
-      isAtTop: Math.abs(iframeScrollOffset.y) < 5,
-      originalViewport: pointerCoordinates
-    });
+    const infoPanel = createInfoPanel(
+      originalPointerRelative,
+      adjustedPointerRelative,
+      collisions.length,
+      {
+        iframeScrollOffset,
+        isAtTop: Math.abs(iframeScrollOffset.y) < 5,
+        originalViewport: pointerCoordinates,
+      },
+    );
     elements.push(infoPanel);
     svg.appendChild(infoPanel);
 
@@ -249,80 +305,115 @@ export const disableCollisionDebug = () => {
 
 // Make debug functions available globally for console access
 if (typeof window !== 'undefined') {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   (window as any).toggleCollisionDebug = toggleCollisionDebug;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   (window as any).enableCollisionDebug = enableCollisionDebug;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   (window as any).disableCollisionDebug = disableCollisionDebug;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   (window as any).clearDebugElements = clearDebugElements;
 }
 
 // Helper functions for creating SVG elements
-function createCircle(x: number, y: number, radius: number, color: string, title?: string): SVGCircleElement {
-  const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-  circle.setAttribute("cx", x.toString());
-  circle.setAttribute("cy", y.toString());
-  circle.setAttribute("r", radius.toString());
-  circle.setAttribute("fill", color);
-  circle.setAttribute("stroke", "white");
-  circle.setAttribute("stroke-width", "2");
-  
+function createCircle(
+  x: number,
+  y: number,
+  radius: number,
+  color: string,
+  title?: string,
+): SVGCircleElement {
+  const circle = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'circle',
+  );
+  circle.setAttribute('cx', x.toString());
+  circle.setAttribute('cy', y.toString());
+  circle.setAttribute('r', radius.toString());
+  circle.setAttribute('fill', color);
+  circle.setAttribute('stroke', 'white');
+  circle.setAttribute('stroke-width', '2');
+
   if (title) {
-    const titleElement = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    const titleElement = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'title',
+    );
     titleElement.textContent = title;
     circle.appendChild(titleElement);
   }
-  
+
   return circle;
 }
 
 function createLine(
-  x1: number, y1: number, x2: number, y2: number,
-  color: string, width = 2, dashArray?: string
+  x1: number,
+  y1: number,
+  x2: number,
+  y2: number,
+  color: string,
+  width = 2,
+  dashArray?: string,
 ): SVGLineElement {
-  const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-  line.setAttribute("x1", x1.toString());
-  line.setAttribute("y1", y1.toString());
-  line.setAttribute("x2", x2.toString());
-  line.setAttribute("y2", y2.toString());
-  line.setAttribute("stroke", color);
-  line.setAttribute("stroke-width", width.toString());
-  
+  const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+  line.setAttribute('x1', x1.toString());
+  line.setAttribute('y1', y1.toString());
+  line.setAttribute('x2', x2.toString());
+  line.setAttribute('y2', y2.toString());
+  line.setAttribute('stroke', color);
+  line.setAttribute('stroke-width', width.toString());
+
   if (dashArray) {
-    line.setAttribute("stroke-dasharray", dashArray === "dashed" ? "5,5" : dashArray);
+    line.setAttribute(
+      'stroke-dasharray',
+      dashArray === 'dashed' ? '5,5' : dashArray,
+    );
   }
-  
+
   return line;
 }
 
 function createRect(
-  x: number, y: number, width: number, height: number,
-  color: string, opacity = "0.2"
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: string,
+  opacity = '0.2',
 ): SVGRectElement {
-  const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-  rect.setAttribute("x", x.toString());
-  rect.setAttribute("y", y.toString());
-  rect.setAttribute("width", width.toString());
-  rect.setAttribute("height", height.toString());
-  rect.setAttribute("fill", color);
-  rect.setAttribute("fill-opacity", opacity);
-  rect.setAttribute("stroke", color);
-  rect.setAttribute("stroke-width", "1");
-  
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x.toString());
+  rect.setAttribute('y', y.toString());
+  rect.setAttribute('width', width.toString());
+  rect.setAttribute('height', height.toString());
+  rect.setAttribute('fill', color);
+  rect.setAttribute('fill-opacity', opacity);
+  rect.setAttribute('stroke', color);
+  rect.setAttribute('stroke-width', '1');
+
   return rect;
 }
 
 function createText(
-  x: number, y: number, text: string, color = "black",
-  fontSize = "12px", fontWeight = "normal"
+  x: number,
+  y: number,
+  text: string,
+  color = 'black',
+  fontSize = '12px',
+  fontWeight = 'normal',
 ): SVGTextElement {
-  const textElement = document.createElementNS("http://www.w3.org/2000/svg", "text");
-  textElement.setAttribute("x", x.toString());
-  textElement.setAttribute("y", y.toString());
-  textElement.setAttribute("fill", color);
-  textElement.setAttribute("font-size", fontSize);
-  textElement.setAttribute("font-weight", fontWeight);
-  textElement.setAttribute("font-family", "monospace");
+  const textElement = document.createElementNS(
+    'http://www.w3.org/2000/svg',
+    'text',
+  );
+  textElement.setAttribute('x', x.toString());
+  textElement.setAttribute('y', y.toString());
+  textElement.setAttribute('fill', color);
+  textElement.setAttribute('font-size', fontSize);
+  textElement.setAttribute('font-weight', fontWeight);
+  textElement.setAttribute('font-family', 'monospace');
   textElement.textContent = text;
-  
+
   return textElement;
 }
 
@@ -334,37 +425,37 @@ function createInfoPanel(
     iframeScrollOffset: { x: number; y: number };
     isAtTop: boolean;
     originalViewport: Coordinates;
-  }
+  },
 ): SVGGElement {
-  const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  
+  const group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
   // Background
-  const bg = createRect(10, 10, 350, 140, "white", "0.9");
-  bg.setAttribute("stroke", "black");
-  bg.setAttribute("stroke-width", "1");
+  const bg = createRect(10, 10, 350, 140, 'white', '0.9');
+  bg.setAttribute('stroke', 'black');
+  bg.setAttribute('stroke-width', '1');
   group.appendChild(bg);
-  
+
   // Info text
   const lines = [
     `Original Pointer: (${Math.round(originalPointer.x)}, ${Math.round(originalPointer.y)})`,
     `Adjusted Pointer: (${Math.round(adjustedPointer.x)}, ${Math.round(adjustedPointer.y)})`,
     `Collisions Found: ${collisionCount}`,
-    `Debug Mode: ON`
+    `Debug Mode: ON`,
   ];
 
   if (debugInfo) {
     lines.push(
       `Scroll: (${Math.round(debugInfo.iframeScrollOffset.x)}, ${Math.round(debugInfo.iframeScrollOffset.y)})`,
       `At Top: ${debugInfo.isAtTop}`,
-      `Viewport: (${Math.round(debugInfo.originalViewport.x)}, ${Math.round(debugInfo.originalViewport.y)})`
+      `Viewport: (${Math.round(debugInfo.originalViewport.x)}, ${Math.round(debugInfo.originalViewport.y)})`,
     );
   }
-  
+
   lines.forEach((line, index) => {
-    const text = createText(15, 30 + (index * 15), line, "black", "11px");
+    const text = createText(15, 30 + index * 15, line, 'black', '11px');
     group.appendChild(text);
   });
-  
+
   return group;
 }
 
@@ -372,22 +463,24 @@ function createInfoPanel(
 export const debugCollisionDetection = (
   originalPointer: Coordinates,
   adjustedPointer: Coordinates,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   droppableRects: Map<UniqueIdentifier, any>,
   collisions: Collision[],
-  debugInfo?: any
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  debugInfo?: any,
 ) => {
   if (!DEBUG) return;
 
-  console.group("🎯 Collision Detection Debug");
-  console.log("Original Pointer:", originalPointer);
-  console.log("Adjusted Pointer:", adjustedPointer);
-  console.log("Droppable Rects:", Array.from(droppableRects.entries()));
-  console.log("Collisions:", collisions);
-  
+  console.group('🎯 Collision Detection Debug');
+  console.log('Original Pointer:', originalPointer);
+  console.log('Adjusted Pointer:', adjustedPointer);
+  console.log('Droppable Rects:', Array.from(droppableRects.entries()));
+  console.log('Collisions:', collisions);
+
   if (debugInfo) {
-    console.log("Additional Debug Info:", debugInfo);
+    console.log('Additional Debug Info:', debugInfo);
   }
-  
+
   console.groupEnd();
 
   // Visual debug
@@ -396,6 +489,6 @@ export const debugCollisionDetection = (
     showRects: true,
     showCollisions: true,
     autoHide: true,
-    hideDelay: 3000
+    hideDelay: 3000,
   });
-}; 
+};

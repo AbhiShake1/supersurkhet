@@ -1,12 +1,11 @@
-import { useMutation, type UseMutationOptions } from "@tanstack/react-query";
-import type { GunMessagePut } from "gun/types";
-import _ from "lodash";
-import type { NestedSchemaType, SchemaKeys } from "..";
-import { update } from "../ssr/update";
-import { createGunHook } from "./useGunHook";
+import { useMutation, type UseMutationOptions } from '@tanstack/react-query';
+import type { GunMessagePut } from 'gun/types';
+import type { NestedSchemaType, SchemaKeys } from '..';
+import { update } from '../ssr/update';
+import { createGunHook } from './useGunHook';
 
 export type UpdaterParams<T extends SchemaKeys> = { id: string } & Partial<
-  Omit<NestedSchemaType<T>, "_" | "id">
+  Omit<NestedSchemaType<T>, '_' | 'id'>
 >;
 
 export const useUpdate = createGunHook(() => {
@@ -28,10 +27,10 @@ type Options<T extends SchemaKeys> = UseMutationOptions<
 
 export type UseUpdateOptions<T extends SchemaKeys> = Omit<
   Options<T>,
-  "mutationFn"
+  'mutationFn'
 > & { keys: [T, ...string[]] };
 
 export type UseUpdateOptionsShort = Omit<
   UseUpdateOptions<SchemaKeys>,
-  "keys"
+  'keys'
 > & { keys?: string[] };

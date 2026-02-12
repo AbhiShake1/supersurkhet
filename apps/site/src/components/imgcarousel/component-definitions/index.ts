@@ -1,10 +1,13 @@
-import type { ComponentLayer, ComponentRegistry } from "@/components/ui/ui-builder/types";
-import { z } from "zod";
-import { commonFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
+import { z } from 'zod';
+import { commonFieldOverrides } from '@/lib/ui-builder/registry/form-field-overrides';
 import {
   CarouselCard,
   EnhancedCarousel,
-  mockCarouselItems
+  mockCarouselItems,
 } from '@/components/imgcarousel/imgcarousel';
 import { CarouselItem as CarouselItemSchema } from '@/components/imgcarousel/imgcarousel';
 
@@ -14,9 +17,9 @@ export const imgCarouselComponentDefinitions: ComponentRegistry = {
     schema: z.object({
       showProgress: z.boolean().default(true),
       autoPlay: z.boolean().default(false),
-      variant: z.enum(["default", "compact", "expanded"]).default("default"),
-      title: z.string().default("Featured Items"),
-      subtitle: z.string().default("Discover amazing content"),
+      variant: z.enum(['default', 'compact', 'expanded']).default('default'),
+      title: z.string().default('Featured Items'),
+      subtitle: z.string().default('Discover amazing content'),
       showNavigation: z.boolean().default(true),
       showFilters: z.boolean().default(false),
     }),
@@ -33,11 +36,11 @@ export const imgCarouselComponentDefinitions: ComponentRegistry = {
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: mockCarouselItems.map((item) => ({
       id: item.id,
-      type: "CarouselCard",
-      name: "CarouselCard",
+      type: 'CarouselCard',
+      name: 'CarouselCard',
       props: {
         item,
-        variant: "default",
+        variant: 'default',
       },
       children: [],
     })) as ComponentLayer[],
@@ -46,11 +49,10 @@ export const imgCarouselComponentDefinitions: ComponentRegistry = {
     component: CarouselCard,
     schema: z.object({
       item: CarouselItemSchema,
-      variant: z.enum(["default", "compact", "expanded"]).default("default"),
+      variant: z.enum(['default', 'compact', 'expanded']).default('default'),
     }),
     from: '@/components/imgcarousel/imgcarousel',
     fieldOverrides: commonFieldOverrides(),
     defaultChildren: [],
   },
-}
-
+};

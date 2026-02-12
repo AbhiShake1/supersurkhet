@@ -1,9 +1,26 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { z } from 'zod';
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
-import { Smartphone, Tablet, Monitor, Maximize, X, Search, Terminal, Eye, EyeOff, MessageSquare, MessageSquareX, Code, CopyIcon, GlobeIcon, RefreshCcwIcon, Sparkles } from 'lucide-react';
+import {
+  Smartphone,
+  Tablet,
+  Monitor,
+  Maximize,
+  X,
+  Search,
+  Terminal,
+  Eye,
+  EyeOff,
+  MessageSquare,
+  MessageSquareX,
+  Code,
+} from 'lucide-react';
 import { CopyPromptButton } from '@/components/ui/ui-builder/copy-prompt-button';
 import { zodToJsonSchema } from '@/lib/zod/zod-to-json-schema';
 import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
@@ -14,7 +31,7 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from '@/components/ui/tooltip';
 import { api } from '@/lib/api';
 import { Spinner } from '@/components/ui/spinner';
 import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
@@ -73,7 +90,6 @@ import { useContextData } from '@/lib/ui-builder/context/context-data-store';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import { useAuth } from '@/components/auth-provider';
 
-
 const componentRegistry = {
   ...primitiveComponentDefinitions,
   ...complexComponentDefinitions,
@@ -82,43 +98,49 @@ const componentRegistry = {
 export const Route = createFileRoute('/$businessName/admin/editor')({
   validateSearch: z.object({
     layout: z.enum(['vertical', 'horizontal']).optional().default('horizontal'),
-    previewMode: z.enum(['mobile', 'tablet', 'desktop', 'responsive']).optional().default('responsive'),
+    previewMode: z
+      .enum(['mobile', 'tablet', 'desktop', 'responsive'])
+      .optional()
+      .default('responsive'),
   }),
   component: EditorComponent,
 });
 
 function EditorComponent() {
   const { businessName } = Route.useParams();
-  const { data: business, isLoading } = api.business.useGet({ keys: [businessName], single: true })
+  const { data: business, isLoading } = api.business.useGet({
+    keys: [businessName],
+    single: true,
+  });
 
-  const _business = business?.[0]
-  const code = _business?.uiBuilder?.layers ?? ''
-  const { mutate: update } = api.business.useUpdate()
+  const _business = business?.[0];
+  const code = _business?.uiBuilder?.layers ?? '';
+  const { mutate: update } = api.business.useUpdate();
   function setCode(newCode: string) {
     try {
       // pre-save validations so there is no bad commit
-      const parsed = JSON.parse(newCode)
-      uiBuilderLayerSchema.array().parse(parsed)
+      const parsed = JSON.parse(newCode);
+      uiBuilderLayerSchema.array().parse(parsed);
 
       update({
         id: businessName,
         uiBuilder: {
-          layers: newCode ?? ""
-        }
-      })
-    } catch { }
+          layers: newCode ?? '',
+        },
+      });
+    } catch {}
   }
   const { layout, previewMode } = Route.useSearch();
   const [isPreviewVisible, setIsPreviewVisible] = useState(true);
   const [isAIChatVisible, setIsAIChatVisible] = useState(false);
-  const [selectedPreviewMode, setSelectedPreviewMode] = useState<'mobile' | 'tablet' | 'desktop' | 'responsive'>(
-    previewMode
-  );
+  const [selectedPreviewMode, setSelectedPreviewMode] = useState<
+    'mobile' | 'tablet' | 'desktop' | 'responsive'
+  >(previewMode);
   const initialContextData = useContextData();
 
   // AI Chat related states and logic
-  const [input, setInput] = useState('');
-  const [model, setModel] = useState<string>('google/gemini-pro');
+  const [_input, _setInput] = useState('');
+  const [_model, _setModel] = useState<string>('google/gemini-pro');
 
   // Define a schema for our UI builder based on the Zod schema from ui-builder-schema.ts
   // Converting Zod schema to JSON schema format for Monaco Editor
@@ -127,19 +149,27 @@ function EditorComponent() {
       UiBuilderComponent: {
         type: 'object',
         properties: {
-          id: { type: 'string', description: 'Unique identifier for the component' },
-          name: { type: 'string', description: 'Component name for identification (use same as type if not specified)' },
+          id: {
+            type: 'string',
+            description: 'Unique identifier for the component',
+          },
+          name: {
+            type: 'string',
+            description:
+              'Component name for identification (use same as type if not specified)',
+          },
           type: {
             type: 'string',
             description: 'Component type based on registry',
             enum: Object.keys({
               ...primitiveComponentDefinitions,
               ...complexComponentDefinitions,
-            })
+            }),
           },
           props: {
             type: 'object',
-            description: 'Component properties and attributes (always include even if empty)',
+            description:
+              'Component properties and attributes (always include even if empty)',
             additionalProperties: true,
           },
           children: {
@@ -147,49 +177,55 @@ function EditorComponent() {
               { type: 'string', description: 'Child as string' },
               {
                 type: 'array',
-                description: 'Array of children - each can be a string or nested components',
-                items: { $ref: '#/$defs/UiBuilderComponent' }
-              }
-            ]
+                description:
+                  'Array of children - each can be a string or nested components',
+                items: { $ref: '#/$defs/UiBuilderComponent' },
+              },
+            ],
           },
         },
         required: ['id', 'type', 'name', 'props', 'children'],
-      }
+      },
     },
     type: 'array',
     description: 'Array of UI builder components/pages',
-    items: { $ref: '#/$defs/UiBuilderComponent' }
+    items: { $ref: '#/$defs/UiBuilderComponent' },
   };
 
   // Generate comprehensive system prompt for AI
   function generateSystemPrompt() {
     // Create compact summaries of component schemas
-    const componentSummaries = Object.entries(componentRegistry).map(([key, component]) => {
-      const summary = {
-        type: key,
-        required: [] as string[],
-        optional: [] as string[],
-        types: {} as Record<string, string>
-      };
+    const componentSummaries = Object.entries(componentRegistry).map(
+      ([key, component]) => {
+        const summary = {
+          type: key,
+          required: [] as string[],
+          optional: [] as string[],
+          types: {} as Record<string, string>,
+        };
 
-      if (component.schema) {
-        const jsonSchema = zodToJsonSchema(component.schema);
-        if (jsonSchema.properties) {
-          Object.entries(jsonSchema.properties).forEach(([propName, propSchema]) => {
-            const isRequired = jsonSchema.required?.includes(propName);
-            summary.types[propName] = (propSchema as any).type || 'any';
+        if (component.schema) {
+          const jsonSchema = zodToJsonSchema(component.schema);
+          if (jsonSchema.properties) {
+            Object.entries(jsonSchema.properties).forEach(
+              ([propName, propSchema]) => {
+                const isRequired = jsonSchema.required?.includes(propName);
+                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                summary.types[propName] = (propSchema as any).type || 'any';
 
-            if (isRequired) {
-              summary.required.push(propName);
-            } else {
-              summary.optional.push(propName);
-            }
-          });
+                if (isRequired) {
+                  summary.required.push(propName);
+                } else {
+                  summary.optional.push(propName);
+                }
+              },
+            );
+          }
         }
-      }
 
-      return summary;
-    });
+        return summary;
+      },
+    );
 
     return `You are an expert UI developer working with a UI builder system. Your task is to generate UI configurations in JSON format for the UI builder. Focus specifically on creating UI elements that serve the core business functions of the specified business type.
 
@@ -398,9 +434,9 @@ Important: Any string prop can contain @ mentions, and their values will be reso
 ]
 
 Provide the complete UI configuration in JSON format as your response. Do not include any additional text or explanations outside of the JSON structure.`;
-  };
+  }
 
-  const [webSearch, setWebSearch] = useState(false);
+  const [_webSearch, _setWebSearch] = useState(false);
 
   // const { messages, sendMessage, status, regenerate } = useChat({
   //   transport: new DefaultChatTransport({
@@ -429,7 +465,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
   // });
 
   // Available models
-  const models = [
+  const _models = [
     {
       name: 'Gemini Pro',
       value: 'google/gemini-pro',
@@ -440,23 +476,32 @@ Provide the complete UI configuration in JSON format as your response. Do not in
     },
   ];
 
-  const editorRef = useRef<import('monaco-editor').editor.IStandaloneCodeEditor | null>(null);
+  const editorRef = useRef<
+    import('monaco-editor').editor.IStandaloneCodeEditor | null
+  >(null);
 
-  const [monacoInstance, setMonacoInstance] = useState<typeof import('monaco-editor') | null>(null);
+  const [monacoInstance, setMonacoInstance] = useState<
+    typeof import('monaco-editor') | null
+  >(null);
   const [vimMode, setVimMode] = useState(false);
 
-  const handleEditorDidMount = (editor: import('monaco-editor').editor.IStandaloneCodeEditor, monaco: typeof import('monaco-editor')) => {
+  const handleEditorDidMount = (
+    editor: import('monaco-editor').editor.IStandaloneCodeEditor,
+    monaco: typeof import('monaco-editor'),
+  ) => {
     editorRef.current = editor;
     setMonacoInstance(monaco);
 
     // Register the JSON schema for validation
     monaco.languages.json.jsonDefaults.setDiagnosticsOptions({
       validate: true,
-      schemas: [{
-        uri: 'ui-builder-schema',
-        fileMatch: ['*'], // Apply to all files for this demo
-        schema: rootSchema
-      }]
+      schemas: [
+        {
+          uri: 'ui-builder-schema',
+          fileMatch: ['*'], // Apply to all files for this demo
+          schema: rootSchema,
+        },
+      ],
     });
 
     // Add custom keybindings if needed
@@ -465,7 +510,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
       monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyF, // Cmd/Ctrl+F for format
       () => {
         editor.getAction('editor.action.formatDocument')?.run();
-      }
+      },
     );
 
     // Set up vim mode if enabled
@@ -490,7 +535,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
 
   // Toggle vim mode
   const toggleVimMode = useCallback(() => {
-    setVimMode(prev => {
+    setVimMode((prev) => {
       const newVimMode = !prev;
       if (editorRef.current && monacoInstance) {
         // Toggle vim mode in the editor
@@ -513,25 +558,30 @@ Provide the complete UI configuration in JSON format as your response. Do not in
     if (!isAuthenticated && !isLoading)
       promptLogin({ dismissible: false, showBackgroundContent: false });
     else closeLoginPrompt();
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, closeLoginPrompt, promptLogin]);
 
-  if (isLoading) return <Spinner />
+  if (isLoading) return <Spinner />;
 
   if (!user) return null;
 
-  const currentLayers = _business?.uiBuilder?.layers
+  const currentLayers = _business?.uiBuilder?.layers;
   function tryParse(str: string) {
     try {
-      return JSON.parse(str)
-    } catch { }
+      return JSON.parse(str);
+    } catch {}
   }
   const currentPage = currentLayers ? tryParse(currentLayers)?.[0] : undefined;
 
   return (
     <div className="flex flex-col h-screen bg-background">
       {/* Top Toolbar */}
-      <div className="p-4 border-b bg-background flex items-center justify-between" style={{ zIndex: 10 }}>
-        <h1 className="text-xl font-bold">UI Builder Editor - {businessName}</h1>
+      <div
+        className="p-4 border-b bg-background flex items-center justify-between"
+        style={{ zIndex: 10 }}
+      >
+        <h1 className="text-xl font-bold">
+          UI Builder Editor - {businessName}
+        </h1>
         <div className="flex items-center gap-2">
           <ThemeToggle />
 
@@ -552,14 +602,18 @@ Provide the complete UI configuration in JSON format as your response. Do not in
               <Tablet className="h-4 w-4" />
             </Button>
             <Button
-              variant={selectedPreviewMode === 'desktop' ? 'secondary' : 'ghost'}
+              variant={
+                selectedPreviewMode === 'desktop' ? 'secondary' : 'ghost'
+              }
               size="sm"
               onClick={() => setSelectedPreviewMode('desktop')}
             >
               <Monitor className="h-4 w-4" />
             </Button>
             <Button
-              variant={selectedPreviewMode === 'responsive' ? 'secondary' : 'ghost'}
+              variant={
+                selectedPreviewMode === 'responsive' ? 'secondary' : 'ghost'
+              }
               size="sm"
               onClick={() => setSelectedPreviewMode('responsive')}
             >
@@ -575,11 +629,15 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                 onClick={() => setIsPreviewVisible(!isPreviewVisible)}
                 className="ml-2"
               >
-                {isPreviewVisible ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {isPreviewVisible ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isPreviewVisible ? "Hide Preview" : "Show Preview"}
+              {isPreviewVisible ? 'Hide Preview' : 'Show Preview'}
             </TooltipContent>
           </Tooltip>
 
@@ -591,11 +649,15 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                 onClick={() => setIsAIChatVisible(!isAIChatVisible)}
                 className="ml-2"
               >
-                {isAIChatVisible ? <MessageSquareX className="h-4 w-4" /> : <MessageSquare className="h-4 w-4" />}
+                {isAIChatVisible ? (
+                  <MessageSquareX className="h-4 w-4" />
+                ) : (
+                  <MessageSquare className="h-4 w-4" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              {isAIChatVisible ? "Hide AI Chat" : "Show AI Chat"}
+              {isAIChatVisible ? 'Hide AI Chat' : 'Show AI Chat'}
             </TooltipContent>
           </Tooltip>
         </div>
@@ -608,18 +670,22 @@ Provide the complete UI configuration in JSON format as your response. Do not in
         >
           {/* Main Editor and Preview Area */}
           <ResizablePanel defaultSize={isAIChatVisible ? 70 : 100} minSize={30}>
-            <ResizablePanelGroup
-              direction="horizontal"
-              className="h-full"
-            >
+            <ResizablePanelGroup direction="horizontal" className="h-full">
               {/* Code Editor Panel */}
               <ResizablePanel defaultSize={50} minSize={30}>
                 <div className="h-full w-full p-2">
                   <div className="h-full w-full flex flex-col">
-                    <div className="flex items-center gap-2 p-2 border-b" style={{ zIndex: 5 }}>
+                    <div
+                      className="flex items-center gap-2 p-2 border-b"
+                      style={{ zIndex: 5 }}
+                    >
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={formatCode}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={formatCode}
+                          >
                             <Code className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
@@ -628,7 +694,11 @@ Provide the complete UI configuration in JSON format as your response. Do not in
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button variant="outline" size="sm" onClick={showSearch}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={showSearch}
+                          >
                             <Search className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
@@ -638,7 +708,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button
-                            variant={vimMode ? "secondary" : "outline"}
+                            variant={vimMode ? 'secondary' : 'outline'}
                             size="sm"
                             onClick={toggleVimMode}
                           >
@@ -646,13 +716,15 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
-                          {vimMode ? "Disable Vim Mode" : "Enable Vim Mode"}
+                          {vimMode ? 'Disable Vim Mode' : 'Enable Vim Mode'}
                         </TooltipContent>
                       </Tooltip>
 
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <CopyPromptButton onGeneratePrompt={generateSystemPrompt} />
+                          <CopyPromptButton
+                            onGeneratePrompt={generateSystemPrompt}
+                          />
                         </TooltipTrigger>
                         <TooltipContent>Copy AI Prompt</TooltipContent>
                       </Tooltip>
@@ -703,23 +775,26 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                     </Button>
                   </div>
 
-                  <div className={`flex-1 overflow-auto ${selectedPreviewMode === 'mobile' ? 'max-w-xs mx-auto border' : selectedPreviewMode === 'tablet' ? 'max-w-md mx-auto border' : ''}`}>
-                    {
-                      currentPage ?
-                        <LayerRenderer
-                          className="w-full h-full"
-                          page={currentPage}
-                          componentRegistry={componentRegistry}
-                        /> : "Something went wrong"
-                    }
+                  <div
+                    className={`flex-1 overflow-auto ${selectedPreviewMode === 'mobile' ? 'max-w-xs mx-auto border' : selectedPreviewMode === 'tablet' ? 'max-w-md mx-auto border' : ''}`}
+                  >
+                    {currentPage ? (
+                      <LayerRenderer
+                        className="w-full h-full"
+                        page={currentPage}
+                        componentRegistry={componentRegistry}
+                      />
+                    ) : (
+                      'Something went wrong'
+                    )}
                   </div>
                 </div>
               </ResizablePanel>
             </ResizablePanelGroup>
           </ResizablePanel>
 
-          {isAIChatVisible && (
-            "AI Chat is temporarily disabled"
+          {
+            isAIChatVisible && 'AI Chat is temporarily disabled'
             // <>
             //   <ResizableHandle withHandle />
             //   {/* AI Chat Area */}
@@ -973,14 +1048,17 @@ Provide the complete UI configuration in JSON format as your response. Do not in
             //     </div>
             //   </ResizablePanel>
             // </>
-          )}
+          }
         </ResizablePanelGroup>
       ) : (
         // Full editor view when preview is hidden - ensure editor has proper height
         <div className="flex-1 flex flex-col">
           <div className="flex-1 p-2 min-h-[300px]">
             <div className="h-full w-full flex flex-col min-h-[250px]">
-              <div className="flex items-center gap-2 p-2 border-b" style={{ zIndex: 5 }}>
+              <div
+                className="flex items-center gap-2 p-2 border-b"
+                style={{ zIndex: 5 }}
+              >
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="sm" onClick={formatCode}>
@@ -1002,7 +1080,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant={vimMode ? "secondary" : "outline"}
+                      variant={vimMode ? 'secondary' : 'outline'}
                       size="sm"
                       onClick={toggleVimMode}
                     >
@@ -1010,7 +1088,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
-                    {vimMode ? "Disable Vim Mode" : "Enable Vim Mode"}
+                    {vimMode ? 'Disable Vim Mode' : 'Enable Vim Mode'}
                   </TooltipContent>
                 </Tooltip>
 
@@ -1043,7 +1121,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
                       quickSuggestions: {
                         other: true,
                         comments: false,
-                        strings: true
+                        strings: true,
                       },
                       // parameterHints: true,
                       suggestOnTriggerCharacters: true,

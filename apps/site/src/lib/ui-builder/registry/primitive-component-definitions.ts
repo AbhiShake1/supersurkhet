@@ -1,132 +1,154 @@
 import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
 import { z } from 'zod';
-import { childrenAsTextareaFieldOverrides, classNameFieldOverrides, commonFieldOverrides } from "@/lib/ui-builder/registry/form-field-overrides";
+import {
+  childrenAsTextareaFieldOverrides,
+  classNameFieldOverrides,
+  commonFieldOverrides,
+} from '@/lib/ui-builder/registry/form-field-overrides';
 import { divComponentDefinitions } from './div-component-definitions';
 
 export const primitiveComponentDefinitions: ComponentRegistry = {
-  'a': {
+  a: {
     schema: z.object({
       className: z.string().optional(),
       children: z.any().optional(),
       href: z.string().optional(),
-      target: z.enum(['_blank', '_self', '_parent', '_top']).optional().default('_self'),
+      target: z
+        .enum(['_blank', '_self', '_parent', '_top'])
+        .optional()
+        .default('_self'),
       rel: z.enum(['noopener', 'noreferrer', 'nofollow']).optional(),
       title: z.string().optional(),
       download: z.boolean().optional().default(false),
     }),
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: commonFieldOverrides(),
   },
-  'img': {
+  img: {
     schema: z.object({
       className: z.string().optional(),
-      src: z.string().default("https://placehold.co/200"),
+      src: z.string().default('https://placehold.co/200'),
       alt: z.string().optional(),
       width: z.coerce.number().optional(),
       height: z.coerce.number().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
   ...divComponentDefinitions,
-  'iframe': {
+  iframe: {
     schema: z.object({
       className: z.string().optional(),
-      src: z.string().default("https://www.youtube.com/embed/dQw4w9WgXcQ?si=oc74qTYUBuCsOJwL"),
+      src: z
+        .string()
+        .default(
+          'https://www.youtube.com/embed/dQw4w9WgXcQ?si=oc74qTYUBuCsOJwL',
+        ),
       title: z.string().optional(),
       width: z.coerce.number().optional(),
       height: z.coerce.number().optional(),
       frameBorder: z.number().optional(),
       allowFullScreen: z.boolean().optional(),
       allow: z.string().optional(),
-      referrerPolicy: z.enum(['no-referrer', 'no-referrer-when-downgrade', 'origin', 'origin-when-cross-origin', 'same-origin', 'strict-origin', 'strict-origin-when-cross-origin', 'unsafe-url']).optional(),
+      referrerPolicy: z
+        .enum([
+          'no-referrer',
+          'no-referrer-when-downgrade',
+          'origin',
+          'origin-when-cross-origin',
+          'same-origin',
+          'strict-origin',
+          'strict-origin-when-cross-origin',
+          'unsafe-url',
+        ])
+        .optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'span': {
+  span: {
     schema: z.object({
       className: z.string().optional(),
       children: z.string().optional(),
     }),
     fieldOverrides: {
       className: (layer) => classNameFieldOverrides(layer),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: "Text"
+    defaultChildren: 'Text',
   },
-  'h1': {
+  h1: {
     schema: z.object({
       className: z.string().optional(),
       children: z.string().optional(),
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: "Heading 1"
+    defaultChildren: 'Heading 1',
   },
-  'h2': {
+  h2: {
     schema: z.object({
       className: z.string().optional(),
       children: z.string().optional(),
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: "Heading 2"
+    defaultChildren: 'Heading 2',
   },
-  'h3': {
+  h3: {
     schema: z.object({
       className: z.string().optional(),
       children: z.string().optional(),
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: "Heading 3"
+    defaultChildren: 'Heading 3',
   },
-  'p': {
+  p: {
     schema: z.object({
       className: z.string().optional(),
       children: z.string().optional(),
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: "Paragraph text"
+    defaultChildren: 'Paragraph text',
   },
-  'li': {
+  li: {
     schema: z.object({
       className: z.string().optional(),
       children: z.string().optional(),
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: "List item"
+    defaultChildren: 'List item',
   },
-  'ul': {
+  ul: {
     schema: z.object({
       className: z.string().optional(),
       children: z.string().optional(),
     }),
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: commonFieldOverrides(),
   },
-  'ol': {
+  ol: {
     schema: z.object({
       className: z.string().optional(),
       children: z.string().optional(),
     }),
-    fieldOverrides: commonFieldOverrides()
+    fieldOverrides: commonFieldOverrides(),
   },
   // SVG primitive components
-  'svg': {
+  svg: {
     schema: z.object({
       xmlns: z.string().optional().default('http://www.w3.org/2000/svg'),
       version: z.string().optional(),
@@ -141,11 +163,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'g': {
+  g: {
     schema: z.object({
       className: z.string().optional(),
       children: z.any().optional(),
@@ -157,11 +179,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'path': {
+  path: {
     schema: z.object({
       d: z.string().optional(),
       fill: z.string().optional(),
@@ -171,10 +193,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       id: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'circle': {
+  circle: {
     schema: z.object({
       cx: z.string().optional(),
       cy: z.string().optional(),
@@ -186,10 +208,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       id: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'rect': {
+  rect: {
     schema: z.object({
       x: z.string().optional(),
       y: z.string().optional(),
@@ -204,10 +226,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       id: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'line': {
+  line: {
     schema: z.object({
       x1: z.string().optional(),
       y1: z.string().optional(),
@@ -219,10 +241,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       id: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'polyline': {
+  polyline: {
     schema: z.object({
       points: z.string().optional(),
       fill: z.string().optional(),
@@ -232,10 +254,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       id: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'polygon': {
+  polygon: {
     schema: z.object({
       points: z.string().optional(),
       fill: z.string().optional(),
@@ -245,10 +267,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       id: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'ellipse': {
+  ellipse: {
     schema: z.object({
       cx: z.string().optional(),
       cy: z.string().optional(),
@@ -261,10 +283,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       id: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'text': {
+  text: {
     schema: z.object({
       x: z.string().optional(),
       y: z.string().optional(),
@@ -279,11 +301,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: "Text"
+    defaultChildren: 'Text',
   },
-  'textPath': {
+  textPath: {
     schema: z.object({
       href: z.string().optional(),
       startOffset: z.string().optional(),
@@ -295,11 +317,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: "Text Path"
+    defaultChildren: 'Text Path',
   },
-  'tspan': {
+  tspan: {
     schema: z.object({
       dx: z.string().optional(),
       dy: z.string().optional(),
@@ -311,34 +333,22 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: "Tspan"
+    defaultChildren: 'Tspan',
   },
-  'defs': {
+  defs: {
     schema: z.object({
       className: z.string().optional(),
       children: z.any().optional(),
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'clipPath': {
-    schema: z.object({
-      id: z.string().optional(),
-      className: z.string().optional(),
-      children: z.any().optional(),
-    }),
-    fieldOverrides: {
-      ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
-    },
-    defaultChildren: ""
-  },
-  'mask': {
+  clipPath: {
     schema: z.object({
       id: z.string().optional(),
       className: z.string().optional(),
@@ -346,11 +356,23 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'linearGradient': {
+  mask: {
+    schema: z.object({
+      id: z.string().optional(),
+      className: z.string().optional(),
+      children: z.any().optional(),
+    }),
+    fieldOverrides: {
+      ...commonFieldOverrides(),
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
+    },
+    defaultChildren: '',
+  },
+  linearGradient: {
     schema: z.object({
       id: z.string().optional(),
       x1: z.string().optional().default('0%'),
@@ -362,11 +384,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'radialGradient': {
+  radialGradient: {
     schema: z.object({
       id: z.string().optional(),
       cx: z.string().optional().default('50%'),
@@ -377,11 +399,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'stop': {
+  stop: {
     schema: z.object({
       offset: z.string().optional().default('0%'),
       stopColor: z.string().optional(),
@@ -389,10 +411,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       className: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'pattern': {
+  pattern: {
     schema: z.object({
       id: z.string().optional(),
       x: z.string().optional(),
@@ -405,11 +427,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'image': {
+  image: {
     schema: z.object({
       href: z.string().optional(),
       x: z.string().optional(),
@@ -420,10 +442,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       className: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'use': {
+  use: {
     schema: z.object({
       href: z.string().optional(),
       x: z.string().optional(),
@@ -433,10 +455,10 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
       className: z.string().optional(),
     }),
     fieldOverrides: {
-      className: (layer) => classNameFieldOverrides(layer)
-    }
+      className: (layer) => classNameFieldOverrides(layer),
+    },
   },
-  'symbol': {
+  symbol: {
     schema: z.object({
       id: z.string().optional(),
       viewBox: z.string().optional(),
@@ -445,11 +467,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'gSymbol': {
+  gSymbol: {
     schema: z.object({
       id: z.string().optional(),
       viewBox: z.string().optional(),
@@ -458,11 +480,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'marker': {
+  marker: {
     schema: z.object({
       id: z.string().optional(),
       viewBox: z.string().optional(),
@@ -476,11 +498,11 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
+    defaultChildren: '',
   },
-  'foreignObject': {
+  foreignObject: {
     schema: z.object({
       x: z.string().optional(),
       y: z.string().optional(),
@@ -491,8 +513,8 @@ export const primitiveComponentDefinitions: ComponentRegistry = {
     }),
     fieldOverrides: {
       ...commonFieldOverrides(),
-      children: (layer) => childrenAsTextareaFieldOverrides(layer)
+      children: (layer) => childrenAsTextareaFieldOverrides(layer),
     },
-    defaultChildren: ""
-  }
+    defaultChildren: '',
+  },
 };

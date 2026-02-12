@@ -1,28 +1,33 @@
-import { Input } from "@/components/ui/input";
-import type { AutoFormFieldProps } from "../react";
-import type React from "react";
-import { useFormContext } from "react-hook-form";
+import { Input } from '@/components/ui/input';
+import type { AutoFormFieldProps } from '../react';
+import type React from 'react';
+import { useFormContext } from 'react-hook-form';
 
 export const NumberField: React.FC<AutoFormFieldProps> = ({
   inputProps,
   error,
   id,
   field,
-  path
+  path,
 }) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
-  const form = useFormContext()
+  const form = useFormContext();
 
   return (
     <Input
       id={id}
       type="number"
       step="any"
-      className={error ? "border-destructive" : ""}
+      className={error ? 'border-destructive' : ''}
       {...props}
       onChange={(e) => {
-        props.onChange(e)
-        field.fieldConfig?.customData?.onValueChange?.(e.target.value, path, form);
+        props.onChange(e);
+        field.fieldConfig?.customData?.onValueChange?.(
+          e.target.value,
+          path,
+          form,
+        );
       }}
     />
   );

@@ -1,0 +1,23 @@
+{
+  "name": "@supersurkhet/vite-plugin-zod-typegen",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsup --watch src/index.ts --format esm,cjs --dts --clean",
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean"
+  },
+  "devDependencies": {
+    "ts-morph": "^25.0.0",
+    "tsup": "^8.5.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.0"
+  },
+  "peerDependencies": {
+    "vite": ">=7.0.0"
+  }
+}

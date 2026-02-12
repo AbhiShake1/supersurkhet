@@ -1,8 +1,12 @@
-import { AddComponentsPopover } from "@/components/ui/ui-builder/internal/components/add-component-popover";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
+import { Button } from '@/components/ui/button';
+import { PlusCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 type DividerControlProps = {
   className?: string;
@@ -16,7 +20,7 @@ export function DividerControl({
   parentLayerId,
 }: DividerControlProps) {
   return (
-    <div className={cn("relative py-0", className)}>
+    <div className={cn('relative py-0', className)}>
       <div className="absolute inset-0 flex items-center" aria-hidden="true">
         <div className="w-full border-t border-primary border-dashed" />
       </div>
@@ -34,9 +38,7 @@ export function DividerControl({
             </Button>
           </TooltipTrigger>
         </AddComponentsPopover>
-        <TooltipContent>
-          Add component
-        </TooltipContent>
+        <TooltipContent>Add component</TooltipContent>
       </Tooltip>
     </div>
   );

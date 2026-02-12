@@ -1,64 +1,74 @@
-"use client";
+'use client';
 
-import { RatingGroup } from "@ark-ui/react/rating-group";
-import { Star, StarHalf, ThumbsUp, Heart, Zap, Sparkles } from "lucide-react";
-import { useState, useId } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { z } from "zod";
+import { RatingGroup } from '@ark-ui/react/rating-group';
+import { Star, ThumbsUp, Heart, Zap, Sparkles } from 'lucide-react';
+import { useState, useId } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { z } from 'zod';
 
 // Safe number helper
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 const safeNumber = (v: any, defaultValue: number) =>
-  isNaN(Number(v)) ? defaultValue : Number(v);
-
-
-
-
+  Number.isNaN(Number(v)) ? defaultValue : Number(v);
 
 //Schema
 export const RatingSchema = z.object({
   className: z.string().optional(),
-  maxStars: z.preprocess((v) => safeNumber(v, 5), z.number().int().min(1).max(10).default(5)),
+  maxStars: z.preprocess(
+    (v) => safeNumber(v, 5),
+    z.number().int().min(1).max(10).default(5),
+  ),
   value: z.preprocess((v) => safeNumber(v, 0), z.number().min(0).optional()),
   allowHalf: z.boolean().default(true),
   readOnly: z.boolean().default(false),
   disabled: z.boolean().default(false),
-  
+
   // Visual customization
-  variant: z.enum(["stars", "hearts", "thumbs", "zap", "custom"]).default("stars"),
-  size: z.enum(["xs", "sm", "md", "lg", "xl"]).default("md"),
-  filledColor: z.string().default("text-yellow-400"),
-  emptyColor: z.string().default("text-gray-300 dark:text-gray-600"),
+  variant: z
+    .enum(['stars', 'hearts', 'thumbs', 'zap', 'custom'])
+    .default('stars'),
+  size: z.enum(['xs', 'sm', 'md', 'lg', 'xl']).default('md'),
+  filledColor: z.string().default('text-yellow-400'),
+  emptyColor: z.string().default('text-gray-300 dark:text-gray-600'),
   highlightColor: z.string().optional(),
-  animation: z.enum(["none", "bounce", "pulse", "scale", "float"]).default("scale"),
+  animation: z
+    .enum(['none', 'bounce', 'pulse', 'scale', 'float'])
+    .default('scale'),
   glowEffect: z.boolean().default(true),
-  
+
   // Layout
-  layout: z.enum(["vertical", "horizontal", "compact"]).default("vertical"),
-  align: z.enum(["start", "center", "end"]).default("center"),
-  gap: z.preprocess((v) => safeNumber(v, 4), z.number().min(0).max(12).default(4)),
-  spacing: z.enum(["tight", "normal", "loose"]).default("normal"),
-  
+  layout: z.enum(['vertical', 'horizontal', 'compact']).default('vertical'),
+  align: z.enum(['start', 'center', 'end']).default('center'),
+  gap: z.preprocess(
+    (v) => safeNumber(v, 4),
+    z.number().min(0).max(12).default(4),
+  ),
+  spacing: z.enum(['tight', 'normal', 'loose']).default('normal'),
+
   // Labels & Text
   labels: z.array(z.string()).optional(),
   showLabels: z.boolean().default(true),
   showValue: z.boolean().default(true),
   showMax: z.boolean().default(false),
-  headerText: z.string().default("Product Rating"),
-  descriptionText: z.string().default("How would you rate this product?"),
-  successText: z.string().default("Thanks for your rating!"),
-  errorText: z.string().default("Please select a rating"),
-  
+  headerText: z.string().default('Product Rating'),
+  descriptionText: z.string().default('How would you rate this product?'),
+  successText: z.string().default('Thanks for your rating!'),
+  errorText: z.string().default('Please select a rating'),
+
   // Review section
   showReview: z.boolean().default(true),
-  reviewPlaceholder: z.string().default("Share your thoughts..."),
+  reviewPlaceholder: z.string().default('Share your thoughts...'),
   reviewRequired: z.boolean().default(false),
   minReviewLength: z.preprocess((v) => safeNumber(v, 0), z.number().default(0)),
-  maxReviewLength: z.preprocess((v) => safeNumber(v, 500), z.number().default(500)),
-  
+  maxReviewLength: z.preprocess(
+    (v) => safeNumber(v, 500),
+    z.number().default(500),
+  ),
+
   // Validation & State
   required: z.boolean().default(false),
   showValidation: z.boolean().default(true),
-  
+
   // Custom icons
   customFilledIcon: z.string().optional(),
   customEmptyIcon: z.string().optional(),
@@ -69,17 +79,17 @@ export type RatingProps = z.infer<typeof RatingSchema>;
 interface Props extends Partial<RatingProps> {}
 
 const sizeMap = {
-  xs: { icon: 16, text: "text-xs" },
-  sm: { icon: 20, text: "text-sm" },
-  md: { icon: 24, text: "text-base" },
-  lg: { icon: 32, text: "text-lg" },
-  xl: { icon: 40, text: "text-xl" },
+  xs: { icon: 16, text: 'text-xs' },
+  sm: { icon: 20, text: 'text-sm' },
+  md: { icon: 24, text: 'text-base' },
+  lg: { icon: 32, text: 'text-lg' },
+  xl: { icon: 40, text: 'text-xl' },
 };
 
 const spacingMap = {
-  tight: "gap-1",
-  normal: "gap-2",
-  loose: "gap-3",
+  tight: 'gap-1',
+  normal: 'gap-2',
+  loose: 'gap-3',
 };
 
 const animationVariants = {
@@ -91,19 +101,19 @@ const animationVariants = {
 };
 
 const getIconComponent = (variant: string, filled: boolean) => {
-  const baseProps = { 
-    className: "transition-all duration-200",
-    fill: filled ? "currentColor" : "none" 
+  const baseProps = {
+    className: 'transition-all duration-200',
+    fill: filled ? 'currentColor' : 'none',
   };
-  
+
   switch (variant) {
-    case "hearts":
+    case 'hearts':
       return <Heart {...baseProps} />;
-    case "thumbs":
+    case 'thumbs':
       return <ThumbsUp {...baseProps} />;
-    case "zap":
+    case 'zap':
       return <Zap {...baseProps} />;
-    case "custom":
+    case 'custom':
       return <Sparkles {...baseProps} />;
     default:
       return filled ? <Star {...baseProps} /> : <Star {...baseProps} />;
@@ -113,19 +123,19 @@ const getIconComponent = (variant: string, filled: boolean) => {
 export default function EnhancedRating(props: Props) {
   const config = RatingSchema.parse(props);
   const id = useId();
-  
+
   const [rating, setRating] = useState(config.value || 0);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [review, setReview] = useState("");
+  const [review, setReview] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const size = sizeMap[config.size];
   const spacingClass = spacingMap[config.spacing];
-  
+
   const handleRatingChange = (value: number) => {
     setRating(value);
-    setError("");
+    setError('');
   };
 
   const handleSubmit = () => {
@@ -133,12 +143,16 @@ export default function EnhancedRating(props: Props) {
       setError(config.errorText);
       return;
     }
-    
-    if (config.showReview && config.reviewRequired && review.length < config.minReviewLength) {
+
+    if (
+      config.showReview &&
+      config.reviewRequired &&
+      review.length < config.minReviewLength
+    ) {
       setError(`Please write at least ${config.minReviewLength} characters`);
       return;
     }
-    
+
     setSubmitted(true);
     // In a real app, you would submit to an API here
     console.log({ rating, review });
@@ -146,13 +160,18 @@ export default function EnhancedRating(props: Props) {
 
   const getVariantColor = () => {
     if (config.highlightColor) return config.highlightColor;
-    
+
     switch (config.variant) {
-      case "hearts": return "text-pink-500 dark:text-pink-400";
-      case "thumbs": return "text-blue-500 dark:text-blue-400";
-      case "zap": return "text-purple-500 dark:text-purple-400";
-      case "custom": return "text-amber-500 dark:text-amber-400";
-      default: return "text-yellow-500 dark:text-yellow-400";
+      case 'hearts':
+        return 'text-pink-500 dark:text-pink-400';
+      case 'thumbs':
+        return 'text-blue-500 dark:text-blue-400';
+      case 'zap':
+        return 'text-purple-500 dark:text-purple-400';
+      case 'custom':
+        return 'text-amber-500 dark:text-amber-400';
+      default:
+        return 'text-yellow-500 dark:text-yellow-400';
     }
   };
 
@@ -160,24 +179,30 @@ export default function EnhancedRating(props: Props) {
 
   const renderLabels = () => {
     if (!config.showLabels) return null;
-    
-    const labels = config.labels || [
-      "Poor", "Fair", "Good", "Very Good", "Excellent"
-    ].slice(0, config.maxStars);
-    
+
+    const labels =
+      config.labels ||
+      ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'].slice(
+        0,
+        config.maxStars,
+      );
+
     return (
-      <div className={`flex justify-between mt-2 ${size.text} text-gray-600 dark:text-gray-400`}>
+      <div
+        className={`flex justify-between mt-2 ${size.text} text-gray-600 dark:text-gray-400`}
+      >
         {labels.map((label, index) => (
           <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={index}
             className={`transition-opacity duration-200 ${
               hoveredIndex !== null
                 ? index <= hoveredIndex
-                  ? "opacity-100 font-medium text-gray-900 dark:text-white"
-                  : "opacity-50"
+                  ? 'opacity-100 font-medium text-gray-900 dark:text-white'
+                  : 'opacity-50'
                 : index < Math.floor(rating)
-                ? "opacity-100 font-medium text-gray-900 dark:text-white"
-                : "opacity-50"
+                  ? 'opacity-100 font-medium text-gray-900 dark:text-white'
+                  : 'opacity-50'
             }`}
           >
             {label}
@@ -198,11 +223,13 @@ export default function EnhancedRating(props: Props) {
         rounded-2xl shadow-lg dark:shadow-2xl
         border border-gray-200 dark:border-gray-700
         overflow-hidden
-        ${config.className || ""}
+        ${config.className || ''}
       `}
     >
       <div className="p-6 md:p-8">
-        <div className={`flex flex-col ${config.layout === "horizontal" ? "md:flex-row md:items-center" : ""} gap-6`}>
+        <div
+          className={`flex flex-col ${config.layout === 'horizontal' ? 'md:flex-row md:items-center' : ''} gap-6`}
+        >
           {/* Header Section */}
           <div className="flex-1 space-y-3">
             {config.headerText && (
@@ -228,7 +255,7 @@ export default function EnhancedRating(props: Props) {
               disabled={config.disabled}
               onHoverChange={(details) => setHoveredIndex(details.value)}
             >
-              <RatingGroup.Control 
+              <RatingGroup.Control
                 className={`flex ${spacingClass} justify-${config.align} flex-wrap`}
               >
                 <RatingGroup.Context>
@@ -239,42 +266,52 @@ export default function EnhancedRating(props: Props) {
                         index={item}
                         className={`
                           relative
-                          ${config.disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}
+                          ${config.disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}
                           transition-all duration-200
-                          ${config.glowEffect && "hover:drop-shadow-lg"}
+                          ${config.glowEffect && 'hover:drop-shadow-lg'}
                           focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-current rounded-full
                         `}
                       >
                         <RatingGroup.ItemContext>
                           {({ half, highlighted }) => {
-                            const isActive = highlighted || (hoveredIndex !== null && item <= hoveredIndex);
+                            const isActive =
+                              highlighted ||
+                              (hoveredIndex !== null && item <= hoveredIndex);
                             const isFilled = half || isActive;
-                            
+
                             return (
                               <motion.div
-                                animate={isActive && config.animation !== "none" ? animationVariants[config.animation] : {}}
+                                animate={
+                                  isActive && config.animation !== 'none'
+                                    ? animationVariants[config.animation]
+                                    : {}
+                                }
                                 className="relative"
                               >
                                 {/* Empty State */}
-                                <div className={`absolute ${config.emptyColor}`}>
+                                <div
+                                  className={`absolute ${config.emptyColor}`}
+                                >
                                   {getIconComponent(config.variant, false)}
                                 </div>
-                                
+
                                 {/* Filled State */}
-                                <div 
+                                <div
                                   className={`
-                                    ${isFilled ? "opacity-100" : "opacity-0"}
+                                    ${isFilled ? 'opacity-100' : 'opacity-0'}
                                     transition-all duration-300
                                     ${filledColor}
-                                    ${config.glowEffect && isFilled ? "filter drop-shadow" : ""}
+                                    ${config.glowEffect && isFilled ? 'filter drop-shadow' : ''}
                                   `}
                                   style={{
-                                    clipPath: half ? "inset(0 50% 0 0)" : "inset(0 0 0 0)"
+                                    clipPath: half
+                                      ? 'inset(0 50% 0 0)'
+                                      : 'inset(0 0 0 0)',
                                   }}
                                 >
                                   {getIconComponent(config.variant, true)}
                                 </div>
-                                
+
                                 {/* Highlight overlay */}
                                 {isActive && config.highlightColor && (
                                   <motion.div
@@ -292,7 +329,7 @@ export default function EnhancedRating(props: Props) {
                   }
                 </RatingGroup.Context>
               </RatingGroup.Control>
-              
+
               {config.showValue && rating > 0 && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
@@ -309,7 +346,7 @@ export default function EnhancedRating(props: Props) {
                   )}
                 </motion.div>
               )}
-              
+
               {renderLabels()}
             </RatingGroup.Root>
 
@@ -318,7 +355,7 @@ export default function EnhancedRating(props: Props) {
               {error && (
                 <motion.p
                   initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
+                  animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-2 text-sm text-red-500 dark:text-red-400"
                 >
@@ -334,7 +371,7 @@ export default function EnhancedRating(props: Props) {
           {config.showReview && rating > 0 && !submitted && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
+              animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700"
             >
@@ -363,7 +400,7 @@ export default function EnhancedRating(props: Props) {
                     focus:outline-none
                     resize-none
                     transition-all duration-200
-                    ${error ? "border-red-300 dark:border-red-500" : ""}
+                    ${error ? 'border-red-300 dark:border-red-500' : ''}
                   `}
                   rows={3}
                 />
@@ -372,11 +409,13 @@ export default function EnhancedRating(props: Props) {
                     {review.length}/{config.maxReviewLength} characters
                   </span>
                   {config.minReviewLength > 0 && (
-                    <span className={`text-xs ${
-                      review.length >= config.minReviewLength 
-                        ? "text-green-500" 
-                        : "text-amber-500"
-                    }`}>
+                    <span
+                      className={`text-xs ${
+                        review.length >= config.minReviewLength
+                          ? 'text-green-500'
+                          : 'text-amber-500'
+                      }`}
+                    >
                       Min {config.minReviewLength}
                     </span>
                   )}
@@ -395,6 +434,7 @@ export default function EnhancedRating(props: Props) {
               exit={{ opacity: 0, y: -10 }}
               className="mt-6"
             >
+              {/** biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
               <button
                 onClick={handleSubmit}
                 disabled={config.disabled}
@@ -437,7 +477,7 @@ export default function EnhancedRating(props: Props) {
                     {config.successText}
                   </h4>
                   <p className="text-sm text-green-600 dark:text-green-400 mt-1">
-                    You rated this {rating} star{rating !== 1 ? "s" : ""}
+                    You rated this {rating} star{rating !== 1 ? 's' : ''}
                   </p>
                 </div>
               </div>

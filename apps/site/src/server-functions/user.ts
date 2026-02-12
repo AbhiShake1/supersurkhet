@@ -1,7 +1,11 @@
-import { createServerFn } from "@tanstack/react-start";
-import { deleteCookie, getCookie, setCookie } from "@tanstack/react-start/server";
-import type { ISEAPair } from "gun/types";
-import { z } from "zod";
+import { createServerFn } from '@tanstack/react-start';
+import {
+  deleteCookie,
+  getCookie,
+  setCookie,
+} from '@tanstack/react-start/server';
+import type { ISEAPair } from 'gun/types';
+import { z } from 'zod';
 
 // export const getUser = async () => {
 //   return JSON.parse(localStorage.getItem("gun-user") || "{}");
@@ -16,16 +20,16 @@ import { z } from "zod";
 // }
 
 export const getUser = createServerFn().handler(() => {
-  const user = getCookie("gun-user")
-  return JSON.parse(user ?? "{}") as ISEAPair
-})
+  const user = getCookie('gun-user');
+  return JSON.parse(user ?? '{}') as ISEAPair;
+});
 
 export const removeUser = createServerFn().handler(() => {
-  return deleteCookie("gun-user")
-})
+  return deleteCookie('gun-user');
+});
 
 export const setUser = createServerFn()
   .inputValidator(z.custom<ISEAPair>())
   .handler(({ data: user }) => {
-    return setCookie("gun-user", JSON.stringify(user))
-  })
+    return setCookie('gun-user', JSON.stringify(user));
+  });

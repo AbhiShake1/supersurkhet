@@ -1,6 +1,7 @@
-import type { SVGProps } from "react";
+import type { SVGProps } from 'react';
 
 const Paypal = (props: SVGProps<SVGSVGElement>) => (
+  // biome-ignore lint/a11y/noSvgWithoutTitle: lint debt cleanup
   <svg {...props} viewBox="7.056000232696533 3 37.35095977783203 45">
     <g xmlns="http://www.w3.org/2000/svg" clipPath="url(#a)">
       <path

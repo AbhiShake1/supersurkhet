@@ -1,54 +1,60 @@
-"use client";
-import type React from "react";
+'use client';
+import type React from 'react';
+import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { Plus, Crosshair, ZoomIn, ZoomOut, MousePointer } from 'lucide-react';
 import {
-  useCallback,
-  useMemo,
-  useState,
-  useRef,
-  useEffect,
-} from "react";
-import { Plus, Crosshair, ZoomIn, ZoomOut, MousePointer } from "lucide-react";
-import { countLayers, defaultLayers, useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import type { ComponentLayer } from "@/components/ui/ui-builder/types";
+  countLayers,
+  defaultLayers,
+  useLayerStore,
+} from '@/lib/ui-builder/store/layer-store';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import {
   TransformWrapper,
   TransformComponent,
   useControls,
-} from "react-zoom-pan-pinch";
+} from 'react-zoom-pan-pinch';
 
-import LayerRenderer from "@/components/ui/ui-builder/layer-renderer";
-import { DndContextProvider, useComponentDragContext } from "@/lib/ui-builder/context/dnd-context";
-import { cn } from "@/lib/utils";
-import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
-import { AddComponentsPopover } from "@/components/ui/ui-builder/internal/components/add-component-popover";
-import { Button } from "@/components/ui/button";
-import { ResizableWrapper } from "@/components/ui/ui-builder/internal/canvas/resizable-wrapper";
-import AutoFrame from "@/components/ui/ui-builder/internal/canvas/auto-frame";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
+import {
+  DndContextProvider,
+  useComponentDragContext,
+} from '@/lib/ui-builder/context/dnd-context';
+import { cn } from '@/lib/utils';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
+import { Button } from '@/components/ui/button';
+import { ResizableWrapper } from '@/components/ui/ui-builder/internal/canvas/resizable-wrapper';
+import AutoFrame from '@/components/ui/ui-builder/internal/canvas/auto-frame';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip';
 
 // Static style objects to prevent recreation on every render
 const WRAPPER_STYLE = {
-  width: "100%",
-  height: "100%",
+  width: '100%',
+  height: '100%',
 } as const;
 
 const CONTENT_STYLE = {
-  width: "100%",
-  height: "100%",
+  width: '100%',
+  height: '100%',
 } as const;
 
 const TRANSFORM_DIV_STYLE = {
-  minHeight: "100vh",
-  padding: "50px",
+  minHeight: '100vh',
+  padding: '50px',
 } as const;
 
 const WHEEL_CONFIG = { step: 0.1 } as const;
 const DOUBLE_CLICK_CONFIG = { disabled: false } as const;
 
-const ZoomControls: React.FC<{ onPointerEventsToggle: (enabled: boolean) => void; pointerEventsEnabled: boolean }> = ({
-  onPointerEventsToggle,
-  pointerEventsEnabled
-}) => {
+const ZoomControls: React.FC<{
+  onPointerEventsToggle: (enabled: boolean) => void;
+  pointerEventsEnabled: boolean;
+}> = ({ onPointerEventsToggle, pointerEventsEnabled }) => {
   const { zoomIn, zoomOut, resetTransform } = useControls();
 
   const handleZoomIn = useCallback(() => zoomIn(), [zoomIn]);
@@ -116,16 +122,30 @@ const ZoomControls: React.FC<{ onPointerEventsToggle: (enabled: boolean) => void
           <TooltipTrigger asChild>
             <Button
               data-testid="button-PointerEvents"
-              variant={pointerEventsEnabled ? "default" : "secondary"}
+              variant={pointerEventsEnabled ? 'default' : 'secondary'}
               className="size-14 md:size-10 rounded-r-full rounded-l-none [&_svg]:size-7 [&_svg]:md:size-4"
               onClick={handleTogglePointerEvents}
             >
-              <span className="sr-only">{pointerEventsEnabled ? "Disable pointer events" : "Enable pointer events"}</span>
-              <MousePointer className={pointerEventsEnabled ? "text-primary-foreground" : "text-secondary-foreground"} />
+              <span className="sr-only">
+                {pointerEventsEnabled
+                  ? 'Disable pointer events'
+                  : 'Enable pointer events'}
+              </span>
+              <MousePointer
+                className={
+                  pointerEventsEnabled
+                    ? 'text-primary-foreground'
+                    : 'text-secondary-foreground'
+                }
+              />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
-            <p>{pointerEventsEnabled ? "Disable page interaction" : "Enable page interaction"}</p>
+            <p>
+              {pointerEventsEnabled
+                ? 'Disable page interaction'
+                : 'Enable page interaction'}
+            </p>
           </TooltipContent>
         </Tooltip>
       </div>
@@ -151,20 +171,20 @@ const EditorPanel: React.FC<EditorPanelProps> = ({ className }) => {
   const selectedLayer = findLayerById(selectedLayerId) as ComponentLayer;
   const selectedPage = findLayerById(selectedPageId) as ComponentLayer;
   const isLayerAPage = useLayerStore((state) =>
-    state.isLayerAPage(selectedLayerId || "")
+    state.isLayerAPage(selectedLayerId || ''),
   );
   const allowPagesCreation = useEditorStore(
-    (state) => state.allowPagesCreation
+    (state) => state.allowPagesCreation,
   );
   const allowPagesDeletion = useEditorStore(
-    (state) => state.allowPagesDeletion
+    (state) => state.allowPagesDeletion,
   );
 
   const onSelectElement = useCallback(
     (layerId: string) => {
       selectLayer(layerId);
     },
-    [selectLayer]
+    [selectLayer],
   );
 
   const handleDeleteLayer = useCallback(() => {
@@ -213,6 +233,7 @@ interface EditorPanelContentProps {
   allowPagesCreation: boolean;
   allowPagesDeletion: boolean;
   previewMode: string;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   componentRegistry: any;
   autoZoomToSelected?: boolean;
   onSelectElement: (layerId: string) => void;
@@ -234,14 +255,16 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   autoZoomToSelected,
   onSelectElement,
   handleDeleteLayer,
-  handleDuplicateLayer
+  handleDuplicateLayer,
 }) => {
   const { isDragging: isComponentDragging } = useComponentDragContext();
   const [resizing, setResizing] = useState(false);
-  const [frameSize, setFrameSize] = useState<{ width: number; height: number }>({
-    width: 1000,
-    height: 1000
-  });
+  const [frameSize, setFrameSize] = useState<{ width: number; height: number }>(
+    {
+      width: 1000,
+      height: 1000,
+    },
+  );
   const [pointerEventsEnabled, setPointerEventsEnabled] = useState(true);
   const frameRef = useRef<HTMLIFrameElement>(null);
 
@@ -281,70 +304,79 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
       handleDeleteLayer,
       allowPagesCreation,
       allowPagesDeletion,
-    ]
+    ],
   );
 
   const widthClass = useMemo(() => {
-    if (previewMode === "responsive") {
-      return "w-full";
-    } else if (previewMode === "mobile") {
-      return "w-[390px]";
-    } else if (previewMode === "tablet") {
-      return "w-[768px]";
-    } else if (previewMode === "desktop") {
-      return "w-[1440px]";
+    if (previewMode === 'responsive') {
+      return 'w-full';
+    } else if (previewMode === 'mobile') {
+      return 'w-[390px]';
+    } else if (previewMode === 'tablet') {
+      return 'w-[768px]';
+    } else if (previewMode === 'desktop') {
+      return 'w-[1440px]';
     } else {
-      return "w-full";
+      return 'w-full';
     }
   }, [previewMode]);
 
   const heightClass = useMemo(() => {
-    if (previewMode === "responsive") {
-      return "";
-    } else if (previewMode === "mobile") {
+    if (previewMode === 'responsive') {
+      return '';
+    } else if (previewMode === 'mobile') {
       // iPhone 13 / 14 viewport: 390×844
-      return "h-[844px]";
-    } else if (previewMode === "tablet") {
+      return 'h-[844px]';
+    } else if (previewMode === 'tablet') {
       // iPad portrait viewport: 768×1024
-      return "h-[1024px]";
-    } else if (previewMode === "desktop") {
+      return 'h-[1024px]';
+    } else if (previewMode === 'desktop') {
       // MacBook Air 13" viewport: 1440×900
-      return "h-[900px]";
+      return 'h-[900px]';
     } else {
-      return "h-full";
+      return 'h-full';
     }
   }, [previewMode]);
 
-
   // Memoize ResizableWrapper props
-  const resizableProps = useMemo(() => ({
-    isResizable: previewMode === "responsive",
-    onDraggingChange: handleResizingChange,
-    onSizeChange: handleSizeChange
-  }), [previewMode, handleResizingChange, handleSizeChange]);
+  const resizableProps = useMemo(
+    () => ({
+      isResizable: previewMode === 'responsive',
+      onDraggingChange: handleResizingChange,
+      onSizeChange: handleSizeChange,
+    }),
+    [previewMode, handleResizingChange, handleSizeChange],
+  );
 
   // Memoize AutoFrame props
-  const autoFrameProps = useMemo(() => ({
-    height: frameSize.height,
-    className: cn("shadow-lg", widthClass, heightClass),
-    // frameRef: frameRef,
-    pointerEventsEnabled: pointerEventsEnabled
-  }), [frameSize.height, widthClass, heightClass, frameRef, pointerEventsEnabled]);
+  const autoFrameProps = useMemo(
+    () => ({
+      height: frameSize.height,
+      className: cn('shadow-lg', widthClass, heightClass),
+      // frameRef: frameRef,
+      pointerEventsEnabled: pointerEventsEnabled,
+    }),
+    [frameSize.height, widthClass, heightClass, pointerEventsEnabled],
+  );
 
   // Memoize LayerRenderer props
-  const layerRendererProps = useMemo(() => ({
-    className: "contents",
-    page: selectedPage,
-    editorConfig: editorConfig,
-    componentRegistry: componentRegistry
-  }), [selectedPage, editorConfig, componentRegistry]);
+  const layerRendererProps = useMemo(
+    () => ({
+      className: 'contents',
+      page: selectedPage,
+      editorConfig: editorConfig,
+      componentRegistry: componentRegistry,
+    }),
+    [selectedPage, editorConfig, componentRegistry],
+  );
 
   const renderer = useMemo(
     () => (
       <ResizableWrapper {...resizableProps}>
+        {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
         <div
           id="editor-panel-content"
-          className={cn("overflow-visible ", widthClass)}
+          className={cn('overflow-visible ', widthClass)}
         >
           <AutoFrame {...autoFrameProps} ref={frameRef}>
             <LayerRenderer {...layerRendererProps} />
@@ -352,9 +384,8 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
         </div>
       </ResizableWrapper>
     ),
-    [resizableProps, widthClass, autoFrameProps, layerRendererProps]
+    [resizableProps, widthClass, autoFrameProps, layerRendererProps],
   );
-
 
   // Use static objects for consistent styles (defined outside component would be better)
   const wrapperStyle = WRAPPER_STYLE;
@@ -364,16 +395,20 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
   const doubleClickConfig = DOUBLE_CLICK_CONFIG;
 
   // Disable panning when either resizing the viewport OR dragging components
-  const panningConfig = useMemo(() => ({
-    disabled: resizing || isComponentDragging
-  }), [resizing, isComponentDragging]);
+  const panningConfig = useMemo(
+    () => ({
+      disabled: resizing || isComponentDragging,
+    }),
+    [resizing, isComponentDragging],
+  );
 
   return (
+    // biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup
     <div
       id="editor-panel-container"
       className={cn(
-        "flex flex-col relative size-full bg-fixed bg-[radial-gradient(hsl(var(--border))_1px,hsl(var(--primary)/0.05)_1px)] [background-size:16px_16px] will-change-auto",
-        className
+        'flex flex-col relative size-full bg-fixed bg-[radial-gradient(hsl(var(--border))_1px,hsl(var(--primary)/0.05)_1px)] [background-size:16px_16px] will-change-auto',
+        className,
       )}
     >
       <TransformWrapper
@@ -392,16 +427,18 @@ const EditorPanelContent: React.FC<EditorPanelContentProps> = ({
           onPointerEventsToggle={handlePointerEventsToggle}
           pointerEventsEnabled={pointerEventsEnabled}
         />
-        {autoZoomToSelected && <AutoZoomToSelected
-          selectedLayerId={selectedLayerId}
-          autoZoomToSelected={autoZoomToSelected}
-        />}
+        {autoZoomToSelected && (
+          <AutoZoomToSelected
+            selectedLayerId={selectedLayerId}
+            autoZoomToSelected={autoZoomToSelected}
+          />
+        )}
         <TransformComponent
           wrapperStyle={wrapperStyle}
           contentStyle={contentStyle}
         >
           <div
-            className={cn("relative", widthClass)}
+            className={cn('relative', widthClass)}
             data-testid="transform-component"
             style={transformDivStyle}
           >
@@ -459,5 +496,3 @@ const AutoZoomToSelected: React.FC<{
 
   return null; // This component doesn't render anything
 };
-
-

@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * @author: @dorian_baffier
@@ -10,19 +10,19 @@
  * @github: https://github.com/kokonut-labs/kokonutui
  */
 
-import { cn } from "@/lib/utils";
-import { motion } from "motion/react";
-import z from "zod";
+import { cn } from '@/lib/utils';
+import { motion } from 'motion/react';
+import z from 'zod';
 
 export const ShimmerTextSchema = z.object({
   text: z.string().optional(),
   className: z.string().optional(),
-})
+});
 
 export type ShimmerTextProps = z.infer<typeof ShimmerTextSchema>;
 
 export default function ShimmerText({
-  text = "Text Shimmer",
+  text = 'Text Shimmer',
   className,
 }: ShimmerTextProps) {
   return (
@@ -35,15 +35,15 @@ export default function ShimmerText({
       >
         <motion.h1
           className={cn(
-            "text-3xl font-bold bg-gradient-to-r from-neutral-950 via-neutral-400 to-neutral-950 dark:from-white dark:via-neutral-600 dark:to-white bg-[length:200%_100%] bg-clip-text text-transparent",
-            className
+            'text-3xl font-bold bg-gradient-to-r from-neutral-950 via-neutral-400 to-neutral-950 dark:from-white dark:via-neutral-600 dark:to-white bg-[length:200%_100%] bg-clip-text text-transparent',
+            className,
           )}
           animate={{
-            backgroundPosition: ["200% center", "-200% center"],
+            backgroundPosition: ['200% center', '-200% center'],
           }}
           transition={{
             duration: 2.5,
-            ease: "linear",
+            ease: 'linear',
             repeat: Number.POSITIVE_INFINITY,
           }}
         >

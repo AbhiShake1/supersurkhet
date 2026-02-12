@@ -1,8 +1,14 @@
-import { Header } from "@/components/hero5-header";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { createFileRoute, useRouteContext } from "@tanstack/react-router";
+import { Header } from '@/components/hero5-header';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { createFileRoute, useRouteContext } from '@tanstack/react-router';
 import {
   Bell,
   CheckCircle2,
@@ -11,29 +17,31 @@ import {
   LogOut,
   Smartphone,
   Moon,
-} from "lucide-react";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { ThemePresetSelector } from "@/components/theme/theme-preset-selector";
-import { ThemeEditor } from "@/components/theme/theme-editor";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+} from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { ThemePresetSelector } from '@/components/theme/theme-preset-selector';
+import { ThemeEditor } from '@/components/theme/theme-editor';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 
-export const Route = createFileRoute("/_auth/settings")({
+export const Route = createFileRoute('/_auth/settings')({
   component: RouteComponent,
 });
 
 function RouteComponent() {
-  const { auth } = useRouteContext({ from: "/_auth" });
+  const { auth } = useRouteContext({ from: '/_auth' });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { register, handleSubmit, reset, setValue } = useForm({
     defaultValues: {
       emailNotifications: true,
       smsNotifications: false,
-      language: "en",
+      language: 'en',
     },
   });
-  const onSubmit = (data: any) => {
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  const onSubmit = (_data: any) => {
     setSaving(true);
     setSaved(false);
     // In a real app, you would save the notification settings and language
@@ -64,18 +72,14 @@ function RouteComponent() {
                     <Bell size={18} />
                     <span>Email Notifications</span>
                   </div>
-                  <Switch
-                    {...register("emailNotifications")}
-                  />
+                  <Switch {...register('emailNotifications')} />
                 </div>
                 <div className="flex items-center justify-between py-3">
                   <div className="flex items-center gap-2">
                     <Smartphone size={18} />
                     <span>SMS Notifications</span>
                   </div>
-                  <Switch
-                    {...register("smsNotifications")}
-                  />
+                  <Switch {...register('smsNotifications')} />
                 </div>
               </Card>
               <Card className="p-6 shadow-xl border-2 border-muted/40">
@@ -98,7 +102,7 @@ function RouteComponent() {
                 <div className="flex items-center justify-between py-3">
                   <span>Preferred Language</span>
                   <select
-                    {...register("language")}
+                    {...register('language')}
                     className="w-40 rounded-lg border px-3 py-2 bg-background text-foreground"
                   >
                     <option value="en">English</option>
@@ -113,7 +117,7 @@ function RouteComponent() {
                   ) : saved ? (
                     <CheckCircle2 className="text-green-500 mr-2 h-4 w-4" />
                   ) : null}
-                  {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}
+                  {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
                 </Button>
                 <Button type="button" variant="outline" onClick={() => reset()}>
                   Reset
@@ -140,7 +144,9 @@ function RouteComponent() {
             <Card>
               <CardHeader>
                 <CardTitle>Theme Customization</CardTitle>
-                <CardDescription>Choose a preset or customize your theme</CardDescription>
+                <CardDescription>
+                  Choose a preset or customize your theme
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-6">
@@ -148,8 +154,12 @@ function RouteComponent() {
                   <div className="pt-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-lg">Customize Theme</CardTitle>
-                        <CardDescription>Adjust colors and styles to your preference</CardDescription>
+                        <CardTitle className="text-lg">
+                          Customize Theme
+                        </CardTitle>
+                        <CardDescription>
+                          Adjust colors and styles to your preference
+                        </CardDescription>
                       </CardHeader>
                       <CardContent>
                         <ThemeEditor compact={true} />

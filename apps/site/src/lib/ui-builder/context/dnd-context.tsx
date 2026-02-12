@@ -9,9 +9,12 @@ import {
   type DndContextState,
   type ComponentDragContextState,
   useDndContext,
-  useComponentDragContext
+  useComponentDragContext,
 } from '@/lib/ui-builder/context/dnd-contexts';
-import { TransformAwareDragOverlay, DragOverlayContent } from '@/lib/ui-builder/context/drag-overlay';
+import {
+  TransformAwareDragOverlay,
+  DragOverlayContent,
+} from '@/lib/ui-builder/context/drag-overlay';
 import { useAutoScroll } from '@/lib/ui-builder/hooks/use-auto-scroll';
 import { useDndSensors } from '@/lib/ui-builder/hooks/use-dnd-sensors';
 import { useDndEventHandlers } from '@/lib/ui-builder/hooks/use-dnd-event-handlers';
@@ -25,18 +28,29 @@ interface DndContextProviderProps {
   children: ReactNode;
 }
 
-export const DndContextProvider: React.FC<DndContextProviderProps> = ({ children }) => {
+export const DndContextProvider: React.FC<DndContextProviderProps> = ({
+  children,
+}) => {
   const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
   const [componentDragging, setComponentDragging] = useState(false);
 
   // Use extracted hooks
-  const { handleParentMouseMove, handleIframeMouseMove, stopAutoScroll } = useAutoScroll();
+  const { handleParentMouseMove, handleIframeMouseMove, stopAutoScroll } =
+    useAutoScroll();
   const sensors = useDndSensors();
-  const { handleDragStart, handleDragEnd, handleDragCancel, isLayerDescendantOf } = useDndEventHandlers({
+  const {
+    handleDragStart,
+    handleDragEnd,
+    handleDragCancel,
+    isLayerDescendantOf,
+  } = useDndEventHandlers({
     stopAutoScroll,
     setActiveLayerId,
   });
-  const { canDropOnLayer } = useDropValidation(activeLayerId, isLayerDescendantOf);
+  const { canDropOnLayer } = useDropValidation(
+    activeLayerId,
+    isLayerDescendantOf,
+  );
 
   // Use keyboard shortcuts hook
   useKeyboardShortcutsDnd(activeLayerId, handleDragCancel);
@@ -45,22 +59,29 @@ export const DndContextProvider: React.FC<DndContextProviderProps> = ({ children
   // Don't memoize this to ensure we always get fresh scroll positions during auto-scroll
   const collisionDetection = createTransformAwareCollisionDetection();
 
-  const contextValue: DndContextState = useMemo(() => ({
-    isDragging: !!activeLayerId,
-    activeLayerId,
-    canDropOnLayer,
-  }), [activeLayerId, canDropOnLayer]);
+  const contextValue: DndContextState = useMemo(
+    () => ({
+      isDragging: !!activeLayerId,
+      activeLayerId,
+      canDropOnLayer,
+    }),
+    [activeLayerId, canDropOnLayer],
+  );
 
-  const componentDragContextValue: ComponentDragContextState = useMemo(() => ({
-    isDragging: componentDragging,
-    setDragging: setComponentDragging,
-  }), [componentDragging]);
+  const componentDragContextValue: ComponentDragContextState = useMemo(
+    () => ({
+      isDragging: componentDragging,
+      setDragging: setComponentDragging,
+    }),
+    [componentDragging],
+  );
 
   // Auto-scroll event listeners setup/cleanup
   useEffect(() => {
     if (activeLayerId) {
       // Add global mouse move listener for auto-scroll on parent document
-      const handleParentMove = (event: MouseEvent) => handleParentMouseMove(event, activeLayerId);
+      const handleParentMove = (event: MouseEvent) =>
+        handleParentMouseMove(event, activeLayerId);
       document.addEventListener('mousemove', handleParentMove);
 
       // Also add mouse move listener to iframe content window
@@ -70,7 +91,8 @@ export const DndContextProvider: React.FC<DndContextProviderProps> = ({ children
       if (iframeElements) {
         const { window: iframeWindow } = iframeElements;
         if (iframeWindow) {
-          const handleIframeMove = (event: MouseEvent) => handleIframeMouseMove(event, activeLayerId);
+          const handleIframeMove = (event: MouseEvent) =>
+            handleIframeMouseMove(event, activeLayerId);
           iframeWindow.addEventListener('mousemove', handleIframeMove);
           iframeCleanup = () => {
             try {
@@ -94,7 +116,12 @@ export const DndContextProvider: React.FC<DndContextProviderProps> = ({ children
       // Clean up when no active drag
       stopAutoScroll();
     }
-  }, [activeLayerId, handleParentMouseMove, handleIframeMouseMove, stopAutoScroll]);
+  }, [
+    activeLayerId,
+    handleParentMouseMove,
+    handleIframeMouseMove,
+    stopAutoScroll,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -115,11 +142,12 @@ export const DndContextProvider: React.FC<DndContextProviderProps> = ({ children
         >
           {children}
           <TransformAwareDragOverlay>
-            {activeLayerId ? <DragOverlayContent layerId={activeLayerId} /> : null}
+            {activeLayerId ? (
+              <DragOverlayContent layerId={activeLayerId} />
+            ) : null}
           </TransformAwareDragOverlay>
         </DndContext>
       </ComponentDragContext.Provider>
     </DndContextStateContext.Provider>
   );
 };
-

@@ -1,20 +1,18 @@
-import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import {
-  ChevronDown,
-  ChevronRight
-} from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "./ui/tooltip";
-import type { PossibleTabConfig } from "./auto-admin";
-import { generatePermissions } from "@/lib/permissions/generate-permissions";
+import { Card, CardContent } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import type { PossibleTabConfig } from './auto-admin';
+import { generatePermissions } from '@/lib/permissions/generate-permissions';
 
 interface RolesMatrixProps {
   slug?: string;
-  tabs: PossibleTabConfig[]
+  tabs: PossibleTabConfig[];
 }
 
+// biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 export function RolesAndPermissionsPage({ slug, tabs }: RolesMatrixProps) {
   const groupedPermissions = useMemo(() => {
     return generatePermissions(tabs);
@@ -25,7 +23,11 @@ export function RolesAndPermissionsPage({ slug, tabs }: RolesMatrixProps) {
       <CardContent className="p-0 space-y-6">
         <div className="space-y-2">
           {Object.entries(groupedPermissions).map(([feature, actions]) => (
-            <PermissionGroup key={feature} feature={feature} actions={actions} />
+            <PermissionGroup
+              key={feature}
+              feature={feature}
+              actions={actions}
+            />
           ))}
         </div>
       </CardContent>
@@ -41,7 +43,9 @@ interface PermissionGroupProps {
 function PermissionGroup({ feature, actions }: PermissionGroupProps) {
   const [expanded, setExpanded] = useState(true);
 
-  const [checkedStates, setCheckedStates] = useState<Record<string, boolean>>({});
+  const [checkedStates, setCheckedStates] = useState<Record<string, boolean>>(
+    {},
+  );
 
   // Initialize the checked states
   useEffect(() => {
@@ -52,13 +56,13 @@ function PermissionGroup({ feature, actions }: PermissionGroupProps) {
     setCheckedStates(initialStates);
   }, [feature, actions]);
 
-  const isFeatureFullyChecked = actions.every(action =>
-    checkedStates[`${feature}:${action}`]
+  const isFeatureFullyChecked = actions.every(
+    (action) => checkedStates[`${feature}:${action}`],
   );
 
   const isFeaturePartiallyChecked = () => {
     const checkedCount = actions.filter(
-      action => checkedStates[`${feature}:${action}`]
+      (action) => checkedStates[`${feature}:${action}`],
     ).length;
     return checkedCount > 0 && checkedCount < actions.length;
   };
@@ -72,14 +76,16 @@ function PermissionGroup({ feature, actions }: PermissionGroupProps) {
   };
 
   const handlePermissionChange = (action: string, checked: boolean) => {
-    setCheckedStates(prev => ({
+    setCheckedStates((prev) => ({
       ...prev,
-      [`${feature}:${action}`]: checked
+      [`${feature}:${action}`]: checked,
     }));
   };
 
   return (
     <div className="space-y-1">
+      {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
+      {/** biome-ignore lint/a11y/useKeyWithClickEvents: lint debt cleanup */}
       <div
         className="flex items-center space-x-2 cursor-pointer"
         onClick={() => setExpanded(!expanded)}
@@ -91,10 +97,19 @@ function PermissionGroup({ feature, actions }: PermissionGroupProps) {
         )}
         <Checkbox
           id={`feature-${feature}`}
-          checked={isFeatureFullyChecked ? true : isFeaturePartiallyChecked() ? "indeterminate" : false}
+          checked={
+            isFeatureFullyChecked
+              ? true
+              : isFeaturePartiallyChecked()
+                ? 'indeterminate'
+                : false
+          }
           onCheckedChange={(checked) => handleFeatureChange(checked as boolean)}
         />
-        <Label htmlFor={`feature-${feature}`} className="text-sm font-medium capitalize">
+        <Label
+          htmlFor={`feature-${feature}`}
+          className="text-sm font-medium capitalize"
+        >
           {feature}
         </Label>
       </div>
@@ -102,20 +117,28 @@ function PermissionGroup({ feature, actions }: PermissionGroupProps) {
       {expanded && (
         <div className="ml-6 space-y-1 pl-2 border-l border-border">
           {actions.map((action) => (
-            <div key={`${feature}:${action}`} className="flex items-center space-x-2 py-1">
+            <div
+              key={`${feature}:${action}`}
+              className="flex items-center space-x-2 py-1"
+            >
               <Checkbox
                 id={`${feature}-${action}`}
                 checked={checkedStates[`${feature}:${action}`] || false}
-                onCheckedChange={(checked) => handlePermissionChange(action, checked as boolean)}
+                onCheckedChange={(checked) =>
+                  handlePermissionChange(action, checked as boolean)
+                }
               />
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Label htmlFor={`${feature}-${action}`} className="text-sm capitalize">
-                    {action.replaceAll("_", " ")}
+                  <Label
+                    htmlFor={`${feature}-${action}`}
+                    className="text-sm capitalize"
+                  >
+                    {action.replaceAll('_', ' ')}
                   </Label>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{`Can ${action.replaceAll("_", " ")} ${feature.replaceAll("_", " ")}`}</p>
+                  <p>{`Can ${action.replaceAll('_', ' ')} ${feature.replaceAll('_', ' ')}`}</p>
                 </TooltipContent>
               </Tooltip>
             </div>

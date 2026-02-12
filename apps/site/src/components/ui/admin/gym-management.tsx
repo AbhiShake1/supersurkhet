@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Plus,
   Search,
@@ -22,9 +22,9 @@ import {
   User,
   CreditCard,
   Clock,
-} from "lucide-react";
-import { toast } from "sonner";
-import type { AdminComponent } from "@/components/ui/admin";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import type { AdminComponent } from '@/components/ui/admin';
 
 interface Equipment {
   id: string;
@@ -54,26 +54,26 @@ interface ClassSchedule {
 
 const mockEquipment: Equipment[] = [
   {
-    id: "1",
-    name: "Treadmills",
+    id: '1',
+    name: 'Treadmills',
     quantity: 10,
     available: true,
   },
   {
-    id: "2",
-    name: "Ellipticals",
+    id: '2',
+    name: 'Ellipticals',
     quantity: 5,
     available: true,
   },
   {
-    id: "3",
-    name: "Weight Machines",
+    id: '3',
+    name: 'Weight Machines',
     quantity: 20,
     available: true,
   },
   {
-    id: "4",
-    name: "Free Weights",
+    id: '4',
+    name: 'Free Weights',
     quantity: 15,
     available: true,
   },
@@ -81,66 +81,66 @@ const mockEquipment: Equipment[] = [
 
 const mockMembershipPlans: MembershipPlan[] = [
   {
-    id: "1",
-    name: "Basic",
+    id: '1',
+    name: 'Basic',
     price: 1500,
-    duration: "1 Month",
+    duration: '1 Month',
     active: true,
   },
   {
-    id: "2",
-    name: "Premium",
+    id: '2',
+    name: 'Premium',
     price: 3500,
-    duration: "1 Month",
+    duration: '1 Month',
     active: true,
   },
   {
-    id: "3",
-    name: "Elite",
+    id: '3',
+    name: 'Elite',
     price: 6000,
-    duration: "1 Month",
+    duration: '1 Month',
     active: false,
   },
 ];
 
 const mockClassSchedules: ClassSchedule[] = [
   {
-    id: "1",
-    name: "Morning Yoga",
-    trainer: "Sunita Thapa",
-    time: "6:00 AM",
-    duration: "60 mins",
-    level: "Beginner",
+    id: '1',
+    name: 'Morning Yoga',
+    trainer: 'Sunita Thapa',
+    time: '6:00 AM',
+    duration: '60 mins',
+    level: 'Beginner',
     maxSpots: 15,
     active: true,
   },
   {
-    id: "2",
-    name: "HIIT Workout",
-    trainer: "Rajesh KC",
-    time: "7:00 AM",
-    duration: "45 mins",
-    level: "Intermediate",
+    id: '2',
+    name: 'HIIT Workout',
+    trainer: 'Rajesh KC',
+    time: '7:00 AM',
+    duration: '45 mins',
+    level: 'Intermediate',
     maxSpots: 10,
     active: true,
   },
   {
-    id: "3",
-    name: "Strength Training",
-    trainer: "Amit Shah",
-    time: "5:00 PM",
-    duration: "90 mins",
-    level: "Advanced",
+    id: '3',
+    name: 'Strength Training',
+    trainer: 'Amit Shah',
+    time: '5:00 PM',
+    duration: '90 mins',
+    level: 'Advanced',
     maxSpots: 8,
     active: true,
   },
   {
-    id: "4",
-    name: "Evening Zumba",
-    trainer: "Priya Gurung",
-    time: "6:30 PM",
-    duration: "60 mins",
-    level: "All Levels",
+    id: '4',
+    name: 'Evening Zumba',
+    trainer: 'Priya Gurung',
+    time: '6:30 PM',
+    duration: '60 mins',
+    level: 'All Levels',
     maxSpots: 15,
     active: false,
   },
@@ -152,9 +152,9 @@ export const GymManagement: AdminComponent = () => {
       equipment={mockEquipment}
       membershipPlans={mockMembershipPlans}
       classSchedules={mockClassSchedules}
-      onAddEquipment={() => { }}
-      onAddMembershipPlan={() => { }}
-      onAddClassSchedule={() => { }}
+      onAddEquipment={() => {}}
+      onAddMembershipPlan={() => {}}
+      onAddClassSchedule={() => {}}
     />
   );
 };
@@ -176,8 +176,8 @@ function _GymManagement({
   membershipPlans,
   classSchedules,
 }: GymManagementProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTab, setSelectedTab] = useState("equipment");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedTab, setSelectedTab] = useState('equipment');
 
   const filteredEquipment = equipment.filter((item) => {
     return (
@@ -203,32 +203,32 @@ function _GymManagement({
 
   const toggleEquipmentAvailability = (_id: string, available: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Equipment ${available ? "enabled" : "disabled"}`);
+    toast.success(`Equipment ${available ? 'enabled' : 'disabled'}`);
   };
 
   const toggleMembershipPlanActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Membership plan ${active ? "activated" : "deactivated"}`);
+    toast.success(`Membership plan ${active ? 'activated' : 'deactivated'}`);
   };
 
   const toggleClassScheduleActive = (_id: string, active: boolean) => {
     // In a real implementation, this would update the data in GunDB
-    toast.success(`Class schedule ${active ? "activated" : "deactivated"}`);
+    toast.success(`Class schedule ${active ? 'activated' : 'deactivated'}`);
   };
 
-  const deleteEquipment = (g) => {
+  const deleteEquipment = (_g) => {
     // In a real implementation, this would delete the equipment from GunDB
-    toast.success("Equipment removed");
+    toast.success('Equipment removed');
   };
 
-  const deleteMembershipPlan = (g) => {
+  const deleteMembershipPlan = (_g) => {
     // In a real implementation, this would delete the membership plan from GunDB
-    toast.success("Membership plan removed");
+    toast.success('Membership plan removed');
   };
 
-  const deleteClassSchedule = (g) => {
+  const deleteClassSchedule = (_g) => {
     // In a real implementation, this would delete the class schedule from GunDB
-    toast.success("Class schedule removed");
+    toast.success('Class schedule removed');
   };
 
   return (
@@ -370,7 +370,7 @@ function _GymManagement({
             {filteredEquipment.map((item) => (
               <Card
                 key={item.id}
-                className={`${!item.available ? "opacity-60" : ""}`}
+                className={`${!item.available ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -398,7 +398,7 @@ function _GymManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {item.available ? "Available" : "Unavailable"}
+                        {item.available ? 'Available' : 'Unavailable'}
                       </span>
                     </div>
 
@@ -443,7 +443,7 @@ function _GymManagement({
             {filteredMembershipPlans.map((plan) => (
               <Card
                 key={plan.id}
-                className={`${!plan.active ? "opacity-60" : ""}`}
+                className={`${!plan.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -469,7 +469,7 @@ function _GymManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {plan.active ? "Active" : "Inactive"}
+                        {plan.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 
@@ -514,7 +514,7 @@ function _GymManagement({
             {filteredClassSchedules.map((schedule) => (
               <Card
                 key={schedule.id}
-                className={`${!schedule.active ? "opacity-60" : ""}`}
+                className={`${!schedule.active ? 'opacity-60' : ''}`}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
@@ -533,14 +533,15 @@ function _GymManagement({
                           </span>
                         </div>
                         <span
-                          className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${schedule.level === "Beginner"
-                            ? "bg-green-100 text-green-800"
-                            : schedule.level === "Intermediate"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : schedule.level === "Advanced"
-                                ? "bg-red-100 text-red-800"
-                                : "bg-blue-100 text-blue-800"
-                            }`}
+                          className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
+                            schedule.level === 'Beginner'
+                              ? 'bg-green-100 text-green-800'
+                              : schedule.level === 'Intermediate'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : schedule.level === 'Advanced'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-blue-100 text-blue-800'
+                          }`}
                         >
                           {schedule.level}
                         </span>
@@ -562,7 +563,7 @@ function _GymManagement({
                         }
                       />
                       <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {schedule.active ? "Active" : "Inactive"}
+                        {schedule.active ? 'Active' : 'Inactive'}
                       </span>
                     </div>
 

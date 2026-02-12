@@ -1,15 +1,15 @@
-import * as React from "react";
-import { cn } from "@/lib/utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { api } from "@/lib/api";
-import { NotFound } from "@/components/ui/not-found";
-import { Slot, Slottable } from "@radix-ui/react-slot";
-import { useBusiness } from "@/contexts/business-context";
-import { z } from "zod";
-import type { SchemaKeys } from "@/lib/gun/index";
-import type { AppSchemaType } from "@/lib/schema";
+import { NotFound } from '@/components/ui/not-found';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useBusiness } from '@/contexts/business-context';
+import { api } from '@/lib/api';
+import type { SchemaKeys } from '@/lib/gun/index';
+import type { AppSchemaType } from '@/lib/schema';
+import { cn } from '@/lib/utils';
+import { Slot } from '@radix-ui/react-slot';
+import * as React from 'react';
+import { z } from 'zod';
 
-type AllCompositeSchemas = AppSchemaType["shape"]
+type AllCompositeSchemas = AppSchemaType['shape'];
 
 type Data = {
   [K in keyof AllCompositeSchemas]: z.infer<AllCompositeSchemas[K]>;
@@ -21,17 +21,19 @@ interface DataContextProps {
   isLoading?: boolean;
 }
 
-const DataContext = React.createContext<DataContextProps | undefined>(undefined);
+const DataContext = React.createContext<DataContextProps | undefined>(
+  undefined,
+);
 
 const useData = () => {
   const context = React.useContext(DataContext);
   if (!context) {
-    throw new Error("useData must be used within a DataProvider");
+    throw new Error('useData must be used within a DataProvider');
   }
   return context;
 };
 
-const tableSchema = z.any()
+const tableSchema = z.any();
 
 export const DataDetailSchema = z.object({
   table: tableSchema.optional(),
@@ -39,7 +41,7 @@ export const DataDetailSchema = z.object({
   children: z.any().optional(),
   className: z.string().optional(),
   asChild: z.boolean().optional(),
-})
+});
 
 interface DataDetailProps extends React.HTMLAttributes<HTMLDivElement> {
   dataId: string;
@@ -48,11 +50,17 @@ interface DataDetailProps extends React.HTMLAttributes<HTMLDivElement> {
 }
 
 const DataDetail = React.forwardRef<HTMLDivElement, DataDetailProps>(
-  ({ className, asChild, table = "product", dataId, children, ...props }, ref) => {
-    dataId = dataId.trim()
-    const { business } = useBusiness()
-    const { data: _data = [], isLoading } = api[table].useGet({ keys: [business?.id ?? "", dataId], single: true })
-    const data = _data?.[0]
+  (
+    { className, asChild, table = 'product', dataId, children, ...props },
+    ref,
+  ) => {
+    dataId = dataId.trim();
+    const { business } = useBusiness();
+    const { data: _data = [], isLoading } = api[table].useGet({
+      keys: [business?.id ?? '', dataId],
+      single: true,
+    });
+    const data = _data?.[0];
 
     if (isLoading) {
       if (asChild) {
@@ -76,35 +84,31 @@ const DataDetail = React.forwardRef<HTMLDivElement, DataDetailProps>(
     }
 
     if (!data) {
-      return <NotFound />
+      return <NotFound />;
     }
 
     if (asChild) {
       return (
         <Slot ref={ref}>
-          <DataProvider data={data}>
-            {children}
-          </DataProvider>
+          <DataProvider data={data}>{children}</DataProvider>
         </Slot>
       );
     }
     return (
       <div ref={ref} className={cn(className)} {...props}>
-        <DataProvider data={data}>
-          {children}
-        </DataProvider>
+        <DataProvider data={data}>{children}</DataProvider>
       </div>
     );
-  }
+  },
 );
-DataDetail.displayName = "DataDetail";
+DataDetail.displayName = 'DataDetail';
 
 export const DataListSchema = z.object({
   table: tableSchema.optional(),
   children: z.any().optional(),
   className: z.string().optional(),
   asChild: z.boolean().optional(),
-})
+});
 
 interface DataListProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -114,11 +118,13 @@ interface DataListProps extends React.HTMLAttributes<HTMLDivElement> {
 
 // DataList component - the main container
 const DataList = React.forwardRef<HTMLDivElement, DataListProps>(
-  ({ className, asChild, table = "product", children, ...props }, ref) => {
-    const { business } = useBusiness()
-    const { data, isLoading } = api[table].useGet({ keys: [business?.id ?? ""] })
+  ({ className, asChild, table = 'product', children, ...props }, ref) => {
+    const { business } = useBusiness();
+    const { data, isLoading } = api[table].useGet({
+      keys: [business?.id ?? ''],
+    });
 
-    const dataList = data as Data[] ?? []
+    const dataList = (data as Data[]) ?? [];
 
     if (isLoading) {
       if (asChild) {
@@ -126,6 +132,7 @@ const DataList = React.forwardRef<HTMLDivElement, DataListProps>(
         return (
           <>
             {[...Array(8)].map((_, index) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
               <Skeleton key={index} className="h-80 w-full rounded-xl" />
             ))}
           </>
@@ -134,6 +141,7 @@ const DataList = React.forwardRef<HTMLDivElement, DataListProps>(
       return (
         <div ref={ref} className={cn(className)} {...props}>
           {[...Array(8)].map((_, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             <Skeleton key={index} className="h-80 w-full rounded-xl" />
           ))}
         </div>
@@ -164,9 +172,9 @@ const DataList = React.forwardRef<HTMLDivElement, DataListProps>(
         ))}
       </div>
     );
-  }
+  },
 );
-DataList.displayName = "DataList";
+DataList.displayName = 'DataList';
 
 // DataProvider component to pass data context to children
 interface DataProviderProps {
@@ -176,9 +184,7 @@ interface DataProviderProps {
 
 const DataProvider: React.FC<DataProviderProps> = ({ data, children }) => {
   return (
-    <DataContext.Provider value={{ data }}>
-      {children}
-    </DataContext.Provider>
+    <DataContext.Provider value={{ data }}>{children}</DataContext.Provider>
   );
 };
 
@@ -186,7 +192,7 @@ export const DataSchema = z.object({
   children: z.any().optional(),
   className: z.string().optional(),
   asChild: z.boolean().optional(),
-})
+});
 
 interface DataProps extends React.HTMLAttributes<HTMLDivElement> {
   isLoading?: boolean;
@@ -198,7 +204,7 @@ interface DataProps extends React.HTMLAttributes<HTMLDivElement> {
 const SingleData = React.forwardRef<HTMLDivElement, DataProps>(
   ({ className, asChild, isLoading = false, children, ...props }, ref) => {
     const { data: _data } = useData();
-    const data = _data as Data | undefined
+    const data = _data as Data | undefined;
 
     if (isLoading || !data) {
       if (asChild) {
@@ -222,26 +228,15 @@ const SingleData = React.forwardRef<HTMLDivElement, DataProps>(
     }
 
     if (asChild) {
-      return (
-        <Slot ref={ref}>
-          {children}
-        </Slot>
-      );
+      return <Slot ref={ref}>{children}</Slot>;
     }
     return (
       <div ref={ref} className={cn(className)} {...props}>
         {children}
       </div>
     );
-  }
+  },
 );
-SingleData.displayName = "SingleData";
+SingleData.displayName = 'SingleData';
 
-export {
-  DataList,
-  DataProvider,
-  SingleData,
-  DataDetail,
-  type Data,
-  useData,
-};
+export { DataDetail, DataList, DataProvider, SingleData, useData, type Data };

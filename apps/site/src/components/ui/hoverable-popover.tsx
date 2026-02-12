@@ -1,6 +1,6 @@
-import * as React from "react";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import * as PopoverPrimitive from '@radix-ui/react-popover';
+import { cn } from '@/lib/utils';
 
 const HoverablePopoverContext = React.createContext<{
   open: boolean;
@@ -13,9 +13,10 @@ const HoverablePopoverContext = React.createContext<{
 const HoverablePopover = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Root>
->(({ children, ...props }, ref) => {
+  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
+>(({ children, ...props }, _ref) => {
   const [open, setOpen] = React.useState(false);
-  
+
   return (
     <PopoverPrimitive.Root open={open} onOpenChange={setOpen}>
       <HoverablePopoverContext.Provider value={{ open, setOpen }}>
@@ -24,14 +25,14 @@ const HoverablePopover = React.forwardRef<
     </PopoverPrimitive.Root>
   );
 });
-HoverablePopover.displayName = "HoverablePopover";
+HoverablePopover.displayName = 'HoverablePopover';
 
 const HoverablePopoverTrigger = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Trigger>
 >(({ children, ...props }, ref) => {
   const { setOpen } = React.useContext(HoverablePopoverContext);
-  
+
   return (
     <PopoverPrimitive.Trigger
       ref={ref}
@@ -45,14 +46,15 @@ const HoverablePopoverTrigger = React.forwardRef<
     </PopoverPrimitive.Trigger>
   );
 });
-HoverablePopoverTrigger.displayName = "HoverablePopoverTrigger";
+HoverablePopoverTrigger.displayName = 'HoverablePopoverTrigger';
 
 const HoverablePopoverContent = React.forwardRef<
   React.ElementRef<typeof PopoverPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = "center", sideOffset = 4, ...props }, ref) => {
+>(({ className, align = 'center', sideOffset = 4, ...props }, ref) => {
+  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { open, setOpen } = React.useContext(HoverablePopoverContext);
-  
+
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content
@@ -60,8 +62,8 @@ const HoverablePopoverContent = React.forwardRef<
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 shadow-md outline-hidden",
-          className
+          'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-72 rounded-md border p-4 shadow-md outline-hidden',
+          className,
         )}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
@@ -72,6 +74,6 @@ const HoverablePopoverContent = React.forwardRef<
     </PopoverPrimitive.Portal>
   );
 });
-HoverablePopoverContent.displayName = "HoverablePopoverContent";
+HoverablePopoverContent.displayName = 'HoverablePopoverContent';
 
 export { HoverablePopover, HoverablePopoverTrigger, HoverablePopoverContent };

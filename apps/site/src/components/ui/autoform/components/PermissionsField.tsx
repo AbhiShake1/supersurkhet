@@ -1,17 +1,26 @@
-"use client";
+'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
-import { ChevronDown, ChevronRight } from "lucide-react";
-import { generatePermissions } from "@/lib/permissions/generate-permissions";
-import type { AutoFormFieldProps } from "../react";
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { generatePermissions } from '@/lib/permissions/generate-permissions';
+import type { AutoFormFieldProps } from '../react';
 
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
@@ -39,16 +48,14 @@ function PermissionGroup({
   const [expanded, setExpanded] = useState(true);
 
   const permissionKeys = useMemo(
-    () => actions.map(action => `${feature}:${action}`),
-    [feature, actions]
+    () => actions.map((action) => `${feature}:${action}`),
+    [feature, actions],
   );
 
-  const isFeatureFullyChecked = permissionKeys.every(
-    key => value[key]
-  );
+  const isFeatureFullyChecked = permissionKeys.every((key) => value[key]);
 
   const isFeaturePartiallyChecked =
-    permissionKeys.some(key => value[key]) && !isFeatureFullyChecked;
+    permissionKeys.some((key) => value[key]) && !isFeatureFullyChecked;
 
   const toggleFeature = (checked: boolean) => {
     const next: PermissionMap = { ...value };
@@ -74,7 +81,7 @@ function PermissionGroup({
         <button
           type="button"
           className="cursor-pointer"
-          onClick={() => setExpanded(v => !v)}
+          onClick={() => setExpanded((v) => !v)}
         >
           {expanded ? (
             <ChevronDown className="h-4 w-4" />
@@ -89,49 +96,50 @@ function PermissionGroup({
             isFeatureFullyChecked
               ? true
               : isFeaturePartiallyChecked
-                ? "indeterminate"
+                ? 'indeterminate'
                 : false
           }
-          onCheckedChange={checked => {
-            if (typeof checked === "boolean") toggleFeature(checked);
+          onCheckedChange={(checked) => {
+            if (typeof checked === 'boolean') toggleFeature(checked);
           }}
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
         />
 
         <Label
           htmlFor={`feature-${feature}`}
           className="text-sm font-medium capitalize cursor-pointer"
-          onClick={() => setExpanded(v => !v)}
+          onClick={() => setExpanded((v) => !v)}
         >
-          {feature.replaceAll("_", " ")}
+          {feature.replaceAll('_', ' ')}
         </Label>
       </div>
 
       {expanded && (
         <div className="ml-6 space-y-1 pl-2 border-l border-border">
-          {actions.map(action => {
+          {actions.map((action) => {
             const key = `${feature}:${action}`;
             return (
               <div key={key} className="flex items-center space-x-2 py-1">
                 <Checkbox
                   id={key}
                   checked={!!value[key]}
-                  onCheckedChange={checked => {
-                    if (typeof checked === "boolean") toggleAction(action, checked);
+                  onCheckedChange={(checked) => {
+                    if (typeof checked === 'boolean')
+                      toggleAction(action, checked);
                   }}
-                  onClick={e => e.stopPropagation()}
+                  onClick={(e) => e.stopPropagation()}
                 />
 
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Label htmlFor={key} className="text-sm capitalize">
-                        {action.replaceAll("_", " ")}
+                        {action.replaceAll('_', ' ')}
                       </Label>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>
-                        {`Can ${action.replaceAll("_", " ")} ${feature.replaceAll("_", " ")}`}
+                        {`Can ${action.replaceAll('_', ' ')} ${feature.replaceAll('_', ' ')}`}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -149,23 +157,29 @@ function PermissionGroup({
 /*                              Permissions Field                              */
 /* -------------------------------------------------------------------------- */
 
-interface PermissionsFieldProps extends AutoFormFieldProps {
-}
+interface PermissionsFieldProps extends AutoFormFieldProps {}
 
-export const PermissionsField: React.FC<PermissionsFieldProps> = ({ path, field, id, inputProps, value: _value }) => {
-
-  const name = path.join(".");
+export const PermissionsField: React.FC<PermissionsFieldProps> = ({
+  path,
+  field,
+  id,
+  inputProps,
+  value: _value,
+}) => {
+  const name = path.join('.');
   const tabs = field.fieldConfig?.customData?.tabs;
 
   // Update local state when prop changes
-  const [localValue, setLocalValue] = useState(() => _value || field.default || {});
+  const [localValue, setLocalValue] = useState(
+    () => _value || field.default || {},
+  );
   useEffect(() => {
     setLocalValue(_value || field.default || {});
   }, [_value, field.default]);
 
   const groupedPermissions = useMemo(
     () => generatePermissions(tabs || []),
-    [tabs]
+    [tabs],
   );
 
   return (
@@ -181,6 +195,7 @@ export const PermissionsField: React.FC<PermissionsFieldProps> = ({ path, field,
 
       <PopoverContent className="w-80">
         <ScrollArea className="h-64 w-full pr-4">
+          {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
           <div className="space-y-2" onBlur={inputProps.onBlur}>
             {Object.entries(groupedPermissions).map(([feature, actions]) => (
               <PermissionGroup
@@ -189,9 +204,8 @@ export const PermissionsField: React.FC<PermissionsFieldProps> = ({ path, field,
                 actions={actions}
                 value={localValue}
                 onChange={(permissions) => {
-
                   const updatedPermissions = { ...localValue };
-                  Object.keys(permissions).forEach(key => {
+                  Object.keys(permissions).forEach((key) => {
                     updatedPermissions[key] = permissions[key];
                   });
                   setLocalValue(updatedPermissions);

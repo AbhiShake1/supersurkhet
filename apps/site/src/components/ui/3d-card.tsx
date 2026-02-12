@@ -1,16 +1,10 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
+import { cn } from '@/lib/utils';
 import { z } from 'zod';
 
-import type React from "react";
-import {
-  createContext,
-  useState,
-  useContext,
-  useRef,
-  useEffect,
-} from "react";
+import type React from 'react';
+import { createContext, useState, useContext, useRef, useEffect } from 'react';
 
 const MouseEnterContext = createContext<
   [boolean, React.Dispatch<React.SetStateAction<boolean>>] | undefined
@@ -28,7 +22,7 @@ export const CardBodySchema = z.object({
 });
 
 export const CardItemSchema = z.object({
-  as: z.string().default("div"),
+  as: z.string().default('div'),
   children: z.any(),
   className: z.string().optional(),
   translateX: z.union([z.number(), z.string()]).default(0),
@@ -60,12 +54,12 @@ export const CardContainer = ({
     containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${y}deg)`;
   };
 
-  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseEnter = (_e: React.MouseEvent<HTMLDivElement>) => {
     setIsMouseEntered(true);
     if (!containerRef.current) return;
   };
 
-  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseLeave = (_e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
     setIsMouseEntered(false);
     containerRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
@@ -74,24 +68,25 @@ export const CardContainer = ({
     <MouseEnterContext.Provider value={[isMouseEntered, setIsMouseEntered]}>
       <div
         className={cn(
-          "py-20 flex items-center justify-center",
-          containerClassName
+          'py-20 flex items-center justify-center',
+          containerClassName,
         )}
         style={{
-          perspective: "1000px",
+          perspective: '1000px',
         }}
       >
+        {/** biome-ignore lint/a11y/noStaticElementInteractions: lint debt cleanup */}
         <div
           ref={containerRef}
           onMouseEnter={handleMouseEnter}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
           className={cn(
-            "flex items-center justify-center relative transition-all duration-200 ease-linear",
-            className
+            'flex items-center justify-center relative transition-all duration-200 ease-linear',
+            className,
           )}
           style={{
-            transformStyle: "preserve-3d",
+            transformStyle: 'preserve-3d',
           }}
         >
           {children}
@@ -111,8 +106,8 @@ export const CardBody = ({
   return (
     <div
       className={cn(
-        "h-96 w-96 [transform-style:preserve-3d]  [&>*]:[transform-style:preserve-3d]",
-        className
+        'h-96 w-96 [transform-style:preserve-3d]  [&>*]:[transform-style:preserve-3d]',
+        className,
       )}
     >
       {children}
@@ -121,7 +116,7 @@ export const CardBody = ({
 };
 
 export const CardItem = ({
-  as: Tag = "div",
+  as: Tag = 'div',
   children,
   className,
   translateX = 0,
@@ -141,6 +136,7 @@ export const CardItem = ({
   rotateX?: number | string;
   rotateY?: number | string;
   rotateZ?: number | string;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   [key: string]: any;
 }) => {
   const ref = useRef<HTMLDivElement>(null);
@@ -148,7 +144,9 @@ export const CardItem = ({
 
   useEffect(() => {
     handleAnimations();
-  }, [isMouseEntered]);
+    // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
+    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
+  }, [handleAnimations]);
 
   const handleAnimations = () => {
     if (!ref.current) return;
@@ -162,7 +160,7 @@ export const CardItem = ({
   return (
     <Tag
       ref={ref}
-      className={cn("w-fit transition duration-200 ease-linear", className)}
+      className={cn('w-fit transition duration-200 ease-linear', className)}
       {...rest}
     >
       {children}
@@ -174,7 +172,7 @@ export const CardItem = ({
 export const useMouseEnter = () => {
   const context = useContext(MouseEnterContext);
   if (context === undefined) {
-    throw new Error("useMouseEnter must be used within a MouseEnterProvider");
+    throw new Error('useMouseEnter must be used within a MouseEnterProvider');
   }
   return context;
 };

@@ -1,16 +1,16 @@
-import React, { useCallback, useMemo } from "react";
-import { z } from "zod";
-import { useLayerStore } from "@/lib/ui-builder/store/layer-store";
-import { useEditorStore } from "@/lib/ui-builder/store/editor-store";
+import React, { useCallback, useMemo } from 'react';
+import { z } from 'zod';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
 import type {
   ComponentRegistry,
   ComponentLayer,
-} from "@/components/ui/ui-builder/types";
-import { Button } from "@/components/ui/button";
-import AutoForm from "@/components/ui/auto-form";
-import { generateFieldOverrides } from "@/lib/ui-builder/store/editor-utils";
-import { addDefaultValues } from "@/lib/ui-builder/store/schema-utils";
-import { getBaseType } from "@/components/ui/auto-form/utils";
+} from '@/components/ui/ui-builder/types';
+import { Button } from '@/components/ui/button';
+import AutoForm from '@/components/ui/auto-form';
+import { generateFieldOverrides } from '@/lib/ui-builder/store/editor-utils';
+import { addDefaultValues } from '@/lib/ui-builder/store/schema-utils';
+import { getBaseType } from '@/components/ui/auto-form/utils';
 
 interface PropsPanelProps {
   className?: string;
@@ -30,14 +30,14 @@ const PropsPanel: React.FC<PropsPanelProps> = React.memo(({ className }) => {
     (layerType: string, parentLayerId: string, addPosition?: number) => {
       addComponentLayer(layerType, parentLayerId, addPosition);
     },
-    [addComponentLayer]
+    [addComponentLayer],
   );
 
   const handleDeleteLayer = useCallback(
     (layerId: string) => {
       removeLayer(layerId);
     },
-    [removeLayer]
+    [removeLayer],
   );
 
   const handleDuplicateLayer = useCallback(() => {
@@ -49,12 +49,13 @@ const PropsPanel: React.FC<PropsPanelProps> = React.memo(({ className }) => {
   const handleUpdateLayer = useCallback(
     (
       id: string,
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       props: Record<string, any>,
-      rest?: Partial<Omit<ComponentLayer, "props">>
+      rest?: Partial<Omit<ComponentLayer, 'props'>>,
     ) => {
       updateLayer(id, props, rest);
     },
-    [updateLayer]
+    [updateLayer],
   );
 
   //first check if selectedLayer.type is a valid key in componentRegistry
@@ -71,7 +72,7 @@ const PropsPanel: React.FC<PropsPanelProps> = React.memo(({ className }) => {
         <>
           <Title />
           <h3 className="text-base font-medium mb-4">
-            Type: {selectedLayer.type.replaceAll("_", "")}
+            Type: {selectedLayer.type.replaceAll('_', '')}
           </h3>
         </>
       )}
@@ -96,7 +97,7 @@ const PropsPanel: React.FC<PropsPanelProps> = React.memo(({ className }) => {
     </div>
   );
 });
-PropsPanel.displayName = "PropsPanel";
+PropsPanel.displayName = 'PropsPanel';
 export default PropsPanel;
 
 interface ComponentPropsAutoFormProps {
@@ -106,13 +107,14 @@ interface ComponentPropsAutoFormProps {
   duplicateLayer: (id: string) => void;
   updateLayer: (
     id: string,
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     props: Record<string, any>,
-    rest?: Partial<Omit<ComponentLayer, "props">>
+    rest?: Partial<Omit<ComponentLayer, 'props'>>,
   ) => void;
   addComponentLayer: (
     layerType: string,
     parentLayerId: string,
-    addPosition?: number
+    addPosition?: number,
   ) => void;
 }
 
@@ -134,10 +136,10 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
     | undefined;
   const isPage = useLayerStore((state) => state.isLayerAPage(selectedLayerId));
   const allowPagesCreation = useEditorStore(
-    (state) => state.allowPagesCreation
+    (state) => state.allowPagesCreation,
   );
   const allowPagesDeletion = useEditorStore(
-    (state) => state.allowPagesDeletion
+    (state) => state.allowPagesDeletion,
   );
 
   // Retrieve the appropriate schema from componentRegistry
@@ -165,20 +167,24 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
     (
       parsedValues: z.infer<typeof schema> & {
         children?: string | { layerType: string; addPosition: number };
-      }
+      },
     ) => {
       const { children, ...dataProps } = parsedValues;
 
       // Preserve variable references by merging with original props
+      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       const preservedProps: Record<string, any> = {};
       if (selectedLayer) {
         // Start with all original props to preserve any that aren't in the form update
         Object.assign(preservedProps, selectedLayer.props);
 
         // Then update only the props that came from the form, preserving variable references
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         for (const key of Object.keys(dataProps as Record<string, any>)) {
+          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           const newValue = (dataProps as Record<string, any>)[key];
-          const fieldDef = ('shape' in schema && schema.shape) ? schema.shape[key] : undefined;
+          const fieldDef =
+            'shape' in schema && schema.shape ? schema.shape[key] : undefined;
           const baseType = fieldDef
             ? getBaseType(fieldDef as z.ZodAny)
             : undefined;
@@ -192,10 +198,10 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
           } else {
             preservedProps[key] = newValue;
           }
-        };
+        }
       }
 
-      if (typeof children === "string") {
+      if (typeof children === 'string') {
         updateLayer(selectedLayerId, preservedProps, { children: children });
       } else if (children?.layerType) {
         updateLayer(selectedLayerId, preservedProps, {
@@ -204,13 +210,13 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
         addComponentLayer(
           children.layerType,
           selectedLayerId,
-          children.addPosition
+          children.addPosition,
         );
       } else {
         updateLayer(selectedLayerId, preservedProps);
       }
     },
-    [updateLayer, selectedLayerId, selectedLayer, addComponentLayer, schema]
+    [updateLayer, selectedLayerId, selectedLayer, addComponentLayer, schema],
   );
 
   // Prepare values for AutoForm, converting enum values to strings as select elements only accept string values
@@ -220,8 +226,12 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
     // First resolve variable references to get display values
     const resolvedProps = selectedLayer.props;
 
+    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
     const transformedProps: Record<string, any> = {};
-    const schemaShape = ('shape' in schema && schema.shape) ? schema.shape as z.ZodRawShape : undefined; // Get shape from the memoized schema
+    const schemaShape =
+      'shape' in schema && schema.shape
+        ? (schema.shape as z.ZodRawShape)
+        : undefined; // Get shape from the memoized schema
 
     if (schemaShape) {
       for (const [key, value] of Object.entries(resolvedProps)) {
@@ -231,14 +241,16 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
           if (baseType === z.ZodFirstPartyTypeKind.ZodEnum) {
             // Convert enum value to string if it's not already a string
             transformedProps[key] =
-              typeof value === "string" ? value : String(value);
+              typeof value === 'string' ? value : String(value);
           } else if (baseType === z.ZodFirstPartyTypeKind.ZodDate) {
             // Convert string to Date if necessary
             if (value instanceof Date) {
               transformedProps[key] = value;
-            } else if (typeof value === "string" || typeof value === "number") {
+            } else if (typeof value === 'string' || typeof value === 'number') {
               const date = new Date(value);
-              transformedProps[key] = Number.isNaN(date.getTime()) ? undefined : date;
+              transformedProps[key] = Number.isNaN(date.getTime())
+                ? undefined
+                : date;
             } else {
               transformedProps[key] = undefined;
             }
@@ -256,12 +268,13 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
 
     return { ...transformedProps, children: selectedLayer.children };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedLayer, schema, revisionCounter]); // Include revisionCounter to detect undo/redo changes 
+  }, [selectedLayer, schema]); // Include revisionCounter to detect undo/redo changes
 
   const autoFormSchema = useMemo(() => {
     // Only pass ZodObject schemas to addDefaultValues, otherwise return the original schema
     if ('shape' in schema && typeof schema.shape === 'object') {
       try {
+        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         return addDefaultValues(schema as any, formValues);
       } catch (error) {
         console.warn('Failed to add default values to schema:', error);
@@ -306,9 +319,9 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
           variant="secondary"
           className="mt-4 w-full"
           onClick={handleDuplicateLayer}
-          data-testid={`button-Duplicate ,${isPage ? "Page" : "Component"}`}
+          data-testid={`button-Duplicate ,${isPage ? 'Page' : 'Component'}`}
         >
-          Duplicate {isPage ? "Page" : "Component"}
+          Duplicate {isPage ? 'Page' : 'Component'}
         </Button>
       )}
       {(!isPage || allowPagesDeletion) && (
@@ -317,19 +330,19 @@ const ComponentPropsAutoForm: React.FC<ComponentPropsAutoFormProps> = ({
           variant="destructive"
           className="mt-4 w-full"
           onClick={handleDeleteLayer}
-          data-testid={`button-Delete ,${isPage ? "Page" : "Component"}`}
+          data-testid={`button-Delete ,${isPage ? 'Page' : 'Component'}`}
         >
-          Delete {isPage ? "Page" : "Component"}
+          Delete {isPage ? 'Page' : 'Component'}
         </Button>
       )}
     </AutoForm>
   );
 };
 
-ComponentPropsAutoForm.displayName = "ComponentPropsAutoForm";
+ComponentPropsAutoForm.displayName = 'ComponentPropsAutoForm';
 
 const nameForLayer = (layer: ComponentLayer) => {
-  return layer.name || layer.type.replaceAll("_", "");
+  return layer.name || layer.type.replaceAll('_', '');
 };
 
 const Title = React.memo(() => {
@@ -340,9 +353,9 @@ const Title = React.memo(() => {
 
   return (
     <h2 className="text-xl font-semibold mb-2">
-      {selectedLayer ? nameForLayer(selectedLayer) : ""} Properties
+      {selectedLayer ? nameForLayer(selectedLayer) : ''} Properties
     </h2>
   );
 });
 
-Title.displayName = "Title";
+Title.displayName = 'Title';

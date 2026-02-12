@@ -14,14 +14,10 @@ import type { ReactNode } from '@tanstack/react-router';
 
 export const CarouzelContextSchema = z.object({
   index: z.number(),
-  setIndex: z.function()
-    .args(z.number())
-    .returns(z.void()),
+  setIndex: z.function().args(z.number()).returns(z.void()),
 
   itemsCount: z.number(),
-  setItemsCount: z.function()
-    .args(z.number())
-    .returns(z.void()),
+  setItemsCount: z.function().args(z.number()).returns(z.void()),
 
   disableDrag: z.boolean(),
 });
@@ -29,7 +25,7 @@ export const CarouzelContextSchema = z.object({
 export type CarouzelContextType = z.infer<typeof CarouzelContextSchema>;
 
 const CarouzelContext = createContext<CarouzelContextType | undefined>(
-  undefined
+  undefined,
 );
 
 function useCarouzel() {
@@ -47,7 +43,7 @@ export const CarouzelProviderSchema = z.object({
   disableDrag: z.boolean().optional(),
 });
 
-export type CarouzelProviderProps = z.infer<typeof CarouzelProviderSchema>
+export type CarouzelProviderProps = z.infer<typeof CarouzelProviderSchema>;
 
 function CarouzelProvider({
   children,
@@ -91,7 +87,7 @@ export const CarouzelSchema = z.object({
   disableDrag: z.boolean().optional(),
 });
 
-export type CarouzelProps = z.infer<typeof CarouzelSchema>
+export type CarouzelProps = z.infer<typeof CarouzelSchema>;
 
 function Carouzel({
   children,
@@ -118,8 +114,13 @@ function Carouzel({
       onIndexChange={handleIndexChange}
       disableDrag={disableDrag}
     >
-      <div className={cn('group/hover relative w-min min-w-0 max-w-full', className)}>
-        <div className='overflow-hidden'>{children}</div>
+      <div
+        className={cn(
+          'group/hover relative w-min min-w-0 max-w-full',
+          className,
+        )}
+      >
+        <div className="overflow-hidden">{children}</div>
       </div>
     </CarouzelProvider>
   );
@@ -131,7 +132,7 @@ export const CarouzelNavigationSchema = z.object({
   alwaysShow: z.boolean().optional(),
 });
 
-export type CarouzelNavigationProps = z.infer<typeof CarouzelNavigationSchema>
+export type CarouzelNavigationProps = z.infer<typeof CarouzelNavigationSchema>;
 
 function CarouzelNavigation({
   className,
@@ -144,12 +145,12 @@ function CarouzelNavigation({
     <div
       className={cn(
         'pointer-events-none absolute top-1/2 flex -translate-y-1/2 justify-between px-2',
-        className
+        className,
       )}
     >
       <button
-        type='button'
-        aria-label='Previous slide'
+        type="button"
+        aria-label="Previous slide"
         className={cn(
           'pointer-events-auto h-fit w-fit rounded-full bg-zinc-50 p-2 transition-opacity duration-300 dark:bg-zinc-950',
           alwaysShow
@@ -158,7 +159,7 @@ function CarouzelNavigation({
           alwaysShow
             ? 'disabled:opacity-40'
             : 'group-hover/hover:disabled:opacity-40',
-          classNameButton
+          classNameButton,
         )}
         disabled={index === 0}
         onClick={() => {
@@ -168,12 +169,12 @@ function CarouzelNavigation({
         }}
       >
         <ChevronLeft
-          className='stroke-zinc-600 dark:stroke-zinc-50'
+          className="stroke-zinc-600 dark:stroke-zinc-50"
           size={16}
         />
       </button>
       <button
-        type='button'
+        type="button"
         className={cn(
           'pointer-events-auto h-fit w-fit rounded-full bg-zinc-50 p-2 transition-opacity duration-300 dark:bg-zinc-950',
           alwaysShow
@@ -182,9 +183,9 @@ function CarouzelNavigation({
           alwaysShow
             ? 'disabled:opacity-40'
             : 'group-hover/hover:disabled:opacity-40',
-          classNameButton
+          classNameButton,
         )}
-        aria-label='Next slide'
+        aria-label="Next slide"
         disabled={index + 1 === itemsCount}
         onClick={() => {
           if (index < itemsCount - 1) {
@@ -193,10 +194,12 @@ function CarouzelNavigation({
         }}
       >
         <ChevronRight
-          className='stroke-zinc-600 dark:stroke-zinc-50'
+          className="stroke-zinc-600 dark:stroke-zinc-50"
           size={16}
         />
-      </button>    </div>);
+      </button>{' '}
+    </div>
+  );
 }
 
 export const CarouzelIndicatorSchema = z.object({
@@ -204,7 +207,7 @@ export const CarouzelIndicatorSchema = z.object({
   classNameButton: z.string().optional(),
 });
 
-export type CarouzelIndicatorProps = z.infer<typeof CarouzelIndicatorSchema>
+export type CarouzelIndicatorProps = z.infer<typeof CarouzelIndicatorSchema>;
 
 function CarouzelIndicator({
   className,
@@ -216,14 +219,15 @@ function CarouzelIndicator({
     <div
       className={cn(
         'absolute bottom-0 z-10 flex w-full items-center justify-center',
-        className
+        className,
       )}
     >
-      <div className='flex space-x-2'>
+      <div className="flex space-x-2">
         {Array.from({ length: itemsCount }, (_, i) => (
           <button
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
-            type='button'
+            type="button"
             aria-label={`Go to slide ${i + 1}`}
             onClick={() => setIndex(i)}
             className={cn(
@@ -231,12 +235,13 @@ function CarouzelIndicator({
               index === i
                 ? 'bg-zinc-950 dark:bg-zinc-50'
                 : 'bg-zinc-900/50 dark:bg-zinc-100/50',
-              classNameButton
+              classNameButton,
             )}
           />
         ))}
-      </div>    </div>
-  )
+      </div>{' '}
+    </div>
+  );
 }
 
 export const CarouzelContentSchema = z.object({
@@ -245,7 +250,7 @@ export const CarouzelContentSchema = z.object({
   transition: z.custom<Transition>().optional(),
 });
 
-export type CarouzelContentProps = z.infer<typeof CarouzelContentSchema>
+export type CarouzelContentProps = z.infer<typeof CarouzelContentSchema>;
 
 function CarouzelContent({
   children,
@@ -270,16 +275,17 @@ function CarouzelContent({
 
     const observer = new IntersectionObserver((entries) => {
       const visibleCount = entries.filter(
-        (entry) => entry.isIntersecting
+        (entry) => entry.isIntersecting,
       ).length;
       setVisibleItemsCount(visibleCount);
     }, options);
 
     const childNodes = containerRef.current.children;
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: lint debt cleanup
     Array.from(childNodes).forEach((child) => observer.observe(child));
 
     return () => observer.disconnect();
-  }, [children, setItemsCount]);
+  }, []);
 
   useEffect(() => {
     if (!itemsLength) {
@@ -306,9 +312,9 @@ function CarouzelContent({
         disableDrag
           ? undefined
           : {
-            left: 0,
-            right: 0,
-          }
+              left: 0,
+              right: 0,
+            }
       }
       dragMomentum={disableDrag ? undefined : false}
       style={{
@@ -329,7 +335,7 @@ function CarouzelContent({
       className={cn(
         'flex items-center gap-4 pt-4',
         !disableDrag && 'cursor-grab active:cursor-grabbing',
-        className
+        className,
       )}
       ref={containerRef}
     >
@@ -344,14 +350,14 @@ export const CarouzelItemShema = z.object({
   innerClassName: z.string().optional(),
 });
 
-export type CarouzelItemProps = z.infer<typeof CarouzelItemShema>
+export type CarouzelItemProps = z.infer<typeof CarouzelItemShema>;
 
 function CarouzelItem({ children, className }: CarouzelItemProps) {
   return (
     <motion.div
       className={cn(
         'w-full flex border border-zinc-200 dark:border-gray-500',
-        className
+        className,
       )}
     >
       {children}
@@ -366,5 +372,5 @@ export {
   CarouzelIndicator,
   CarouzelItem,
   useCarouzel,
-  CarouzelProvider
+  CarouzelProvider,
 };

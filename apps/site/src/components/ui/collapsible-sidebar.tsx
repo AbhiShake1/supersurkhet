@@ -1,5 +1,5 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import type React from 'react';
+import { useState, useEffect } from 'react';
 import {
   ChevronsRight,
   Search,
@@ -7,42 +7,47 @@ import {
   ChevronsUpDown,
   LogOut,
   Settings,
-} from "lucide-react";
-import { Link, useLocation } from "@tanstack/react-router";
-import { Input } from "./input";
-import { useAuth } from "../auth-provider";
-import type { LucideIcon } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "./avatar";
+} from 'lucide-react';
+import { Link, useLocation } from '@tanstack/react-router';
+import { Input } from './input';
+import { useAuth } from '../auth-provider';
+import type { LucideIcon } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import {
   DropdownMenu,
-  DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "./dropdown-menu";
-import { useProfile } from "@/hooks/use-profile";
-import { ManageOrganization } from "./organizations/manage-organization";
-import { ThemeToggle } from "../theme/theme-toggle";
-import type { PossibleTabConfig } from "../auto-admin";
-import { useDialog } from "@/contexts/dialog-context";
-import { useIsMobile } from "@/hooks/use-mobile";
-import isDeepEqual from "fast-deep-equal";
+  DropdownMenuTrigger,
+} from './dropdown-menu';
+import { useProfile } from '@/hooks/use-profile';
+import { ManageOrganization } from './organizations/manage-organization';
+import { ThemeToggle } from '../theme/theme-toggle';
+import type { PossibleTabConfig } from '../auto-admin';
+import { useDialog } from '@/contexts/dialog-context';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export interface CollapsibleSidebarProps {
   businessName?: string;
   slug?: string;
-  tabs: PossibleTabConfig[]
+  tabs: PossibleTabConfig[];
 }
 
-const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, slug, tabs }) => {
-  "use memo"
-  const isMobile = useIsMobile()
+const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
+  businessName,
+  slug,
+  tabs,
+}) => {
+  'use memo';
+  const isMobile = useIsMobile();
   const [open, setOpen] = useState(!isMobile);
-  const [selected, setSelected] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [selected, setSelected] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { search } = useLocation();
-  const currentTab = (search?.tab as string) ?? (tabs.length > 0 ? tabs[0].title : "");
+  const currentTab =
+    (search?.tab as string) ?? (tabs.length > 0 ? tabs[0].title : '');
 
   // Set initial selected tab based on URL or first item
   useEffect(() => {
@@ -56,21 +61,21 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, s
   // Filter items based on search query
   const filteredItems = searchQuery
     ? tabs.filter((item) => {
-      try {
-        const regex = new RegExp(searchQuery, "i"); // case-insensitive search
-        return regex.test(item.title);
-      } catch (e) {
-        // If the regex is invalid, fallback to simple string includes
-        return item.title.toLowerCase().includes(searchQuery.toLowerCase());
-      }
-    })
+        try {
+          const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
+          return regex.test(item.title);
+        } catch (_e) {
+          // If the regex is invalid, fallback to simple string includes
+          return item.title.toLowerCase().includes(searchQuery.toLowerCase());
+        }
+      })
     : tabs;
 
   // Group items by group property if available
   const groupedItems: { [key: string]: typeof tabs } = {};
   const ungroupedItems: typeof tabs = [];
 
-  filteredItems.forEach(item => {
+  filteredItems.forEach((item) => {
     if (item.group) {
       if (!groupedItems[item.group]) {
         groupedItems[item.group] = [];
@@ -83,12 +88,18 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, s
 
   return (
     <nav
-      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? "w-48 sm:w-64" : "w-10 sm:w-16"
-        } border-gray-200 dark:border-gray-800 bg-card p-0.5 sm:p-2 shadow-sm z-50 flex flex-col`}
+      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${
+        open ? 'w-48 sm:w-64' : 'w-10 sm:w-16'
+      } border-gray-200 dark:border-gray-800 bg-card p-0.5 sm:p-2 shadow-sm z-50 flex flex-col`}
     >
       {/* User profile section at the top */}
       <div className="flex-shrink-0">
-        <TitleSection open={open} businessName={businessName} slug={slug} tabs={tabs} />
+        <TitleSection
+          open={open}
+          businessName={businessName}
+          slug={slug}
+          tabs={tabs}
+        />
 
         {/* Search bar */}
         {open && (
@@ -107,6 +118,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, s
         <div className="space-y-1">
           {ungroupedItems.map((item, index) => (
             <Option
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
               key={index}
               Icon={item.icon || Menu}
               title={item.title}
@@ -129,7 +141,10 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({ businessName, s
             <div className="space-y-1">
               {items.map((item, index) => (
                 <Option
-                  key={`${groupName}-${index}`}
+                  key={`${groupName}-${
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                    index
+                  }`}
                   Icon={item.icon || Menu}
                   title={item.title}
                   url={item.url}
@@ -170,10 +185,11 @@ const Option: React.FC<{
       onClick={handleClick}
       to="."
       search={{ tab: title }}
-      className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${isSelected
-        ? "bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50"
-        : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
-        }`}
+      className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${
+        isSelected
+          ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
+          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+      }`}
     >
       <div className="grid h-full w-10 sm:w-12 place-content-center">
         <Icon className="h-4 w-4" />
@@ -181,8 +197,9 @@ const Option: React.FC<{
 
       {open && (
         <span
-          className={`text-sm font-medium transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
-            }`}
+          className={`text-sm font-medium transition-opacity duration-200 ${
+            open ? 'opacity-100' : 'opacity-0'
+          }`}
         >
           {title}
         </span>
@@ -191,20 +208,29 @@ const Option: React.FC<{
   );
 };
 
-const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: string, tabs: PossibleTabConfig[] }> = ({ open, businessName, slug, tabs }) => {
-  const { openDialog } = useDialog()
+const TitleSection: React.FC<{
+  open: boolean;
+  businessName?: string;
+  slug?: string;
+  tabs: PossibleTabConfig[];
+}> = ({ open, businessName, slug, tabs }) => {
+  const { openDialog } = useDialog();
   const { logout, isAuthenticated } = useAuth();
   const user = useProfile();
 
   if (!isAuthenticated) return null;
 
   return (
-    <div className="border-b border-gray-200 dark:border-gray-800 pb-1 sm:pb-4">
+    <div className="border-b border-gray-200 dark:border-gray-800 pb-0 sm:pb-2">
       <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
-          <div className={`flex cursor-pointer items-center ${open ? 'justify-between' : 'justify-center'} rounded-md p-0.5 sm:p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800`}>
+          <div
+            className={`flex cursor-pointer items-center ${open ? 'justify-between' : 'justify-center'} rounded-md p-0.5 sm:p-2 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800`}
+          >
             <div className="flex items-center gap-1 sm:gap-3">
-              <div className={`flex items-center justify-center ${open ? 'w-auto' : 'w-full'}`}>
+              <div
+                className={`flex items-center justify-center ${open ? 'w-auto' : 'w-full'}`}
+              >
                 <Avatar className="h-5 w-5 sm:h-8 sm:w-8">
                   <AvatarImage src={user?.avatar} alt={user?.name} />
                   <AvatarFallback className="capitalize text-[0.5rem] sm:text-sm">
@@ -213,10 +239,12 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: stri
                 </Avatar>
               </div>
               {open && (
-                <div className={`transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"}`}>
+                <div
+                  className={`transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'}`}
+                >
                   <div className="flex flex-col">
                     <span className="block max-w-[4ch] sm:max-w-[8ch] truncate text-[0.6rem] sm:text-sm font-semibold text-gray-900 dark:text-gray-100">
-                      {user?.name || user?.email || "User"}
+                      {user?.name || user?.email || 'User'}
                     </span>
                     {businessName && (
                       <span className="block text-[0.5rem] sm:text-xs text-gray-500 dark:text-gray-400">
@@ -227,18 +255,19 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: stri
                 </div>
               )}
             </div>
-            {open && <ChevronsUpDown className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 dark:text-gray-500" />}
+            {open && (
+              <ChevronsUpDown className="h-3 w-3 sm:h-4 sm:w-4 text-gray-400 dark:text-gray-500" />
+            )}
           </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent
-          className="min-w-56 rounded-lg"
-          side={"bottom"}
-        >
+        <DropdownMenuContent className="min-w-56 rounded-lg" side={'bottom'}>
           <DropdownMenuLabel className="p-0 font-normal">
             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={user?.avatar} alt={user?.name} />
-                <AvatarFallback className="rounded-lg">{user?.name?.substring(0, 1)?.toUpperCase() ?? "U"}</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {user?.name?.substring(0, 1)?.toUpperCase() ?? 'U'}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user?.name}</span>
@@ -246,25 +275,32 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: stri
               </div>
             </div>
           </DropdownMenuLabel>
-          <DropdownMenuItem className="mb-4" onSelect={e => e.preventDefault()} asChild>
+          <DropdownMenuItem
+            className="mb-4"
+            onSelect={(e) => e.preventDefault()}
+            asChild
+          >
             <ThemeToggle />
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          {
-            slug && <>
-              <DropdownMenuItem className="gap-2" onSelect={e => {
-                e.preventDefault()
-                openDialog({
-                  children: <ManageOrganization slug={slug} tabs={tabs} />,
-                  className: "sm:max-w-[70%] h-[80%] p-0 overflow-clip"
-                })
-              }}>
+          {slug && (
+            <>
+              <DropdownMenuItem
+                className="gap-2"
+                onSelect={(e) => {
+                  e.preventDefault();
+                  openDialog({
+                    children: <ManageOrganization slug={slug} tabs={tabs} />,
+                    className: 'sm:max-w-[70%] h-[80%] p-0 overflow-clip',
+                  });
+                }}
+              >
                 <Settings className="size-4" />
                 Manage Business
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
-          }
+          )}
           <DropdownMenuItem className="gap-2" onClick={() => logout()}>
             <LogOut className="size-4" />
             Log out
@@ -275,8 +311,12 @@ const TitleSection: React.FC<{ open: boolean; businessName?: string, slug?: stri
   );
 };
 
-const ToggleClose: React.FC<{ open: boolean; setOpen: (open: boolean) => void }> = ({ open, setOpen }) => {
+const ToggleClose: React.FC<{
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}> = ({ open, setOpen }) => {
   return (
+    // biome-ignore lint/a11y/useButtonType: lint debt cleanup
     <button
       onClick={() => setOpen(!open)}
       className="w-full border-t border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 backdrop-blur-2xl"
@@ -284,14 +324,16 @@ const ToggleClose: React.FC<{ open: boolean; setOpen: (open: boolean) => void }>
       <div className="flex items-center p-1 sm:p-3">
         <div className="grid size-6 sm:size-10 place-content-center">
           <ChevronsRight
-            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${open ? "rotate-180" : ""
-              }`}
+            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${
+              open ? 'rotate-180' : ''
+            }`}
           />
         </div>
         {open && (
           <span
-            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${open ? "opacity-100" : "opacity-0"
-              }`}
+            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${
+              open ? 'opacity-100' : 'opacity-0'
+            }`}
           >
             Hide
           </span>

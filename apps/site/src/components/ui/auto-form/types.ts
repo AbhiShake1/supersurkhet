@@ -1,17 +1,17 @@
-import type { ControllerRenderProps, FieldValues } from "react-hook-form";
-import type * as z from "zod";
-import type { INPUT_COMPONENTS } from "./config";
+import type { ControllerRenderProps, FieldValues } from 'react-hook-form';
+import type * as z from 'zod';
+import type { INPUT_COMPONENTS } from './config';
 
 export type FieldConfigItem = {
   description?: React.ReactNode;
   inputProps?: React.InputHTMLAttributes<HTMLInputElement> &
-  React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
-    showLabel?: boolean;
-  };
+    React.TextareaHTMLAttributes<HTMLTextAreaElement> & {
+      showLabel?: boolean;
+    };
   label?: string;
   fieldType?:
-  | keyof typeof INPUT_COMPONENTS
-  | React.FC<AutoFormInputComponentProps>;
+    | keyof typeof INPUT_COMPONENTS
+    | React.FC<AutoFormInputComponentProps>;
 
   renderParent?: (props: {
     children: React.ReactNode;
@@ -20,11 +20,12 @@ export type FieldConfigItem = {
   order?: number;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export type FieldConfig<SchemaType extends z.infer<z.ZodObject<any, any>>> = {
   // If SchemaType.key is an object, create a nested FieldConfig, otherwise FieldConfigItem
   [Key in keyof SchemaType]?: SchemaType[Key] extends object
-  ? FieldConfig<z.infer<SchemaType[Key]>>
-  : FieldConfigItem;
+    ? FieldConfig<z.infer<SchemaType[Key]>>
+    : FieldConfigItem;
 };
 
 export enum DependencyType {
@@ -34,24 +35,28 @@ export enum DependencyType {
   SETS_OPTIONS = 3,
 }
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 type BaseDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> = {
   sourceField: keyof SchemaType;
   type: DependencyType;
   targetField: keyof SchemaType;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   when: (sourceFieldValue: any, targetFieldValue: any) => boolean;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export type ValueDependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
   BaseDependency<SchemaType> & {
     type:
-    | DependencyType.DISABLES
-    | DependencyType.REQUIRES
-    | DependencyType.HIDES;
+      | DependencyType.DISABLES
+      | DependencyType.REQUIRES
+      | DependencyType.HIDES;
   };
 
 export type EnumValues = readonly [string, ...string[]];
 
 export type OptionsDependency<
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   SchemaType extends z.infer<z.ZodObject<any, any>>,
 > = BaseDependency<SchemaType> & {
   type: DependencyType.SETS_OPTIONS;
@@ -60,6 +65,7 @@ export type OptionsDependency<
   options: EnumValues;
 };
 
+// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 export type Dependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
   | ValueDependency<SchemaType>
   | OptionsDependency<SchemaType>;
@@ -69,10 +75,12 @@ export type Dependency<SchemaType extends z.infer<z.ZodObject<any, any>>> =
  */
 export type AutoFormInputComponentProps = {
   zodInputProps: React.InputHTMLAttributes<HTMLInputElement>;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   field: ControllerRenderProps<FieldValues, any>;
   fieldConfigItem: FieldConfigItem;
   label: string;
   isRequired: boolean;
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   fieldProps: any;
   zodItem: z.ZodAny;
   className?: string;
