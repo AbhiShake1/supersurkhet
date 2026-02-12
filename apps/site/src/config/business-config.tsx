@@ -119,6 +119,170 @@ export function useBusinessConfig({
     products?.filter((item) => item?._?.soul).map((item) => [item._?.soul!, item]),
   );
 
+  function returnedProductsSchemaWithProducts(products: string[]) {
+  return salesItemSchema
+    .extend({
+      product: z
+        .string()
+        .describe('Product')
+        .superRefine(
+          fieldConfig({
+            fieldType: 'select',
+            customData: {
+              options: products.map(p=>[p,productsBySoul.get(p)?.title]),
+              onValueChange: async (val, path, form) => {
+                const products = await db.product.get({ keys: [slug] });
+                const product = products.find((item) => item?._?.soul === val);
+                if (!product) return;
+                const [itemsKey, index] = path;
+
+                form.setValue(
+                  [itemsKey, index, 'unitPrice'].join('.'),
+                  product.sellingPrice,
+                );
+
+                if (product.unit) {
+                  form.setValue(
+                    [itemsKey, index, 'unit'].join('.'),
+                    product.unit,
+                  );
+                }
+                refreshPaidAmount(form);
+              },
+            },
+          }),
+        ),
+      unit: z
+        .string()
+        .optional()
+        .describe('Unit')
+        .superRefine(
+          fieldConfig({
+            fieldType: 'unit',
+            inputProps: {
+              disabled: true,
+              placeholder: 'Select product for unit',
+              className: 'border-none',
+            },
+            customData: withSourceCustomData({
+              slug,
+              source: {
+                table: 'product',
+                displayKey: 'title',
+                key: 'product',
+              },
+              derive: async ({ sourceRow }) => {
+                if (!sourceRow?.unit) return null;
+                const [unitType, piecesPerUnit] = String(sourceRow.unit).split(
+                  ':',
+                );
+                const configDisabled = Boolean(piecesPerUnit);
+
+                return {
+                  customData: {
+                    onlyAllow: [
+                      unitType,
+                      piecesPerUnit ? 'piece' : undefined,
+                    ].filter(Boolean),
+                          configDisabled,
+                          onValueChange(value, path, form) {
+                            const [, productQuantityPerUnit] = String(
+                              sourceRow.unit,
+                            ).split(':');
+                            const [, quantityPerUnit] = value?.split(':') ?? [];
+                            const [itemsKey, index] = path;
+                            const sellingPrice = Number(
+                              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                              (sourceRow as any).sellingPrice,
+                            );
+
+                            if (quantityPerUnit) {
+                              if (sellingPrice) {
+                                form.setValue(
+                                  [itemsKey, index, 'unitPrice'].join('.'),
+                                  sellingPrice,
+                                );
+                              }
+                            } else if (
+                              productQuantityPerUnit &&
+                              sellingPrice &&
+                              !Number.isNaN(Number(productQuantityPerUnit))
+                            ) {
+                              form.setValue(
+                                [itemsKey, index, 'unitPrice'].join('.'),
+                                sellingPrice / Number(productQuantityPerUnit),
+                              );
+                            }
+                          },
+                  },
+                };
+              },
+            }),
+          }),
+        ),
+      quantity: z
+        .number({ coerce: true })
+        .int()
+        .nonnegative()
+        .describe('Quantity Returned')
+        .superRefine(
+          fieldConfig({
+            fieldType: 'number',
+            customData: {
+              onValueChange: (value: string, path: string[], form) => {
+                const items = form.getValues('returnedProducts');
+                const [itemsKey, index] = path;
+                calculateTotalAmountForItem(
+                  items,
+                  itemsKey,
+                  Number(index),
+                  form,
+                );
+
+                return value;
+              },
+            },
+          }),
+        ),
+      unitPrice: z
+        .number({ coerce: true })
+        .describe('Unit Price')
+        .superRefine(
+          fieldConfig({
+            fieldType: 'number',
+            customData: {
+              onValueChange: ((value: string, path: string[], form) => {
+                const items = form.getValues('returnedProducts');
+                const [itemsKey, index] = path;
+                calculateTotalAmountForItem(
+                  items,
+                  itemsKey,
+                  Number(index),
+                  form,
+                );
+
+                return value;
+                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+              }),
+            },
+          }),
+        ),
+      totalAmount: z
+        .number({ coerce: true })
+        .describe('Total Amount')
+        .superRefine(
+          fieldConfig({
+            inputProps: {
+              readOnly: true,
+            },
+          }),
+        ),
+    })
+    .array()
+    .describe('Products Returned from Trip')
+    .min(0)
+  }
+
   const returnedProductsSchema = salesItemSchema
     .extend({
       product: z
@@ -188,8 +352,6 @@ export function useBusinessConfig({
                       unitType,
                       piecesPerUnit ? 'piece' : undefined,
                     ].filter(Boolean),
-                    ...(configDisabled
-                      ? {
                           configDisabled,
                           onValueChange(value, path, form) {
                             const [, productQuantityPerUnit] = String(
@@ -220,8 +382,6 @@ export function useBusinessConfig({
                               );
                             }
                           },
-                        }
-                      : {}),
                   },
                 };
               },
@@ -271,7 +431,7 @@ export function useBusinessConfig({
 
                 return value;
                 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-              }) as any,
+              }),
             },
           }),
         ),
@@ -287,8 +447,8 @@ export function useBusinessConfig({
         ),
     })
     .array()
-    .optional()
-    .describe('Products Returned from Trip');
+    .describe('Products Returned from Trip')
+    .min(0)
 
   async function deleteInvoiceByPartyId(id: string) {
     const invoices = await db.invoice.get({ keys: [slug] });
@@ -1584,7 +1744,7 @@ export function useBusinessConfig({
           products: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: item.product ?? '-',
+              product: productsBySoul.get(item.product)?.title ?? '-',
               totalAmount:
                 Number(item.quantity || 0) * Number(item.unitPrice || 0),
             }));
@@ -1878,7 +2038,7 @@ export function useBusinessConfig({
                                   className="grid grid-cols-3 gap-2 text-sm"
                                 >
                                   <div>
-                                    {product?.title || 'Unknown Product'}
+                                    {productsBySoul.get(product.product)?.title || 'Unknown Product'}
                                   </div>
                                   <div className="text-center">
                                     {product.quantity}
@@ -1900,7 +2060,7 @@ export function useBusinessConfig({
                               })),
                             }}
                             schema={z.object({
-                              returnedProducts: returnedProductsSchema,
+                              returnedProducts: returnedProductsSchemaWithProducts(row.original.products?.map(p=>p.product)??[]),
                             })}
                             onSubmit={async (data) => {
                               const soldProducts = row.original.products
