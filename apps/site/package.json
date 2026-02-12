@@ -179,7 +179,6 @@
     "@babel/plugin-transform-react-jsx": "^7.28.6",
     "@biomejs/biome": "2.2.4",
     "@playwright/test": "^1.51.1",
-    "@supersurkhet/vite-plugin-zod-typegen": "workspace:*",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/devtools-vite": "^0.3.11",
     "@testing-library/dom": "^10.4.0",

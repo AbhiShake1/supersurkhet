@@ -34,7 +34,7 @@ import {
   useUpdate,
 } from '@gta/react-hooks';
 import { DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
-import type { MutationFunctionContext } from '@tanstack/react-query';
+import { useQuery, type MutationFunctionContext } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import type { CellContext, ColumnDef } from '@tanstack/react-table';
 import type { GunMessagePut } from 'gun';
@@ -118,7 +118,9 @@ export type AutoTableProps<T extends SchemaKeys> = {
   ) => unknown;
   readOnly?: boolean;
   treatSlugAsAbsolute?: boolean;
-  actions?: (ctx: CellContext<NestedSchemaType<T>, unknown>) => React.ReactNode;
+  actions?: (
+    ctx: CellContext<NestedSchemaType<T>, unknown>,
+  ) => Promise<React.ReactNode>;
 } & (
   | {
       schema: T;
@@ -339,7 +341,9 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
     React.SetStateAction<DataTableRowAction<NestedSchemaType<T>> | null>
   >;
   schema: S;
-  actions?: (ctx: CellContext<NestedSchemaType<T>, unknown>) => React.ReactNode;
+  actions?: (
+    ctx: CellContext<NestedSchemaType<T>, unknown>,
+  ) => Promise<React.ReactNode>;
   readOnly?: boolean;
   previewOverrides?: PreviewOverrides<T>;
 }
@@ -479,6 +483,15 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
       id: 'actions',
       cell: function Cell(props) {
         const { row } = props;
+        const { data: actionNode } = useQuery({
+          enabled: !!actions,
+          queryFn: async () => {
+            if (!actions) return null;
+            return actions(props);
+          },
+          queryKey: ['auto-table-actions', row.id, row.original],
+        });
+
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -509,7 +522,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
                   <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
                 </DropdownMenuItem>
               )}
-              {actions?.(props)}
+              {actionNode}
             </DropdownMenuContent>
           </DropdownMenu>
         );
