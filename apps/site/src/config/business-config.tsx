@@ -97,12 +97,6 @@ function calculateTotalAmountForItem(
   }
 }
 
-export function useRetailConfig({
-  slug,
-}: {
-  slug: string;
-}): BusinessConfigReturn['retail'] {}
-
 export function useBusinessConfig({
   slug,
 }: {
@@ -110,7 +104,6 @@ export function useBusinessConfig({
 }): BusinessConfigReturn {
   'use memo';
 
-  const { data: parties } = api.party.useGet({ keys: [slug] });
   const { openDialog, closeDialog } = useDialog();
 
   const returnedProductsSchema = salesItemSchema
@@ -184,37 +177,37 @@ export function useBusinessConfig({
                     ].filter(Boolean),
                     ...(configDisabled
                       ? {
-                          configDisabled,
-                          onValueChange(value, path, form) {
-                            const [, productQuantityPerUnit] = String(
-                              sourceRow.unit,
-                            ).split(':');
-                            const [, quantityPerUnit] = value?.split(':') ?? [];
-                            const [itemsKey, index] = path;
-                            const sellingPrice = Number(
-                              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                              (sourceRow as any).sellingPrice,
-                            );
+                        configDisabled,
+                        onValueChange(value, path, form) {
+                          const [, productQuantityPerUnit] = String(
+                            sourceRow.unit,
+                          ).split(':');
+                          const [, quantityPerUnit] = value?.split(':') ?? [];
+                          const [itemsKey, index] = path;
+                          const sellingPrice = Number(
+                            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                            (sourceRow as any).sellingPrice,
+                          );
 
-                            if (quantityPerUnit) {
-                              if (sellingPrice) {
-                                form.setValue(
-                                  [itemsKey, index, 'unitPrice'].join('.'),
-                                  sellingPrice,
-                                );
-                              }
-                            } else if (
-                              productQuantityPerUnit &&
-                              sellingPrice &&
-                              !Number.isNaN(Number(productQuantityPerUnit))
-                            ) {
+                          if (quantityPerUnit) {
+                            if (sellingPrice) {
                               form.setValue(
                                 [itemsKey, index, 'unitPrice'].join('.'),
-                                sellingPrice / Number(productQuantityPerUnit),
+                                sellingPrice,
                               );
                             }
-                          },
-                        }
+                          } else if (
+                            productQuantityPerUnit &&
+                            sellingPrice &&
+                            !Number.isNaN(Number(productQuantityPerUnit))
+                          ) {
+                            form.setValue(
+                              [itemsKey, index, 'unitPrice'].join('.'),
+                              sellingPrice / Number(productQuantityPerUnit),
+                            );
+                          }
+                        },
+                      }
                       : {}),
                   },
                 };
@@ -488,7 +481,7 @@ export function useBusinessConfig({
                                     form.setValue(
                                       [itemsKey, index, 'unitPrice'].join('.'),
                                       costPrice /
-                                        Number(productQuantityPerUnit),
+                                      Number(productQuantityPerUnit),
                                     );
                                   }
                                 },
@@ -774,7 +767,7 @@ export function useBusinessConfig({
                                     form.setValue(
                                       [itemsKey, index, 'unitPrice'].join('.'),
                                       sellingPrice /
-                                        Number(productQuantityPerUnit),
+                                      Number(productQuantityPerUnit),
                                     );
                                   }
                                 },
@@ -987,9 +980,10 @@ export function useBusinessConfig({
         slug,
         icon: Receipt,
         readOnly: true,
-        actions: ({ row }) => {
+        actions: async ({ row }) => {
           const partyId = row.original.partyId;
           if (!partyId) return null;
+          const parties = await api.party.get({ keys: [slug] });
           const party = parties?.find((p) => p?._?.soul === partyId);
           if (!party) return null;
           return (
@@ -1022,20 +1016,20 @@ export function useBusinessConfig({
           issuedAt: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
               : '-',
           dueDate: (date) =>
             date
               ? new Date(date).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })
               : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
@@ -1141,7 +1135,7 @@ export function useBusinessConfig({
                                     form.setValue(
                                       [itemsKey, index, 'unitPrice'].join('.'),
                                       sellingPrice /
-                                        Number(productQuantityPerUnit),
+                                      Number(productQuantityPerUnit),
                                     );
                                   }
                                 },
@@ -1602,44 +1596,44 @@ export function useBusinessConfig({
                               configDisabled,
                               ...(configDisabled
                                 ? {
-                                    onValueChange(value, path, form) {
-                                      const [, productQuantityPerUnit] = String(
-                                        sourceRow.unit,
-                                      ).split(':');
-                                      const [, quantityPerUnit] =
-                                        value?.split(':') ?? [];
-                                      const [itemsKey, index] = path;
-                                      const sellingPrice = Number(
-                                        // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                        (sourceRow as any).sellingPrice,
-                                      );
+                                  onValueChange(value, path, form) {
+                                    const [, productQuantityPerUnit] = String(
+                                      sourceRow.unit,
+                                    ).split(':');
+                                    const [, quantityPerUnit] =
+                                      value?.split(':') ?? [];
+                                    const [itemsKey, index] = path;
+                                    const sellingPrice = Number(
+                                      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+                                      (sourceRow as any).sellingPrice,
+                                    );
 
-                                      if (quantityPerUnit) {
-                                        if (sellingPrice) {
-                                          form.setValue(
-                                            [itemsKey, index, 'unitPrice'].join(
-                                              '.',
-                                            ),
-                                            sellingPrice,
-                                          );
-                                        }
-                                      } else if (
-                                        productQuantityPerUnit &&
-                                        sellingPrice &&
-                                        !Number.isNaN(
-                                          Number(productQuantityPerUnit),
-                                        )
-                                      ) {
+                                    if (quantityPerUnit) {
+                                      if (sellingPrice) {
                                         form.setValue(
                                           [itemsKey, index, 'unitPrice'].join(
                                             '.',
                                           ),
-                                          sellingPrice /
-                                            Number(productQuantityPerUnit),
+                                          sellingPrice,
                                         );
                                       }
-                                    },
-                                  }
+                                    } else if (
+                                      productQuantityPerUnit &&
+                                      sellingPrice &&
+                                      !Number.isNaN(
+                                        Number(productQuantityPerUnit),
+                                      )
+                                    ) {
+                                      form.setValue(
+                                        [itemsKey, index, 'unitPrice'].join(
+                                          '.',
+                                        ),
+                                        sellingPrice /
+                                        Number(productQuantityPerUnit),
+                                      );
+                                    }
+                                  },
+                                }
                                 : {}),
                             },
                           };
@@ -1765,7 +1759,7 @@ export function useBusinessConfig({
             'Trip update functionality would handle stock adjustments here',
           );
         },
-        actions: ({ row }) => {
+        actions: async ({ row }) => {
           if (row.original.returnTime) return null;
 
           return (
@@ -1908,8 +1902,8 @@ export function useBusinessConfig({
                                   (sum: number, item: any) =>
                                     sum +
                                     item.quantity *
-                                      (productsBySoul.get(item.productId)
-                                        ?.sellingPrice || 0),
+                                    (productsBySoul.get(item.productId)
+                                      ?.sellingPrice || 0),
                                   0,
                                 );
 
