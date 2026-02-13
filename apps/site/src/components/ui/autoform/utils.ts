@@ -8,16 +8,16 @@ export type SourceConfigFor<K extends SchemaKeys> = {
   table: K;
   key?: string;
 } & (
-  | {
+    | {
       displayKey: keyof NestedSchemaType<K>;
     }
-  | {
+    | {
       displayKey?: never;
       displayKeys: Array<keyof NestedSchemaType<K>>;
       separator: string;
       suffix?: string;
     }
-);
+  );
 
 export type SourceConfig = {
   [K in SchemaKeys]: SourceConfigFor<K>;
@@ -33,7 +33,7 @@ export type DeriveContext<K extends SchemaKeys = SchemaKeys> = {
 export type DerivedFieldOverride = {
   fieldType?: FieldTypes;
   inputProps?: Record<string, unknown>;
-  customData?: Record<string, unknown>;
+  customData?: FieldConfigCustomData;
 } | null;
 
 export type DeriveFn<K extends SchemaKeys = SchemaKeys> = (
@@ -49,8 +49,7 @@ type FieldConfigCustomDataBase = {
   slug?: string;
   disableWhenValueIn?: string[];
 } & {
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  onValueChange?: (value: any, path: string[], form: UseFormReturn) => any;
+  onValueChange?: (value: string, path: string[], form: UseFormReturn) => any;
   // onValueChange?: LogicExprWithContext<{
   //   value: string;
   //   path: string[];
@@ -89,11 +88,11 @@ type FieldConfigCustomDataWithoutSource = FieldConfigCustomDataBase & {
 
 export type FieldConfigCustomData =
   | {
-      [K in SchemaKeys]: FieldConfigCustomDataWithSource<K>;
-    }[SchemaKeys]
+    [K in SchemaKeys]: FieldConfigCustomDataWithSource<K>;
+  }[SchemaKeys]
   | {
-      [K in SchemaKeys]: FieldConfigCustomDataWithSources<K>;
-    }[SchemaKeys]
+    [K in SchemaKeys]: FieldConfigCustomDataWithSources<K>;
+  }[SchemaKeys]
   | FieldConfigCustomDataWithoutSource;
 
 export function withSourceCustomData<K extends SchemaKeys>(

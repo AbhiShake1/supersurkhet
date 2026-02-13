@@ -20,8 +20,8 @@ import { z } from 'zod';
 import { dataMatrixActionSchema } from './datamatrix';
 import type {
   CreatedSchema,
+  ExtractZodSchema,
   GTAAppConfig,
-  InferredTable,
   SchemaShape,
 } from './schemas/core/types';
 import { folderSchema } from './schemas/folder-schema';
@@ -92,7 +92,7 @@ export const otpSchema = z
   })
   .extend(table);
 
-export type OTP = InferredTable<'otp'>;
+export type OTP = z.infer<typeof otpSchema>;
 
 export const businessMemberSchema = z.object({
   role: z.enum(['owner', 'staff']),
@@ -110,15 +110,13 @@ export const businessInvitationSchema = z.object({
   expiresAt: z.number().optional(),
 });
 
-export type BusinessInvitation = NonNullable<
-  InferredTable<'business'>['invitations']
->[string];
+export type BusinessInvitation = z.infer<typeof businessInvitationSchema>;
 
 export const businessTypeSchema = z
   .enum(['retail'])
   .describe('The primary category of the business');
 
-export type BusinessType = InferredTable<'business'>['businessType'];
+export type BusinessType = z.infer<typeof businessTypeSchema>;
 
 export const businessSchema = z
   .object({
@@ -177,11 +175,11 @@ export const partySchema = z
   })
   .extend(table);
 
-export type Party = InferredTable<'party'>;
+export type Party = z.infer<typeof partySchema>;
 
 export const customerSchema = partySchema.extend({});
 
-export type Customer = InferredTable<'customer'>;
+export type Customer = z.infer<typeof customerSchema>;
 
 export const invoiceSchema = z
   .object({
@@ -269,7 +267,7 @@ export const invoiceSchema = z
 //   }
 // });
 
-export type Invoice = InferredTable<'invoice'>;
+export type Invoice = z.infer<typeof invoiceSchema>;
 
 export const tripSchema = z
   .object({
@@ -313,7 +311,7 @@ export const tripSchema = z
   })
   .extend(table);
 
-export type Trip = InferredTable<'trip'>;
+export type Trip = z.infer<typeof tripSchema>;
 
 export const membershipSchema = z
   .object({
@@ -396,13 +394,6 @@ export const recentlyUsedAppSchema = z
 // #endregion
 
 // #region App Schema
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-// biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-export type ExtractZodSchema<T extends CreatedSchema<SchemaShape<any>>> =
-  z.ZodObject<{
-    -readonly [K in keyof T['rawShape']]: T['rawShape'][K]['schema'];
-  }>;
-
 function createSchema<const TSchema extends GTAAppConfig['schema']>(
   schema: TSchema,
 ): CreatedSchema<TSchema> {
@@ -648,17 +639,16 @@ export const appSchema = coreSchema.merge(featureSchema);
 export type AppSchemaType = ExtractZodSchema<typeof appSchema>;
 
 declare global {
-  // biome-ignore lint/suspicious/noRedeclare: lint debt cleanup
   interface GTAAppConfig {
-    schema: AppSchemaType;
+    // schema: AppSchemaType;
   }
 }
 // #endregion
 
 // #region Type Exports
-export type User = InferredTable<'user'>;
-export type Business = InferredTable<'business'>;
-export type Order = InferredTable<'order'>;
+export type User = z.infer<typeof userSchema>;
+export type Business = z.infer<typeof businessSchema>;
+export type Order = z.infer<typeof orderSchema>;
 // #endregion
 
 export function transformSchema<const TSchema extends typeof appSchema>(
@@ -671,7 +661,7 @@ export function transformSchema<const TSchema extends typeof appSchema>(
         value.schema,
       ]),
     ),
-  ) as unknown as AppSchemaType;
+  ) as AppSchemaType;
 }
 
 export default appSchema;

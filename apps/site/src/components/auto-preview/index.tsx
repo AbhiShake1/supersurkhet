@@ -216,10 +216,11 @@ const RatingPreview: AutoPreviewComponent<number> = ({ value }) => {
           <Star
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
-            className={`h-4 w-4 ${i < Math.floor(value)
+            className={`h-4 w-4 ${
+              i < Math.floor(value)
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300'
-              }`}
+            }`}
           />
         ))}
       </div>

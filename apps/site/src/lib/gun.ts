@@ -34,14 +34,14 @@ GUN.chain.then = function <F extends (...args: any[]) => any>(cb?: F) {
 };
 
 // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
-type ExtratedSchema = {
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  [K in keyof BaseAppSchemaType as BaseAppSchemaType[K] extends { schema: any }
-    ? K
-    : never]: BaseAppSchemaType[K] extends { schema: infer S }
-    ? z.infer<S>
-    : never;
-};
+// type ExtratedSchema = {
+//   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+//   [K in keyof BaseAppSchemaType as BaseAppSchemaType[K] extends { schema: any }
+//     ? K
+//     : never]: BaseAppSchemaType[K] extends { schema: infer S }
+//     ? z.infer<S>
+//     : never;
+// };
 
 export const gun = GUN(
   /*<ExtratedSchema>*/ {

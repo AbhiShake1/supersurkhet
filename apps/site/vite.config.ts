@@ -23,6 +23,15 @@ const config = defineConfig({
       cloudflare: {
         nodeCompat: true,
         wrangler: {
+          // main: fileURLToPath(new URL('./wrangler.toml', import.meta.url)),
+          // durable_objects: {
+          //   bindings: [
+          //     {
+          //       name: 'GUN_SOCKET',
+          //       class_name: 'GunSocket',
+          //     }
+          //   ]
+          // },
           compatibility_date: '2026-01-21',
           compatibility_flags: ['nodejs_compat'],
           keep_vars: true,

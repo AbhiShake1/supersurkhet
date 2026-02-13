@@ -122,23 +122,23 @@ export type AutoTableProps<T extends SchemaKeys> = {
     ctx: CellContext<NestedSchemaType<T>, unknown>,
   ) => Promise<React.ReactNode>;
 } & (
-    | {
+  | {
       schema: T;
     }
-    | {
+  | {
       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       parsedSchema: z.ZodObject<any>;
     }
-  ) &
+) &
   (
     | {
-      slug: string;
-      data?: undefined;
-    }
+        slug: string;
+        data?: undefined;
+      }
     | {
-      data: NestedSchemaType<T>[];
-      slug?: undefined;
-    }
+        data: NestedSchemaType<T>[];
+        slug?: undefined;
+      }
   );
 
 export function AutoTable<T extends SchemaKeys>({
@@ -572,12 +572,12 @@ export function AddDataSuggestions({
       Object.fromEntries(
         othersData.map((d) => [
           d?.title ||
-          d?.name ||
-          d?.label ||
-          d?.text ||
-          d?.displayName ||
-          d?.heading ||
-          '',
+            d?.name ||
+            d?.label ||
+            d?.text ||
+            d?.displayName ||
+            d?.heading ||
+            '',
           d,
         ]),
       ),
