@@ -36,6 +36,8 @@ import { formatCurrency } from '@/lib/intl';
 import type { BusinessType } from '@/lib/schema';
 import { type SalesItem, salesItemSchema } from '@/lib/schemas/sales';
 import { db } from '@/lib/ssr/api';
+import { isNonNullable } from '@/lib/utils';
+
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoTableTab<K>;
@@ -184,7 +186,7 @@ export function useBusinessConfig({
                       onlyAllow: [
                         unitType,
                         piecesPerUnit ? 'piece' : undefined,
-                      ].filter(Boolean),
+                      ].filter(isNonNullable),
                       configDisabled,
                       onValueChange(value, path, form) {
                         const [, productQuantityPerUnit] = String(
@@ -457,7 +459,7 @@ export function useBusinessConfig({
                                 onlyAllow: [
                                   unitType,
                                   piecesPerUnit ? 'piece' : undefined,
-                                ].filter(Boolean),
+                                ].filter(isNonNullable),
                                 configDisabled,
                                 onValueChange(value, path, form) {
                                   const [, productQuantityPerUnit] = String(
@@ -768,7 +770,7 @@ export function useBusinessConfig({
                                 onlyAllow: [
                                   unitType,
                                   piecesPerUnit ? 'piece' : undefined,
-                                ].filter(Boolean),
+                                ].filter(isNonNullable),
                                 configDisabled,
                                 onValueChange(value, path, form) {
                                   const [, productQuantityPerUnit] = String(
@@ -1144,7 +1146,7 @@ export function useBusinessConfig({
                                 onlyAllow: [
                                   unitType,
                                   piecesPerUnit ? 'piece' : undefined,
-                                ].filter(Boolean),
+                                ].filter(isNonNullable),
                                 configDisabled,
                                 onValueChange(value, path, form) {
                                   const [, productQuantityPerUnit] = String(
@@ -1154,8 +1156,7 @@ export function useBusinessConfig({
                                     value?.split(':') ?? [];
                                   const [itemsKey, index] = path;
                                   const sellingPrice = Number(
-                                    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                    (sourceRow as any).sellingPrice,
+                                    sourceRow.sellingPrice,
                                   );
 
                                   if (quantityPerUnit) {
@@ -1616,7 +1617,7 @@ export function useBusinessConfig({
                               onlyAllow: [
                                 unitType,
                                 piecesPerUnit ? 'piece' : undefined,
-                              ].filter(Boolean),
+                              ].filter(isNonNullable),
                               configDisabled,
                               ...(configDisabled
                                 ? {
