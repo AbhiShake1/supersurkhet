@@ -636,11 +636,11 @@ export const featureSchema = createSchema({
 // This is useful for type inference and for providing a single entry point to all data models.
 export const appSchema = coreSchema.merge(featureSchema);
 
-export type AppSchemaType = ExtractZodSchema<typeof appSchema>;
+export type AppSchemaType = ExtractZodSchema<BaseAppSchemaType>;
 
 declare global {
   interface GTAAppConfig {
-    // schema: AppSchemaType;
+    schema: AppSchemaType;
   }
 }
 // #endregion
@@ -651,7 +651,7 @@ export type Business = z.infer<typeof businessSchema>;
 export type Order = z.infer<typeof orderSchema>;
 // #endregion
 
-export function transformSchema<const TSchema extends typeof appSchema>(
+export function transformSchema<const TSchema extends BaseAppSchemaType>(
   schema: TSchema,
 ) {
   return z.object(

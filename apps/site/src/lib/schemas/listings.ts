@@ -28,12 +28,12 @@ export const table = {
     .optional(),
   created_by: z.string().describe('Created by').optional(),
   // _: z.object({ soul: z.string() }),
-  // _: z
-  // 	.object({
-  // 		soul: z.string().optional(),
-  // 		">": z.record(z.union([z.string(), z.number()])).optional(),
-  // 	})
-  // 	.optional(),
+  _: z
+    .object({
+      soul: z.string().optional(),
+      ">": z.record(z.union([z.string(), z.number()])).optional(),
+    })
+    .optional(),
 };
 // #endregion
 

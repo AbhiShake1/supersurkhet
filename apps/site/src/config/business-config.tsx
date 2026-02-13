@@ -110,16 +110,13 @@ export function useBusinessConfig({
   const { data: trips } = api.trip.useGet({ keys: [slug] });
   const { data: products } = api.product.useGet({ keys: [slug] });
   const { data: customers } = api.customer.useGet({ keys: [slug] });
-  const partiesBySoul = new Map(parties?.map((p) => [p._.soul, p]));
-  const vehiclesBySoul = new Map(vehicles?.map((v) => [v._.soul, v]));
-  const tripsBySoul = new Map(trips?.map((t) => [t._.soul, t]));
-  const customersBySoul = new Map(customers?.map((c) => [c._.soul, c]));
-
-  const productsBySoul = new Map(
-    products
-      ?.filter((item) => item?._?.soul)
-      .map((item) => [item._?.soul!, item]),
-  );
+  const { data: orders } = api.order.useGet({ keys: [slug] });
+  const partiesBySoul = new Map(parties?.map((p) => [p._?.soul, p]));
+  const vehiclesBySoul = new Map(vehicles?.map((v) => [v._?.soul, v]));
+  const tripsBySoul = new Map(trips?.map((t) => [t._?.soul, t]));
+  const customersBySoul = new Map(customers?.map((c) => [c._?.soul, c]));
+  const productsBySoul = new Map(products?.map((p) => [p._?.soul, p]));
+  const ordersBySoul = new Map(orders?.map((o) => [o._?.soul, o]));
 
   function returnedProductsSchemaWithProducts(products: string[]) {
     return salesItemSchema
@@ -131,7 +128,7 @@ export function useBusinessConfig({
             fieldConfig({
               fieldType: 'select',
               customData: {
-                options: products.map((p) => [p, productsBySoul.get(p)?.title]),
+                options: products.map((p) => [p, productsBySoul.get(p)?.title ?? "-"]),
                 onValueChange: async (val, path, form) => {
                   const products = await db.product.get({ keys: [slug] });
                   const product = products.find(
@@ -287,9 +284,7 @@ export function useBusinessConfig({
       .min(0);
   }
 
-  const returnedProductsSchema = returnedProductsSchemaWithProducts(
-    products ?? [],
-  );
+  const returnedProductsSchema = returnedProductsSchemaWithProducts(products?.map((p) => p._?.soul ?? "") ?? []);
 
   async function deleteInvoiceByPartyId(id: string) {
     const invoices = await db.invoice.get({ keys: [slug] });
@@ -614,7 +609,7 @@ export function useBusinessConfig({
           const productsBySoul = new Map(
             products
               .filter((item) => item?._?.soul)
-              .map((item) => [item._.soul, item]),
+              .map((item) => [item._?.soul, item]),
           );
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, { product, quantity, unit }) => {
@@ -698,18 +693,9 @@ export function useBusinessConfig({
         previewOverrides: {
           customerId: (id) =>
             customersBySoul.get(id)?.name ||
-            customersBySoul.get(id)?.email ||
+            customersBySoul.get(id)?.phone ||
             '-',
-          vehicleId: (id) => vehiclesBySoul.get(id)?.name || '-',
-          tripId: (id) => {
-            const trip = tripsBySoul.get(id);
-            if (!trip) return '-';
-            return [
-              trip.destination,
-              [trip.dispatchTime, trip.returnTime].filter(Boolean).join(' - '),
-            ].join(' | ');
-          },
-          issuedAt: (date) =>
+          saleDate: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
                 year: 'numeric',
@@ -717,14 +703,6 @@ export function useBusinessConfig({
                 day: 'numeric',
                 hour: '2-digit',
                 minute: '2-digit',
-              })
-              : '-',
-          dueDate: (date) =>
-            date
-              ? new Date(date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
               })
               : '-',
           items: (items) => {
@@ -947,12 +925,6 @@ export function useBusinessConfig({
                 });
             }),
         async onCreate(_, variables) {
-          const products = await db.product.get({ keys: [slug] });
-          const productsBySoul = new Map(
-            products
-              .filter((item) => item?._?.soul)
-              .map((item) => [item._.soul, item]),
-          );
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, { product, quantity, unit }) => {
               const productInfo = productsBySoul.get(product);
@@ -1039,8 +1011,7 @@ export function useBusinessConfig({
         actions: async ({ row }) => {
           const partyId = row.original.partyId;
           if (!partyId) return null;
-          const parties = await api.party.get({ keys: [slug] });
-          const party = parties?.find((p) => p?._?.soul === partyId);
+          const party = partiesBySoul.get(partyId);
           if (!party) return null;
           return (
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
@@ -1107,35 +1078,8 @@ export function useBusinessConfig({
         previewOverrides: {
           customerId: (id) =>
             customersBySoul.get(id)?.name ||
-            customersBySoul.get(id)?.email ||
+            customersBySoul.get(id)?.phone ||
             '-',
-          vehicleId: (id) => vehiclesBySoul.get(id)?.name || '-',
-          tripId: (id) => {
-            const trip = tripsBySoul.get(id);
-            if (!trip) return '-';
-            return [
-              trip.destination,
-              [trip.dispatchTime, trip.returnTime].filter(Boolean).join(' - '),
-            ].join(' | ');
-          },
-          issuedAt: (date) =>
-            date
-              ? new Date(date).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
-              : '-',
-          dueDate: (date) =>
-            date
-              ? new Date(date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              })
-              : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
@@ -1294,11 +1238,7 @@ export function useBusinessConfig({
                       fieldConfig({
                         fieldType: 'number',
                         customData: {
-                          onValueChange: ((
-                            value: string,
-                            path: string[],
-                            form,
-                          ) => {
+                          onValueChange: (_value, path, form) => {
                             refreshPaidAmount(form);
                             const items = form.getValues('items');
                             const [itemsKey, index] = path;
@@ -1308,10 +1248,7 @@ export function useBusinessConfig({
                               Number(index),
                               form,
                             );
-
-                            return value;
-                            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                          }) as any,
+                          },
                         },
                       }),
                     ),
@@ -1322,8 +1259,8 @@ export function useBusinessConfig({
                       fieldConfig({
                         fieldType: 'number',
                         customData: {
-                          onValueChange: ((
-                            value: string,
+                          onValueChange: (
+                            _value: string,
                             path: string[],
                             form,
                           ) => {
@@ -1336,10 +1273,7 @@ export function useBusinessConfig({
                               Number(index),
                               form,
                             );
-
-                            return value;
-                            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                          }) as any,
+                          },
                         },
                       }),
                     ),
@@ -1495,13 +1429,11 @@ export function useBusinessConfig({
         onUpdate(_, variables) {
           if (variables.orderStatus !== 'done') return;
           const currentOrder = ordersBySoul.get(variables.id);
-          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-          const order = { ...currentOrder, ...variables } as any;
+          const order = { ...currentOrder, ...variables };
           if (!order?.items?.length || !order?.customerId) return;
 
           const itemsByProductIdWithQuantity = order.items?.reduce(
-            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-            (a: Record<string, number>, item: any) => {
+            (a, item) => {
               const product = productsBySoul.get(item.product);
               let adjustedQuantity = item.quantity;
               if (product?.unit?.includes(':')) {
@@ -1742,7 +1674,7 @@ export function useBusinessConfig({
                     fieldConfig({
                       fieldType: 'number',
                       customData: {
-                        onValueChange: ((
+                        onValueChange: (
                           value: string,
                           path: string[],
                           form,
@@ -1758,8 +1690,7 @@ export function useBusinessConfig({
                           );
 
                           return value;
-                          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                        }) as any,
+                        },
                       },
                     }),
                   ),
@@ -1770,7 +1701,7 @@ export function useBusinessConfig({
                     fieldConfig({
                       fieldType: 'number',
                       customData: {
-                        onValueChange: ((
+                        onValueChange: (
                           value: string,
                           path: string[],
                           form,
@@ -1787,7 +1718,7 @@ export function useBusinessConfig({
 
                           return value;
                           // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                        }) as any,
+                        },
                       },
                     }),
                   ),
@@ -1812,7 +1743,7 @@ export function useBusinessConfig({
           const productsBySoul = new Map(
             products
               .filter((item) => item?._?.soul)
-              .map((item) => [item._.soul, item]),
+              .map((item) => [item._?.soul, item]),
           );
 
           const itemsByProductIdWithQuantity = variables.products?.reduce(
