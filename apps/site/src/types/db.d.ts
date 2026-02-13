@@ -159,6 +159,10 @@ declare global {
      businessType: "retail";
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      location?: string | undefined;
      basePath?: string | undefined;
      features?: Record<string, boolean> | undefined;
@@ -186,10 +190,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
-    } | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      name: string;
@@ -198,6 +198,10 @@ declare global {
      timestamp?: number | undefined;
      isActive?: boolean | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      location?: string | undefined;
      basePath?: string | undefined;
      features?: Record<string, boolean> | undefined;
@@ -225,10 +229,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
-    } | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
@@ -390,6 +390,10 @@ declare global {
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      sellingPrice?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
@@ -398,10 +402,6 @@ declare global {
      sku?: string | undefined;
      imageUrl?: string | undefined;
      isFeatured?: boolean | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }, {
      title: string;
      hsCode: string;
@@ -410,6 +410,10 @@ declare global {
      timestamp?: number | undefined;
      isActive?: boolean | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      sellingPrice?: number | undefined;
      stockQuantity?: number | undefined;
      barcode?: string | undefined;
@@ -419,10 +423,6 @@ declare global {
      sku?: string | undefined;
      imageUrl?: string | undefined;
      isFeatured?: boolean | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Products & Inventory";
@@ -458,29 +458,29 @@ declare global {
      phone?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      address?: string | undefined;
      panNumber?: string | undefined;
      creditLimit?: number | undefined;
      paymentTerms?: string | undefined;
      notes?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }, {
      name: string;
      phone?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      address?: string | undefined;
      panNumber?: string | undefined;
      creditLimit?: number | undefined;
      paymentTerms?: string | undefined;
      notes?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -516,29 +516,29 @@ declare global {
      phone?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      address?: string | undefined;
      panNumber?: string | undefined;
      creditLimit?: number | undefined;
      paymentTerms?: string | undefined;
      notes?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }, {
      name: string;
      phone?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      address?: string | undefined;
      panNumber?: string | undefined;
      creditLimit?: number | undefined;
      paymentTerms?: string | undefined;
      notes?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -601,16 +601,16 @@ declare global {
      fiscalYear: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      description?: string | undefined;
      partyId?: string | undefined;
      vehicleId?: string | undefined;
      tripId?: string | undefined;
      issuedAt?: string | undefined;
      dueDate?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }, {
      type: "sale" | "purchase";
      items: {
@@ -623,6 +623,10 @@ declare global {
      fiscalYear: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      description?: string | undefined;
      partyId?: string | undefined;
      vehicleId?: string | undefined;
@@ -632,10 +636,6 @@ declare global {
      tax?: number | undefined;
      paidAmount?: number | undefined;
      paymentStatus?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<import("@tabler/icons-react").IconProps & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -729,12 +729,12 @@ declare global {
      saleDate: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     notes?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }, {
      items: {
      product: string;
@@ -753,14 +753,14 @@ declare global {
      customerId: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     notes?: string | undefined;
-     paymentStatus?: string | undefined;
-     saleDate?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     notes?: string | undefined;
+     paymentStatus?: string | undefined;
+     saleDate?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -849,11 +849,11 @@ declare global {
      importDate: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     notes?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     notes?: string | undefined;
     }, {
      party: string;
      items: {
@@ -872,13 +872,13 @@ declare global {
      paidAmount: number;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     notes?: string | undefined;
-     paymentStatus?: string | undefined;
-     importDate?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     notes?: string | undefined;
+     paymentStatus?: string | undefined;
+     importDate?: string | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -968,12 +968,12 @@ declare global {
      orderStatus: "pending" | "done" | "cancelled";
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     notes?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }, {
      items: {
      product: string;
@@ -992,14 +992,14 @@ declare global {
      customerId: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     notes?: string | undefined;
-     paymentStatus?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
-     orderStatus?: "pending" | "done" | "cancelled" | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     notes?: string | undefined;
+     paymentStatus?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+     orderStatus?: "pending" | "done" | "cancelled" | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Business Operations";
@@ -1053,6 +1053,10 @@ declare global {
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      sellingPrice?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
@@ -1063,10 +1067,6 @@ declare global {
      isFeatured?: boolean | undefined;
      isSpecial?: boolean | undefined;
      preparationTime?: number | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }, {
      title: string;
      hsCode: string;
@@ -1075,6 +1075,10 @@ declare global {
      timestamp?: number | undefined;
      isActive?: boolean | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      sellingPrice?: number | undefined;
      stockQuantity?: number | undefined;
      barcode?: string | undefined;
@@ -1088,10 +1092,6 @@ declare global {
      isSpicy?: boolean | undefined;
      isSpecial?: boolean | undefined;
      preparationTime?: number | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Products & Inventory";
@@ -1984,11 +1984,11 @@ declare global {
      appId: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     usageCount?: number | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     usageCount?: number | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "System Configuration";
@@ -2026,11 +2026,11 @@ declare global {
      name?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     apps?: Record<string, boolean> | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     apps?: Record<string, boolean> | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "System Configuration";
@@ -2244,11 +2244,11 @@ declare global {
      revision: number;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     description?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
     }, {
      id: string;
      title: string;
@@ -2293,11 +2293,11 @@ declare global {
      revision: number;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     description?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "System Configuration";
@@ -2325,21 +2325,21 @@ declare global {
      licensePlate: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     description?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
     }, {
      name: string;
      licensePlate: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
-     description?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Logistics";
@@ -2469,6 +2469,10 @@ declare global {
     }[];
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      returnTime?: string | undefined;
      destination?: string | undefined;
      returnedProducts?: {
@@ -2484,10 +2488,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[] | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }, {
      vehicleId: string;
      products: {
@@ -2505,6 +2505,10 @@ declare global {
     }[];
      timestamp?: number | undefined;
      created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
      dispatchTime?: string | undefined;
      returnTime?: string | undefined;
      destination?: string | undefined;
@@ -2521,10 +2525,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }[] | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Logistics";

@@ -6,15 +6,16 @@ import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { appSchema } from '@/lib/schema';
+import { getSoulFromUnknown } from '@/lib/utils';
 import {
   type SchemaKeys,
+  type NestedSchema,
   type NestedSchemaType,
   getNestedZodShape,
   getSchema,
   useCreate,
 } from '@gta/react-hooks';
 import { ZodEffects } from 'zod';
-import type { ZodType } from 'zod';
 import {
   ArrowBigUpDash,
   FileJson,
@@ -89,10 +90,11 @@ export function AddRowDialog<T extends SchemaKeys>({
 
   const _schema = getNestedZodShape(schema, appSchema.schemaShape);
   const schemaWithOverrides = getSchema(_schema);
+  const tableSchema = schemaWithOverrides as NestedSchema<T>;
   function getFinalSchema() {
     let schema: ZodObjectOrWrapped = schemaWithOverrides;
     if (extender) {
-      schema = extender(schema);
+      schema = extender(tableSchema);
     }
     return schema;
   }
@@ -102,7 +104,6 @@ export function AddRowDialog<T extends SchemaKeys>({
   type SchemaRecord = Omit<NestedSchemaType<T>, '_'> & {
     id?: string | number;
   };
-  const typedSchema = finalSchemaObject as ZodType<SchemaRecord>;
 
   const handleFileUpload = async (
     selectedFile: File | null,
@@ -123,9 +124,9 @@ export function AddRowDialog<T extends SchemaKeys>({
       }
 
       // Validate the parsed data against the schema
-      const { validData, errors } = validateDataAgainstSchema<SchemaRecord>(
+      const { validData, errors } = validateDataAgainstSchema(
         parsedData,
-        typedSchema,
+        finalSchemaObject,
       );
 
       if (errors.length > 0) {
@@ -139,10 +140,10 @@ export function AddRowDialog<T extends SchemaKeys>({
 
       // Create all records
       for (const record of validData) {
-        const payload = typedSchema.parse({
+        const payload = finalSchemaObject.parse({
           ...record,
           timestamp: Date.now(),
-        });
+        }) as SchemaRecord;
         createMutation.mutate(payload);
       }
 
@@ -206,11 +207,11 @@ export function AddRowDialog<T extends SchemaKeys>({
                   values={formValues}
                   schema={finalSchema}
                   onSubmit={(b) => {
-                    const payload = typedSchema.parse({
+                    const payload = finalSchemaObject.parse({
                       ...b,
                       created_by: user?._?.soul ?? 'anon',
                       timestamp: Date.now(),
-                    });
+                    }) as SchemaRecord;
                     createMutation.mutate(payload);
                   }}
                   formProps={{ id: 'auto-table-add-form' }}
@@ -365,7 +366,7 @@ function useAllData(tableName: SchemaKeys) {
 
   const data = allItems
     ?.flatMap((item) => {
-      const business = item._?.soul;
+      const business = getSoulFromUnknown(item);
       return Object.values(item).map((entry) => {
         if (!entry || typeof entry !== 'object') return null;
         return { ...(entry as Record<string, unknown>), business };

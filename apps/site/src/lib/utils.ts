@@ -25,6 +25,18 @@ export function soulToId(soul?: string | null) {
   return soul.split('/').pop() ?? '';
 }
 
+export function getSoulFromUnknown(value: unknown): string | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  if (!('_' in value)) return undefined;
+
+  const meta = value._;
+  if (!meta || typeof meta !== 'object') return undefined;
+  if (!('soul' in meta)) return undefined;
+
+  const soul = meta.soul;
+  return typeof soul === 'string' ? soul : undefined;
+}
+
 // Function to get app icon from business data
 // Returns base64 image if available, otherwise returns a default icon based on business type
 export function getAppIcon(business: Business): string | null {

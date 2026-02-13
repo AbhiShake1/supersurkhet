@@ -3,12 +3,13 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
 import { api } from '@/lib/api';
 import { appSchema } from '@/lib/schema';
-import { cn } from '@/lib/utils';
+import { cn, getSoulFromUnknown } from '@/lib/utils';
 import type { NestedSchemaType, SchemaKeys } from '@gta/react-hooks';
 import { getNestedZodShape } from '@gta/react-hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from '@tanstack/react-router';
 import _ from 'lodash';
+import { ZodEffects } from 'zod';
 import {
   GripVertical,
   QrCodeIcon,
@@ -47,6 +48,27 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
     }
   | AutoTableProps<K extends SchemaKeys ? K : never>
 );
+
+type AutoTableItem = AutoTableProps<SchemaKeys>;
+
+function isRenderableAutoTableTab(tab: unknown): tab is AutoTableItem {
+  if (!tab || typeof tab !== 'object') return false;
+  return 'schema' in tab || 'parsedSchema' in tab;
+}
+
+function normalizeTableTab(
+  tab: AutoTableTab & AutoTableItem,
+  basePath: string,
+): AutoTableItem {
+  if ('data' in tab && tab.data !== undefined) {
+    return tab;
+  }
+
+  return {
+    ...tab,
+    slug: tab.slug ?? basePath,
+  };
+}
 
 export function AutoAdmin({ tabs }: AutoAdminProps) {
   'use memo';
@@ -124,6 +146,10 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
     return <NotFound />;
   }
 
+  const currentTableItem = isRenderableAutoTableTab(currentItem)
+    ? normalizeTableTab(currentItem, basePath)
+    : null;
+
   return (
     <SidebarProvider>
       <CollapsibleSidebar
@@ -151,18 +177,12 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
         >
           {'children' in currentItem ? (
             currentItem.children
-          ) : 'parsedSchema' in currentItem ? (
-            <AutoTable
-              {...currentItem}
-              slug={currentItem.slug ?? basePath}
-              key={tab}
-            />
+          ) : 'parsedSchema' in currentItem && currentTableItem ? (
+            <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
           ) : !components?.length ? (
-            <AutoTable
-              {...currentItem}
-              slug={currentItem.slug ?? basePath}
-              key={tab}
-            />
+            currentTableItem ? (
+              <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
+            ) : null
           ) : (
             <Tabs
               key={tab}
@@ -187,11 +207,9 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
               <TabsContent value="table" className={cn('flex-1 mt-1 sm:mt-4')}>
                 <Card className="border rounded-lg shadow-sm overflow-hidden">
                   <div className="p-0.5 sm:p-4">
-                    <AutoTable
-                      {...currentItem}
-                      slug={currentItem.slug ?? basePath}
-                      key={tab}
-                    />
+                    {currentTableItem ? (
+                      <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
+                    ) : null}
                   </div>
                 </Card>
               </TabsContent>
@@ -235,6 +253,14 @@ export function AutoKanban<K extends SchemaKeys>({
   const { mutate: update } = api[schemaName].useUpdate({ keys: [slug] });
   const columns = _.groupBy(orders, (o) => o[groupKey]);
   const schema = getNestedZodShape(schemaName, appSchema.schemaShape);
+  const schemaObject = schema instanceof ZodEffects ? schema.innerType() : schema;
+  const groupField = schemaObject.shape[groupKey] as {
+    Values?: Record<string, string>;
+    _def?: { innerType?: { Values?: Record<string, string> } };
+  };
+  const statuses = Object.keys(
+    groupField.Values ?? groupField._def?.innerType?.Values ?? {},
+  );
 
   return (
     // @ts-expect-error
@@ -244,21 +270,19 @@ export function AutoKanban<K extends SchemaKeys>({
       onValueChange={(columns) => {
         for (const [status, orders] of Object.entries(columns)) {
           for (const order of orders) {
-            if (!order._?.soul) continue;
+            const soul = getSoulFromUnknown(order);
+            if (!soul) continue;
             if (isItemLocked?.(order)) continue;
             // @ts-expect-error
-            update({ id: order._?.soul, [groupKey]: status });
+            update({ id: soul, [groupKey]: status });
           }
         }
       }}
       // @ts-expect-error
-      getItemValue={(item) => item._?.soul ?? ''}
+      getItemValue={(item) => getSoulFromUnknown(item) ?? ''}
     >
       <Kanban.Board className="grid auto-rows-fr grid-cols-3">
-        {Object.keys(
-          schema.shape[groupKey].Values ??
-            schema.shape[groupKey]._def.innerType.Values,
-        ).map((status) => (
+        {statuses.map((status) => (
           <KanbanColumn
             key={status}
             value={status}
@@ -279,7 +303,7 @@ export function AutoKanban<K extends SchemaKeys>({
 
           const order = Object.values(columns)
             .flat()
-            .find((o) => o._?.soul === value);
+            .find((o) => getSoulFromUnknown(o) === value);
 
           if (!order) return null;
 
@@ -303,8 +327,8 @@ function KanbanCard<K extends SchemaKeys>({
 }: KanbanCardProps<K>) {
   return (
     <Kanban.Item
-      key={order._?.soul}
-      value={order._?.soul ?? ''}
+      key={getSoulFromUnknown(order)}
+      value={getSoulFromUnknown(order) ?? ''}
       // asChild
       {...props}
     >
@@ -358,7 +382,7 @@ function KanbanColumn<K extends SchemaKeys>({
             ))
           : orders.map((order) => (
               <KanbanCard
-                key={order._?.soul}
+                key={getSoulFromUnknown(order)}
                 order={order}
                 cardBuilder={cardBuilder}
                 asHandle={!(isItemLocked?.(order) ?? false)}
