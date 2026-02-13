@@ -2,6 +2,7 @@ import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { AdminComponent } from '@/components/ui/admin';
 import type z from 'zod';
 import type { LucideIcon, LucideProps } from 'lucide-react';
+import type { SchemaKeys } from '@gta/react-hooks';
 
 export type DefaultSchemaType = z.ZodObject<any> | z.ZodEffects<any>
 
@@ -44,4 +45,6 @@ export type CreatedSchema<T extends GTAAppConfig['schema']> = T & {
   ): CreatedSchema<T & TOtherSchema>;
 };
 
-// export type InferredTable<K extends SchemaKeys> = z.infer<AppSchemaType>[K];
+export type AppSchemaType = ExtractZodSchema<BaseAppSchemaType>;
+
+export type InferredTable<K extends SchemaKeys> = z.infer<AppSchemaType>[K];

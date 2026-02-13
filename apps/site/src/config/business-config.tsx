@@ -172,7 +172,6 @@ export function useBusinessConfig({
                 source: {
                   table: 'product',
                   displayKey: 'title',
-                  key: 'product',
                 },
                 derive: async ({ sourceRow }) => {
                   if (!sourceRow?.unit) return null;
@@ -445,7 +444,6 @@ export function useBusinessConfig({
                           source: {
                             table: 'product',
                             displayKey: 'title',
-                            key: 'product',
                           },
                           derive: async ({ sourceRow }) => {
                             if (!sourceRow?.unit) return null;
@@ -757,7 +755,6 @@ export function useBusinessConfig({
                           source: {
                             table: 'product',
                             displayKey: 'title',
-                            key: 'product',
                           },
                           derive: async ({ sourceRow }) => {
                             if (!sourceRow?.unit) return null;
@@ -1132,7 +1129,6 @@ export function useBusinessConfig({
                           source: {
                             table: 'product',
                             displayKey: 'title',
-                            key: 'product',
                           },
                           derive: async ({ sourceRow }) => {
                             if (!sourceRow?.unit) return null;
@@ -1603,7 +1599,6 @@ export function useBusinessConfig({
                         source: {
                           table: 'product',
                           displayKey: 'title',
-                          key: 'product',
                         },
                         derive: async ({ sourceRow }) => {
                           if (!sourceRow?.unit) return null;

@@ -19,9 +19,10 @@ import {
 import { z } from 'zod';
 import { dataMatrixActionSchema } from './datamatrix';
 import type {
+  AppSchemaType,
   CreatedSchema,
-  ExtractZodSchema,
   GTAAppConfig,
+  InferredTable,
   SchemaShape,
 } from './schemas/core/types';
 import { folderSchema } from './schemas/folder-schema';
@@ -92,7 +93,7 @@ export const otpSchema = z
   })
   .extend(table);
 
-export type OTP = z.infer<typeof otpSchema>;
+export type OTP = InferredTable<'otp'>;
 
 export const businessMemberSchema = z.object({
   role: z.enum(['owner', 'staff']),
@@ -110,13 +111,13 @@ export const businessInvitationSchema = z.object({
   expiresAt: z.number().optional(),
 });
 
-export type BusinessInvitation = z.infer<typeof businessInvitationSchema>;
+export type BusinessInvitation = NonNullable<Business["invitations"]>[string]
 
 export const businessTypeSchema = z
   .enum(['retail'])
   .describe('The primary category of the business');
 
-export type BusinessType = z.infer<typeof businessTypeSchema>;
+export type BusinessType = Business["businessType"]
 
 export const businessSchema = z
   .object({
@@ -175,11 +176,11 @@ export const partySchema = z
   })
   .extend(table);
 
-export type Party = z.infer<typeof partySchema>;
+export type Party = InferredTable<'party'>;
 
 export const customerSchema = partySchema.extend({});
 
-export type Customer = z.infer<typeof customerSchema>;
+export type Customer = InferredTable<'customer'>;
 
 export const invoiceSchema = z
   .object({
@@ -267,7 +268,7 @@ export const invoiceSchema = z
 //   }
 // });
 
-export type Invoice = z.infer<typeof invoiceSchema>;
+export type Invoice = InferredTable<'invoice'>;
 
 export const tripSchema = z
   .object({
@@ -311,7 +312,7 @@ export const tripSchema = z
   })
   .extend(table);
 
-export type Trip = z.infer<typeof tripSchema>;
+export type Trip = InferredTable<'trip'>;
 
 export const membershipSchema = z
   .object({
@@ -636,7 +637,6 @@ export const featureSchema = createSchema({
 // This is useful for type inference and for providing a single entry point to all data models.
 export const appSchema = coreSchema.merge(featureSchema);
 
-export type AppSchemaType = ExtractZodSchema<BaseAppSchemaType>;
 
 declare global {
   interface GTAAppConfig {
@@ -646,9 +646,9 @@ declare global {
 // #endregion
 
 // #region Type Exports
-export type User = z.infer<typeof userSchema>;
-export type Business = z.infer<typeof businessSchema>;
-export type Order = z.infer<typeof orderSchema>;
+export type User = InferredTable<'user'>;
+export type Business = InferredTable<'business'>;
+export type Order = InferredTable<'order'>;
 // #endregion
 
 export function transformSchema<const TSchema extends BaseAppSchemaType>(

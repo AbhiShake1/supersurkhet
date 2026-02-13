@@ -33,8 +33,8 @@ declare global {
      avatar?: string | undefined;
      phone?: string | undefined;
      timestamp?: number | undefined;
-     role?: "user" | "internal-staff" | "admin" | undefined;
      isActive?: boolean | undefined;
+     role?: "user" | "internal-staff" | "admin" | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
@@ -47,8 +47,8 @@ declare global {
      avatar?: string | undefined;
      phone?: string | undefined;
      timestamp?: number | undefined;
-     role?: "user" | "internal-staff" | "admin" | undefined;
      isActive?: boolean | undefined;
+     role?: "user" | "internal-staff" | "admin" | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
@@ -394,10 +394,10 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
      sellingPrice?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
-     description?: string | undefined;
      category?: string | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
@@ -414,11 +414,11 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
      sellingPrice?: number | undefined;
      stockQuantity?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
-     description?: string | undefined;
      category?: string | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
@@ -587,7 +587,7 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
-     type: "sale" | "purchase";
+     type: "purchase" | "sale";
      items: {
      product: string;
      quantity: number;
@@ -612,7 +612,7 @@ declare global {
      issuedAt?: string | undefined;
      dueDate?: string | undefined;
     }, {
-     type: "sale" | "purchase";
+     type: "purchase" | "sale";
      items: {
      product: string;
      quantity: number;
@@ -1057,10 +1057,10 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
      sellingPrice?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
-     description?: string | undefined;
      category?: string | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
@@ -1079,11 +1079,11 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
      sellingPrice?: number | undefined;
      stockQuantity?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
-     description?: string | undefined;
      category?: string | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
@@ -1819,11 +1819,11 @@ declare global {
     } | undefined;
     }, {
      action: "wifi_connect" | "profile_enrichment" | "equipment_session" | "restaurant_ordering" | "product_interaction" | "navigate" | "form_request" | "choice_selection" | "notification" | "equipment_control";
+     version?: string | undefined;
      product?: {
      id: string;
      sku: string;
     } | undefined;
-     version?: string | undefined;
      wifi?: {
      password: string;
      ssid: string;
