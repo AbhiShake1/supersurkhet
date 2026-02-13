@@ -39,24 +39,31 @@ describe('business-config derived contracts', () => {
     expect(matches).toHaveLength(3);
   });
 
-  it('updates paid amount softly from item rows and recomputes payment status on manual edit', () => {
+  it('keeps paymentStatus hard-derived while paidAmount is soft-derived for all payment flows', () => {
     const content = getContent();
 
-    expect(content).toContain('function refreshPaidAmount(form: UseFormReturn)');
-    expect(content).toContain("form.setValue('paidAmount', totalCost);");
-    expect(content).toContain('function refreshPaymentStatus(form: UseFormReturn)');
-
-    const manualPaidAmountHooks = content.match(/onValueChange:\s*\(_,\s*__,\s*form\)\s*=>\s*\{\s*refreshPaymentStatus\(form\);\s*\}/g) ?? [];
+    const paymentStatusDerivations =
+      content.match(/withDerivation\('paymentStatus'/g) ?? [];
+    const paidAmountDerivations =
+      content.match(/withDerivation\('paidAmount'/g) ?? [];
 
     // stockImport + sale + order
-    expect(manualPaidAmountHooks).toHaveLength(3);
+    expect(paymentStatusDerivations).toHaveLength(3);
+    expect(paidAmountDerivations).toHaveLength(3);
+
+    expect(content).not.toContain('function refreshPaidAmount(form: UseFormReturn)');
+    expect(content).not.toContain('function refreshPaymentStatus(form: UseFormReturn)');
   });
 
-  it('routes row field updates through syncItemDerivedFields', () => {
+  it('keeps item totals and pricing/unit defaults fully derived with no imperative setValue writes', () => {
     const content = getContent();
-    const syncCalls = content.match(/syncItemDerivedFields\(form, path\)/g) ?? [];
+    const totalAmountDerivations =
+      content.match(/totalAmount:\s*createDerivedItemTotalAmountField\(/g) ?? [];
+    const setValueCalls = content.match(/form\.setValue\(/g) ?? [];
 
-    // Should be used across product/unit/quantity/unitPrice handlers in all relevant sections.
-    expect(syncCalls.length).toBeGreaterThanOrEqual(18);
+    expect(content).not.toContain('function syncItemDerivedFields');
+    expect(content).not.toContain('function setItemUnitPrice');
+    expect(totalAmountDerivations).toHaveLength(3);
+    expect(setValueCalls).toHaveLength(0);
   });
 });

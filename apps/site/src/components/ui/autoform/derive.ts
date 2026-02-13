@@ -72,8 +72,11 @@ export function useDerivedField({
     | undefined;
   const deriveFn = getDeriveFn(customData);
   const sourceConfig = customData?.source ?? customData?.sources?.[0];
-  const rowWatchName = rowPathKey || fieldPathKey;
-  const rowSnapshot = useWatch({ name: rowWatchName });
+  const rowSnapshot = useWatch({
+    // Top-level derived fields may depend on sibling fields (e.g. paidAmount <- items).
+    // Watch the full form in that case so derivations re-run on any relevant input change.
+    name: rowPathKey ? rowPathKey : undefined,
+  });
 
   const sourceSelectorKey = sourceConfig?.key ?? path[path.length - 1];
   const sourceSelectorPathJoined = rowPathKey
@@ -125,7 +128,9 @@ export function useDerivedField({
     async queryFn() {
       if (!deriveFn) return null;
       const formValues = form.getValues() as Record<string, unknown>;
-      return runDeriveWithRuntimeFormValues(formValues, async () => {
+      return runDeriveWithRuntimeFormValues(
+        formValues,
+        async () => {
         return (
           (await deriveFn({
             formValues,
@@ -134,19 +139,41 @@ export function useDerivedField({
             sourceRow: (sourceRow ?? null) as never,
           })) ?? null
         );
-      });
+        },
+      );
     },
   });
 
-  const hasDerivedValue = Boolean(derivedOverride && 'value' in derivedOverride);
-  const derivedValue = hasDerivedValue ? derivedOverride?.value : undefined;
-  const effectiveField = hasFieldOverride(derivedOverride)
-    ? mergeDerivedField(field, derivedOverride)
+  const normalizeSoftInputPropsValue = useMemo(() => {
+    if (!derivedOverride) return null;
+    if ('value' in derivedOverride) return derivedOverride;
+    if (!derivedOverride.inputProps) return derivedOverride;
+
+    const inputProps = derivedOverride.inputProps as Record<string, unknown>;
+    if (!('value' in inputProps)) return derivedOverride;
+
+    const { value, ...restInputProps } = inputProps;
+    return {
+      ...derivedOverride,
+      value,
+      inputProps:
+        Object.keys(restInputProps).length > 0 ? restInputProps : undefined,
+    };
+  }, [derivedOverride]);
+
+  const hasNormalizedDerivedValue = Boolean(
+    normalizeSoftInputPropsValue && 'value' in normalizeSoftInputPropsValue,
+  );
+  const derivedValue = hasNormalizedDerivedValue
+    ? normalizeSoftInputPropsValue?.value
+    : undefined;
+  const effectiveField = hasFieldOverride(normalizeSoftInputPropsValue)
+    ? mergeDerivedField(field, normalizeSoftInputPropsValue)
     : field;
 
   return {
     field: effectiveField,
     value: derivedValue,
-    hasDerivedValue,
+    hasDerivedValue: hasNormalizedDerivedValue,
   };
 }

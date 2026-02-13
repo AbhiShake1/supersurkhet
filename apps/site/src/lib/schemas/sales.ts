@@ -3,6 +3,13 @@ import { fieldConfig } from '@/components/ui/autoform';
 import '@/lib/zod/with-derivations';
 import { table } from './listings';
 
+function getValueAtPath(input: unknown, path: string[]) {
+  return path.reduce<unknown>((acc, key) => {
+    if (!acc || typeof acc !== 'object') return undefined;
+    return (acc as Record<string, unknown>)[key];
+  }, input);
+}
+
 export const salesItemSchema = z
   .object({
     product: z
@@ -45,6 +52,20 @@ export const salesItemSchema = z
           inputProps: {
             className: 'border-none',
             readOnly: true,
+          },
+          customData: {
+            derive: ({ formValues, rowPath }) => {
+              const row = getValueAtPath(formValues, rowPath);
+              const quantity = Number(
+                (row as { quantity?: number | null } | undefined)?.quantity ?? 0,
+              );
+              const unitPrice = Number(
+                (row as { unitPrice?: number | null } | undefined)?.unitPrice ?? 0,
+              );
+              return {
+                value: quantity * unitPrice,
+              };
+            },
           },
         }),
       ),

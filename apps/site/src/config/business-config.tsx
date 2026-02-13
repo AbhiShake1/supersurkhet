@@ -10,7 +10,6 @@ import {
   Users2,
 } from 'lucide-react';
 import NepaliDate from 'nepali-datetime';
-import type { UseFormReturn } from 'react-hook-form';
 import z from 'zod';
 import type { AutoTableTab } from '@/components/auto-admin';
 import { AutoFormSubmit } from '@/components/ui/auto-form';
@@ -58,17 +57,10 @@ function calculateFiscalYear() {
     .slice(2)}/${(year + 1).toString().slice(2)}`;
 }
 
-function calculateTotalCost(form: UseFormReturn, itemsKey = 'items') {
-  const items = form.getValues(itemsKey);
-  if (!Array.isArray(items) || !items.length) return 0;
-  return getItemsTotalForPaymentStatus(items);
-}
-
-function getTotalCostFromItems(
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  items: any[],
-) {
-  return getItemsTotalForPaymentStatus(items);
+function getPaidAmountFromFormValues(formValues: {
+  paidAmount?: number | null | string;
+}) {
+  return Number(formValues.paidAmount ?? 0);
 }
 
 function createDerivedPaymentStatusFieldFromFormValues(
@@ -89,10 +81,8 @@ function createDerivedPaymentStatusFieldFromFormValues(
         },
         customData: {
           derive: () => {
-            const totalCost = getTotalCostFromItems(
-              formValues.items ?? [],
-            );
-            const paidAmount = Number(formValues.paidAmount ?? 0);
+            const totalCost = getItemsTotalForPaymentStatus(formValues.items ?? []);
+            const paidAmount = getPaidAmountFromFormValues(formValues);
             return {
               inputProps: {
                 value: getPaymentStatusFromTotals({
@@ -107,64 +97,196 @@ function createDerivedPaymentStatusFieldFromFormValues(
     );
 }
 
-function refreshPaymentStatus(form: UseFormReturn) {
-  const totalCost = calculateTotalCost(form, 'items');
-  const paidAmount = Number(form.getValues('paidAmount') ?? 0);
-  form.setValue(
-    'paymentStatus',
-    getPaymentStatusFromTotals({
-      paidAmount,
-      totalAmount: totalCost,
-    }),
+function createSoftDerivedPaidAmountFieldFromFormValues(
+  formValues: {
+    items?: Array<{ quantity?: number | null; unitPrice?: number | null } | null> | null;
+  },
+) {
+  return z
+    .number({ coerce: true })
+    .default(0)
+    .describe('Paid Amount')
+    .superRefine(
+      fieldConfig({
+        fieldType: 'number',
+        customData: {
+          derive: () => ({
+            inputProps: {
+              value: getItemsTotalForPaymentStatus(formValues.items ?? []),
+            }
+          }),
+        },
+      }),
+    );
+}
+
+function getValueAtPath(input: unknown, path: string[]) {
+  return path.reduce<unknown>((acc, key) => {
+    if (!acc || typeof acc !== 'object') return undefined;
+    return (acc as Record<string, unknown>)[key];
+  }, input);
+}
+
+function getSoftDerivedUnitValue({
+  formValues,
+  rowPath,
+  productUnit,
+}: {
+  formValues: unknown;
+  rowPath: string[];
+  productUnit?: string | null;
+}) {
+  const row = getValueAtPath(formValues, rowPath) as
+    | { unit?: string | null }
+    | undefined;
+  const explicitUnitRaw = row?.unit;
+  const explicitUnit =
+    explicitUnitRaw === null || explicitUnitRaw === undefined || explicitUnitRaw === ''
+      ? null
+      : String(explicitUnitRaw);
+
+  const [unitType, piecesPerUnit] = String(productUnit ?? '').split(':');
+  const allowedUnits = [unitType, piecesPerUnit ? 'piece' : undefined].filter(
+    isNonNullable,
   );
-}
-
-function refreshPaidAmount(form: UseFormReturn) {
-  const totalCost = calculateTotalCost(form, 'items');
-  form.setValue('paidAmount', totalCost);
-  refreshPaymentStatus(form);
-}
-
-function calculateTotalAmountForItem(
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  items: any[],
-  itemsKey: string,
-  index: number,
-  form: UseFormReturn,
-) {
-  if (items?.[index]) {
-    const quantity = Number(items[index].quantity) || 0;
-    const unitPrice = Number(items[index].unitPrice) || 0;
-    const totalAmount = quantity * unitPrice;
-
-    form.setValue([itemsKey, index, 'totalAmount'].join('.'), totalAmount);
+  if (explicitUnit && allowedUnits.includes(explicitUnit)) {
+    return explicitUnit;
   }
+  return String(productUnit ?? '');
 }
 
-function setItemUnitPrice(
-  form: UseFormReturn,
-  path: string[],
-  basePrice: number,
-  productUnit?: string | null,
-  selectedUnit?: string | null,
-) {
-  const [itemsKey, index] = path;
-  const derivedUnitPrice = deriveUnitPrice({
-    basePrice,
-    productUnit,
-    selectedUnit,
-  });
+function createSoftDerivedUnitField({
+  slug,
+  className = 'border-none',
+}: {
+  slug: string;
+  className?: string;
+}) {
+  return z
+    .string()
+    .optional()
+    .describe('Unit')
+    .superRefine(
+      fieldConfig({
+        fieldType: 'unit',
+        inputProps: {
+          disabled: true,
+          placeholder: 'Select product for unit',
+          className,
+        },
+        customData: withSourceCustomData({
+          slug,
+          source: {
+            table: 'product',
+            key: 'product',
+            displayKey: 'title',
+          },
+          derive: async ({ sourceRow, formValues, rowPath }) => {
+            if (!sourceRow?.unit) return null;
+            const [unitType, piecesPerUnit] = String(sourceRow.unit).split(':');
+            const configDisabled = Boolean(piecesPerUnit);
 
-  form.setValue([itemsKey, index, 'unitPrice'].join('.'), derivedUnitPrice);
+            return {
+              value: getSoftDerivedUnitValue({
+                formValues,
+                rowPath,
+                productUnit: String(sourceRow.unit),
+              }),
+              customData: {
+                onlyAllow: [
+                  unitType,
+                  piecesPerUnit ? 'piece' : undefined,
+                ].filter(isNonNullable),
+                configDisabled,
+              },
+            };
+          },
+        }),
+      }),
+    );
 }
 
-function syncItemDerivedFields(form: UseFormReturn, path: string[]) {
-  const [itemsKey, index] = path;
-  const items = form.getValues(itemsKey);
-  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
-  if (itemsKey === 'items') {
-    refreshPaidAmount(form);
-  }
+function createSoftDerivedUnitPriceField({
+  slug,
+  priceKey,
+}: {
+  slug: string;
+  priceKey: 'sellingPrice' | 'costPrice';
+}) {
+  return z
+    .number({ coerce: true })
+    .describe('Unit Price')
+    .superRefine(
+      fieldConfig({
+        fieldType: 'number',
+        customData: withSourceCustomData({
+          slug,
+          source: {
+            table: 'product',
+            key: 'product',
+            displayKey: 'title',
+          },
+          derive: async ({ sourceRow, formValues, rowPath }) => {
+            if (!sourceRow) return null;
+            const row = getValueAtPath(formValues, rowPath) as
+              | { unit?: string | null; unitPrice?: number | string | null }
+              | undefined;
+
+            const basePrice = Number(
+              (sourceRow as Record<string, unknown>)[priceKey] ?? 0,
+            );
+            const derivedUnitPrice = deriveUnitPrice({
+              basePrice,
+              productUnit: String(sourceRow.unit ?? ''),
+              selectedUnit: String(row?.unit ?? sourceRow.unit ?? ''),
+            });
+
+            return {
+              inputProps: {
+                value: derivedUnitPrice,
+              }
+            };
+          },
+        }),
+      }),
+    );
+}
+
+function createDerivedItemTotalAmountField({
+  placeholder,
+  className = 'border-none',
+}: {
+  placeholder?: string;
+  className?: string;
+} = {}) {
+  return z
+    .number({ coerce: true })
+    .describe('Total Amount')
+    .superRefine(
+      fieldConfig({
+        inputProps: {
+          ...(placeholder ? { placeholder } : {}),
+          className,
+          readOnly: true,
+        },
+        customData: {
+          derive: ({ formValues, rowPath }) => {
+            const row = getValueAtPath(formValues, rowPath);
+            const quantity = Number(
+              (row as { quantity?: number | null } | undefined)?.quantity ?? 0,
+            );
+            const unitPrice = Number(
+              (row as { unitPrice?: number | null } | undefined)?.unitPrice ?? 0,
+            );
+            return {
+              inputProps: {
+                value: quantity * unitPrice,
+              }
+            };
+          },
+        },
+      }),
+    );
 }
 
 export function useBusinessConfig({
@@ -197,82 +319,10 @@ export function useBusinessConfig({
               fieldType: 'select',
               customData: {
                 options: products.map((p) => [p, productsBySoul.get(p)?.title ?? "-"]),
-                onValueChange: async (val, path, form) => {
-                  const products = await db.product.get({ keys: [slug] });
-                  const product = products.find(
-                    (item) => item?._?.soul === val,
-                  );
-                  if (!product) return;
-                  if (product.unit) {
-                    setItemUnitPrice(
-                      form,
-                      path,
-                      Number(product.sellingPrice),
-                      product.unit,
-                      product.unit,
-                    );
-                    form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
-                  } else {
-                    setItemUnitPrice(form, path, Number(product.sellingPrice));
-                  }
-                  syncItemDerivedFields(form, path);
-                },
               },
             }),
           ),
-        unit: z
-          .string()
-          .optional()
-          .describe('Unit')
-          .superRefine(
-            fieldConfig({
-              fieldType: 'unit',
-              inputProps: {
-                disabled: true,
-                placeholder: 'Select product for unit',
-                className: 'border-none',
-              },
-              customData: withSourceCustomData({
-                slug,
-                source: {
-                  table: 'product',
-                  key: 'product',
-                  displayKey: 'title',
-                },
-                derive: async ({ sourceRow }) => {
-                  if (!sourceRow?.unit) return null;
-                  const [unitType, piecesPerUnit] = String(
-                    sourceRow.unit,
-                  ).split(':');
-                  const configDisabled = Boolean(piecesPerUnit);
-
-                  return {
-                    customData: {
-                      onlyAllow: [
-                        unitType,
-                        piecesPerUnit ? 'piece' : undefined,
-                      ].filter(isNonNullable),
-                      configDisabled,
-                      onValueChange(value, path, form) {
-                        const sellingPrice = Number(
-                          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                          (sourceRow as any).sellingPrice,
-                        );
-                        setItemUnitPrice(
-                          form,
-                          path,
-                          sellingPrice,
-                          String(sourceRow.unit),
-                          value,
-                        );
-                        syncItemDerivedFields(form, path);
-                      },
-                    },
-                  };
-                },
-              }),
-            }),
-          ),
+        unit: createSoftDerivedUnitField({ slug }),
         quantity: z
           .number({ coerce: true })
           .int()
@@ -281,41 +331,13 @@ export function useBusinessConfig({
           .superRefine(
             fieldConfig({
               fieldType: 'number',
-              customData: {
-                onValueChange: (value: string, path: string[], form) => {
-                  syncItemDerivedFields(form, path);
-
-                  return value;
-                },
-              },
             }),
           ),
-        unitPrice: z
-          .number({ coerce: true })
-          .describe('Unit Price')
-          .superRefine(
-            fieldConfig({
-              fieldType: 'number',
-              customData: {
-                onValueChange: (value: string, path: string[], form) => {
-                  syncItemDerivedFields(form, path);
-
-                  return value;
-                  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                },
-              },
-            }),
-          ),
-        totalAmount: z
-          .number({ coerce: true })
-          .describe('Total Amount')
-          .superRefine(
-            fieldConfig({
-              inputProps: {
-                readOnly: true,
-              },
-            }),
-          ),
+        unitPrice: createSoftDerivedUnitPriceField({
+          slug,
+          priceKey: 'sellingPrice',
+        }),
+        totalAmount: createDerivedItemTotalAmountField(),
       })
       .array()
       .describe('Products Returned from Trip')
@@ -456,74 +478,9 @@ export function useBusinessConfig({
         extender: (schema) =>
           schema
             .extend({
-              paidAmount: z
-                .number({ coerce: true })
-                .describe('Paid Amount')
-                .superRefine(
-                  fieldConfig({
-                    fieldType: 'number',
-                    customData: {
-                      onValueChange: (_, __, form) => {
-                        refreshPaymentStatus(form);
-                      },
-                    },
-                  }),
-                ),
               items: salesItemSchema
                 .extend({
-                  unit: z
-                    .string()
-                    .optional()
-                    .describe('Unit')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'unit',
-                        inputProps: {
-                          disabled: true,
-                          placeholder: 'Select product for unit',
-                          className: 'border-none',
-                        },
-                        customData: withSourceCustomData({
-                          slug,
-                          source: {
-                            table: 'product',
-                            key: 'product',
-                            displayKey: 'title',
-                          },
-                          derive: async ({ sourceRow }) => {
-                            if (!sourceRow?.unit) return null;
-                            const [unitType, piecesPerUnit] = String(
-                              sourceRow.unit,
-                            ).split(':');
-                            const configDisabled = Boolean(piecesPerUnit);
-
-                            return {
-                              customData: {
-                                onlyAllow: [
-                                  unitType,
-                                  piecesPerUnit ? 'piece' : undefined,
-                                ].filter(isNonNullable),
-                                configDisabled,
-                                onValueChange(value, path, form) {
-                                  const costPrice = Number(
-                                    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                    (sourceRow as any).costPrice,
-                                  );
-                                  setItemUnitPrice(
-                                    form,
-                                    path,
-                                    costPrice,
-                                    String(sourceRow.unit),
-                                    value,
-                                  );
-                                  syncItemDerivedFields(form, path);
-                                },
-                              },
-                            };
-                          },
-                        }),
-                      }),
-                    ),
+                  unit: createSoftDerivedUnitField({ slug }),
                   product: z
                     .string()
                     .describe('Product')
@@ -537,32 +494,6 @@ export function useBusinessConfig({
                               displayKey: 'title',
                             },
                           ],
-                          onValueChange: async (val, path, form) => {
-                            const products = await db.product.get({
-                              keys: [slug],
-                            });
-                            const product = products.find(
-                              (item) => item?._?.soul === val,
-                            );
-                            if (!product) return;
-                            if (product.unit) {
-                              setItemUnitPrice(
-                                form,
-                                path,
-                                Number(product.costPrice),
-                                product.unit,
-                                product.unit,
-                              );
-                              form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
-                            } else {
-                              setItemUnitPrice(
-                                form,
-                                path,
-                                Number(product.costPrice),
-                              );
-                            }
-                            syncItemDerivedFields(form, path);
-                          },
                         },
                       }),
                     ),
@@ -574,31 +505,20 @@ export function useBusinessConfig({
                     .superRefine(
                       fieldConfig({
                         fieldType: 'number',
-                        customData: {
-                          onValueChange: (_, path, form) => {
-                            syncItemDerivedFields(form, path);
-                          },
-                        },
                       }),
                     ),
-                  unitPrice: z
-                    .number({ coerce: true })
-                    .describe('Unit Price')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'number',
-                        customData: {
-                          onValueChange: (_, path, form) => {
-                            syncItemDerivedFields(form, path);
-                          },
-                        },
-                      }),
-                    ),
+                  unitPrice: createSoftDerivedUnitPriceField({
+                    slug,
+                    priceKey: 'costPrice',
+                  }),
                 })
                 .array()
                 .min(1, { message: 'Please add at least one item.' })
                 .describe('Items to Import'),
             })
+            .withDerivation('paidAmount', ({ formValues }) =>
+              createSoftDerivedPaidAmountFieldFromFormValues(formValues),
+            )
             .withDerivation('paymentStatus', ({ formValues }) =>
               createDerivedPaymentStatusFieldFromFormValues(formValues),
             )
@@ -726,73 +646,9 @@ export function useBusinessConfig({
         extender: (schema) =>
           schema
             .extend({
-              paidAmount: z
-                .number({ coerce: true })
-                .describe('Paid Amount')
-                .superRefine(
-                  fieldConfig({
-                    fieldType: 'number',
-                    customData: {
-                      onValueChange: (_, __, form) => {
-                        refreshPaymentStatus(form);
-                      },
-                    },
-                  }),
-                ),
               items: salesItemSchema
                 .extend({
-                  unit: z
-                    .string()
-                    .optional()
-                    .describe('Unit')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'unit',
-                        inputProps: {
-                          disabled: true,
-                          placeholder: 'Select product for unit',
-                          className: 'border-none',
-                        },
-                        customData: withSourceCustomData({
-                          slug,
-                          source: {
-                            table: 'product',
-                            key: 'product',
-                            displayKey: 'title',
-                          },
-                          derive: async ({ sourceRow }) => {
-                            if (!sourceRow?.unit) return null;
-                            const [unitType, piecesPerUnit] = String(
-                              sourceRow.unit,
-                            ).split(':');
-                            const configDisabled = Boolean(piecesPerUnit);
-                            return {
-                              customData: {
-                                onlyAllow: [
-                                  unitType,
-                                  piecesPerUnit ? 'piece' : undefined,
-                                ].filter(isNonNullable),
-                                configDisabled,
-                                onValueChange(value, path, form) {
-                                  const sellingPrice = Number(
-                                    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                    (sourceRow as any).sellingPrice,
-                                  );
-                                  setItemUnitPrice(
-                                    form,
-                                    path,
-                                    sellingPrice,
-                                    String(sourceRow.unit),
-                                    value,
-                                  );
-                                  syncItemDerivedFields(form, path);
-                                },
-                              },
-                            };
-                          },
-                        }),
-                      }),
-                    ),
+                  unit: createSoftDerivedUnitField({ slug }),
                   product: z
                     .string()
                     .describe('Product')
@@ -807,32 +663,6 @@ export function useBusinessConfig({
                               separator: ' - Stock: ',
                             },
                           ],
-                          onValueChange: async (val, path, form) => {
-                            const products = await db.product.get({
-                              keys: [slug],
-                            });
-                            const product = products.find(
-                              (item) => item?._?.soul === val,
-                            );
-                            if (!product) return;
-                            if (product.unit) {
-                              setItemUnitPrice(
-                                form,
-                                path,
-                                Number(product.sellingPrice),
-                                product.unit,
-                                product.unit,
-                              );
-                              form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
-                            } else {
-                              setItemUnitPrice(
-                                form,
-                                path,
-                                Number(product.sellingPrice),
-                              );
-                            }
-                            syncItemDerivedFields(form, path);
-                          },
                         },
                       }),
                     ),
@@ -844,39 +674,20 @@ export function useBusinessConfig({
                     .superRefine(
                       fieldConfig({
                         fieldType: 'number',
-                        customData: {
-                          onValueChange: (
-                            value: string,
-                            path: string[],
-                            form,
-                          ) => {
-                            syncItemDerivedFields(form, path);
-
-                            return value;
-                          },
-                        },
                       }),
                     ),
-                  unitPrice: z
-                    .number({ coerce: true })
-                    .describe('Unit Price')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'number',
-                        customData: {
-                          onValueChange: (value, path, form) => {
-                            syncItemDerivedFields(form, path);
-
-                            return value;
-                          },
-                        },
-                      }),
-                    ),
+                  unitPrice: createSoftDerivedUnitPriceField({
+                    slug,
+                    priceKey: 'sellingPrice',
+                  }),
                 })
                 .array()
                 .min(1, { message: 'Please add at least one item.' })
                 .describe('Items Sold'),
             })
+            .withDerivation('paidAmount', ({ formValues }) =>
+              createSoftDerivedPaidAmountFieldFromFormValues(formValues),
+            )
             .withDerivation('paymentStatus', ({ formValues }) =>
               createDerivedPaymentStatusFieldFromFormValues(formValues),
             )
@@ -1059,73 +870,9 @@ export function useBusinessConfig({
         extender: (schema) =>
           schema
             .extend({
-              paidAmount: z
-                .number({ coerce: true })
-                .describe('Paid Amount')
-                .superRefine(
-                  fieldConfig({
-                    fieldType: 'number',
-                    customData: {
-                      onValueChange: (_, __, form) => {
-                        refreshPaymentStatus(form);
-                      },
-                    },
-                  }),
-                ),
               items: salesItemSchema
                 .extend({
-                  unit: z
-                    .string()
-                    .optional()
-                    .describe('Unit')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'unit',
-                        inputProps: {
-                          disabled: true,
-                          placeholder: 'Select product for unit',
-                          className: 'border-none',
-                        },
-                        customData: withSourceCustomData({
-                          slug,
-                          source: {
-                            table: 'product',
-                            key: 'product',
-                            displayKey: 'title',
-                          },
-                          derive: async ({ sourceRow }) => {
-                            if (!sourceRow?.unit) return null;
-                            const [unitType, piecesPerUnit] = String(
-                              sourceRow.unit,
-                            ).split(':');
-                            const configDisabled = Boolean(piecesPerUnit);
-
-                            return {
-                              customData: {
-                                onlyAllow: [
-                                  unitType,
-                                  piecesPerUnit ? 'piece' : undefined,
-                                ].filter(isNonNullable),
-                                configDisabled,
-                                onValueChange(value, path, form) {
-                                  const sellingPrice = Number(
-                                    sourceRow.sellingPrice,
-                                  );
-                                  setItemUnitPrice(
-                                    form,
-                                    path,
-                                    sellingPrice,
-                                    String(sourceRow.unit),
-                                    value,
-                                  );
-                                  syncItemDerivedFields(form, path);
-                                },
-                              },
-                            };
-                          },
-                        }),
-                      }),
-                    ),
+                  unit: createSoftDerivedUnitField({ slug }),
                   product: z
                     .string()
                     .describe('Product')
@@ -1140,33 +887,6 @@ export function useBusinessConfig({
                               separator: ' - Stock: ',
                             },
                           ],
-                          onValueChange: async (val, path, form) => {
-                            const products = await db.product.get({
-                              keys: [slug],
-                            });
-                            const product = products.find(
-                              (item) => item?._?.soul === val,
-                            );
-
-                            if (!product) return;
-                            if (product.unit) {
-                              setItemUnitPrice(
-                                form,
-                                path,
-                                Number(product.sellingPrice),
-                                product.unit,
-                                product.unit,
-                              );
-                              form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
-                            } else {
-                              setItemUnitPrice(
-                                form,
-                                path,
-                                Number(product.sellingPrice),
-                              );
-                            }
-                            syncItemDerivedFields(form, path);
-                          },
                         },
                       }),
                     ),
@@ -1178,46 +898,23 @@ export function useBusinessConfig({
                     .superRefine(
                       fieldConfig({
                         fieldType: 'number',
-                        customData: {
-                          onValueChange: (_value, path, form) => {
-                            syncItemDerivedFields(form, path);
-                          },
-                        },
                       }),
                     ),
-                  unitPrice: z
-                    .number({ coerce: true })
-                    .describe('Unit Price')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'number',
-                        customData: {
-                          onValueChange: (
-                            _value: string,
-                            path: string[],
-                            form,
-                          ) => {
-                            syncItemDerivedFields(form, path);
-                          },
-                        },
-                      }),
-                    ),
-                  totalAmount: z
-                    .number({ coerce: true })
-                    .describe('Total Amount')
-                    .superRefine(
-                      fieldConfig({
-                        inputProps: {
-                          placeholder: 'Select a product first',
-                          readOnly: true,
-                        },
-                      }),
-                    ),
+                  unitPrice: createSoftDerivedUnitPriceField({
+                    slug,
+                    priceKey: 'sellingPrice',
+                  }),
+                  totalAmount: createDerivedItemTotalAmountField({
+                    placeholder: 'Select a product first',
+                  }),
                 })
                 .array()
                 .min(1, { message: 'Please add at least one item.' })
                 .describe('Items Ordered'),
             })
+            .withDerivation('paidAmount', ({ formValues }) =>
+              createSoftDerivedPaidAmountFieldFromFormValues(formValues),
+            )
             .withDerivation('paymentStatus', ({ formValues }) =>
               createDerivedPaymentStatusFieldFromFormValues(formValues),
             )
@@ -1431,92 +1128,10 @@ export function useBusinessConfig({
                             separator: ' - Stock: ',
                           },
                         ],
-                        onValueChange: async (val, path, form) => {
-                          const products = await db.product.get({
-                            keys: [slug],
-                          });
-                          const product = products.find(
-                            (item) => item?._?.soul === val,
-                          );
-                          if (!product) return;
-                          if (product.unit) {
-                            setItemUnitPrice(
-                              form,
-                              path,
-                              Number(product.sellingPrice),
-                              product.unit,
-                              product.unit,
-                            );
-                            form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
-                          } else {
-                            setItemUnitPrice(
-                              form,
-                              path,
-                              Number(product.sellingPrice),
-                            );
-                          }
-                          syncItemDerivedFields(form, path);
-                        },
                       },
                     }),
                   ),
-                unit: z
-                  .string()
-                  .optional()
-                  .describe('Unit')
-                  .superRefine(
-                    fieldConfig({
-                      fieldType: 'unit',
-                      inputProps: {
-                        disabled: true,
-                        placeholder: 'Select product for unit',
-                        className: 'border-none',
-                      },
-                      customData: withSourceCustomData({
-                        slug,
-                        source: {
-                          table: 'product',
-                          key: 'product',
-                          displayKey: 'title',
-                        },
-                        derive: async ({ sourceRow }) => {
-                          if (!sourceRow?.unit) return null;
-                          const [unitType, piecesPerUnit] = String(
-                            sourceRow.unit,
-                          ).split(':');
-                          const configDisabled = Boolean(piecesPerUnit);
-
-                          return {
-                            customData: {
-                              onlyAllow: [
-                                unitType,
-                                piecesPerUnit ? 'piece' : undefined,
-                              ].filter(isNonNullable),
-                              configDisabled,
-                              ...(configDisabled
-                                ? {
-                                  onValueChange(value, path, form) {
-                                    const sellingPrice = Number(
-                                      // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                      (sourceRow as any).sellingPrice,
-                                    );
-                                    setItemUnitPrice(
-                                      form,
-                                      path,
-                                      sellingPrice,
-                                      String(sourceRow.unit),
-                                      value,
-                                    );
-                                    syncItemDerivedFields(form, path);
-                                  },
-                                }
-                                : {}),
-                            },
-                          };
-                        },
-                      }),
-                    }),
-                  ),
+                unit: createSoftDerivedUnitField({ slug }),
                 quantity: z
                   .number({ coerce: true })
                   .int()
@@ -1525,49 +1140,13 @@ export function useBusinessConfig({
                   .superRefine(
                     fieldConfig({
                       fieldType: 'number',
-                      customData: {
-                        onValueChange: (
-                          value: string,
-                          path: string[],
-                          form,
-                        ) => {
-                          syncItemDerivedFields(form, path);
-
-                          return value;
-                        },
-                      },
                     }),
                   ),
-                unitPrice: z
-                  .number({ coerce: true })
-                  .describe('Unit Price')
-                  .superRefine(
-                    fieldConfig({
-                      fieldType: 'number',
-                      customData: {
-                        onValueChange: (
-                          value: string,
-                          path: string[],
-                          form,
-                        ) => {
-                          syncItemDerivedFields(form, path);
-
-                          return value;
-                          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                        },
-                      },
-                    }),
-                  ),
-                totalAmount: z
-                  .number({ coerce: true })
-                  .describe('Total Amount')
-                  .superRefine(
-                    fieldConfig({
-                      inputProps: {
-                        readOnly: true,
-                      },
-                    }),
-                  ),
+                unitPrice: createSoftDerivedUnitPriceField({
+                  slug,
+                  priceKey: 'sellingPrice',
+                }),
+                totalAmount: createDerivedItemTotalAmountField(),
               })
               .array()
               .min(1, { message: 'Please add at least one product.' })

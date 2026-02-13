@@ -76,7 +76,11 @@ export function UnitField({
 
     onDerivedValueChange?.(nextValue, pathKey.split('.'), form);
     // Update the form field with the new value only when it changed.
-    form.setValue(fieldName, nextValue);
+    form.setValue(fieldName, nextValue, {
+      shouldDirty: true,
+      shouldTouch: true,
+      shouldValidate: false,
+    });
   }, [
     selectedUnit,
     piecesPerUnit,
