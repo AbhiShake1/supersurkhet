@@ -222,6 +222,29 @@ export function isDerivedField(schema: z.ZodTypeAny, fieldName: string): boolean
   return fieldName in derivations;
 }
 
+type AddDerivedOutput<
+  TOutput,
+  K extends string,
+  S extends z.ZodTypeAny,
+> = TOutput & Record<K, z.output<S>>;
+type AddDerivedInput<
+  TInput,
+  K extends string,
+  S extends z.ZodTypeAny,
+> = TInput & Partial<Record<K, z.input<S>>>;
+type AddDerivedOutputs<
+  TOutput,
+  TFields extends z.ZodRawShape,
+> = TOutput & {
+  [K in keyof TFields]: z.output<TFields[K]>;
+};
+type AddDerivedInputs<
+  TInput,
+  TFields extends z.ZodRawShape,
+> = TInput & {
+  [K in keyof TFields]?: z.input<TFields[K]>;
+};
+
 declare module 'zod' {
   interface ZodObject<
     T extends z.ZodRawShape = z.ZodRawShape,
@@ -251,14 +274,22 @@ declare module 'zod' {
     withDerivation<K extends string, S extends z.ZodTypeAny>(
       fieldName: K,
       fieldSchema: S | ((ctx: WithDerivationCtx<Output>) => S),
-    ): z.ZodEffects<z.ZodObject<Record<K, S>> | T, Output, Input>;
+    ): z.ZodEffects<
+      z.ZodObject<Record<K, S>> | T,
+      AddDerivedOutput<Output, K, S>,
+      AddDerivedInput<Input, K, S>
+    >;
     withDerivations<TFields extends z.ZodRawShape>(
       fields: {
         [K in keyof TFields]:
         | TFields[K]
         | ((ctx: WithDerivationCtx<Output>) => TFields[K]);
       },
-    ): z.ZodEffects<z.ZodObject<TFields> | T, Output, Input>;
+    ): z.ZodEffects<
+      z.ZodObject<TFields> | T,
+      AddDerivedOutputs<Output, TFields>,
+      AddDerivedInputs<Input, TFields>
+    >;
   }
 }
 

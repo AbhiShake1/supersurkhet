@@ -1,9 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import '@/lib/zod/with-derivations';
 import { parseSchema } from '@autoform/zod';
 import { getSchemaDerivations, runDeriveWithRuntimeFormValues } from './with-derivations';
 import { fieldConfig } from '@/components/ui/autoform';
+
+type IsAny<T> = 0 extends 1 & T ? true : false;
+
+function expectNotAny<T>(_value: IsAny<T> extends true ? never : T) {}
 
 describe('withDerivations', () => {
   it('adds derived field to schema shape', () => {
@@ -73,5 +77,20 @@ describe('withDerivations', () => {
 
     const result = runDeriveWithRuntimeFormValues({ age: 21 }, () => derive());
     expect(result).toEqual({ value: true });
+  });
+
+  it('infers formValues from the current derivation chain on effects schemas', () => {
+    z.object({ age: z.number() })
+      .superRefine(() => {})
+      .withDerivation('isAdult', ({ formValues }) => {
+        expectNotAny(formValues);
+        expectTypeOf(formValues.age).toEqualTypeOf<number | null>();
+        return z.boolean();
+      })
+      .withDerivation('status', ({ formValues }) => {
+        expectNotAny(formValues);
+        expectTypeOf(formValues.isAdult).toEqualTypeOf<boolean | null>();
+        return z.string();
+      });
   });
 });

@@ -42,7 +42,16 @@ export const salesItemSchema = z
           },
         }),
       ),
-    quantity: z.number({ coerce: true }).int().positive().describe('Quantity'),
+    quantity: z
+      .number({ coerce: true })
+      .int()
+      .nonnegative()
+      .describe('Quantity')
+      .superRefine(
+        fieldConfig({
+          fieldType: 'number',
+        }),
+      ),
     unitPrice: z.number({ coerce: true }).positive().describe('Unit Price'),
     totalAmount: z
       .number({ coerce: true })
@@ -162,6 +171,7 @@ export const stockImportSchema = z
       .array()
       .min(1, { message: 'Please add at least one item.' })
       .describe('Items'),
+    totalAmount: createDerivedItemTotalAmountField(),
     paidAmount: z.number({ coerce: true }).positive().describe('Paid Amount'),
     paymentStatus: z
       .string()
@@ -185,3 +195,40 @@ export const stockImportSchema = z
   .describe('Stock Import');
 
 export type StockImport = z.infer<typeof stockImportSchema>;
+
+function createDerivedItemTotalAmountField({
+  placeholder = 'Select a product first',
+  className = 'border-none',
+}: {
+  placeholder?: string;
+  className?: string;
+} = {}) {
+  return z
+    .number({ coerce: true })
+    .describe('Total Amount')
+    .superRefine(
+      fieldConfig({
+        inputProps: {
+          ...(placeholder ? { placeholder } : {}),
+          className,
+          readOnly: true,
+        },
+        customData: {
+          derive: ({ formValues, rowPath }) => {
+            const row = getValueAtPath(formValues, rowPath);
+            const quantity = Number(
+              (row as { quantity?: number | null } | undefined)?.quantity ?? 0,
+            );
+            const unitPrice = Number(
+              (row as { unitPrice?: number | null } | undefined)?.unitPrice ?? 0,
+            );
+            return {
+              inputProps: {
+                value: quantity * unitPrice,
+              }
+            };
+          },
+        },
+      }),
+    );
+}

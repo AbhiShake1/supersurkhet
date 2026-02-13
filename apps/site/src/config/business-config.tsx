@@ -252,43 +252,6 @@ function createSoftDerivedUnitPriceField({
     );
 }
 
-function createDerivedItemTotalAmountField({
-  placeholder,
-  className = 'border-none',
-}: {
-  placeholder?: string;
-  className?: string;
-} = {}) {
-  return z
-    .number({ coerce: true })
-    .describe('Total Amount')
-    .superRefine(
-      fieldConfig({
-        inputProps: {
-          ...(placeholder ? { placeholder } : {}),
-          className,
-          readOnly: true,
-        },
-        customData: {
-          derive: ({ formValues, rowPath }) => {
-            const row = getValueAtPath(formValues, rowPath);
-            const quantity = Number(
-              (row as { quantity?: number | null } | undefined)?.quantity ?? 0,
-            );
-            const unitPrice = Number(
-              (row as { unitPrice?: number | null } | undefined)?.unitPrice ?? 0,
-            );
-            return {
-              inputProps: {
-                value: quantity * unitPrice,
-              }
-            };
-          },
-        },
-      }),
-    );
-}
-
 export function useBusinessConfig({
   slug,
 }: {
@@ -323,21 +286,10 @@ export function useBusinessConfig({
             }),
           ),
         unit: createSoftDerivedUnitField({ slug }),
-        quantity: z
-          .number({ coerce: true })
-          .int()
-          .nonnegative()
-          .describe('Quantity Returned')
-          .superRefine(
-            fieldConfig({
-              fieldType: 'number',
-            }),
-          ),
         unitPrice: createSoftDerivedUnitPriceField({
           slug,
           priceKey: 'sellingPrice',
         }),
-        totalAmount: createDerivedItemTotalAmountField(),
       })
       .array()
       .describe('Products Returned from Trip')
@@ -481,32 +433,6 @@ export function useBusinessConfig({
               items: salesItemSchema
                 .extend({
                   unit: createSoftDerivedUnitField({ slug }),
-                  product: z
-                    .string()
-                    .describe('Product')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'select',
-                        customData: {
-                          sources: [
-                            {
-                              table: 'product',
-                              displayKey: 'title',
-                            },
-                          ],
-                        },
-                      }),
-                    ),
-                  quantity: z
-                    .number({ coerce: true })
-                    .int()
-                    .positive()
-                    .describe('Quantity')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'number',
-                      }),
-                    ),
                   unitPrice: createSoftDerivedUnitPriceField({
                     slug,
                     priceKey: 'costPrice',
@@ -649,33 +575,6 @@ export function useBusinessConfig({
               items: salesItemSchema
                 .extend({
                   unit: createSoftDerivedUnitField({ slug }),
-                  product: z
-                    .string()
-                    .describe('Product')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'select',
-                        customData: {
-                          sources: [
-                            {
-                              table: 'product',
-                              displayKeys: ['title', 'stockQuantity'],
-                              separator: ' - Stock: ',
-                            },
-                          ],
-                        },
-                      }),
-                    ),
-                  quantity: z
-                    .number({ coerce: true })
-                    .int()
-                    .positive()
-                    .describe('Quantity')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'number',
-                      }),
-                    ),
                   unitPrice: createSoftDerivedUnitPriceField({
                     slug,
                     priceKey: 'sellingPrice',
@@ -873,39 +772,9 @@ export function useBusinessConfig({
               items: salesItemSchema
                 .extend({
                   unit: createSoftDerivedUnitField({ slug }),
-                  product: z
-                    .string()
-                    .describe('Product')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'select',
-                        customData: {
-                          sources: [
-                            {
-                              table: 'product',
-                              displayKeys: ['title', 'stockQuantity'],
-                              separator: ' - Stock: ',
-                            },
-                          ],
-                        },
-                      }),
-                    ),
-                  quantity: z
-                    .number({ coerce: true })
-                    .int()
-                    .positive()
-                    .describe('Quantity')
-                    .superRefine(
-                      fieldConfig({
-                        fieldType: 'number',
-                      }),
-                    ),
                   unitPrice: createSoftDerivedUnitPriceField({
                     slug,
                     priceKey: 'sellingPrice',
-                  }),
-                  totalAmount: createDerivedItemTotalAmountField({
-                    placeholder: 'Select a product first',
                   }),
                 })
                 .array()
@@ -1066,7 +935,6 @@ export function useBusinessConfig({
             subTotal: totalAmount,
             tax: 0,
             paidAmount: order.paidAmount || 0,
-            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
             paymentStatus: order.paymentStatus || ('pending' as any),
             fiscalYear: calculateFiscalYear(),
           });
@@ -1114,39 +982,11 @@ export function useBusinessConfig({
           schema.extend({
             products: salesItemSchema
               .extend({
-                product: z
-                  .string()
-                  .describe('Product')
-                  .superRefine(
-                    fieldConfig({
-                      fieldType: 'select',
-                      customData: {
-                        sources: [
-                          {
-                            table: 'product',
-                            displayKeys: ['title', 'stockQuantity'],
-                            separator: ' - Stock: ',
-                          },
-                        ],
-                      },
-                    }),
-                  ),
                 unit: createSoftDerivedUnitField({ slug }),
-                quantity: z
-                  .number({ coerce: true })
-                  .int()
-                  .positive()
-                  .describe('Quantity Sent')
-                  .superRefine(
-                    fieldConfig({
-                      fieldType: 'number',
-                    }),
-                  ),
                 unitPrice: createSoftDerivedUnitPriceField({
                   slug,
                   priceKey: 'sellingPrice',
                 }),
-                totalAmount: createDerivedItemTotalAmountField(),
               })
               .array()
               .min(1, { message: 'Please add at least one product.' })
@@ -1375,8 +1215,7 @@ export function useBusinessConfig({
                                   description: `Sale from trip ${row.original._?.soul} by ${vehicle?.name || 'vehicle'}`,
                                 });
 
-                                // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                soldProducts.forEach((soldProduct: any) => {
+                                soldProducts.forEach((soldProduct) => {
                                   const product = productsBySoul.get(
                                     soldProduct.productId,
                                   );
