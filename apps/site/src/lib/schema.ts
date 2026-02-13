@@ -364,8 +364,16 @@ export const orderSchema = z
       ),
     orderStatus: z
       .enum(['pending', 'done', 'cancelled'])
+      .default('pending')
       .describe('Order Status')
-      .default('pending'),
+      .superRefine(
+        fieldConfig({
+          fieldType: 'select',
+          customData: {
+            disableWhenValueIn: ['done', 'cancelled'],
+          },
+        }),
+      ),
     paymentMethod: z
       .enum(['cash', 'card', 'bankTransfer', 'credit'])
       .optional()

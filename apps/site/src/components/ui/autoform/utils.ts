@@ -4,6 +4,14 @@ import type { NestedSchemaType, SchemaKeys } from '@/lib/gun/index';
 import type { FieldTypes } from './AutoForm';
 import { buildZodFieldConfig } from './react';
 
+export type DeepNullableRequired<T> = T extends Array<infer U>
+  ? Array<DeepNullableRequired<U> | null> | null
+  : T extends object
+    ? {
+      [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
+    }
+    : T | null;
+
 export type SourceConfigFor<K extends SchemaKeys> = {
   table: K;
   key?: string;
@@ -23,25 +31,37 @@ export type SourceConfig = {
   [K in SchemaKeys]: SourceConfigFor<K>;
 }[SchemaKeys];
 
-export type DeriveContext<K extends SchemaKeys = SchemaKeys> = {
-  formValues: Record<string, unknown>;
+export type DeriveContext<
+  K extends SchemaKeys = SchemaKeys,
+  TFormValues = Record<string, unknown>,
+> = {
+  formValues: DeepNullableRequired<TFormValues>;
   rowPath: string[];
   fieldPath: string[];
   sourceRow: NestedSchemaType<K> | null;
 };
 
-export type DerivedFieldOverride = {
+export type DerivedFieldResult = {
+  value?: unknown;
   fieldType?: FieldTypes;
   inputProps?: Record<string, unknown>;
   customData?: FieldConfigCustomData;
 } | null;
 
-export type DeriveFn<K extends SchemaKeys = SchemaKeys> = (
-  ctx: DeriveContext<K>,
-) => Promise<DerivedFieldOverride> | DerivedFieldOverride;
+export type DerivedFieldOverride = Exclude<DerivedFieldResult, null>;
 
-export type DeriveConfig<K extends SchemaKeys = SchemaKeys> = {
-  run: DeriveFn<K>;
+export type DeriveFn<
+  K extends SchemaKeys = SchemaKeys,
+  TFormValues = Record<string, unknown>,
+> = (
+  ctx: DeriveContext<K, TFormValues>,
+) => Promise<DerivedFieldResult> | DerivedFieldResult;
+
+export type DeriveConfig<
+  K extends SchemaKeys = SchemaKeys,
+  TFormValues = Record<string, unknown>,
+> = {
+  run: DeriveFn<K, TFormValues>;
 };
 
 type FieldConfigCustomDataBase = {

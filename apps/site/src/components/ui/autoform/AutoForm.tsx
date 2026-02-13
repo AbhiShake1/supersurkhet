@@ -33,6 +33,7 @@ import { UrlField } from './components/UrlField';
 import { PasswordField } from './components/PasswordField';
 import { PermissionsField } from './components/PermissionsField';
 import { UnitField } from './components/UnitField';
+import React from 'react';
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, 'FieldWrapper'> = {
   Form,
@@ -78,19 +79,21 @@ export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
   ...props
 }: AutoFormProps<F>) {
   return (
-    <BaseAutoForm
-      {...props}
-      onSubmit={onSubmit}
-      schema={new ZodProvider(schema)}
-      uiComponents={{
-        ...ShadcnUIComponents,
-        FieldWrapper: FieldWrapperWithoutLabel,
-        ...uiComponents,
-      }}
-      formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
-    >
-      {props.children}
-    </BaseAutoForm>
+    <AutoFormDefaultValueProvider defaultValues={props.defaultValues ?? props.values ?? {}}>
+      <BaseAutoForm
+        {...props}
+        onSubmit={onSubmit}
+        schema={new ZodProvider(schema)}
+        uiComponents={{
+          ...ShadcnUIComponents,
+          FieldWrapper: FieldWrapperWithoutLabel,
+          ...uiComponents,
+        }}
+        formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
+      >
+        {props.children}
+      </BaseAutoForm>
+    </AutoFormDefaultValueProvider>
   );
 }
 
@@ -100,14 +103,40 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
   schema,
   ...props
 }: AutoFormProps<F>) {
-  'use memo';
   if (!schema) return null;
   return (
-    <BaseAutoForm
-      {...props}
-      schema={new ZodProvider(schema)}
-      uiComponents={{ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }}
-      formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
-    />
+    <AutoFormDefaultValueProvider defaultValues={props.defaultValues ?? props.values ?? {}}>
+      <BaseAutoForm
+        {...props}
+        schema={new ZodProvider(schema)}
+        uiComponents={{ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }}
+        formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
+      />
+    </AutoFormDefaultValueProvider>
   );
+}
+
+type AutoFormDefaultValues = Record<string, any>;
+
+const AutoFormDefaultValuesContext =
+  React.createContext<AutoFormDefaultValues | undefined>(undefined);
+
+export function AutoFormDefaultValueProvider({
+  defaultValues,
+  children,
+}: {
+  defaultValues: AutoFormDefaultValues;
+  children: React.ReactNode;
+}) {
+  return (
+    <AutoFormDefaultValuesContext.Provider value={defaultValues}>
+      {children}
+    </AutoFormDefaultValuesContext.Provider>
+  );
+}
+
+export function useAutoFormDefaultValues(): AutoFormDefaultValues {
+  const defaultValues = React.useContext(AutoFormDefaultValuesContext);
+  if (!defaultValues) throw new Error('useAutoFormDefaultValues must be used within AutoFormDefaultValueProvider');
+  return defaultValues;
 }

@@ -3,8 +3,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useFormContext, useWatch } from 'react-hook-form';
 import { useBusinessSafe } from '@/contexts/business-context';
+import { runDeriveWithRuntimeFormValues } from '@/lib/zod/with-derivations';
 import type {
   DeriveConfig,
+  DerivedFieldResult,
   DerivedFieldOverride,
   DeriveFn,
   FieldConfigCustomData,
@@ -23,22 +25,32 @@ function mergeDerivedField(
   field: ParsedField,
   derived: Exclude<DerivedFieldOverride, null>,
 ): ParsedField {
+  const { value: _value, ...fieldOverride } = derived;
   const baseConfig = field.fieldConfig ?? {};
   return {
     ...field,
-    type: derived.fieldType ?? field.type,
+    type: fieldOverride.fieldType ?? field.type,
     fieldConfig: {
       ...baseConfig,
       inputProps: {
         ...baseConfig.inputProps,
-        ...derived.inputProps,
+        ...fieldOverride.inputProps,
       },
       customData: {
         ...(baseConfig.customData as Record<string, unknown>),
-        ...derived.customData,
+        ...fieldOverride.customData,
       },
     },
   };
+}
+
+function hasFieldOverride(
+  derived: DerivedFieldResult,
+): derived is Exclude<DerivedFieldOverride, null> {
+  if (!derived) return false;
+  return Boolean(
+    derived.fieldType || derived.inputProps || derived.customData,
+  );
 }
 
 export function useDerivedField({
@@ -47,7 +59,7 @@ export function useDerivedField({
 }: {
   field: ParsedField;
   path: string[];
-}): ParsedField {
+}): { field: ParsedField; value: unknown; hasDerivedValue: boolean } {
   const form = useFormContext();
   const business = useBusinessSafe();
   const fieldPathKey = path.join('.');
@@ -113,17 +125,28 @@ export function useDerivedField({
     async queryFn() {
       if (!deriveFn) return null;
       const formValues = form.getValues() as Record<string, unknown>;
-      return (
-        (await deriveFn({
-          formValues,
-          rowPath: rowPathKey ? rowPathKey.split('.') : [],
-          fieldPath: fieldPathKey.split('.'),
-          sourceRow: (sourceRow ?? null) as never,
-        })) ?? null
-      );
+      return runDeriveWithRuntimeFormValues(formValues, async () => {
+        return (
+          (await deriveFn({
+            formValues,
+            rowPath: rowPathKey ? rowPathKey.split('.') : [],
+            fieldPath: fieldPathKey.split('.'),
+            sourceRow: (sourceRow ?? null) as never,
+          })) ?? null
+        );
+      });
     },
   });
 
-  if (!derivedOverride) return field;
-  return mergeDerivedField(field, derivedOverride);
+  const hasDerivedValue = Boolean(derivedOverride && 'value' in derivedOverride);
+  const derivedValue = hasDerivedValue ? derivedOverride?.value : undefined;
+  const effectiveField = hasFieldOverride(derivedOverride)
+    ? mergeDerivedField(field, derivedOverride)
+    : field;
+
+  return {
+    field: effectiveField,
+    value: derivedValue,
+    hasDerivedValue,
+  };
 }

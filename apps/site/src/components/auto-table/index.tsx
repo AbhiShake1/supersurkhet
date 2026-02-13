@@ -20,6 +20,7 @@ import * as Editable from '@/components/ui/editable';
 import { api } from '@/lib/api';
 import { appSchema } from '@/lib/schema';
 import { applySorting } from '@/lib/sort';
+import { getSchemaDerivations } from '@/lib/zod/with-derivations';
 import { parseSchema, type ZodObjectOrWrapped } from '@autoform/zod';
 import {
   type NestedSchema,
@@ -56,6 +57,8 @@ import { DeleteRowDialog } from '../data-table/delete-row-dialog';
 import { EditRowDialog } from '../data-table/edit-row-dialog';
 import SkeletonTableOneWrapper from '../mvpblocks/skeleton-table-1';
 import { BadgeMarquee } from '../ui/badge-marquee';
+import type { DeriveFn, FieldConfigCustomData } from '../ui/autoform';
+import { applyDerivedValuesToRow, getDeriveFn } from './derive-row';
 import { AutoTableActionBar } from './auto-table-action-bar';
 
 type AggregationType =
@@ -156,49 +159,6 @@ export function AutoTable<T extends SchemaKeys>({
   ...props
 }: AutoTableProps<T>) {
   const schemaName = 'schema' in props ? props.schema : ('' as SchemaKeys);
-  const { data: __data = [], isLoading } = useGet(
-    {
-      key: schemaName,
-      treatSlugAsAbsolute,
-      queryOptions: {
-        enabled: !!slug,
-        initialData: defaultData,
-      },
-    },
-    slug ?? '',
-  );
-  const _data = props.transformer?.(__data) ?? __data;
-  const search = useSearch({ from: '__root__' });
-  // @ts-expect-error
-  const filters = search.filters;
-  // @ts-expect-error
-  const sorting = search.sort;
-  function getFiltered() {
-    if (filters) {
-      return applyFilters(_data, filters);
-    }
-    return _data;
-  }
-  function getSorted(data: typeof _data) {
-    if (sorting) {
-      return applySorting(data, sorting);
-    }
-    return data;
-  }
-  const data = getSorted(getFiltered());
-
-  const updateMutation = useUpdate({
-    keys: [schemaName, slug ?? ''],
-    onSuccess(...args) {
-      props?.onUpdate?.(...args);
-    },
-  });
-  const { mutate: onDelete } = useDelete({
-    keys: [schemaName, slug ?? ''],
-    onSuccess(...args) {
-      props?.onDelete?.(...args);
-    },
-  });
   const _schema = (() => {
     if ('parsedSchema' in props) {
       return props.parsedSchema;
@@ -221,6 +181,82 @@ export function AutoTable<T extends SchemaKeys>({
   const schemaObject =
     schema instanceof ZodEffects ? schema.innerType() : schema;
 
+  const derivationSchemas = getSchemaDerivations(schemaObject);
+  const derivedFieldKeys = React.useMemo(
+    () => new Set(Object.keys(derivationSchemas)),
+    [derivationSchemas],
+  );
+  const deriveFns = React.useMemo(() => {
+    const parsedSchema = parseSchema(schemaObject);
+    const fnMap = new Map<string, DeriveFn>();
+
+    for (const field of parsedSchema.fields) {
+      if (!derivedFieldKeys.has(field.key)) continue;
+      const customData = field.fieldConfig?.customData as
+        | FieldConfigCustomData
+        | undefined;
+      const deriveFn = getDeriveFn(customData);
+      if (deriveFn) {
+        fnMap.set(field.key, deriveFn);
+      }
+    }
+
+    return fnMap;
+  }, [derivedFieldKeys, schemaObject]);
+
+  const { data: __data = [], isLoading } = useGet(
+    {
+      key: schemaName,
+      treatSlugAsAbsolute,
+      queryOptions: {
+        enabled: !!slug,
+        initialData: defaultData,
+      },
+    },
+    slug ?? '',
+  );
+  const _data = props.transformer?.(__data) ?? __data;
+  const dataWithDerived = React.useMemo(() => {
+    if (!deriveFns.size) return _data;
+    return _data.map((item) => {
+      if (!item || typeof item !== 'object') return item;
+      return applyDerivedValuesToRow(
+        item as unknown as Record<string, unknown>,
+        deriveFns,
+      );
+    });
+  }, [_data, deriveFns]);
+  const search = useSearch({ from: '__root__' });
+  // @ts-expect-error
+  const filters = search.filters;
+  // @ts-expect-error
+  const sorting = search.sort;
+  function getFiltered() {
+    if (filters) {
+      return applyFilters(dataWithDerived, filters);
+    }
+    return dataWithDerived;
+  }
+  function getSorted(data: typeof _data) {
+    if (sorting) {
+      return applySorting(data, sorting);
+    }
+    return data;
+  }
+  const data = getSorted(getFiltered());
+
+  const updateMutation = useUpdate({
+    keys: [schemaName, slug ?? ''],
+    onSuccess(...args) {
+      props?.onUpdate?.(...args);
+    },
+  });
+  const { mutate: onDelete } = useDelete({
+    keys: [schemaName, slug ?? ''],
+    onSuccess(...args) {
+      props?.onDelete?.(...args);
+    },
+  });
   const [rowAction, setRowAction] = React.useState<DataTableRowAction<
     NestedSchemaType<T>
   > | null>(null);
@@ -228,6 +264,7 @@ export function AutoTable<T extends SchemaKeys>({
   const columns = getAutoTableColumns({
     schema: schemaObject,
     setRowAction,
+    derivedFieldKeys,
     previewOverrides: props.previewOverrides,
     readOnly: props.readOnly,
     actions: props.actions,
@@ -344,6 +381,7 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
     ctx: CellContext<NestedSchemaType<T>, unknown>,
   ) => Promise<React.ReactNode>;
   readOnly?: boolean;
+  derivedFieldKeys: Set<string>;
   previewOverrides?: PreviewOverrides<T>;
 }
 
@@ -351,6 +389,7 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
 function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   setRowAction,
   schema,
+  derivedFieldKeys,
   previewOverrides,
   actions,
   readOnly,
@@ -384,6 +423,10 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
     },
   ];
 
+  const { data: users } = api.user.useGet()
+
+  const usersById = new Map(users?.map(u => [u._?.soul, u]))
+
   const parsedSchema = parseSchema(getSchema(schema));
 
   for (const field of parsedSchema.fields) {
@@ -409,7 +452,18 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
           table.options.meta?.updateData(row.id, value);
         }
 
-        if (readOnly) {
+        if (field.key === "created_by" && typeof value === "string") {
+          return (
+            <AutoPreview
+              field={field}
+              key={field.key}
+              value={usersById?.get(value?.substring(1))?.name ?? "-"}
+              baseSchema={schema.shape[field.key]}
+            />
+          )
+        }
+
+        if (readOnly || derivedFieldKeys.has(key)) {
           return (
             <AutoPreview
               field={field}

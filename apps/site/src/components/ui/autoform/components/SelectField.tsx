@@ -1,11 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import type React from 'react';
-import { useState } from 'react';
-import { useFormContext } from 'react-hook-form';
 import { useBusinessSafe } from '@/contexts/business-context';
 import type { UseGet } from '@/lib/gun/index';
+import { useQuery } from '@tanstack/react-query';
+import type React from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Combobox } from '../../combobox';
-import type { AutoFormFieldProps } from '../react';
+import { useAutoFormDefaultValues } from '../AutoForm';
+import { type AutoFormFieldProps } from '../react';
 import type { FieldConfigCustomData, SourceConfig } from '../utils';
 
 const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
@@ -56,11 +56,10 @@ const _SelectField: React.FC<
   AutoFormFieldProps & {
     useGet: UseGet;
   }
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
 > = ({ field, inputProps, error, id, value, path, useGet }) => {
-  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
   const customData = field.fieldConfig?.customData as FieldConfigCustomData;
+  const defaultValues = useAutoFormDefaultValues()
 
   const sources =
     customData && 'sources' in customData
@@ -80,12 +79,11 @@ const _SelectField: React.FC<
 
   const options = getOptions();
   const form = useFormContext();
-  const [innerValue, setInnerValue] = useState(value || field.default);
-  const currentValue = form.watch(path.join('.'));
+  const currentValue = String(value ?? field.default ?? '');
   const lockedValues = customData?.disableWhenValueIn;
   const isLocked =
-    Array.isArray(lockedValues) &&
-    lockedValues.includes(currentValue ?? innerValue);
+    lockedValues && Array.isArray(lockedValues) &&
+    lockedValues.includes(defaultValues[field.key]);
 
   return (
     <Combobox
@@ -94,9 +92,8 @@ const _SelectField: React.FC<
         value,
         label,
       }))}
-      value={innerValue}
+      value={currentValue}
       onValueChange={(value) => {
-        setInnerValue(value);
         field.fieldConfig?.customData?.onValueChange?.(value, path, form);
         const syntheticEvent = {
           target: {

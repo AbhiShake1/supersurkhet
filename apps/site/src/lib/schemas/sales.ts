@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { fieldConfig } from '@/components/ui/autoform';
+import '@/lib/zod/with-derivations';
 import { table } from './listings';
 
 export const salesItemSchema = z

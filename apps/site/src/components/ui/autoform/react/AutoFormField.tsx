@@ -1,6 +1,7 @@
 import { getLabel, type ParsedField } from '@autoform/core';
-import type React from 'react';
-import { useFormContext, useWatch } from 'react-hook-form';
+import React from 'react';
+import { useFormContext } from 'react-hook-form';
+import { useAutoFormDefaultValues } from '../AutoForm';
 import { useDerivedField } from '../derive';
 import type { FieldConfigCustomData } from '../utils';
 import { ArrayField } from './ArrayField';
@@ -14,23 +15,28 @@ export const AutoFormField: React.FC<{
   path: string[];
 }> = ({ field, path }) => {
   const { formComponents, uiComponents } = useAutoForm();
+  const defaultValues = useAutoFormDefaultValues()
   const {
     register,
     formState: { errors },
     getValues,
+    setValue,
   } = useFormContext();
 
   const fullPath = path.join('.');
-  const effectiveField = useDerivedField({ field, path });
+  const {
+    field: effectiveField,
+    value: derivedValue,
+    hasDerivedValue,
+  } = useDerivedField({ field, path });
   const error = getPathInObject(errors, path)?.message as string | undefined;
   const value = getValues(fullPath);
-  const watchedValue = useWatch({ name: fullPath });
   const customData = effectiveField.fieldConfig?.customData as
     | FieldConfigCustomData
     | undefined;
   const isLocked =
     Array.isArray(customData?.disableWhenValueIn) &&
-    customData?.disableWhenValueIn.includes(watchedValue ?? value);
+    customData?.disableWhenValueIn.includes(defaultValues[field.key]);
   const inputDisabled = Boolean(
     effectiveField.fieldConfig?.inputProps?.disabled || isLocked,
   );
@@ -41,6 +47,17 @@ export const AutoFormField: React.FC<{
   const inputTestId =
     effectiveField.fieldConfig?.inputProps?.['data-testid'] ??
     `af-input-${testIdBase}`;
+
+  React.useEffect(() => {
+    if (!hasDerivedValue) return;
+    const currentValue = getValues(fullPath);
+    if (Object.is(currentValue, derivedValue)) return;
+    setValue(fullPath, derivedValue, {
+      shouldDirty: false,
+      shouldTouch: false,
+      shouldValidate: false,
+    });
+  }, [derivedValue, fullPath, getValues, hasDerivedValue, setValue]);
 
   // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
   let FieldComponent: React.ComponentType<AutoFormFieldProps> = () => (

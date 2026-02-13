@@ -32,11 +32,15 @@ import {
 import { ReceiptWrapper } from '@/components/ui/receipt-wrapper';
 import { useDialog } from '@/contexts/dialog-context';
 import { api } from '@/lib/api';
-import { formatCurrency } from '@/lib/intl';
 import type { BusinessType } from '@/lib/schema';
 import { type SalesItem, salesItemSchema } from '@/lib/schemas/sales';
 import { db } from '@/lib/ssr/api';
 import { isNonNullable } from '@/lib/utils';
+import {
+  getItemsTotalForPaymentStatus,
+  getPaymentStatusFromTotals,
+} from './payment-status-derivation';
+import { deriveUnitPrice } from './unit-price-derivation';
 
 
 type AnyAutoTableTab = {
@@ -54,33 +58,71 @@ function calculateFiscalYear() {
     .slice(2)}/${(year + 1).toString().slice(2)}`;
 }
 
-function calculateTotalCost(form: UseFormReturn) {
-  const formValues = form.getValues();
-  if (!formValues?.items?.length) return 0;
+function calculateTotalCost(form: UseFormReturn, itemsKey = 'items') {
+  const items = form.getValues(itemsKey);
+  if (!Array.isArray(items) || !items.length) return 0;
+  return getItemsTotalForPaymentStatus(items);
+}
 
-  return formValues.items.reduce(
-    // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    (sum: number, item: any) =>
-      sum + Number(item.quantity || 0) * Number(item.unitPrice || 0),
-    0,
+function getTotalCostFromItems(
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  items: any[],
+) {
+  return getItemsTotalForPaymentStatus(items);
+}
+
+function createDerivedPaymentStatusFieldFromFormValues(
+  formValues: {
+    items?: Array<{ quantity?: number | null; unitPrice?: number | null } | null> | null;
+    paidAmount?: number | null;
+  },
+) {
+  return z
+    .string()
+    .default('pending')
+    .describe('Payment Status')
+    .superRefine(
+      fieldConfig({
+        inputProps: {
+          className: 'border-none',
+          disabled: true,
+        },
+        customData: {
+          derive: () => {
+            const totalCost = getTotalCostFromItems(
+              formValues.items ?? [],
+            );
+            const paidAmount = Number(formValues.paidAmount ?? 0);
+            return {
+              inputProps: {
+                value: getPaymentStatusFromTotals({
+                  paidAmount,
+                  totalAmount: totalCost,
+                }),
+              }
+            };
+          },
+        },
+      }),
+    );
+}
+
+function refreshPaymentStatus(form: UseFormReturn) {
+  const totalCost = calculateTotalCost(form, 'items');
+  const paidAmount = Number(form.getValues('paidAmount') ?? 0);
+  form.setValue(
+    'paymentStatus',
+    getPaymentStatusFromTotals({
+      paidAmount,
+      totalAmount: totalCost,
+    }),
   );
 }
 
-function getPaymentStatus(paidAmount: number, totalCost: number) {
-  if (paidAmount === totalCost) return 'paid';
-  if (paidAmount === 0) return 'pending';
-  if (paidAmount > totalCost) return 'overpaid (invalid)';
-  return `partial (${formatCurrency(totalCost - paidAmount)} to pay)`;
-}
-
 function refreshPaidAmount(form: UseFormReturn) {
-  const totalCost = calculateTotalCost(form);
-  if (!totalCost) return;
+  const totalCost = calculateTotalCost(form, 'items');
   form.setValue('paidAmount', totalCost);
-  const formValues = form.getValues();
-  const paidAmount = formValues.paidAmount;
-  const paymentStatus = getPaymentStatus(paidAmount, totalCost);
-  form.setValue('paymentStatus', paymentStatus);
+  refreshPaymentStatus(form);
 }
 
 function calculateTotalAmountForItem(
@@ -99,13 +141,37 @@ function calculateTotalAmountForItem(
   }
 }
 
+function setItemUnitPrice(
+  form: UseFormReturn,
+  path: string[],
+  basePrice: number,
+  productUnit?: string | null,
+  selectedUnit?: string | null,
+) {
+  const [itemsKey, index] = path;
+  const derivedUnitPrice = deriveUnitPrice({
+    basePrice,
+    productUnit,
+    selectedUnit,
+  });
+
+  form.setValue([itemsKey, index, 'unitPrice'].join('.'), derivedUnitPrice);
+}
+
+function syncItemDerivedFields(form: UseFormReturn, path: string[]) {
+  const [itemsKey, index] = path;
+  const items = form.getValues(itemsKey);
+  calculateTotalAmountForItem(items, itemsKey, Number(index), form);
+  if (itemsKey === 'items') {
+    refreshPaidAmount(form);
+  }
+}
+
 export function useBusinessConfig({
   slug,
 }: {
   slug: string;
 }): BusinessConfigReturn {
-  'use memo';
-
   const { openDialog, closeDialog } = useDialog();
   const { data: parties } = api.party.useGet({ keys: [slug] });
   const { data: vehicles } = api.vehicle.useGet({ keys: [slug] });
@@ -137,20 +203,19 @@ export function useBusinessConfig({
                     (item) => item?._?.soul === val,
                   );
                   if (!product) return;
-                  const [itemsKey, index] = path;
-
-                  form.setValue(
-                    [itemsKey, index, 'unitPrice'].join('.'),
-                    product.sellingPrice,
-                  );
-
                   if (product.unit) {
-                    form.setValue(
-                      [itemsKey, index, 'unit'].join('.'),
+                    setItemUnitPrice(
+                      form,
+                      path,
+                      Number(product.sellingPrice),
+                      product.unit,
                       product.unit,
                     );
+                    form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
+                  } else {
+                    setItemUnitPrice(form, path, Number(product.sellingPrice));
                   }
-                  refreshPaidAmount(form);
+                  syncItemDerivedFields(form, path);
                 },
               },
             }),
@@ -171,6 +236,7 @@ export function useBusinessConfig({
                 slug,
                 source: {
                   table: 'product',
+                  key: 'product',
                   displayKey: 'title',
                 },
                 derive: async ({ sourceRow }) => {
@@ -188,33 +254,18 @@ export function useBusinessConfig({
                       ].filter(isNonNullable),
                       configDisabled,
                       onValueChange(value, path, form) {
-                        const [, productQuantityPerUnit] = String(
-                          sourceRow.unit,
-                        ).split(':');
-                        const [, quantityPerUnit] = value?.split(':') ?? [];
-                        const [itemsKey, index] = path;
                         const sellingPrice = Number(
                           // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                           (sourceRow as any).sellingPrice,
                         );
-
-                        if (quantityPerUnit) {
-                          if (sellingPrice) {
-                            form.setValue(
-                              [itemsKey, index, 'unitPrice'].join('.'),
-                              sellingPrice,
-                            );
-                          }
-                        } else if (
-                          productQuantityPerUnit &&
-                          sellingPrice &&
-                          !Number.isNaN(Number(productQuantityPerUnit))
-                        ) {
-                          form.setValue(
-                            [itemsKey, index, 'unitPrice'].join('.'),
-                            sellingPrice / Number(productQuantityPerUnit),
-                          );
-                        }
+                        setItemUnitPrice(
+                          form,
+                          path,
+                          sellingPrice,
+                          String(sourceRow.unit),
+                          value,
+                        );
+                        syncItemDerivedFields(form, path);
                       },
                     },
                   };
@@ -232,14 +283,7 @@ export function useBusinessConfig({
               fieldType: 'number',
               customData: {
                 onValueChange: (value: string, path: string[], form) => {
-                  const items = form.getValues('returnedProducts');
-                  const [itemsKey, index] = path;
-                  calculateTotalAmountForItem(
-                    items,
-                    itemsKey,
-                    Number(index),
-                    form,
-                  );
+                  syncItemDerivedFields(form, path);
 
                   return value;
                 },
@@ -254,14 +298,7 @@ export function useBusinessConfig({
               fieldType: 'number',
               customData: {
                 onValueChange: (value: string, path: string[], form) => {
-                  const items = form.getValues('returnedProducts');
-                  const [itemsKey, index] = path;
-                  calculateTotalAmountForItem(
-                    items,
-                    itemsKey,
-                    Number(index),
-                    form,
-                  );
+                  syncItemDerivedFields(form, path);
 
                   return value;
                   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
@@ -404,6 +441,18 @@ export function useBusinessConfig({
         icon: ShoppingBag,
         slug,
         group: 'Inventory',
+        previewOverrides: {
+          party: (p) => partiesBySoul.get(p)?.name ?? "-",
+          items: (items) => {
+            const mapped = items?.map((item: SalesItem) => ({
+              ...item,
+              product: productsBySoul.get(item.product)?.title ?? '-',
+            }));
+            if (!mapped) return;
+            mapped['#'] = items?.['#'];
+            return mapped;
+          },
+        },
         extender: (schema) =>
           schema
             .extend({
@@ -414,13 +463,8 @@ export function useBusinessConfig({
                   fieldConfig({
                     fieldType: 'number',
                     customData: {
-                      onValueChange: (paidAmount, __, form) => {
-                        const totalCost = calculateTotalCost(form);
-                        if (!totalCost) return;
-                        form.setValue(
-                          'paymentStatus',
-                          getPaymentStatus(Number(paidAmount), totalCost),
-                        );
+                      onValueChange: (_, __, form) => {
+                        refreshPaymentStatus(form);
                       },
                     },
                   }),
@@ -443,6 +487,7 @@ export function useBusinessConfig({
                           slug,
                           source: {
                             table: 'product',
+                            key: 'product',
                             displayKey: 'title',
                           },
                           derive: async ({ sourceRow }) => {
@@ -460,39 +505,18 @@ export function useBusinessConfig({
                                 ].filter(isNonNullable),
                                 configDisabled,
                                 onValueChange(value, path, form) {
-                                  const [, productQuantityPerUnit] = String(
-                                    sourceRow.unit,
-                                  ).split(':');
-                                  const [, quantityPerUnit] =
-                                    value?.split(':') ?? [];
-                                  const [itemsKey, index] = path;
                                   const costPrice = Number(
                                     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                                     (sourceRow as any).costPrice,
                                   );
-
-                                  if (quantityPerUnit) {
-                                    if (costPrice) {
-                                      form.setValue(
-                                        [itemsKey, index, 'unitPrice'].join(
-                                          '.',
-                                        ),
-                                        costPrice,
-                                      );
-                                    }
-                                  } else if (
-                                    productQuantityPerUnit &&
-                                    costPrice &&
-                                    !Number.isNaN(
-                                      Number(productQuantityPerUnit),
-                                    )
-                                  ) {
-                                    form.setValue(
-                                      [itemsKey, index, 'unitPrice'].join('.'),
-                                      costPrice /
-                                      Number(productQuantityPerUnit),
-                                    );
-                                  }
+                                  setItemUnitPrice(
+                                    form,
+                                    path,
+                                    costPrice,
+                                    String(sourceRow.unit),
+                                    value,
+                                  );
+                                  syncItemDerivedFields(form, path);
                                 },
                               },
                             };
@@ -521,19 +545,23 @@ export function useBusinessConfig({
                               (item) => item?._?.soul === val,
                             );
                             if (!product) return;
-                            const [itemsKey, index] = path;
-
-                            form.setValue(
-                              [itemsKey, index, 'unitPrice'].join('.'),
-                              product.costPrice,
-                            );
                             if (product.unit) {
-                              form.setValue(
-                                [itemsKey, index, 'unit'].join('.'),
+                              setItemUnitPrice(
+                                form,
+                                path,
+                                Number(product.costPrice),
+                                product.unit,
                                 product.unit,
                               );
+                              form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
+                            } else {
+                              setItemUnitPrice(
+                                form,
+                                path,
+                                Number(product.costPrice),
+                              );
                             }
-                            refreshPaidAmount(form);
+                            syncItemDerivedFields(form, path);
                           },
                         },
                       }),
@@ -548,16 +576,7 @@ export function useBusinessConfig({
                         fieldType: 'number',
                         customData: {
                           onValueChange: (_, path, form) => {
-                            const [itemsKey, index] = path;
-                            const items = form.getValues('items');
-
-                            calculateTotalAmountForItem(
-                              items,
-                              itemsKey,
-                              Number(index),
-                              form,
-                            );
-                            refreshPaidAmount(form);
+                            syncItemDerivedFields(form, path);
                           },
                         },
                       }),
@@ -570,16 +589,7 @@ export function useBusinessConfig({
                         fieldType: 'number',
                         customData: {
                           onValueChange: (_, path, form) => {
-                            const [itemsKey, index] = path;
-                            const items = form.getValues('items');
-
-                            calculateTotalAmountForItem(
-                              items,
-                              itemsKey,
-                              Number(index),
-                              form,
-                            );
-                            refreshPaidAmount(form);
+                            syncItemDerivedFields(form, path);
                           },
                         },
                       }),
@@ -589,14 +599,12 @@ export function useBusinessConfig({
                 .min(1, { message: 'Please add at least one item.' })
                 .describe('Items to Import'),
             })
+            .withDerivation('paymentStatus', ({ formValues }) =>
+              createDerivedPaymentStatusFieldFromFormValues(formValues),
+            )
             .superRefine((stockImport, ctx) => {
               if (!stockImport.paidAmount) return;
-              const totalCost = stockImport.items.reduce(
-                (sum, item) =>
-                  sum +
-                  Number(item.quantity || 0) * Number(item.unitPrice || 0),
-                0,
-              );
+              const totalCost = getItemsTotalForPaymentStatus(stockImport.items);
               if (stockImport.paidAmount > totalCost)
                 ctx.addIssue({
                   code: 'custom',
@@ -708,7 +716,7 @@ export function useBusinessConfig({
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: item.product ?? '-',
+              product: productsBySoul.get(item.product)?.title ?? '-',
             }));
             if (!mapped) return;
             mapped['#'] = items?.['#'];
@@ -725,13 +733,8 @@ export function useBusinessConfig({
                   fieldConfig({
                     fieldType: 'number',
                     customData: {
-                      onValueChange: (_paidAmount, __, form) => {
-                        const paidAmount = Number(_paidAmount);
-                        const totalCost = calculateTotalCost(form);
-                        form.setValue(
-                          'paymentStatus',
-                          getPaymentStatus(paidAmount, totalCost),
-                        );
+                      onValueChange: (_, __, form) => {
+                        refreshPaymentStatus(form);
                       },
                     },
                   }),
@@ -754,6 +757,7 @@ export function useBusinessConfig({
                           slug,
                           source: {
                             table: 'product',
+                            key: 'product',
                             displayKey: 'title',
                           },
                           derive: async ({ sourceRow }) => {
@@ -770,39 +774,18 @@ export function useBusinessConfig({
                                 ].filter(isNonNullable),
                                 configDisabled,
                                 onValueChange(value, path, form) {
-                                  const [, productQuantityPerUnit] = String(
-                                    sourceRow.unit,
-                                  ).split(':');
-                                  const [, quantityPerUnit] =
-                                    value?.split(':') ?? [];
-                                  const [itemsKey, index] = path;
                                   const sellingPrice = Number(
                                     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                                     (sourceRow as any).sellingPrice,
                                   );
-
-                                  if (quantityPerUnit) {
-                                    if (sellingPrice) {
-                                      form.setValue(
-                                        [itemsKey, index, 'unitPrice'].join(
-                                          '.',
-                                        ),
-                                        sellingPrice,
-                                      );
-                                    }
-                                  } else if (
-                                    productQuantityPerUnit &&
-                                    sellingPrice &&
-                                    !Number.isNaN(
-                                      Number(productQuantityPerUnit),
-                                    )
-                                  ) {
-                                    form.setValue(
-                                      [itemsKey, index, 'unitPrice'].join('.'),
-                                      sellingPrice /
-                                      Number(productQuantityPerUnit),
-                                    );
-                                  }
+                                  setItemUnitPrice(
+                                    form,
+                                    path,
+                                    sellingPrice,
+                                    String(sourceRow.unit),
+                                    value,
+                                  );
+                                  syncItemDerivedFields(form, path);
                                 },
                               },
                             };
@@ -832,21 +815,23 @@ export function useBusinessConfig({
                               (item) => item?._?.soul === val,
                             );
                             if (!product) return;
-                            const [itemsKey, index] = path;
-
-                            form.setValue(
-                              [itemsKey, index, 'unitPrice'].join('.'),
-                              product.sellingPrice,
-                            );
-
                             if (product.unit) {
-                              form.setValue(
-                                [itemsKey, index, 'unit'].join('.'),
+                              setItemUnitPrice(
+                                form,
+                                path,
+                                Number(product.sellingPrice),
+                                product.unit,
                                 product.unit,
                               );
+                              form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
+                            } else {
+                              setItemUnitPrice(
+                                form,
+                                path,
+                                Number(product.sellingPrice),
+                              );
                             }
-
-                            refreshPaidAmount(form);
+                            syncItemDerivedFields(form, path);
                           },
                         },
                       }),
@@ -865,15 +850,7 @@ export function useBusinessConfig({
                             path: string[],
                             form,
                           ) => {
-                            refreshPaidAmount(form);
-                            const items = form.getValues('items');
-                            const [itemsKey, index] = path;
-                            calculateTotalAmountForItem(
-                              items,
-                              itemsKey,
-                              Number(index),
-                              form,
-                            );
+                            syncItemDerivedFields(form, path);
 
                             return value;
                           },
@@ -888,15 +865,7 @@ export function useBusinessConfig({
                         fieldType: 'number',
                         customData: {
                           onValueChange: (value, path, form) => {
-                            refreshPaidAmount(form);
-                            const items = form.getValues('items');
-                            const [itemsKey, index] = path;
-                            calculateTotalAmountForItem(
-                              items,
-                              itemsKey,
-                              Number(index),
-                              form,
-                            );
+                            syncItemDerivedFields(form, path);
 
                             return value;
                           },
@@ -908,14 +877,12 @@ export function useBusinessConfig({
                 .min(1, { message: 'Please add at least one item.' })
                 .describe('Items Sold'),
             })
+            .withDerivation('paymentStatus', ({ formValues }) =>
+              createDerivedPaymentStatusFieldFromFormValues(formValues),
+            )
             .superRefine((sale, ctx) => {
               if (!sale.paidAmount) return;
-              const totalCost = sale.items.reduce(
-                (sum, item) =>
-                  sum +
-                  Number(item.quantity || 0) * Number(item.unitPrice || 0),
-                0,
-              );
+              const totalCost = getItemsTotalForPaymentStatus(sale.items);
               if (sale.paidAmount > totalCost)
                 ctx.addIssue({
                   code: 'custom',
@@ -1060,7 +1027,7 @@ export function useBusinessConfig({
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: item.product ?? '-',
+              product: productsBySoul.get(item.product)?.title ?? '-',
             }));
             if (!mapped) return;
             mapped['#'] = items?.['#'];
@@ -1082,7 +1049,7 @@ export function useBusinessConfig({
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: item.product ?? '-',
+              product: productsBySoul.get(item.product)?.title ?? '-',
             }));
             if (!mapped) return;
             mapped['#'] = items?.['#'];
@@ -1099,13 +1066,8 @@ export function useBusinessConfig({
                   fieldConfig({
                     fieldType: 'number',
                     customData: {
-                      onValueChange: (_paidAmount, __, form) => {
-                        const paidAmount = Number(_paidAmount);
-                        const totalCost = calculateTotalCost(form);
-                        form.setValue(
-                          'paymentStatus',
-                          getPaymentStatus(paidAmount, totalCost),
-                        );
+                      onValueChange: (_, __, form) => {
+                        refreshPaymentStatus(form);
                       },
                     },
                   }),
@@ -1128,6 +1090,7 @@ export function useBusinessConfig({
                           slug,
                           source: {
                             table: 'product',
+                            key: 'product',
                             displayKey: 'title',
                           },
                           derive: async ({ sourceRow }) => {
@@ -1145,38 +1108,17 @@ export function useBusinessConfig({
                                 ].filter(isNonNullable),
                                 configDisabled,
                                 onValueChange(value, path, form) {
-                                  const [, productQuantityPerUnit] = String(
-                                    sourceRow.unit,
-                                  ).split(':');
-                                  const [, quantityPerUnit] =
-                                    value?.split(':') ?? [];
-                                  const [itemsKey, index] = path;
                                   const sellingPrice = Number(
                                     sourceRow.sellingPrice,
                                   );
-
-                                  if (quantityPerUnit) {
-                                    if (sellingPrice) {
-                                      form.setValue(
-                                        [itemsKey, index, 'unitPrice'].join(
-                                          '.',
-                                        ),
-                                        sellingPrice,
-                                      );
-                                    }
-                                  } else if (
-                                    productQuantityPerUnit &&
-                                    sellingPrice &&
-                                    !Number.isNaN(
-                                      Number(productQuantityPerUnit),
-                                    )
-                                  ) {
-                                    form.setValue(
-                                      [itemsKey, index, 'unitPrice'].join('.'),
-                                      sellingPrice /
-                                      Number(productQuantityPerUnit),
-                                    );
-                                  }
+                                  setItemUnitPrice(
+                                    form,
+                                    path,
+                                    sellingPrice,
+                                    String(sourceRow.unit),
+                                    value,
+                                  );
+                                  syncItemDerivedFields(form, path);
                                 },
                               },
                             };
@@ -1207,21 +1149,23 @@ export function useBusinessConfig({
                             );
 
                             if (!product) return;
-                            const [itemsKey, index] = path;
-
-                            form.setValue(
-                              [itemsKey, index, 'unitPrice'].join('.'),
-                              product.sellingPrice,
-                            );
-
                             if (product.unit) {
-                              form.setValue(
-                                [itemsKey, index, 'unit'].join('.'),
+                              setItemUnitPrice(
+                                form,
+                                path,
+                                Number(product.sellingPrice),
+                                product.unit,
                                 product.unit,
                               );
+                              form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
+                            } else {
+                              setItemUnitPrice(
+                                form,
+                                path,
+                                Number(product.sellingPrice),
+                              );
                             }
-
-                            refreshPaidAmount(form);
+                            syncItemDerivedFields(form, path);
                           },
                         },
                       }),
@@ -1236,15 +1180,7 @@ export function useBusinessConfig({
                         fieldType: 'number',
                         customData: {
                           onValueChange: (_value, path, form) => {
-                            refreshPaidAmount(form);
-                            const items = form.getValues('items');
-                            const [itemsKey, index] = path;
-                            calculateTotalAmountForItem(
-                              items,
-                              itemsKey,
-                              Number(index),
-                              form,
-                            );
+                            syncItemDerivedFields(form, path);
                           },
                         },
                       }),
@@ -1261,15 +1197,7 @@ export function useBusinessConfig({
                             path: string[],
                             form,
                           ) => {
-                            refreshPaidAmount(form);
-                            const items = form.getValues('items');
-                            const [itemsKey, index] = path;
-                            calculateTotalAmountForItem(
-                              items,
-                              itemsKey,
-                              Number(index),
-                              form,
-                            );
+                            syncItemDerivedFields(form, path);
                           },
                         },
                       }),
@@ -1280,6 +1208,7 @@ export function useBusinessConfig({
                     .superRefine(
                       fieldConfig({
                         inputProps: {
+                          placeholder: 'Select a product first',
                           readOnly: true,
                         },
                       }),
@@ -1288,63 +1217,13 @@ export function useBusinessConfig({
                 .array()
                 .min(1, { message: 'Please add at least one item.' })
                 .describe('Items Ordered'),
-              orderStatus: z
-                .enum(['pending', 'done', 'cancelled'])
-                .describe('Order Status')
-                .superRefine(
-                  fieldConfig({
-                    fieldType: 'select',
-                    customData: {
-                      disableWhenValueIn: ['done', 'cancelled'],
-                      options: [
-                        ['pending', 'Pending'],
-                        ['done', 'Done'],
-                        ['cancelled', 'Cancelled'],
-                      ],
-                      onValueChange: async (newStatus, _, form) => {
-                        if (newStatus === 'done') {
-                          const order = form.getValues();
-                          if (order.items) {
-                            for (const item of order.items) {
-                              const products = await db.product.get({
-                                keys: [slug],
-                              });
-                              const product = products.find(
-                                (entry) => entry?._?.soul === item.product,
-                              );
-                              if (product?._?.soul) {
-                                let adjustedQuantity = item.quantity;
-                                if (product.unit?.includes(':')) {
-                                  const [unitType, piecesPerUnit] =
-                                    product.unit.split(':');
-                                  if (item.unit === unitType) {
-                                    adjustedQuantity =
-                                      item.quantity *
-                                      parseInt(piecesPerUnit, 10);
-                                  }
-                                }
-                                void db.product.update(slug)({
-                                  id: product._.soul,
-                                  stockQuantity:
-                                    product.stockQuantity - adjustedQuantity,
-                                });
-                              }
-                            }
-                          }
-                        }
-                      },
-                    },
-                  }),
-                ),
             })
+            .withDerivation('paymentStatus', ({ formValues }) =>
+              createDerivedPaymentStatusFieldFromFormValues(formValues),
+            )
             .superRefine((order, ctx) => {
               if (!order.paidAmount) return;
-              const totalCost = order.items.reduce(
-                (sum, item) =>
-                  sum +
-                  Number(item.quantity || 0) * Number(item.unitPrice || 0),
-                0,
-              );
+              const totalCost = getItemsTotalForPaymentStatus(order.items);
               if (order.paidAmount > totalCost)
                 ctx.addIssue({
                   code: 'custom',
@@ -1457,34 +1336,30 @@ export function useBusinessConfig({
             },
           );
 
-          const invoiceItems =
-            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-            order.items?.map((item: any) => {
-              const productInfo = productsBySoul.get(item.product);
-              let adjustedQuantity = item.quantity;
+          const invoiceItems = order.items?.map((item) => {
+            const productInfo = productsBySoul.get(item.product);
+            let adjustedQuantity = item.quantity;
 
-              if (productInfo?.unit?.includes(':')) {
-                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-                if (item.unit === unitType) {
-                  adjustedQuantity =
-                    item.quantity * parseInt(piecesPerUnit, 10);
-                }
+            if (productInfo?.unit?.includes(':')) {
+              const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+              if (item.unit === unitType) {
+                adjustedQuantity =
+                  item.quantity * parseInt(piecesPerUnit, 10);
               }
+            }
 
-              return {
-                product: item.product,
-                quantity: adjustedQuantity,
-                rate: item.unitPrice,
-                total: item.quantity * item.unitPrice,
-              };
-            }) ?? [];
+            return {
+              product: item.product,
+              quantity: adjustedQuantity,
+              rate: item.unitPrice,
+              total: item.quantity * item.unitPrice,
+            };
+          }) ?? [];
 
-          const totalAmount =
-            order.items?.reduce(
-              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-              (sum: number, item: any) => sum + item.quantity * item.unitPrice,
-              0,
-            ) ?? 0;
+          const totalAmount = order.items?.reduce(
+            (sum, item) => sum + item.quantity * item.unitPrice,
+            0,
+          ) ?? 0;
 
           db.invoice.create(slug)({
             type: 'sale',
@@ -1564,20 +1439,23 @@ export function useBusinessConfig({
                             (item) => item?._?.soul === val,
                           );
                           if (!product) return;
-                          const [itemsKey, index] = path;
-
-                          form.setValue(
-                            [itemsKey, index, 'unitPrice'].join('.'),
-                            product.sellingPrice,
-                          );
-
                           if (product.unit) {
-                            form.setValue(
-                              [itemsKey, index, 'unit'].join('.'),
+                            setItemUnitPrice(
+                              form,
+                              path,
+                              Number(product.sellingPrice),
+                              product.unit,
                               product.unit,
                             );
+                            form.setValue([path[0], path[1], 'unit'].join('.'), product.unit);
+                          } else {
+                            setItemUnitPrice(
+                              form,
+                              path,
+                              Number(product.sellingPrice),
+                            );
                           }
-                          refreshPaidAmount(form);
+                          syncItemDerivedFields(form, path);
                         },
                       },
                     }),
@@ -1598,6 +1476,7 @@ export function useBusinessConfig({
                         slug,
                         source: {
                           table: 'product',
+                          key: 'product',
                           displayKey: 'title',
                         },
                         derive: async ({ sourceRow }) => {
@@ -1617,41 +1496,18 @@ export function useBusinessConfig({
                               ...(configDisabled
                                 ? {
                                   onValueChange(value, path, form) {
-                                    const [, productQuantityPerUnit] = String(
-                                      sourceRow.unit,
-                                    ).split(':');
-                                    const [, quantityPerUnit] =
-                                      value?.split(':') ?? [];
-                                    const [itemsKey, index] = path;
                                     const sellingPrice = Number(
                                       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                                       (sourceRow as any).sellingPrice,
                                     );
-
-                                    if (quantityPerUnit) {
-                                      if (sellingPrice) {
-                                        form.setValue(
-                                          [itemsKey, index, 'unitPrice'].join(
-                                            '.',
-                                          ),
-                                          sellingPrice,
-                                        );
-                                      }
-                                    } else if (
-                                      productQuantityPerUnit &&
-                                      sellingPrice &&
-                                      !Number.isNaN(
-                                        Number(productQuantityPerUnit),
-                                      )
-                                    ) {
-                                      form.setValue(
-                                        [itemsKey, index, 'unitPrice'].join(
-                                          '.',
-                                        ),
-                                        sellingPrice /
-                                        Number(productQuantityPerUnit),
-                                      );
-                                    }
+                                    setItemUnitPrice(
+                                      form,
+                                      path,
+                                      sellingPrice,
+                                      String(sourceRow.unit),
+                                      value,
+                                    );
+                                    syncItemDerivedFields(form, path);
                                   },
                                 }
                                 : {}),
@@ -1675,15 +1531,7 @@ export function useBusinessConfig({
                           path: string[],
                           form,
                         ) => {
-                          refreshPaidAmount(form);
-                          const items = form.getValues('products');
-                          const [itemsKey, index] = path;
-                          calculateTotalAmountForItem(
-                            items,
-                            itemsKey,
-                            Number(index),
-                            form,
-                          );
+                          syncItemDerivedFields(form, path);
 
                           return value;
                         },
@@ -1702,15 +1550,7 @@ export function useBusinessConfig({
                           path: string[],
                           form,
                         ) => {
-                          refreshPaidAmount(form);
-                          const items = form.getValues('products');
-                          const [itemsKey, index] = path;
-                          calculateTotalAmountForItem(
-                            items,
-                            itemsKey,
-                            Number(index),
-                            form,
-                          );
+                          syncItemDerivedFields(form, path);
 
                           return value;
                           // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
