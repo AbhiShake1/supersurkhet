@@ -569,9 +569,7 @@ export function useBusinessConfig({
         },
         onUpdate(_, variables) {
           if (variables.orderStatus !== 'done') return;
-          const currentOrder = ordersBySoul.get(variables.id);
-          if (currentOrder?.orderStatus === 'done') return;
-          const order = { ...currentOrder, ...variables };
+          const order = ordersBySoul.get(variables.id);
           if (!order?.items?.length || !order?.customerId) return;
 
           const itemsByProductIdWithQuantity = order.items?.reduce(

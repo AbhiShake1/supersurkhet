@@ -426,7 +426,6 @@ export const featureSchema = createSchema({
 // This is useful for type inference and for providing a single entry point to all data models.
 export const appSchema = coreSchema.merge(featureSchema);
 
-
 declare global {
   interface GTAAppConfig {
     schema: AppSchemaType;

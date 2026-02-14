@@ -7,7 +7,6 @@ type JoinWithDot<K extends string, T extends Primitives> = T extends never | ''
   : `${K}.${T}`;
 
 type ExtractFromShape<T extends z.ZodObject<any>> = {
-  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   [K in keyof T['shape']]: T['shape'][K] extends ZodObjectOrWrapped
   ? JoinWithDot<
     // @ts-expect-error if K is number, it will work unless it has nested object shape. if nested, entire object will be removed from type
@@ -39,7 +38,7 @@ type FindNestedShape<
   K extends string,
 > = FindNestedShapeInternal<T, K>;
 
-export type SchemaKeys = ExtractFromShape<GTAAppConfig['schema']>;
+export type SchemaKeys = keyof GTAAppConfig["schema"]["shape"] // ExtractFromShape<GTAAppConfig['schema']>;
 export type NestedSchema<K extends SchemaKeys> = FindNestedShape<
   GTAAppConfig['schema'],
   K

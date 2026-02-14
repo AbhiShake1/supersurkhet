@@ -594,10 +594,10 @@ declare global {
      rate: number;
      total: number;
     }[];
-     paidAmount: number;
-     paymentStatus: string;
      subTotal: number;
      tax: number;
+     paidAmount: number;
+     paymentStatus: string;
      fiscalYear: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -606,8 +606,8 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
-     vehicleId?: string | undefined;
      partyId?: string | undefined;
+     vehicleId?: string | undefined;
      tripId?: string | undefined;
      issuedAt?: string | undefined;
      dueDate?: string | undefined;
@@ -628,14 +628,14 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
-     paidAmount?: number | undefined;
-     paymentStatus?: string | undefined;
-     vehicleId?: string | undefined;
      partyId?: string | undefined;
+     vehicleId?: string | undefined;
      tripId?: string | undefined;
      issuedAt?: string | undefined;
      dueDate?: string | undefined;
      tax?: number | undefined;
+     paidAmount?: number | undefined;
+     paymentStatus?: string | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<import("@tabler/icons-react").IconProps & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -645,7 +645,7 @@ declare global {
     }[]>;
     };
      readonly sale: {
-     readonly schema: import("zod").ZodObject<{
+     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
      customerId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
      saleDate: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      items: import("zod").ZodArray<import("zod").ZodObject<{
@@ -669,9 +669,9 @@ declare global {
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -681,9 +681,9 @@ declare global {
     } | undefined;
     }, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -696,7 +696,7 @@ declare global {
      paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      paymentMethod: import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit"]>>;
      notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-    } & {
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
@@ -710,13 +710,11 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
-     customerId: string;
-     saleDate: string;
      items: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -727,6 +725,8 @@ declare global {
     }[];
      paidAmount: number;
      paymentStatus: string;
+     customerId: string;
+     saleDate: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
@@ -736,12 +736,11 @@ declare global {
      notes?: string | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }, {
-     customerId: string;
      items: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -751,6 +750,7 @@ declare global {
     } | undefined;
     }[];
      paidAmount: number;
+     customerId: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
@@ -758,24 +758,74 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      notes?: string | undefined;
-     saleDate?: string | undefined;
      paymentStatus?: string | undefined;
+     saleDate?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+    }>, {
+     items: {
+     product: string;
+     totalAmount: number;
+     quantity: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     paidAmount: number;
+     paymentStatus: string;
+     customerId: string;
+     saleDate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+    }, {
+     items: {
+     product: string;
+     totalAmount: number;
+     quantity: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     paidAmount: number;
+     customerId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentStatus?: string | undefined;
+     saleDate?: string | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }>;
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly stockImport: {
-     readonly schema: import("zod").ZodObject<{
+     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
      party: import("zod").ZodEffects<import("zod").ZodString, string, string>;
      importDate: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      items: import("zod").ZodArray<import("zod").ZodObject<{
      product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
      unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     unitPrice: import("zod").ZodNumber;
      totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    } & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
@@ -788,11 +838,13 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -802,9 +854,9 @@ declare global {
     } | undefined;
     }, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -817,7 +869,7 @@ declare global {
      paidAmount: import("zod").ZodNumber;
      paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
      notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-    } & {
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
@@ -834,9 +886,9 @@ declare global {
      party: string;
      items: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -860,9 +912,61 @@ declare global {
      party: string;
      items: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     paidAmount: number;
      totalAmount: number;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentStatus?: string | undefined;
+     importDate?: string | undefined;
+    }>, {
+     party: string;
+     items: {
+     product: string;
+     totalAmount: number;
+     quantity: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     paidAmount: number;
+     paymentStatus: string;
+     importDate: string;
+     totalAmount: number;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+    }, {
+     party: string;
+     items: {
+     product: string;
+     totalAmount: number;
+     quantity: number;
+     unitPrice: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -887,15 +991,13 @@ declare global {
      readonly group: "Financial";
     };
      readonly order: {
-     readonly schema: import("zod").ZodObject<{
+     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
      customerId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
      items: import("zod").ZodArray<import("zod").ZodObject<{
      product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
      unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     unitPrice: import("zod").ZodNumber;
      totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    } & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
@@ -908,11 +1010,13 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -922,9 +1026,9 @@ declare global {
     } | undefined;
     }, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -938,7 +1042,7 @@ declare global {
      orderStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodEnum<["pending", "done", "cancelled"]>>, "pending" | "done" | "cancelled", "pending" | "done" | "cancelled" | undefined>;
      paymentMethod: import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit"]>>;
      notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-    } & {
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
@@ -952,12 +1056,11 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
-     customerId: string;
      items: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -968,6 +1071,7 @@ declare global {
     }[];
      paidAmount: number;
      paymentStatus: string;
+     customerId: string;
      orderStatus: "pending" | "done" | "cancelled";
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -978,12 +1082,11 @@ declare global {
      notes?: string | undefined;
      paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
     }, {
-     customerId: string;
      items: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -993,6 +1096,59 @@ declare global {
     } | undefined;
     }[];
      paidAmount: number;
+     customerId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentStatus?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+     orderStatus?: "pending" | "done" | "cancelled" | undefined;
+    }>, {
+     items: {
+     product: string;
+     totalAmount: number;
+     quantity: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     paidAmount: number;
+     paymentStatus: string;
+     customerId: string;
+     orderStatus: "pending" | "done" | "cancelled";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+    }, {
+     items: {
+     product: string;
+     totalAmount: number;
+     quantity: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     paidAmount: number;
+     customerId: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
@@ -2357,9 +2513,7 @@ declare global {
      product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
      unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     unitPrice: import("zod").ZodNumber;
      totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    } & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
@@ -2372,11 +2526,13 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2386,9 +2542,9 @@ declare global {
     } | undefined;
     }, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2401,9 +2557,7 @@ declare global {
      product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
      unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     unitPrice: import("zod").ZodNumber;
      totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    } & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
@@ -2416,11 +2570,13 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
     }, "strip", import("zod").ZodTypeAny, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2430,9 +2586,9 @@ declare global {
     } | undefined;
     }, {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2459,9 +2615,9 @@ declare global {
      dispatchTime: string;
      products: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2480,9 +2636,9 @@ declare global {
      destination?: string | undefined;
      returnedProducts?: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2495,9 +2651,9 @@ declare global {
      vehicleId: string;
      products: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2517,9 +2673,9 @@ declare global {
      destination?: string | undefined;
      returnedProducts?: {
      product: string;
+     totalAmount: number;
      quantity: number;
      unitPrice: number;
-     totalAmount: number;
      unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
