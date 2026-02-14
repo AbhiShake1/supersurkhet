@@ -1,9 +1,9 @@
-import type { AutoTableTab } from '@/components/auto-admin';
+import type { SchemaKeys } from '@gta/react-hooks';
+import NepaliDate from 'nepali-datetime';
+import z from 'zod';
+import type { AutoAdminTabInput } from '@/components/auto-admin';
 import { AutoFormSubmit } from '@/components/ui/auto-form';
-import {
-  AutoForm,
-  fieldConfig
-} from '@/components/ui/autoform';
+import { AutoForm, fieldConfig } from '@/components/ui/autoform';
 import { Button } from '@/components/ui/button';
 import {
   Credenza,
@@ -18,24 +18,12 @@ import { ReceiptWrapper } from '@/components/ui/receipt-wrapper';
 import { useDialog } from '@/contexts/dialog-context';
 import { api } from '@/lib/api';
 import type { BusinessType } from '@/lib/schema';
-import { salesItemSchema, type SalesItem } from '@/lib/schemas/retail';
+import { type SalesItem, salesItemSchema } from '@/lib/schemas/retail';
 import { db } from '@/lib/ssr/api';
-import type { SchemaKeys } from '@gta/react-hooks';
-import {
-  Car,
-  DollarSign,
-  MapIcon,
-  Receipt,
-  ShoppingBag,
-  ShoppingCart,
-  Users,
-  Users2,
-} from 'lucide-react';
-import NepaliDate from 'nepali-datetime';
-import z from 'zod';
+import { getPaymentStatusFromTotals } from './payment-status-derivation';
 
 type AnyAutoTableTab = {
-  [K in SchemaKeys]: AutoTableTab<K>;
+  [K in SchemaKeys]: AutoAdminTabInput;
 }[SchemaKeys];
 
 export type BusinessConfigReturn = {
@@ -47,6 +35,35 @@ function calculateFiscalYear() {
   return `${year.toString().slice(0, 2)}${year
     .toString()
     .slice(2)}/${(year + 1).toString().slice(2)}`;
+}
+
+type PaymentInput = {
+  paidAt?: string | null;
+  paidAmount?: number | string | null;
+} | null;
+
+function normalizePaymentsWithFallback(
+  payments: PaymentInput[] | undefined,
+  fallbackPaidAmount: number | undefined,
+) {
+  if (Array.isArray(payments) && payments.length) {
+    return payments.map((payment) => ({
+      paidAt: payment?.paidAt || new Date().toISOString(),
+      paidAmount: Number(payment?.paidAmount ?? 0),
+    }));
+  }
+
+  const paidAmount = Number(fallbackPaidAmount ?? 0);
+  if (!paidAmount) return [];
+  return [{ paidAt: new Date().toISOString(), paidAmount }];
+}
+
+function getPaidAmountFromPayments(payments: PaymentInput[] | undefined) {
+  if (!Array.isArray(payments) || !payments.length) return 0;
+  return payments.reduce((sum, payment) => {
+    const paidAmount = Number(payment?.paidAmount ?? 0);
+    return Number.isFinite(paidAmount) ? sum + paidAmount : sum;
+  }, 0);
 }
 
 export function useBusinessConfig({
@@ -78,7 +95,10 @@ export function useBusinessConfig({
             fieldConfig({
               fieldType: 'select',
               customData: {
-                options: products.map((p) => [p, productsBySoul.get(p)?.title ?? "-"]),
+                options: products.map((p) => [
+                  p,
+                  productsBySoul.get(p)?.title ?? '-',
+                ]),
               },
             }),
           ),
@@ -88,7 +108,9 @@ export function useBusinessConfig({
       .min(0);
   }
 
-  const returnedProductsSchema = returnedProductsSchemaWithProducts(products?.map((p) => p._?.soul ?? "") ?? []);
+  const returnedProductsSchema = returnedProductsSchemaWithProducts(
+    products?.map((p) => p._?.soul ?? '') ?? [],
+  );
 
   async function deleteInvoiceByPartyId(id: string) {
     const invoices = await db.invoice.get({ keys: [slug] });
@@ -126,17 +148,11 @@ export function useBusinessConfig({
     retail: [
       {
         schema: 'product',
-        title: 'Products',
         slug,
-        icon: ShoppingBag,
-        group: 'Inventory',
       },
       {
         schema: 'party',
-        title: 'Purchase Parties',
         slug,
-        icon: Users2,
-        group: 'Party',
         async onDelete(_, id) {
           const invoices = await db.invoice.get({ keys: [slug] });
           if (!invoices.length) return;
@@ -168,10 +184,7 @@ export function useBusinessConfig({
       },
       {
         schema: 'customer',
-        title: 'Customers',
         slug,
-        icon: Users,
-        group: 'Party',
         async onDelete(_, id) {
           const invoices = await db.invoice.get({ keys: [slug] });
           if (!invoices.length) return;
@@ -203,12 +216,9 @@ export function useBusinessConfig({
       },
       {
         schema: 'stockImport',
-        title: 'Stock Imports',
-        icon: ShoppingBag,
         slug,
-        group: 'Inventory',
         previewOverrides: {
-          party: (p) => partiesBySoul.get(p)?.name ?? "-",
+          party: (p) => partiesBySoul.get(p)?.name ?? '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
@@ -284,6 +294,11 @@ export function useBusinessConfig({
               (sum, item) => sum + item.quantity * item.unitPrice,
               0,
             ) ?? 0;
+          const payments = normalizePaymentsWithFallback(
+            variables.payments,
+            variables.paidAmount,
+          );
+          const paidAmount = getPaidAmountFromPayments(payments);
 
           void db.invoice.create(slug)({
             type: 'purchase',
@@ -292,18 +307,18 @@ export function useBusinessConfig({
             items: invoiceItems,
             subTotal: totalAmount,
             tax: 0,
-            paidAmount: variables.paidAmount || 0,
-            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-            paymentStatus: (variables.paymentStatus || 'pending') as any,
+            payments,
+            paidAmount,
+            paymentStatus: getPaymentStatusFromTotals({
+              paidAmount,
+              totalAmount,
+            }),
             fiscalYear: calculateFiscalYear(),
           });
         },
       },
       {
         schema: 'sale',
-        title: 'Sales',
-        icon: DollarSign,
-        group: 'Inventory',
         slug,
         previewOverrides: {
           customerId: (id) =>
@@ -313,12 +328,12 @@ export function useBusinessConfig({
           saleDate: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
               : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
@@ -389,6 +404,11 @@ export function useBusinessConfig({
               (sum, item) => sum + item.quantity * item.unitPrice,
               0,
             ) ?? 0;
+          const payments = normalizePaymentsWithFallback(
+            variables.payments,
+            variables.paidAmount,
+          );
+          const paidAmount = getPaidAmountFromPayments(payments);
 
           void db.invoice.create(slug)({
             type: 'sale',
@@ -397,9 +417,12 @@ export function useBusinessConfig({
             items: invoiceItems,
             subTotal: totalAmount,
             tax: 0,
-            paidAmount: variables.paidAmount || 0,
-            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-            paymentStatus: (variables.paymentStatus || 'pending') as any,
+            payments,
+            paidAmount,
+            paymentStatus: getPaymentStatusFromTotals({
+              paidAmount,
+              totalAmount,
+            }),
             fiscalYear: calculateFiscalYear(),
           });
         },
@@ -409,10 +432,7 @@ export function useBusinessConfig({
       },
       {
         schema: 'invoice',
-        title: 'Invoices',
-        group: 'Financial',
         slug,
-        icon: Receipt,
         readOnly: true,
         actions: async ({ row }) => {
           const partyId = row.original.partyId;
@@ -449,20 +469,20 @@ export function useBusinessConfig({
           issuedAt: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              })
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
               : '-',
           dueDate: (date) =>
             date
               ? new Date(date).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-              })
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })
               : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
@@ -477,9 +497,6 @@ export function useBusinessConfig({
       },
       {
         schema: 'order',
-        title: 'Orders',
-        icon: ShoppingCart,
-        group: 'Inventory',
         slug,
         previewOverrides: {
           customerId: (id) =>
@@ -552,6 +569,11 @@ export function useBusinessConfig({
                 (sum, item) => sum + item.quantity * item.unitPrice,
                 0,
               ) ?? 0;
+            const payments = normalizePaymentsWithFallback(
+              variables.payments,
+              variables.paidAmount,
+            );
+            const paidAmount = getPaidAmountFromPayments(payments);
 
             void db.invoice.create(slug)({
               type: 'sale',
@@ -560,9 +582,12 @@ export function useBusinessConfig({
               items: invoiceItems,
               subTotal: totalAmount,
               tax: 0,
-              paidAmount: variables.paidAmount || 0,
-              // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-              paymentStatus: (variables.paymentStatus || 'pending') as any,
+              payments,
+              paidAmount,
+              paymentStatus: getPaymentStatusFromTotals({
+                paidAmount,
+                totalAmount,
+              }),
               fiscalYear: calculateFiscalYear(),
             });
           }
@@ -600,30 +625,37 @@ export function useBusinessConfig({
             },
           );
 
-          const invoiceItems = order.items?.map((item) => {
-            const productInfo = productsBySoul.get(item.product);
-            let adjustedQuantity = item.quantity;
+          const invoiceItems =
+            order.items?.map((item) => {
+              const productInfo = productsBySoul.get(item.product);
+              let adjustedQuantity = item.quantity;
 
-            if (productInfo?.unit?.includes(':')) {
-              const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-              if (item.unit === unitType) {
-                adjustedQuantity =
-                  item.quantity * parseInt(piecesPerUnit, 10);
+              if (productInfo?.unit?.includes(':')) {
+                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+                if (item.unit === unitType) {
+                  adjustedQuantity =
+                    item.quantity * parseInt(piecesPerUnit, 10);
+                }
               }
-            }
 
-            return {
-              product: item.product,
-              quantity: adjustedQuantity,
-              rate: item.unitPrice,
-              total: item.quantity * item.unitPrice,
-            };
-          }) ?? [];
+              return {
+                product: item.product,
+                quantity: adjustedQuantity,
+                rate: item.unitPrice,
+                total: item.quantity * item.unitPrice,
+              };
+            }) ?? [];
 
-          const totalAmount = order.items?.reduce(
-            (sum, item) => sum + item.quantity * item.unitPrice,
-            0,
-          ) ?? 0;
+          const totalAmount =
+            order.items?.reduce(
+              (sum, item) => sum + item.quantity * item.unitPrice,
+              0,
+            ) ?? 0;
+          const payments = normalizePaymentsWithFallback(
+            order.payments,
+            order.paidAmount,
+          );
+          const paidAmount = getPaidAmountFromPayments(payments);
 
           db.invoice.create(slug)({
             type: 'sale',
@@ -632,25 +664,23 @@ export function useBusinessConfig({
             items: invoiceItems,
             subTotal: totalAmount,
             tax: 0,
-            paidAmount: order.paidAmount || 0,
-            paymentStatus: order.paymentStatus || ('pending' as any),
+            payments,
+            paidAmount,
+            paymentStatus: getPaymentStatusFromTotals({
+              paidAmount,
+              totalAmount,
+            }),
             fiscalYear: calculateFiscalYear(),
           });
         },
       },
       {
         schema: 'vehicle',
-        title: 'Vehicles',
         slug,
-        icon: Car,
-        group: 'Logistics',
       },
       {
         schema: 'trip',
-        title: 'Trips',
         slug,
-        icon: MapIcon,
-        group: 'Logistics',
         previewOverrides: {
           vehicleId: (vehicleId) => vehiclesBySoul.get(vehicleId)?.name ?? '-',
           products: (items) => {
@@ -869,12 +899,11 @@ export function useBusinessConfig({
                                 );
 
                                 const totalAmount = soldProducts.reduce(
-                                  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                  (sum: number, item: any) =>
+                                  (sum, item) =>
                                     sum +
                                     item.quantity *
-                                    (productsBySoul.get(item.productId)
-                                      ?.sellingPrice || 0),
+                                      (productsBySoul.get(item.productId)
+                                        ?.sellingPrice || 0),
                                   0,
                                 );
 
@@ -893,9 +922,14 @@ export function useBusinessConfig({
                                   items: invoiceItems,
                                   subTotal: totalAmount,
                                   tax: 0,
+                                  payments: [
+                                    {
+                                      paidAt: new Date().toISOString(),
+                                      paidAmount: totalAmount,
+                                    },
+                                  ],
                                   paidAmount: totalAmount,
-                                  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-                                  paymentStatus: 'paid' as any,
+                                  paymentStatus: 'paid',
                                   fiscalYear: calculateFiscalYear(),
                                   vehicleId: row.original.vehicleId,
                                   tripId: row.original._?.soul,

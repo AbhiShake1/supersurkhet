@@ -1,37 +1,37 @@
-import * as Kanban from '@/components/ui/kanban';
-import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
-import { api } from '@/lib/api';
-import { appSchema } from '@/lib/schema';
-import { cn, getSoulFromUnknown } from '@/lib/utils';
 import type { NestedSchemaType, SchemaKeys } from '@gta/react-hooks';
 import { getNestedZodShape } from '@gta/react-hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from '@tanstack/react-router';
 import _ from 'lodash';
-import { ZodEffects } from 'zod';
 import {
-  GripVertical,
-  QrCodeIcon,
   BarChart3,
+  GripVertical,
   type LucideIcon,
+  QrCodeIcon,
   Sigma,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { ZodEffects } from 'zod';
+import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
+import * as Kanban from '@/components/ui/kanban';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { api } from '@/lib/api';
+import { appSchema } from '@/lib/schema';
+import { cn, getSoulFromUnknown } from '@/lib/utils';
+import { AdminDashboard } from '../admin-dashboard';
 import { AutoTable, type AutoTableProps } from '../auto-table';
+import { LanguageSelector } from '../language-selector';
+import { QRCodePage } from '../qr-code-page';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Skeleton } from '../ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { AdminDashboard } from '../admin-dashboard';
-import { QRCodePage } from '../qr-code-page';
 import Card from '../ui/minimal-card';
 import { NotFound } from '../ui/not-found';
+import { Skeleton } from '../ui/skeleton';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { CustomUiBuilderPage } from '../ui-builder';
-import { LanguageSelector } from '../language-selector';
 
 export interface AutoAdminProps {
-  tabs: PossibleTabConfig[];
+  tabs: AutoAdminTabInput[];
 }
 
 export type PossibleTabConfig = {
@@ -41,13 +41,30 @@ export type PossibleTabConfig = {
 export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
   group?: string;
   title: string;
-  icon?: LucideIcon;
 } & (
   | {
       children: ReactNode;
+      icon?: LucideIcon;
     }
   | AutoTableProps<K extends SchemaKeys ? K : never>
 );
+
+export type AutoAdminTabInput = {
+  [K in SchemaKeys]: AutoTableTabInput<K>;
+}[SchemaKeys];
+
+export type AutoTableTabInput<K extends SchemaKeys = SchemaKeys> =
+  | {
+      title: string;
+      group?: string;
+      icon?: LucideIcon;
+      children: ReactNode;
+    }
+  | (AutoTableProps<K extends SchemaKeys ? K : never> & {
+      title?: string;
+      group?: string;
+      icon?: LucideIcon;
+    });
 
 type AutoTableItem = AutoTableProps<SchemaKeys>;
 
@@ -70,6 +87,29 @@ function normalizeTableTab(
   };
 }
 
+function toTitleCase(schema: string) {
+  return schema
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/^./, (c) => c.toUpperCase());
+}
+
+function resolveTabMetadata(tab: AutoAdminTabInput): PossibleTabConfig {
+  if (!('schema' in tab)) {
+    return {
+      ...tab,
+      title: tab.title ?? 'Untitled',
+    };
+  }
+
+  const schemaMeta = appSchema[tab.schema];
+  return {
+    ...tab,
+    title: tab.title ?? schemaMeta.title ?? toTitleCase(tab.schema),
+    group: tab.group ?? schemaMeta.group,
+    icon: 'icon' in tab && tab.icon ? tab.icon : schemaMeta.icon,
+  };
+}
+
 export function AutoAdmin({ tabs }: AutoAdminProps) {
   'use memo';
   const { search, pathname: currentPathname } = useLocation();
@@ -81,7 +121,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
-  const tabsWithHome = [
+  const tabsWithHome: PossibleTabConfig[] = [
     {
       title: 'Dashboard',
       icon: BarChart3,
@@ -89,7 +129,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
         <AdminDashboard slug={basePath} businessType={business.businessType} />
       ),
     },
-    ...tabs,
+    ...tabs.map(resolveTabMetadata),
     {
       title: 'QR Management',
       icon: QrCodeIcon,
@@ -253,7 +293,8 @@ export function AutoKanban<K extends SchemaKeys>({
   const { mutate: update } = api[schemaName].useUpdate({ keys: [slug] });
   const columns = _.groupBy(orders, (o) => o[groupKey]);
   const schema = getNestedZodShape(schemaName, appSchema.schemaShape);
-  const schemaObject = schema instanceof ZodEffects ? schema.innerType() : schema;
+  const schemaObject =
+    schema instanceof ZodEffects ? schema.innerType() : schema;
   const groupField = schemaObject.shape[groupKey] as {
     Values?: Record<string, string>;
     _def?: { innerType?: { Values?: Record<string, string> } };

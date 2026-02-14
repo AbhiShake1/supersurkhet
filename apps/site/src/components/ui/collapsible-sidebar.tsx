@@ -1,17 +1,23 @@
-import type React from 'react';
-import { useState, useEffect } from 'react';
+import { Link, useLocation } from '@tanstack/react-router';
+import type { LucideIcon } from 'lucide-react';
 import {
   ChevronsRight,
-  Search,
-  Menu,
   ChevronsUpDown,
   LogOut,
+  LucideBriefcaseBusiness,
+  Menu,
+  Search,
   Settings,
 } from 'lucide-react';
-import { Link, useLocation } from '@tanstack/react-router';
-import { Input } from './input';
+import type React from 'react';
+import { useEffect, useState } from 'react';
+import { useDialog } from '@/contexts/dialog-context';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useProfile } from '@/hooks/use-profile';
+import { appSchema } from '@/lib/schema';
 import { useAuth } from '../auth-provider';
-import type { LucideIcon } from 'lucide-react';
+import type { PossibleTabConfig } from '../auto-admin';
+import { ThemeToggle } from '../theme/theme-toggle';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
 import {
   DropdownMenu,
@@ -21,12 +27,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './dropdown-menu';
-import { useProfile } from '@/hooks/use-profile';
+import { Input } from './input';
 import { ManageOrganization } from './organizations/manage-organization';
-import { ThemeToggle } from '../theme/theme-toggle';
-import type { PossibleTabConfig } from '../auto-admin';
-import { useDialog } from '@/contexts/dialog-context';
-import { useIsMobile } from '@/hooks/use-mobile';
+
+function isLucideIcon(value: unknown): value is LucideIcon {
+  return typeof value === 'function';
+}
+
+function getTabIcon(tab: PossibleTabConfig): LucideIcon {
+  if ('icon' in tab && tab.icon) return tab.icon;
+  if ('schema' in tab) {
+    const schemaIcon = appSchema[tab.schema].icon;
+    if (isLucideIcon(schemaIcon)) return schemaIcon;
+    return LucideBriefcaseBusiness;
+  }
+  return Menu;
+}
 
 export interface CollapsibleSidebarProps {
   businessName?: string;
@@ -120,7 +136,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
             <Option
               // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
               key={index}
-              Icon={item.icon || Menu}
+              Icon={getTabIcon(item)}
               title={item.title}
               url={item.url}
               selected={selected}
@@ -145,7 +161,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                     index
                   }`}
-                  Icon={item.icon || Menu}
+                  Icon={getTabIcon(item)}
                   title={item.title}
                   url={item.url}
                   selected={selected}

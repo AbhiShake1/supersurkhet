@@ -1,13 +1,12 @@
+import type { SchemaKeys } from '@gta/react-hooks';
 import { createFileRoute } from '@tanstack/react-router';
-import { LucideBriefcaseBusiness } from 'lucide-react';
 import { useEffect } from 'react';
 import { useAuth } from '@/components/auth-provider';
-import { AutoAdmin, type PossibleTabConfig } from '@/components/auto-admin';
+import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import { Unauthorized } from '@/components/ui/unauthorized';
 import { api } from '@/lib/api';
 import { appSchema } from '@/lib/schema';
-import type { SchemaKeys } from '@gta/react-hooks';
 import type { GTAAppConfig } from '@/lib/schemas/core/types';
 
 export const Route = createFileRoute('/admin')({
@@ -20,10 +19,6 @@ function toRawShapeEntries(
   rawShape: typeof appSchema.rawShape,
 ): Array<[SchemaKeys, RawShapeConfig]> {
   return Object.entries(rawShape) as Array<[SchemaKeys, RawShapeConfig]>;
-}
-
-function isLucideIcon(value: unknown): value is typeof LucideBriefcaseBusiness {
-  return typeof value === 'function';
 }
 
 function RouteComponent() {
@@ -47,7 +42,7 @@ function RouteComponent() {
 
   const tabs = entries
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([schemaKey, schemaConfig]) => {
+    .map(([schemaKey]) => {
       const transformer = (rows: any[]): any[] => {
         if (rows.length === 0) return rows;
         const first = rows[0];
@@ -72,14 +67,9 @@ function RouteComponent() {
 
       return {
         schema: schemaKey,
-        title: schemaKey[0].toUpperCase() + schemaKey.slice(1),
-        icon: isLucideIcon(schemaConfig.icon)
-          ? schemaConfig.icon
-          : LucideBriefcaseBusiness,
-        group: schemaConfig.group,
         slug: '',
         transformer,
-      } satisfies PossibleTabConfig;
+      } satisfies AutoAdminTabInput;
     });
 
   return <AutoAdmin tabs={tabs} />;

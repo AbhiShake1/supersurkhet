@@ -1,15 +1,16 @@
-import type { ForwardRefExoticComponent, RefAttributes } from 'react';
-import type { AdminComponent } from '@/components/ui/admin';
-import type z from 'zod';
-import type { LucideIcon, LucideProps } from 'lucide-react';
 import type { SchemaKeys } from '@gta/react-hooks';
+import type { LucideIcon, LucideProps } from 'lucide-react';
+import type { ForwardRefExoticComponent, RefAttributes } from 'react';
+import type z from 'zod';
+import type { AdminComponent } from '@/components/ui/admin';
 
-export type DefaultSchemaType = z.ZodObject<any> | z.ZodEffects<any>
+export type DefaultSchemaType = z.ZodObject<any> | z.ZodEffects<any>;
 
 export interface GTAAppConfig {
   schema: {
     [table: string]: {
       schema: DefaultSchemaType;
+      title?: string;
       icon?: ForwardRefExoticComponent<
         Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
       >;

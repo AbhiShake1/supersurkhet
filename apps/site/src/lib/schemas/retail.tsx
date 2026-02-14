@@ -14,9 +14,17 @@ function getValueAtPath(input: unknown, path: string[]) {
 }
 
 function getPaidAmountFromFormValues(formValues: {
-  paidAmount?: number | null | string;
+  payments?: Array<{ paidAmount?: number | null | string } | null> | null;
 }) {
-  return Number(formValues.paidAmount ?? 0);
+  if (!Array.isArray(formValues.payments) || !formValues.payments.length) {
+    return 0;
+  }
+
+  return formValues.payments.reduce((sum, payment) => {
+    if (!payment) return sum;
+    const paidAmount = Number(payment.paidAmount ?? 0);
+    return Number.isFinite(paidAmount) ? sum + paidAmount : sum;
+  }, 0);
 }
 
 function getSoftDerivedUnitValue({
@@ -92,7 +100,7 @@ function createSoftDerivedUnitPriceField({
 
 function createPaidAmountFieldFromFormValues(
   formValues: {
-    items?: Array<{ quantity?: number | null; unitPrice?: number | null } | null> | null;
+    payments?: Array<{ paidAmount?: number | null | string } | null> | null;
   },
 ) {
   return z
@@ -102,10 +110,14 @@ function createPaidAmountFieldFromFormValues(
     .superRefine(
       fieldConfig({
         fieldType: 'number',
+        inputProps: {
+          className: 'border-none',
+          readOnly: true,
+        },
         customData: {
           derive: () => ({
             inputProps: {
-              value: getItemsTotalForPaymentStatus(formValues.items ?? []),
+              value: getPaidAmountFromFormValues(formValues),
             }
           }),
         },
@@ -116,7 +128,7 @@ function createPaidAmountFieldFromFormValues(
 function createDerivedPaymentStatusFieldFromFormValues(
   formValues: {
     items?: Array<{ quantity?: number | null; unitPrice?: number | null } | null> | null;
-    paidAmount?: number | null;
+    payments?: Array<{ paidAmount?: number | null | string } | null> | null;
   },
 ) {
   return z
@@ -279,7 +291,25 @@ export const saleSchema = z
       .array()
       .min(1, { message: 'Please add at least one item.' })
       .describe('Items Sold'),
-    paidAmount: z.number({ coerce: true }).positive().describe('Paid Amount'),
+    payments: z
+      .array(
+        z.object({
+          paidAt: z
+            .string()
+            .datetime({ offset: true })
+            .default(() => new Date().toISOString())
+            .describe('Paid At')
+            .superRefine(fieldConfig({ fieldType: 'datetime' })),
+          paidAmount: z
+            .number({ coerce: true })
+            .nonnegative()
+            .describe('Paid Amount')
+            .superRefine(fieldConfig({ fieldType: 'number' })),
+        }),
+      )
+      .default([])
+      .describe('Payments'),
+    paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
       .string()
       .default('pending')
@@ -351,7 +381,25 @@ export const orderSchema = z
       .array()
       .min(1, { message: 'Please add at least one item.' })
       .describe('Items Ordered'),
-    paidAmount: z.number({ coerce: true }).positive().describe('Paid Amount'),
+    payments: z
+      .array(
+        z.object({
+          paidAt: z
+            .string()
+            .datetime({ offset: true })
+            .default(() => new Date().toISOString())
+            .describe('Paid At')
+            .superRefine(fieldConfig({ fieldType: 'datetime' })),
+          paidAmount: z
+            .number({ coerce: true })
+            .nonnegative()
+            .describe('Paid Amount')
+            .superRefine(fieldConfig({ fieldType: 'number' })),
+        }),
+      )
+      .default([])
+      .describe('Payments'),
+    paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
       .string()
       .default('pending')
@@ -475,7 +523,25 @@ export const stockImportSchema = z
       .min(1, { message: 'Please add at least one item.' })
       .describe('Items to Import'),
     totalAmount: createDerivedItemTotalAmountField(),
-    paidAmount: z.number({ coerce: true }).positive().describe('Paid Amount'),
+    payments: z
+      .array(
+        z.object({
+          paidAt: z
+            .string()
+            .datetime({ offset: true })
+            .default(() => new Date().toISOString())
+            .describe('Paid At')
+            .superRefine(fieldConfig({ fieldType: 'datetime' })),
+          paidAmount: z
+            .number({ coerce: true })
+            .nonnegative()
+            .describe('Paid Amount')
+            .superRefine(fieldConfig({ fieldType: 'number' })),
+        }),
+      )
+      .default([])
+      .describe('Payments'),
+    paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
       .string()
       .default('pending')
@@ -542,7 +608,6 @@ export const customerSchema = partySchema.extend({
 export const invoiceSchema = z
   .object({
     type: z.enum(['purchase', 'sale']),
-
     partyId: z.string().describe('Party').optional(),
     vehicleId: z.string().describe('Vehicle').optional(),
     tripId: z.string().describe('Trip').optional(),
@@ -572,6 +637,24 @@ export const invoiceSchema = z
 
     subTotal: z.number({ coerce: true }).int().nonnegative(),
     tax: z.number({ coerce: true }).int().nonnegative().default(0),
+    payments: z
+      .array(
+        z.object({
+          paidAt: z
+            .string()
+            .datetime({ offset: true })
+            .default(() => new Date().toISOString())
+            .describe('Paid At')
+            .superRefine(fieldConfig({ fieldType: 'datetime' })),
+          paidAmount: z
+            .number({ coerce: true })
+            .nonnegative()
+            .describe('Paid Amount')
+            .superRefine(fieldConfig({ fieldType: 'number' })),
+        }),
+      )
+      .default([])
+      .describe('Payments'),
     paidAmount: z
       .number({ coerce: true })
       .nonnegative()
@@ -591,6 +674,38 @@ export const invoiceSchema = z
       ),
     fiscalYear: z.string().describe('Fiscal Year'),
   })
+  .withDerivation('paidAmount', ({ formValues }) =>
+    createPaidAmountFieldFromFormValues(formValues),
+  )
+  .withDerivation('paymentStatus', ({ formValues }) =>
+    z
+      .string()
+      .default('pending')
+      .describe('Payment Status')
+      .superRefine(
+        fieldConfig({
+          inputProps: {
+            className: 'border-none',
+            disabled: true,
+          },
+          customData: {
+            derive: () => {
+              const subTotal = Number(formValues.subTotal ?? 0);
+              const tax = Number(formValues.tax ?? 0);
+              const paidAmount = getPaidAmountFromFormValues(formValues);
+              return {
+                inputProps: {
+                  value: getPaymentStatusFromTotals({
+                    paidAmount,
+                    totalAmount: subTotal + tax,
+                  }),
+                }
+              };
+            },
+          },
+        }),
+      ),
+  )
   .extend(table);
 
 export const tripSchema = z
@@ -645,4 +760,3 @@ export const tripSchema = z
       .describe('Products Returned from Trip'),
   })
   .extend(table);
-

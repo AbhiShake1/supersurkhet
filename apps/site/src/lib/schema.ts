@@ -1,4 +1,3 @@
-import { fieldConfig } from '@/components/ui/autoform';
 import { IconMoneybag } from '@tabler/icons-react';
 import {
   Building,
@@ -17,11 +16,12 @@ import {
   Users2,
 } from 'lucide-react';
 import { z } from 'zod';
+import { fieldConfig } from '@/components/ui/autoform';
 import { dataMatrixActionSchema } from './datamatrix';
 import type {
   AppSchemaType,
   CreatedSchema,
-  GTAAppConfig,
+  GTAAppConfig as GTAAppConfigShape,
   InferredTable,
   SchemaShape,
 } from './schemas/core/types';
@@ -33,8 +33,16 @@ import {
   withLabel,
 } from './schemas/listings';
 import { qrFlowConfigSchema } from './schemas/qr-flow-config-schema';
+import {
+  customerSchema,
+  invoiceSchema,
+  orderSchema,
+  partySchema,
+  saleSchema,
+  stockImportSchema,
+  tripSchema,
+} from './schemas/retail';
 import { uiBuilderSchema } from './schemas/ui-builder-schema';
-import { customerSchema, invoiceSchema, orderSchema, partySchema, saleSchema, stockImportSchema, tripSchema } from './schemas/retail';
 
 function getPermissions() {
   return ['product'] as readonly [string, ...string[]];
@@ -107,13 +115,13 @@ export const businessInvitationSchema = z.object({
   expiresAt: z.number().optional(),
 });
 
-export type BusinessInvitation = NonNullable<Business["invitations"]>[string]
+export type BusinessInvitation = NonNullable<Business['invitations']>[string];
 
 export const businessTypeSchema = z
   .enum(['retail'])
   .describe('The primary category of the business');
 
-export type BusinessType = Business["businessType"]
+export type BusinessType = Business['businessType'];
 
 export const businessSchema = z
   .object({
@@ -184,7 +192,7 @@ export const recentlyUsedAppSchema = z
   .extend(table);
 
 // #region App Schema
-function createSchema<const TSchema extends GTAAppConfig['schema']>(
+function createSchema<const TSchema extends GTAAppConfigShape['schema']>(
   schema: TSchema,
 ): CreatedSchema<TSchema> {
   return {
@@ -196,15 +204,14 @@ function createSchema<const TSchema extends GTAAppConfig['schema']>(
       ) as SchemaShape<TSchema>;
       return z.object(o);
     },
-    extend<const TOtherSchema extends GTAAppConfig['schema']>(
+    extend<const TOtherSchema extends GTAAppConfigShape['schema']>(
       otherSchema: TOtherSchema,
     ) {
       return createSchema({ ...schema, ...otherSchema });
     },
-    merge<const TOtherSchema extends CreatedSchema<GTAAppConfig['schema']>>(
-      this,
-      otherSchema: TOtherSchema,
-    ) {
+    merge<
+      const TOtherSchema extends CreatedSchema<GTAAppConfigShape['schema']>,
+    >(this, otherSchema: TOtherSchema) {
       return createSchema({
         ...this.rawShape,
         ...otherSchema.rawShape,
@@ -216,26 +223,31 @@ function createSchema<const TSchema extends GTAAppConfig['schema']>(
 export const coreSchema = createSchema({
   user: {
     schema: userSchema,
+    title: 'Users',
     icon: LucideUser,
     group: 'User Management',
   },
   business: {
     schema: businessSchema,
+    title: 'Businesses',
     icon: Building,
     group: 'System Configuration',
   },
   role: {
     schema: roleSchema,
+    title: 'Roles',
     icon: List,
     group: 'User Management',
   },
   membership: {
     schema: membershipSchema,
+    title: 'Memberships',
     icon: Users,
     group: 'User Management',
   },
   otp: {
     schema: otpSchema,
+    title: 'OTPs',
     icon: Lock,
     group: 'System Configuration',
   },
@@ -244,6 +256,7 @@ export const coreSchema = createSchema({
 export const featureSchema = createSchema({
   product: {
     schema: productSchema,
+    title: 'Products',
     icon: Package,
     group: 'Products & Inventory',
     components: async () => {
@@ -260,6 +273,7 @@ export const featureSchema = createSchema({
   },
   party: {
     schema: partySchema,
+    title: 'Purchase Parties',
     icon: Users,
     group: 'Financial',
     components: async () => {
@@ -276,6 +290,7 @@ export const featureSchema = createSchema({
   },
   customer: {
     schema: customerSchema,
+    title: 'Customers',
     icon: Users2,
     group: 'Financial',
     // components: async () => {
@@ -292,6 +307,7 @@ export const featureSchema = createSchema({
   },
   invoice: {
     schema: invoiceSchema,
+    title: 'Invoices',
     icon: IconMoneybag,
     group: 'Financial',
     components: async () => {
@@ -308,16 +324,19 @@ export const featureSchema = createSchema({
   },
   sale: {
     schema: saleSchema,
+    title: 'Sales',
     icon: DollarSign,
     group: 'Financial',
   },
   stockImport: {
     schema: stockImportSchema,
+    title: 'Stock Imports',
     icon: ShoppingCart,
     group: 'Financial',
   },
   order: {
     schema: orderSchema,
+    title: 'Orders',
     icon: DollarSign,
     group: 'Business Operations',
     components: async () => {
@@ -334,6 +353,7 @@ export const featureSchema = createSchema({
   },
   menuItem: {
     schema: menuItemSchema,
+    title: 'Menu Items',
     icon: Package,
     group: 'Products & Inventory',
     components: async () => {
@@ -351,6 +371,7 @@ export const featureSchema = createSchema({
   },
   dataMatrixAction: {
     schema: dataMatrixActionSchema,
+    title: 'Data Matrix Actions',
     icon: QrCode,
     group: 'System Configuration',
     components: async () => {
@@ -370,18 +391,21 @@ export const featureSchema = createSchema({
   // Recently used apps schema
   recentlyUsedApp: {
     schema: recentlyUsedAppSchema,
+    title: 'Recently Used Apps',
     icon: Clock,
     group: 'System Configuration',
   },
   // Folder schema
   folder: {
     schema: folderSchema,
+    title: 'Folders',
     icon: Folder,
     group: 'System Configuration',
   },
   // QR Flow Config schema
   qrFlowConfig: {
     schema: qrFlowConfigSchema,
+    title: 'QR Flow Config',
     icon: QrCode,
     group: 'System Configuration',
   },
@@ -399,6 +423,7 @@ export const featureSchema = createSchema({
           .superRefine(fieldConfig({ fieldType: 'richText' })),
       })
       .extend(table),
+    title: 'Vehicles',
     icon: Car,
     group: 'Logistics',
   },
@@ -406,6 +431,7 @@ export const featureSchema = createSchema({
   // Trip schema
   trip: {
     schema: tripSchema,
+    title: 'Trips',
     icon: MapIcon,
     group: 'Logistics',
     components: async () => {
