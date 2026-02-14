@@ -92,11 +92,12 @@ export function generatePrintHTML(
   businessName: string,
 ) {
   const formatCurrency = (amount: number) => {
+    const safeAmount = Number.isFinite(amount) ? amount : 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'NPR',
       minimumFractionDigits: 2,
-    }).format(amount);
+    }).format(safeAmount);
   };
 
   const formatDate = (dateString: string) => {

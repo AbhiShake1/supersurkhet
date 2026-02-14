@@ -188,11 +188,12 @@ function FinancialOverview({
   data: ReturnType<typeof useBusinessAnalytics>;
 }) {
   const formatCurrency = (amount: number) => {
+    const safeAmount = Number.isFinite(amount) ? amount : 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'NPR', // Using NPR as it's a Nepal-focused app
       minimumFractionDigits: 2,
-    }).format(amount);
+    }).format(safeAmount);
   };
 
   // Helper function to render revenue breakdown table

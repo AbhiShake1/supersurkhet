@@ -2,12 +2,18 @@ import { useMemo } from 'react';
 import { api } from '@/lib/api';
 import NepaliDate from 'nepali-datetime';
 import type { Sale, StockImport } from '@/lib/schemas/sales';
+import {
+  lineTotal,
+  toFiniteNumber,
+} from './business-analytics-number-utils';
 
 const saleTotal = (sale: Sale) =>
-  sale.items?.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0) ?? 0;
+  sale.items?.reduce((sum, i) => sum + lineTotal(i.quantity, i.unitPrice), 0) ??
+  0;
 
 const importTotal = (imp: StockImport) =>
-  imp.items?.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0) ?? 0;
+  imp.items?.reduce((sum, i) => sum + lineTotal(i.quantity, i.unitPrice), 0) ??
+  0;
 
 export function useBusinessAnalytics(slug: string, period: string = 'all') {
   const { data: sales = [] } = api.sale.useGet({ keys: [slug] });
@@ -51,7 +57,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     () =>
       filteredSales.reduce((sum, sale) => {
         const total = saleTotal(sale);
-        const due = total - (sale.paidAmount ?? 0);
+        const due = total - toFiniteNumber(sale.paidAmount);
         return due > 0 ? sum + due : sum;
       }, 0),
     [filteredSales],
@@ -61,7 +67,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     () =>
       filteredStockImports.reduce((sum, imp) => {
         const total = importTotal(imp);
-        const due = total - (imp.paidAmount ?? 0);
+        const due = total - toFiniteNumber(imp.paidAmount);
         return due > 0 ? sum + due : sum;
       }, 0),
     [filteredStockImports],
@@ -74,18 +80,18 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
         // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         .filter((sale: any) => {
           const total = saleTotal(sale);
-          const due = total - (sale.paidAmount ?? 0);
+          const due = total - toFiniteNumber(sale.paidAmount);
           return due > 0;
         })
         // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
         .map((sale: any) => {
           const total = saleTotal(sale);
-          const due = total - (sale.paidAmount ?? 0);
+          const due = total - toFiniteNumber(sale.paidAmount);
           return {
             id: sale._?.soul || '',
             customer: sale.customerName || 'Walk-in Customer',
             totalAmount: total,
-            paidAmount: sale.paidAmount ?? 0,
+            paidAmount: toFiniteNumber(sale.paidAmount),
             dueAmount: due,
             date:
               sale.saleDate ||
@@ -95,9 +101,9 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
               sale.items?.map((item: any) => ({
                 product:
                   productsBySoul.get(item.product)?.title || item.product,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                total: item.quantity * item.unitPrice,
+                quantity: toFiniteNumber(item.quantity),
+                unitPrice: toFiniteNumber(item.unitPrice),
+                total: lineTotal(item.quantity, item.unitPrice),
               })) || [],
           };
         })
@@ -109,18 +115,18 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     return filteredStockImports
       .filter((imp) => {
         const total = importTotal(imp);
-        const due = total - (imp.paidAmount ?? 0);
+        const due = total - toFiniteNumber(imp.paidAmount);
         return due > 0;
       })
       .map((imp) => {
         const total = importTotal(imp);
-        const due = total - (imp.paidAmount ?? 0);
+        const due = total - toFiniteNumber(imp.paidAmount);
         const party = partiesBySoul.get(imp.party);
         return {
           id: imp._?.soul || '',
           supplier: party?.name || imp.party,
           totalAmount: total,
-          paidAmount: imp.paidAmount ?? 0,
+          paidAmount: toFiniteNumber(imp.paidAmount),
           dueAmount: due,
           date:
             imp.importDate ||
@@ -129,9 +135,9 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
             imp.items?.map((item) => ({
               ...item,
               product: productsBySoul.get(item.product)?.title || item.product,
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              total: item.quantity * item.unitPrice,
+              quantity: toFiniteNumber(item.quantity),
+              unitPrice: toFiniteNumber(item.unitPrice),
+              total: lineTotal(item.quantity, item.unitPrice),
             })) || [],
         };
       });
@@ -162,8 +168,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       (acc, sale) => {
         sale.items?.forEach((item) => {
           acc[item.product] =
-            (acc[item.product] || 0) +
-            (item.quantity ?? 0) * (item.unitPrice ?? 0);
+            (acc[item.product] || 0) + lineTotal(item.quantity, item.unitPrice);
         });
         return acc;
       },
@@ -223,7 +228,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       if (product._?.soul) {
         inventory.set(product._.soul, {
           product,
-          currentStock: product.stockQuantity || 0,
+          currentStock: toFiniteNumber(product.stockQuantity),
         });
       }
     });
@@ -325,8 +330,8 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
         id: sale._?.soul || '',
         customer: sale.customerName || 'Walk-in Customer',
         totalAmount: total,
-        paidAmount: sale.paidAmount ?? 0,
-        dueAmount: total - (sale.paidAmount ?? 0),
+        paidAmount: toFiniteNumber(sale.paidAmount),
+        dueAmount: total - toFiniteNumber(sale.paidAmount),
         date:
           sale.saleDate ||
           (sale.timestamp ? new Date(sale.timestamp).toISOString() : ''),
@@ -334,9 +339,9 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
           // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
           sale.items?.map((item: any) => ({
             product: productsBySoul.get(item.product)?.title || item.product,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            total: item.quantity * item.unitPrice,
+            quantity: toFiniteNumber(item.quantity),
+            unitPrice: toFiniteNumber(item.unitPrice),
+            total: lineTotal(item.quantity, item.unitPrice),
           })) || [],
       };
     });
@@ -353,9 +358,9 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
         const items =
           imp.items?.map((item) => ({
             product: productsBySoul.get(item.product)?.title || item.product,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            total: (item.quantity ?? 0) * (item.unitPrice ?? 0),
+            quantity: toFiniteNumber(item.quantity),
+            unitPrice: toFiniteNumber(item.unitPrice),
+            total: lineTotal(item.quantity, item.unitPrice),
           })) || [];
 
         const totalAmount = items.reduce((s, i) => s + i.total, 0);
