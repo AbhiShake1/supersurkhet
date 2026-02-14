@@ -10,6 +10,12 @@ import {
 import type { Invoice, Party } from '@/lib/schema';
 import type { Product } from '../supersurkhet/products';
 import { formatCurrency } from '@/lib/intl';
+import {
+  getInvoiceOutstandingAmount,
+  getInvoicePaidAmount,
+  getInvoicePayments,
+  getInvoiceTotalAmount,
+} from '@/lib/invoice-payments';
 
 interface ReceiptProps {
   invoice: Invoice;
@@ -22,8 +28,16 @@ export function InvoiceReceipt({
   productsById,
   party: { name: companyName },
 }: ReceiptProps) {
-  const totalAmount = invoice.subTotal + invoice.tax;
-  const outstandingAmount = totalAmount - invoice.paidAmount;
+  const totalAmount = getInvoiceTotalAmount(invoice);
+  const paidAmount = getInvoicePaidAmount(invoice);
+  const outstandingAmount = getInvoiceOutstandingAmount(invoice);
+  const payments = getInvoicePayments(invoice)
+    .filter((payment) => payment.paidAmount && payment.paidAmount > 0)
+    .sort((a, b) => {
+      const aDate = a.paidAt ? new Date(a.paidAt).getTime() : 0;
+      const bDate = b.paidAt ? new Date(b.paidAt).getTime() : 0;
+      return bDate - aDate;
+    });
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return 'N/A';
@@ -187,19 +201,19 @@ export function InvoiceReceipt({
               <div className="flex justify-between items-center pb-2 border-b-2 mb-2 text-sm">
                 <span className="text-muted-foreground">Total Amount</span>
                 <span className="font-bold">
-                  {formatCurrency(invoice.subTotal + invoice.tax)}
+                  {formatCurrency(totalAmount)}
                 </span>
               </div>
 
               {/* Payment Details */}
-              <div className="rounded-lg p-3 space-y-2">
+              <div className="rounded-lg p-3 space-y-2 border bg-muted/30">
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground text-xs flex items-center gap-1">
                     <DollarSign className="w-3 h-3" />
                     Amount Paid
                   </span>
-                  <span className="font-semibold">
-                    {formatCurrency(invoice.paidAmount)}
+                  <span className="font-semibold tabular-nums">
+                    {formatCurrency(paidAmount)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t">
@@ -219,14 +233,41 @@ export function InvoiceReceipt({
                   <span
                     className={`font-bold text-sm ${outstandingAmount > 0 ? 'text-destructive' : 'text-success'}`}
                   >
-                    {formatCurrency(outstandingAmount)}{' '}
+                    {formatCurrency(Math.max(outstandingAmount, 0))}{' '}
                     {outstandingAmount <= 0 && (
                       <sub className="text-xs text-muted-foreground">
-                        To Pay
+                        Settled
                       </sub>
                     )}
                   </span>
                 </div>
+                {payments.length > 0 ? (
+                  <div className="pt-2 border-t">
+                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">
+                      Payment Timeline ({payments.length})
+                    </div>
+                    <div className="space-y-1.5">
+                      {payments.map((payment, index) => (
+                        <div
+                          // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                          key={`${payment.paidAt}-${index}`}
+                          className="flex items-center justify-between text-xs"
+                        >
+                          <span className="text-muted-foreground">
+                            {formatDate(payment.paidAt)}
+                          </span>
+                          <span className="font-medium tabular-nums">
+                            {formatCurrency(payment.paidAmount ?? 0)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-2 border-t text-xs text-muted-foreground">
+                    No payment entries yet
+                  </div>
+                )}
               </div>
             </div>
           </div>

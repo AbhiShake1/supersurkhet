@@ -13,19 +13,30 @@ import { Badge } from '@/components/ui/badge';
 import {
   Search,
   FileText,
-  Calendar,
   DollarSign,
   Loader2,
   AlertCircle,
   Users,
   ShoppingCart,
   Package,
+  CheckCircle2,
+  HandCoins,
 } from 'lucide-react';
 import type { AdminComponent } from '.';
 import { api } from '@/lib/api';
 import _ from 'lodash';
 import { format } from 'date-fns';
 import type { Invoice } from '@/lib/schema';
+import { formatCurrency } from '@/lib/intl';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import {
+  getInvoiceOutstandingAmount,
+  getInvoicePaidAmount,
+  getInvoicePaymentProgress,
+  getInvoicePayments,
+  getInvoiceTotalAmount,
+} from '@/lib/invoice-payments';
 
 interface InvoiceManagementProps {
   slug: string;
@@ -50,6 +61,14 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
   const { data: customers = [] } = api.customer.useGet({
     keys: [slug],
   });
+  const totalPaidAmount = invoices.reduce(
+    (sum, inv) => sum + getInvoicePaidAmount(inv),
+    0,
+  );
+  const totalOutstandingAmount = invoices.reduce(
+    (sum, inv) => sum + Math.max(0, getInvoiceOutstandingAmount(inv)),
+    0,
+  );
 
   if (isLoading) {
     return (
@@ -106,7 +125,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
   const partyStats = filteredParties.map((party) => {
     const partyInvoices = groupedPurchaseInvoices[party._?.soul || ''] || [];
     const totalAmount = partyInvoices.reduce(
-      (sum, inv) => sum + (inv.subTotal || 0),
+      (sum, inv) => sum + getInvoiceTotalAmount(inv),
       0,
     );
     const purchaseCount = partyInvoices.length;
@@ -123,7 +142,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
   const customerStats = filteredCustomers.map((customer) => {
     const customerInvoices = groupedSaleInvoices[customer._?.soul || ''] || [];
     const totalAmount = customerInvoices.reduce(
-      (sum, inv) => sum + (inv.subTotal || 0),
+      (sum, inv) => sum + getInvoiceTotalAmount(inv),
       0,
     );
     const salesCount = customerInvoices.length;
@@ -150,87 +169,177 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
   const InvoiceCard = ({
     invoice,
   }: {
-    invoice: Invoice & { _?: { soul: string } };
+    invoice: Invoice;
   }) => {
     // Determine if this is a party or customer invoice
     const party = parties.find((p) => p._?.soul === invoice.partyId);
-    const customer = customers.find((c) => c._?.soul === invoice.customerId);
+    const customer = customers.find((c) => c._?.soul === invoice.partyId);
+    const totalAmount = getInvoiceTotalAmount(invoice);
+    const paidAmount = getInvoicePaidAmount(invoice);
+    const outstandingAmount = getInvoiceOutstandingAmount(invoice);
+    const paymentProgress = getInvoicePaymentProgress(invoice);
+    const payments = getInvoicePayments(invoice)
+      .filter((payment) => payment.paidAmount && payment.paidAmount > 0)
+      .sort((a, b) => {
+        const aDate = a.paidAt ? new Date(a.paidAt).getTime() : 0;
+        const bDate = b.paidAt ? new Date(b.paidAt).getTime() : 0;
+        return bDate - aDate;
+      });
+    const displayName = party?.name || customer?.name || 'Unknown party';
+    const issuedOn = invoice.issuedAt
+      ? format(new Date(invoice.issuedAt), 'dd MMM yyyy')
+      : 'N/A';
+    const dueOn = invoice.dueDate
+      ? format(new Date(invoice.dueDate), 'dd MMM yyyy')
+      : 'N/A';
+    const lastPaymentOn = payments[0]?.paidAt
+      ? format(new Date(payments[0].paidAt), 'dd MMM yyyy')
+      : 'N/A';
+    const isSettled = outstandingAmount <= 0;
 
     return (
-      <Card className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-accent/50 hover:scale-[1.02]">
-        <CardHeader className="">
-          <div className="flex items-start justify-start gap-2 flex-col">
-            <div className="flex items-center gap-3">
-              <div className="bg-primary/10 p-3 rounded-xl">
-                <FileText className="w-6 h-6 text-primary" />
+      <Card className="group border-l-4 border-l-accent/60 transition-all duration-200 hover:shadow-lg">
+        <CardHeader className="space-y-3 pb-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex items-center gap-3">
+              <div className="rounded-xl bg-primary/10 p-2.5">
+                <FileText className="h-5 w-5 text-primary" />
               </div>
-              <div>
-                <h3 className="font-semibold text-base">
+              <div className="min-w-0">
+                <h3 className="truncate font-semibold text-sm sm:text-base">
                   #{invoice._?.soul?.split('/').at(-1)}
                 </h3>
+                <p className="truncate text-xs text-muted-foreground">
+                  {displayName}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="tabular-nums text-lg font-bold text-primary">
+                {formatCurrency(totalAmount)}
+              </div>
+              <div className="mt-1 flex items-center justify-end gap-1.5">
                 <Badge
                   variant={getInvoiceTypeBadgeVariant(invoice.type)}
-                  className="mt-1 text-xs"
+                  className="text-[10px] uppercase tracking-wide"
                 >
                   {invoice.type}
                 </Badge>
-              </div>
-            </div>
-            <div className="">
-              <div className="font-bold text-lg text-primary">
-                Rs. {invoice.subTotal?.toFixed(2)}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {invoice.issuedAt &&
-                  format(new Date(invoice.issuedAt), 'MMM dd, yyyy')}
+                <Badge
+                  variant={isSettled ? 'default' : 'secondary'}
+                  className={cn(
+                    'text-[10px] uppercase tracking-wide',
+                    isSettled
+                      ? 'bg-emerald-600 hover:bg-emerald-600 text-white'
+                      : 'bg-amber-100 text-amber-800 hover:bg-amber-100 dark:bg-amber-900/40 dark:text-amber-200',
+                  )}
+                >
+                  {isSettled ? 'settled' : 'due'}
+                </Badge>
               </div>
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="rounded-md bg-muted/40 p-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Issued
+              </p>
+              <p className="mt-0.5 font-medium">{issuedOn}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Due
+              </p>
+              <p className="mt-0.5 font-medium">{dueOn}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Payments
+              </p>
+              <p className="mt-0.5 font-medium">{payments.length}</p>
+            </div>
+            <div className="rounded-md bg-muted/40 p-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Last Paid
+              </p>
+              <p className="mt-0.5 font-medium">{lastPaymentOn}</p>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {party && (
-              <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <Package className="w-4 h-4 text-gray-500" />
-                <span className="font-medium">{party.name}</span>
-              </div>
-            )}
-            {customer && (
-              <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <Users className="w-4 h-4 text-gray-500" />
-                <span className="font-medium">{customer.name}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-              <Calendar className="w-4 h-4 text-gray-500" />
-              {invoice.issuedAt && (
-                <span>
-                  {format(new Date(invoice.issuedAt), 'MMM dd, yyyy')}
-                </span>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <div className="p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Subtotal
-                </span>
-                <div className="font-medium">
-                  Rs. {invoice.subTotal?.toFixed(2)}
-                </div>
-              </div>
-              <div className="p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                  Tax
-                </span>
-                <div className="font-medium">Rs. {invoice.tax?.toFixed(2)}</div>
-              </div>
-            </div>
-            <div className="flex justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg mt-2 border-t border-gray-200 dark:border-gray-700">
-              <span className="font-semibold">Total:</span>
-              <span className="font-bold text-lg text-blue-600 dark:text-blue-400">
-                Rs. {invoice.subTotal?.toFixed(2)}
+        <CardContent className="space-y-3 pt-0">
+          <div className="rounded-lg border bg-card/70 p-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="tabular-nums font-medium">
+                {formatCurrency(invoice.subTotal)}
               </span>
             </div>
+            <div className="mt-1 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Tax</span>
+              <span className="tabular-nums font-medium">
+                {formatCurrency(invoice.tax)}
+              </span>
+            </div>
+            <div className="mt-2 flex items-center justify-between border-t pt-2 text-sm">
+              <span className="font-semibold">Invoice Total</span>
+              <span className="tabular-nums text-base font-bold text-primary">
+                {formatCurrency(totalAmount)}
+              </span>
+            </div>
+          </div>
+
+          <div className="rounded-lg border bg-card/70 p-3">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Paid</span>
+              <span className="tabular-nums font-semibold">
+                {formatCurrency(paidAmount)}
+              </span>
+            </div>
+            <div className="mt-1 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground">Outstanding</span>
+              <span
+                className={cn(
+                  'tabular-nums font-semibold',
+                  outstandingAmount > 0
+                    ? 'text-amber-600 dark:text-amber-300'
+                    : 'text-emerald-600 dark:text-emerald-300',
+                )}
+              >
+                {formatCurrency(Math.max(outstandingAmount, 0))}
+              </span>
+            </div>
+            <Progress className="mt-2 h-2" value={paymentProgress} />
+            <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
+              <span>{payments.length} payments logged</span>
+              <span>{paymentProgress.toFixed(0)}% complete</span>
+            </div>
+
+            {payments.length > 0 && (
+              <div className="mt-2 border-t pt-2">
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Recent Payments
+                </p>
+                <div className="space-y-1">
+                  {payments.slice(0, 2).map((payment, index) => (
+                    <div
+                      // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                      key={`${payment.paidAt}-${index}`}
+                      className="flex items-center justify-between text-xs"
+                    >
+                      <span className="text-muted-foreground">
+                        {payment.paidAt
+                          ? format(new Date(payment.paidAt), 'dd MMM yyyy')
+                          : 'Unknown date'}
+                      </span>
+                      <span className="tabular-nums font-medium">
+                        {formatCurrency(payment.paidAmount ?? 0)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -252,7 +361,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-4">
         <Card className="relative overflow-hidden">
           <CardContent className="p-4 flex flex-col items-center justify-center text-center">
             <Package className="absolute inset-0 w-full h-full opacity-5 flex items-center justify-center" />
@@ -308,10 +417,33 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
               Total Amount
             </p>
             <p className="text-2xl font-bold text-purple-600 z-10">
-              Rs.{' '}
-              {invoices
-                .reduce((sum, inv) => sum + (inv.subTotal || 0), 0)
-                .toFixed(2)}
+              {formatCurrency(
+                invoices.reduce((sum, inv) => sum + getInvoiceTotalAmount(inv), 0),
+              )}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-emerald-200/60 dark:border-emerald-900/40">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <CheckCircle2 className="absolute inset-0 w-full h-full opacity-5 flex items-center justify-center" />
+            <p className="text-sm text-gray-600 dark:text-gray-400 z-10">
+              Total Paid
+            </p>
+            <p className="text-2xl font-bold text-emerald-600 z-10 tabular-nums">
+              {formatCurrency(totalPaidAmount)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="relative overflow-hidden border-amber-200/60 dark:border-amber-900/40">
+          <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+            <HandCoins className="absolute inset-0 w-full h-full opacity-5 flex items-center justify-center" />
+            <p className="text-sm text-gray-600 dark:text-gray-400 z-10">
+              Outstanding
+            </p>
+            <p className="text-2xl font-bold text-amber-600 z-10 tabular-nums">
+              {formatCurrency(totalOutstandingAmount)}
             </p>
           </CardContent>
         </Card>
@@ -375,7 +507,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
               </CardHeader>
               <CardContent>
                 {invoices.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                     {invoices.map((invoice) => (
                       <InvoiceCard key={invoice._?.soul} invoice={invoice} />
                     ))}
@@ -438,7 +570,7 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                 </CardHeader>
                 <CardContent>
                   {invoices.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                       {invoices.map((invoice) => (
                         <InvoiceCard key={invoice._?.soul} invoice={invoice} />
                       ))}

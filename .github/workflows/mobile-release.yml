@@ -1,0 +1,110 @@
+name: Mobile Release (Expo)
+
+on:
+  push:
+    tags:
+      - "surkhet-v*"
+      - "v*"
+
+jobs:
+  detect-version-bump:
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.version.outputs.version_changed }}
+      current_version: ${{ steps.version.outputs.current_version }}
+      previous_version: ${{ steps.version.outputs.previous_version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Detect app version change
+        id: version
+        shell: bash
+        run: |
+          result="$(./scripts/ci/check-version-bump.sh apps/surkhet/package.json)"
+          echo "$result"
+          echo "$result" >> "$GITHUB_OUTPUT"
+
+  build-and-submit:
+    runs-on: ubuntu-latest
+    needs: detect-version-bump
+    if: |
+      needs.detect-version-bump.outputs.version_changed == 'true'
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+      EXPO_APPLE_ID: ${{ secrets.EXPO_APPLE_ID }}
+      EXPO_ASC_APP_ID: ${{ secrets.EXPO_ASC_APP_ID }}
+      EXPO_APPLE_TEAM_ID: ${{ secrets.EXPO_APPLE_TEAM_ID }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Expo auth token
+        shell: bash
+        run: |
+          if [[ -z "${EXPO_TOKEN:-}" ]]; then
+            echo "EXPO_TOKEN is missing. Add it in repository secrets." >&2
+            exit 1
+          fi
+          if [[ -z "${EXPO_APPLE_ID:-}" || -z "${EXPO_ASC_APP_ID:-}" || -z "${EXPO_APPLE_TEAM_ID:-}" ]]; then
+            echo "Missing iOS submit secrets. Add EXPO_APPLE_ID, EXPO_ASC_APP_ID, and EXPO_APPLE_TEAM_ID." >&2
+            exit 1
+          fi
+
+      - name: Setup Expo and EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          token: ${{ secrets.EXPO_TOKEN }}
+          eas-version: latest
+
+      - name: Materialize Play Store service account key
+        shell: bash
+        env:
+          EXPO_GOOGLE_SERVICE_ACCOUNT_KEY: ${{ secrets.EXPO_GOOGLE_SERVICE_ACCOUNT_KEY }}
+        run: |
+          mkdir -p apps/surkhet/.secrets
+          if [[ -z "${EXPO_GOOGLE_SERVICE_ACCOUNT_KEY:-}" ]]; then
+            echo "EXPO_GOOGLE_SERVICE_ACCOUNT_KEY is missing. Add it for Play Store auto-submit." >&2
+            exit 1
+          fi
+          printf '%s' "$EXPO_GOOGLE_SERVICE_ACCOUNT_KEY" > apps/surkhet/.secrets/google-service-account.json
+
+      - name: Show release version
+        run: |
+          echo "Releasing mobile version: ${{ needs.detect-version-bump.outputs.current_version }}"
+
+      - name: Build and submit Android
+        working-directory: apps/surkhet
+        run: pnpm dlx eas-cli build --platform android --profile production --non-interactive --auto-submit
+
+      - name: Build and submit iOS
+        working-directory: apps/surkhet
+        run: pnpm dlx eas-cli build --platform ios --profile production --non-interactive --auto-submit
+
+  no-release:
+    runs-on: ubuntu-latest
+    needs: detect-version-bump
+    if: |
+      needs.detect-version-bump.outputs.version_changed != 'true'
+    steps:
+      - name: Skip release
+        run: |
+          echo "Skipping mobile release. Version unchanged in apps/surkhet/package.json"
+          echo "Current: ${{ needs.detect-version-bump.outputs.current_version }}"
+          echo "Previous: ${{ needs.detect-version-bump.outputs.previous_version }}"

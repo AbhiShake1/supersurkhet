@@ -10,9 +10,51 @@ publish:
   provider: github
   owner: AbhiShake1
   repo: supersurkhet
+
 win:
-  target: nsis
+  target:
+    - target: nsis
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+
+appx:
+  applicationId: SuperSurkhet
+  displayName: SuperSurkhet
+  publisherDisplayName: SuperSurkhet
+  identityName: com.supersurkhet.desktop
+
 mac:
-  target: dmg
+  category: public.app-category.utilities
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+    - target: zip
+      arch:
+        - x64
+        - arm64
+
+mas:
+  category: public.app-category.utilities
+
 linux:
-  target: AppImage
+  target:
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
+    - target: rpm
+      arch:
+        - x64
+    - target: snap
+      arch:
+        - x64
+  category: Utility
