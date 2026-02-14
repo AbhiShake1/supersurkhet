@@ -33,12 +33,8 @@ import {
   withLabel,
 } from './schemas/listings';
 import { qrFlowConfigSchema } from './schemas/qr-flow-config-schema';
-import {
-  saleSchema,
-  salesItemSchema,
-  stockImportSchema,
-} from './schemas/sales';
 import { uiBuilderSchema } from './schemas/ui-builder-schema';
+import { customerSchema, invoiceSchema, orderSchema, partySchema, saleSchema, stockImportSchema, tripSchema } from './schemas/retail';
 
 function getPermissions() {
   return ['product'] as readonly [string, ...string[]];
@@ -155,162 +151,11 @@ export const businessSchema = z
   })
   .extend(table);
 
-export const partySchema = z
-  .object({
-    name: z.string().min(1).describe('Name of the party'),
-    address: z.string().optional().describe('Address of the party'),
-    panNumber: z.string().optional().describe('PAN number of the party'),
-    phone: z.string().optional().describe('Phone number of the party'),
-    creditLimit: z
-      .number({ coerce: true })
-      .int()
-      .positive()
-      .optional()
-      .describe('Credit limit of the party'),
-    paymentTerms: z.string().optional().describe('Payment terms of the party'),
-    notes: z
-      .string()
-      .optional()
-      .describe('Notes for the party')
-      .superRefine(fieldConfig({ fieldType: 'richText' })),
-  })
-  .extend(table);
-
 export type Party = InferredTable<'party'>;
-
-export const customerSchema = partySchema.extend({});
 
 export type Customer = InferredTable<'customer'>;
 
-export const invoiceSchema = z
-  .object({
-    type: z.enum(['purchase', 'sale']),
-
-    partyId: z.string().describe('Party').optional(),
-    vehicleId: z.string().describe('Vehicle').optional(),
-    tripId: z.string().describe('Trip').optional(),
-    description: z
-      .string()
-      .optional()
-      .superRefine(fieldConfig({ fieldType: 'richText' })),
-    issuedAt: z
-      .string()
-      .datetime({ offset: true })
-      .describe('Issued At')
-      .optional(),
-    dueDate: z
-      .string()
-      .datetime({ offset: true })
-      .describe('Due Date')
-      .optional(),
-
-    items: z.array(
-      z.object({
-        product: z.string().describe('Product'),
-        quantity: z.number({ coerce: true }).positive(),
-        rate: z.number({ coerce: true }).int().nonnegative(), // paisa
-        total: z.number({ coerce: true }).int().nonnegative(),
-      }),
-    ),
-
-    subTotal: z.number({ coerce: true }).int().nonnegative(),
-    tax: z.number({ coerce: true }).int().nonnegative().default(0),
-    paidAmount: z
-      .number({ coerce: true })
-      .nonnegative()
-      .default(0)
-      .describe('Amount Paid'),
-    paymentStatus: z
-      .string()
-      .default('pending')
-      .describe('Payment Status')
-      .superRefine(
-        fieldConfig({
-          inputProps: {
-            className: 'border-none',
-            disabled: true,
-          },
-        }),
-      ),
-    fiscalYear: z.string().describe('Fiscal Year'),
-  })
-  .extend(table);
-// .transform(invoice => ({
-//   ...invoice,
-//   total: invoice.subTotal + invoice.tax,
-//   balance: (invoice.subTotal + invoice.tax) - (invoice.paidAmount || 0),
-//   fiscalYear: (() => {
-//     const year = new NepaliDate().getYear()
-//     return `${year.toString().slice(0, 2)}${year.toString().slice(2)}/${(year + 1).toString().slice(2)}`
-//   })()
-// }))
-//
-// .superRefine((invoice, ctx) => {
-//   const computedSubTotal = Object.values(invoice.items).reduce(
-//     (sum, item) => sum + item.total,
-//     0
-//   );
-//
-//   if (computedSubTotal !== invoice.subTotal) {
-//     ctx.addIssue({
-//       code: z.ZodIssueCode.custom,
-//       message: "Invoice subTotal must equal sum of item totals",
-//       path: ["subTotal"],
-//     });
-//   }
-//
-//   if (invoice.subTotal + invoice.tax !== invoice.total) {
-//     ctx.addIssue({
-//       code: z.ZodIssueCode.custom,
-//       message: "Invoice total must equal subTotal + tax",
-//       path: ["total"],
-//     });
-//   }
-// });
-
 export type Invoice = InferredTable<'invoice'>;
-
-export const tripSchema = z
-  .object({
-    vehicleId: z
-      .string()
-      .describe('Vehicle')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            sources: [
-              {
-                table: 'vehicle',
-                displayKeys: ['name', 'licensePlate'],
-                separator: ' (',
-                suffix: ')',
-              },
-            ],
-          },
-        }),
-      ),
-    dispatchTime: z
-      .string()
-      .datetime({ offset: true })
-      // .datetime()
-      .describe('Dispatch Time')
-      .default(() => new Date().toISOString())
-      .superRefine(fieldConfig({ fieldType: 'datetime' })),
-    returnTime: z
-      .string()
-      .datetime({ offset: true })
-      .describe('Return Time')
-      .superRefine(fieldConfig({ fieldType: 'datetime' }))
-      .optional(),
-    destination: z.string().optional().describe('Destination'),
-    products: salesItemSchema.array().describe('Products Sent on Trip'),
-    returnedProducts: salesItemSchema
-      .array()
-      .optional()
-      .describe('Products Returned from Trip'),
-  })
-  .extend(table);
 
 export type Trip = InferredTable<'trip'>;
 
@@ -323,68 +168,6 @@ export const membershipSchema = z
   .extend(table);
 
 // #endregion
-
-export const customerIdSchema: z.ZodEffects<z.ZodString> = z
-  .string()
-  .describe('Customer')
-  .superRefine(
-    fieldConfig({
-      fieldType: 'select',
-      customData: {
-        sources: [
-          {
-            table: 'customer',
-            displayKey: 'name',
-          },
-        ],
-      },
-    }),
-  );
-
-// #region Transactional Schemas
-export const orderSchema = z
-  .object({
-    customerId: customerIdSchema,
-    items: salesItemSchema
-      .array()
-      .min(1, { message: 'Please add at least one item.' })
-      .describe('Items Ordered'),
-    paidAmount: z.number({ coerce: true }).positive().describe('Paid Amount'),
-    paymentStatus: z
-      .string()
-      .default('pending')
-      .describe('Payment Status')
-      .superRefine(
-        fieldConfig({
-          inputProps: {
-            className: 'border-none',
-            disabled: true,
-          },
-        }),
-      ),
-    orderStatus: z
-      .enum(['pending', 'done', 'cancelled'])
-      .default('pending')
-      .describe('Order Status')
-      .superRefine(
-        fieldConfig({
-          fieldType: 'select',
-          customData: {
-            disableWhenValueIn: ['done', 'cancelled'],
-          },
-        }),
-      ),
-    paymentMethod: z
-      .enum(['cash', 'card', 'bankTransfer', 'credit'])
-      .optional()
-      .describe('Payment Method'),
-    notes: z
-      .string()
-      .optional()
-      .describe('Notes')
-      .superRefine(fieldConfig({ fieldType: 'richText' })),
-  })
-  .extend(table);
 
 export const recentlyUsedAppSchema = z
   .object({
@@ -399,8 +182,6 @@ export const recentlyUsedAppSchema = z
       .default(1),
   })
   .extend(table);
-
-// #endregion
 
 // #region App Schema
 function createSchema<const TSchema extends GTAAppConfig['schema']>(

@@ -1,22 +1,8 @@
-import type { SchemaKeys } from '@gta/react-hooks';
-import {
-  Car,
-  DollarSign,
-  MapIcon,
-  Receipt,
-  ShoppingBag,
-  ShoppingCart,
-  Users,
-  Users2,
-} from 'lucide-react';
-import NepaliDate from 'nepali-datetime';
-import z from 'zod';
 import type { AutoTableTab } from '@/components/auto-admin';
 import { AutoFormSubmit } from '@/components/ui/auto-form';
 import {
   AutoForm,
-  fieldConfig,
-  withSourceCustomData,
+  fieldConfig
 } from '@/components/ui/autoform';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,15 +18,21 @@ import { ReceiptWrapper } from '@/components/ui/receipt-wrapper';
 import { useDialog } from '@/contexts/dialog-context';
 import { api } from '@/lib/api';
 import type { BusinessType } from '@/lib/schema';
-import { type SalesItem, salesItemSchema } from '@/lib/schemas/sales';
+import { salesItemSchema, type SalesItem } from '@/lib/schemas/retail';
 import { db } from '@/lib/ssr/api';
-import { isNonNullable } from '@/lib/utils';
+import type { SchemaKeys } from '@gta/react-hooks';
 import {
-  getItemsTotalForPaymentStatus,
-  getPaymentStatusFromTotals,
-} from './payment-status-derivation';
-import { deriveUnitPrice } from './unit-price-derivation';
-
+  Car,
+  DollarSign,
+  MapIcon,
+  Receipt,
+  ShoppingBag,
+  ShoppingCart,
+  Users,
+  Users2,
+} from 'lucide-react';
+import NepaliDate from 'nepali-datetime';
+import z from 'zod';
 
 type AnyAutoTableTab = {
   [K in SchemaKeys]: AutoTableTab<K>;
@@ -55,201 +47,6 @@ function calculateFiscalYear() {
   return `${year.toString().slice(0, 2)}${year
     .toString()
     .slice(2)}/${(year + 1).toString().slice(2)}`;
-}
-
-function getPaidAmountFromFormValues(formValues: {
-  paidAmount?: number | null | string;
-}) {
-  return Number(formValues.paidAmount ?? 0);
-}
-
-function createDerivedPaymentStatusFieldFromFormValues(
-  formValues: {
-    items?: Array<{ quantity?: number | null; unitPrice?: number | null } | null> | null;
-    paidAmount?: number | null;
-  },
-) {
-  return z
-    .string()
-    .default('pending')
-    .describe('Payment Status')
-    .superRefine(
-      fieldConfig({
-        inputProps: {
-          className: 'border-none',
-          disabled: true,
-        },
-        customData: {
-          derive: () => {
-            const totalCost = getItemsTotalForPaymentStatus(formValues.items ?? []);
-            const paidAmount = getPaidAmountFromFormValues(formValues);
-            return {
-              inputProps: {
-                value: getPaymentStatusFromTotals({
-                  paidAmount,
-                  totalAmount: totalCost,
-                }),
-              }
-            };
-          },
-        },
-      }),
-    );
-}
-
-function createSoftDerivedPaidAmountFieldFromFormValues(
-  formValues: {
-    items?: Array<{ quantity?: number | null; unitPrice?: number | null } | null> | null;
-  },
-) {
-  return z
-    .number({ coerce: true })
-    .default(0)
-    .describe('Paid Amount')
-    .superRefine(
-      fieldConfig({
-        fieldType: 'number',
-        customData: {
-          derive: () => ({
-            inputProps: {
-              value: getItemsTotalForPaymentStatus(formValues.items ?? []),
-            }
-          }),
-        },
-      }),
-    );
-}
-
-function getValueAtPath(input: unknown, path: string[]) {
-  return path.reduce<unknown>((acc, key) => {
-    if (!acc || typeof acc !== 'object') return undefined;
-    return (acc as Record<string, unknown>)[key];
-  }, input);
-}
-
-function getSoftDerivedUnitValue({
-  formValues,
-  rowPath,
-  productUnit,
-}: {
-  formValues: unknown;
-  rowPath: string[];
-  productUnit?: string | null;
-}) {
-  const row = getValueAtPath(formValues, rowPath) as
-    | { unit?: string | null }
-    | undefined;
-  const explicitUnitRaw = row?.unit;
-  const explicitUnit =
-    explicitUnitRaw === null || explicitUnitRaw === undefined || explicitUnitRaw === ''
-      ? null
-      : String(explicitUnitRaw);
-
-  const [unitType, piecesPerUnit] = String(productUnit ?? '').split(':');
-  const allowedUnits = [unitType, piecesPerUnit ? 'piece' : undefined].filter(
-    isNonNullable,
-  );
-  if (explicitUnit && allowedUnits.includes(explicitUnit)) {
-    return explicitUnit;
-  }
-  return String(productUnit ?? '');
-}
-
-function createSoftDerivedUnitField({
-  slug,
-  className = 'border-none',
-}: {
-  slug: string;
-  className?: string;
-}) {
-  return z
-    .string()
-    .optional()
-    .describe('Unit')
-    .superRefine(
-      fieldConfig({
-        fieldType: 'unit',
-        inputProps: {
-          disabled: true,
-          placeholder: 'Select product for unit',
-          className,
-        },
-        customData: withSourceCustomData({
-          slug,
-          source: {
-            table: 'product',
-            key: 'product',
-            displayKey: 'title',
-          },
-          derive: async ({ sourceRow, formValues, rowPath }) => {
-            if (!sourceRow?.unit) return null;
-            const [unitType, piecesPerUnit] = String(sourceRow.unit).split(':');
-            const configDisabled = Boolean(piecesPerUnit);
-
-            return {
-              value: getSoftDerivedUnitValue({
-                formValues,
-                rowPath,
-                productUnit: String(sourceRow.unit),
-              }),
-              customData: {
-                onlyAllow: [
-                  unitType,
-                  piecesPerUnit ? 'piece' : undefined,
-                ].filter(isNonNullable),
-                configDisabled,
-              },
-            };
-          },
-        }),
-      }),
-    );
-}
-
-function createSoftDerivedUnitPriceField({
-  slug,
-  priceKey,
-}: {
-  slug: string;
-  priceKey: 'sellingPrice' | 'costPrice';
-}) {
-  return z
-    .number({ coerce: true })
-    .describe('Unit Price')
-    .superRefine(
-      fieldConfig({
-        fieldType: 'number',
-        customData: withSourceCustomData({
-          slug,
-          source: {
-            table: 'product',
-            key: 'product',
-            displayKey: 'title',
-          },
-          derive: async ({ sourceRow, formValues, rowPath }) => {
-            if (!sourceRow) return null;
-            const row = getValueAtPath(formValues, rowPath) as
-              | { unit?: string | null; unitPrice?: number | string | null }
-              | undefined;
-
-            const basePrice = Number(
-              (sourceRow as Record<string, unknown>)[priceKey] ?? 0,
-            );
-            const derivedUnitPrice = deriveUnitPrice({
-              basePrice,
-              productUnit: String(sourceRow.unit ?? ''),
-              selectedUnit: String(row?.unit ?? sourceRow.unit ?? ''),
-            });
-
-            return {
-              inputProps: {
-                value: derivedUnitPrice,
-              }
-            };
-          },
-        }),
-      }),
-    );
 }
 
 export function useBusinessConfig({
@@ -285,11 +82,6 @@ export function useBusinessConfig({
               },
             }),
           ),
-        unit: createSoftDerivedUnitField({ slug }),
-        unitPrice: createSoftDerivedUnitPriceField({
-          slug,
-          priceKey: 'sellingPrice',
-        }),
       })
       .array()
       .describe('Products Returned from Trip')
@@ -427,37 +219,6 @@ export function useBusinessConfig({
             return mapped;
           },
         },
-        extender: (schema) =>
-          schema
-            .extend({
-              items: salesItemSchema
-                .extend({
-                  unit: createSoftDerivedUnitField({ slug }),
-                  unitPrice: createSoftDerivedUnitPriceField({
-                    slug,
-                    priceKey: 'costPrice',
-                  }),
-                })
-                .array()
-                .min(1, { message: 'Please add at least one item.' })
-                .describe('Items to Import'),
-            })
-            .withDerivation('paidAmount', ({ formValues }) =>
-              createSoftDerivedPaidAmountFieldFromFormValues(formValues),
-            )
-            .withDerivation('paymentStatus', ({ formValues }) =>
-              createDerivedPaymentStatusFieldFromFormValues(formValues),
-            )
-            .superRefine((stockImport, ctx) => {
-              if (!stockImport.paidAmount) return;
-              const totalCost = getItemsTotalForPaymentStatus(stockImport.items);
-              if (stockImport.paidAmount > totalCost)
-                ctx.addIssue({
-                  code: 'custom',
-                  message: `Paid amount cannot be greater than total cost (${totalCost})`,
-                  path: ['paidAmount'],
-                });
-            }),
         async onCreate(_, variables) {
           const products = await db.product.get({ keys: [slug] });
           const productsBySoul = new Map(
@@ -569,37 +330,6 @@ export function useBusinessConfig({
             return mapped;
           },
         },
-        extender: (schema) =>
-          schema
-            .extend({
-              items: salesItemSchema
-                .extend({
-                  unit: createSoftDerivedUnitField({ slug }),
-                  unitPrice: createSoftDerivedUnitPriceField({
-                    slug,
-                    priceKey: 'sellingPrice',
-                  }),
-                })
-                .array()
-                .min(1, { message: 'Please add at least one item.' })
-                .describe('Items Sold'),
-            })
-            .withDerivation('paidAmount', ({ formValues }) =>
-              createSoftDerivedPaidAmountFieldFromFormValues(formValues),
-            )
-            .withDerivation('paymentStatus', ({ formValues }) =>
-              createDerivedPaymentStatusFieldFromFormValues(formValues),
-            )
-            .superRefine((sale, ctx) => {
-              if (!sale.paidAmount) return;
-              const totalCost = getItemsTotalForPaymentStatus(sale.items);
-              if (sale.paidAmount > totalCost)
-                ctx.addIssue({
-                  code: 'custom',
-                  message: `Paid amount cannot be greater than total cost (${totalCost})`,
-                  path: ['paidAmount'],
-                });
-            }),
         async onCreate(_, variables) {
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, { product, quantity, unit }) => {
@@ -766,37 +496,6 @@ export function useBusinessConfig({
             return mapped;
           },
         },
-        extender: (schema) =>
-          schema
-            .extend({
-              items: salesItemSchema
-                .extend({
-                  unit: createSoftDerivedUnitField({ slug }),
-                  unitPrice: createSoftDerivedUnitPriceField({
-                    slug,
-                    priceKey: 'sellingPrice',
-                  }),
-                })
-                .array()
-                .min(1, { message: 'Please add at least one item.' })
-                .describe('Items Ordered'),
-            })
-            .withDerivation('paidAmount', ({ formValues }) =>
-              createSoftDerivedPaidAmountFieldFromFormValues(formValues),
-            )
-            .withDerivation('paymentStatus', ({ formValues }) =>
-              createDerivedPaymentStatusFieldFromFormValues(formValues),
-            )
-            .superRefine((order, ctx) => {
-              if (!order.paidAmount) return;
-              const totalCost = getItemsTotalForPaymentStatus(order.items);
-              if (order.paidAmount > totalCost)
-                ctx.addIssue({
-                  code: 'custom',
-                  message: `Paid amount cannot be greater than total cost (${totalCost})`,
-                  path: ['paidAmount'],
-                });
-            }),
         async onCreate(_, variables) {
           if (variables.orderStatus === 'done') {
             const itemsByProductIdWithQuantity = variables.items?.reduce(
@@ -980,17 +679,6 @@ export function useBusinessConfig({
         },
         extender: (schema) =>
           schema.extend({
-            products: salesItemSchema
-              .extend({
-                unit: createSoftDerivedUnitField({ slug }),
-                unitPrice: createSoftDerivedUnitPriceField({
-                  slug,
-                  priceKey: 'sellingPrice',
-                }),
-              })
-              .array()
-              .min(1, { message: 'Please add at least one product.' })
-              .describe('Products Sent on Trip'),
             returnedProducts: returnedProductsSchema,
           }),
         async onCreate(_, variables) {

@@ -83,7 +83,7 @@ export function useDerivedField({
     ? `${rowPathKey}.${sourceSelectorKey}`
     : sourceSelectorKey;
   const selectedSourceId = useWatch({ name: sourceSelectorPathJoined });
-  const sourceScope = customData?.slug ?? business?.business?.basePath ?? '';
+  const sourceScope = business?.business?.basePath ?? '';
 
   const { data: sourceRows = [] } = useQuery({
     queryKey: ['autoform', 'derive-source', sourceScope, sourceConfig?.table],
@@ -131,14 +131,14 @@ export function useDerivedField({
       return runDeriveWithRuntimeFormValues(
         formValues,
         async () => {
-        return (
-          (await deriveFn({
-            formValues,
-            rowPath: rowPathKey ? rowPathKey.split('.') : [],
-            fieldPath: fieldPathKey.split('.'),
-            sourceRow: (sourceRow ?? null) as never,
-          })) ?? null
-        );
+          return (
+            (await deriveFn({
+              formValues,
+              rowPath: rowPathKey ? rowPathKey.split('.') : [],
+              fieldPath: fieldPathKey.split('.'),
+              sourceRow: (sourceRow ?? null) as never,
+            })) ?? null
+          );
         },
       );
     },

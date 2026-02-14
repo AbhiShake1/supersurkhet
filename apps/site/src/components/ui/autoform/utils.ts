@@ -7,10 +7,10 @@ import { buildZodFieldConfig } from './react';
 export type DeepNullableRequired<T> = T extends Array<infer U>
   ? Array<DeepNullableRequired<U> | null> | null
   : T extends object
-    ? {
-      [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
-    }
-    : T | null;
+  ? {
+    [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
+  }
+  : T | null;
 
 export type SourceConfigFor<K extends SchemaKeys> = {
   table: K;
@@ -66,7 +66,6 @@ export type DeriveConfig<
 
 type FieldConfigCustomDataBase = {
   tabs?: PossibleTabConfig[];
-  slug?: string;
   disableWhenValueIn?: string[];
 } & {
   onValueChange?: (value: string, path: string[], form: UseFormReturn) => any;
