@@ -19,6 +19,34 @@ function omitMeta<T>(obj: T): T {
   });
 }
 
+export function omitEmptyObject<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .map(omitEmptyObject)
+      .filter((v) => !(isPlainObject(v) && Object.keys(v).length === 0)) as T;
+  }
+
+  if (isPlainObject(value)) {
+    const result: any = {};
+
+    for (const [k, v] of Object.entries(value)) {
+      const cleaned = omitEmptyObject(v);
+
+      if (!(isPlainObject(cleaned) && Object.keys(cleaned).length === 0)) {
+        result[k] = cleaned;
+      }
+    }
+
+    return result;
+  }
+
+  return value;
+}
+
+function isPlainObject(x: unknown): x is Record<string, any> {
+  return typeof x === "object" && x !== null && !Array.isArray(x);
+}
+
 export function update<const T extends SchemaKeys>(
   key: T,
   ...restKeys: string[]
@@ -30,11 +58,10 @@ export function update<const T extends SchemaKeys>(
     const encrypted = Object.fromEntries(
       Object.entries(_encrypted).filter(([, v]) => v !== undefined),
     );
-    console.log('update', encrypted);
     return new Promise<GunMessagePut>((resolve, reject) => {
       getGunRef(keys)
         .get(id)
-        .put(omitMeta(encrypted), (ack) => {
+        .put(omitEmptyObject(omitMeta(encrypted)), (ack) => {
           if ('err' in ack && !!ack.err) {
             reject(ack.err);
           } else {
