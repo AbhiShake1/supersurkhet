@@ -105,7 +105,6 @@ export function useBusinessConfig({
       })
       .array()
       .describe('Products Returned from Trip')
-      .min(0);
   }
 
   const returnedProductsSchema = returnedProductsSchemaWithProducts(
