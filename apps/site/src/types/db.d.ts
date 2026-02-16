@@ -18,13 +18,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      email: string;
@@ -38,7 +38,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      email: string;
@@ -52,7 +52,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Users";
@@ -115,20 +115,20 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
     }, {
@@ -136,7 +136,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
     }>>;
@@ -145,13 +145,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      name: string;
@@ -162,7 +162,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      location?: string | undefined;
      basePath?: string | undefined;
@@ -188,7 +188,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
     } | undefined;
@@ -201,7 +201,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      location?: string | undefined;
      basePath?: string | undefined;
@@ -227,7 +227,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
      layers?: string | undefined;
     } | undefined;
@@ -245,13 +245,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      name: string;
@@ -260,7 +260,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      name: string;
@@ -269,7 +269,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Roles";
@@ -286,13 +286,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      userId: string;
@@ -302,7 +302,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      userId: string;
@@ -312,7 +312,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "Memberships";
@@ -327,13 +327,13 @@ declare global {
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
      _: import("zod").ZodOptional<import("zod").ZodObject<{
      soul: import("zod").ZodOptional<import("zod").ZodString>;
-     '>': import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
     }, "strip", import("zod").ZodTypeAny, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }, {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
      otp: string;
@@ -341,7 +341,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }, {
      otp: string;
@@ -349,7 +349,7 @@ declare global {
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
-     '>'?: Record<string, string | number> | undefined;
+     ">"?: Record<string, string | number> | undefined;
     } | undefined;
     }>;
      readonly title: "OTPs";
@@ -357,16 +357,1485 @@ declare global {
      readonly group: "System Configuration";
     };
     } & {
-     [table: string]: {
-     schema: import("../components/ui/autoform/zod/types").ZodObjectOrWrapped;
-     title?: string | undefined;
-     icon?: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>> | undefined;
-     group?: string | undefined;
-     components?: (() => {
+     readonly product: {
+     readonly schema: import("zod").ZodObject<{
+     title: import("zod").ZodString;
+     hsCode: import("zod").ZodString;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     costPrice: import("zod").ZodNumber;
+     sellingPrice: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, number | undefined, number | undefined>;
+     stockQuantity: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>;
+     barcode: import("zod").ZodOptional<import("zod").ZodString>;
+     reorderLevel: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, number | undefined, number | undefined>;
+     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     category: import("zod").ZodOptional<import("zod").ZodDefault<import("zod").ZodString>>;
+     sku: import("zod").ZodOptional<import("zod").ZodString>;
+     imageUrl: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodString, string, string>>;
+     isFeatured: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     isActive: import("zod").ZodDefault<import("zod").ZodBoolean>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     isActive: boolean;
+     title: string;
+     hsCode: string;
+     costPrice: number;
+     stockQuantity: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+     sellingPrice?: number | undefined;
+     barcode?: string | undefined;
+     reorderLevel?: number | undefined;
+     category?: string | undefined;
+     sku?: string | undefined;
+     imageUrl?: string | undefined;
+     isFeatured?: boolean | undefined;
+    }, {
+     title: string;
+     hsCode: string;
+     costPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     isActive?: boolean | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+     sellingPrice?: number | undefined;
+     stockQuantity?: number | undefined;
+     barcode?: string | undefined;
+     reorderLevel?: number | undefined;
+     category?: string | undefined;
+     sku?: string | undefined;
+     imageUrl?: string | undefined;
+     isFeatured?: boolean | undefined;
+    }>;
+     readonly title: "Products";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Products & Inventory";
+     readonly components: () => Promise<{
      name: string;
-     icon?: import("lucide-react").LucideIcon | undefined;
      component: import("../components/ui/admin/index").AdminComponent;
-    }[]) | undefined;
+    }[]>;
+    };
+     readonly party: {
+     readonly schema: any;
+     readonly title: "Purchase Parties";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Financial";
+     readonly components: () => Promise<{
+     name: string;
+     component: import("../components/ui/admin/index").AdminComponent;
+    }[]>;
+    };
+     readonly customer: {
+     readonly schema: any;
+     readonly title: "Customers";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Financial";
+    };
+     readonly invoice: {
+     readonly schema: any;
+     readonly title: "Invoices";
+     readonly icon: React.ForwardRefExoticComponent<import("@tabler/icons-react").IconProps & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Financial";
+     readonly components: () => Promise<{
+     name: string;
+     component: import("../components/ui/admin/index").AdminComponent;
+    }[]>;
+    };
+     readonly sale: {
+     readonly schema: any;
+     readonly title: "Sales";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Financial";
+    };
+     readonly stockImport: {
+     readonly schema: any;
+     readonly title: "Stock Imports";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Financial";
+    };
+     readonly order: {
+     readonly schema: any;
+     readonly title: "Orders";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Business Operations";
+     readonly components: () => Promise<{
+     name: string;
+     component: import("../components/ui/admin/index").AdminComponent;
+    }[]>;
+    };
+     readonly menuItem: {
+     readonly schema: import("zod").ZodObject<{
+     title: import("zod").ZodString;
+     hsCode: import("zod").ZodString;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     costPrice: import("zod").ZodNumber;
+     sellingPrice: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, number | undefined, number | undefined>;
+     stockQuantity: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>;
+     barcode: import("zod").ZodOptional<import("zod").ZodString>;
+     reorderLevel: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, number | undefined, number | undefined>;
+     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     category: import("zod").ZodOptional<import("zod").ZodDefault<import("zod").ZodString>>;
+     sku: import("zod").ZodOptional<import("zod").ZodString>;
+     imageUrl: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodString, string, string>>;
+     isFeatured: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     isActive: import("zod").ZodDefault<import("zod").ZodBoolean>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     isVegetarian: import("zod").ZodDefault<import("zod").ZodBoolean>;
+     isSpicy: import("zod").ZodDefault<import("zod").ZodBoolean>;
+     isSpecial: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     preparationTime: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
+     isActive: boolean;
+     title: string;
+     hsCode: string;
+     costPrice: number;
+     stockQuantity: number;
+     isVegetarian: boolean;
+     isSpicy: boolean;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+     sellingPrice?: number | undefined;
+     barcode?: string | undefined;
+     reorderLevel?: number | undefined;
+     category?: string | undefined;
+     sku?: string | undefined;
+     imageUrl?: string | undefined;
+     isFeatured?: boolean | undefined;
+     isSpecial?: boolean | undefined;
+     preparationTime?: number | undefined;
+    }, {
+     title: string;
+     hsCode: string;
+     costPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     isActive?: boolean | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+     sellingPrice?: number | undefined;
+     stockQuantity?: number | undefined;
+     barcode?: string | undefined;
+     reorderLevel?: number | undefined;
+     category?: string | undefined;
+     sku?: string | undefined;
+     imageUrl?: string | undefined;
+     isFeatured?: boolean | undefined;
+     isVegetarian?: boolean | undefined;
+     isSpicy?: boolean | undefined;
+     isSpecial?: boolean | undefined;
+     preparationTime?: number | undefined;
+    }>;
+     readonly title: "Menu Items";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Products & Inventory";
+     readonly components: () => Promise<{
+     name: string;
+     component: import("../components/ui/admin/index").AdminComponent;
+    }[]>;
+    };
+     readonly dataMatrixAction: {
+     readonly schema: import("zod").ZodObject<{
+     version: import("zod").ZodDefault<import("zod").ZodString>;
+     action: import("zod").ZodEnum<["wifi_connect", "profile_enrichment", "equipment_session", "restaurant_ordering", "product_interaction", "navigate", "form_request", "choice_selection", "notification", "equipment_control"]>;
+     wifi: import("zod").ZodOptional<import("zod").ZodObject<{
+     ssid: import("zod").ZodString;
+     password: import("zod").ZodString;
+     security: import("zod").ZodOptional<import("zod").ZodEnum<["WPA2", "WPA3", "WEP", "open"]>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     password: string;
+     ssid: string;
+     security?: "WPA2" | "WPA3" | "WEP" | "open" | undefined;
+    }, {
+     password: string;
+     ssid: string;
+     security?: "WPA2" | "WPA3" | "WEP" | "open" | undefined;
+    }>>;
+     navigation: import("zod").ZodOptional<import("zod").ZodObject<{
+     url: import("zod").ZodString;
+     params: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodBoolean, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     url: string;
+     params?: Record<string, string | number | boolean> | undefined;
+    }, {
+     url: string;
+     params?: Record<string, string | number | boolean> | undefined;
+    }>>;
+     post_connect: import("zod").ZodOptional<import("zod").ZodObject<{
+     notification: import("zod").ZodObject<{
+     title: import("zod").ZodString;
+     message: import("zod").ZodString;
+    }, "strip", import("zod").ZodTypeAny, {
+     message: string;
+     title: string;
+    }, {
+     message: string;
+     title: string;
+    }>;
+    }, "strip", import("zod").ZodTypeAny, {
+     notification: {
+     message: string;
+     title: string;
+    };
+    }, {
+     notification: {
+     message: string;
+     title: string;
+    };
+    }>>;
+     checks: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     field: import("zod").ZodString;
+     required: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     if_missing: import("zod").ZodOptional<import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["form_request", "choice_selection"]>;
+     schema: import("zod").ZodOptional<import("zod").ZodObject<{
+     title: import("zod").ZodString;
+     fields: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     name: import("zod").ZodString;
+     type: import("zod").ZodString;
+     required: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     label: import("zod").ZodString;
+    }, "strip", import("zod").ZodTypeAny, {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }, {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }>, "many">>;
+    }, "strip", import("zod").ZodTypeAny, {
+     title: string;
+     fields?: {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }[] | undefined;
+    }, {
+     title: string;
+     fields?: {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }[] | undefined;
+    }>>;
+     options: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     value: import("zod").ZodString;
+     label: import("zod").ZodString;
+    }, "strip", import("zod").ZodTypeAny, {
+     value: string;
+     label: string;
+    }, {
+     value: string;
+     label: string;
+    }>, "many">>;
+     multiple: import("zod").ZodOptional<import("zod").ZodBoolean>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "form_request" | "choice_selection";
+     schema?: {
+     title: string;
+     fields?: {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }[] | undefined;
+    } | undefined;
+     options?: {
+     value: string;
+     label: string;
+    }[] | undefined;
+     multiple?: boolean | undefined;
+    }, {
+     type: "form_request" | "choice_selection";
+     schema?: {
+     title: string;
+     fields?: {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }[] | undefined;
+    } | undefined;
+     options?: {
+     value: string;
+     label: string;
+    }[] | undefined;
+     multiple?: boolean | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     field: string;
+     required?: boolean | undefined;
+     if_missing?: {
+     type: "form_request" | "choice_selection";
+     schema?: {
+     title: string;
+     fields?: {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }[] | undefined;
+    } | undefined;
+     options?: {
+     value: string;
+     label: string;
+    }[] | undefined;
+     multiple?: boolean | undefined;
+    } | undefined;
+    }, {
+     field: string;
+     required?: boolean | undefined;
+     if_missing?: {
+     type: "form_request" | "choice_selection";
+     schema?: {
+     title: string;
+     fields?: {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }[] | undefined;
+    } | undefined;
+     options?: {
+     value: string;
+     label: string;
+    }[] | undefined;
+     multiple?: boolean | undefined;
+    } | undefined;
+    }>, "many">>;
+     on_complete: import("zod").ZodOptional<import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["navigate", "notification"]>;
+     url: import("zod").ZodOptional<import("zod").ZodString>;
+     message: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "navigate" | "notification";
+     message?: string | undefined;
+     url?: string | undefined;
+    }, {
+     type: "navigate" | "notification";
+     message?: string | undefined;
+     url?: string | undefined;
+    }>>;
+     equipment: import("zod").ZodOptional<import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     type: import("zod").ZodString;
+     location: import("zod").ZodString;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: string;
+     id: string;
+     location: string;
+    }, {
+     type: string;
+     id: string;
+     location: string;
+    }>>;
+     session: import("zod").ZodOptional<import("zod").ZodObject<{
+     duration: import("zod").ZodNumber;
+     max_duration: import("zod").ZodOptional<import("zod").ZodNumber>;
+     extendable: import("zod").ZodOptional<import("zod").ZodBoolean>;
+    }, "strip", import("zod").ZodTypeAny, {
+     duration: number;
+     max_duration?: number | undefined;
+     extendable?: boolean | undefined;
+    }, {
+     duration: number;
+     max_duration?: number | undefined;
+     extendable?: boolean | undefined;
+    }>>;
+     user_validation: import("zod").ZodOptional<import("zod").ZodObject<{
+     membership_required: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     min_fitness_level: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     membership_required?: boolean | undefined;
+     min_fitness_level?: string | undefined;
+    }, {
+     membership_required?: boolean | undefined;
+     min_fitness_level?: string | undefined;
+    }>>;
+     actions: import("zod").ZodOptional<import("zod").ZodObject<{
+     on_start: import("zod").ZodOptional<import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["equipment_control"]>;
+     command: import("zod").ZodEnum<["activate"]>;
+     parameters: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodString>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "equipment_control";
+     command: "activate";
+     parameters?: Record<string, string> | undefined;
+    }, {
+     type: "equipment_control";
+     command: "activate";
+     parameters?: Record<string, string> | undefined;
+    }>>;
+     on_extend: import("zod").ZodOptional<import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["confirm"]>;
+     message: import("zod").ZodString;
+     actions: import("zod").ZodOptional<import("zod").ZodObject<{
+     confirm: import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["equipment_control"]>;
+     command: import("zod").ZodEnum<["extend_session"]>;
+     duration: import("zod").ZodNumber;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    }, {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    }>;
+    }, "strip", import("zod").ZodTypeAny, {
+     confirm: {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    };
+    }, {
+     confirm: {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    };
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     message: string;
+     type: "confirm";
+     actions?: {
+     confirm: {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    };
+    } | undefined;
+    }, {
+     message: string;
+     type: "confirm";
+     actions?: {
+     confirm: {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    };
+    } | undefined;
+    }>>;
+     on_end: import("zod").ZodOptional<import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["equipment_control"]>;
+     command: import("zod").ZodEnum<["deactivate"]>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "equipment_control";
+     command: "deactivate";
+    }, {
+     type: "equipment_control";
+     command: "deactivate";
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     on_start?: {
+     type: "equipment_control";
+     command: "activate";
+     parameters?: Record<string, string> | undefined;
+    } | undefined;
+     on_extend?: {
+     message: string;
+     type: "confirm";
+     actions?: {
+     confirm: {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    };
+    } | undefined;
+    } | undefined;
+     on_end?: {
+     type: "equipment_control";
+     command: "deactivate";
+    } | undefined;
+    }, {
+     on_start?: {
+     type: "equipment_control";
+     command: "activate";
+     parameters?: Record<string, string> | undefined;
+    } | undefined;
+     on_extend?: {
+     message: string;
+     type: "confirm";
+     actions?: {
+     confirm: {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    };
+    } | undefined;
+    } | undefined;
+     on_end?: {
+     type: "equipment_control";
+     command: "deactivate";
+    } | undefined;
+    }>>;
+     restaurant: import("zod").ZodOptional<import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     table: import("zod").ZodString;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     table: string;
+    }, {
+     id: string;
+     table: string;
+    }>>;
+     flow: import("zod").ZodOptional<import("zod").ZodObject<{
+     steps: import("zod").ZodArray<import("zod").ZodObject<{
+     step: import("zod").ZodNumber;
+     type: import("zod").ZodEnum<["menu_display", "order_building", "order_confirmation", "payment_selection"]>;
+     categories: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     filters: import("zod").ZodOptional<import("zod").ZodObject<{
+     dietary: import("zod").ZodOptional<import("zod").ZodString>;
+     availability: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     dietary?: string | undefined;
+     availability?: string | undefined;
+    }, {
+     dietary?: string | undefined;
+     availability?: string | undefined;
+    }>>;
+     features: import("zod").ZodOptional<import("zod").ZodObject<{
+     customization: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     special_requests: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     combo_suggestions: import("zod").ZodOptional<import("zod").ZodBoolean>;
+    }, "strip", import("zod").ZodTypeAny, {
+     customization?: boolean | undefined;
+     special_requests?: boolean | undefined;
+     combo_suggestions?: boolean | undefined;
+    }, {
+     customization?: boolean | undefined;
+     special_requests?: boolean | undefined;
+     combo_suggestions?: boolean | undefined;
+    }>>;
+     validation: import("zod").ZodOptional<import("zod").ZodObject<{
+     allergen_check: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     preparation_time: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     allergen_check?: boolean | undefined;
+     preparation_time?: string | undefined;
+    }, {
+     allergen_check?: boolean | undefined;
+     preparation_time?: string | undefined;
+    }>>;
+     options: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodEnum<["card", "mobile_payment", "cash"]>, "many">>;
+     tip_suggestions: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodNumber, "many">>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
+     step: number;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     validation?: {
+     allergen_check?: boolean | undefined;
+     preparation_time?: string | undefined;
+    } | undefined;
+     features?: {
+     customization?: boolean | undefined;
+     special_requests?: boolean | undefined;
+     combo_suggestions?: boolean | undefined;
+    } | undefined;
+     categories?: string[] | undefined;
+     filters?: {
+     dietary?: string | undefined;
+     availability?: string | undefined;
+    } | undefined;
+     tip_suggestions?: number[] | undefined;
+    }, {
+     type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
+     step: number;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     validation?: {
+     allergen_check?: boolean | undefined;
+     preparation_time?: string | undefined;
+    } | undefined;
+     features?: {
+     customization?: boolean | undefined;
+     special_requests?: boolean | undefined;
+     combo_suggestions?: boolean | undefined;
+    } | undefined;
+     categories?: string[] | undefined;
+     filters?: {
+     dietary?: string | undefined;
+     availability?: string | undefined;
+    } | undefined;
+     tip_suggestions?: number[] | undefined;
+    }>, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     steps: {
+     type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
+     step: number;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     validation?: {
+     allergen_check?: boolean | undefined;
+     preparation_time?: string | undefined;
+    } | undefined;
+     features?: {
+     customization?: boolean | undefined;
+     special_requests?: boolean | undefined;
+     combo_suggestions?: boolean | undefined;
+    } | undefined;
+     categories?: string[] | undefined;
+     filters?: {
+     dietary?: string | undefined;
+     availability?: string | undefined;
+    } | undefined;
+     tip_suggestions?: number[] | undefined;
+    }[];
+    }, {
+     steps: {
+     type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
+     step: number;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     validation?: {
+     allergen_check?: boolean | undefined;
+     preparation_time?: string | undefined;
+    } | undefined;
+     features?: {
+     customization?: boolean | undefined;
+     special_requests?: boolean | undefined;
+     combo_suggestions?: boolean | undefined;
+    } | undefined;
+     categories?: string[] | undefined;
+     filters?: {
+     dietary?: string | undefined;
+     availability?: string | undefined;
+    } | undefined;
+     tip_suggestions?: number[] | undefined;
+    }[];
+    }>>;
+     product: import("zod").ZodOptional<import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     sku: import("zod").ZodString;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     sku: string;
+    }, {
+     id: string;
+     sku: string;
+    }>>;
+     interactions: import("zod").ZodOptional<import("zod").ZodObject<{
+     info: import("zod").ZodOptional<import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["product_details"]>;
+     sections: import("zod").ZodArray<import("zod").ZodString, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "product_details";
+     sections: string[];
+    }, {
+     type: "product_details";
+     sections: string[];
+    }>>;
+     demo: import("zod").ZodOptional<import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["ar_experience"]>;
+     model: import("zod").ZodString;
+     features: import("zod").ZodArray<import("zod").ZodString, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "ar_experience";
+     features: string[];
+     model: string;
+    }, {
+     type: "ar_experience";
+     features: string[];
+     model: string;
+    }>>;
+     compare: import("zod").ZodOptional<import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["product_comparison"]>;
+     related_products: import("zod").ZodArray<import("zod").ZodString, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "product_comparison";
+     related_products: string[];
+    }, {
+     type: "product_comparison";
+     related_products: string[];
+    }>>;
+     purchase: import("zod").ZodOptional<import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["quick_buy"]>;
+     options: import("zod").ZodObject<{
+     delivery: import("zod").ZodArray<import("zod").ZodEnum<["in_store", "home_delivery"]>, "many">;
+     payment: import("zod").ZodArray<import("zod").ZodString, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    }, {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    }>;
+    }, "strip", import("zod").ZodTypeAny, {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    }, {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     info?: {
+     type: "product_details";
+     sections: string[];
+    } | undefined;
+     demo?: {
+     type: "ar_experience";
+     features: string[];
+     model: string;
+    } | undefined;
+     compare?: {
+     type: "product_comparison";
+     related_products: string[];
+    } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
+    }, {
+     info?: {
+     type: "product_details";
+     sections: string[];
+    } | undefined;
+     demo?: {
+     type: "ar_experience";
+     features: string[];
+     model: string;
+    } | undefined;
+     compare?: {
+     type: "product_comparison";
+     related_products: string[];
+    } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     version: string;
+     action: "wifi_connect" | "profile_enrichment" | "equipment_session" | "restaurant_ordering" | "product_interaction" | "navigate" | "form_request" | "choice_selection" | "notification" | "equipment_control";
+     product?: {
+     id: string;
+     sku: string;
+    } | undefined;
+     wifi?: {
+     password: string;
+     ssid: string;
+     security?: "WPA2" | "WPA3" | "WEP" | "open" | undefined;
+    } | undefined;
+     navigation?: {
+     url: string;
+     params?: Record<string, string | number | boolean> | undefined;
+    } | undefined;
+     post_connect?: {
+     notification: {
+     message: string;
+     title: string;
+    };
+    } | undefined;
+     checks?: {
+     field: string;
+     required?: boolean | undefined;
+     if_missing?: {
+     type: "form_request" | "choice_selection";
+     schema?: {
+     title: string;
+     fields?: {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }[] | undefined;
+    } | undefined;
+     options?: {
+     value: string;
+     label: string;
+    }[] | undefined;
+     multiple?: boolean | undefined;
+    } | undefined;
+    }[] | undefined;
+     on_complete?: {
+     type: "navigate" | "notification";
+     message?: string | undefined;
+     url?: string | undefined;
+    } | undefined;
+     equipment?: {
+     type: string;
+     id: string;
+     location: string;
+    } | undefined;
+     session?: {
+     duration: number;
+     max_duration?: number | undefined;
+     extendable?: boolean | undefined;
+    } | undefined;
+     user_validation?: {
+     membership_required?: boolean | undefined;
+     min_fitness_level?: string | undefined;
+    } | undefined;
+     actions?: {
+     on_start?: {
+     type: "equipment_control";
+     command: "activate";
+     parameters?: Record<string, string> | undefined;
+    } | undefined;
+     on_extend?: {
+     message: string;
+     type: "confirm";
+     actions?: {
+     confirm: {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    };
+    } | undefined;
+    } | undefined;
+     on_end?: {
+     type: "equipment_control";
+     command: "deactivate";
+    } | undefined;
+    } | undefined;
+     restaurant?: {
+     id: string;
+     table: string;
+    } | undefined;
+     flow?: {
+     steps: {
+     type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
+     step: number;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     validation?: {
+     allergen_check?: boolean | undefined;
+     preparation_time?: string | undefined;
+    } | undefined;
+     features?: {
+     customization?: boolean | undefined;
+     special_requests?: boolean | undefined;
+     combo_suggestions?: boolean | undefined;
+    } | undefined;
+     categories?: string[] | undefined;
+     filters?: {
+     dietary?: string | undefined;
+     availability?: string | undefined;
+    } | undefined;
+     tip_suggestions?: number[] | undefined;
+    }[];
+    } | undefined;
+     interactions?: {
+     info?: {
+     type: "product_details";
+     sections: string[];
+    } | undefined;
+     demo?: {
+     type: "ar_experience";
+     features: string[];
+     model: string;
+    } | undefined;
+     compare?: {
+     type: "product_comparison";
+     related_products: string[];
+    } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
+    } | undefined;
+    }, {
+     action: "wifi_connect" | "profile_enrichment" | "equipment_session" | "restaurant_ordering" | "product_interaction" | "navigate" | "form_request" | "choice_selection" | "notification" | "equipment_control";
+     product?: {
+     id: string;
+     sku: string;
+    } | undefined;
+     version?: string | undefined;
+     wifi?: {
+     password: string;
+     ssid: string;
+     security?: "WPA2" | "WPA3" | "WEP" | "open" | undefined;
+    } | undefined;
+     navigation?: {
+     url: string;
+     params?: Record<string, string | number | boolean> | undefined;
+    } | undefined;
+     post_connect?: {
+     notification: {
+     message: string;
+     title: string;
+    };
+    } | undefined;
+     checks?: {
+     field: string;
+     required?: boolean | undefined;
+     if_missing?: {
+     type: "form_request" | "choice_selection";
+     schema?: {
+     title: string;
+     fields?: {
+     name: string;
+     type: string;
+     label: string;
+     required?: boolean | undefined;
+    }[] | undefined;
+    } | undefined;
+     options?: {
+     value: string;
+     label: string;
+    }[] | undefined;
+     multiple?: boolean | undefined;
+    } | undefined;
+    }[] | undefined;
+     on_complete?: {
+     type: "navigate" | "notification";
+     message?: string | undefined;
+     url?: string | undefined;
+    } | undefined;
+     equipment?: {
+     type: string;
+     id: string;
+     location: string;
+    } | undefined;
+     session?: {
+     duration: number;
+     max_duration?: number | undefined;
+     extendable?: boolean | undefined;
+    } | undefined;
+     user_validation?: {
+     membership_required?: boolean | undefined;
+     min_fitness_level?: string | undefined;
+    } | undefined;
+     actions?: {
+     on_start?: {
+     type: "equipment_control";
+     command: "activate";
+     parameters?: Record<string, string> | undefined;
+    } | undefined;
+     on_extend?: {
+     message: string;
+     type: "confirm";
+     actions?: {
+     confirm: {
+     type: "equipment_control";
+     duration: number;
+     command: "extend_session";
+    };
+    } | undefined;
+    } | undefined;
+     on_end?: {
+     type: "equipment_control";
+     command: "deactivate";
+    } | undefined;
+    } | undefined;
+     restaurant?: {
+     id: string;
+     table: string;
+    } | undefined;
+     flow?: {
+     steps: {
+     type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
+     step: number;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     validation?: {
+     allergen_check?: boolean | undefined;
+     preparation_time?: string | undefined;
+    } | undefined;
+     features?: {
+     customization?: boolean | undefined;
+     special_requests?: boolean | undefined;
+     combo_suggestions?: boolean | undefined;
+    } | undefined;
+     categories?: string[] | undefined;
+     filters?: {
+     dietary?: string | undefined;
+     availability?: string | undefined;
+    } | undefined;
+     tip_suggestions?: number[] | undefined;
+    }[];
+    } | undefined;
+     interactions?: {
+     info?: {
+     type: "product_details";
+     sections: string[];
+    } | undefined;
+     demo?: {
+     type: "ar_experience";
+     features: string[];
+     model: string;
+    } | undefined;
+     compare?: {
+     type: "product_comparison";
+     related_products: string[];
+    } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
+    } | undefined;
+    }>;
+     readonly title: "Data Matrix Actions";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "System Configuration";
+     readonly components: () => Promise<never[]>;
+    };
+     readonly recentlyUsedApp: {
+     readonly schema: import("zod").ZodObject<{
+     appId: import("zod").ZodString;
+     usageCount: import("zod").ZodDefault<import("zod").ZodNumber>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     appId: string;
+     usageCount: number;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     appId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     usageCount?: number | undefined;
+    }>;
+     readonly title: "Recently Used Apps";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "System Configuration";
+    };
+     readonly folder: {
+     readonly schema: import("zod").ZodObject<{
+     name: import("zod").ZodOptional<import("zod").ZodString>;
+     apps: import("zod").ZodDefault<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodBoolean>>;
+     userId: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     userId: string;
+     apps: Record<string, boolean>;
+     name?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     userId: string;
+     name?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     apps?: Record<string, boolean> | undefined;
+    }>;
+     readonly title: "Folders";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "System Configuration";
+    };
+     readonly qrFlowConfig: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     title: import("zod").ZodString;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     nodes: import("zod").ZodArray<import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     type: import("zod").ZodString;
+     position: import("zod").ZodObject<{
+     x: import("zod").ZodNumber;
+     y: import("zod").ZodNumber;
+    }, "strip", import("zod").ZodTypeAny, {
+     x: number;
+     y: number;
+    }, {
+     x: number;
+     y: number;
+    }>;
+     data: import("zod").ZodObject<{
+     label: import("zod").ZodString;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     status: import("zod").ZodOptional<import("zod").ZodString>;
+     config: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodAny>>;
+     stats: import("zod").ZodOptional<import("zod").ZodObject<{
+     started: import("zod").ZodOptional<import("zod").ZodNumber>;
+     running: import("zod").ZodOptional<import("zod").ZodNumber>;
+     completed: import("zod").ZodOptional<import("zod").ZodNumber>;
+     error: import("zod").ZodOptional<import("zod").ZodNumber>;
+     progress: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
+     started?: number | undefined;
+     running?: number | undefined;
+     completed?: number | undefined;
+     error?: number | undefined;
+     progress?: number | undefined;
+    }, {
+     started?: number | undefined;
+     running?: number | undefined;
+     completed?: number | undefined;
+     error?: number | undefined;
+     progress?: number | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     label: string;
+     status?: string | undefined;
+     description?: string | undefined;
+     config?: Record<string, any> | undefined;
+     stats?: {
+     started?: number | undefined;
+     running?: number | undefined;
+     completed?: number | undefined;
+     error?: number | undefined;
+     progress?: number | undefined;
+    } | undefined;
+    }, {
+     label: string;
+     status?: string | undefined;
+     description?: string | undefined;
+     config?: Record<string, any> | undefined;
+     stats?: {
+     started?: number | undefined;
+     running?: number | undefined;
+     completed?: number | undefined;
+     error?: number | undefined;
+     progress?: number | undefined;
+    } | undefined;
+    }>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: string;
+     id: string;
+     position: {
+     x: number;
+     y: number;
+    };
+     data: {
+     label: string;
+     status?: string | undefined;
+     description?: string | undefined;
+     config?: Record<string, any> | undefined;
+     stats?: {
+     started?: number | undefined;
+     running?: number | undefined;
+     completed?: number | undefined;
+     error?: number | undefined;
+     progress?: number | undefined;
+    } | undefined;
+    };
+    }, {
+     type: string;
+     id: string;
+     position: {
+     x: number;
+     y: number;
+    };
+     data: {
+     label: string;
+     status?: string | undefined;
+     description?: string | undefined;
+     config?: Record<string, any> | undefined;
+     stats?: {
+     started?: number | undefined;
+     running?: number | undefined;
+     completed?: number | undefined;
+     error?: number | undefined;
+     progress?: number | undefined;
+    } | undefined;
+    };
+    }>, "many">;
+     edges: import("zod").ZodArray<import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     source: import("zod").ZodString;
+     target: import("zod").ZodString;
+     sourceHandle: import("zod").ZodOptional<import("zod").ZodString>;
+     targetHandle: import("zod").ZodOptional<import("zod").ZodString>;
+     type: import("zod").ZodOptional<import("zod").ZodString>;
+     data: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodAny>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     target: string;
+     source: string;
+     type?: string | undefined;
+     data?: Record<string, any> | undefined;
+     sourceHandle?: string | undefined;
+     targetHandle?: string | undefined;
+    }, {
+     id: string;
+     target: string;
+     source: string;
+     type?: string | undefined;
+     data?: Record<string, any> | undefined;
+     sourceHandle?: string | undefined;
+     targetHandle?: string | undefined;
+    }>, "many">;
+     nodeLibraryOrder: import("zod").ZodArray<import("zod").ZodObject<{
+     type: import("zod").ZodString;
+     label: import("zod").ZodString;
+     color: import("zod").ZodString;
+     order: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: string;
+     color: string;
+     label: string;
+     order?: number | undefined;
+    }, {
+     type: string;
+     color: string;
+     label: string;
+     order?: number | undefined;
+    }>, "many">;
+     createdAt: import("zod").ZodNumber;
+     updatedAt: import("zod").ZodNumber;
+     revision: import("zod").ZodNumber;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     title: string;
+     nodes: {
+     type: string;
+     id: string;
+     position: {
+     x: number;
+     y: number;
+    };
+     data: {
+     label: string;
+     status?: string | undefined;
+     description?: string | undefined;
+     config?: Record<string, any> | undefined;
+     stats?: {
+     started?: number | undefined;
+     running?: number | undefined;
+     completed?: number | undefined;
+     error?: number | undefined;
+     progress?: number | undefined;
+    } | undefined;
+    };
+    }[];
+     edges: {
+     id: string;
+     target: string;
+     source: string;
+     type?: string | undefined;
+     data?: Record<string, any> | undefined;
+     sourceHandle?: string | undefined;
+     targetHandle?: string | undefined;
+    }[];
+     nodeLibraryOrder: {
+     type: string;
+     color: string;
+     label: string;
+     order?: number | undefined;
+    }[];
+     createdAt: number;
+     updatedAt: number;
+     revision: number;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+    }, {
+     id: string;
+     title: string;
+     nodes: {
+     type: string;
+     id: string;
+     position: {
+     x: number;
+     y: number;
+    };
+     data: {
+     label: string;
+     status?: string | undefined;
+     description?: string | undefined;
+     config?: Record<string, any> | undefined;
+     stats?: {
+     started?: number | undefined;
+     running?: number | undefined;
+     completed?: number | undefined;
+     error?: number | undefined;
+     progress?: number | undefined;
+    } | undefined;
+    };
+    }[];
+     edges: {
+     id: string;
+     target: string;
+     source: string;
+     type?: string | undefined;
+     data?: Record<string, any> | undefined;
+     sourceHandle?: string | undefined;
+     targetHandle?: string | undefined;
+    }[];
+     nodeLibraryOrder: {
+     type: string;
+     color: string;
+     label: string;
+     order?: number | undefined;
+    }[];
+     createdAt: number;
+     updatedAt: number;
+     revision: number;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+    }>;
+     readonly title: "QR Flow Config";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "System Configuration";
+    };
+     readonly vehicle: {
+     readonly schema: import("zod").ZodObject<{
+     name: import("zod").ZodString;
+     licensePlate: import("zod").ZodString;
+     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     name: string;
+     licensePlate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+    }, {
+     name: string;
+     licensePlate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+    }>;
+     readonly title: "Vehicles";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Logistics";
+    };
+     readonly trip: {
+     readonly schema: any;
+     readonly title: "Trips";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Logistics";
+     readonly components: () => Promise<{
+     name: string;
+     component: typeof import("../components/ui/admin/trip-management").TripManagement;
+    }[]>;
     };
     }>;
 }

@@ -73,6 +73,7 @@ function createSoftDerivedUnitPriceField({
             displayKey: 'title',
           },
           derive: async ({ sourceRow, formValues, rowPath }) => {
+            console.log('sourceRow', sourceRow, priceKey);
             if (!sourceRow) return null;
             const row = getValueAtPath(formValues, rowPath) as
               | { unit?: string | null; unitPrice?: number | string | null }
