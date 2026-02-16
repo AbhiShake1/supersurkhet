@@ -296,6 +296,11 @@ export const saleSchema = z
       .describe('Sale Date')
       .superRefine(fieldConfig({ fieldType: 'datetime' })),
     items: salesItemSchema
+      .extend({
+        unitPrice: createSoftDerivedUnitPriceField({
+          priceKey: 'sellingPrice',
+        }),
+      })
       .array()
       .min(1, { message: 'Please add at least one item.' })
       .describe('Items Sold'),
