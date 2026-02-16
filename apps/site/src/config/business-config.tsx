@@ -328,12 +328,12 @@ export function useBusinessConfig({
           saleDate: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
               : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
@@ -469,20 +469,20 @@ export function useBusinessConfig({
           issuedAt: (date) =>
             date
               ? new Date(date).toLocaleString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              })
               : '-',
           dueDate: (date) =>
             date
               ? new Date(date).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+              })
               : '-',
           items: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
@@ -902,8 +902,8 @@ export function useBusinessConfig({
                                   (sum, item) =>
                                     sum +
                                     item.quantity *
-                                      (productsBySoul.get(item.productId)
-                                        ?.sellingPrice || 0),
+                                    (productsBySoul.get(item.productId)
+                                      ?.sellingPrice || 0),
                                   0,
                                 );
 

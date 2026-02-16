@@ -73,6 +73,7 @@ function createSoftDerivedUnitPriceField({
             displayKey: 'title',
           },
           derive: async ({ sourceRow, formValues, rowPath }) => {
+            console.log('sourceRow', sourceRow, priceKey);
             if (!sourceRow) return null;
             const row = getValueAtPath(formValues, rowPath) as
               | { unit?: string | null; unitPrice?: number | string | null }
@@ -288,6 +289,11 @@ export const saleSchema = z
       .describe('Sale Date')
       .superRefine(fieldConfig({ fieldType: 'datetime' })),
     items: salesItemSchema
+      .extend({
+        unitPrice: createSoftDerivedUnitPriceField({
+          priceKey: 'sellingPrice',
+        }),
+      })
       .array()
       .min(1, { message: 'Please add at least one item.' })
       .describe('Items Sold'),
