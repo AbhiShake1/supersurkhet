@@ -3,8 +3,9 @@ import type { LucideIcon, LucideProps } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type z from 'zod';
 import type { AdminComponent } from '@/components/ui/admin';
+import type { ZodObjectOrWrapped } from '@autoform/zod';
 
-export type DefaultSchemaType = z.ZodObject<any> | z.ZodEffects<any>;
+export type DefaultSchemaType = ZodObjectOrWrapped
 
 export interface GTAAppConfig {
   schema: {

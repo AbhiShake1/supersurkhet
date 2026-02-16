@@ -18,6 +18,16 @@ import {
 import { z } from 'zod';
 import { fieldConfig } from '@/components/ui/autoform';
 import { dataMatrixActionSchema } from './datamatrix';
+import {
+  businessPluginDraftInstallSchema,
+  businessPluginInstallSchema,
+  pluginDraftRevisionSchema,
+  pluginDraftSchema,
+  pluginRecordSchema,
+  pluginReleaseSchema,
+  pluginSchemaDocStorageSchema,
+  pluginWorkflowDocStorageSchema,
+} from './schema/plugins';
 import type {
   AppSchemaType,
   CreatedSchema,
@@ -251,6 +261,54 @@ export const coreSchema = createSchema({
     icon: Lock,
     group: 'System Configuration',
   },
+  pluginRelease: {
+    schema: pluginReleaseSchema,
+    title: 'Plugin Releases',
+    icon: Package,
+    group: 'Plugin Platform',
+  },
+  businessPluginInstall: {
+    schema: businessPluginInstallSchema,
+    title: 'Business Plugin Installs',
+    icon: Building,
+    group: 'Plugin Platform',
+  },
+  pluginDraft: {
+    schema: pluginDraftSchema,
+    title: 'Plugin Drafts',
+    icon: Package,
+    group: 'Plugin Platform',
+  },
+  pluginDraftRevision: {
+    schema: pluginDraftRevisionSchema,
+    title: 'Plugin Draft Revisions',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  businessPluginDraftInstall: {
+    schema: businessPluginDraftInstallSchema,
+    title: 'Business Plugin Draft Installs',
+    icon: Building,
+    group: 'Plugin Platform',
+  },
+  pluginRecord: {
+    schema: pluginRecordSchema,
+    title: 'Plugin Runtime Records',
+    icon: Folder,
+    group: 'Plugin Platform',
+  },
+  pluginSchemaDoc: {
+    schema: pluginSchemaDocStorageSchema,
+    title: 'Plugin Schema Docs',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  pluginWorkflowDoc: {
+    schema: pluginWorkflowDocStorageSchema,
+    title: 'Plugin Workflow Docs',
+    icon: MapIcon,
+    group: 'Plugin Platform',
+  },
 });
 
 export const featureSchema = createSchema({
@@ -463,7 +521,26 @@ declare global {
 export type User = InferredTable<'user'>;
 export type Business = InferredTable<'business'>;
 export type Order = InferredTable<'order'>;
+export type PluginRelease = InferredTable<'pluginRelease'>;
+export type BusinessPluginInstall = InferredTable<'businessPluginInstall'>;
+export type PluginDraft = InferredTable<'pluginDraft'>;
+export type PluginDraftRevision = InferredTable<'pluginDraftRevision'>;
+export type BusinessPluginDraftInstall =
+  InferredTable<'businessPluginDraftInstall'>;
+export type PluginRecord = InferredTable<'pluginRecord'>;
 // #endregion
+
+export {
+  businessPluginDraftInstallSchema,
+  businessPluginInstallSchema,
+  compilePluginSchemasFromDocs,
+  pluginDraftRevisionSchema,
+  pluginDraftSchema,
+  pluginRecordSchema,
+  pluginReleaseSchema,
+  pluginSchemaDocStorageSchema,
+  pluginWorkflowDocStorageSchema,
+} from './schema/plugins';
 
 export function transformSchema<const TSchema extends BaseAppSchemaType>(
   schema: TSchema,

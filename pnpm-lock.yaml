@@ -484,6 +484,9 @@ importers:
       streamdown:
         specifier: ^2.1.0
         version: 2.1.0(react@19.2.3)
+      supersurkhet-sdk:
+        specifier: workspace:*
+        version: link:../../packages/supersurkhet-sdk
       tailwind-merge:
         specifier: ^3.0.2
         version: 3.4.0
@@ -744,6 +747,14 @@ importers:
       typescript:
         specifier: ~5.8.3
         version: 5.8.3
+
+  packages/supersurkhet-plugin-restaurant-admin:
+    dependencies:
+      supersurkhet-sdk:
+        specifier: workspace:*
+        version: link:../supersurkhet-sdk
+
+  packages/supersurkhet-sdk: {}
 
   packages/typescript-config: {}
 
@@ -1774,7 +1785,7 @@ packages:
   '@esbuild-plugins/node-globals-polyfill@0.2.3':
     resolution: {integrity: sha512-r3MIryXDeXDOZh7ih1l/yE9ZLORCd5e8vWg02azWRGj5SPTuoh69A2AIyn0Z31V/kHBfZ4HgWJ+OK3GTTwLmnw==}
     peerDependencies:
-      esbuild: '*'
+      esbuild: 0.17.19
 
   '@esbuild-plugins/node-modules-polyfill@0.2.2':
     resolution: {integrity: sha512-LXV7QsWJxRuMYvKbiznh+U1ilIop3g2TeKRzUxOG5X3YITc8JyyTa90BmLwqqv0YnX4v32CSlG+vsziZp9dMvA==}

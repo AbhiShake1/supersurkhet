@@ -12,14 +12,16 @@ import {
   type CredenzaProps,
 } from '@/components/ui/credenza';
 import { api } from '@/lib/api';
-import { businessSchema } from '@/lib/schema';
+import type { businessSchema } from '@/lib/schema';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
+import type { z } from 'zod';
 import {
   BusinessCreationForm,
+  businessCreationSchema,
   getBusinessTypeDataField,
+  type BusinessCreationValues,
 } from './business-creation-form';
 import { Button } from './ui/button';
 import { Form } from './ui/form';
@@ -28,21 +30,11 @@ import { toast } from 'sonner';
 import { useAuth } from './auth-provider';
 import { gun } from '@/lib/gun';
 import { getGunRef } from '@/lib/gun/utils';
-
-const businessCreationSchema = businessSchema
-  .pick({
-    name: true,
-    businessType: true,
-    location: true,
-    locationCoordinates: true,
-  })
-  .extend({
-    prepopulateData: z
-      .record(z.string(), z.boolean().default(false))
-      .optional(),
-  });
-
-type BusinessCreationValues = z.infer<typeof businessCreationSchema>;
+import { parseReleaseId } from '@/lib/plugins/marketplace-seed';
+import {
+  ensureMarketplaceSeedReleases,
+  installPluginRelease,
+} from '@/server-functions/plugins';
 
 const stepContent = {
   1: {
@@ -50,9 +42,9 @@ const stepContent = {
     description: 'What is your business and what does it do?',
   },
   2: {
-    title: 'Pre-populate Your Data.',
+    title: 'Install Your Plugin Stack.',
     description:
-      "Select which items you'd like to pre-populate based on similar businesses. Common items are pre-selected for you.",
+      'Pick your required plugins first, then optionally pre-populate data from similar businesses.',
   },
   3: {
     title: 'Congratulations!',
@@ -78,17 +70,15 @@ export function CreateBusiness({
     resolver: zodResolver(businessCreationSchema),
     defaultValues: {
       name: '',
-      businessType: 'other',
+      businessType: 'retail',
+      features: {},
       location: '',
       locationCoordinates: '',
+      selectedPluginReleaseIds: [],
     },
   });
 
   const { mutateAsync: createBusiness, isPending } = api.business.useCreate({
-    onSuccess: (_, data) => {
-      setCreatedBusiness(data);
-      setStep(3);
-    },
     onError: (err) => {
       console.error('Error creating business:', err);
       toast.error(
@@ -100,6 +90,18 @@ export function CreateBusiness({
       });
     },
   });
+
+  useEffect(() => {
+    if (!open) return;
+
+    ensureMarketplaceSeedReleases({
+      data: {
+        actorUserId: user?._?.soul ?? 'system-seed',
+      },
+    }).catch((error) => {
+      console.error('Error seeding marketplace plugins:', error);
+    });
+  }, [open, user?._?.soul]);
 
   const handleNextStep1 = async () => {
     if (isLoading) {
@@ -126,10 +128,11 @@ export function CreateBusiness({
     setStep(2);
   };
 
-  const onSubmit = async (values: BusinessCreationValues) => {
+  const onSubmit = async (values: BusinessCreationValues): Promise<void> => {
     const basePath = values.name.toLowerCase().replace(/\s+/g, '-');
     // Extract prepopulateData to avoid including it in the business creation
-    const { prepopulateData, ...businessData } = values;
+    const { prepopulateData, selectedPluginReleaseIds, ...businessData } =
+      values;
     for (const [key, value] of Object.entries(prepopulateData ?? {})) {
       if (!value) continue;
       if (key === 'undefined') continue;
@@ -148,9 +151,10 @@ export function CreateBusiness({
       });
     }
     if (!user) {
-      return toast.error('You must be logged in to create a business.');
+      toast.error('You must be logged in to create a business.');
+      return;
     }
-    await createBusiness({
+    const created = (await createBusiness({
       ...businessData,
       basePath,
       isActive: true,
@@ -164,7 +168,50 @@ export function CreateBusiness({
           joinedAt: Date.now(),
         },
       },
-    });
+    })) as unknown as z.infer<typeof businessSchema>;
+
+    const installTargets = selectedPluginReleaseIds
+      .map((releaseId) => parseReleaseId(releaseId))
+      .filter(
+        (release): release is { pluginId: string; version: string } =>
+          release !== null,
+      );
+
+    if (installTargets.length > 0) {
+      const installResults = await Promise.allSettled(
+        installTargets.map((target) =>
+          installPluginRelease({
+            data: {
+              actorUserId: user?._?.soul ?? 'anon',
+              actorRole: 'owner',
+              businessId: basePath,
+              pluginId: target.pluginId,
+              version: target.version,
+              explicitOwnerAction: true,
+            },
+          }),
+        ),
+      );
+
+      const successfulInstalls = installResults.filter(
+        (result) => result.status === 'fulfilled',
+      ).length;
+      const failedInstalls = installResults.length - successfulInstalls;
+
+      if (successfulInstalls > 0) {
+        toast.success(
+          `${successfulInstalls} plugin${successfulInstalls === 1 ? '' : 's'} installed.`,
+        );
+      }
+      if (failedInstalls > 0) {
+        toast.warning(
+          `Business created, but ${failedInstalls} plugin install${failedInstalls === 1 ? '' : 's'} failed. You can retry from Admin > Plugins.`,
+        );
+      }
+    }
+
+    setCreatedBusiness(created);
+    setStep(3);
   };
 
   const handleClose = () => {
@@ -245,7 +292,10 @@ export function CreateBusiness({
               <Button
                 type="submit"
                 form="business-creation-form"
-                disabled={isPending}
+                disabled={
+                  isPending ||
+                  (form.watch('selectedPluginReleaseIds')?.length ?? 0) === 0
+                }
               >
                 {isPending ? 'Creating...' : 'Create Business'}
               </Button>

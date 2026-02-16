@@ -7,20 +7,45 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { api } from '@/lib/api';
+import {
+  buildPluginCatalog,
+  type PluginCatalogSort,
+} from '@/lib/plugins/admin-plugin-catalog';
+import {
+  getRecommendedSeedReleaseIds,
+  mergeMarketplaceReleasesWithSeed,
+  parseReleaseId,
+} from '@/lib/plugins/marketplace-seed';
+import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import { businessSchema, featureSchema } from '@/lib/schema';
 import { cn } from '@/lib/utils';
 import type { SchemaKeys } from '@gta/react-hooks';
 import { Link } from '@tanstack/react-router';
-import { Building, CheckCircle, Store } from 'lucide-react';
-import { useLayoutEffect, useMemo } from 'react';
+import {
+  Building,
+  CheckCircle,
+  Package,
+  Search,
+  Sparkles,
+  Store,
+} from 'lucide-react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from './ui/button';
 import { Card, CardHeader, CardTitle } from './ui/card';
+import { Badge } from './ui/badge';
 import { MapField } from './ui/autoform/components/MapField';
 
-const businessCreationSchema = businessSchema
+export const businessCreationSchema = businessSchema
   .pick({
     name: true,
     businessType: true,
@@ -30,9 +55,12 @@ const businessCreationSchema = businessSchema
   })
   .extend({
     prepopulateData: z.record(z.string(), z.boolean()).optional(),
+    selectedPluginReleaseIds: z
+      .array(z.string())
+      .min(1, 'Install at least one plugin before creating your business.'),
   });
 
-type BusinessCreationValues = z.infer<typeof businessCreationSchema>;
+export type BusinessCreationValues = z.infer<typeof businessCreationSchema>;
 
 // Define types for pre-population data
 interface PrePopulateItem {
@@ -88,6 +116,23 @@ const recommendedFeatures: Record<
   ride_sharing: ['rideSharing', 'driverProfile', 'trip', 'expense'],
 };
 
+const pluginCategoryById: Record<string, string> = {
+  'supersurkhet.plugin.restaurant-admin': 'operations',
+  'supersurkhet.plugin.customer-loyalty': 'growth',
+  'supersurkhet.plugin.finance-ops': 'finance',
+  'supersurkhet.plugin.fulfillment-ops': 'operations',
+  'supersurkhet.plugin.catalog-intelligence': 'inventory',
+};
+
+const pluginCategoryOptions = [
+  { value: 'all', label: 'All' },
+  { value: 'recommended', label: 'Recommended' },
+  { value: 'operations', label: 'Operations' },
+  { value: 'finance', label: 'Finance' },
+  { value: 'inventory', label: 'Inventory' },
+  { value: 'growth', label: 'Growth' },
+] as const;
+
 interface BusinessCreationFormProps {
   step: number;
   form: UseFormReturn<BusinessCreationValues>;
@@ -129,6 +174,14 @@ export function BusinessCreationForm({
                   params={{ businessName: createdBusiness.basePath ?? '' }}
                 >
                   Go to Admin Dashboard
+                </Link>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link
+                  to="/$businessName/admin/plugins"
+                  params={{ businessName: createdBusiness.basePath ?? '' }}
+                >
+                  Open Plugin Manager
                 </Link>
               </Button>
             </div>
@@ -270,13 +323,311 @@ export function BusinessCreationForm({
         </div>
       )}
 
-      {step === 2 && <DataPrepopulateForm form={form} key="prepopulate-form" />}
+      {step === 2 && (
+        <div className="space-y-6">
+          <PluginInstallSelectionForm form={form} />
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              Optional data pre-population
+            </h3>
+            <DataPrepopulateForm form={form} key="prepopulate-form" />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
 interface DataPrepopulateFormProps {
   form: UseFormReturn<BusinessCreationValues>;
+}
+
+function toReleaseId(pluginId: string, version: string) {
+  return `${pluginId}@${version}`;
+}
+
+function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<(typeof pluginCategoryOptions)[number]['value']>(
+    'recommended',
+  );
+  const [sortBy, setSortBy] = useState<PluginCatalogSort>('recent');
+  const businessType = form.watch('businessType');
+  const { data: releaseRows = [] } = api.pluginRelease.useGet();
+  const releases = useMemo(
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    [releaseRows],
+  );
+
+  const recommendedReleaseIds = useMemo(
+    () => getRecommendedSeedReleaseIds(businessType),
+    [businessType],
+  );
+
+  const recommendedPluginIds = useMemo(
+    () =>
+      new Set(
+        recommendedReleaseIds
+          .map((releaseId) => parseReleaseId(releaseId)?.pluginId)
+          .filter((pluginId): pluginId is string => Boolean(pluginId)),
+      ),
+    [recommendedReleaseIds],
+  );
+
+  const catalog = useMemo(
+    () =>
+      buildPluginCatalog({
+        releases,
+        installs: [],
+        query,
+        filter: 'all',
+        sort: sortBy,
+      }),
+    [releases, query, sortBy],
+  );
+
+  const visibleCatalog = useMemo(
+    () =>
+      catalog.filter((entry) => {
+        if (category === 'all') return true;
+        if (category === 'recommended') {
+          return recommendedPluginIds.has(entry.pluginId);
+        }
+        return (pluginCategoryById[entry.pluginId] ?? 'other') === category;
+      }),
+    [catalog, category, recommendedPluginIds],
+  );
+
+  return (
+    <FormField
+      control={form.control}
+      name="selectedPluginReleaseIds"
+      render={({ field }) => {
+        const selectedReleaseIds = field.value ?? [];
+        const selectedReleaseIdsSet = new Set(selectedReleaseIds);
+
+        const selectedCards = catalog.filter((entry) =>
+          selectedReleaseIdsSet.has(
+            toReleaseId(entry.pluginId, entry.latestRelease.version),
+          ),
+        );
+
+        function togglePlugin(entry: (typeof catalog)[number]) {
+          const releaseId = toReleaseId(
+            entry.pluginId,
+            entry.latestRelease.version,
+          );
+          if (selectedReleaseIdsSet.has(releaseId)) {
+            field.onChange(
+              selectedReleaseIds.filter((current) => current !== releaseId),
+            );
+            return;
+          }
+          field.onChange([...selectedReleaseIds, releaseId]);
+        }
+
+        function selectRecommended() {
+          const recommendedIds = catalog
+            .filter((entry) => recommendedPluginIds.has(entry.pluginId))
+            .map((entry) => toReleaseId(entry.pluginId, entry.latestRelease.version));
+          if (recommendedIds.length === 0) return;
+          field.onChange(
+            recommendedIds.filter(
+              (id, index) => recommendedIds.indexOf(id) === index,
+            ),
+          );
+        }
+
+        return (
+          <FormItem className="space-y-4">
+            <div className="space-y-2">
+              <FormLabel className="text-base">Plugin stack (required)</FormLabel>
+              <p className="text-sm text-muted-foreground">
+                Pick the plugins to install as soon as the business is created.
+                You need at least one plugin to continue.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border/70 bg-gradient-to-br from-cyan-50/70 via-background to-amber-50/70 p-4 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-medium">
+                  <Sparkles className="size-3.5" />
+                  Starter plugin marketplace
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  type="button"
+                  onClick={selectRecommended}
+                >
+                  Apply recommended stack
+                </Button>
+              </div>
+
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="relative flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Search plugins by name, id, or capability"
+                    className="pl-9"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {pluginCategoryOptions.map((option) => (
+                    <Button
+                      key={option.value}
+                      size="sm"
+                      type="button"
+                      variant={category === option.value ? 'default' : 'outline'}
+                      onClick={() => setCategory(option.value)}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+
+                <Select
+                  value={sortBy}
+                  onValueChange={(value) =>
+                    setSortBy(value as PluginCatalogSort)
+                  }
+                >
+                  <SelectTrigger className="w-full md:w-[180px]">
+                    <SelectValue placeholder="Sort plugins" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recent">Most recent</SelectItem>
+                    <SelectItem value="name">Name</SelectItem>
+                    <SelectItem value="capabilities">Capabilities</SelectItem>
+                    <SelectItem value="versions">Version count</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedCards.length > 0 && (
+                <div className="rounded-lg border bg-background/70 p-3">
+                  <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
+                    Install queue ({selectedCards.length})
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedCards.map((entry) => {
+                      const releaseId = toReleaseId(
+                        entry.pluginId,
+                        entry.latestRelease.version,
+                      );
+                      return (
+                        <Badge
+                          key={releaseId}
+                          variant="outline"
+                          className="gap-2 py-1"
+                        >
+                          <Package className="size-3" />
+                          {entry.title}@{entry.latestRelease.version}
+                          <button
+                            type="button"
+                            className="rounded-sm px-1 text-muted-foreground hover:bg-muted"
+                            onClick={() =>
+                              field.onChange(
+                                selectedReleaseIds.filter(
+                                  (current) => current !== releaseId,
+                                ),
+                              )
+                            }
+                          >
+                            x
+                          </button>
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {visibleCatalog.length === 0 ? (
+                <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                  No plugins matched this filter.
+                </div>
+              ) : (
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  {visibleCatalog.map((entry) => {
+                    const releaseId = toReleaseId(
+                      entry.pluginId,
+                      entry.latestRelease.version,
+                    );
+                    const isSelected = selectedReleaseIdsSet.has(releaseId);
+                    const isRecommended = recommendedPluginIds.has(entry.pluginId);
+
+                    return (
+                      <Card
+                        key={releaseId}
+                        className={cn(
+                          'border-border/70 py-4 gap-3 transition-colors',
+                          isSelected && 'border-primary bg-primary/5',
+                        )}
+                      >
+                        <CardHeader className="px-4">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-1">
+                              <CardTitle className="text-sm leading-tight">
+                                {entry.title}
+                              </CardTitle>
+                              <p className="text-xs text-muted-foreground">
+                                {entry.pluginId}
+                              </p>
+                            </div>
+                            <Badge variant="outline">
+                              {entry.latestRelease.version}
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <div className="px-4 space-y-3">
+                          <p className="text-xs text-muted-foreground min-h-10">
+                            {entry.description || 'No description available.'}
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {entry.capabilities.slice(0, 3).map((capability) => (
+                              <Badge
+                                key={capability}
+                                variant="secondary"
+                                className="text-[10px]"
+                              >
+                                {capability}
+                              </Badge>
+                            ))}
+                            {entry.capabilityCount > 3 && (
+                              <Badge variant="outline" className="text-[10px]">
+                                +{entry.capabilityCount - 3}
+                              </Badge>
+                            )}
+                            {isRecommended && (
+                              <Badge className="text-[10px]">Recommended</Badge>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="w-full"
+                            variant={isSelected ? 'secondary' : 'default'}
+                            onClick={() => togglePlugin(entry)}
+                          >
+                            {isSelected ? 'Installed in queue' : 'Install plugin'}
+                          </Button>
+                        </div>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
+  );
 }
 
 function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {

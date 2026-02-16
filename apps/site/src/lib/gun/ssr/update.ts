@@ -1,9 +1,10 @@
 import type { GunMessagePut } from 'gun';
+import _ from 'lodash';
+import { runLifecycleHookPipeline } from '@/lib/plugins/runtime-pipeline';
 import type { SchemaKeys, UpdaterParams } from '..';
 import { mergeOptionsWithDefaults } from '../options';
 import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
 import { encrypt } from '../utils/sea';
-import _ from 'lodash';
 
 function omitMeta<T>(obj: T): T {
   if (!obj) return obj;
@@ -23,8 +24,20 @@ export function update<const T extends SchemaKeys>(
   key: T,
   ...restKeys: string[]
 ) {
-  const schema = getNestedZodShape(key, mergeOptionsWithDefaults({}).schema!);
+  const defaultSchema = mergeOptionsWithDefaults({}).schema;
+  if (!defaultSchema) {
+    throw new Error('Default schema not set for update runtime');
+  }
+  const schema = getNestedZodShape(key, defaultSchema);
   return async ({ id, ...value }: UpdaterParams<T>) => {
+    const businessId = restKeys[0];
+    await runLifecycleHookPipeline({
+      businessId,
+      table: key,
+      hook: 'beforeUpdate',
+      payload: { id, ...value },
+    });
+
     const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
     const _encrypted = await encrypt(value, schema);
     const encrypted = Object.fromEntries(
@@ -38,7 +51,14 @@ export function update<const T extends SchemaKeys>(
           if ('err' in ack && !!ack.err) {
             reject(ack.err);
           } else {
-            resolve(ack);
+            void runLifecycleHookPipeline({
+              businessId,
+              table: key,
+              hook: 'afterUpdate',
+              payload: { id, ...value },
+            })
+              .then(() => resolve(ack))
+              .catch(reject);
           }
         });
     });

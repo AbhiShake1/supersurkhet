@@ -6,9 +6,10 @@ import { useBusinessConfig } from '@/config/business-config';
 import { BusinessProvider } from '@/contexts/business-context';
 import { api } from '@/lib/api';
 import type { BusinessType } from '@/lib/schema';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Loader2 } from 'lucide-react';
 import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
 
 export const Route = createFileRoute('/$businessName/admin/')({
   component: () => {
@@ -50,6 +51,7 @@ export const Route = createFileRoute('/$businessName/admin/')({
       <BusinessProvider business={business}>
         <Child
           businessName={businessName}
+          businessId={business.id}
           businessType={business.businessType}
         />
       </BusinessProvider>
@@ -59,18 +61,36 @@ export const Route = createFileRoute('/$businessName/admin/')({
 
 function Child({
   businessName,
+  businessId,
   businessType,
 }: {
   businessName: string;
+  businessId: string;
   businessType: BusinessType;
 }) {
-  const config = useBusinessConfig({ slug: businessName })[businessType];
+  const config = useBusinessConfig({
+    slug: businessName,
+    businessId,
+    businessType,
+  })[businessType];
   if (!config?.length)
     return (
       <div className="p-2">
-        <h3>{businessName} Admin Dashboard</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3>{businessName} Admin Dashboard</h3>
+          <Button asChild variant="outline" size="sm">
+            <Link
+              to="/$businessName/admin/plugins"
+              params={{ businessName }}
+            >
+              Plugins
+            </Link>
+          </Button>
+        </div>
         <p>This is the admin panel for {businessName}.</p>
       </div>
     );
-  return <AutoAdmin tabs={config} />;
+  return (
+    <AutoAdmin tabs={config} />
+  );
 }

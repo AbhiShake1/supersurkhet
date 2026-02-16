@@ -1,6 +1,7 @@
-description = "Generate an actionable, dependency-ordered tasks.md for the feature based on available design artifacts."
+---
+description: Generate an actionable, dependency-ordered tasks.md for the feature based on available design artifacts.
+---
 
-prompt = """
 ---
 description: Generate an actionable, dependency-ordered tasks.md for the feature based on available design artifacts.
 ---
@@ -63,4 +64,4 @@ $ARGUMENTS
 Context for task generation: {{args}}
 
 The tasks.md should be immediately executable - each task must be specific enough that an LLM can complete it without additional context.
-"""
+

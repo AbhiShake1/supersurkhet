@@ -356,6 +356,1110 @@ declare global {
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "System Configuration";
     };
+     readonly pluginRelease: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     version: import("zod").ZodString;
+     manifestHash: import("zod").ZodString;
+     artifactHash: import("zod").ZodString;
+     author: import("zod").ZodObject<{
+     userId: import("zod").ZodString;
+     name: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     userId: string;
+     name?: string | undefined;
+    }, {
+     userId: string;
+     name?: string | undefined;
+    }>;
+     visibility: import("zod").ZodDefault<import("zod").ZodLiteral<"public">>;
+     docs: import("zod").ZodOptional<import("zod").ZodObject<{
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     description?: string | undefined;
+     title?: string | undefined;
+    }, {
+     description?: string | undefined;
+     title?: string | undefined;
+    }>>;
+     actionManifest: import("zod").ZodArray<import("zod").ZodObject<{
+     actionId: import("zod").ZodString;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     capabilities: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     runtime: import("zod").ZodOptional<import("zod").ZodEnum<["sandbox-worker", "core"]>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }, {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }>, "many">;
+     schemaDocs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     schemaId: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     fields: import("zod").ZodArray<import("zod").ZodObject<{
+     key: import("zod").ZodString;
+     type: import("zod").ZodEnum<["string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp", ...("string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp")[], "enum", "array", "object"]>;
+     label: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     optional: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     defaultValue: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     enumValues: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     itemType: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+     fields: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>, "many">>;
+     tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+     rules: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     kind: import("zod").ZodEnum<["min", "max", "nonnegative", "positive", "int", "customToken"]>;
+     value: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>;
+     token: import("zod").ZodOptional<import("zod").ZodString>;
+     message: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }, {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }>, "many">>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }, {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }>, "many">;
+     tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schemaId: string;
+     fields: {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }[];
+     description?: string | undefined;
+     title?: string | undefined;
+     tokens?: Record<string, unknown> | undefined;
+    }, {
+     schemaId: string;
+     fields: {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }[];
+     description?: string | undefined;
+     title?: string | undefined;
+     tokens?: Record<string, unknown> | undefined;
+    }>, "many">>;
+     workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     workflowId: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     table: import("zod").ZodString;
+     hook: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     nodes: import("zod").ZodArray<import("zod").ZodObject<{
+     nodeId: import("zod").ZodString;
+     type: import("zod").ZodLiteral<"action">;
+     actionId: import("zod").ZodString;
+     input: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }, {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }>, "many">;
+     edges: import("zod").ZodArray<import("zod").ZodObject<{
+     from: import("zod").ZodString;
+     to: import("zod").ZodString;
+     conditionToken: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }, {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }>, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }[];
+     title?: string | undefined;
+    }, {
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }[];
+     title?: string | undefined;
+    }>, "many">>;
+     adminTabs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     schema: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     group: import("zod").ZodOptional<import("zod").ZodString>;
+     icon: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }, {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }>, "many">>;
+     publishedAt: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     version: string;
+     visibility: "public";
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     author: {
+     userId: string;
+     name?: string | undefined;
+    };
+     actionManifest: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     docs?: {
+     description?: string | undefined;
+     title?: string | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }[];
+     description?: string | undefined;
+     title?: string | undefined;
+     tokens?: Record<string, unknown> | undefined;
+    }[] | undefined;
+     workflows?: {
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }[];
+     title?: string | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+     publishedAt?: string | undefined;
+    }, {
+     id: string;
+     version: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     author: {
+     userId: string;
+     name?: string | undefined;
+    };
+     actionManifest: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     visibility?: "public" | undefined;
+     docs?: {
+     description?: string | undefined;
+     title?: string | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }[];
+     description?: string | undefined;
+     title?: string | undefined;
+     tokens?: Record<string, unknown> | undefined;
+    }[] | undefined;
+     workflows?: {
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }[];
+     title?: string | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+     publishedAt?: string | undefined;
+    }>;
+     readonly title: "Plugin Releases";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly businessPluginInstall: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     businessId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     version: import("zod").ZodString;
+     manifestHash: import("zod").ZodString;
+     artifactHash: import("zod").ZodString;
+     installedAt: import("zod").ZodString;
+     installedByUserId: import("zod").ZodString;
+     status: import("zod").ZodDefault<import("zod").ZodEnum<["active", "paused"]>>;
+     requestedCapabilities: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "active" | "paused";
+     id: string;
+     version: string;
+     businessId: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     installedAt: string;
+     installedByUserId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     requestedCapabilities?: string[] | undefined;
+    }, {
+     id: string;
+     version: string;
+     businessId: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     installedAt: string;
+     installedByUserId: string;
+     status?: "active" | "paused" | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     requestedCapabilities?: string[] | undefined;
+    }>;
+     readonly title: "Business Plugin Installs";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginDraft: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     draftId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     ownerUserId: import("zod").ZodString;
+     collaboratorUserIds: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     status: import("zod").ZodDefault<import("zod").ZodEnum<["active", "archived"]>>;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "active" | "archived";
+     id: string;
+     pluginId: string;
+     draftId: string;
+     ownerUserId: string;
+     createdAt: string;
+     updatedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     title?: string | undefined;
+     collaboratorUserIds?: string[] | undefined;
+    }, {
+     id: string;
+     pluginId: string;
+     draftId: string;
+     ownerUserId: string;
+     createdAt: string;
+     updatedAt: string;
+     status?: "active" | "archived" | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     title?: string | undefined;
+     collaboratorUserIds?: string[] | undefined;
+    }>;
+     readonly title: "Plugin Drafts";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginDraftRevision: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     revisionId: import("zod").ZodString;
+     draftId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     manifestHash: import("zod").ZodString;
+     artifactHash: import("zod").ZodString;
+     schemaDocs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     schemaId: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     fields: import("zod").ZodArray<import("zod").ZodObject<{
+     key: import("zod").ZodString;
+     type: import("zod").ZodEnum<["string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp", ...("string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp")[], "enum", "array", "object"]>;
+     label: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     optional: import("zod").ZodOptional<import("zod").ZodBoolean>;
+     defaultValue: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     enumValues: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     itemType: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+     fields: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>, "many">>;
+     tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+     rules: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     kind: import("zod").ZodEnum<["min", "max", "nonnegative", "positive", "int", "customToken"]>;
+     value: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>;
+     token: import("zod").ZodOptional<import("zod").ZodString>;
+     message: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }, {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }>, "many">>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }, {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }>, "many">;
+     tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schemaId: string;
+     fields: {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }[];
+     description?: string | undefined;
+     title?: string | undefined;
+     tokens?: Record<string, unknown> | undefined;
+    }, {
+     schemaId: string;
+     fields: {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }[];
+     description?: string | undefined;
+     title?: string | undefined;
+     tokens?: Record<string, unknown> | undefined;
+    }>, "many">>;
+     workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     workflowId: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     table: import("zod").ZodString;
+     hook: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     nodes: import("zod").ZodArray<import("zod").ZodObject<{
+     nodeId: import("zod").ZodString;
+     type: import("zod").ZodLiteral<"action">;
+     actionId: import("zod").ZodString;
+     input: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }, {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }>, "many">;
+     edges: import("zod").ZodArray<import("zod").ZodObject<{
+     from: import("zod").ZodString;
+     to: import("zod").ZodString;
+     conditionToken: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }, {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }>, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }[];
+     title?: string | undefined;
+    }, {
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }[];
+     title?: string | undefined;
+    }>, "many">>;
+     adminTabs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     schema: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     group: import("zod").ZodOptional<import("zod").ZodString>;
+     icon: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }, {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }>, "many">>;
+     createdAt: import("zod").ZodString;
+     createdByUserId: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     draftId: string;
+     createdAt: string;
+     revisionId: string;
+     createdByUserId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }[];
+     description?: string | undefined;
+     title?: string | undefined;
+     tokens?: Record<string, unknown> | undefined;
+    }[] | undefined;
+     workflows?: {
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }[];
+     title?: string | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+    }, {
+     id: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     draftId: string;
+     createdAt: string;
+     revisionId: string;
+     createdByUserId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: {
+     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     key: string;
+     label?: string | undefined;
+     description?: string | undefined;
+     fields?: Record<string, unknown>[] | undefined;
+     optional?: boolean | undefined;
+     defaultValue?: unknown;
+     enumValues?: string[] | undefined;
+     itemType?: Record<string, unknown> | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     rules?: {
+     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
+     value?: string | number | undefined;
+     message?: string | undefined;
+     token?: string | undefined;
+    }[] | undefined;
+    }[];
+     description?: string | undefined;
+     title?: string | undefined;
+     tokens?: Record<string, unknown> | undefined;
+    }[] | undefined;
+     workflows?: {
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     type: "action";
+     actionId: string;
+     nodeId: string;
+     input?: unknown;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     conditionToken?: string | undefined;
+    }[];
+     title?: string | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+    }>;
+     readonly title: "Plugin Draft Revisions";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly businessPluginDraftInstall: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     businessId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     draftId: import("zod").ZodString;
+     revisionId: import("zod").ZodString;
+     teamId: import("zod").ZodString;
+     manifestHash: import("zod").ZodString;
+     artifactHash: import("zod").ZodString;
+     installedAt: import("zod").ZodString;
+     installedByUserId: import("zod").ZodString;
+     status: import("zod").ZodDefault<import("zod").ZodEnum<["active", "paused"]>>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "active" | "paused";
+     id: string;
+     businessId: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     installedAt: string;
+     installedByUserId: string;
+     draftId: string;
+     revisionId: string;
+     teamId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     id: string;
+     businessId: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     installedAt: string;
+     installedByUserId: string;
+     draftId: string;
+     revisionId: string;
+     teamId: string;
+     status?: "active" | "paused" | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>;
+     readonly title: "Business Plugin Draft Installs";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginRecord: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     businessId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     schemaId: import("zod").ZodString;
+     rowId: import("zod").ZodString;
+     namespacePath: import("zod").ZodString;
+     payload: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     businessId: string;
+     pluginId: string;
+     schemaId: string;
+     createdAt: string;
+     updatedAt: string;
+     rowId: string;
+     namespacePath: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     payload?: unknown;
+    }, {
+     id: string;
+     businessId: string;
+     pluginId: string;
+     schemaId: string;
+     createdAt: string;
+     updatedAt: string;
+     rowId: string;
+     namespacePath: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     payload?: unknown;
+    }>;
+     readonly title: "Plugin Runtime Records";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginSchemaDoc: {
+     readonly schema: import("zod").ZodObject<{
+     pluginId: import("zod").ZodString;
+     version: import("zod").ZodString;
+     schemaId: import("zod").ZodString;
+     doc: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     version: string;
+     pluginId: string;
+     schemaId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     doc?: unknown;
+    }, {
+     version: string;
+     pluginId: string;
+     schemaId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     doc?: unknown;
+    }>;
+     readonly title: "Plugin Schema Docs";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginWorkflowDoc: {
+     readonly schema: import("zod").ZodObject<{
+     pluginId: import("zod").ZodString;
+     version: import("zod").ZodString;
+     workflowId: import("zod").ZodString;
+     doc: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     version: string;
+     pluginId: string;
+     workflowId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     doc?: unknown;
+    }, {
+     version: string;
+     pluginId: string;
+     workflowId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     doc?: unknown;
+    }>;
+     readonly title: "Plugin Workflow Docs";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
     } & {
      readonly product: {
      readonly schema: import("zod").ZodObject<{
@@ -438,56 +1542,7 @@ declare global {
     }[]>;
     };
      readonly party: {
-     readonly schema: import("zod").ZodObject<{
-     name: import("zod").ZodString;
-     address: import("zod").ZodOptional<import("zod").ZodString>;
-     panNumber: import("zod").ZodOptional<import("zod").ZodString>;
-     phone: import("zod").ZodOptional<import("zod").ZodString>;
-     creditLimit: import("zod").ZodOptional<import("zod").ZodNumber>;
-     paymentTerms: import("zod").ZodOptional<import("zod").ZodString>;
-     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-    } & {
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     name: string;
-     phone?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     address?: string | undefined;
-     panNumber?: string | undefined;
-     creditLimit?: number | undefined;
-     paymentTerms?: string | undefined;
-     notes?: string | undefined;
-    }, {
-     name: string;
-     phone?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     address?: string | undefined;
-     panNumber?: string | undefined;
-     creditLimit?: number | undefined;
-     paymentTerms?: string | undefined;
-     notes?: string | undefined;
-    }>;
+     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
      readonly title: "Purchase Parties";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -497,172 +1552,13 @@ declare global {
     }[]>;
     };
      readonly customer: {
-     readonly schema: import("zod").ZodObject<{
-     name: import("zod").ZodString;
-     address: import("zod").ZodOptional<import("zod").ZodString>;
-     panNumber: import("zod").ZodOptional<import("zod").ZodString>;
-     phone: import("zod").ZodOptional<import("zod").ZodString>;
-     creditLimit: import("zod").ZodOptional<import("zod").ZodNumber>;
-     paymentTerms: import("zod").ZodOptional<import("zod").ZodString>;
-     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-    } & {
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     name: string;
-     phone?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     address?: string | undefined;
-     panNumber?: string | undefined;
-     creditLimit?: number | undefined;
-     paymentTerms?: string | undefined;
-     notes?: string | undefined;
-    }, {
-     name: string;
-     phone?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     address?: string | undefined;
-     panNumber?: string | undefined;
-     creditLimit?: number | undefined;
-     paymentTerms?: string | undefined;
-     notes?: string | undefined;
-    }>;
+     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
      readonly title: "Customers";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly invoice: {
-     readonly schema: import("zod").ZodObject<{
-     type: import("zod").ZodEnum<["purchase", "sale"]>;
-     partyId: import("zod").ZodOptional<import("zod").ZodString>;
-     vehicleId: import("zod").ZodOptional<import("zod").ZodString>;
-     tripId: import("zod").ZodOptional<import("zod").ZodString>;
-     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-     issuedAt: import("zod").ZodOptional<import("zod").ZodString>;
-     dueDate: import("zod").ZodOptional<import("zod").ZodString>;
-     items: import("zod").ZodArray<import("zod").ZodObject<{
-     product: import("zod").ZodString;
-     quantity: import("zod").ZodNumber;
-     rate: import("zod").ZodNumber;
-     total: import("zod").ZodNumber;
-    }, "strip", import("zod").ZodTypeAny, {
-     product: string;
-     quantity: number;
-     rate: number;
-     total: number;
-    }, {
-     product: string;
-     quantity: number;
-     rate: number;
-     total: number;
-    }>, "many">;
-     subTotal: import("zod").ZodNumber;
-     tax: import("zod").ZodDefault<import("zod").ZodNumber>;
-     payments: import("zod").ZodDefault<import("zod").ZodArray<import("zod").ZodObject<{
-     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    }, "strip", import("zod").ZodTypeAny, {
-     paidAmount: number;
-     paidAt: string;
-    }, {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }>, "many">>;
-     paidAmount: import("zod").ZodDefault<import("zod").ZodNumber>;
-     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     fiscalYear: import("zod").ZodString;
-    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     type: "sale" | "purchase";
-     paidAmount: number;
-     paymentStatus: string;
-     items: {
-     product: string;
-     quantity: number;
-     rate: number;
-     total: number;
-    }[];
-     subTotal: number;
-     tax: number;
-     payments: {
-     paidAmount: number;
-     paidAt: string;
-    }[];
-     fiscalYear: string;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     description?: string | undefined;
-     partyId?: string | undefined;
-     vehicleId?: string | undefined;
-     tripId?: string | undefined;
-     issuedAt?: string | undefined;
-     dueDate?: string | undefined;
-    }, {
-     type: "sale" | "purchase";
-     items: {
-     product: string;
-     quantity: number;
-     rate: number;
-     total: number;
-    }[];
-     subTotal: number;
-     fiscalYear: string;
-     timestamp?: number | undefined;
-     paidAmount?: number | undefined;
-     paymentStatus?: string | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     description?: string | undefined;
-     partyId?: string | undefined;
-     vehicleId?: string | undefined;
-     tripId?: string | undefined;
-     issuedAt?: string | undefined;
-     dueDate?: string | undefined;
-     tax?: number | undefined;
-     payments?: {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }[] | undefined;
-    }>;
+     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
      readonly title: "Invoices";
      readonly icon: React.ForwardRefExoticComponent<import("@tabler/icons-react").IconProps & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -672,601 +1568,19 @@ declare global {
     }[]>;
     };
      readonly sale: {
-     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
-     customerId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
-     saleDate: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     items: import("zod").ZodArray<import("zod").ZodObject<{
-     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
-     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     unitPrice: import("zod").ZodNumber;
-     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    } & {
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }>, "many">;
-     payments: import("zod").ZodDefault<import("zod").ZodArray<import("zod").ZodObject<{
-     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    }, "strip", import("zod").ZodTypeAny, {
-     paidAmount: number;
-     paidAt: string;
-    }, {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }>, "many">>;
-     paidAmount: import("zod").ZodNumber;
-     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     paymentMethod: import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit"]>>;
-     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     paidAmount: number;
-     paymentStatus: string;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     payments: {
-     paidAmount: number;
-     paidAt: string;
-    }[];
-     customerId: string;
-     saleDate: string;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
-    }, {
-     paidAmount: number;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     customerId: string;
-     timestamp?: number | undefined;
-     paymentStatus?: string | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     payments?: {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }[] | undefined;
-     saleDate?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
-    }>, {
-     paidAmount: number;
-     paymentStatus: string;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     payments: {
-     paidAmount: number;
-     paidAt: string;
-    }[];
-     customerId: string;
-     saleDate: string;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
-    }, {
-     paidAmount: number;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     customerId: string;
-     timestamp?: number | undefined;
-     paymentStatus?: string | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     payments?: {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }[] | undefined;
-     saleDate?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
-    }>;
+     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
      readonly title: "Sales";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly stockImport: {
-     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
-     party: import("zod").ZodEffects<import("zod").ZodString, string, string>;
-     importDate: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     items: import("zod").ZodArray<import("zod").ZodObject<{
-     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
-     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    } & {
-     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    }, "strip", import("zod").ZodTypeAny, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }>, "many">;
-     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     payments: import("zod").ZodDefault<import("zod").ZodArray<import("zod").ZodObject<{
-     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    }, "strip", import("zod").ZodTypeAny, {
-     paidAmount: number;
-     paidAt: string;
-    }, {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }>, "many">>;
-     paidAmount: import("zod").ZodNumber;
-     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     party: string;
-     paidAmount: number;
-     paymentStatus: string;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     payments: {
-     paidAmount: number;
-     paidAt: string;
-    }[];
-     importDate: string;
-     totalAmount: number;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-    }, {
-     party: string;
-     paidAmount: number;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     totalAmount: number;
-     timestamp?: number | undefined;
-     paymentStatus?: string | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     payments?: {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }[] | undefined;
-     importDate?: string | undefined;
-    }>, {
-     party: string;
-     paidAmount: number;
-     paymentStatus: string;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     payments: {
-     paidAmount: number;
-     paidAt: string;
-    }[];
-     importDate: string;
-     totalAmount: number;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-    }, {
-     party: string;
-     paidAmount: number;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     totalAmount: number;
-     timestamp?: number | undefined;
-     paymentStatus?: string | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     payments?: {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }[] | undefined;
-     importDate?: string | undefined;
-    }>;
+     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
      readonly title: "Stock Imports";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly order: {
-     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
-     customerId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
-     items: import("zod").ZodArray<import("zod").ZodObject<{
-     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
-     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    } & {
-     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    }, "strip", import("zod").ZodTypeAny, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }>, "many">;
-     payments: import("zod").ZodDefault<import("zod").ZodArray<import("zod").ZodObject<{
-     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    }, "strip", import("zod").ZodTypeAny, {
-     paidAmount: number;
-     paidAt: string;
-    }, {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }>, "many">>;
-     paidAmount: import("zod").ZodNumber;
-     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     orderStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodEnum<["pending", "done", "cancelled"]>>, "pending" | "done" | "cancelled", "pending" | "done" | "cancelled" | undefined>;
-     paymentMethod: import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit"]>>;
-     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     paidAmount: number;
-     paymentStatus: string;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     payments: {
-     paidAmount: number;
-     paidAt: string;
-    }[];
-     customerId: string;
-     orderStatus: "pending" | "done" | "cancelled";
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
-    }, {
-     paidAmount: number;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     customerId: string;
-     timestamp?: number | undefined;
-     paymentStatus?: string | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     payments?: {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }[] | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
-     orderStatus?: "pending" | "done" | "cancelled" | undefined;
-    }>, {
-     paidAmount: number;
-     paymentStatus: string;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     payments: {
-     paidAmount: number;
-     paidAt: string;
-    }[];
-     customerId: string;
-     orderStatus: "pending" | "done" | "cancelled";
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
-    }, {
-     paidAmount: number;
-     items: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     customerId: string;
-     timestamp?: number | undefined;
-     paymentStatus?: string | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     notes?: string | undefined;
-     payments?: {
-     paidAmount: number;
-     paidAt?: string | undefined;
-    }[] | undefined;
-     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
-     orderStatus?: "pending" | "done" | "cancelled" | undefined;
-    }>;
+     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
      readonly title: "Orders";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Business Operations";
@@ -1762,7 +2076,7 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -1781,7 +2095,7 @@ declare global {
     }, {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -1802,7 +2116,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -1823,7 +2137,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -1911,13 +2225,6 @@ declare global {
      type: "quick_buy";
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
-    } | undefined;
      info?: {
      type: "product_details";
      sections: string[];
@@ -1930,15 +2237,15 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
+    } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
     } | undefined;
     }, {
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
-    } | undefined;
      info?: {
      type: "product_details";
      sections: string[];
@@ -1951,6 +2258,13 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
+    } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
     } | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
@@ -2045,7 +2359,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -2064,13 +2378,6 @@ declare global {
     }[];
     } | undefined;
      interactions?: {
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
-    } | undefined;
      info?: {
      type: "product_details";
      sections: string[];
@@ -2083,6 +2390,13 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
+    } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
     } | undefined;
     } | undefined;
     }, {
@@ -2177,7 +2491,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
+     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -2196,13 +2510,6 @@ declare global {
     }[];
     } | undefined;
      interactions?: {
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
-    } | undefined;
      info?: {
      type: "product_details";
      sections: string[];
@@ -2215,6 +2522,13 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
+    } | undefined;
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
     } | undefined;
     } | undefined;
     }>;
@@ -2504,14 +2818,14 @@ declare global {
      sourceHandle?: string | undefined;
      targetHandle?: string | undefined;
     }[];
+     createdAt: number;
+     updatedAt: number;
      nodeLibraryOrder: {
      type: string;
      color: string;
      label: string;
      order?: number | undefined;
     }[];
-     createdAt: number;
-     updatedAt: number;
      revision: number;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2553,14 +2867,14 @@ declare global {
      sourceHandle?: string | undefined;
      targetHandle?: string | undefined;
     }[];
+     createdAt: number;
+     updatedAt: number;
      nodeLibraryOrder: {
      type: string;
      color: string;
      label: string;
      order?: number | undefined;
     }[];
-     createdAt: number;
-     updatedAt: number;
      revision: number;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -2618,187 +2932,7 @@ declare global {
      readonly group: "Logistics";
     };
      readonly trip: {
-     readonly schema: import("zod").ZodObject<{
-     vehicleId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
-     dispatchTime: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
-     returnTime: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodString, string, string>>;
-     destination: import("zod").ZodOptional<import("zod").ZodString>;
-     products: import("zod").ZodArray<import("zod").ZodObject<{
-     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
-     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    } & {
-     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    }, "strip", import("zod").ZodTypeAny, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }>, "many">;
-     returnedProducts: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
-     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
-     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
-     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    } & {
-     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
-    }, "strip", import("zod").ZodTypeAny, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }, {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }>, "many">>;
-    } & {
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     vehicleId: string;
-     dispatchTime: string;
-     products: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     returnTime?: string | undefined;
-     destination?: string | undefined;
-     returnedProducts?: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[] | undefined;
-    }, {
-     vehicleId: string;
-     products: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[];
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     dispatchTime?: string | undefined;
-     returnTime?: string | undefined;
-     destination?: string | undefined;
-     returnedProducts?: {
-     product: string;
-     quantity: number;
-     totalAmount: number;
-     unitPrice: number;
-     unit?: string | undefined;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-    }[] | undefined;
-    }>;
+     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
      readonly title: "Trips";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Logistics";

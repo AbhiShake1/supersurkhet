@@ -251,7 +251,11 @@ export const tablePickerFieldOverrides = (_layer: ComponentLayer) => {
       // Use basePath as the slug, fallback to id if basePath is not available
       const slug = business?.basePath || business?.id;
 
-      const businessConfig = useBusinessConfig({ slug });
+      const businessConfig = useBusinessConfig({
+        slug,
+        businessId: business?.id,
+        businessType: businessType ?? 'retail',
+      });
 
       // Get the business config for the current business
       const config = businessType && slug ? businessConfig[businessType] : [];

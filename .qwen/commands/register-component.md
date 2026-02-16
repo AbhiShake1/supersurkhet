@@ -1,6 +1,7 @@
-description = "Converts a component with schemas and registers it to the UI builder registry with proper Zod validation and form field overrides. Supports file path completion for easy selection."
+---
+description: Converts a component with schemas and registers it to the UI builder registry with proper Zod validation and form field overrides. Supports file path completion for easy selection.
+---
 
-prompt = '''
 ---
 description: Convert a component with schemas and register it to the UI builder registry
 ---
@@ -70,4 +71,4 @@ Additional context:
 - The from path should always use the @/ alias followed by the relative path from the src directory
 
 File to modify: apps/site/src/lib/ui-builder/registry/complex-component-definitions.ts
-'''
+

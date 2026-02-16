@@ -53,8 +53,8 @@ export function get<const T extends SchemaKeys>(
   key:
     | T
     | (GetBuilder<T> & {
-        key: T;
-      }),
+      key: T;
+    }),
   ...restKeys: string[]
 ) {
   const options = mergeOptionsWithDefaults({});
@@ -70,6 +70,10 @@ export function get<const T extends SchemaKeys>(
 
   return new Promise<NestedSchemaType<T>[]>((resolve) => {
     const node = getGunRef(keys);
+
+    node.once((data: any) => {
+      if (data === undefined) resolve([]);
+    })
 
     node.load(async (data) => {
       if (!data || typeof data !== 'object') return;
@@ -100,6 +104,6 @@ export function get<const T extends SchemaKeys>(
         }
         resolve(items);
       }
-    });
+    }).not(() => resolve([]));
   });
 }

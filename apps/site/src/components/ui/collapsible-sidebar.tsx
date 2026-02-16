@@ -6,6 +6,7 @@ import {
   LogOut,
   LucideBriefcaseBusiness,
   Menu,
+  PlugZapIcon,
   Search,
   Settings,
 } from 'lucide-react';
@@ -77,14 +78,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   // Filter items based on search query
   const filteredItems = searchQuery
     ? tabs.filter((item) => {
-        try {
-          const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
-          return regex.test(item.title);
-        } catch (_e) {
-          // If the regex is invalid, fallback to simple string includes
-          return item.title.toLowerCase().includes(searchQuery.toLowerCase());
-        }
-      })
+      try {
+        const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
+        return regex.test(item.title);
+      } catch (_e) {
+        // If the regex is invalid, fallback to simple string includes
+        return item.title.toLowerCase().includes(searchQuery.toLowerCase());
+      }
+    })
     : tabs;
 
   // Group items by group property if available
@@ -104,9 +105,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
   return (
     <nav
-      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${
-        open ? 'w-48 sm:w-64' : 'w-10 sm:w-16'
-      } border-gray-200 dark:border-gray-800 bg-card p-0.5 sm:p-2 shadow-sm z-50 flex flex-col`}
+      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? 'w-48 sm:w-64' : 'w-10 sm:w-16'
+        } border-gray-200 dark:border-gray-800 bg-card p-0.5 sm:p-2 shadow-sm z-50 flex flex-col`}
     >
       {/* User profile section at the top */}
       <div className="flex-shrink-0">
@@ -160,7 +160,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   key={`${groupName}-${
                     // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
                     index
-                  }`}
+                    }`}
                   Icon={getTabIcon(item)}
                   title={item.title}
                   url={item.url}
@@ -201,11 +201,10 @@ const Option: React.FC<{
       onClick={handleClick}
       to="."
       search={{ tab: title }}
-      className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${
-        isSelected
-          ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
-          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
-      }`}
+      className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${isSelected
+        ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
+        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+        }`}
     >
       <div className="grid h-full w-10 sm:w-12 place-content-center">
         <Icon className="h-4 w-4" />
@@ -213,9 +212,8 @@ const Option: React.FC<{
 
       {open && (
         <span
-          className={`text-sm font-medium transition-opacity duration-200 ${
-            open ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`text-sm font-medium transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'
+            }`}
         >
           {title}
         </span>
@@ -317,6 +315,19 @@ const TitleSection: React.FC<{
               <DropdownMenuSeparator />
             </>
           )}
+          {
+            slug && (
+              <>
+                <DropdownMenuItem asChild>
+                  <Link to='/$businessName/admin/plugins' params={{ businessName: slug }} className='gap-1'>
+                    <PlugZapIcon className='size-4' />
+                    Manage Plugins
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )
+          }
           <DropdownMenuItem className="gap-2" onClick={() => logout()}>
             <LogOut className="size-4" />
             Log out
@@ -340,16 +351,14 @@ const ToggleClose: React.FC<{
       <div className="flex items-center p-1 sm:p-3">
         <div className="grid size-6 sm:size-10 place-content-center">
           <ChevronsRight
-            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${
-              open ? 'rotate-180' : ''
-            }`}
+            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${open ? 'rotate-180' : ''
+              }`}
           />
         </div>
         {open && (
           <span
-            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${
-              open ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'
+              }`}
           >
             Hide
           </span>
