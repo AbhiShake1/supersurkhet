@@ -15,6 +15,7 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
+import { useConfetti } from '@/components/confetti-provider';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -67,7 +68,6 @@ export const Route = createFileRoute('/$businessName/admin/plugins')({
 
 const FILTER_OPTIONS: { value: PluginCatalogFilter; label: string }[] = [
   { value: 'all', label: 'All plugins' },
-  { value: 'installed', label: 'Installed' },
   { value: 'upgradable', label: 'Needs upgrade' },
   { value: 'not-installed', label: 'Not installed' },
 ];
@@ -103,6 +103,7 @@ function metricValue(value: number, suffix?: string) {
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
   const { user } = useAuth();
+  const { fire: fireConfetti } = useConfetti();
   const [query, setQuery] = useState('');
   const [marketFilter, setMarketFilter] = useState<PluginCatalogFilter>('all');
   const [sortBy, setSortBy] = useState<PluginCatalogSort>('recent');
@@ -303,6 +304,7 @@ function PluginsRouteComponent() {
         },
       });
       toast.success(`Installed ${params.draftId}@${params.revisionId}`);
+      fireConfetti();
     } catch (error) {
       console.error(error);
       toast.error(`Failed to install ${params.draftId}@${params.revisionId}`);
@@ -846,17 +848,22 @@ function useIndividualPluginInstallation(
   ensureMarketplaceSeedIsAvailable: () => Promise<void>
 ) {
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
+  const { fire: fireConfetti } = useConfetti();
 
   const runIndividualMutation = async (params: {
     actionId: string;
     action: () => Promise<unknown>;
     successMessage: string;
     errorMessage: string;
+    fireConfettiOnSuccess?: boolean;
   }) => {
     try {
       setPendingActionId(params.actionId);
       await params.action();
       toast.success(params.successMessage);
+      if (params.fireConfettiOnSuccess) {
+        fireConfetti();
+      }
     } catch (error) {
       console.error(error);
       toast.error(params.errorMessage);
@@ -882,6 +889,7 @@ function useIndividualPluginInstallation(
       },
       successMessage: `Pinned ${params.pluginId}@${params.version}`,
       errorMessage: `Failed to pin ${params.pluginId}@${params.version}`,
+      fireConfettiOnSuccess: true,
     });
   };
 
