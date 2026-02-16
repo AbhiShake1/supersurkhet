@@ -344,6 +344,41 @@ export function useBusinessConfig({
             return mapped;
           },
         },
+        extender: schema => schema.superRefine((data, ctx) => {
+          if (!data?.items) return;
+
+          // Sum quantities per product
+          const totalsByProduct = new Map<string, number>();
+
+          data.items.forEach((item) => {
+            const productId = item?.product;
+            if (!productId) return;
+
+            const qty = Number(item?.quantity ?? 0);
+            if (!Number.isFinite(qty) || qty <= 0) return;
+
+            totalsByProduct.set(productId, (totalsByProduct.get(productId) ?? 0) + qty);
+          });
+
+          // Validate against stock
+          for (const [productId, total] of totalsByProduct) {
+            const product = productsBySoul.get(productId);
+            const available = Number(product?.stockQuantity ?? 0);
+
+            if (total > available) {
+              // Put the error on each row that uses that product
+              data.items.forEach((item, index) => {
+                if (item?.product !== productId) return;
+
+                ctx.addIssue({
+                  code: "custom",
+                  message: `${product?.title ?? "This product"} has ${available} in stock. You tried to order ${total}.`,
+                  path: ["items", index, "quantity"],
+                });
+              });
+            }
+          }
+        }),
         async onCreate(_, variables) {
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, { product, quantity, unit }) => {
@@ -512,6 +547,41 @@ export function useBusinessConfig({
             return mapped;
           },
         },
+        extender: schema => schema.superRefine((data, ctx) => {
+          if (!data?.items) return;
+
+          // Sum quantities per product
+          const totalsByProduct = new Map<string, number>();
+
+          data.items.forEach((item) => {
+            const productId = item?.product;
+            if (!productId) return;
+
+            const qty = Number(item?.quantity ?? 0);
+            if (!Number.isFinite(qty) || qty <= 0) return;
+
+            totalsByProduct.set(productId, (totalsByProduct.get(productId) ?? 0) + qty);
+          });
+
+          // Validate against stock
+          for (const [productId, total] of totalsByProduct) {
+            const product = productsBySoul.get(productId);
+            const available = Number(product?.stockQuantity ?? 0);
+
+            if (total > available) {
+              // Put the error on each row that uses that product
+              data.items.forEach((item, index) => {
+                if (item?.product !== productId) return;
+
+                ctx.addIssue({
+                  code: "custom",
+                  message: `${product?.title ?? "This product"} has ${available} in stock. You tried to order ${total}.`,
+                  path: ["items", index, "quantity"],
+                });
+              });
+            }
+          }
+        }),
         async onCreate(_, variables) {
           if (variables.orderStatus === 'done') {
             const itemsByProductIdWithQuantity = variables.items?.reduce(
@@ -708,6 +778,40 @@ export function useBusinessConfig({
         extender: (schema) =>
           schema.extend({
             returnedProducts: returnedProductsSchema,
+          }).superRefine((data, ctx) => {
+            if (!data?.products) return;
+
+            // Sum quantities per product
+            const totalsByProduct = new Map<string, number>();
+
+            data.products.forEach((item) => {
+              const productId = item?.product;
+              if (!productId) return;
+
+              const qty = Number(item?.quantity ?? 0);
+              if (!Number.isFinite(qty) || qty <= 0) return;
+
+              totalsByProduct.set(productId, (totalsByProduct.get(productId) ?? 0) + qty);
+            });
+
+            // Validate against stock
+            for (const [productId, total] of totalsByProduct) {
+              const product = productsBySoul.get(productId);
+              const available = Number(product?.stockQuantity ?? 0);
+
+              if (total > available) {
+                // Put the error on each row that uses that product
+                data.products.forEach((item, index) => {
+                  if (item?.product !== productId) return;
+
+                  ctx.addIssue({
+                    code: "custom",
+                    message: `${product?.title ?? "This product"} has ${available} in stock. You tried to order ${total}.`,
+                    path: ["items", index, "quantity"],
+                  });
+                });
+              }
+            }
           }),
         async onCreate(_, variables) {
           const products = await db.product.get({ keys: [slug] });
