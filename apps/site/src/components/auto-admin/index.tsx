@@ -42,12 +42,12 @@ export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
   group?: string;
   title: string;
 } & (
-  | {
+    | {
       children: ReactNode;
       icon?: LucideIcon;
     }
-  | AutoTableProps<K extends SchemaKeys ? K : never>
-);
+    | AutoTableProps<K extends SchemaKeys ? K : never>
+  );
 
 export type AutoAdminTabInput = {
   [K in SchemaKeys]: AutoTableTabInput<K>;
@@ -55,16 +55,16 @@ export type AutoAdminTabInput = {
 
 export type AutoTableTabInput<K extends SchemaKeys = SchemaKeys> =
   | {
-      title: string;
-      group?: string;
-      icon?: LucideIcon;
-      children: ReactNode;
-    }
+    title: string;
+    group?: string;
+    icon?: LucideIcon;
+    children: ReactNode;
+  }
   | (AutoTableProps<K extends SchemaKeys ? K : never> & {
-      title?: string;
-      group?: string;
-      icon?: LucideIcon;
-    });
+    title?: string;
+    group?: string;
+    icon?: LucideIcon;
+  });
 
 type AutoTableItem = AutoTableProps<SchemaKeys>;
 
@@ -300,7 +300,7 @@ export function AutoKanban<K extends SchemaKeys>({
     _def?: { innerType?: { Values?: Record<string, string> } };
   };
   const statuses = Object.keys(
-    groupField.Values ?? groupField._def?.innerType?.Values ?? {},
+    groupField.Values ?? groupField._def?.innerType?.Values ?? groupField._def?.schema?._def?.innerType?.Values ?? {},
   );
 
   return (
@@ -418,17 +418,17 @@ function KanbanColumn<K extends SchemaKeys>({
       <div className="flex flex-col gap-2 p-0.5">
         {context.loading
           ? Array.from({ length: 3 }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-              <Skeleton key={i} className="w-full h-12" />
-            ))
+            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+            <Skeleton key={i} className="w-full h-12" />
+          ))
           : orders.map((order) => (
-              <KanbanCard
-                key={getSoulFromUnknown(order)}
-                order={order}
-                cardBuilder={cardBuilder}
-                asHandle={!(isItemLocked?.(order) ?? false)}
-              />
-            ))}
+            <KanbanCard
+              key={getSoulFromUnknown(order)}
+              order={order}
+              cardBuilder={cardBuilder}
+              asHandle={!(isItemLocked?.(order) ?? false)}
+            />
+          ))}
       </div>
     </Kanban.Column>
   );
