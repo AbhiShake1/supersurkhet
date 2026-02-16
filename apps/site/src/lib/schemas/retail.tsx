@@ -73,7 +73,6 @@ function createSoftDerivedUnitPriceField({
             displayKey: 'title',
           },
           derive: async ({ sourceRow, formValues, rowPath }) => {
-            console.log('sourceRow', sourceRow, priceKey);
             if (!sourceRow) return null;
             const row = getValueAtPath(formValues, rowPath) as
               | { unit?: string | null; unitPrice?: number | string | null }
@@ -313,7 +312,6 @@ export const saleSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
-      .default([])
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
@@ -403,7 +401,6 @@ export const orderSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
-      .default([])
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
@@ -545,7 +542,6 @@ export const stockImportSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
-      .default([])
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
@@ -659,7 +655,6 @@ export const invoiceSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
-      .default([])
       .describe('Payments'),
     paidAmount: z
       .number({ coerce: true })
