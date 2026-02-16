@@ -764,7 +764,6 @@ export const tripSchema = z
         }),
       })
       .array()
-      .optional()
       .describe('Products Returned from Trip'),
   })
   .extend(table);
