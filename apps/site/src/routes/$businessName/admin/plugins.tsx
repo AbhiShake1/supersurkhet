@@ -647,9 +647,9 @@ function PluginsRouteComponent() {
                             <Badge
                               className={cn(
                                 statusTone === 'ok' &&
-                                  'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-200',
+                                'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-200',
                                 statusTone === 'warn' &&
-                                  'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200',
+                                'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200',
                               )}
                               variant={
                                 statusTone === 'secondary'
@@ -968,7 +968,7 @@ function MarketplacePluginCard({
       className={cn(
         'py-4 gap-4 border-border/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
         entry.isUpgradable &&
-          'border-amber-300/80 bg-amber-50/70 dark:border-amber-500/40 dark:bg-amber-950/20',
+        'border-amber-300/80 bg-amber-50/70 dark:border-amber-500/40 dark:bg-amber-950/20',
       )}
     >
       <CardHeader className="px-4 md:px-6">
@@ -1057,8 +1057,8 @@ function MarketplacePluginCard({
         </div>
 
         <div className="grid gap-2 sm:grid-cols-2">
-          <Button 
-            size="sm" 
+          <Button
+            size="sm"
             variant="outline"
             onClick={() => setIsPreviewOpen(true)}
           >
@@ -1084,7 +1084,7 @@ function MarketplacePluginCard({
                 ? `Upgrade to ${entry.latestRelease.version}`
                 : `Install ${entry.latestRelease.version}`}
           </Button>
-          
+
           <PluginPreviewDialog
             open={isPreviewOpen}
             onOpenChange={setIsPreviewOpen}
@@ -1301,9 +1301,9 @@ function MetricCard({
         'rounded-xl border p-4 shadow-xs backdrop-blur-sm',
         tone === 'default' && 'border-border/70 bg-background/80',
         tone === 'warn' &&
-          'border-amber-300/70 bg-amber-50/90 text-amber-950 dark:border-amber-500/35 dark:bg-amber-950/25 dark:text-amber-200',
+        'border-amber-300/70 bg-amber-50/90 text-amber-950 dark:border-amber-500/35 dark:bg-amber-950/25 dark:text-amber-200',
         tone === 'ok' &&
-          'border-emerald-300/70 bg-emerald-50/90 text-emerald-950 dark:border-emerald-500/35 dark:bg-emerald-950/25 dark:text-emerald-200',
+        'border-emerald-300/70 bg-emerald-50/90 text-emerald-950 dark:border-emerald-500/35 dark:bg-emerald-950/25 dark:text-emerald-200',
       )}
     >
       <div className="mb-2 flex items-center justify-between gap-2">
