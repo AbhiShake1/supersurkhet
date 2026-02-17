@@ -312,6 +312,7 @@ export const saleSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
+      .optional()
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
@@ -401,6 +402,7 @@ export const orderSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
+      .optional()
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
@@ -542,6 +544,7 @@ export const stockImportSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
+      .optional()
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
@@ -655,6 +658,7 @@ export const invoiceSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
+      .optional()
       .describe('Payments'),
     paidAmount: z
       .number({ coerce: true })
