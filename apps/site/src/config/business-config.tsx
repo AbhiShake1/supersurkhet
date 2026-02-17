@@ -583,83 +583,82 @@ export function useBusinessConfig({
           }
         }),
         async onCreate(_, variables) {
-          if (variables.orderStatus === 'done') {
-            const itemsByProductIdWithQuantity = variables.items?.reduce(
-              (a, item) => {
-                const product = productsBySoul.get(item.product);
-                let adjustedQuantity = item.quantity;
-                if (product?.unit?.includes(':')) {
-                  const [unitType, piecesPerUnit] = product.unit.split(':');
-                  if (item.unit === unitType) {
-                    adjustedQuantity =
-                      item.quantity * parseInt(piecesPerUnit, 10);
-                  }
+          if (variables.orderStatus !== 'done') return
+          const itemsByProductIdWithQuantity = variables.items?.reduce(
+            (a, item) => {
+              const product = productsBySoul.get(item.product);
+              let adjustedQuantity = item.quantity;
+              if (product?.unit?.includes(':')) {
+                const [unitType, piecesPerUnit] = product.unit.split(':');
+                if (item.unit === unitType) {
+                  adjustedQuantity =
+                    item.quantity * parseInt(piecesPerUnit, 10);
                 }
-                a[item.product] = (a[item.product] || 0) + adjustedQuantity;
-                return a;
-              },
-              {} as Record<string, number>,
-            );
+              }
+              a[item.product] = (a[item.product] || 0) + adjustedQuantity;
+              return a;
+            },
+            {} as Record<string, number>,
+          );
 
-            Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
-              ([productId, quantity]) => {
-                const product = productsBySoul.get(productId);
-                if (!product?._?.soul) return;
-                db.product.update(slug)({
-                  id: product._.soul,
-                  stockQuantity: product.stockQuantity - quantity,
-                });
-              },
-            );
+          Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
+            ([productId, quantity]) => {
+              const product = productsBySoul.get(productId);
+              if (!product?._?.soul) return;
+              db.product.update(slug)({
+                id: product._.soul,
+                stockQuantity: product.stockQuantity - quantity,
+              });
+            },
+          );
 
-            const invoiceItems =
-              variables.items?.map((item) => {
-                const productInfo = productsBySoul.get(item.product);
-                let adjustedQuantity = item.quantity;
+          const invoiceItems =
+            variables.items?.map((item) => {
+              const productInfo = productsBySoul.get(item.product);
+              let adjustedQuantity = item.quantity;
 
-                if (productInfo?.unit?.includes(':')) {
-                  const [unitType, piecesPerUnit] = productInfo.unit.split(':');
-                  if (item.unit === unitType) {
-                    adjustedQuantity =
-                      item.quantity * parseInt(piecesPerUnit, 10);
-                  }
+              if (productInfo?.unit?.includes(':')) {
+                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+                if (item.unit === unitType) {
+                  adjustedQuantity =
+                    item.quantity * parseInt(piecesPerUnit, 10);
                 }
+              }
 
-                return {
-                  product: item.product,
-                  quantity: adjustedQuantity,
-                  rate: item.unitPrice,
-                  total: item.quantity * item.unitPrice,
-                };
-              }) ?? [];
+              return {
+                product: item.product,
+                quantity: adjustedQuantity,
+                rate: item.unitPrice,
+                total: item.quantity * item.unitPrice,
+              };
+            }) ?? [];
 
-            const totalAmount =
-              variables.items?.reduce(
-                (sum, item) => sum + item.quantity * item.unitPrice,
-                0,
-              ) ?? 0;
-            const payments = normalizePaymentsWithFallback(
-              variables.payments,
-              variables.paidAmount,
-            );
-            const paidAmount = getPaidAmountFromPayments(payments);
+          const totalAmount =
+            variables.items?.reduce(
+              (sum, item) => sum + item.quantity * item.unitPrice,
+              0,
+            ) ?? 0;
+          const payments = normalizePaymentsWithFallback(
+            variables.payments,
+            variables.paidAmount,
+          );
+          const paidAmount = getPaidAmountFromPayments(payments);
 
-            void db.invoice.create(slug)({
-              type: 'sale',
-              partyId: variables.customerId,
-              issuedAt: new Date().toISOString(),
-              items: invoiceItems,
-              subTotal: totalAmount,
-              tax: 0,
-              payments,
+          void db.invoice.create(slug)({
+            type: 'sale',
+            partyId: variables.customerId,
+            issuedAt: new Date().toISOString(),
+            items: invoiceItems,
+            subTotal: totalAmount,
+            tax: 0,
+            payments,
+            paidAmount,
+            paymentStatus: getPaymentStatusFromTotals({
               paidAmount,
-              paymentStatus: getPaymentStatusFromTotals({
-                paidAmount,
-                totalAmount,
-              }),
-              fiscalYear: calculateFiscalYear(),
-            });
-          }
+              totalAmount,
+            }),
+            fiscalYear: calculateFiscalYear(),
+          });
         },
         onUpdate(_, variables) {
           if (variables.orderStatus !== 'done') return;

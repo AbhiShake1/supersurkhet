@@ -9,7 +9,6 @@ export const DateTimeField: React.FC<AutoFormFieldProps> = ({
   error,
   id,
   value,
-  path,
   field
 }) => {
   const { key, ...props } = inputProps;
