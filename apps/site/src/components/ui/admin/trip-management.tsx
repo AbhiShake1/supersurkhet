@@ -133,10 +133,15 @@ export function TripManagement({ slug }: { slug: string }) {
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Dispatched:{' '}
-                        {format(
-                          new Date(trip.dispatchTime),
-                          'MMM dd, yyyy HH:mm',
-                        )}
+                        {
+                          trip.dispatchTime &&
+                          <>
+                            {format(
+                              new Date(trip.dispatchTime),
+                              'MMM dd, yyyy HH:mm',
+                            )}
+                          </>
+                        }
                         {trip.returnTime &&
                           ` | Returned: ${format(new Date(trip.returnTime), 'MMM dd, yyyy HH:mm')}`}
                       </p>
