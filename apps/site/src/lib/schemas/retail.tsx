@@ -762,7 +762,6 @@ export const tripSchema = z
           priceKey: 'sellingPrice',
         }),
       })
-      .optional()
       .array()
       .describe('Products Returned from Trip'),
   })
