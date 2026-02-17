@@ -49,7 +49,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { AutoTableProps } from '../auto-table';
-import type { ZodObjectOrWrapped } from '@autoform/zod';
+import type { ZodObjectOrWrapped } from '../ui/auto-form/utils';
 
 export type AddRowDialogProps<T extends SchemaKeys> = Pick<
   AutoTableProps<T>,

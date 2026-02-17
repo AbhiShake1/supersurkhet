@@ -21,7 +21,6 @@ import { api } from '@/lib/api';
 import { appSchema } from '@/lib/schema';
 import { applySorting } from '@/lib/sort';
 import { getSchemaDerivations } from '@/lib/zod/with-derivations';
-import { parseSchema, type ZodObjectOrWrapped } from '@autoform/zod';
 import {
   type NestedSchema,
   type NestedSchemaType,
@@ -60,6 +59,7 @@ import { BadgeMarquee } from '../ui/badge-marquee';
 import type { DeriveFn, FieldConfigCustomData } from '../ui/autoform';
 import { applyDerivedValuesToRow, getDeriveFn } from './derive-row';
 import { AutoTableActionBar } from './auto-table-action-bar';
+import { parseSchema, type ZodObjectOrWrapped } from '../ui/autoform/zod';
 
 type AggregationType =
   | 'sum'
@@ -431,7 +431,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
 
   for (const field of parsedSchema.fields) {
     const { key, description } = field;
-    const childSchema = z.object({ [key]: getShape(schema)[key] });
+    const childSchema = z.object({ [key]: getShape(schema)?.[key] });
     if (['_'].includes(key)) continue;
 
     const column: ColumnDef<NestedSchemaType<T>> = {

@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { parseSchema } from '@autoform/core';
-import { ZodProvider } from '@autoform/zod';
+import { ZodProvider } from './autoform/zod';
 
 interface PossibleStep {
   id: string;
@@ -176,7 +176,7 @@ export default function MultiStepForm({
                       {...register(field.fieldConfig?.label?.toString() as any)}
                       className={cn(
                         errors[
-                          field.fieldConfig?.label?.toString() as string
+                        field.fieldConfig?.label?.toString() as string
                         ] && 'border-destructive',
                       )}
                     />
