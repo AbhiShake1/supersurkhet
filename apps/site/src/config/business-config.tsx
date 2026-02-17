@@ -379,7 +379,7 @@ export function useBusinessConfig({
             }
           }
         }),
-        async onCreate(_, variables) {
+        async onCreate(data, variables) {
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, { product, quantity, unit }) => {
               const productInfo = productsBySoul.get(product);
@@ -445,6 +445,7 @@ export function useBusinessConfig({
           const paidAmount = getPaidAmountFromPayments(payments);
 
           void db.invoice.create(slug)({
+            id: data.id,
             type: 'sale',
             partyId: variables.customerId,
             issuedAt: variables.saleDate,
@@ -460,8 +461,28 @@ export function useBusinessConfig({
             fiscalYear: calculateFiscalYear(),
           });
         },
-        onUpdate(_) {
-          return;
+        onUpdate(_, variables) {
+          const totalAmount =
+            variables.items?.reduce(
+              (sum, item) => sum + item.quantity * item.unitPrice,
+              0,
+            ) ?? 0;
+          const payments = normalizePaymentsWithFallback(
+            variables.payments,
+            variables.paidAmount,
+          );
+          const paidAmount = getPaidAmountFromPayments(payments);
+
+          db.invoice.update(slug)({
+            id: variables.id,
+            payments,
+            paidAmount,
+            paymentStatus: getPaymentStatusFromTotals({
+              paidAmount,
+              totalAmount,
+            }),
+
+          });
         },
       },
       {
