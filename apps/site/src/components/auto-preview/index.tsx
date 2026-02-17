@@ -2,7 +2,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import type { ParsedField } from '@autoform/core';
-import type { ZodObjectOrWrapped } from '@autoform/zod';
 import {
   CheckCircle2,
   ExternalLink,
@@ -18,6 +17,7 @@ import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
 import { CredenzaBody } from '../ui/credenza';
 import { useDrawer } from '@/contexts/dialog-context';
 import { MapPreview } from '../ui/autoform/components/MapPreview';
+import type { ZodObjectOrWrapped } from '../ui/auto-form/utils';
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]['fieldType']>;
 
 export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
@@ -216,11 +216,10 @@ const RatingPreview: AutoPreviewComponent<number> = ({ value }) => {
           <Star
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
-            className={`h-4 w-4 ${
-              i < Math.floor(value)
+            className={`h-4 w-4 ${i < Math.floor(value)
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300'
-            }`}
+              }`}
           />
         ))}
       </div>

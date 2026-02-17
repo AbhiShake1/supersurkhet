@@ -2,7 +2,12 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { PossibleTabConfig } from '@/components/auto-admin';
 import type { NestedSchemaType, SchemaKeys } from '@/lib/gun/index';
 import type { FieldTypes } from './AutoForm';
-import { buildZodFieldConfig } from './react';
+import type { FieldWrapperProps } from './react';
+import type { FieldConfig } from '@autoform/core';
+import type { ReactNode } from 'react';
+import { fieldConfig as zodFieldConfig } from '@/components/ui/autoform/zod';
+
+export const ZOD_FIELD_CONFIG_SYMBOL = Symbol("GetFieldConfig");
 
 export type DeepNullableRequired<T> = T extends Array<infer U>
   ? Array<DeepNullableRequired<U> | null> | null
@@ -118,6 +123,26 @@ export function withSourceCustomData<K extends SchemaKeys>(
   data: FieldConfigCustomDataWithSource<K>,
 ): FieldConfigCustomDataWithSource<K> {
   return data;
+}
+
+export function buildZodFieldConfig<
+  FieldTypes = string,
+  CustomData = Record<string, any>,
+>(): (
+  config: FieldConfig<
+    ReactNode,
+    FieldTypes,
+    React.ComponentType<FieldWrapperProps>,
+    CustomData
+  >,
+) => ReturnType<typeof zodFieldConfig> {
+  return (config) =>
+    zodFieldConfig<
+      ReactNode,
+      FieldTypes,
+      React.ComponentType<FieldWrapperProps>,
+      CustomData
+    >(config);
 }
 
 export const fieldConfig = buildZodFieldConfig<
