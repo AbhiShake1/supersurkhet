@@ -103,7 +103,6 @@ export function useBusinessConfig({
             }),
           ),
       })
-      .optional()
       .array()
       .describe('Products Returned from Trip')
   }
