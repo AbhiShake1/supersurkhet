@@ -158,7 +158,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       .slice(0, 5)
       .map(([partyId, total]) => {
         const party = partiesBySoul.get(partyId);
-        return { name: party?.name || partyId, total };
+        return { name: party?.name || "Deleted Party", total };
       });
   }, [filteredStockImports, partiesBySoul.get]);
 
@@ -180,7 +180,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       .slice(0, 5)
       .map(([productId, revenue]) => {
         const product = products.find((p) => p._?.soul === productId);
-        return { name: product?.title || productId, revenue };
+        return { name: product?.title || "Deleted Product", revenue };
       });
   }, [filteredSales, products]);
 
