@@ -112,7 +112,7 @@ function createPaidAmountFieldFromFormValues(
         fieldType: 'number',
         inputProps: {
           className: 'border-none',
-          readOnly: true,
+          disabled: true,
         },
         customData: {
           derive: () => ({
@@ -472,7 +472,7 @@ function createDerivedItemTotalAmountField({
         inputProps: {
           ...(placeholder ? { placeholder } : {}),
           className,
-          readOnly: true,
+          disabled: true,
         },
         customData: {
           derive: ({ formValues, rowPath }) => {
