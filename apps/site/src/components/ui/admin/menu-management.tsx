@@ -32,9 +32,10 @@ interface MenuManagementProps {
   onAddItem: () => void;
 }
 
-export default const MenuManagement: AdminComponent = () => {
+const MenuManagement: AdminComponent = () => {
   return <_MenuManagement onAddItem={() => { }} />;
 };
+export default MenuManagement;
 
 function _MenuManagement({ onAddItem }: MenuManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
