@@ -293,21 +293,23 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         <Toaster richColors />
         <Outlet />
         <VibeKanbanWebCompanion />
-        <TanStackDevtools
-          config={{
-            position: 'bottom-right',
-            openHotkey: ['Shift', 'd'],
-            triggerHidden: true,
-            hideUntilHover: true,
-          }}
-          plugins={[
-            {
-              name: 'Tanstack Router',
-              render: <TanStackRouterDevtoolsPanel />,
-            },
-            TanStackQueryDevtools,
-          ]}
-        />
+        {
+          //<TanStackDevtools
+          //   config={{
+          //     position: 'bottom-right',
+          //     openHotkey: ['Shift', 'd'],
+          //     triggerHidden: true,
+          //     hideUntilHover: true,
+          //   }}
+          //   plugins={[
+          //     {
+          //       name: 'Tanstack Router',
+          //       render: <TanStackRouterDevtoolsPanel />,
+          //     },
+          //     TanStackQueryDevtools,
+          //   ]}
+          // />
+        }
       </RootDocument>
     );
   },
@@ -452,7 +454,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       lang="en"
       className={
         loaderData.savedDarkMode === undefined ||
-        loaderData.savedDarkMode === 'true'
+          loaderData.savedDarkMode === 'true'
           ? 'dark'
           : ''
       }
@@ -507,7 +509,7 @@ function AgentationBridge() {
     const isAgentationTarget = (target: EventTarget | null) =>
       target instanceof Element &&
       target.closest('[data-feedback-toolbar], [data-agentation-root]') !==
-        null;
+      null;
 
     const handleFocusIn = (event: FocusEvent) => {
       if (!isAgentationTarget(event.target)) return;

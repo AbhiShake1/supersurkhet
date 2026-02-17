@@ -15,13 +15,11 @@ export interface GTAAppConfig {
         Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>
       >;
       group?: string;
-      components?: () => Promise<
-        Array<{
-          name: string;
-          icon?: LucideIcon;
-          component: AdminComponent;
-        }>
-      >;
+      components?: () => Array<{
+        name: string;
+        icon?: LucideIcon;
+        component: AdminComponent;
+      }>;
     };
   };
 }

@@ -32,8 +32,8 @@ interface MenuManagementProps {
   onAddItem: () => void;
 }
 
-export const MenuManagement: AdminComponent = () => {
-  return <_MenuManagement onAddItem={() => {}} />;
+export default const MenuManagement: AdminComponent = () => {
+  return <_MenuManagement onAddItem={() => { }} />;
 };
 
 function _MenuManagement({ onAddItem }: MenuManagementProps) {
@@ -155,7 +155,7 @@ function _MenuManagement({ onAddItem }: MenuManagementProps) {
                   Rs.{' '}
                   {(
                     items.reduce((sum, item) => sum + item.price, 0) /
-                      items.length || 0
+                    items.length || 0
                   ).toFixed(2)}
                 </p>
               </div>

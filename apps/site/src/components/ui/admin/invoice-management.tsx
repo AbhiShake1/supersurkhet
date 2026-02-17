@@ -46,6 +46,8 @@ export const InvoiceManagement: AdminComponent = ({ slug }) => {
   return <_InvoiceManagement slug={slug} />;
 };
 
+export default InvoiceManagement;
+
 function _InvoiceManagement({ slug }: InvoiceManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const {
