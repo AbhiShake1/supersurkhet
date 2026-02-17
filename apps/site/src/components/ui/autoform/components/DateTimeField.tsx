@@ -9,11 +9,11 @@ export const DateTimeField: React.FC<AutoFormFieldProps> = ({
   error,
   id,
   value,
+  field,
 }) => {
-  // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
   const [date, setDate] = React.useState<Date | undefined>(
-    value ? new Date(value) : undefined,
+    field.default ? new Date(field.default) : value ? new Date(value) : undefined,
   );
 
   const handleDateChange = (newDate: Date | undefined) => {
