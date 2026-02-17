@@ -749,7 +749,9 @@ export const tripSchema = z
           priceKey: 'sellingPrice',
         }),
       })
-      .array().describe('Products Sent on Trip'),
+      .array()
+      .min(1, { message: 'At least one product must be sent on a trip.' })
+      .describe('Products Sent on Trip'),
     returnedProducts: salesItemSchema
       .extend({
         unitPrice: createSoftDerivedUnitPriceField({
