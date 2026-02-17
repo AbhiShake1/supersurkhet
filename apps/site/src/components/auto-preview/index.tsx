@@ -18,7 +18,6 @@ import type { fieldConfig } from '../ui/autoform';
 import { MapPreview } from '../ui/autoform/components/MapPreview';
 import { CredenzaBody } from '../ui/credenza';
 import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
-
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]['fieldType']>;
 
 export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
@@ -236,11 +235,10 @@ const RatingPreview: AutoPreviewComponent<number> = ({ value }) => {
           <Star
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
-            className={`h-4 w-4 ${
-              i < Math.floor(value)
+            className={`h-4 w-4 ${i < Math.floor(value)
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300'
-            }`}
+              }`}
           />
         ))}
       </div>
