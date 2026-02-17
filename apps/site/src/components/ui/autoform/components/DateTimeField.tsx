@@ -13,7 +13,6 @@ export const DateTimeField: React.FC<AutoFormFieldProps> = ({
   field
 }) => {
   const { key, ...props } = inputProps;
-  console.log({ path, value, field })
   const [date, setDate] = React.useState<Date | undefined>(
     field.default ? new Date(field.default) : value ? new Date(value) : undefined,
   );
