@@ -1074,10 +1074,11 @@ export function useBusinessConfig({
                                 });
                               }
 
-                              const closeBtn = document.querySelector(
-                                '[data-state="open"] [data-dismiss]',
-                              );
-                              if (closeBtn) (closeBtn as HTMLElement).click();
+                              // const closeBtn = document.querySelector(
+                              //   '[data-state="open"] [data-dismiss]',
+                              // );
+                              // if (closeBtn) (closeBtn as HTMLElement).click();
+                              closeDialog();
                             }}
                           >
                             <AutoFormSubmit className="w-full">
