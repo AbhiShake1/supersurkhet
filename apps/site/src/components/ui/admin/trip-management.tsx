@@ -48,10 +48,10 @@ export function TripManagement({ slug }: { slug: string }) {
     useState<ReturnedProductsFormData>({ returnedProducts: [] });
 
   // Find products by ID for display
-  const productsMap = new Map(products.map((p) => [p._?.soul, p]));
+  const productsMap = new Map(products?.map((p) => [p._?.soul, p]));
 
   // Find vehicles by ID for display
-  const vehiclesMap = new Map(vehicles.map((v) => [v._?.soul, v]));
+  const vehiclesMap = new Map(vehicles?.map((v) => [v._?.soul, v]));
 
   // Handle opening the return dialog
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
@@ -60,7 +60,7 @@ export function TripManagement({ slug }: { slug: string }) {
 
     // Pre-populate with products that were sent
     // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-    const initialReturnedProducts = trip.products.map((p: any) => ({
+    const initialReturnedProducts = trip.products?.map((p: any) => ({
       productId: p.productId,
       quantity: 0, // Start with 0 returned
     }));
@@ -76,7 +76,7 @@ export function TripManagement({ slug }: { slug: string }) {
     // Calculate sold products (dispatched - returned)
     const soldProducts = currentTrip.products
       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-      .map((dispatchedProduct: any) => {
+      ?.map((dispatchedProduct: any) => {
         const returnedProduct = data.returnedProducts.find(
           (rp) => rp.productId === dispatchedProduct.productId,
         );
@@ -119,7 +119,7 @@ export function TripManagement({ slug }: { slug: string }) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {trips.map((trip) => {
+            {trips?.map((trip) => {
               const vehicle = vehiclesMap.get(trip.vehicleId);
               const status = trip.returnTime ? 'Completed' : 'In Transit';
 
@@ -186,7 +186,7 @@ export function TripManagement({ slug }: { slug: string }) {
                                   <div className="text-center">Sent</div>
                                   <div className="text-center">Returned</div>
                                 </div>
-                                {trip.products.map(
+                                {trip.products?.map(
                                   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
                                   (product: any, idx: number) => {
                                     const prod = productsMap.get(
@@ -228,7 +228,7 @@ export function TripManagement({ slug }: { slug: string }) {
                                       fields: {
                                         productId: {
                                           fieldType: 'select',
-                                          options: products.map((p) => [
+                                          options: products?.map((p) => [
                                             // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
                                             p._?.soul!,
                                             p.title,
@@ -253,7 +253,7 @@ export function TripManagement({ slug }: { slug: string }) {
                       <h4 className="font-medium">Products on Trip:</h4>
                       <div className="grid grid-cols-2 gap-2">
                         {/** biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup */}
-                        {trip.products.map((product: any, idx: number) => {
+                        {trip.products?.map((product: any, idx: number) => {
                           const prod = productsMap.get(product.productId);
                           return (
                             <div
