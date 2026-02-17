@@ -33,7 +33,7 @@ const ReturnedProductsSchema = z.object({
 
 type ReturnedProductsFormData = z.infer<typeof ReturnedProductsSchema>;
 
-export function TripManagement({ slug }: { slug: string }) {
+export default function TripManagement({ slug }: { slug: string }) {
   const { data: trips = [], isLoading } = api.trip.useGet({ keys: [slug] });
   const { data: products = [] } = api.product.useGet({ keys: [slug] });
   const { data: vehicles = [] } = api.vehicle.useGet({ keys: [slug] });

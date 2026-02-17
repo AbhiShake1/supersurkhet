@@ -36,6 +36,7 @@ interface PartyManagementProps {
 export const PartyManagement: AdminComponent = ({ slug }) => {
   return <_PartyManagement slug={slug} />;
 };
+export default PartyManagement;
 
 function _PartyManagement({ slug }: PartyManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
