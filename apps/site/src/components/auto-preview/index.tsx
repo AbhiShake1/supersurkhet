@@ -10,7 +10,7 @@ import {
   Star,
   XCircle,
 } from 'lucide-react';
-import type { FC, ReactNode } from 'react';
+import { useState, type FC, type ReactNode } from 'react';
 import { z } from 'zod';
 import { AutoTable } from '../auto-table';
 import type { fieldConfig } from '../ui/autoform';
@@ -18,6 +18,9 @@ import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
 import { CredenzaBody } from '../ui/credenza';
 import { useDrawer } from '@/contexts/dialog-context';
 import { MapPreview } from '../ui/autoform/components/MapPreview';
+import { getGunRef, GUN_PREFIX, GUN_SEPARATOR } from '@/lib/gun/utils';
+import { Skeleton } from '../ui/skeleton';
+import { useQuery } from '@tanstack/react-query';
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]['fieldType']>;
 
 export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
@@ -34,9 +37,30 @@ export function AutoPreview<T>({
   value: T;
   baseSchema: ZodObjectOrWrapped;
 }): ReactNode {
+  const enabled = !!value && typeof value === "string" && !!value?.startsWith(GUN_PREFIX);
+  const { isLoading, data } = useQuery({
+    enabled,
+    queryKey: ['auto-preview', value],
+    queryFn: async () => {
+      const v = value as string;
+      const values = v.split(GUN_SEPARATOR);
+      const basePart = values.slice(0, -1).join(GUN_SEPARATOR);
+      const gunRef = getGunRef(basePart).get(v);
+      return await gunRef.then() ?? "-";
+    },
+  })
   const Comp =
     // @ts-expect-error
     autoPreviewComponents[field.type] ?? autoPreviewComponents.fallback;
+
+  if (enabled) {
+    function getDisplayValue() {
+      const displayKey = field.fieldConfig?.customData?.displayKey ?? '_.#';
+      const displayKeys = displayKey.split('.');
+      return displayKeys.reduce((acc, key) => acc?.[key], data);
+    }
+    return <Comp value={isLoading ? "loading..." : getDisplayValue()} schema={schema} />;
+  }
 
   return <Comp value={value} schema={schema} />;
 }
@@ -216,11 +240,10 @@ const RatingPreview: AutoPreviewComponent<number> = ({ value }) => {
           <Star
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
-            className={`h-4 w-4 ${
-              i < Math.floor(value)
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-300'
-            }`}
+            className={`h-4 w-4 ${i < Math.floor(value)
+              ? 'fill-yellow-400 text-yellow-400'
+              : 'text-gray-300'
+              }`}
           />
         ))}
       </div>

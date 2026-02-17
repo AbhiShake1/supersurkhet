@@ -104,9 +104,9 @@ function resolveTabMetadata(tab: AutoAdminTabInput): PossibleTabConfig {
   const schemaMeta = appSchema[tab.schema];
   return {
     ...tab,
-    title: tab.title ?? schemaMeta.title ?? toTitleCase(tab.schema),
+    title: tab.title ?? schemaMeta?.title ?? toTitleCase(tab.schema),
     group: tab.group ?? schemaMeta.group,
-    icon: 'icon' in tab && tab.icon ? tab.icon : schemaMeta.icon,
+    icon: 'icon' in tab && tab.icon ? tab.icon : schemaMeta?.icon,
   };
 }
 

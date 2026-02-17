@@ -218,6 +218,7 @@ export const salesItemSchema = z
         fieldConfig({
           fieldType: 'select',
           customData: {
+            displayKey: 'title',
             sources: [
               {
                 table: 'product',
@@ -279,6 +280,7 @@ export const saleSchema = z
         fieldConfig({
           fieldType: 'select',
           customData: {
+            displayKey: 'name',
             sources: [
               {
                 table: 'customer',
@@ -320,7 +322,6 @@ export const saleSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
-      .default([])
       .describe('Payments'),
     paidAmount: z
       .number({ coerce: true })
@@ -379,6 +380,7 @@ export const orderSchema = z
         fieldConfig({
           fieldType: 'select',
           customData: {
+            displayKey: 'name',
             sources: [
               {
                 table: 'customer',
@@ -413,7 +415,6 @@ export const orderSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
-      .default([])
       .describe('Payments'),
     paidAmount: z
       .number({ coerce: true })
@@ -480,6 +481,7 @@ export const stockImportSchema = z
         fieldConfig({
           fieldType: 'select',
           customData: {
+            displayKey: 'name',
             sources: [
               {
                 table: 'party',
@@ -521,7 +523,6 @@ export const stockImportSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
-      .default([])
       .describe('Payments'),
     paidAmount: z
       .number({ coerce: true })
@@ -615,9 +616,21 @@ export const customerSchema = partySchema.extend({});
 export const invoiceSchema = z
   .object({
     type: z.enum(['purchase', 'sale']),
-    partyId: z.string().describe('Party').optional(),
-    vehicleId: z.string().describe('Vehicle').optional(),
-    tripId: z.string().describe('Trip').optional(),
+    partyId: z.string().describe('Party').optional().superRefine(fieldConfig({
+      customData: {
+        displayKey: 'name'
+      }
+    })),
+    vehicleId: z.string().describe('Vehicle').optional().superRefine(fieldConfig({
+      customData: {
+        displayKey: 'name'
+      }
+    })),
+    tripId: z.string().describe('Trip').optional().superRefine(fieldConfig({
+      customData: {
+        displayKey: 'name'
+      }
+    })),
     description: z
       .string()
       .optional()
@@ -660,7 +673,6 @@ export const invoiceSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
-      .default([])
       .describe('Payments'),
     paidAmount: z
       .number({ coerce: true })
@@ -724,6 +736,7 @@ export const tripSchema = z
         fieldConfig({
           fieldType: 'select',
           customData: {
+            displayKey: 'name',
             sources: [
               {
                 table: 'vehicle',

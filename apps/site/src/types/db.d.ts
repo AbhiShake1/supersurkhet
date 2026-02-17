@@ -63,7 +63,6 @@ declare global {
      readonly schema: import("zod").ZodObject<{
      name: import("zod").ZodString;
      id: import("zod").ZodString;
-     location: import("zod").ZodOptional<import("zod").ZodString>;
      basePath: import("zod").ZodOptional<import("zod").ZodString>;
      businessType: import("zod").ZodEnum<["retail"]>;
      features: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodBoolean>>, Record<string, boolean> | undefined, Record<string, boolean> | undefined>;
@@ -164,7 +163,6 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     location?: string | undefined;
      basePath?: string | undefined;
      features?: Record<string, boolean> | undefined;
      icon?: string | undefined;
@@ -203,7 +201,6 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     location?: string | undefined;
      basePath?: string | undefined;
      features?: Record<string, boolean> | undefined;
      icon?: string | undefined;
@@ -406,7 +403,7 @@ declare global {
      description: import("zod").ZodOptional<import("zod").ZodString>;
      fields: import("zod").ZodArray<import("zod").ZodObject<{
      key: import("zod").ZodString;
-     type: import("zod").ZodEnum<["string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp", ...("string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp")[], "enum", "array", "object"]>;
+     type: import("zod").ZodEnum<[string, ...string[]]>;
      label: import("zod").ZodOptional<import("zod").ZodString>;
      description: import("zod").ZodOptional<import("zod").ZodString>;
      optional: import("zod").ZodOptional<import("zod").ZodBoolean>;
@@ -432,7 +429,7 @@ declare global {
      token?: string | undefined;
     }>, "many">>;
     }, "strip", import("zod").ZodTypeAny, {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -449,7 +446,7 @@ declare global {
      token?: string | undefined;
     }[] | undefined;
     }, {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -470,7 +467,7 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      schemaId: string;
      fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -493,7 +490,7 @@ declare global {
     }, {
      schemaId: string;
      fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -641,7 +638,7 @@ declare global {
      schemaDocs?: {
      schemaId: string;
      fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -716,7 +713,7 @@ declare global {
      schemaDocs?: {
      schemaId: string;
      fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -905,7 +902,7 @@ declare global {
      description: import("zod").ZodOptional<import("zod").ZodString>;
      fields: import("zod").ZodArray<import("zod").ZodObject<{
      key: import("zod").ZodString;
-     type: import("zod").ZodEnum<["string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp", ...("string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp")[], "enum", "array", "object"]>;
+     type: import("zod").ZodEnum<[string, ...string[]]>;
      label: import("zod").ZodOptional<import("zod").ZodString>;
      description: import("zod").ZodOptional<import("zod").ZodString>;
      optional: import("zod").ZodOptional<import("zod").ZodBoolean>;
@@ -931,7 +928,7 @@ declare global {
      token?: string | undefined;
     }>, "many">>;
     }, "strip", import("zod").ZodTypeAny, {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -948,7 +945,7 @@ declare global {
      token?: string | undefined;
     }[] | undefined;
     }, {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -969,7 +966,7 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      schemaId: string;
      fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -992,7 +989,7 @@ declare global {
     }, {
      schemaId: string;
      fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -1129,7 +1126,7 @@ declare global {
      schemaDocs?: {
      schemaId: string;
      fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -1191,7 +1188,7 @@ declare global {
      schemaDocs?: {
      schemaId: string;
      fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
+     type: string;
      key: string;
      label?: string | undefined;
      description?: string | undefined;
@@ -1542,7 +1539,56 @@ declare global {
     }[]>;
     };
      readonly party: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodObject<{
+     name: import("zod").ZodString;
+     address: import("zod").ZodOptional<import("zod").ZodString>;
+     panNumber: import("zod").ZodOptional<import("zod").ZodString>;
+     phone: import("zod").ZodOptional<import("zod").ZodString>;
+     creditLimit: import("zod").ZodOptional<import("zod").ZodNumber>;
+     paymentTerms: import("zod").ZodOptional<import("zod").ZodString>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     name: string;
+     phone?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     address?: string | undefined;
+     panNumber?: string | undefined;
+     creditLimit?: number | undefined;
+     paymentTerms?: string | undefined;
+     notes?: string | undefined;
+    }, {
+     name: string;
+     phone?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     address?: string | undefined;
+     panNumber?: string | undefined;
+     creditLimit?: number | undefined;
+     paymentTerms?: string | undefined;
+     notes?: string | undefined;
+    }>;
      readonly title: "Purchase Parties";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -1552,13 +1598,172 @@ declare global {
     }[]>;
     };
      readonly customer: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodObject<{
+     name: import("zod").ZodString;
+     address: import("zod").ZodOptional<import("zod").ZodString>;
+     panNumber: import("zod").ZodOptional<import("zod").ZodString>;
+     phone: import("zod").ZodOptional<import("zod").ZodString>;
+     creditLimit: import("zod").ZodOptional<import("zod").ZodNumber>;
+     paymentTerms: import("zod").ZodOptional<import("zod").ZodString>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     name: string;
+     phone?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     address?: string | undefined;
+     panNumber?: string | undefined;
+     creditLimit?: number | undefined;
+     paymentTerms?: string | undefined;
+     notes?: string | undefined;
+    }, {
+     name: string;
+     phone?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     address?: string | undefined;
+     panNumber?: string | undefined;
+     creditLimit?: number | undefined;
+     paymentTerms?: string | undefined;
+     notes?: string | undefined;
+    }>;
      readonly title: "Customers";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly invoice: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodObject<{
+     type: import("zod").ZodEnum<["purchase", "sale"]>;
+     partyId: import("zod").ZodOptional<import("zod").ZodString>;
+     vehicleId: import("zod").ZodOptional<import("zod").ZodString>;
+     tripId: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     issuedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     dueDate: import("zod").ZodOptional<import("zod").ZodString>;
+     items: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodString;
+     quantity: import("zod").ZodNumber;
+     rate: import("zod").ZodNumber;
+     total: import("zod").ZodNumber;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     rate: number;
+     total: number;
+    }, {
+     product: string;
+     quantity: number;
+     rate: number;
+     total: number;
+    }>, "many">;
+     subTotal: import("zod").ZodNumber;
+     tax: import("zod").ZodDefault<import("zod").ZodNumber>;
+     payments: import("zod").ZodArray<import("zod").ZodObject<{
+     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAmount: number;
+     paidAt: string;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }>, "many">;
+     paidAmount: import("zod").ZodDefault<import("zod").ZodNumber>;
+     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     fiscalYear: import("zod").ZodString;
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     type: "sale" | "purchase";
+     paidAmount: number;
+     paymentStatus: string;
+     items: {
+     product: string;
+     quantity: number;
+     rate: number;
+     total: number;
+    }[];
+     subTotal: number;
+     tax: number;
+     payments: {
+     paidAmount: number;
+     paidAt: string;
+    }[];
+     fiscalYear: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+     partyId?: string | undefined;
+     vehicleId?: string | undefined;
+     tripId?: string | undefined;
+     issuedAt?: string | undefined;
+     dueDate?: string | undefined;
+    }, {
+     type: "sale" | "purchase";
+     items: {
+     product: string;
+     quantity: number;
+     rate: number;
+     total: number;
+    }[];
+     subTotal: number;
+     payments: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }[];
+     fiscalYear: string;
+     timestamp?: number | undefined;
+     paidAmount?: number | undefined;
+     paymentStatus?: string | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+     partyId?: string | undefined;
+     vehicleId?: string | undefined;
+     tripId?: string | undefined;
+     issuedAt?: string | undefined;
+     dueDate?: string | undefined;
+     tax?: number | undefined;
+    }>;
      readonly title: "Invoices";
      readonly icon: React.ForwardRefExoticComponent<import("@tabler/icons-react").IconProps & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
@@ -1568,19 +1773,601 @@ declare global {
     }[]>;
     };
      readonly sale: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
+     customerId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     saleDate: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     items: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">;
+     payments: import("zod").ZodArray<import("zod").ZodObject<{
+     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAmount: number;
+     paidAt: string;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }>, "many">;
+     paidAmount: import("zod").ZodNumber;
+     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paymentMethod: import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit"]>>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAmount: number;
+     paymentStatus: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt: string;
+    }[];
+     customerId: string;
+     saleDate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+    }, {
+     paidAmount: number;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }[];
+     customerId: string;
+     timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     saleDate?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+    }>, {
+     paidAmount: number;
+     paymentStatus: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt: string;
+    }[];
+     customerId: string;
+     saleDate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+    }, {
+     paidAmount: number;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }[];
+     customerId: string;
+     timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     saleDate?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+    }>;
      readonly title: "Sales";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly stockImport: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
+     party: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     importDate: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     items: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">;
+     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     payments: import("zod").ZodArray<import("zod").ZodObject<{
+     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAmount: number;
+     paidAt: string;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }>, "many">;
+     paidAmount: import("zod").ZodNumber;
+     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     party: string;
+     paidAmount: number;
+     paymentStatus: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt: string;
+    }[];
+     totalAmount: number;
+     importDate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+    }, {
+     party: string;
+     paidAmount: number;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }[];
+     totalAmount: number;
+     timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     importDate?: string | undefined;
+    }>, {
+     party: string;
+     paidAmount: number;
+     paymentStatus: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt: string;
+    }[];
+     totalAmount: number;
+     importDate: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+    }, {
+     party: string;
+     paidAmount: number;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }[];
+     totalAmount: number;
+     timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     importDate?: string | undefined;
+    }>;
      readonly title: "Stock Imports";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
     };
      readonly order: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
+     customerId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     items: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">;
+     payments: import("zod").ZodArray<import("zod").ZodObject<{
+     paidAt: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     paidAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAmount: number;
+     paidAt: string;
+    }, {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }>, "many">;
+     paidAmount: import("zod").ZodNumber;
+     paymentStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     orderStatus: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodEnum<["pending", "done", "cancelled"]>>, "pending" | "done" | "cancelled", "pending" | "done" | "cancelled" | undefined>;
+     paymentMethod: import("zod").ZodOptional<import("zod").ZodEnum<["cash", "card", "bankTransfer", "credit"]>>;
+     notes: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+    } & Record<"paidAmount", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>> & Record<"paymentStatus", import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>> & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     paidAmount: number;
+     paymentStatus: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt: string;
+    }[];
+     customerId: string;
+     orderStatus: "pending" | "done" | "cancelled";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+    }, {
+     paidAmount: number;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }[];
+     customerId: string;
+     timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+     orderStatus?: "pending" | "done" | "cancelled" | undefined;
+    }>, {
+     paidAmount: number;
+     paymentStatus: string;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt: string;
+    }[];
+     customerId: string;
+     orderStatus: "pending" | "done" | "cancelled";
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+    }, {
+     paidAmount: number;
+     items: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     payments: {
+     paidAmount: number;
+     paidAt?: string | undefined;
+    }[];
+     customerId: string;
+     timestamp?: number | undefined;
+     paymentStatus?: string | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     notes?: string | undefined;
+     paymentMethod?: "cash" | "card" | "bankTransfer" | "credit" | undefined;
+     orderStatus?: "pending" | "done" | "cancelled" | undefined;
+    }>;
      readonly title: "Orders";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Business Operations";
@@ -2076,7 +2863,7 @@ declare global {
     }, "strip", import("zod").ZodTypeAny, {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -2095,7 +2882,7 @@ declare global {
     }, {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -2116,7 +2903,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -2137,7 +2924,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -2225,6 +3012,13 @@ declare global {
      type: "quick_buy";
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
      info?: {
      type: "product_details";
      sections: string[];
@@ -2237,15 +3031,15 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
-    } | undefined;
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
     } | undefined;
     }, {
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
      info?: {
      type: "product_details";
      sections: string[];
@@ -2258,13 +3052,6 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
-    } | undefined;
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
     } | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
@@ -2359,7 +3146,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -2378,6 +3165,13 @@ declare global {
     }[];
     } | undefined;
      interactions?: {
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
      info?: {
      type: "product_details";
      sections: string[];
@@ -2390,13 +3184,6 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
-    } | undefined;
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
     } | undefined;
     } | undefined;
     }, {
@@ -2491,7 +3278,7 @@ declare global {
      steps: {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
      step: number;
-     options?: ("card" | "mobile_payment" | "cash")[] | undefined;
+     options?: ("cash" | "card" | "mobile_payment")[] | undefined;
      validation?: {
      allergen_check?: boolean | undefined;
      preparation_time?: string | undefined;
@@ -2510,6 +3297,13 @@ declare global {
     }[];
     } | undefined;
      interactions?: {
+     purchase?: {
+     options: {
+     delivery: ("in_store" | "home_delivery")[];
+     payment: string[];
+    };
+     type: "quick_buy";
+    } | undefined;
      info?: {
      type: "product_details";
      sections: string[];
@@ -2522,13 +3316,6 @@ declare global {
      compare?: {
      type: "product_comparison";
      related_products: string[];
-    } | undefined;
-     purchase?: {
-     options: {
-     delivery: ("in_store" | "home_delivery")[];
-     payment: string[];
-    };
-     type: "quick_buy";
     } | undefined;
     } | undefined;
     }>;
@@ -2932,7 +3719,187 @@ declare global {
      readonly group: "Logistics";
     };
      readonly trip: {
-     readonly schema: import("../lib/plugins/schema-compiler").CompiledSchema;
+     readonly schema: import("zod").ZodObject<{
+     vehicleId: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     dispatchTime: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodString>, string, string | undefined>;
+     returnTime: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodString, string, string>>;
+     destination: import("zod").ZodOptional<import("zod").ZodString>;
+     products: import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">;
+     returnedProducts: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     product: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
+     quantity: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     totalAmount: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    } & {
+     unitPrice: import("zod").ZodEffects<import("zod").ZodNumber, number, number>;
+    }, "strip", import("zod").ZodTypeAny, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>, "many">>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     vehicleId: string;
+     dispatchTime: string;
+     products: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     returnTime?: string | undefined;
+     destination?: string | undefined;
+     returnedProducts?: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }, {
+     vehicleId: string;
+     products: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     dispatchTime?: string | undefined;
+     returnTime?: string | undefined;
+     destination?: string | undefined;
+     returnedProducts?: {
+     product: string;
+     quantity: number;
+     totalAmount: number;
+     unitPrice: number;
+     unit?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }>;
      readonly title: "Trips";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Logistics";

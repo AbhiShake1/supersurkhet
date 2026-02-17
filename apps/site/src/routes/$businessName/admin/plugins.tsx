@@ -360,7 +360,7 @@ function PluginsRouteComponent() {
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
+    <div className="relative mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8 overflow-x-hidden">
       <div className="pointer-events-none absolute -left-16 -top-24 -z-10 h-72 w-72 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-700/15" />
       <div className="pointer-events-none absolute -right-16 -top-20 -z-10 h-80 w-80 rounded-full bg-cyan-300/20 blur-3xl dark:bg-cyan-700/15" />
 
@@ -439,15 +439,13 @@ function PluginsRouteComponent() {
       <Card className="border-border/70 py-4 gap-4">
         <CardContent className="space-y-4 px-4 md:px-6">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search by plugin id, title, description, or capability"
-                className="pl-9"
-              />
-            </div>
+            <Input
+              leadingIcon={<Search className="size-4" />}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by plugin id, title, description, or capability"
+              className="pl-9"
+            />
 
             <div className="flex flex-wrap items-center gap-2">
               {FILTER_OPTIONS.map((option) => (
@@ -740,38 +738,6 @@ function PluginsRouteComponent() {
             )}
           </CardContent>
         </Card>
-
-        <Card className="py-4 gap-4">
-          <CardHeader className="px-4 md:px-6">
-            <CardTitle className="text-base">Capability Footprint</CardTitle>
-            <CardDescription>
-              Most common capability scopes exposed by your current plugin
-              catalog.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-4 md:px-6">
-            {topCapabilities.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No capability metadata has been published yet.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {topCapabilities.map((capability) => (
-                  <Badge
-                    key={capability.name}
-                    variant="outline"
-                    className="gap-2"
-                  >
-                    {capability.name}
-                    <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-semibold">
-                      {capability.count}
-                    </span>
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
@@ -779,7 +745,7 @@ function PluginsRouteComponent() {
 
 function PluginsPageSkeleton() {
   return (
-    <div className="relative mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8">
+    <div className="relative mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8 overflow-x-hidden">
       <Card className="border-border/70 py-5 gap-5">
         <CardContent className="space-y-5 px-5 md:px-7">
           <div className="space-y-3">
@@ -985,7 +951,6 @@ function MarketplacePluginCard({
             <CardTitle className="text-base leading-tight">
               {entry.title}
             </CardTitle>
-            <CardDescription>{entry.pluginId}</CardDescription>
           </div>
           <Badge
             className={cn(
@@ -1012,19 +977,6 @@ function MarketplacePluginCard({
           {entry.description ||
             'No description provided for this plugin release.'}
         </p>
-
-        <div className="flex flex-wrap gap-1.5">
-          {entry.capabilities.slice(0, 4).map((capability) => (
-            <Badge key={capability} variant="outline" className="text-[11px]">
-              {capability}
-            </Badge>
-          ))}
-          {entry.capabilityCount > 4 && (
-            <Badge variant="secondary" className="text-[11px]">
-              +{entry.capabilityCount - 4} more
-            </Badge>
-          )}
-        </div>
 
         <div className="rounded-lg border bg-muted/30 p-2">
           <div className="mb-2 text-xs font-medium text-muted-foreground">

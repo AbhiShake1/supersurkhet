@@ -137,10 +137,6 @@ export const businessSchema = z
   .object({
     name: z.string().describe('Official name of the business'),
     id: z.string().describe('Unique ID for the business'),
-    location: z
-      .string()
-      .describe('Physical address or area of the business')
-      .optional(),
     basePath: z
       .string()
       .describe('Unique URL path for the business (e.g., /my-shop)')

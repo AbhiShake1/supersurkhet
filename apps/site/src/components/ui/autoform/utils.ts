@@ -7,25 +7,25 @@ import { buildZodFieldConfig } from './react';
 export type DeepNullableRequired<T> = T extends Array<infer U>
   ? Array<DeepNullableRequired<U> | null> | null
   : T extends object
-    ? {
-        [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
-      }
-    : T | null;
+  ? {
+    [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
+  }
+  : T | null;
 
 export type SourceConfigFor<K extends SchemaKeys> = {
   table: K;
   key?: string;
 } & (
-  | {
+    | {
       displayKey: keyof NestedSchemaType<K>;
     }
-  | {
+    | {
       displayKey?: never;
       displayKeys: Array<keyof NestedSchemaType<K>>;
       separator: string;
       suffix?: string;
     }
-);
+  );
 
 export type SourceConfig = {
   [K in SchemaKeys]: SourceConfigFor<K>;
@@ -67,6 +67,7 @@ export type DeriveConfig<
 type FieldConfigCustomDataBase = {
   tabs?: PossibleTabConfig[];
   disableWhenValueIn?: string[];
+  displayKey?: string
 } & {
   onValueChange?: (value: string, path: string[], form: UseFormReturn) => any;
   // onValueChange?: LogicExprWithContext<{
@@ -107,11 +108,11 @@ type FieldConfigCustomDataWithoutSource = FieldConfigCustomDataBase & {
 
 export type FieldConfigCustomData =
   | {
-      [K in SchemaKeys]: FieldConfigCustomDataWithSource<K>;
-    }[SchemaKeys]
+    [K in SchemaKeys]: FieldConfigCustomDataWithSource<K>;
+  }[SchemaKeys]
   | {
-      [K in SchemaKeys]: FieldConfigCustomDataWithSources<K>;
-    }[SchemaKeys]
+    [K in SchemaKeys]: FieldConfigCustomDataWithSources<K>;
+  }[SchemaKeys]
   | FieldConfigCustomDataWithoutSource;
 
 export function withSourceCustomData<K extends SchemaKeys>(

@@ -50,7 +50,6 @@ export const businessCreationSchema = businessSchema
     name: true,
     businessType: true,
     features: true,
-    location: true,
     locationCoordinates: true,
   })
   .extend({
@@ -210,26 +209,14 @@ export function BusinessCreationForm({
           />
           <FormField
             control={form.control}
-            name="location"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Business Location</FormLabel>
-                <FormControl>
-                  <Input placeholder="e.g., Surkhet, Nepal" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
             name="locationCoordinates"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Set Location on Map</FormLabel>
                 <FormControl>
-                  {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                   <MapField
+                    {...field}
+                    label="Set Location on Map"
                     inputProps={{
                       key: 'locationCoordinates',
                       onChange: field.onChange,
@@ -270,7 +257,7 @@ export function BusinessCreationForm({
                             const isSelected = field.value === type;
                             const Icon =
                               businessTypeIcons[
-                                type as keyof typeof businessTypeIcons
+                              type as keyof typeof businessTypeIcons
                               ] || Building;
                             return (
                               <Card
