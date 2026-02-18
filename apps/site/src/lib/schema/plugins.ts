@@ -210,6 +210,48 @@ const pluginTabDocSchema = z.object({
   icon: z.string().optional(),
 });
 
+const compileVerifyDiagnosticSchema = z.object({
+  category: z.enum([
+    'schema-compile',
+    'derivation-compile',
+    'refinement-compile',
+    'workflow-validation',
+    'capability-validation',
+  ]),
+  code: z.string(),
+  severity: z.enum(['error', 'warning', 'info']),
+  message: z.string(),
+  path: z.array(z.string()),
+});
+
+const artifactDiffSchema = z.object({
+  added: z.array(z.string()),
+  changed: z.array(z.string()),
+  removed: z.array(z.string()),
+});
+
+const hashPreviewSchema = z.object({
+  manifestHash: z.string(),
+  artifactHash: z.string(),
+});
+
+const routesTabsMappedRouteSchema = z.object({
+  id: z.string(),
+  schema: z.string(),
+  title: z.string(),
+  group: z.string().optional(),
+  order: z.number(),
+  routeSegment: z.string(),
+  routePath: z.string(),
+  iconName: z.string().optional(),
+});
+
+const routesTabsMapperDiagnosticSchema = z.object({
+  code: z.enum(['duplicate-route', 'invalid-icon']),
+  message: z.string(),
+  path: z.array(z.string()),
+});
+
 export const pluginReleaseSchema = z
   .object({
     id: z
@@ -318,6 +360,73 @@ export const pluginRecordSchema = z
     payload: jsonValueSchema,
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const pluginV2DiagnosticsSchema = z
+  .object({
+    id: z
+      .string()
+      .describe('Deterministic diagnostics snapshot id: draftId@revisionId'),
+    draftId: z.string(),
+    revisionId: z.string(),
+    pluginId: z.string(),
+    environment: z.string().default('production'),
+    status: z.enum(['ready', 'blocking']).default('blocking'),
+    diagnostics: z.array(compileVerifyDiagnosticSchema),
+    artifactDiff: artifactDiffSchema,
+    hashPreview: hashPreviewSchema,
+    createdByUserId: z.string(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const pluginPublishReviewSchema = z
+  .object({
+    id: z
+      .string()
+      .describe(
+        'Deterministic review id: draftId@revisionId@environment',
+      ),
+    draftId: z.string(),
+    revisionId: z.string(),
+    pluginId: z.string(),
+    environment: z.string().default('production'),
+    status: z.enum(['not-required', 'required-pending', 'approved']),
+    approvedByUserId: z.string().optional(),
+    decidedAt: z.string().datetime({ offset: true }),
+    note: z.string().optional(),
+  })
+  .extend(table);
+
+export const pluginActionCapabilityEnvelopeSchema = z
+  .object({
+    id: z
+      .string()
+      .describe('Deterministic capability envelope id: businessId::environment'),
+    businessId: z.string(),
+    environment: z.string().default('production'),
+    runtimeTarget: z.enum(['sandbox-worker', 'core']).default('sandbox-worker'),
+    capabilities: z.array(z.string()),
+    deniedActionIds: z.array(z.string()).optional(),
+    updatedByUserId: z.string(),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const pluginRoutesTabsConfigSchema = z
+  .object({
+    id: z
+      .string()
+      .describe('Deterministic routes-tabs config id: draftId@revisionId'),
+    draftId: z.string(),
+    revisionId: z.string(),
+    pluginId: z.string(),
+    businessSlug: z.string(),
+    routes: z.array(routesTabsMappedRouteSchema),
+    diagnostics: z.array(routesTabsMapperDiagnosticSchema),
+    savedByUserId: z.string(),
+    savedAt: z.string().datetime({ offset: true }),
   })
   .extend(table);
 

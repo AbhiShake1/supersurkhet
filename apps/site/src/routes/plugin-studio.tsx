@@ -13,6 +13,37 @@ import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { useConfetti } from '@/components/confetti-provider';
 import {
+  ActionsManifestEditor,
+  createActionsManifestEditorState,
+} from '@/features/plugin-builder/workspace/tabs/actions-manifest-editor';
+import {
+  type ExpressionRow,
+  ExpressionRowBuilder,
+} from '@/features/plugin-builder/workspace/tabs/expression-row-builder';
+import {
+  createFieldConfigPanelModel,
+  serializeFieldConfigPanelDraft,
+} from '@/features/plugin-builder/workspace/tabs/field-config-panel';
+import {
+  applyGuardedIrDraftText,
+  createGuardedIrEditorState,
+  GuardedIrEditor,
+  switchGuardedIrEditorMode,
+} from '@/features/plugin-builder/workspace/tabs/guarded-ir-editor';
+import { OverviewTab } from '@/features/plugin-builder/workspace/tabs/overview-tab';
+import {
+  createPublishGateTabState,
+  PublishGateTab,
+  setPublishConfirmationChecked,
+} from '@/features/plugin-builder/workspace/tabs/publish-gate-tab';
+import { ReviewDiagnosticsTab } from '@/features/plugin-builder/workspace/tabs/review-diagnostics-tab';
+import {
+  mapRoutesTabsToAutoAdminConfig,
+  RoutesTabsMapperTab,
+} from '@/features/plugin-builder/workspace/tabs/routes-tabs-mapper';
+import { SchemasTab } from '@/features/plugin-builder/workspace/tabs/schemas-tab';
+import { WorkflowGraphEditor } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -50,6 +81,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import type {
+  FieldEntity,
+  SchemaEntity,
+} from '@/features/plugin-builder/domain/workspace/workspace-entities';
+import type { PluginBuildDiagnostic } from '@/features/plugin-builder/domain/validation/diagnostics-contract';
 import { api } from '@/lib/api';
 import {
   MARKETPLACE_SEED_RELEASES,
@@ -73,6 +109,7 @@ import {
   previewPluginReleaseHashes,
   publishPluginRelease,
 } from '@/server-functions/plugins';
+import type { CompileVerifyDiagnostic } from '@/server-functions/plugins-v2-compile-verify';
 
 export const Route = createFileRoute('/plugin-studio')({
   component: PluginStudioRoute,
@@ -118,6 +155,111 @@ const DEFAULT_WORKFLOW_DOC = {
 
 function canonicalStringify(input: unknown) {
   return JSON.stringify(input, null, 2);
+}
+
+function toErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return 'Unknown error';
+}
+
+function toStableWorkspaceSuffix(input: string) {
+  const normalized = input
+    .trim()
+    .replace(/[^A-Za-z0-9._:-]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return normalized || 'entity';
+}
+
+function toWorkspaceSchemasAndFields(schemaDocs: readonly SchemaDoc[]): {
+  schemas: SchemaEntity[];
+  fields: FieldEntity[];
+} {
+  const schemas: SchemaEntity[] = [];
+  const fields: FieldEntity[] = [];
+
+  for (const [schemaIndex, schemaDoc] of schemaDocs.entries()) {
+    const schemaSuffix = toStableWorkspaceSuffix(
+      schemaDoc.schemaId || `schema_${schemaIndex + 1}`,
+    );
+    const schemaEntityId = `schema_${schemaSuffix}` as const;
+    const rootFieldIds: FieldEntity['id'][] = [];
+
+    const appendField = (
+      fieldDoc: SchemaFieldDoc,
+      context: {
+        suffix: string;
+        parentFieldId?: FieldEntity['id'];
+      },
+    ): FieldEntity['id'] => {
+      const fieldSuffix = toStableWorkspaceSuffix(context.suffix);
+      const fieldId = `field_${fieldSuffix}` as const;
+      const childFieldIds: FieldEntity['id'][] = [];
+      let itemFieldId: FieldEntity['id'] | undefined;
+
+      if (fieldDoc.type === 'array' && fieldDoc.itemType) {
+        const itemFieldDoc: SchemaFieldDoc = {
+          key: `${fieldDoc.key || 'item'}_item`,
+          type: fieldDoc.itemType.type,
+          optional: fieldDoc.optional,
+          enumValues: fieldDoc.itemType.enumValues,
+          fields: fieldDoc.itemType.fields,
+        };
+        itemFieldId = appendField(itemFieldDoc, {
+          suffix: `${fieldSuffix}_item`,
+          parentFieldId: fieldId,
+        });
+      }
+
+      if (fieldDoc.type === 'object' && fieldDoc.fields?.length) {
+        for (const [childIndex, childDoc] of fieldDoc.fields.entries()) {
+          const childId = appendField(childDoc, {
+            suffix: `${fieldSuffix}_${childDoc.key || `child_${childIndex + 1}`}`,
+            parentFieldId: fieldId,
+          });
+          childFieldIds.push(childId);
+        }
+      }
+
+      const nextField: FieldEntity = {
+        id: fieldId,
+        schemaId: schemaEntityId,
+        parentFieldId: context.parentFieldId,
+        itemFieldId,
+        childFieldIds: childFieldIds.length > 0 ? childFieldIds : undefined,
+        key: fieldDoc.key || `field_${fieldSuffix}`,
+        type: fieldDoc.type,
+        optional: fieldDoc.optional,
+        derivationIds: [],
+        refinementIds: [],
+      };
+
+      fields.push(nextField);
+      return fieldId;
+    };
+
+    for (const [fieldIndex, fieldDoc] of schemaDoc.fields.entries()) {
+      const fieldId = appendField(fieldDoc, {
+        suffix: `${schemaSuffix}_${fieldDoc.key || `field_${fieldIndex + 1}`}`,
+      });
+      rootFieldIds.push(fieldId);
+    }
+
+    schemas.push({
+      id: schemaEntityId,
+      schemaId: schemaDoc.schemaId,
+      title: schemaDoc.title,
+      description: schemaDoc.description,
+      fieldIds: rootFieldIds,
+      refinementIds: [],
+    });
+  }
+
+  return {
+    schemas,
+    fields,
+  };
 }
 
 function toLatestSeedReleases() {
@@ -988,6 +1130,13 @@ function PluginStudioRoute() {
   const seededActorRef = useRef<string | null>(null);
   const [selectedDraftId, setSelectedDraftId] = useState('');
   const [selectedRevisionId, setSelectedRevisionId] = useState('');
+  const [guardedIrState, setGuardedIrState] = useState(() =>
+    createGuardedIrEditorState({
+      schemaDocs: [DEFAULT_SCHEMA_DOC],
+    }),
+  );
+  const [workspacePublishGateChecked, setWorkspacePublishGateChecked] =
+    useState(false);
 
   const {
     data: releaseRows = [],
@@ -1067,6 +1216,13 @@ function PluginStudioRoute() {
         .filter((revision) => revision.draftId === selectedDraftId)
         .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
     [draftRevisions, selectedDraftId],
+  );
+  const selectedRevision = useMemo(
+    () =>
+      selectedDraftRevisions.find(
+        (revision) => revision.revisionId === selectedRevisionId,
+      ) ?? null,
+    [selectedDraftRevisions, selectedRevisionId],
   );
 
   useEffect(() => {
@@ -1265,6 +1421,19 @@ function PluginStudioRoute() {
     setSchemaText(canonicalStringify([nextSchemaDoc]));
   }, [blocklyRefinements, schemaBuilder, schemaRefinements]);
 
+  useEffect(() => {
+    if (!parsed) return;
+    setGuardedIrState((current) => {
+      if (current.mode === 'ir') {
+        return current;
+      }
+      return createGuardedIrEditorState({
+        schemaDocs: parsed.schemaDocs,
+        initialMode: current.mode,
+      });
+    });
+  }, [parsed]);
+
   const hashPreviewQuery = useQuery({
     queryKey: ['plugin-studio', 'release-hash-preview', debouncedHashInput],
     enabled: debouncedHashInput !== null,
@@ -1433,6 +1602,228 @@ function PluginStudioRoute() {
     [selectedBlocklyField?.type],
   );
   const firstBlocklyComparableField = blocklyComparableFields[0] ?? '';
+  const workspaceSchemasAndFields = useMemo(
+    () => toWorkspaceSchemasAndFields(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
+    [parsed?.schemaDocs],
+  );
+  const workspaceActiveSchemaId =
+    workspaceSchemasAndFields.schemas[0]?.id ?? null;
+  const workspaceFieldConfigModel = useMemo(() => {
+    const firstField = schemaBuilder.fields[0];
+    const fallbackFieldType = 'string';
+    const fieldType =
+      firstField?.fieldType && AUTOFORM_FIELD_TYPES.includes(firstField.fieldType)
+        ? firstField.fieldType
+        : fallbackFieldType;
+
+    const model = createFieldConfigPanelModel(fieldType);
+    const draft = serializeFieldConfigPanelDraft({
+      fieldType,
+      label: firstField?.label || firstField?.key || 'Field',
+      description: firstField?.description || undefined,
+      inputProps: parseJsonObject(firstField?.inputPropsJson),
+      customData: parseJsonObject(firstField?.customDataJson),
+    });
+
+    return {
+      model,
+      draft,
+    };
+  }, [schemaBuilder.fields]);
+  const expressionRows = useMemo<ExpressionRow[]>(
+    () =>
+      schemaRefinements
+        .filter(
+          (rule) => Boolean(rule.leftField.trim()) && Boolean(rule.rightField.trim()),
+        )
+        .map((rule) => ({
+          operator: rule.operator,
+          operands: [
+            {
+              kind: 'fieldRef',
+              path: [rule.leftField],
+            },
+            {
+              kind: 'fieldRef',
+              path: [rule.rightField],
+            },
+          ],
+        })),
+    [schemaRefinements],
+  );
+  const workspaceWorkflow = parsed?.workflows[0] ?? DEFAULT_WORKFLOW_DOC;
+  const workspaceActionsManifestState = useMemo(
+    () =>
+      createActionsManifestEditorState({
+        actionManifest: parsed?.actionManifest ?? [],
+        workflows: parsed?.workflows ?? [DEFAULT_WORKFLOW_DOC],
+        capabilityEnvelope: ['db.read', 'db.write', 'email.send', 'http.fetch'],
+        runtimeTarget: 'sandbox-worker',
+      }),
+    [parsed],
+  );
+  const workspaceRoutesTabsResult = useMemo(
+    () =>
+      mapRoutesTabsToAutoAdminConfig({
+        businessSlug: pluginId.replace(/^plugin\./, ''),
+        tabs: (parsed?.adminTabs ?? []).map((tab, index) => ({
+          id: `tab_${tab.schema || index + 1}`,
+          schema: tab.schema,
+          title: tab.title,
+          group: tab.group,
+          order: index,
+        })),
+      }),
+    [parsed?.adminTabs, pluginId],
+  );
+  const workspaceCompileDiagnostics = useMemo<CompileVerifyDiagnostic[]>(() => {
+    const diagnostics: CompileVerifyDiagnostic[] = [];
+
+    if (!parsed) {
+      diagnostics.push({
+        category: 'schema-compile',
+        code: 'invalid-json',
+        severity: 'error',
+        message: 'Schema/workflow JSON could not be parsed.',
+        path: ['schemaDocs'],
+      });
+    }
+
+    const invalidFieldCount = schemaBuilder.fields.filter((field) =>
+      hasFieldValidationErrors(field),
+    ).length;
+    if (invalidFieldCount > 0) {
+      diagnostics.push({
+        category: 'schema-compile',
+        code: 'field-validation',
+        severity: 'warning',
+        message: `${invalidFieldCount} field(s) have incomplete or invalid configuration.`,
+        path: ['schemaBuilder', 'fields'],
+      });
+    }
+
+    if (hashPreviewQuery.isError) {
+      diagnostics.push({
+        category: 'schema-compile',
+        code: 'hash-preview-failed',
+        severity: 'warning',
+        message: toErrorMessage(hashPreviewQuery.error),
+        path: ['hashPreview'],
+      });
+    }
+
+    if (hashPreviewQuery.data) {
+      diagnostics.push({
+        category: 'schema-compile',
+        code: 'hash-preview-ready',
+        severity: 'info',
+        message: 'Release hash preview is up to date.',
+        path: ['hashPreview'],
+      });
+    }
+
+    return diagnostics;
+  }, [
+    hashPreviewQuery.data,
+    hashPreviewQuery.error,
+    hashPreviewQuery.isError,
+    parsed,
+    schemaBuilder.fields,
+  ]);
+  const workspaceArtifactDiff = useMemo(() => {
+    const currentBySchema = new Map(
+      (parsed?.schemaDocs ?? []).map((schemaDoc) => [schemaDoc.schemaId, schemaDoc]),
+    );
+    const previousBySchema = new Map(
+      (selectedRevision?.schemaDocs ?? []).map((schemaDoc) => [
+        schemaDoc.schemaId,
+        schemaDoc,
+      ]),
+    );
+
+    const added = [...currentBySchema.keys()].filter(
+      (schemaId) => !previousBySchema.has(schemaId),
+    );
+    const removed = [...previousBySchema.keys()].filter(
+      (schemaId) => !currentBySchema.has(schemaId),
+    );
+    const changed = [...currentBySchema.keys()].filter((schemaId) => {
+      if (!previousBySchema.has(schemaId)) return false;
+      return (
+        canonicalStringify(currentBySchema.get(schemaId)) !==
+        canonicalStringify(previousBySchema.get(schemaId))
+      );
+    });
+
+    return {
+      added: added.sort((left, right) => left.localeCompare(right)),
+      changed: changed.sort((left, right) => left.localeCompare(right)),
+      removed: removed.sort((left, right) => left.localeCompare(right)),
+    };
+  }, [parsed?.schemaDocs, selectedRevision?.schemaDocs]);
+  const workspaceReviewChangelog = useMemo(
+    () => [
+      {
+        label: 'Schemas',
+        summary: `${parsed?.schemaDocs.length ?? 0} schema document(s) in current draft.`,
+      },
+      {
+        label: 'Workflows',
+        summary: `${parsed?.workflows.length ?? 0} workflow document(s) configured.`,
+      },
+      {
+        label: 'Actions',
+        summary: `${parsed?.actionManifest.length ?? 0} action(s) declared in manifest.`,
+      },
+    ],
+    [parsed],
+  );
+  const workspacePublishGateDiagnostics = useMemo<PluginBuildDiagnostic[]>(
+    () =>
+      workspaceCompileDiagnostics.map((diagnostic) => ({
+        code: diagnostic.code,
+        severity: diagnostic.severity,
+        path: diagnostic.path,
+        message: diagnostic.message,
+      })),
+    [workspaceCompileDiagnostics],
+  );
+  const workspacePublishGateState = useMemo(
+    () =>
+      createPublishGateTabState({
+        diagnostics: workspacePublishGateDiagnostics,
+        reviewStatus: workspaceCompileDiagnostics.some(
+          (diagnostic) => diagnostic.severity === 'error',
+        )
+          ? 'required-pending'
+          : 'required-approved',
+        environment: 'production',
+        tenantId: actorUserId,
+        warningBlocklistPolicy: {
+          defaultWarningBlocklistByEnvironment: {
+            production: ['field-validation', 'hash-preview-failed'],
+          },
+        },
+        immutableRevision: {
+          revisionId: selectedRevision?.revisionId ?? 'draft.local',
+          summary: selectedDraft?.title || title || 'Plugin draft',
+          artifactHash:
+            hashPreviewQuery.data?.artifactHash ??
+            'pending-artifact-hash-preview',
+        },
+        isPublishConfirmationChecked: workspacePublishGateChecked,
+      }),
+    [
+      actorUserId,
+      hashPreviewQuery.data?.artifactHash,
+      selectedDraft?.title,
+      selectedRevision?.revisionId,
+      title,
+      workspaceCompileDiagnostics,
+      workspacePublishGateChecked,
+      workspacePublishGateDiagnostics,
+    ],
+  );
 
   useEffect(() => {
     const nextOptions = blocklyComparableFields.length
@@ -3408,6 +3799,208 @@ function PluginStudioRoute() {
             </CardContent>
           </Card>
         </div>
+
+        <Card className="border-border bg-gradient-to-br from-card to-muted/20">
+          <CardHeader>
+            <CardTitle className="text-base">Workspace Tab Integrations</CardTitle>
+            <CardDescription>
+              Unified view of all plugin-builder workspace modules wired into the
+              current plugin studio state.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-4 xl:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Overview</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <OverviewTab
+                    metadata={{
+                      pluginId,
+                      pluginName: title,
+                      namespace: schemaBuilder.schemaId,
+                      status: selectedRevision ? 'review' : 'draft',
+                    }}
+                    collaborators={[
+                      {
+                        id: actorUserId,
+                        name: user.pub || actorUserId,
+                        role: 'owner',
+                        isActive: true,
+                      },
+                    ]}
+                    activeDraft={
+                      selectedDraft
+                        ? {
+                            draftId: selectedDraft.draftId,
+                            updatedAt: selectedDraft.updatedAt,
+                            updatedBy: selectedDraft.ownerUserId,
+                          }
+                        : null
+                    }
+                    latestImmutableRevision={
+                      selectedRevision
+                        ? {
+                            revisionId: selectedRevision.revisionId,
+                            publishedAt: selectedRevision.createdAt,
+                            publishedBy: selectedRevision.authorUserId,
+                            note: selectedDraft?.title,
+                          }
+                        : null
+                    }
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Schemas</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <SchemasTab
+                    schemas={workspaceSchemasAndFields.schemas}
+                    fields={workspaceSchemasAndFields.fields}
+                    activeSchemaId={workspaceActiveSchemaId}
+                    expandedFieldIds={[]}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Field Config Panel</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-xs">
+                  <p className="text-muted-foreground">
+                    Model and serialized payload from current first schema field.
+                  </p>
+                  <pre className="overflow-x-auto rounded border bg-muted/20 p-2">
+                    {canonicalStringify(workspaceFieldConfigModel.model)}
+                  </pre>
+                  <pre className="overflow-x-auto rounded border bg-muted/20 p-2">
+                    {canonicalStringify(workspaceFieldConfigModel.draft)}
+                  </pre>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Expression Row Builder</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <ExpressionRowBuilder rows={expressionRows} />
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Guarded IR Editor</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <GuardedIrEditor
+                    state={guardedIrState}
+                    onModeChange={(mode) =>
+                      setGuardedIrState((current) =>
+                        switchGuardedIrEditorMode(current, mode),
+                      )
+                    }
+                    onIrTextChange={(nextText) => {
+                      const next = applyGuardedIrDraftText(guardedIrState, nextText);
+                      setGuardedIrState(next);
+                      if (next.canSave) {
+                        setSchemaText(next.irText);
+                      }
+                    }}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Workflow Graph Editor</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <WorkflowGraphEditor workflow={workspaceWorkflow} />
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Actions Manifest</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <ActionsManifestEditor
+                    actionManifest={workspaceActionsManifestState.actionManifest}
+                    workflows={workspaceActionsManifestState.workflows}
+                    capabilityEnvelope={
+                      workspaceActionsManifestState.capabilityEnvelope
+                    }
+                    runtimeTarget={workspaceActionsManifestState.runtimeTarget}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Routes & Tabs Mapper</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <RoutesTabsMapperTab result={workspaceRoutesTabsResult} />
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Review Diagnostics</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <ReviewDiagnosticsTab
+                    diagnostics={workspaceCompileDiagnostics}
+                    artifactDiff={workspaceArtifactDiff}
+                    hashPreview={{
+                      manifestHash:
+                        hashPreviewQuery.data?.manifestHash ??
+                        'pending-manifest-hash-preview',
+                      artifactHash:
+                        hashPreviewQuery.data?.artifactHash ??
+                        'pending-artifact-hash-preview',
+                    }}
+                    changelog={workspaceReviewChangelog}
+                  />
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Publish Gate</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm">
+                  <PublishGateTab
+                    state={workspacePublishGateState}
+                    onPublishConfirmationChange={(checked) => {
+                      const nextPublishGateState = setPublishConfirmationChecked(
+                        workspacePublishGateState,
+                        checked,
+                      );
+                      setWorkspacePublishGateChecked(
+                        nextPublishGateState.isPublishConfirmationChecked,
+                      );
+                    }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="border-border/80 bg-gradient-to-br from-card to-accent/20">
           <CardHeader>

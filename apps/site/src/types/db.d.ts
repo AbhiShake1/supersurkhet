@@ -1227,6 +1227,383 @@ declare global {
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
+     readonly pluginV2Diagnostics: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     draftId: import("zod").ZodString;
+     revisionId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     environment: import("zod").ZodDefault<import("zod").ZodString>;
+     status: import("zod").ZodDefault<import("zod").ZodEnum<["ready", "blocking"]>>;
+     diagnostics: import("zod").ZodArray<import("zod").ZodObject<{
+     category: import("zod").ZodEnum<["schema-compile", "derivation-compile", "refinement-compile", "workflow-validation", "capability-validation"]>;
+     code: import("zod").ZodString;
+     severity: import("zod").ZodEnum<["error", "warning", "info"]>;
+     message: import("zod").ZodString;
+     path: import("zod").ZodArray<import("zod").ZodString, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     code: string;
+     path: string[];
+     message: string;
+     category: "schema-compile" | "derivation-compile" | "refinement-compile" | "workflow-validation" | "capability-validation";
+     severity: "error" | "warning" | "info";
+    }, {
+     code: string;
+     path: string[];
+     message: string;
+     category: "schema-compile" | "derivation-compile" | "refinement-compile" | "workflow-validation" | "capability-validation";
+     severity: "error" | "warning" | "info";
+    }>, "many">;
+     artifactDiff: import("zod").ZodObject<{
+     added: import("zod").ZodArray<import("zod").ZodString, "many">;
+     changed: import("zod").ZodArray<import("zod").ZodString, "many">;
+     removed: import("zod").ZodArray<import("zod").ZodString, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     added: string[];
+     changed: string[];
+     removed: string[];
+    }, {
+     added: string[];
+     changed: string[];
+     removed: string[];
+    }>;
+     hashPreview: import("zod").ZodObject<{
+     manifestHash: import("zod").ZodString;
+     artifactHash: import("zod").ZodString;
+    }, "strip", import("zod").ZodTypeAny, {
+     manifestHash: string;
+     artifactHash: string;
+    }, {
+     manifestHash: string;
+     artifactHash: string;
+    }>;
+     createdByUserId: import("zod").ZodString;
+     createdAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "ready" | "blocking";
+     id: string;
+     pluginId: string;
+     draftId: string;
+     createdAt: string;
+     revisionId: string;
+     createdByUserId: string;
+     environment: string;
+     diagnostics: {
+     code: string;
+     path: string[];
+     message: string;
+     category: "schema-compile" | "derivation-compile" | "refinement-compile" | "workflow-validation" | "capability-validation";
+     severity: "error" | "warning" | "info";
+    }[];
+     artifactDiff: {
+     added: string[];
+     changed: string[];
+     removed: string[];
+    };
+     hashPreview: {
+     manifestHash: string;
+     artifactHash: string;
+    };
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     id: string;
+     pluginId: string;
+     draftId: string;
+     createdAt: string;
+     revisionId: string;
+     createdByUserId: string;
+     diagnostics: {
+     code: string;
+     path: string[];
+     message: string;
+     category: "schema-compile" | "derivation-compile" | "refinement-compile" | "workflow-validation" | "capability-validation";
+     severity: "error" | "warning" | "info";
+    }[];
+     artifactDiff: {
+     added: string[];
+     changed: string[];
+     removed: string[];
+    };
+     hashPreview: {
+     manifestHash: string;
+     artifactHash: string;
+    };
+     status?: "ready" | "blocking" | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     environment?: string | undefined;
+    }>;
+     readonly title: "Plugin V2 Diagnostics";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginPublishReview: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     draftId: import("zod").ZodString;
+     revisionId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     environment: import("zod").ZodDefault<import("zod").ZodString>;
+     status: import("zod").ZodEnum<["not-required", "required-pending", "approved"]>;
+     approvedByUserId: import("zod").ZodOptional<import("zod").ZodString>;
+     decidedAt: import("zod").ZodString;
+     note: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "not-required" | "required-pending" | "approved";
+     id: string;
+     pluginId: string;
+     draftId: string;
+     revisionId: string;
+     environment: string;
+     decidedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     approvedByUserId?: string | undefined;
+     note?: string | undefined;
+    }, {
+     status: "not-required" | "required-pending" | "approved";
+     id: string;
+     pluginId: string;
+     draftId: string;
+     revisionId: string;
+     decidedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     environment?: string | undefined;
+     approvedByUserId?: string | undefined;
+     note?: string | undefined;
+    }>;
+     readonly title: "Plugin Publish Reviews";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginActionCapabilityEnvelope: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     businessId: import("zod").ZodString;
+     environment: import("zod").ZodDefault<import("zod").ZodString>;
+     runtimeTarget: import("zod").ZodDefault<import("zod").ZodEnum<["sandbox-worker", "core"]>>;
+     capabilities: import("zod").ZodArray<import("zod").ZodString, "many">;
+     deniedActionIds: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     updatedByUserId: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     businessId: string;
+     capabilities: string[];
+     updatedAt: string;
+     environment: string;
+     runtimeTarget: "sandbox-worker" | "core";
+     updatedByUserId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     deniedActionIds?: string[] | undefined;
+    }, {
+     id: string;
+     businessId: string;
+     capabilities: string[];
+     updatedAt: string;
+     updatedByUserId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     environment?: string | undefined;
+     runtimeTarget?: "sandbox-worker" | "core" | undefined;
+     deniedActionIds?: string[] | undefined;
+    }>;
+     readonly title: "Plugin Capability Envelopes";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginRoutesTabsConfig: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     draftId: import("zod").ZodString;
+     revisionId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     businessSlug: import("zod").ZodString;
+     routes: import("zod").ZodArray<import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     schema: import("zod").ZodString;
+     title: import("zod").ZodString;
+     group: import("zod").ZodOptional<import("zod").ZodString>;
+     order: import("zod").ZodNumber;
+     routeSegment: import("zod").ZodString;
+     routePath: import("zod").ZodString;
+     iconName: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schema: string;
+     order: number;
+     id: string;
+     title: string;
+     routeSegment: string;
+     routePath: string;
+     group?: string | undefined;
+     iconName?: string | undefined;
+    }, {
+     schema: string;
+     order: number;
+     id: string;
+     title: string;
+     routeSegment: string;
+     routePath: string;
+     group?: string | undefined;
+     iconName?: string | undefined;
+    }>, "many">;
+     diagnostics: import("zod").ZodArray<import("zod").ZodObject<{
+     code: import("zod").ZodEnum<["duplicate-route", "invalid-icon"]>;
+     message: import("zod").ZodString;
+     path: import("zod").ZodArray<import("zod").ZodString, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     code: "duplicate-route" | "invalid-icon";
+     path: string[];
+     message: string;
+    }, {
+     code: "duplicate-route" | "invalid-icon";
+     path: string[];
+     message: string;
+    }>, "many">;
+     savedByUserId: import("zod").ZodString;
+     savedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     pluginId: string;
+     draftId: string;
+     revisionId: string;
+     diagnostics: {
+     code: "duplicate-route" | "invalid-icon";
+     path: string[];
+     message: string;
+    }[];
+     businessSlug: string;
+     routes: {
+     schema: string;
+     order: number;
+     id: string;
+     title: string;
+     routeSegment: string;
+     routePath: string;
+     group?: string | undefined;
+     iconName?: string | undefined;
+    }[];
+     savedByUserId: string;
+     savedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     id: string;
+     pluginId: string;
+     draftId: string;
+     revisionId: string;
+     diagnostics: {
+     code: "duplicate-route" | "invalid-icon";
+     path: string[];
+     message: string;
+    }[];
+     businessSlug: string;
+     routes: {
+     schema: string;
+     order: number;
+     id: string;
+     title: string;
+     routeSegment: string;
+     routePath: string;
+     group?: string | undefined;
+     iconName?: string | undefined;
+    }[];
+     savedByUserId: string;
+     savedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>;
+     readonly title: "Plugin Routes Tabs Config";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
      readonly pluginSchemaDoc: {
      readonly schema: import("zod").ZodObject<{
      pluginId: import("zod").ZodString;
@@ -1363,10 +1740,10 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
+     category?: string | undefined;
      sellingPrice?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
-     category?: string | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
      isFeatured?: boolean | undefined;
@@ -1383,11 +1760,11 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
+     category?: string | undefined;
      sellingPrice?: number | undefined;
      stockQuantity?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
-     category?: string | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
      isFeatured?: boolean | undefined;
@@ -1498,10 +1875,10 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
+     category?: string | undefined;
      sellingPrice?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
-     category?: string | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
      isFeatured?: boolean | undefined;
@@ -1520,11 +1897,11 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      description?: string | undefined;
+     category?: string | undefined;
      sellingPrice?: number | undefined;
      stockQuantity?: number | undefined;
      barcode?: string | undefined;
      reorderLevel?: number | undefined;
-     category?: string | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
      isFeatured?: boolean | undefined;
@@ -2509,16 +2886,16 @@ declare global {
      error: import("zod").ZodOptional<import("zod").ZodNumber>;
      progress: import("zod").ZodOptional<import("zod").ZodNumber>;
     }, "strip", import("zod").ZodTypeAny, {
+     error?: number | undefined;
      started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
-     error?: number | undefined;
      progress?: number | undefined;
     }, {
+     error?: number | undefined;
      started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
-     error?: number | undefined;
      progress?: number | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
@@ -2527,10 +2904,10 @@ declare global {
      description?: string | undefined;
      config?: Record<string, any> | undefined;
      stats?: {
+     error?: number | undefined;
      started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
-     error?: number | undefined;
      progress?: number | undefined;
     } | undefined;
     }, {
@@ -2539,10 +2916,10 @@ declare global {
      description?: string | undefined;
      config?: Record<string, any> | undefined;
      stats?: {
+     error?: number | undefined;
      started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
-     error?: number | undefined;
      progress?: number | undefined;
     } | undefined;
     }>;
@@ -2559,10 +2936,10 @@ declare global {
      description?: string | undefined;
      config?: Record<string, any> | undefined;
      stats?: {
+     error?: number | undefined;
      started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
-     error?: number | undefined;
      progress?: number | undefined;
     } | undefined;
     };
@@ -2579,10 +2956,10 @@ declare global {
      description?: string | undefined;
      config?: Record<string, any> | undefined;
      stats?: {
+     error?: number | undefined;
      started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
-     error?: number | undefined;
      progress?: number | undefined;
     } | undefined;
     };
@@ -2660,10 +3037,10 @@ declare global {
      description?: string | undefined;
      config?: Record<string, any> | undefined;
      stats?: {
+     error?: number | undefined;
      started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
-     error?: number | undefined;
      progress?: number | undefined;
     } | undefined;
     };
@@ -2709,10 +3086,10 @@ declare global {
      description?: string | undefined;
      config?: Record<string, any> | undefined;
      stats?: {
+     error?: number | undefined;
      started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
-     error?: number | undefined;
      progress?: number | undefined;
     } | undefined;
     };

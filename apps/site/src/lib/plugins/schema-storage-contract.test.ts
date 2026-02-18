@@ -3,10 +3,14 @@ import {
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
   coreSchema,
+  pluginActionCapabilityEnvelopeSchema,
   pluginDraftRevisionSchema,
   pluginDraftSchema,
+  pluginPublishReviewSchema,
   pluginRecordSchema,
   pluginReleaseSchema,
+  pluginRoutesTabsConfigSchema,
+  pluginV2DiagnosticsSchema,
 } from '@/lib/schema';
 
 describe('plugin storage schema contracts', () => {
@@ -17,6 +21,10 @@ describe('plugin storage schema contracts', () => {
     expect(coreSchema.rawShape).toHaveProperty('pluginDraftRevision');
     expect(coreSchema.rawShape).toHaveProperty('businessPluginDraftInstall');
     expect(coreSchema.rawShape).toHaveProperty('pluginRecord');
+    expect(coreSchema.rawShape).toHaveProperty('pluginV2Diagnostics');
+    expect(coreSchema.rawShape).toHaveProperty('pluginPublishReview');
+    expect(coreSchema.rawShape).toHaveProperty('pluginActionCapabilityEnvelope');
+    expect(coreSchema.rawShape).toHaveProperty('pluginRoutesTabsConfig');
   });
 
   it('uses deterministic release id and immutable author/visibility metadata', () => {
@@ -112,5 +120,94 @@ describe('plugin storage schema contracts', () => {
     });
 
     expect(parsed.namespacePath).toContain('acme.inventory');
+  });
+
+  it('stores compile/verify diagnostics snapshots for review gates', () => {
+    const parsed = pluginV2DiagnosticsSchema.parse({
+      id: 'draft-1@rev-2',
+      draftId: 'draft-1',
+      revisionId: 'rev-2',
+      pluginId: 'acme.inventory',
+      environment: 'production',
+      status: 'blocking',
+      diagnostics: [
+        {
+          category: 'schema-compile',
+          code: 'invalid-field',
+          severity: 'error',
+          message: 'Invalid field config',
+          path: ['schemaDocs', 'inventory', 'fields', '0'],
+        },
+      ],
+      artifactDiff: {
+        added: ['inventory'],
+        changed: [],
+        removed: [],
+      },
+      hashPreview: {
+        manifestHash: 'manifest-hash-2',
+        artifactHash: 'artifact-hash-2',
+      },
+      createdByUserId: 'reviewer-1',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(parsed.status).toBe('blocking');
+  });
+
+  it('stores publish review approvals against immutable revisions', () => {
+    const parsed = pluginPublishReviewSchema.parse({
+      id: 'draft-1@rev-2@production',
+      draftId: 'draft-1',
+      revisionId: 'rev-2',
+      pluginId: 'acme.inventory',
+      environment: 'production',
+      status: 'approved',
+      approvedByUserId: 'owner-1',
+      decidedAt: '2026-01-01T00:00:00.000Z',
+      note: 'Looks good',
+    });
+
+    expect(parsed.status).toBe('approved');
+  });
+
+  it('stores capability envelopes for action manifest validation', () => {
+    const parsed = pluginActionCapabilityEnvelopeSchema.parse({
+      id: 'business-1::production',
+      businessId: 'business-1',
+      environment: 'production',
+      runtimeTarget: 'sandbox-worker',
+      capabilities: ['db.read', 'db.write'],
+      deniedActionIds: ['acme.inventory.delete'],
+      updatedByUserId: 'owner-1',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(parsed.runtimeTarget).toBe('sandbox-worker');
+  });
+
+  it('stores routes-tabs mappings for runtime navigation parity', () => {
+    const parsed = pluginRoutesTabsConfigSchema.parse({
+      id: 'draft-1@rev-2',
+      draftId: 'draft-1',
+      revisionId: 'rev-2',
+      pluginId: 'acme.inventory',
+      businessSlug: 'acme',
+      routes: [
+        {
+          id: 'tab_inventory',
+          schema: 'inventory',
+          title: 'Inventory',
+          routePath: '/acme/inventory',
+          routeSegment: 'inventory',
+          order: 0,
+        },
+      ],
+      diagnostics: [],
+      savedByUserId: 'owner-1',
+      savedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(parsed.routes[0]?.routePath).toBe('/acme/inventory');
   });
 });

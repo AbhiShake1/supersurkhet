@@ -112,4 +112,20 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('createPluginDraftRevision');
     expect(content).toContain('Save Draft Revision');
   });
+
+  it('integrates all plugin-builder workspace modules into the studio route', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('OverviewTab');
+    expect(content).toContain('SchemasTab');
+    expect(content).toContain('serializeFieldConfigPanelDraft');
+    expect(content).toContain('ExpressionRowBuilder');
+    expect(content).toContain('GuardedIrEditor');
+    expect(content).toContain('WorkflowGraphEditor');
+    expect(content).toContain('ActionsManifestEditor');
+    expect(content).toContain('RoutesTabsMapperTab');
+    expect(content).toContain('ReviewDiagnosticsTab');
+    expect(content).toContain('PublishGateTab');
+    expect(content).toContain('Workspace Tab Integrations');
+  });
 });

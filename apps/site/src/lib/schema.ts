@@ -21,11 +21,15 @@ import { dataMatrixActionSchema } from './datamatrix';
 import {
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
+  pluginActionCapabilityEnvelopeSchema,
   pluginDraftRevisionSchema,
   pluginDraftSchema,
+  pluginPublishReviewSchema,
   pluginRecordSchema,
   pluginReleaseSchema,
+  pluginRoutesTabsConfigSchema,
   pluginSchemaDocStorageSchema,
+  pluginV2DiagnosticsSchema,
   pluginWorkflowDocStorageSchema,
 } from './schema/plugins';
 import type {
@@ -293,6 +297,30 @@ export const coreSchema = createSchema({
     icon: Folder,
     group: 'Plugin Platform',
   },
+  pluginV2Diagnostics: {
+    schema: pluginV2DiagnosticsSchema,
+    title: 'Plugin V2 Diagnostics',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  pluginPublishReview: {
+    schema: pluginPublishReviewSchema,
+    title: 'Plugin Publish Reviews',
+    icon: Clock,
+    group: 'Plugin Platform',
+  },
+  pluginActionCapabilityEnvelope: {
+    schema: pluginActionCapabilityEnvelopeSchema,
+    title: 'Plugin Capability Envelopes',
+    icon: Lock,
+    group: 'Plugin Platform',
+  },
+  pluginRoutesTabsConfig: {
+    schema: pluginRoutesTabsConfigSchema,
+    title: 'Plugin Routes Tabs Config',
+    icon: MapIcon,
+    group: 'Plugin Platform',
+  },
   pluginSchemaDoc: {
     schema: pluginSchemaDocStorageSchema,
     title: 'Plugin Schema Docs',
@@ -524,17 +552,25 @@ export type PluginDraftRevision = InferredTable<'pluginDraftRevision'>;
 export type BusinessPluginDraftInstall =
   InferredTable<'businessPluginDraftInstall'>;
 export type PluginRecord = InferredTable<'pluginRecord'>;
+export type PluginV2Diagnostics = InferredTable<'pluginV2Diagnostics'>;
+export type PluginPublishReview = InferredTable<'pluginPublishReview'>;
+export type PluginActionCapabilityEnvelope = InferredTable<'pluginActionCapabilityEnvelope'>;
+export type PluginRoutesTabsConfig = InferredTable<'pluginRoutesTabsConfig'>;
 // #endregion
 
 export {
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
   compilePluginSchemasFromDocs,
+  pluginActionCapabilityEnvelopeSchema,
   pluginDraftRevisionSchema,
   pluginDraftSchema,
+  pluginPublishReviewSchema,
   pluginRecordSchema,
   pluginReleaseSchema,
+  pluginRoutesTabsConfigSchema,
   pluginSchemaDocStorageSchema,
+  pluginV2DiagnosticsSchema,
   pluginWorkflowDocStorageSchema,
 } from './schema/plugins';
 
