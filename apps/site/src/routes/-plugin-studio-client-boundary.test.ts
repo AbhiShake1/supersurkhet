@@ -1,8 +1,11 @@
-import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
 
-const pluginStudioRoutePath = resolve(process.cwd(), 'src/routes/plugin-studio.tsx');
+const pluginStudioRoutePath = resolve(
+  process.cwd(),
+  'src/routes/plugin-studio.tsx',
+);
 
 function getRouteContent() {
   return readFileSync(pluginStudioRoutePath, 'utf8');
@@ -46,12 +49,12 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('mx-auto w-full max-w-7xl');
   });
 
-  it('supports both guided and advanced plugin creation flows', () => {
+  it('supports a no-code plugin builder flow and hides JSON editing', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('Guided Builder');
-    expect(content).toContain('Advanced JSON');
-    expect(content).toContain('builderMode');
+    expect(content).toContain('No-Code Builder');
+    expect(content).not.toContain('Advanced JSON');
+    expect(content).not.toContain('<textarea');
   });
 
   it('applies template presets through a dedicated template handler', () => {
@@ -59,5 +62,33 @@ describe('plugin-studio client boundary', () => {
 
     expect(content).toContain('applyTemplatePreset');
     expect(content).toContain('Loaded template');
+  });
+
+  it('uses type-aware rule field selectors instead of free text', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('availableRuleFieldsByType');
+    expect(content).toContain('Cross-Field Validation Rules');
+  });
+
+  it('restricts cross-field comparisons to a different compatible field', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('leftRuleFields');
+    expect(content).toContain('fieldKey !== nextLeftField');
+  });
+
+  it('exposes a Blockly composer entrypoint for advanced logic', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('Blockly Composer');
+    expect(content).toContain('Compose Logic');
+  });
+
+  it('adds preset logic actions inside the Blockly composer', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('Preset Logic');
+    expect(content).toContain('getBlocklyPresets');
   });
 });
