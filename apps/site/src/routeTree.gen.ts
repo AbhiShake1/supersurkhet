@@ -26,6 +26,7 @@ import { Route as BusinessNameAdminIndexRouteImport } from './routes/$businessNa
 import { Route as BusinessNameAdminPluginsRouteImport } from './routes/$businessName/admin/plugins'
 import { Route as BusinessNameAdminInvitationRouteImport } from './routes/$businessName/admin/invitation'
 import { Route as BusinessNameAdminEditorRouteImport } from './routes/$businessName/admin/editor'
+import { Route as BusinessNameAdminPluginPluginIdRouteImport } from './routes/$businessName/admin/plugin/$pluginId'
 
 const S3testRoute = S3testRouteImport.update({
   id: '/s3test',
@@ -113,6 +114,12 @@ const BusinessNameAdminEditorRoute = BusinessNameAdminEditorRouteImport.update({
   path: '/admin/editor',
   getParentRoute: () => BusinessNameRoute,
 } as any)
+const BusinessNameAdminPluginPluginIdRoute =
+  BusinessNameAdminPluginPluginIdRouteImport.update({
+    id: '/admin/plugin/$pluginId',
+    path: '/admin/plugin/$pluginId',
+    getParentRoute: () => BusinessNameRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,6 +138,7 @@ export interface FileRoutesByFullPath {
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
   '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
+  '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -148,6 +156,7 @@ export interface FileRoutesByTo {
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
   '/$businessName/admin': typeof BusinessNameAdminIndexRoute
+  '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -168,6 +177,7 @@ export interface FileRoutesById {
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
   '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
   '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
+  '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/$businessName/admin/invitation'
     | '/$businessName/admin/plugins'
     | '/$businessName/admin/'
+    | '/$businessName/admin/plugin/$pluginId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/$businessName/admin/invitation'
     | '/$businessName/admin/plugins'
     | '/$businessName/admin'
+    | '/$businessName/admin/plugin/$pluginId'
   id:
     | '__root__'
     | '/'
@@ -224,6 +236,7 @@ export interface FileRouteTypes {
     | '/$businessName/admin/invitation'
     | '/$businessName/admin/plugins'
     | '/$businessName/admin/'
+    | '/$businessName/admin/plugin/$pluginId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -360,6 +373,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessNameAdminEditorRouteImport
       parentRoute: typeof BusinessNameRoute
     }
+    '/$businessName/admin/plugin/$pluginId': {
+      id: '/$businessName/admin/plugin/$pluginId'
+      path: '/admin/plugin/$pluginId'
+      fullPath: '/$businessName/admin/plugin/$pluginId'
+      preLoaderRoute: typeof BusinessNameAdminPluginPluginIdRouteImport
+      parentRoute: typeof BusinessNameRoute
+    }
   }
 }
 
@@ -369,6 +389,7 @@ interface BusinessNameRouteChildren {
   BusinessNameAdminInvitationRoute: typeof BusinessNameAdminInvitationRoute
   BusinessNameAdminPluginsRoute: typeof BusinessNameAdminPluginsRoute
   BusinessNameAdminIndexRoute: typeof BusinessNameAdminIndexRoute
+  BusinessNameAdminPluginPluginIdRoute: typeof BusinessNameAdminPluginPluginIdRoute
 }
 
 const BusinessNameRouteChildren: BusinessNameRouteChildren = {
@@ -377,6 +398,7 @@ const BusinessNameRouteChildren: BusinessNameRouteChildren = {
   BusinessNameAdminInvitationRoute: BusinessNameAdminInvitationRoute,
   BusinessNameAdminPluginsRoute: BusinessNameAdminPluginsRoute,
   BusinessNameAdminIndexRoute: BusinessNameAdminIndexRoute,
+  BusinessNameAdminPluginPluginIdRoute: BusinessNameAdminPluginPluginIdRoute,
 }
 
 const BusinessNameRouteWithChildren = BusinessNameRoute._addFileChildren(

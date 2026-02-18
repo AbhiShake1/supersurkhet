@@ -1,1268 +1,261 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import {
-  ArrowUpCircle,
-  CheckCircle2,
-  CircleAlert,
-  ExternalLink,
-  Eye,
-  FlaskConical,
-  Package,
-  Search,
-  Sparkles,
-  Wrench,
-  Zap,
-} from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { Search, Star } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
-import { useConfetti } from '@/components/confetti-provider';
 import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { api } from '@/lib/api';
-import {
-  buildPluginCatalog,
-  type PluginCatalogEntry,
-  type PluginCatalogFilter,
-  type PluginCatalogSort,
-  summarizePluginPortfolio,
-} from '@/lib/plugins/admin-plugin-catalog';
+import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
+import { buildMarketplaceGroups, type PluginMarketItem } from '@/lib/plugins/admin-plugin-market';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
-import type {
-  BusinessPluginDraftInstallDoc,
-  BusinessPluginInstallDoc,
-  PluginDraftDoc,
-  PluginDraftRevisionDoc,
-  PluginReleaseDoc,
-} from '@/lib/plugins/types';
-import { cn } from '@/lib/utils';
-import {
-  ensureMarketplaceSeedReleases,
-  installPluginDraftRevision,
-  installPluginRelease,
-  rollbackPluginRelease,
-  uninstallPluginRelease,
-} from '@/server-functions/plugins';
+import type { BusinessPluginInstallDoc, PluginReleaseDoc } from '@/lib/plugins/types';
+import { ensureMarketplaceSeedReleases } from '@/server-functions/plugins';
 
 export const Route = createFileRoute('/$businessName/admin/plugins')({
   component: PluginsRouteComponent,
 });
 
-const FILTER_OPTIONS: { value: PluginCatalogFilter; label: string }[] = [
-  { value: 'all', label: 'All plugins' },
-  { value: 'upgradable', label: 'Needs upgrade' },
-  { value: 'not-installed', label: 'Not installed' },
-];
-
-const SORT_OPTIONS: { value: PluginCatalogSort; label: string }[] = [
-  { value: 'recent', label: 'Most recent' },
-  { value: 'name', label: 'Plugin name' },
-  { value: 'capabilities', label: 'Capabilities' },
-  { value: 'versions', label: 'Release count' },
-];
-
-const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  dateStyle: 'medium',
-});
-
-function formatDate(date?: string): string {
-  if (!date) return 'Unknown date';
-  const parsed = Date.parse(date);
-  if (Number.isNaN(parsed)) return 'Unknown date';
-  return DATE_FORMATTER.format(parsed);
-}
-
-function shortenHash(hash?: string): string {
-  if (!hash) return 'n/a';
-  if (hash.length <= 14) return hash;
-  return `${hash.slice(0, 8)}...${hash.slice(-4)}`;
-}
-
-function metricValue(value: number, suffix?: string) {
-  return `${value}${suffix ?? ''}`;
-}
+type ChartType = 'top-free' | 'top-grossing' | 'top-paid';
 
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
   const { user } = useAuth();
-  const { fire: fireConfetti } = useConfetti();
   const [query, setQuery] = useState('');
-  const [marketFilter, setMarketFilter] = useState<PluginCatalogFilter>('all');
-  const [sortBy, setSortBy] = useState<PluginCatalogSort>('recent');
-  const [activeTab, setActiveTab] = useState<
-    'marketplace' | 'installed' | 'drafts'
-  >('marketplace');
-  const [showInitialSkeleton, setShowInitialSkeleton] = useState(true);
-  const { data: businesses = [], isLoading } = api.business.useGet({
-    keys: [businessName],
-    single: true,
-  });
+  const [chartType, setChartType] = useState<ChartType>('top-free');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [previewPlugin, setPreviewPlugin] = useState<PluginMarketItem | null>(null);
 
+  const { data: businesses = [], isLoading } = api.business.useGet({ keys: [businessName], single: true });
   const business = businesses[0];
   const businessId = business?.id ?? businessName;
   const actorUserId = user?._?.soul ?? 'anon';
-  const actorRole =
-    business?.members?.[actorUserId]?.role === 'owner'
-      ? 'owner'
-      : user?.role === 'admin'
-        ? 'admin'
-        : 'staff';
 
-  const ensureMarketplaceSeedIsAvailable = useCallback(async () => {
-    try {
-      await ensureMarketplaceSeedReleases({
-        data: {
-          actorUserId,
-        },
-      });
-    } catch (error) {
-      console.error('Failed to ensure marketplace seed releases:', error);
-      toast.error('Failed to load marketplace releases. Please try again.');
-      throw error;
-    }
-  }, [actorUserId]);
+  const { data: installRows = [] } = api.businessPluginInstall.useGet({ keys: [businessId] });
+  const { data: releaseRows = [] } = api.pluginRelease.useGet();
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setShowInitialSkeleton(false);
-    }, 1400);
-
-    // Ensure marketplace seed releases are available when component mounts.
-    void ensureMarketplaceSeedIsAvailable();
-
-    return () => window.clearTimeout(timeoutId);
-  }, [ensureMarketplaceSeedIsAvailable]);
-
-  const { data: installRows = [] } = api.businessPluginInstall.useGet({
-    keys: [businessId],
-  });
-  const { data: releaseRows = [] } = api.pluginRelease.useGet();
-  const { data: draftRows = [] } = api.pluginDraft.useGet();
-  const { data: revisionRows = [] } = api.pluginDraftRevision.useGet();
-  const { data: draftInstallRows = [] } = api.businessPluginDraftInstall.useGet(
-    {
-      keys: [businessId],
-    },
-  );
+    void ensureMarketplaceSeedReleases({ data: { actorUserId } });
+  }, [actorUserId]);
 
   const installs = installRows as BusinessPluginInstallDoc[];
   const liveReleases = releaseRows as PluginReleaseDoc[];
-  const releases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(liveReleases),
-    [liveReleases],
-  );
-  const liveReleaseIds = useMemo(
-    () => new Set(liveReleases.map((release) => release.id)),
-    [liveReleases],
-  );
-  const drafts = draftRows as PluginDraftDoc[];
-  const revisions = revisionRows as PluginDraftRevisionDoc[];
-  const draftInstalls = draftInstallRows as BusinessPluginDraftInstallDoc[];
+  const releases = useMemo(() => mergeMarketplaceReleasesWithSeed(liveReleases), [liveReleases]);
 
-  const latestRevisionByDraftId = useMemo(() => {
-    const map = new Map<string, PluginDraftRevisionDoc>();
-    for (const revision of revisions) {
-      const current = map.get(revision.draftId);
-      if (!current || revision.createdAt > current.createdAt) {
-        map.set(revision.draftId, revision);
-      }
-    }
-    return map;
-  }, [revisions]);
-
-  const draftInstallByDraftId = useMemo(
-    () =>
-      new Map<string, BusinessPluginDraftInstallDoc>(
-        draftInstalls.map((install) => [install.draftId, install]),
-      ),
-    [draftInstalls],
-  );
-
-  const fullCatalog = useMemo(
-    () =>
-      buildPluginCatalog({
-        releases,
-        installs,
-        query: '',
-        filter: 'all',
-        sort: 'name',
-      }),
+  const catalog = useMemo(
+    () => buildPluginCatalog({ releases, installs, query: '', filter: 'all', sort: 'name' }),
     [releases, installs],
   );
 
-  const marketplaceCatalog = useMemo(
-    () =>
-      buildPluginCatalog({
-        releases,
-        installs,
-        query,
-        filter: marketFilter,
-        sort: sortBy,
-      }),
-    [releases, installs, query, marketFilter, sortBy],
-  );
+  const marketplace = useMemo(() => buildMarketplaceGroups(catalog), [catalog]);
 
-  const installedCatalog = useMemo(
-    () =>
-      buildPluginCatalog({
-        releases,
-        installs,
-        query,
-        filter: 'installed',
-        sort: sortBy,
-      }),
-    [releases, installs, query, sortBy],
-  );
-
-  const upgradableCatalog = useMemo(
-    () => fullCatalog.filter((entry) => entry.isUpgradable),
-    [fullCatalog],
-  );
-
-  const visibleDrafts = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
-    const sorted = [...drafts].sort((left, right) =>
-      right.updatedAt.localeCompare(left.updatedAt),
-    );
-
-    if (!normalizedQuery) return sorted;
-
-    return sorted.filter((draft) => {
-      const haystack = [draft.pluginId, draft.title, draft.draftId]
-        .filter(Boolean)
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(normalizedQuery);
+  const visibleItems = useMemo(() => {
+    const normalized = query.trim().toLowerCase();
+    return marketplace.all.filter((plugin) => {
+      const matchesQuery =
+        normalized.length === 0 ||
+        [plugin.title, plugin.description, plugin.pluginId, plugin.category]
+          .join(' ')
+          .toLowerCase()
+          .includes(normalized);
+      const matchesCategory = selectedCategory === 'All' || plugin.category === selectedCategory;
+      return matchesQuery && matchesCategory;
     });
-  }, [drafts, query]);
+  }, [marketplace, query, selectedCategory]);
 
-  const topCapabilities = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const plugin of fullCatalog) {
-      for (const capability of plugin.capabilities) {
-        counts.set(capability, (counts.get(capability) ?? 0) + 1);
-      }
-    }
+  const topCharts =
+    chartType === 'top-grossing'
+      ? marketplace.topGrossing
+      : chartType === 'top-paid'
+        ? marketplace.topPaid
+        : marketplace.topFree;
 
-    return [...counts.entries()]
-      .sort(
-        (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
-      )
-      .slice(0, 8)
-      .map(([name, count]) => ({ name, count }));
-  }, [fullCatalog]);
-
-  const portfolio = useMemo(
-    () =>
-      summarizePluginPortfolio({
-        catalog: fullCatalog,
-        drafts,
-        draftInstalls,
-      }),
-    [fullCatalog, drafts, draftInstalls],
-  );
-
-  async function installDraft(params: {
-    pluginId: string;
-    draftId: string;
-    revisionId: string;
-  }) {
-    // Using a temporary approach for draft installations since they're less frequent
-    // In a real implementation, we'd want individual state management for drafts too
-    try {
-      await installPluginDraftRevision({
-        data: {
-          actorUserId,
-          actorRole,
-          businessId,
-          pluginId: params.pluginId,
-          draftId: params.draftId,
-          revisionId: params.revisionId,
-          teamId: 'default-team',
-        },
-      });
-      toast.success(`Installed ${params.draftId}@${params.revisionId}`);
-      fireConfetti();
-    } catch (error) {
-      console.error(error);
-      toast.error(`Failed to install ${params.draftId}@${params.revisionId}`);
-    }
-  }
-
-  async function upgradeAllOutdated() {
-    if (upgradableCatalog.length === 0) {
-      toast.success('All installed plugins are already on the latest release.');
-      return;
-    }
-
-    // For bulk operations, we'll use a simple approach without individual state management
-    try {
-      const results = await Promise.allSettled(
-        upgradableCatalog.map((entry) =>
-          installPluginRelease({
-            data: {
-              actorUserId,
-              actorRole,
-              businessId,
-              pluginId: entry.pluginId,
-              version: entry.latestRelease.version,
-              explicitOwnerAction: true,
-            },
-          }),
-        ),
-      );
-
-      const successful = results.filter(
-        (result) => result.status === 'fulfilled',
-      ).length;
-      const failed = results.length - successful;
-
-      if (successful > 0) {
-        toast.success(
-          `Upgraded ${successful} plugin${successful === 1 ? '' : 's'}.`,
-        );
-      }
-      if (failed > 0) {
-        toast.error(
-          `${failed} plugin upgrade${failed === 1 ? '' : 's'} failed. Check logs.`,
-        );
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error('Bulk upgrade failed');
-    }
-  }
-
-  if (showInitialSkeleton && isLoading && !business) {
+  if (isLoading && !business) {
     return <PluginsPageSkeleton />;
   }
 
   return (
-    <div className="relative mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8 overflow-x-hidden">
-      <div className="pointer-events-none absolute -left-16 -top-24 -z-10 h-72 w-72 rounded-full bg-amber-300/20 blur-3xl dark:bg-amber-700/15" />
-      <div className="pointer-events-none absolute -right-16 -top-20 -z-10 h-80 w-80 rounded-full bg-cyan-300/20 blur-3xl dark:bg-cyan-700/15" />
-
-      <section className="relative overflow-hidden rounded-2xl border border-border/70 bg-gradient-to-br from-amber-50/70 via-background to-cyan-50/70 p-5 shadow-sm md:p-7 dark:from-amber-950/15 dark:to-cyan-950/15">
-        <div className="pointer-events-none absolute -right-20 top-0 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl dark:bg-cyan-600/20" />
-        <div className="pointer-events-none absolute -left-24 bottom-0 h-64 w-64 rounded-full bg-amber-400/20 blur-3xl dark:bg-amber-600/20" />
-
-        <div className="relative flex flex-col gap-6">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-2 max-w-2xl">
-              <div className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-100/80 px-3 py-1 text-xs font-medium text-amber-900 dark:border-amber-500/20 dark:bg-amber-950/40 dark:text-amber-200">
-                <Sparkles className="size-3.5" />
-                Plugin Control Center
-              </div>
-              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-                Run your plugin ecosystem like an operations console.
-              </h1>
-              <p className="text-sm text-muted-foreground md:text-base">
-                Discover releases, pin exact versions, ship draft revisions, and
-                close upgrade gaps before they become incidents.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" asChild>
-                <Link to="/$businessName/admin" params={{ businessName }}>
-                  Back to Admin
-                </Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link to="/plugin-studio">
-                  Plugin Studio
-                  <ExternalLink className="ml-2 size-4" />
-                </Link>
-              </Button>
-              <Button
-                onClick={upgradeAllOutdated}
-                disabled={upgradableCatalog.length === 0}
-              >
-                <ArrowUpCircle className="mr-2 size-4" />
-                Upgrade All ({upgradableCatalog.length})
-              </Button>
-            </div>
+    <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 md:px-8">
+      <section className="rounded-3xl border border-border/60 bg-gradient-to-br from-emerald-50 via-background to-cyan-50 p-6 shadow-sm dark:from-emerald-950/20 dark:to-cyan-950/20">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
+            <Badge variant="outline" className="rounded-full">Plugin Marketplace</Badge>
+            <h1 className="text-3xl font-semibold tracking-tight">Discover apps for your admin dashboard</h1>
+            <p className="max-w-3xl text-sm text-muted-foreground">
+              Browse by charts and categories. Install is only available on plugin details pages.
+            </p>
           </div>
+          <Button asChild variant="outline">
+            <Link to="/$businessName/admin" params={{ businessName }}>Back to Admin</Link>
+          </Button>
+        </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <MetricCard
-              label="Installed Coverage"
-              value={metricValue(portfolio.installCoveragePercent, '%')}
-              description={`${portfolio.installedPlugins}/${portfolio.totalPlugins} marketplace plugins pinned`}
-              icon={Package}
-            />
-            <MetricCard
-              label="Upgrade Queue"
-              value={metricValue(portfolio.upgradablePlugins)}
-              description="installed plugins are behind latest release"
-              icon={CircleAlert}
-              tone={portfolio.upgradablePlugins > 0 ? 'warn' : 'ok'}
-            />
-            <MetricCard
-              label="Draft Adoption"
-              value={metricValue(portfolio.draftCoveragePercent, '%')}
-              description={`${portfolio.installedDrafts}/${portfolio.totalDrafts} team drafts installed`}
-              icon={FlaskConical}
-            />
-            <MetricCard
-              label="Capability Surface"
-              value={metricValue(topCapabilities.length)}
-              description="high-signal capabilities across plugin catalog"
-              icon={Zap}
-            />
+        <div className="mt-6 flex flex-col gap-3 md:flex-row">
+          <Input
+            leadingIcon={<Search className="size-4" />}
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Search plugins"
+            className="pl-9"
+          />
+          <div className="flex flex-wrap gap-2">
+            {(['top-free', 'top-grossing', 'top-paid'] as const).map((type) => (
+              <Button
+                key={type}
+                size="sm"
+                variant={chartType === type ? 'default' : 'outline'}
+                onClick={() => setChartType(type)}
+              >
+                {type === 'top-free' ? 'Top free' : type === 'top-grossing' ? 'Top grossing' : 'Top paid'}
+              </Button>
+            ))}
           </div>
         </div>
       </section>
 
-      <Card className="border-border/70 py-4 gap-4">
-        <CardContent className="space-y-4 px-4 md:px-6">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-            <Input
-              leadingIcon={<Search className="size-4" />}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search by plugin id, title, description, or capability"
-              className="pl-9"
-            />
-
-            <div className="flex flex-wrap items-center gap-2">
-              {FILTER_OPTIONS.map((option) => (
-                <Button
-                  key={option.value}
-                  variant={
-                    marketFilter === option.value ? 'default' : 'outline'
-                  }
-                  size="sm"
-                  onClick={() => {
-                    setActiveTab('marketplace');
-                    setMarketFilter(option.value);
-                  }}
-                >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
-
-            <Select
-              value={sortBy}
-              onValueChange={(value) => setSortBy(value as PluginCatalogSort)}
+      <Card className="py-5">
+        <CardHeader className="px-5 pt-0">
+          <CardTitle className="text-2xl">Top charts</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 px-5 md:grid-cols-2 xl:grid-cols-3">
+          {topCharts.slice(0, 12).map((plugin, index) => (
+            <Link
+              key={`${plugin.pluginId}:${index.toString()}`}
+              to="/$businessName/admin/plugin/$pluginId"
+              params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+              className="group flex items-center gap-3 rounded-xl border p-3 transition-colors hover:border-primary/40"
             >
-              <SelectTrigger className="w-full md:w-[220px]">
-                <SelectValue placeholder="Sort plugins" />
-              </SelectTrigger>
-              <SelectContent>
-                {SORT_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Separator />
-
-          <Tabs
-            value={activeTab}
-            onValueChange={(value) =>
-              setActiveTab(value as 'marketplace' | 'installed' | 'drafts')
-            }
-          >
-            <TabsList className="w-full flex flex-wrap justify-start gap-2 border-none bg-transparent p-0">
-              <TabsTrigger
-                value="marketplace"
-                className="after:hidden rounded-md border px-3 data-[state=active]:border-primary/30 data-[state=active]:bg-primary/10"
-              >
-                Marketplace
-                <Badge variant="secondary" className="ml-2">
-                  {marketplaceCatalog.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger
-                value="installed"
-                className="after:hidden rounded-md border px-3 data-[state=active]:border-primary/30 data-[state=active]:bg-primary/10"
-              >
-                Installed
-                <Badge variant="secondary" className="ml-2">
-                  {installedCatalog.length}
-                </Badge>
-              </TabsTrigger>
-              <TabsTrigger
-                value="drafts"
-                className="after:hidden rounded-md border px-3 data-[state=active]:border-primary/30 data-[state=active]:bg-primary/10"
-              >
-                Drafts
-                <Badge variant="secondary" className="ml-2">
-                  {visibleDrafts.length}
-                </Badge>
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="marketplace" className="mt-4">
-              {marketplaceCatalog.length === 0 ? (
-                <Card className="border-dashed py-10">
-                  <CardContent className="flex flex-col items-center gap-3 text-center">
-                    <Wrench className="size-7 text-muted-foreground" />
-                    <p className="font-medium">
-                      No plugins match this filter yet.
-                    </p>
-                    <p className="text-sm text-muted-foreground max-w-md">
-                      Try adjusting the search or filter state, or publish a
-                      release from Plugin Studio.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-                  {marketplaceCatalog.map((entry) => (
-                    <MarketplacePluginCard
-                      key={entry.pluginId}
-                      entry={entry}
-                      isSeedOnlyLatest={
-                        !liveReleaseIds.has(entry.latestRelease.id)
-                      }
-                      businessName={businessName}
-                      actorUserId={actorUserId}
-                      actorRole={actorRole}
-                      businessId={businessId}
-                      ensureMarketplaceSeedIsAvailable={
-                        ensureMarketplaceSeedIsAvailable
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="installed" className="mt-4">
-              {installedCatalog.length === 0 ? (
-                <Card className="border-dashed py-10">
-                  <CardContent className="flex flex-col items-center gap-3 text-center">
-                    <Package className="size-7 text-muted-foreground" />
-                    <p className="font-medium">
-                      No plugins pinned for this business.
-                    </p>
-                    <p className="text-sm text-muted-foreground max-w-md">
-                      Install a marketplace release to lock your runtime and
-                      manage upgrades safely.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {installedCatalog.map((entry) => {
-                    const install = entry.installed;
-                    if (!install) return null;
-
-                    return (
-                      <InstalledPluginCard
-                        key={entry.pluginId}
-                        entry={entry}
-                        install={install}
-                        actorUserId={actorUserId}
-                        actorRole={actorRole}
-                        businessId={businessId}
-                        ensureMarketplaceSeedIsAvailable={
-                          ensureMarketplaceSeedIsAvailable
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="drafts" className="mt-4">
-              {visibleDrafts.length === 0 ? (
-                <Card className="border-dashed py-10">
-                  <CardContent className="flex flex-col items-center gap-3 text-center">
-                    <FlaskConical className="size-7 text-muted-foreground" />
-                    <p className="font-medium">No matching team drafts yet.</p>
-                    <p className="text-sm text-muted-foreground max-w-md">
-                      Create drafts in Plugin Studio, then deploy revisions here
-                      for realistic admin testing.
-                    </p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid gap-4 lg:grid-cols-2">
-                  {visibleDrafts.map((draft) => {
-                    const latestRevision = latestRevisionByDraftId.get(
-                      draft.draftId,
-                    );
-                    const installedDraft = draftInstallByDraftId.get(
-                      draft.draftId,
-                    );
-                    const isSynced =
-                      latestRevision &&
-                      installedDraft?.revisionId === latestRevision.revisionId;
-
-                    const statusLabel = !latestRevision
-                      ? 'No revisions'
-                      : isSynced
-                        ? 'Synced'
-                        : installedDraft
-                          ? 'Outdated install'
-                          : 'Not installed';
-
-                    const statusTone = !latestRevision
-                      ? 'secondary'
-                      : isSynced
-                        ? 'ok'
-                        : installedDraft
-                          ? 'warn'
-                          : 'secondary';
-
-                    return (
-                      <Card key={draft.draftId} className="py-4 gap-4">
-                        <CardHeader className="px-4 md:px-6">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="space-y-1">
-                              <CardTitle className="text-base">
-                                {draft.title ?? draft.pluginId}
-                              </CardTitle>
-                              <CardDescription>
-                                {draft.pluginId} · {draft.draftId}
-                              </CardDescription>
-                            </div>
-                            <Badge
-                              className={cn(
-                                statusTone === 'ok' &&
-                                  'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-200',
-                                statusTone === 'warn' &&
-                                  'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200',
-                              )}
-                              variant={
-                                statusTone === 'secondary'
-                                  ? 'secondary'
-                                  : 'outline'
-                              }
-                            >
-                              {statusLabel}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3 px-4 md:px-6">
-                          <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-                            <dt className="text-muted-foreground">
-                              Latest revision
-                            </dt>
-                            <dd className="text-right font-medium">
-                              {latestRevision?.revisionId ?? 'none'}
-                            </dd>
-                            <dt className="text-muted-foreground">
-                              Installed revision
-                            </dt>
-                            <dd className="text-right font-medium">
-                              {installedDraft?.revisionId ?? 'none'}
-                            </dd>
-                            <dt className="text-muted-foreground">Updated</dt>
-                            <dd className="text-right">
-                              {formatDate(draft.updatedAt)}
-                            </dd>
-                          </dl>
-
-                          <Button
-                            size="sm"
-                            disabled={!latestRevision || isSynced}
-                            onClick={() => {
-                              if (!latestRevision) return;
-                              installDraft({
-                                pluginId: draft.pluginId,
-                                draftId: draft.draftId,
-                                revisionId: latestRevision.revisionId,
-                              });
-                            }}
-                          >
-                            {isSynced
-                              ? 'Latest revision installed'
-                              : latestRevision
-                                ? `Install ${latestRevision.revisionId}`
-                                : 'No revision available'}
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+              <div className="w-5 text-sm text-muted-foreground">{index + 1}</div>
+              <PluginIcon plugin={plugin} onPreview={() => setPreviewPlugin(plugin)} compact />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium">{plugin.title}</p>
+                <p className="truncate text-xs text-muted-foreground">{plugin.category}</p>
+                <p className="flex items-center text-xs text-muted-foreground">
+                  <Star className="mr-1 size-3 fill-current" />
+                  {plugin.averageRating} · {plugin.installs.toLocaleString()} installs
+                </p>
+              </div>
+            </Link>
+          ))}
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Card className="py-4 gap-4">
-          <CardHeader className="px-4 md:px-6">
-            <CardTitle className="text-base">Upgrade Queue</CardTitle>
-            <CardDescription>
-              Highest-risk plugins where installed versions lag behind latest.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3 px-4 md:px-6">
-            {upgradableCatalog.length === 0 ? (
-              <div className="rounded-lg border border-emerald-300/70 bg-emerald-50/80 p-3 text-sm text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/30 dark:text-emerald-200">
-                <CheckCircle2 className="mr-2 inline size-4" />
-                All installed plugins are current.
-              </div>
-            ) : (
-              upgradableCatalog.map((entry) => (
-                <UpgradeQueueItem
-                  key={entry.pluginId}
-                  entry={entry}
-                  actorUserId={actorUserId}
-                  actorRole={actorRole}
-                  businessId={businessId}
-                  ensureMarketplaceSeedIsAvailable={
-                    ensureMarketplaceSeedIsAvailable
-                  }
-                />
-              ))
-            )}
-          </CardContent>
-        </Card>
+      <div className="flex flex-wrap gap-2">
+        {['All', ...marketplace.categories].map((category) => (
+          <Button
+            key={category}
+            size="sm"
+            variant={selectedCategory === category ? 'default' : 'outline'}
+            onClick={() => setSelectedCategory(category)}
+            className="rounded-full"
+          >
+            {category}
+          </Button>
+        ))}
       </div>
+
+      <section className="space-y-8">
+        {marketplace.categories
+          .filter((category) => selectedCategory === 'All' || selectedCategory === category)
+          .map((category) => {
+            const items = visibleItems.filter((plugin) => plugin.category === category);
+            if (items.length === 0) return null;
+            return (
+              <div key={category} className="space-y-3">
+                <h2 className="text-xl font-semibold">{category}</h2>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {items.map((plugin) => (
+                    <Link
+                      key={plugin.pluginId}
+                      to="/$businessName/admin/plugin/$pluginId"
+                      params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+                      className="group rounded-2xl border border-border/70 p-4 transition-colors hover:border-primary/40"
+                    >
+                      <div className="mb-3 flex items-start gap-3">
+                        <PluginIcon plugin={plugin} onPreview={() => setPreviewPlugin(plugin)} />
+                        <div className="min-w-0">
+                          <p className="truncate text-base font-medium">{plugin.title}</p>
+                          <p className="truncate text-xs text-muted-foreground">{plugin.publisher}</p>
+                        </div>
+                      </div>
+                      <p className="line-clamp-2 text-sm text-muted-foreground">{plugin.description}</p>
+                      <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="flex items-center"><Star className="mr-1 size-3 fill-current" />{plugin.averageRating}</span>
+                        <span>{plugin.installs.toLocaleString()} installs</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+      </section>
+
+      {previewPlugin ? (
+        <PluginPreviewDialog
+          open={Boolean(previewPlugin)}
+          onOpenChange={(open) => {
+            if (!open) setPreviewPlugin(null);
+          }}
+          entry={previewPlugin}
+          businessId={businessId}
+          businessSlug={businessName}
+          onInstall={() => {
+            // Intentionally blocked in listing; installs happen in details page.
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function PluginIcon({
+  plugin,
+  onPreview,
+  compact = false,
+}: {
+  plugin: PluginMarketItem;
+  onPreview: () => void;
+  compact?: boolean;
+}) {
+  const iconSize = compact ? 'size-11' : 'size-14';
+  if (plugin.iconUrl) {
+    return (
+      <img
+        src={plugin.iconUrl}
+        alt={`${plugin.title} icon`}
+        className={`${iconSize} rounded-2xl object-cover shadow-sm`}
+      />
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.preventDefault();
+        onPreview();
+      }}
+      className={`${iconSize} rounded-2xl border border-dashed border-border bg-muted/40 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground`}
+    >
+      Preview
+    </button>
   );
 }
 
 function PluginsPageSkeleton() {
   return (
-    <div className="relative mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-6 md:py-8 overflow-x-hidden">
-      <Card className="border-border/70 py-5 gap-5">
-        <CardContent className="space-y-5 px-5 md:px-7">
-          <div className="space-y-3">
-            <Skeleton className="h-5 w-44" />
-            <Skeleton className="h-8 w-full max-w-2xl" />
-            <Skeleton className="h-4 w-full max-w-xl" />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Skeleton className="h-9 w-28" />
-            <Skeleton className="h-9 w-36" />
-            <Skeleton className="h-9 w-28" />
-            <Skeleton className="h-9 w-36" />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={index.toString()}
-                className="rounded-xl border border-border/70 p-4 space-y-2"
-              >
-                <Skeleton className="h-3 w-28" />
-                <Skeleton className="h-7 w-16" />
-                <Skeleton className="h-3 w-full" />
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="border-border/70 py-4 gap-4">
-        <CardContent className="space-y-4 px-4 md:px-6">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-            <Skeleton className="h-10 flex-1" />
-            <div className="flex gap-2">
-              <Skeleton className="h-9 w-24" />
-              <Skeleton className="h-9 w-24" />
-              <Skeleton className="h-9 w-24" />
-            </div>
-            <Skeleton className="h-10 w-full md:w-[220px]" />
-          </div>
-          <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, index) => (
-              <Card key={index.toString()} className="py-4 gap-3">
-                <CardHeader className="px-4 md:px-6 space-y-2">
-                  <Skeleton className="h-4 w-40" />
-                  <Skeleton className="h-3 w-52" />
-                </CardHeader>
-                <CardContent className="px-4 md:px-6 space-y-3">
-                  <Skeleton className="h-3 w-full" />
-                  <Skeleton className="h-3 w-4/5" />
-                  <Skeleton className="h-8 w-full" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-// Custom hook to manage individual plugin installation state
-function useIndividualPluginInstallation(
-  actorUserId: string,
-  actorRole: 'owner' | 'admin' | 'staff',
-  businessId: string,
-  ensureMarketplaceSeedIsAvailable: () => Promise<void>,
-) {
-  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
-  const { fire: fireConfetti } = useConfetti();
-
-  const runIndividualMutation = async (params: {
-    actionId: string;
-    action: () => Promise<unknown>;
-    successMessage: string;
-    errorMessage: string;
-    fireConfettiOnSuccess?: boolean;
-  }) => {
-    try {
-      setPendingActionId(params.actionId);
-      await params.action();
-      toast.success(params.successMessage);
-      if (params.fireConfettiOnSuccess) {
-        fireConfetti();
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(params.errorMessage);
-    } finally {
-      setPendingActionId(null);
-    }
-  };
-
-  const installRelease = async (params: {
-    pluginId: string;
-    version: string;
-  }) => {
-    await runIndividualMutation({
-      actionId: `install:${params.pluginId}:${params.version}`,
-      action: async () => {
-        await ensureMarketplaceSeedIsAvailable();
-        return installPluginRelease({
-          data: {
-            actorUserId,
-            actorRole,
-            businessId,
-            pluginId: params.pluginId,
-            version: params.version,
-            explicitOwnerAction: true,
-          },
-        });
-      },
-      successMessage: `Pinned ${params.pluginId}@${params.version}`,
-      errorMessage: `Failed to pin ${params.pluginId}@${params.version}`,
-      fireConfettiOnSuccess: true,
-    });
-  };
-
-  const rollbackRelease = async (params: {
-    pluginId: string;
-    version: string;
-  }) => {
-    await runIndividualMutation({
-      actionId: `repin:${params.pluginId}:${params.version}`,
-      action: async () => {
-        await ensureMarketplaceSeedIsAvailable();
-        return rollbackPluginRelease({
-          data: {
-            actorUserId,
-            actorRole,
-            businessId,
-            pluginId: params.pluginId,
-            version: params.version,
-            explicitOwnerAction: true,
-          },
-        });
-      },
-      successMessage: `Re-pinned ${params.pluginId}@${params.version}`,
-      errorMessage: `Failed to re-pin ${params.pluginId}@${params.version}`,
-    });
-  };
-
-  const uninstallRelease = async (params: { pluginId: string }) => {
-    await runIndividualMutation({
-      actionId: `uninstall:${params.pluginId}`,
-      action: async () => {
-        return uninstallPluginRelease({
-          data: {
-            actorUserId,
-            actorRole,
-            businessId,
-            pluginId: params.pluginId,
-          },
-        });
-      },
-      successMessage: `Uninstalled ${params.pluginId}`,
-      errorMessage: `Failed to uninstall ${params.pluginId}`,
-    });
-  };
-
-  const isActionPending = (actionId: string) => pendingActionId === actionId;
-
-  return {
-    installRelease,
-    rollbackRelease,
-    uninstallRelease,
-    isActionPending,
-    pendingActionId,
-  };
-}
-
-function MarketplacePluginCard({
-  entry,
-  isSeedOnlyLatest,
-  businessName,
-  actorUserId,
-  actorRole,
-  businessId,
-  ensureMarketplaceSeedIsAvailable,
-}: {
-  entry: PluginCatalogEntry;
-  isSeedOnlyLatest: boolean;
-  businessName: string;
-  actorUserId: string;
-  actorRole: 'owner' | 'admin' | 'staff';
-  businessId: string;
-  ensureMarketplaceSeedIsAvailable: () => Promise<void>;
-}) {
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const { installRelease, isActionPending } = useIndividualPluginInstallation(
-    actorUserId,
-    actorRole,
-    businessId,
-    ensureMarketplaceSeedIsAvailable,
-  );
-
-  const latestActionId = `install:${entry.pluginId}:${entry.latestRelease.version}`;
-  const latestPinned = entry.installed?.version === entry.latestRelease.version;
-
-  return (
-    <Card
-      className={cn(
-        'py-4 gap-4 border-border/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
-        entry.isUpgradable &&
-          'border-amber-300/80 bg-amber-50/70 dark:border-amber-500/40 dark:bg-amber-950/20',
-      )}
-    >
-      <CardHeader className="px-4 md:px-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <CardTitle className="text-base leading-tight">
-              {entry.title}
-            </CardTitle>
-          </div>
-          <Badge
-            className={cn(
-              entry.isInstalled
-                ? 'bg-cyan-100 text-cyan-900 border-cyan-300 dark:bg-cyan-950/40 dark:text-cyan-200'
-                : 'bg-muted text-muted-foreground',
-            )}
-            variant={entry.isInstalled ? 'outline' : 'secondary'}
-          >
-            {entry.isInstalled
-              ? `Pinned ${entry.installed?.version}`
-              : 'Not pinned'}
-          </Badge>
-        </div>
-        {isSeedOnlyLatest && (
-          <Badge variant="secondary" className="w-fit text-[11px]">
-            Seed template preview
-          </Badge>
-        )}
-      </CardHeader>
-
-      <CardContent className="space-y-3 px-4 md:px-6">
-        <p className="text-sm text-muted-foreground min-h-10">
-          {entry.description ||
-            'No description provided for this plugin release.'}
-        </p>
-
-        <div className="rounded-lg border bg-muted/30 p-2">
-          <div className="mb-2 text-xs font-medium text-muted-foreground">
-            Quick version pin
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {entry.availableVersions.slice(0, 3).map((version) => {
-              const actionId = `install:${entry.pluginId}:${version}`;
-              const isPinned = entry.installed?.version === version;
-              return (
-                <Button
-                  key={version}
-                  size="sm"
-                  variant={
-                    version === entry.latestRelease.version
-                      ? 'secondary'
-                      : 'outline'
-                  }
-                  className="h-7 px-2 text-xs"
-                  disabled={isActionPending(actionId) || isPinned}
-                  loading={isActionPending(actionId)}
-                  onClick={() =>
-                    installRelease({
-                      pluginId: entry.pluginId,
-                      version,
-                    })
-                  }
-                >
-                  {isPinned ? `${version} pinned` : `Pin ${version}`}
-                </Button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="text-xs text-muted-foreground">
-          Latest published {formatDate(entry.latestPublishedAt)}
-        </div>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsPreviewOpen(true)}
-          >
-            <Eye className="mr-2 size-4" />
-            Preview dashboard impact
-          </Button>
-
-          <Button
-            size="sm"
-            className="w-full"
-            disabled={isActionPending(latestActionId) || latestPinned}
-            loading={isActionPending(latestActionId)}
-            onClick={() =>
-              installRelease({
-                pluginId: entry.pluginId,
-                version: entry.latestRelease.version,
-              })
-            }
-          >
-            {latestPinned
-              ? `Already at ${entry.latestRelease.version}`
-              : entry.isInstalled
-                ? `Upgrade to ${entry.latestRelease.version}`
-                : `Install ${entry.latestRelease.version}`}
-          </Button>
-
-          <PluginPreviewDialog
-            open={isPreviewOpen}
-            onOpenChange={setIsPreviewOpen}
-            entry={entry}
-            businessId={businessId}
-            businessSlug={businessName}
-            onInstall={() => {
-              installRelease({
-                pluginId: entry.pluginId,
-                version: entry.latestRelease.version,
-              });
-            }}
-          />
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function InstalledPluginCard({
-  entry,
-  install,
-  actorUserId,
-  actorRole,
-  businessId,
-  ensureMarketplaceSeedIsAvailable,
-}: {
-  entry: PluginCatalogEntry;
-  install: BusinessPluginInstallDoc;
-  actorUserId: string;
-  actorRole: 'owner' | 'admin' | 'staff';
-  businessId: string;
-  ensureMarketplaceSeedIsAvailable: () => Promise<void>;
-}) {
-  const { installRelease, rollbackRelease, uninstallRelease, isActionPending } =
-    useIndividualPluginInstallation(
-      actorUserId,
-      actorRole,
-      businessId,
-      ensureMarketplaceSeedIsAvailable,
-    );
-
-  const repinActionId = `repin:${entry.pluginId}:${install.version}`;
-  const upgradeActionId = `install:${entry.pluginId}:${entry.latestRelease.version}`;
-  const uninstallActionId = `uninstall:${entry.pluginId}`;
-
-  return (
-    <Card className="py-4 gap-4">
-      <CardHeader className="px-4 md:px-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1">
-            <CardTitle className="text-base">{entry.title}</CardTitle>
-            <CardDescription>{entry.pluginId}</CardDescription>
-          </div>
-          <Badge
-            className={cn(
-              entry.isUpgradable
-                ? 'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200'
-                : 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-200',
-            )}
-          >
-            {entry.isUpgradable ? 'Upgrade available' : 'Up to date'}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3 px-4 md:px-6">
-        <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-          <dt className="text-muted-foreground">Pinned version</dt>
-          <dd className="text-right font-medium">{install.version}</dd>
-          <dt className="text-muted-foreground">Latest release</dt>
-          <dd className="text-right font-medium">
-            {entry.latestRelease.version}
-          </dd>
-          <dt className="text-muted-foreground">Manifest hash</dt>
-          <dd className="text-right font-mono text-xs">
-            {shortenHash(install.manifestHash)}
-          </dd>
-          <dt className="text-muted-foreground">Artifact hash</dt>
-          <dd className="text-right font-mono text-xs">
-            {shortenHash(install.artifactHash)}
-          </dd>
-        </dl>
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={isActionPending(repinActionId)}
-            loading={isActionPending(repinActionId)}
-            onClick={() =>
-              rollbackRelease({
-                pluginId: entry.pluginId,
-                version: install.version,
-              })
-            }
-          >
-            Re-pin {install.version}
-          </Button>
-
-          <Button
-            size="sm"
-            disabled={isActionPending(upgradeActionId) || !entry.isUpgradable}
-            loading={isActionPending(upgradeActionId)}
-            onClick={() =>
-              installRelease({
-                pluginId: entry.pluginId,
-                version: entry.latestRelease.version,
-              })
-            }
-          >
-            Upgrade to {entry.latestRelease.version}
-          </Button>
-
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={isActionPending(uninstallActionId)}
-            loading={isActionPending(uninstallActionId)}
-            onClick={() =>
-              uninstallRelease({
-                pluginId: entry.pluginId,
-              })
-            }
-          >
-            Uninstall
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function UpgradeQueueItem({
-  entry,
-  actorUserId,
-  actorRole,
-  businessId,
-  ensureMarketplaceSeedIsAvailable,
-}: {
-  entry: PluginCatalogEntry;
-  actorUserId: string;
-  actorRole: 'owner' | 'admin' | 'staff';
-  businessId: string;
-  ensureMarketplaceSeedIsAvailable: () => Promise<void>;
-}) {
-  const { installRelease, isActionPending } = useIndividualPluginInstallation(
-    actorUserId,
-    actorRole,
-    businessId,
-    ensureMarketplaceSeedIsAvailable,
-  );
-
-  const actionId = `install:${entry.pluginId}:${entry.latestRelease.version}`;
-
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
-      <div className="space-y-1">
-        <div className="font-medium text-sm">{entry.pluginId}</div>
-        <div className="text-xs text-muted-foreground">
-          {entry.installed?.version} → {entry.latestRelease.version}
-        </div>
+    <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 md:px-8">
+      <Skeleton className="h-52 w-full rounded-3xl" />
+      <Skeleton className="h-64 w-full rounded-2xl" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <Skeleton key={index.toString()} className="h-56 rounded-2xl" />
+        ))}
       </div>
-      <Button
-        size="sm"
-        loading={isActionPending(actionId)}
-        onClick={() =>
-          installRelease({
-            pluginId: entry.pluginId,
-            version: entry.latestRelease.version,
-          })
-        }
-      >
-        Upgrade
-      </Button>
-    </div>
-  );
-}
-
-function MetricCard({
-  label,
-  value,
-  description,
-  icon: Icon,
-  tone = 'default',
-}: {
-  label: string;
-  value: string;
-  description: string;
-  icon: typeof Sparkles;
-  tone?: 'default' | 'warn' | 'ok';
-}) {
-  return (
-    <div
-      className={cn(
-        'rounded-xl border p-4 shadow-xs backdrop-blur-sm',
-        tone === 'default' && 'border-border/70 bg-background/80',
-        tone === 'warn' &&
-          'border-amber-300/70 bg-amber-50/90 text-amber-950 dark:border-amber-500/35 dark:bg-amber-950/25 dark:text-amber-200',
-        tone === 'ok' &&
-          'border-emerald-300/70 bg-emerald-50/90 text-emerald-950 dark:border-emerald-500/35 dark:bg-emerald-950/25 dark:text-emerald-200',
-      )}
-    >
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          {label}
-        </div>
-        <Icon className="size-4" />
-      </div>
-      <div className="text-2xl font-semibold tracking-tight">{value}</div>
-      <p className="mt-1 text-xs text-muted-foreground">{description}</p>
     </div>
   );
 }
