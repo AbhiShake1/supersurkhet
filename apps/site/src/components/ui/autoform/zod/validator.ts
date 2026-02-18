@@ -1,9 +1,9 @@
-import { z } from "zod";
-import { inferFieldType } from "./field-type-inference";
-import { getDefaultValueInZodStack } from "./default-values";
-import { getFieldConfigInZodStack } from "./field-config";
-import type { ParsedField, ParsedSchema } from "@autoform/core";
-import type { ZodObjectOrWrapped } from "./types";
+import type { ParsedField, ParsedSchema } from '@autoform/core';
+import { z } from 'zod';
+import { getDefaultValueInZodStack } from './default-values';
+import { getFieldConfigInZodStack } from './field-config';
+import { inferFieldType } from './field-type-inference';
+import type { ZodObjectOrWrapped } from './types';
 
 function parseField(key: string, schema: z.ZodTypeAny): ParsedField {
   const baseSchema = getBaseSchema(schema);
@@ -26,11 +26,11 @@ function parseField(key: string, schema: z.ZodTypeAny): ParsedField {
   let subSchema: ParsedField[] = [];
   if (baseSchema instanceof z.ZodObject) {
     subSchema = Object.entries(baseSchema.shape).map(([key, field]) =>
-      parseField(key, field as z.ZodTypeAny)
+      parseField(key, field as z.ZodTypeAny),
     );
   }
   if (baseSchema instanceof z.ZodArray) {
-    subSchema = [parseField("0", baseSchema._def.type)];
+    subSchema = [parseField('0', baseSchema._def.type)];
   }
 
   return {
@@ -48,10 +48,10 @@ function parseField(key: string, schema: z.ZodTypeAny): ParsedField {
 function getBaseSchema<
   ChildType extends z.ZodAny | z.ZodTypeAny | z.AnyZodObject = z.ZodAny,
 >(schema: ChildType | z.ZodEffects<ChildType>): ChildType {
-  if ("innerType" in schema._def) {
+  if ('innerType' in schema._def) {
     return getBaseSchema(schema._def.innerType as ChildType);
   }
-  if ("schema" in schema._def) {
+  if ('schema' in schema._def) {
     return getBaseSchema(schema._def.schema as ChildType);
   }
 
@@ -59,12 +59,24 @@ function getBaseSchema<
 }
 
 export function parseSchema(schema: ZodObjectOrWrapped): ParsedSchema {
-  const objectSchema =
-    schema instanceof z.ZodEffects ? schema.innerType() : schema;
+  // Unwrap ZodEffects, ZodOptional, ZodNullable, etc. until we get to the ZodObject
+  let objectSchema = schema;
+  while ('innerType' in objectSchema._def) {
+    objectSchema = objectSchema._def.innerType();
+  }
+  if (objectSchema instanceof z.ZodEffects) {
+    objectSchema = objectSchema.innerType();
+  }
+
   const shape = objectSchema.shape ?? objectSchema.element?.shape;
 
+  if (!shape) {
+    console.error('parseSchema: Could not extract shape from schema', schema);
+    return { fields: [] };
+  }
+
   const fields: ParsedField[] = Object.entries(shape).map(([key, field]) =>
-    parseField(key, field as z.ZodTypeAny)
+    parseField(key, field as z.ZodTypeAny),
   );
 
   return { fields };
