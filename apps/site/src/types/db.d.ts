@@ -401,114 +401,47 @@ declare global {
      schemaId: import("zod").ZodString;
      title: import("zod").ZodOptional<import("zod").ZodString>;
      description: import("zod").ZodOptional<import("zod").ZodString>;
-     fields: import("zod").ZodArray<import("zod").ZodObject<{
-     key: import("zod").ZodString;
-     type: import("zod").ZodEnum<["string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp", ...("string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp")[], "enum", "array", "object"]>;
-     label: import("zod").ZodOptional<import("zod").ZodString>;
-     description: import("zod").ZodOptional<import("zod").ZodString>;
-     optional: import("zod").ZodOptional<import("zod").ZodBoolean>;
-     defaultValue: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
-     enumValues: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
-     itemType: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
-     fields: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>, "many">>;
-     tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
-     rules: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
-     kind: import("zod").ZodEnum<["min", "max", "nonnegative", "positive", "int", "customToken"]>;
-     value: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>;
-     token: import("zod").ZodOptional<import("zod").ZodString>;
-     message: import("zod").ZodOptional<import("zod").ZodString>;
+     fields: import("zod").ZodArray<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, "many">;
+     refinements: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     code: import("zod").ZodOptional<import("zod").ZodLiteral<"custom">>;
+     path: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     message: import("zod").ZodString;
+     when: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
     }, "strip", import("zod").ZodTypeAny, {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
     }, {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
     }>, "many">>;
-    }, "strip", import("zod").ZodTypeAny, {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }, {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }>, "many">;
      tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
     }, "strip", import("zod").ZodTypeAny, {
      schemaId: string;
-     fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }[];
+     fields: unknown[];
      description?: string | undefined;
      title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
     }, {
      schemaId: string;
-     fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }[];
+     fields: unknown[];
      description?: string | undefined;
      title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
     }>, "many">>;
      workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
@@ -520,29 +453,41 @@ declare global {
      nodeId: import("zod").ZodString;
      type: import("zod").ZodLiteral<"action">;
      actionId: import("zod").ZodString;
-     input: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     input: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, import("zod").ZodObject<{
+     expression: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+    }, "strip", import("zod").ZodTypeAny, {
+     expression?: unknown;
+    }, {
+     expression?: unknown;
+    }>]>>;
+     runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
     }, "strip", import("zod").ZodTypeAny, {
      type: "action";
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }, {
      type: "action";
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }>, "many">;
      edges: import("zod").ZodArray<import("zod").ZodObject<{
      from: import("zod").ZodString;
      to: import("zod").ZodString;
+     condition: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
      conditionToken: import("zod").ZodOptional<import("zod").ZodString>;
     }, "strip", import("zod").ZodTypeAny, {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }, {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }>, "many">;
     }, "strip", import("zod").ZodTypeAny, {
@@ -554,10 +499,12 @@ declare global {
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }[];
      edges: {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }[];
      title?: string | undefined;
@@ -570,10 +517,12 @@ declare global {
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }[];
      edges: {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }[];
      title?: string | undefined;
@@ -637,26 +586,15 @@ declare global {
     } | undefined;
      schemaDocs?: {
      schemaId: string;
-     fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }[];
+     fields: unknown[];
      description?: string | undefined;
      title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
     }[] | undefined;
      workflows?: {
@@ -668,10 +606,12 @@ declare global {
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }[];
      edges: {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }[];
      title?: string | undefined;
@@ -712,26 +652,15 @@ declare global {
     } | undefined;
      schemaDocs?: {
      schemaId: string;
-     fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }[];
+     fields: unknown[];
      description?: string | undefined;
      title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
     }[] | undefined;
      workflows?: {
@@ -743,10 +672,12 @@ declare global {
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }[];
      edges: {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }[];
      title?: string | undefined;
@@ -900,114 +831,47 @@ declare global {
      schemaId: import("zod").ZodString;
      title: import("zod").ZodOptional<import("zod").ZodString>;
      description: import("zod").ZodOptional<import("zod").ZodString>;
-     fields: import("zod").ZodArray<import("zod").ZodObject<{
-     key: import("zod").ZodString;
-     type: import("zod").ZodEnum<["string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp", ...("string" | "number" | "boolean" | "password" | "map" | "date" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp")[], "enum", "array", "object"]>;
-     label: import("zod").ZodOptional<import("zod").ZodString>;
-     description: import("zod").ZodOptional<import("zod").ZodString>;
-     optional: import("zod").ZodOptional<import("zod").ZodBoolean>;
-     defaultValue: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
-     enumValues: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
-     itemType: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
-     fields: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>, "many">>;
-     tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
-     rules: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
-     kind: import("zod").ZodEnum<["min", "max", "nonnegative", "positive", "int", "customToken"]>;
-     value: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>;
-     token: import("zod").ZodOptional<import("zod").ZodString>;
-     message: import("zod").ZodOptional<import("zod").ZodString>;
+     fields: import("zod").ZodArray<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, "many">;
+     refinements: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     code: import("zod").ZodOptional<import("zod").ZodLiteral<"custom">>;
+     path: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     message: import("zod").ZodString;
+     when: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
     }, "strip", import("zod").ZodTypeAny, {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
     }, {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
     }>, "many">>;
-    }, "strip", import("zod").ZodTypeAny, {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }, {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }>, "many">;
      tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
     }, "strip", import("zod").ZodTypeAny, {
      schemaId: string;
-     fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }[];
+     fields: unknown[];
      description?: string | undefined;
      title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
     }, {
      schemaId: string;
-     fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }[];
+     fields: unknown[];
      description?: string | undefined;
      title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
     }>, "many">>;
      workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
@@ -1019,29 +883,41 @@ declare global {
      nodeId: import("zod").ZodString;
      type: import("zod").ZodLiteral<"action">;
      actionId: import("zod").ZodString;
-     input: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     input: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, import("zod").ZodObject<{
+     expression: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+    }, "strip", import("zod").ZodTypeAny, {
+     expression?: unknown;
+    }, {
+     expression?: unknown;
+    }>]>>;
+     runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
     }, "strip", import("zod").ZodTypeAny, {
      type: "action";
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }, {
      type: "action";
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }>, "many">;
      edges: import("zod").ZodArray<import("zod").ZodObject<{
      from: import("zod").ZodString;
      to: import("zod").ZodString;
+     condition: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
      conditionToken: import("zod").ZodOptional<import("zod").ZodString>;
     }, "strip", import("zod").ZodTypeAny, {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }, {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }>, "many">;
     }, "strip", import("zod").ZodTypeAny, {
@@ -1053,10 +929,12 @@ declare global {
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }[];
      edges: {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }[];
      title?: string | undefined;
@@ -1069,10 +947,12 @@ declare global {
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }[];
      edges: {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }[];
      title?: string | undefined;
@@ -1125,26 +1005,15 @@ declare global {
     } | undefined;
      schemaDocs?: {
      schemaId: string;
-     fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }[];
+     fields: unknown[];
      description?: string | undefined;
      title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
     }[] | undefined;
      workflows?: {
@@ -1156,10 +1025,12 @@ declare global {
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }[];
      edges: {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }[];
      title?: string | undefined;
@@ -1187,26 +1058,15 @@ declare global {
     } | undefined;
      schemaDocs?: {
      schemaId: string;
-     fields: {
-     type: "string" | "number" | "boolean" | "object" | "password" | "map" | "date" | "array" | "datetime" | "select" | "image" | "record" | "richText" | "editor" | "color" | "file" | "rating" | "slider" | "tags" | "currency" | "phone" | "url" | "permissions" | "unit" | "timestamp" | "enum";
-     key: string;
-     label?: string | undefined;
-     description?: string | undefined;
-     fields?: Record<string, unknown>[] | undefined;
-     optional?: boolean | undefined;
-     defaultValue?: unknown;
-     enumValues?: string[] | undefined;
-     itemType?: Record<string, unknown> | undefined;
-     tokens?: Record<string, unknown> | undefined;
-     rules?: {
-     kind: "max" | "min" | "nonnegative" | "positive" | "int" | "customToken";
-     value?: string | number | undefined;
-     message?: string | undefined;
-     token?: string | undefined;
-    }[] | undefined;
-    }[];
+     fields: unknown[];
      description?: string | undefined;
      title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
     }[] | undefined;
      workflows?: {
@@ -1218,10 +1078,12 @@ declare global {
      actionId: string;
      nodeId: string;
      input?: unknown;
+     runIf?: unknown;
     }[];
      edges: {
      from: string;
      to: string;
+     condition?: unknown;
      conditionToken?: string | undefined;
     }[];
      title?: string | undefined;

@@ -29,36 +29,139 @@ const pluginSchemaFieldTypes = [
   'object',
 ] as const;
 
-const pluginSchemaFieldDocSchema = z.object({
-  key: z.string(),
+const expressionSourceSchema = z.enum([
+  'payload',
+  'formValues',
+  'context',
+  'sourceRow',
+  'row',
+]);
+
+const expressionRefDocSchema = z.object({
+  kind: z.literal('ref'),
+  source: expressionSourceSchema,
+  path: z.array(z.string()),
+});
+
+const expressionOpSchema = z.enum([
+  'eq',
+  'neq',
+  'gt',
+  'gte',
+  'lt',
+  'lte',
+  'and',
+  'or',
+  'not',
+  'add',
+  'sub',
+  'mul',
+  'div',
+  'coalesce',
+  'concat',
+  'sum',
+  'if',
+]);
+
+const expressionDocSchema: z.ZodType<unknown> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    expressionRefDocSchema,
+    z.object({
+      kind: z.literal('array'),
+      items: z.array(expressionDocSchema),
+    }),
+    z.object({
+      kind: z.literal('object'),
+      value: z.record(z.string(), expressionDocSchema),
+    }),
+    z.object({
+      kind: z.literal('op'),
+      op: expressionOpSchema,
+      args: z.array(expressionDocSchema),
+    }),
+  ]),
+);
+
+const jsonOrExpressionValueSchema = z.union([expressionDocSchema, jsonValueSchema]);
+
+const fieldConfigIRSchema = z.object({
+  fieldType: z.enum(pluginSchemaFieldTypes).optional(),
+  label: z.string().optional(),
+  description: z.string().optional(),
+  inputProps: z.record(z.string(), jsonOrExpressionValueSchema).optional(),
+  customData: z.record(z.string(), jsonOrExpressionValueSchema).optional(),
+});
+
+const deriveIRSchema = z.object({
+  target: z.enum(['value', 'inputProps', 'customData']),
+  key: z.string().optional(),
+  expression: expressionDocSchema,
+});
+
+const refineIssueIRSchema = z.object({
+  code: z.literal('custom').optional(),
+  path: z.array(z.string()).optional(),
+  message: z.string(),
+  when: expressionDocSchema,
+});
+
+const schemaBehaviorIRSchema = z.object({
+  fieldConfig: fieldConfigIRSchema.optional(),
+  derivations: z.array(deriveIRSchema).optional(),
+  refinements: z.array(refineIssueIRSchema).optional(),
+});
+
+const schemaRuleDocSchema = z.object({
+  kind: z
+    .enum(['min', 'max', 'nonnegative', 'positive', 'int', 'customToken'])
+    .describe('Declarative validation rule type'),
+  value: z.union([z.string(), z.number()]).optional(),
+  token: z.string().optional(),
+  message: z.string().optional(),
+});
+
+const pluginSchemaFieldBaseShape = {
   type: z.enum(pluginSchemaFieldTypes),
   label: z.string().optional(),
   description: z.string().optional(),
   optional: z.boolean().optional(),
   defaultValue: jsonValueSchema.optional(),
   enumValues: z.array(z.string()).optional(),
-  itemType: z.record(z.string(), jsonValueSchema).optional(),
-  fields: z.array(z.record(z.string(), jsonValueSchema)).optional(),
   tokens: z.record(z.string(), jsonValueSchema).optional(),
-  rules: z
-    .array(
-      z.object({
-        kind: z
-          .enum(['min', 'max', 'nonnegative', 'positive', 'int', 'customToken'])
-          .describe('Declarative validation rule type'),
-        value: z.union([z.string(), z.number()]).optional(),
-        token: z.string().optional(),
-        message: z.string().optional(),
-      }),
-    )
-    .optional(),
-});
+  behavior: schemaBehaviorIRSchema.optional(),
+  rules: z.array(schemaRuleDocSchema).optional(),
+};
+
+let pluginSchemaFieldDocSchema: z.ZodType<unknown>;
+let pluginSchemaNestedFieldDocSchema: z.ZodType<unknown>;
+
+pluginSchemaNestedFieldDocSchema = z.lazy(() =>
+  z.object({
+    ...pluginSchemaFieldBaseShape,
+    itemType: pluginSchemaNestedFieldDocSchema.optional(),
+    fields: z.array(pluginSchemaFieldDocSchema).optional(),
+  }),
+);
+
+pluginSchemaFieldDocSchema = z.lazy(() =>
+  z.object({
+    key: z.string(),
+    ...pluginSchemaFieldBaseShape,
+    itemType: pluginSchemaNestedFieldDocSchema.optional(),
+    fields: z.array(pluginSchemaFieldDocSchema).optional(),
+  }),
+);
 
 const pluginSchemaDocSchema = z.object({
   schemaId: z.string(),
   title: z.string().optional(),
   description: z.string().optional(),
   fields: z.array(pluginSchemaFieldDocSchema),
+  refinements: z.array(refineIssueIRSchema).optional(),
   tokens: z.record(z.string(), jsonValueSchema).optional(),
 });
 
@@ -66,7 +169,15 @@ const workflowNodeDocSchema = z.object({
   nodeId: z.string(),
   type: z.literal('action'),
   actionId: z.string(),
-  input: jsonValueSchema.optional(),
+  input: z
+    .union([
+      jsonValueSchema,
+      z.object({
+        expression: expressionDocSchema,
+      }),
+    ])
+    .optional(),
+  runIf: expressionDocSchema.optional(),
 });
 
 const workflowDocSchema = z.object({
@@ -86,6 +197,7 @@ const workflowDocSchema = z.object({
     z.object({
       from: z.string(),
       to: z.string(),
+      condition: expressionDocSchema.optional(),
       conditionToken: z.string().optional(),
     }),
   ),
