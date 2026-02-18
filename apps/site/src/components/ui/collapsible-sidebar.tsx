@@ -50,6 +50,8 @@ function getTabIcon(tab: PossibleTabConfig): LucideIcon {
 
 const FREQUENT_TABS_STORAGE_KEY = 'sidebar-frequent-tabs';
 const GROUP_OPEN_STATE_STORAGE_KEY = 'sidebar-group-state';
+const SECTION_TOGGLE_BUTTON_CLASS =
+  'flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 active:bg-slate-200/60 dark:active:bg-slate-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset';
 
 export interface CollapsibleSidebarProps {
   businessName?: string;
@@ -209,13 +211,14 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
       {/* Navigation items */}
       <div className="flex-grow overflow-y-auto pb-16">
         {frequentItemsBySearch.length > 0 && (
-          <div className="mb-2 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40">
+          <div className="mb-2 rounded-lg border border-slate-200/80 bg-slate-50/40 p-1 dark:border-slate-800 dark:bg-slate-900/40">
             {open ? (
               <button
                 type="button"
                 onClick={() => setIsFrequentOpen((prev) => !prev)}
                 aria-expanded={isFrequentOpen}
-                className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60"
+                className={SECTION_TOGGLE_BUTTON_CLASS}
+                style={{ WebkitTapHighlightColor: 'transparent' }}
               >
                 <span className="inline-flex items-center gap-2">
                   <Star className="h-3.5 w-3.5" />
@@ -273,14 +276,15 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
           return (
             <div
               key={groupName}
-              className="mt-1 rounded-lg border border-slate-200/80 dark:border-slate-800"
+              className="mt-1 rounded-lg border border-slate-200/80 p-1 dark:border-slate-800"
             >
               {open ? (
                 <button
                   type="button"
                   onClick={() => toggleGroup(groupName)}
                   aria-expanded={isGroupOpen}
-                  className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60"
+                  className={SECTION_TOGGLE_BUTTON_CLASS}
+                  style={{ WebkitTapHighlightColor: 'transparent' }}
                 >
                   <span>{groupName}</span>
                   {isGroupOpen ? (

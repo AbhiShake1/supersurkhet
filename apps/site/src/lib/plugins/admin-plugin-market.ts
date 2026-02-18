@@ -242,20 +242,7 @@ export function buildPluginDetailView(
 
   return {
     plugin,
-    reviewStats:
-      stats.totalReviews > 0
-        ? stats
-        : {
-            averageRating: plugin.averageRating,
-            totalReviews: plugin.reviewCount,
-            breakdown: {
-              1: Math.max(1, Math.round(plugin.reviewCount * 0.04)),
-              2: Math.max(1, Math.round(plugin.reviewCount * 0.06)),
-              3: Math.max(1, Math.round(plugin.reviewCount * 0.1)),
-              4: Math.max(1, Math.round(plugin.reviewCount * 0.2)),
-              5: Math.max(1, Math.round(plugin.reviewCount * 0.6)),
-            },
-          },
+    reviewStats: stats,
     userReview,
     previewScreenshots: plugin.screenshotUrls,
     previewTabs,

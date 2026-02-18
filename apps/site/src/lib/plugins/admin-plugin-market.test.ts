@@ -128,6 +128,8 @@ describe('admin plugin market helpers', () => {
 
     expect(details.previewScreenshots.length).toBe(0);
     expect(details.previewTabs.length).toBeGreaterThan(0);
+    expect(details.reviewStats.totalReviews).toBe(0);
+    expect(details.reviewStats.averageRating).toBe(0);
   });
 
   it('groups reviews by user and prioritizes the current user at the top', () => {

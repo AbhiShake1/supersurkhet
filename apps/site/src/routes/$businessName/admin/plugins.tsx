@@ -122,7 +122,7 @@ function PluginsRouteComponent() {
           </Button>
         </div>
 
-        <div className="mt-6 flex flex-col gap-3 md:flex-row">
+        <div className="mt-6 flex flex-col gap-3 items-center">
           <Input
             leadingIcon={<Search className="size-4" />}
             value={query}

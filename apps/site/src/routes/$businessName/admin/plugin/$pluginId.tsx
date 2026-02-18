@@ -394,14 +394,15 @@ function PluginDetailsPage() {
           <div className="flex flex-wrap gap-2">
             <Button
               onClick={installCurrent}
-              loading={installing}
               disabled={
                 installing ||
                 uninstalling ||
                 (!pluginData.isUpgradable && pluginData.isInstalled)
               }
             >
-              <Sparkles className="mr-2 size-4" />
+              <Sparkles
+                className={cn('mr-2 size-4', installing && 'animate-spin')}
+              />
               {installLabel}
             </Button>
             <Button variant="secondary" onClick={() => setIsPreviewOpen(true)}>
@@ -559,42 +560,46 @@ function PluginDetailsPage() {
               <CardTitle>Ratings and reviews</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 px-5">
-              <div className="grid gap-4 md:grid-cols-[180px_1fr]">
-                <div>
-                  <p className="text-6xl font-semibold">
-                    {details.reviewStats.averageRating}
-                  </p>
-                  <p className="flex items-center text-sm text-muted-foreground">
-                    <Star className="mr-1 size-3 fill-current" />
-                    {details.reviewStats.totalReviews.toLocaleString()} reviews
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  {[5, 4, 3, 2, 1].map((value) => {
-                    const count = details.reviewStats.breakdown[value] ?? 0;
-                    const width =
-                      details.reviewStats.totalReviews > 0
-                        ? Math.round(
-                            (count / details.reviewStats.totalReviews) * 100,
-                          )
-                        : 0;
-                    return (
-                      <div
-                        key={value}
-                        className="flex items-center gap-2 text-xs"
-                      >
-                        <span className="w-3">{value}</span>
-                        <div className="h-2 flex-1 rounded bg-muted">
-                          <div
-                            className="h-2 rounded bg-emerald-600"
-                            style={{ width: `${width}%` }}
-                          />
+              {details.reviewStats.totalReviews > 0 ? (
+                <div className="grid gap-2 md:grid-cols-[140px_1fr]">
+                  <div>
+                    <p className="text-6xl font-semibold">
+                      {details.reviewStats.averageRating}
+                    </p>
+                    <p className="flex items-center text-sm text-muted-foreground">
+                      <Star className="mr-1 size-3 fill-current" />
+                      {details.reviewStats.totalReviews.toLocaleString()} reviews
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    {[5, 4, 3, 2, 1].map((value) => {
+                      const count = details.reviewStats.breakdown[value] ?? 0;
+                      const width = Math.round(
+                        (count / details.reviewStats.totalReviews) * 100,
+                      );
+                      return (
+                        <div
+                          key={value}
+                          className="flex items-center gap-2 text-xs"
+                        >
+                          <span className="w-3">{value}</span>
+                          <div className="h-2 flex-1 rounded bg-muted">
+                            <div
+                              className="h-2 rounded bg-emerald-600"
+                              style={{ width: `${width}%` }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  This plugin ({pluginData.title}) has no reviews yet. Be the
+                  first one to review.
+                </p>
+              )}
 
               <div className="rounded-xl border p-3">
                 <p className="mb-2 text-sm font-medium">Add your review</p>
@@ -647,13 +652,9 @@ function PluginDetailsPage() {
                 </Button>
               </div>
 
-              <div className="space-y-3">
-                {groupedReviews.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No reviews yet. Be the first to leave feedback.
-                  </p>
-                ) : (
-                  groupedReviews.map((group) => {
+              {groupedReviews.length > 0 ? (
+                <div className="space-y-3">
+                  {groupedReviews.map((group) => {
                     const isOpen = expandedReviewUserIds.includes(group.userId);
                     return (
                       <motion.article
@@ -752,9 +753,9 @@ function PluginDetailsPage() {
                         </AnimatePresence>
                       </motion.article>
                     );
-                  })
-                )}
-              </div>
+                  })}
+                </div>
+              ) : null}
             </CardContent>
           </Card>
         </div>
