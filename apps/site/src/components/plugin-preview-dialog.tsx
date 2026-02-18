@@ -31,7 +31,6 @@ export function PluginPreviewDialog({
 }: PluginPreviewDialogProps) {
   const currentConfig = useBusinessConfig({
     slug: businessSlug,
-    businessId,
   });
 
   const currentBusinessTabs = useMemo(() => {

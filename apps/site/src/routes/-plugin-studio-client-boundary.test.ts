@@ -91,4 +91,15 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('Preset Logic');
     expect(content).toContain('getBlocklyPresets');
   });
+
+  it('uses real Google Blockly workspace for logic composition', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain("import('blockly')");
+    expect(content).toContain('blocklyWorkspaceId');
+    expect(content).toContain('plugin_logic_and');
+    expect(content).toContain('plugin_logic_or');
+    expect(content).toContain('plugin_logic_not');
+    expect(content).toContain('Blockly Logic Rules');
+  });
 });

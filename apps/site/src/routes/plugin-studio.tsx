@@ -8,7 +8,7 @@ import {
   Trash2,
   Wand2,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { useConfetti } from '@/components/confetti-provider';
@@ -58,6 +58,7 @@ import {
 import type {
   ActionManifestDoc,
   AdminTabDoc,
+  ExpressionDoc,
   PluginReleaseDoc,
   SchemaDoc,
   SchemaFieldDoc,
@@ -242,6 +243,21 @@ function getAllowedOperators(
   return ['eq', 'neq'];
 }
 
+function getBlocklyOperatorOptions(
+  fieldType: BuilderFieldType | undefined,
+): [string, RuleOperator][] {
+  const allowed = getAllowedOperators(fieldType);
+  const labels: Record<RuleOperator, string> = {
+    eq: 'equals',
+    neq: 'not equals',
+    gt: 'greater than',
+    gte: 'greater/equal',
+    lt: 'less than',
+    lte: 'less/equal',
+  };
+  return allowed.map((operator) => [labels[operator], operator]);
+}
+
 function getBlocklyPresets(fieldType: BuilderFieldType | undefined) {
   if (fieldType && ORDERABLE_FIELD_TYPES.has(fieldType)) {
     return [
@@ -372,6 +388,29 @@ type BlocklyDraft = {
   message: string;
 };
 
+type BlocklyRefinement = {
+  id: string;
+  leftField: string;
+  message: string;
+  condition: ExpressionDoc;
+};
+
+type BlocklyRuntime = {
+  Blockly: Record<string, unknown>;
+  workspace: {
+    getBlockById: (id: string) => {
+      getField: (name: string) => {
+        menuGenerator_: unknown;
+        setValue: (value: string) => void;
+      } | null;
+      getFieldValue: (name: string) => string;
+      setFieldValue: (value: string, name: string) => void;
+    } | null;
+    render: () => void;
+    dispose: () => void;
+  };
+};
+
 type BuilderFieldType =
   | (typeof AUTOFORM_FIELD_TYPES)[number]
   | 'enum'
@@ -462,22 +501,22 @@ function toSchemaFieldDoc(field: BuilderField): SchemaFieldDoc {
     itemType:
       field.type === 'array'
         ? {
-            type: field.arrayItemType ?? 'string',
-            enumValues: isChoiceFieldType(field.arrayItemType)
-              ? parseCommaSeparatedValues(field.arrayItemEnumValuesText)
-              : undefined,
-            behavior: {
-              fieldConfig: {
-                fieldType: field.arrayItemType ?? 'string',
-              },
+          type: field.arrayItemType ?? 'string',
+          enumValues: isChoiceFieldType(field.arrayItemType)
+            ? parseCommaSeparatedValues(field.arrayItemEnumValuesText)
+            : undefined,
+          behavior: {
+            fieldConfig: {
+              fieldType: field.arrayItemType ?? 'string',
             },
-          }
+          },
+        }
         : undefined,
     fields:
       field.type === 'object'
         ? (field.objectFields ?? []).map((nestedField) =>
-            toObjectFieldDoc(nestedField),
-          )
+          toObjectFieldDoc(nestedField),
+        )
         : undefined,
     behavior: {
       fieldConfig,
@@ -530,6 +569,107 @@ function hasFieldValidationErrors(field: BuilderField) {
   return false;
 }
 
+const blocklyModulePromise = import('blockly');
+
+type BlocklyBlockLike = {
+  type: string;
+  getFieldValue: (fieldName: string) => string;
+  getInputTargetBlock: (inputName: string) => BlocklyBlockLike | null;
+};
+
+function buildConditionFromBlocklyBlock(
+  block: BlocklyBlockLike | null,
+  leftField: string,
+): ExpressionDoc | null {
+  if (!block || !leftField) return null;
+
+  if (block.type === 'plugin_rule_compare') {
+    const operator = block.getFieldValue('OP') as RuleOperator;
+    const rightField = block.getFieldValue('RIGHT');
+    if (!rightField) return null;
+    return {
+      kind: 'op',
+      op: operator,
+      args: [
+        { kind: 'ref', source: 'payload', path: [leftField] },
+        { kind: 'ref', source: 'payload', path: [rightField] },
+      ],
+    };
+  }
+
+  if (block.type === 'plugin_rule_compare_number') {
+    const operator = block.getFieldValue('OP') as RuleOperator;
+    const literalValue = Number(block.getFieldValue('VALUE'));
+    if (!Number.isFinite(literalValue)) return null;
+    return {
+      kind: 'op',
+      op: operator,
+      args: [
+        { kind: 'ref', source: 'payload', path: [leftField] },
+        literalValue,
+      ],
+    };
+  }
+
+  if (block.type === 'plugin_rule_compare_text') {
+    const operator = block.getFieldValue('OP') as RuleOperator;
+    const literalValue = block.getFieldValue('VALUE');
+    return {
+      kind: 'op',
+      op: operator,
+      args: [
+        { kind: 'ref', source: 'payload', path: [leftField] },
+        literalValue,
+      ],
+    };
+  }
+
+  if (block.type === 'plugin_rule_compare_boolean') {
+    const operator = block.getFieldValue('OP') as RuleOperator;
+    const literalValue = block.getFieldValue('VALUE') === 'true';
+    return {
+      kind: 'op',
+      op: operator,
+      args: [
+        { kind: 'ref', source: 'payload', path: [leftField] },
+        literalValue,
+      ],
+    };
+  }
+
+  if (block.type === 'plugin_logic_and' || block.type === 'plugin_logic_or') {
+    const leftCondition = buildConditionFromBlocklyBlock(
+      block.getInputTargetBlock('A'),
+      leftField,
+    );
+    const rightCondition = buildConditionFromBlocklyBlock(
+      block.getInputTargetBlock('B'),
+      leftField,
+    );
+    if (!leftCondition || !rightCondition) return null;
+    return {
+      kind: 'op',
+      op: block.type === 'plugin_logic_and' ? 'and' : 'or',
+      args: [leftCondition, rightCondition],
+    };
+  }
+
+  if (block.type === 'plugin_logic_not') {
+    const nestedCondition = buildConditionFromBlocklyBlock(
+      block.getInputTargetBlock('VALUE'),
+      leftField,
+    );
+    if (!nestedCondition) return null;
+    return {
+      kind: 'op',
+      op: 'not',
+      args: [nestedCondition],
+    };
+  }
+
+  return null;
+}
+
 function PluginStudioRoute() {
   const { user, isAuthenticated } = useAuth();
   const { fire: fireConfetti } = useConfetti();
@@ -570,6 +710,9 @@ function PluginStudioRoute() {
   const [schemaRefinements, setSchemaRefinements] = useState<
     BuilderRefinement[]
   >([]);
+  const [blocklyRefinements, setBlocklyRefinements] = useState<
+    BlocklyRefinement[]
+  >([]);
   const [blocklyDraft, setBlocklyDraft] = useState<BlocklyDraft>({
     fieldId: null,
     operator: 'eq',
@@ -577,6 +720,18 @@ function PluginStudioRoute() {
     message: 'Validation rule failed',
   });
   const [isBlocklyComposerOpen, setIsBlocklyComposerOpen] = useState(false);
+  const [isBlocklyReady, setIsBlocklyReady] = useState(false);
+  const [blocklyError, setBlocklyError] = useState<string | null>(null);
+  const blocklyWorkspaceId = useId();
+  const [blocklyMountElement, setBlocklyMountElement] =
+    useState<HTMLDivElement | null>(null);
+  const blocklyContainerRef = useRef<HTMLDivElement | null>(null);
+  const blocklyRuntimeRef = useRef<BlocklyRuntime | null>(null);
+  const blocklyRightFieldOptionsRef = useRef<[string, string][]>([
+    ['No compatible fields', ''],
+  ]);
+  const blocklyInitialOperatorRef = useRef<RuleOperator>('eq');
+  const blocklyInitialRightFieldRef = useRef('');
   const [debouncedHashInput, setDebouncedHashInput] =
     useState<HashPreviewInput | null>(null);
   const seededActorRef = useRef<string | null>(null);
@@ -706,28 +861,40 @@ function PluginStudioRoute() {
       schemaId: schemaBuilder.schemaId || 'plugin.custom.table',
       title: schemaBuilder.title || 'Custom Schema',
       fields: schemaBuilder.fields.map((field) => toSchemaFieldDoc(field)),
-      refinements: validRefinements.map((rule) => ({
-        code: 'custom',
-        path: rule.leftField ? [rule.leftField] : undefined,
-        message: rule.message || 'Validation failed',
-        when: {
-          kind: 'op',
-          op: 'not',
-          args: [
-            {
-              kind: 'op',
-              op: rule.operator,
-              args: [
-                { kind: 'ref', source: 'payload', path: [rule.leftField] },
-                { kind: 'ref', source: 'payload', path: [rule.rightField] },
-              ],
-            },
-          ],
-        },
-      })),
+      refinements: [
+        ...validRefinements.map((rule) => ({
+          code: 'custom',
+          path: rule.leftField ? [rule.leftField] : undefined,
+          message: rule.message || 'Validation failed',
+          when: {
+            kind: 'op',
+            op: 'not',
+            args: [
+              {
+                kind: 'op',
+                op: rule.operator,
+                args: [
+                  { kind: 'ref', source: 'payload', path: [rule.leftField] },
+                  { kind: 'ref', source: 'payload', path: [rule.rightField] },
+                ],
+              },
+            ],
+          },
+        })),
+        ...blocklyRefinements.map((rule) => ({
+          code: 'custom',
+          path: rule.leftField ? [rule.leftField] : undefined,
+          message: rule.message || 'Validation failed',
+          when: {
+            kind: 'op',
+            op: 'not',
+            args: [rule.condition],
+          },
+        })),
+      ],
     };
     setSchemaText(canonicalStringify([nextSchemaDoc]));
-  }, [schemaBuilder, schemaRefinements]);
+  }, [blocklyRefinements, schemaBuilder, schemaRefinements]);
 
   const hashPreviewQuery = useQuery({
     queryKey: ['plugin-studio', 'release-hash-preview', debouncedHashInput],
@@ -845,8 +1012,8 @@ function PluginStudioRoute() {
         const leftType = fieldTypeByRuleField.get(nextLeftField);
         const compatibleFields = leftType
           ? (availableRuleFieldsByType.get(leftType) ?? []).filter(
-              (fieldKey) => fieldKey !== nextLeftField,
-            )
+            (fieldKey) => fieldKey !== nextLeftField,
+          )
           : [];
         const nextRightField = compatibleFields.includes(rule.rightField)
           ? rule.rightField
@@ -896,6 +1063,280 @@ function PluginStudioRoute() {
     () => getBlocklyPresets(selectedBlocklyField?.type),
     [selectedBlocklyField?.type],
   );
+  const firstBlocklyComparableField = blocklyComparableFields[0] ?? '';
+
+  useEffect(() => {
+    const nextOptions = blocklyComparableFields.length
+      ? blocklyComparableFields.map(
+        (fieldKey) => [fieldKey, fieldKey] as [string, string],
+      )
+      : [['No compatible fields', '']];
+    blocklyRightFieldOptionsRef.current = nextOptions;
+
+    const runtime = blocklyRuntimeRef.current;
+    if (!runtime?.workspace) return;
+    const rootBlock = runtime.workspace.getBlockById('plugin_rule_root');
+    const conditionBlock = rootBlock?.getInputTargetBlock('CONDITION');
+    const operatorField = conditionBlock?.getField('OP');
+    const rightField =
+      conditionBlock?.type === 'plugin_rule_compare'
+        ? conditionBlock.getField('RIGHT')
+        : null;
+    if (operatorField && selectedBlocklyField) {
+      const allowedOperators = getAllowedOperators(selectedBlocklyField.type);
+      const operatorOptions = getBlocklyOperatorOptions(
+        selectedBlocklyField.type,
+      );
+      operatorField.menuGenerator_ =
+        conditionBlock?.type === 'plugin_rule_compare_text' ||
+          conditionBlock?.type === 'plugin_rule_compare_boolean'
+          ? operatorOptions.filter(
+            ([, operator]) => operator === 'eq' || operator === 'neq',
+          )
+          : operatorOptions;
+      const selectedOperator = conditionBlock.getFieldValue(
+        'OP',
+      ) as RuleOperator;
+      if (!allowedOperators.includes(selectedOperator)) {
+        conditionBlock.setFieldValue(allowedOperators[0] ?? 'eq', 'OP');
+      }
+    }
+    if (!rightField) return;
+    rightField.menuGenerator_ = nextOptions;
+    const selectedValue = conditionBlock.getFieldValue('RIGHT');
+    const hasSelection = blocklyComparableFields.includes(selectedValue);
+    rightField.setValue(
+      hasSelection ? selectedValue : (blocklyComparableFields[0] ?? ''),
+    );
+    runtime.workspace.render();
+  }, [blocklyComparableFields, selectedBlocklyField]);
+
+  useEffect(() => {
+    const runtime = blocklyRuntimeRef.current;
+    const rootBlock = runtime?.workspace?.getBlockById('plugin_rule_root');
+    const conditionBlock = rootBlock?.getInputTargetBlock('CONDITION');
+    if (
+      !conditionBlock ||
+      ![
+        'plugin_rule_compare',
+        'plugin_rule_compare_number',
+        'plugin_rule_compare_text',
+        'plugin_rule_compare_boolean',
+      ].includes(conditionBlock.type)
+    ) {
+      return;
+    }
+    conditionBlock.setFieldValue(blocklyDraft.operator, 'OP');
+  }, [blocklyDraft.operator]);
+
+  useEffect(() => {
+    blocklyInitialOperatorRef.current = blocklyDraft.operator;
+    blocklyInitialRightFieldRef.current = blocklyDraft.rightField;
+  }, [blocklyDraft.operator, blocklyDraft.rightField]);
+
+  useEffect(() => {
+    if (
+      !isBlocklyComposerOpen ||
+      !selectedBlocklyField ||
+      !blocklyMountElement
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    setIsBlocklyReady(false);
+    setBlocklyError(null);
+
+    const mountBlockly = async () => {
+      try {
+        const Blockly = await blocklyModulePromise;
+        if (cancelled || !blocklyMountElement) return;
+        const operatorOptions = getBlocklyOperatorOptions(
+          selectedBlocklyField.type,
+        );
+
+        Blockly.Blocks.plugin_rule_compare = {
+          init() {
+            this.appendDummyInput()
+              .appendField('compare with')
+              .appendField(
+                new Blockly.FieldDropdown(blocklyRightFieldOptionsRef.current),
+                'RIGHT',
+              )
+              .appendField('using')
+              .appendField(new Blockly.FieldDropdown(operatorOptions), 'OP');
+            this.setOutput(true, 'Boolean');
+            this.setColour(210);
+          },
+        };
+        Blockly.Blocks.plugin_rule_compare_number = {
+          init() {
+            this.appendDummyInput()
+              .appendField('value')
+              .appendField(new Blockly.FieldDropdown(operatorOptions), 'OP')
+              .appendField('number')
+              .appendField(new Blockly.FieldNumber(0), 'VALUE');
+            this.setOutput(true, 'Boolean');
+            this.setColour(200);
+          },
+        };
+        Blockly.Blocks.plugin_rule_compare_text = {
+          init() {
+            this.appendDummyInput()
+              .appendField('value')
+              .appendField(
+                new Blockly.FieldDropdown(
+                  operatorOptions.filter(
+                    ([, operator]) => operator === 'eq' || operator === 'neq',
+                  ),
+                ),
+                'OP',
+              )
+              .appendField('text')
+              .appendField(new Blockly.FieldTextInput(''), 'VALUE');
+            this.setOutput(true, 'Boolean');
+            this.setColour(200);
+          },
+        };
+        Blockly.Blocks.plugin_rule_compare_boolean = {
+          init() {
+            this.appendDummyInput()
+              .appendField('value')
+              .appendField(
+                new Blockly.FieldDropdown(
+                  operatorOptions.filter(
+                    ([, operator]) => operator === 'eq' || operator === 'neq',
+                  ),
+                ),
+                'OP',
+              )
+              .appendField('boolean')
+              .appendField(
+                new Blockly.FieldDropdown([
+                  ['true', 'true'],
+                  ['false', 'false'],
+                ]),
+                'VALUE',
+              );
+            this.setOutput(true, 'Boolean');
+            this.setColour(200);
+          },
+        };
+        if (!Blockly.Blocks.plugin_logic_and) {
+          Blockly.Blocks.plugin_logic_and = {
+            init() {
+              this.appendValueInput('A')
+                .setCheck('Boolean')
+                .appendField('all of');
+              this.appendValueInput('B').setCheck('Boolean').appendField('and');
+              this.setOutput(true, 'Boolean');
+              this.setColour(120);
+            },
+          };
+        }
+        if (!Blockly.Blocks.plugin_logic_or) {
+          Blockly.Blocks.plugin_logic_or = {
+            init() {
+              this.appendValueInput('A')
+                .setCheck('Boolean')
+                .appendField('any of');
+              this.appendValueInput('B').setCheck('Boolean').appendField('or');
+              this.setOutput(true, 'Boolean');
+              this.setColour(120);
+            },
+          };
+        }
+        if (!Blockly.Blocks.plugin_logic_not) {
+          Blockly.Blocks.plugin_logic_not = {
+            init() {
+              this.appendValueInput('VALUE')
+                .setCheck('Boolean')
+                .appendField('not');
+              this.setOutput(true, 'Boolean');
+              this.setColour(120);
+            },
+          };
+        }
+        if (!Blockly.Blocks.plugin_rule_root) {
+          Blockly.Blocks.plugin_rule_root = {
+            init() {
+              this.appendDummyInput().appendField('validation condition');
+              this.appendValueInput('CONDITION')
+                .setCheck('Boolean')
+                .appendField('must satisfy');
+              this.setColour(260);
+              this.setMovable(false);
+              this.setDeletable(false);
+            },
+          };
+        }
+
+        const workspace = Blockly.inject(blocklyMountElement, {
+          toolbox: {
+            kind: 'flyoutToolbox',
+            contents: [
+              { kind: 'block', type: 'plugin_rule_compare' },
+              { kind: 'block', type: 'plugin_rule_compare_number' },
+              { kind: 'block', type: 'plugin_rule_compare_text' },
+              { kind: 'block', type: 'plugin_rule_compare_boolean' },
+              { kind: 'block', type: 'plugin_logic_and' },
+              { kind: 'block', type: 'plugin_logic_or' },
+              { kind: 'block', type: 'plugin_logic_not' },
+            ],
+          },
+          trashcan: true,
+          move: { wheel: true, drag: true, scrollbars: true },
+        });
+
+        const xml = Blockly.utils.xml.textToDom(
+          '<xml xmlns="https://developers.google.com/blockly/xml"><block type="plugin_rule_root" id="plugin_rule_root" x="24" y="24"><value name="CONDITION"><block type="plugin_rule_compare" id="plugin_rule_compare_default"></block></value></block></xml>',
+        );
+        Blockly.Xml.clearWorkspaceAndLoadFromXml(xml, workspace);
+
+        const rootBlock = workspace.getBlockById('plugin_rule_root');
+        const compareBlock = rootBlock?.getInputTargetBlock('CONDITION');
+        if (compareBlock && compareBlock.type === 'plugin_rule_compare') {
+          const allowedOperators = getAllowedOperators(
+            selectedBlocklyField.type,
+          );
+          const initialOperator = blocklyInitialOperatorRef.current;
+          const nextOperator = allowedOperators.includes(initialOperator)
+            ? initialOperator
+            : (allowedOperators[0] ?? 'eq');
+          compareBlock.setFieldValue(nextOperator, 'OP');
+          compareBlock.setFieldValue(
+            blocklyInitialRightFieldRef.current || firstBlocklyComparableField,
+            'RIGHT',
+          );
+        }
+
+        blocklyRuntimeRef.current = { Blockly, workspace };
+        if (!cancelled) setIsBlocklyReady(true);
+      } catch (error) {
+        console.error(error);
+        if (!cancelled) {
+          setBlocklyError('Failed to load Blockly composer.');
+        }
+      }
+    };
+
+    void mountBlockly();
+
+    return () => {
+      cancelled = true;
+      const runtime = blocklyRuntimeRef.current;
+      if (runtime?.workspace) {
+        runtime.workspace.dispose();
+      }
+      blocklyRuntimeRef.current = null;
+      setIsBlocklyReady(false);
+    };
+  }, [
+    isBlocklyComposerOpen,
+    blocklyMountElement,
+    firstBlocklyComparableField,
+    selectedBlocklyField,
+  ]);
 
   function applyTemplatePreset(releaseId: string) {
     let parsedReleaseId = parseReleaseId(releaseId);
@@ -933,19 +1374,19 @@ function PluginStudioRoute() {
     const firstAction = template.actionManifest[0];
     const workflowNodes = firstAction
       ? [
-          {
-            nodeId: 'n1',
-            type: 'action' as const,
-            actionId: firstAction.actionId,
-            input: {
-              expression: {
-                kind: 'ref' as const,
-                source: 'payload' as const,
-                path: [],
-              },
+        {
+          nodeId: 'n1',
+          type: 'action' as const,
+          actionId: firstAction.actionId,
+          input: {
+            expression: {
+              kind: 'ref' as const,
+              source: 'payload' as const,
+              path: [],
             },
           },
-        ]
+        },
+      ]
       : DEFAULT_WORKFLOW_DOC.nodes;
 
     setWorkflowText(
@@ -993,8 +1434,8 @@ function PluginStudioRoute() {
       ],
     });
     setSchemaRefinements([]);
+    setBlocklyRefinements([]);
     setSelectedTemplateLabel(template.docs.title);
-    fireConfetti();
     toast.success(`Loaded template ${template.docs.title}`);
   }
 
@@ -1063,11 +1504,10 @@ function PluginStudioRoute() {
             {templates.map((template) => (
               <div
                 key={`${template.pluginId}@${template.version}`}
-                className={`rounded-xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${
-                  selectedTemplateLabel === template.docs.title
-                    ? 'ring-2 ring-primary'
-                    : ''
-                }`}
+                className={`rounded-xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedTemplateLabel === template.docs.title
+                  ? 'ring-2 ring-primary'
+                  : ''
+                  }`}
               >
                 <div className="space-y-0.5">
                   <div className="font-medium text-sm">
@@ -1217,7 +1657,7 @@ function PluginStudioRoute() {
                     const enumValuesMissing =
                       choiceFieldType &&
                       parseCommaSeparatedValues(field.enumValuesText).length ===
-                        0;
+                      0;
                     const inputPropsInvalid = isInvalidObjectJson(
                       field.inputPropsJson,
                     );
@@ -1251,9 +1691,9 @@ function PluginStudioRoute() {
                                   (nextField, nextIndex) =>
                                     nextIndex === fieldIndex
                                       ? {
-                                          ...nextField,
-                                          key: event.target.value,
-                                        }
+                                        ...nextField,
+                                        key: event.target.value,
+                                      }
                                       : nextField,
                                 ),
                               }))
@@ -1270,9 +1710,9 @@ function PluginStudioRoute() {
                                   (nextField, nextIndex) =>
                                     nextIndex === fieldIndex
                                       ? {
-                                          ...nextField,
-                                          label: event.target.value,
-                                        }
+                                        ...nextField,
+                                        label: event.target.value,
+                                      }
                                       : nextField,
                                 ),
                               }))
@@ -1288,9 +1728,9 @@ function PluginStudioRoute() {
                                   (nextField, nextIndex) =>
                                     nextIndex === fieldIndex
                                       ? {
-                                          ...nextField,
-                                          description: event.target.value,
-                                        }
+                                        ...nextField,
+                                        description: event.target.value,
+                                      }
                                       : nextField,
                                 ),
                               }))
@@ -1351,10 +1791,10 @@ function PluginStudioRoute() {
                                   (nextField, nextIndex) =>
                                     nextIndex === fieldIndex
                                       ? {
-                                          ...nextField,
-                                          fieldType:
-                                            value as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                        }
+                                        ...nextField,
+                                        fieldType:
+                                          value as (typeof AUTOFORM_FIELD_TYPES)[number],
+                                      }
                                       : nextField,
                                 ),
                               }))
@@ -1381,9 +1821,9 @@ function PluginStudioRoute() {
                                     (nextField, nextIndex) =>
                                       nextIndex === fieldIndex
                                         ? {
-                                            ...nextField,
-                                            required: checked === true,
-                                          }
+                                          ...nextField,
+                                          required: checked === true,
+                                        }
                                         : nextField,
                                   ),
                                 }))
@@ -1403,10 +1843,10 @@ function PluginStudioRoute() {
                                       (nextField, nextIndex) =>
                                         nextIndex === fieldIndex
                                           ? {
-                                              ...nextField,
-                                              min:
-                                                event.target.value || undefined,
-                                            }
+                                            ...nextField,
+                                            min:
+                                              event.target.value || undefined,
+                                          }
                                           : nextField,
                                     ),
                                   }))
@@ -1423,10 +1863,10 @@ function PluginStudioRoute() {
                                       (nextField, nextIndex) =>
                                         nextIndex === fieldIndex
                                           ? {
-                                              ...nextField,
-                                              max:
-                                                event.target.value || undefined,
-                                            }
+                                            ...nextField,
+                                            max:
+                                              event.target.value || undefined,
+                                          }
                                           : nextField,
                                     ),
                                   }))
@@ -1444,10 +1884,10 @@ function PluginStudioRoute() {
                                   (nextField, nextIndex) =>
                                     nextIndex === fieldIndex
                                       ? {
-                                          ...nextField,
-                                          defaultValue:
-                                            event.target.value || undefined,
-                                        }
+                                        ...nextField,
+                                        defaultValue:
+                                          event.target.value || undefined,
+                                      }
                                       : nextField,
                                 ),
                               }))
@@ -1464,9 +1904,9 @@ function PluginStudioRoute() {
                                     (nextField, nextIndex) =>
                                       nextIndex === fieldIndex
                                         ? {
-                                            ...nextField,
-                                            enumValuesText: event.target.value,
-                                          }
+                                          ...nextField,
+                                          enumValuesText: event.target.value,
+                                        }
                                         : nextField,
                                   ),
                                 }))
@@ -1488,10 +1928,10 @@ function PluginStudioRoute() {
                                       (nextField, nextIndex) =>
                                         nextIndex === fieldIndex
                                           ? {
-                                              ...nextField,
-                                              arrayItemType:
-                                                value as BuilderLeafFieldType,
-                                            }
+                                            ...nextField,
+                                            arrayItemType:
+                                              value as BuilderLeafFieldType,
+                                          }
                                           : nextField,
                                     ),
                                   }))
@@ -1521,10 +1961,10 @@ function PluginStudioRoute() {
                                         (nextField, nextIndex) =>
                                           nextIndex === fieldIndex
                                             ? {
-                                                ...nextField,
-                                                arrayItemEnumValuesText:
-                                                  event.target.value,
-                                              }
+                                              ...nextField,
+                                              arrayItemEnumValuesText:
+                                                event.target.value,
+                                            }
                                             : nextField,
                                       ),
                                     }))
@@ -1548,9 +1988,9 @@ function PluginStudioRoute() {
                                   (nextField, nextIndex) =>
                                     nextIndex === fieldIndex
                                       ? {
-                                          ...nextField,
-                                          fieldConfigJson: event.target.value,
-                                        }
+                                        ...nextField,
+                                        fieldConfigJson: event.target.value,
+                                      }
                                       : nextField,
                                 ),
                               }))
@@ -1569,9 +2009,9 @@ function PluginStudioRoute() {
                                   (nextField, nextIndex) =>
                                     nextIndex === fieldIndex
                                       ? {
-                                          ...nextField,
-                                          inputPropsJson: event.target.value,
-                                        }
+                                        ...nextField,
+                                        inputPropsJson: event.target.value,
+                                      }
                                       : nextField,
                                 ),
                               }))
@@ -1590,9 +2030,9 @@ function PluginStudioRoute() {
                                   (nextField, nextIndex) =>
                                     nextIndex === fieldIndex
                                       ? {
-                                          ...nextField,
-                                          customDataJson: event.target.value,
-                                        }
+                                        ...nextField,
+                                        customDataJson: event.target.value,
+                                      }
                                       : nextField,
                                 ),
                               }))
@@ -1614,9 +2054,9 @@ function PluginStudioRoute() {
                                         (nextField, nextIndex) =>
                                           nextIndex === fieldIndex
                                             ? {
-                                                ...nextField,
-                                                useInt: checked === true,
-                                              }
+                                              ...nextField,
+                                              useInt: checked === true,
+                                            }
                                             : nextField,
                                       ),
                                     }))
@@ -1634,9 +2074,9 @@ function PluginStudioRoute() {
                                         (nextField, nextIndex) =>
                                           nextIndex === fieldIndex
                                             ? {
-                                                ...nextField,
-                                                usePositive: checked === true,
-                                              }
+                                              ...nextField,
+                                              usePositive: checked === true,
+                                            }
                                             : nextField,
                                       ),
                                     }))
@@ -1654,10 +2094,10 @@ function PluginStudioRoute() {
                                         (nextField, nextIndex) =>
                                           nextIndex === fieldIndex
                                             ? {
-                                                ...nextField,
-                                                useNonNegative:
-                                                  checked === true,
-                                              }
+                                              ...nextField,
+                                              useNonNegative:
+                                                checked === true,
+                                            }
                                             : nextField,
                                       ),
                                     }))
@@ -1684,20 +2124,20 @@ function PluginStudioRoute() {
                                         (nextField, nextIndex) =>
                                           nextIndex === fieldIndex
                                             ? {
-                                                ...nextField,
-                                                objectFields: [
-                                                  ...(nextField.objectFields ??
-                                                    []),
-                                                  {
-                                                    id: generateBuilderId(),
-                                                    key: `nested_${(nextField.objectFields ?? []).length + 1}`,
-                                                    label: 'Nested Field',
-                                                    description: '',
-                                                    type: 'string',
-                                                    required: false,
-                                                  },
-                                                ],
-                                              }
+                                              ...nextField,
+                                              objectFields: [
+                                                ...(nextField.objectFields ??
+                                                  []),
+                                                {
+                                                  id: generateBuilderId(),
+                                                  key: `nested_${(nextField.objectFields ?? []).length + 1}`,
+                                                  label: 'Nested Field',
+                                                  description: '',
+                                                  type: 'string',
+                                                  required: false,
+                                                },
+                                              ],
+                                            }
                                             : nextField,
                                       ),
                                     }))
@@ -1722,25 +2162,25 @@ function PluginStudioRoute() {
                                             (nextField, nextIndex) =>
                                               nextIndex === fieldIndex
                                                 ? {
-                                                    ...nextField,
-                                                    objectFields: (
-                                                      nextField.objectFields ??
-                                                      []
-                                                    ).map(
-                                                      (
-                                                        nextNestedField,
-                                                        nextNestedIndex,
-                                                      ) =>
-                                                        nextNestedIndex ===
+                                                  ...nextField,
+                                                  objectFields: (
+                                                    nextField.objectFields ??
+                                                    []
+                                                  ).map(
+                                                    (
+                                                      nextNestedField,
+                                                      nextNestedIndex,
+                                                    ) =>
+                                                      nextNestedIndex ===
                                                         nestedIndex
-                                                          ? {
-                                                              ...nextNestedField,
-                                                              key: event.target
-                                                                .value,
-                                                            }
-                                                          : nextNestedField,
-                                                    ),
-                                                  }
+                                                        ? {
+                                                          ...nextNestedField,
+                                                          key: event.target
+                                                            .value,
+                                                        }
+                                                        : nextNestedField,
+                                                  ),
+                                                }
                                                 : nextField,
                                           ),
                                         }))
@@ -1756,26 +2196,26 @@ function PluginStudioRoute() {
                                             (nextField, nextIndex) =>
                                               nextIndex === fieldIndex
                                                 ? {
-                                                    ...nextField,
-                                                    objectFields: (
-                                                      nextField.objectFields ??
-                                                      []
-                                                    ).map(
-                                                      (
-                                                        nextNestedField,
-                                                        nextNestedIndex,
-                                                      ) =>
-                                                        nextNestedIndex ===
+                                                  ...nextField,
+                                                  objectFields: (
+                                                    nextField.objectFields ??
+                                                    []
+                                                  ).map(
+                                                    (
+                                                      nextNestedField,
+                                                      nextNestedIndex,
+                                                    ) =>
+                                                      nextNestedIndex ===
                                                         nestedIndex
-                                                          ? {
-                                                              ...nextNestedField,
-                                                              label:
-                                                                event.target
-                                                                  .value,
-                                                            }
-                                                          : nextNestedField,
-                                                    ),
-                                                  }
+                                                        ? {
+                                                          ...nextNestedField,
+                                                          label:
+                                                            event.target
+                                                              .value,
+                                                        }
+                                                        : nextNestedField,
+                                                  ),
+                                                }
                                                 : nextField,
                                           ),
                                         }))
@@ -1791,26 +2231,26 @@ function PluginStudioRoute() {
                                             (nextField, nextIndex) =>
                                               nextIndex === fieldIndex
                                                 ? {
-                                                    ...nextField,
-                                                    objectFields: (
-                                                      nextField.objectFields ??
-                                                      []
-                                                    ).map(
-                                                      (
-                                                        nextNestedField,
-                                                        nextNestedIndex,
-                                                      ) =>
-                                                        nextNestedIndex ===
+                                                  ...nextField,
+                                                  objectFields: (
+                                                    nextField.objectFields ??
+                                                    []
+                                                  ).map(
+                                                    (
+                                                      nextNestedField,
+                                                      nextNestedIndex,
+                                                    ) =>
+                                                      nextNestedIndex ===
                                                         nestedIndex
-                                                          ? {
-                                                              ...nextNestedField,
-                                                              description:
-                                                                event.target
-                                                                  .value,
-                                                            }
-                                                          : nextNestedField,
-                                                    ),
-                                                  }
+                                                        ? {
+                                                          ...nextNestedField,
+                                                          description:
+                                                            event.target
+                                                              .value,
+                                                        }
+                                                        : nextNestedField,
+                                                  ),
+                                                }
                                                 : nextField,
                                           ),
                                         }))
@@ -1826,24 +2266,24 @@ function PluginStudioRoute() {
                                             (nextField, nextIndex) =>
                                               nextIndex === fieldIndex
                                                 ? {
-                                                    ...nextField,
-                                                    objectFields: (
-                                                      nextField.objectFields ??
-                                                      []
-                                                    ).map(
-                                                      (
-                                                        nextNestedField,
-                                                        nextNestedIndex,
-                                                      ) =>
-                                                        nextNestedIndex ===
+                                                  ...nextField,
+                                                  objectFields: (
+                                                    nextField.objectFields ??
+                                                    []
+                                                  ).map(
+                                                    (
+                                                      nextNestedField,
+                                                      nextNestedIndex,
+                                                    ) =>
+                                                      nextNestedIndex ===
                                                         nestedIndex
-                                                          ? {
-                                                              ...nextNestedField,
-                                                              type: value as BuilderLeafFieldType,
-                                                            }
-                                                          : nextNestedField,
-                                                    ),
-                                                  }
+                                                        ? {
+                                                          ...nextNestedField,
+                                                          type: value as BuilderLeafFieldType,
+                                                        }
+                                                        : nextNestedField,
+                                                  ),
+                                                }
                                                 : nextField,
                                           ),
                                         }))
@@ -1876,16 +2316,16 @@ function PluginStudioRoute() {
                                             (nextField, nextIndex) =>
                                               nextIndex === fieldIndex
                                                 ? {
-                                                    ...nextField,
-                                                    objectFields: (
-                                                      nextField.objectFields ??
-                                                      []
-                                                    ).filter(
-                                                      (_, nextNestedIndex) =>
-                                                        nextNestedIndex !==
-                                                        nestedIndex,
-                                                    ),
-                                                  }
+                                                  ...nextField,
+                                                  objectFields: (
+                                                    nextField.objectFields ??
+                                                    []
+                                                  ).filter(
+                                                    (_, nextNestedIndex) =>
+                                                      nextNestedIndex !==
+                                                      nestedIndex,
+                                                  ),
+                                                }
                                                 : nextField,
                                           ),
                                         }))
@@ -1903,26 +2343,26 @@ function PluginStudioRoute() {
                                               (nextField, nextIndex) =>
                                                 nextIndex === fieldIndex
                                                   ? {
-                                                      ...nextField,
-                                                      objectFields: (
-                                                        nextField.objectFields ??
-                                                        []
-                                                      ).map(
-                                                        (
-                                                          nextNestedField,
-                                                          nextNestedIndex,
-                                                        ) =>
-                                                          nextNestedIndex ===
+                                                    ...nextField,
+                                                    objectFields: (
+                                                      nextField.objectFields ??
+                                                      []
+                                                    ).map(
+                                                      (
+                                                        nextNestedField,
+                                                        nextNestedIndex,
+                                                      ) =>
+                                                        nextNestedIndex ===
                                                           nestedIndex
-                                                            ? {
-                                                                ...nextNestedField,
-                                                                required:
-                                                                  checked ===
-                                                                  true,
-                                                              }
-                                                            : nextNestedField,
-                                                      ),
-                                                    }
+                                                          ? {
+                                                            ...nextNestedField,
+                                                            required:
+                                                              checked ===
+                                                              true,
+                                                          }
+                                                          : nextNestedField,
+                                                    ),
+                                                  }
                                                   : nextField,
                                             ),
                                           }))
@@ -1940,26 +2380,26 @@ function PluginStudioRoute() {
                                               (nextField, nextIndex) =>
                                                 nextIndex === fieldIndex
                                                   ? {
-                                                      ...nextField,
-                                                      objectFields: (
-                                                        nextField.objectFields ??
-                                                        []
-                                                      ).map(
-                                                        (
-                                                          nextNestedField,
-                                                          nextNestedIndex,
-                                                        ) =>
-                                                          nextNestedIndex ===
+                                                    ...nextField,
+                                                    objectFields: (
+                                                      nextField.objectFields ??
+                                                      []
+                                                    ).map(
+                                                      (
+                                                        nextNestedField,
+                                                        nextNestedIndex,
+                                                      ) =>
+                                                        nextNestedIndex ===
                                                           nestedIndex
-                                                            ? {
-                                                                ...nextNestedField,
-                                                                enumValuesText:
-                                                                  event.target
-                                                                    .value,
-                                                              }
-                                                            : nextNestedField,
-                                                      ),
-                                                    }
+                                                          ? {
+                                                            ...nextNestedField,
+                                                            enumValuesText:
+                                                              event.target
+                                                                .value,
+                                                          }
+                                                          : nextNestedField,
+                                                    ),
+                                                  }
                                                   : nextField,
                                             ),
                                           }))
@@ -2126,8 +2566,8 @@ function PluginStudioRoute() {
                         const firstType = fieldTypeByRuleField.get(leftField);
                         const compatibleFields = firstType
                           ? (
-                              availableRuleFieldsByType.get(firstType) ?? []
-                            ).filter((fieldKey) => fieldKey !== leftField)
+                            availableRuleFieldsByType.get(firstType) ?? []
+                          ).filter((fieldKey) => fieldKey !== leftField)
                           : [];
                         const rightField = compatibleFields[0] ?? '';
                         const operator =
@@ -2170,8 +2610,8 @@ function PluginStudioRoute() {
                     );
                     const compatibleFields = leftFieldType
                       ? (
-                          availableRuleFieldsByType.get(leftFieldType) ?? []
-                        ).filter((fieldKey) => fieldKey !== rule.leftField)
+                        availableRuleFieldsByType.get(leftFieldType) ?? []
+                      ).filter((fieldKey) => fieldKey !== rule.leftField)
                       : [];
                     const allowedOperators = getAllowedOperators(leftFieldType);
 
@@ -2196,12 +2636,12 @@ function PluginStudioRoute() {
                                       fieldTypeByRuleField.get(value);
                                     const nextCompatibleFields = nextType
                                       ? (
-                                          availableRuleFieldsByType.get(
-                                            nextType,
-                                          ) ?? []
-                                        ).filter(
-                                          (fieldKey) => fieldKey !== value,
-                                        )
+                                        availableRuleFieldsByType.get(
+                                          nextType,
+                                        ) ?? []
+                                      ).filter(
+                                        (fieldKey) => fieldKey !== value,
+                                      )
                                       : [];
                                     const nextOperators =
                                       getAllowedOperators(nextType);
@@ -2249,10 +2689,10 @@ function PluginStudioRoute() {
                                   current.map((nextRule) =>
                                     nextRule.id === rule.id
                                       ? {
-                                          ...nextRule,
-                                          operator:
-                                            value as BuilderRefinement['operator'],
-                                        }
+                                        ...nextRule,
+                                        operator:
+                                          value as BuilderRefinement['operator'],
+                                      }
                                       : nextRule,
                                   ),
                                 )
@@ -2342,9 +2782,9 @@ function PluginStudioRoute() {
                                   current.map((nextRule) =>
                                     nextRule.id === rule.id
                                       ? {
-                                          ...nextRule,
-                                          message: event.target.value,
-                                        }
+                                        ...nextRule,
+                                        message: event.target.value,
+                                      }
                                       : nextRule,
                                   ),
                                 )
@@ -2395,6 +2835,46 @@ function PluginStudioRoute() {
                   })
                 )}
               </div>
+              <div className="space-y-2 rounded-xl border bg-card p-3">
+                <div className="text-sm font-medium">Blockly Logic Rules</div>
+                {blocklyRefinements.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Use the Blockly Composer to add advanced nested logic.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {blocklyRefinements.map((rule) => (
+                      <div
+                        key={rule.id}
+                        className="rounded-lg border bg-muted/20 p-3"
+                      >
+                        <div className="text-sm text-foreground">
+                          {rule.message}
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Applies to: {rule.leftField}
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          className="mt-2"
+                          onClick={() =>
+                            setBlocklyRefinements((current) =>
+                              current.filter(
+                                (nextRule) => nextRule.id !== rule.id,
+                              ),
+                            )
+                          }
+                        >
+                          <Trash2 className="mr-2 size-4 text-destructive" />
+                          Remove Logic
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -2420,7 +2900,7 @@ function PluginStudioRoute() {
           open={isBlocklyComposerOpen}
           onOpenChange={setIsBlocklyComposerOpen}
         >
-          <DialogContent className="sm:max-w-2xl">
+          <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
             <DialogHeader>
               <DialogTitle>Blockly Composer</DialogTitle>
               <DialogDescription>
@@ -2433,60 +2913,36 @@ function PluginStudioRoute() {
                 Choose a field from the builder and click `Compose Logic`.
               </p>
             ) : (
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-1">
+              <div className="grid gap-3">
+                <div className="rounded-lg border bg-muted/20 p-3">
                   <div className="text-xs font-medium text-muted-foreground">
-                    Field
+                    Building Logic For Field
                   </div>
-                  <div className="rounded-md border bg-muted/30 px-3 py-2 text-sm text-foreground">
+                  <div className="mt-1 text-sm font-medium text-foreground">
                     {selectedBlocklyField.key}
                   </div>
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Operator
-                  </div>
-                  <Select
-                    value={blocklyDraft.operator}
-                    onValueChange={(value) =>
-                      setBlocklyDraft((current) => ({
-                        ...current,
-                        operator: value as RuleOperator,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Operator" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {getAllowedOperators(selectedBlocklyField.type).includes(
-                        'eq',
-                      ) && <SelectItem value="eq">equals</SelectItem>}
-                      {getAllowedOperators(selectedBlocklyField.type).includes(
-                        'neq',
-                      ) && <SelectItem value="neq">not equals</SelectItem>}
-                      {getAllowedOperators(selectedBlocklyField.type).includes(
-                        'gt',
-                      ) && <SelectItem value="gt">greater than</SelectItem>}
-                      {getAllowedOperators(selectedBlocklyField.type).includes(
-                        'gte',
-                      ) && (
-                        <SelectItem value="gte">
-                          greater than or equal
-                        </SelectItem>
-                      )}
-                      {getAllowedOperators(selectedBlocklyField.type).includes(
-                        'lt',
-                      ) && <SelectItem value="lt">less than</SelectItem>}
-                      {getAllowedOperators(selectedBlocklyField.type).includes(
-                        'lte',
-                      ) && (
-                        <SelectItem value="lte">less than or equal</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
+                <div className="rounded-lg border bg-card p-2">
+                  <div
+                    id={blocklyWorkspaceId}
+                    ref={(node) => {
+                      blocklyContainerRef.current = node;
+                      setBlocklyMountElement(node);
+                    }}
+                    className="h-[360px] w-full rounded-md"
+                  />
+                  {!isBlocklyReady && !blocklyError && (
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      Loading Blockly workspace...
+                    </p>
+                  )}
+                  {blocklyError && (
+                    <p className="mt-2 text-xs text-destructive">
+                      {blocklyError}
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-1 md:col-span-2">
+                <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">
                     Preset Logic
                   </div>
@@ -2498,7 +2954,7 @@ function PluginStudioRoute() {
                         size="sm"
                         variant={
                           blocklyDraft.operator === preset.operator &&
-                          blocklyDraft.message === preset.message
+                            blocklyDraft.message === preset.message
                             ? 'default'
                             : 'outline'
                         }
@@ -2515,41 +2971,7 @@ function PluginStudioRoute() {
                     ))}
                   </div>
                 </div>
-                <div className="space-y-1 md:col-span-2">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Compare With Field
-                  </div>
-                  <Select
-                    value={blocklyDraft.rightField}
-                    onValueChange={(value) =>
-                      setBlocklyDraft((current) => ({
-                        ...current,
-                        rightField: value,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a compatible field" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {blocklyComparableFields.map((fieldKey) => (
-                        <SelectItem
-                          key={`blockly-${fieldKey}`}
-                          value={fieldKey}
-                        >
-                          {fieldKey}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {blocklyComparableFields.length === 0 && (
-                    <p className="text-xs text-muted-foreground">
-                      Add another field of type `{selectedBlocklyField.type}` to
-                      compare against.
-                    </p>
-                  )}
-                </div>
-                <div className="space-y-1 md:col-span-2">
+                <div className="space-y-1">
                   <div className="text-xs font-medium text-muted-foreground">
                     Error Message
                   </div>
@@ -2564,6 +2986,13 @@ function PluginStudioRoute() {
                     placeholder="Message shown when this logic fails"
                   />
                 </div>
+                {blocklyComparableFields.length === 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Field-to-field compare needs another `
+                    {selectedBlocklyField.type}` field. Literal blocks can still
+                    be used right now.
+                  </p>
+                )}
               </div>
             )}
             <DialogFooter>
@@ -2578,14 +3007,27 @@ function PluginStudioRoute() {
                 type="button"
                 onClick={() => {
                   if (!selectedBlocklyField) return;
-                  if (!blocklyDraft.rightField) return;
-                  setSchemaRefinements((current) => [
+                  const runtime = blocklyRuntimeRef.current;
+                  const rootBlock =
+                    runtime?.workspace?.getBlockById('plugin_rule_root');
+                  const conditionBlock =
+                    rootBlock?.getInputTargetBlock('CONDITION') ?? null;
+                  const condition = buildConditionFromBlocklyBlock(
+                    conditionBlock,
+                    selectedBlocklyField.key,
+                  );
+                  if (!condition) {
+                    toast.error(
+                      'Compose a valid Blockly condition before applying.',
+                    );
+                    return;
+                  }
+                  setBlocklyRefinements((current) => [
                     ...current,
                     {
                       id: generateBuilderId(),
                       leftField: selectedBlocklyField.key,
-                      operator: blocklyDraft.operator,
-                      rightField: blocklyDraft.rightField,
+                      condition,
                       message: blocklyDraft.message || 'Validation rule failed',
                     },
                   ]);
@@ -2593,7 +3035,7 @@ function PluginStudioRoute() {
                   toast.success('Blockly logic added.');
                   setIsBlocklyComposerOpen(false);
                 }}
-                disabled={!selectedBlocklyField || !blocklyDraft.rightField}
+                disabled={!selectedBlocklyField}
               >
                 Apply Logic
               </Button>
