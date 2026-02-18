@@ -102,4 +102,14 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('plugin_logic_not');
     expect(content).toContain('Blockly Logic Rules');
   });
+
+  it('wires draft CRUD through app api schema tables and draft server functions', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('api.pluginDraft.useGet');
+    expect(content).toContain('api.pluginDraftRevision.useGet');
+    expect(content).toContain('createPluginDraft');
+    expect(content).toContain('createPluginDraftRevision');
+    expect(content).toContain('Save Draft Revision');
+  });
 });

@@ -59,12 +59,16 @@ import type {
   ActionManifestDoc,
   AdminTabDoc,
   ExpressionDoc,
+  PluginDraftDoc,
+  PluginDraftRevisionDoc,
   PluginReleaseDoc,
   SchemaDoc,
   SchemaFieldDoc,
   WorkflowDoc,
 } from '@/lib/plugins/types';
 import {
+  createPluginDraft,
+  createPluginDraftRevision,
   ensureMarketplaceSeedReleases,
   previewPluginReleaseHashes,
   publishPluginRelease,
@@ -670,10 +674,257 @@ function buildConditionFromBlocklyBlock(
   return null;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isBuilderFieldType(value: string): value is BuilderFieldType {
+  return (BUILDER_FIELD_TYPES as readonly string[]).includes(value);
+}
+
+function isBuilderLeafFieldType(value: string): value is BuilderLeafFieldType {
+  return (BUILDER_LEAF_FIELD_TYPES as readonly string[]).includes(value);
+}
+
+function stringifyJsonInput(value: unknown) {
+  if (!isRecord(value) || Object.keys(value).length === 0) {
+    return '{}';
+  }
+  return canonicalStringify(value);
+}
+
+function normalizeBuilderFieldType(
+  fieldType: string | undefined,
+): BuilderFieldType {
+  if (fieldType && isBuilderFieldType(fieldType)) {
+    return fieldType;
+  }
+  return 'string';
+}
+
+function normalizeBuilderLeafFieldType(
+  fieldType: string | undefined,
+): BuilderLeafFieldType {
+  if (fieldType && isBuilderLeafFieldType(fieldType)) {
+    return fieldType;
+  }
+  return 'string';
+}
+
+function getRuleValue(
+  field: SchemaFieldDoc,
+  kind: 'min' | 'max',
+): string | undefined {
+  const rule = field.rules?.find((entry) => entry.kind === kind);
+  if (!rule || rule.value === undefined) {
+    return undefined;
+  }
+  return String(rule.value);
+}
+
+function toDefaultValueText(value: unknown): string | undefined {
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  return JSON.stringify(value);
+}
+
+function toBuilderObjectField(field: SchemaFieldDoc): BuilderObjectField {
+  return {
+    id: generateBuilderId(),
+    key: field.key,
+    label:
+      field.behavior?.fieldConfig?.label ??
+      field.label ??
+      field.key ??
+      'Field',
+    description:
+      field.behavior?.fieldConfig?.description ?? field.description ?? '',
+    type: normalizeBuilderLeafFieldType(field.type),
+    required: !field.optional,
+    enumValuesText: (field.enumValues ?? []).join(','),
+  };
+}
+
+function toBuilderField(field: SchemaFieldDoc): BuilderField {
+  const fieldConfig = isRecord(field.behavior?.fieldConfig)
+    ? field.behavior?.fieldConfig
+    : {};
+  const { label, description, fieldType, inputProps, customData, ...extra } =
+    fieldConfig;
+  const normalizedType = normalizeBuilderFieldType(field.type);
+  const normalizedFieldType = normalizeBuilderLeafFieldType(
+    typeof fieldType === 'string' ? fieldType : undefined,
+  );
+
+  return {
+    id: generateBuilderId(),
+    key: field.key,
+    label: typeof label === 'string' ? label : field.key,
+    description:
+      typeof description === 'string'
+        ? description
+        : (field.description ?? ''),
+    type: normalizedType,
+    fieldType: AUTOFORM_FIELD_TYPES.includes(normalizedFieldType)
+      ? normalizedFieldType
+      : 'string',
+    required: !field.optional,
+    min: getRuleValue(field, 'min'),
+    max: getRuleValue(field, 'max'),
+    useInt: Boolean(field.rules?.some((rule) => rule.kind === 'int')),
+    usePositive: Boolean(field.rules?.some((rule) => rule.kind === 'positive')),
+    useNonNegative: Boolean(
+      field.rules?.some((rule) => rule.kind === 'nonnegative'),
+    ),
+    defaultValue: toDefaultValueText(field.defaultValue),
+    enumValuesText: (field.enumValues ?? []).join(','),
+    fieldConfigJson: stringifyJsonInput(extra),
+    inputPropsJson: stringifyJsonInput(inputProps),
+    customDataJson: stringifyJsonInput(customData),
+    arrayItemType:
+      normalizedType === 'array'
+        ? normalizeBuilderLeafFieldType(field.itemType?.type)
+        : undefined,
+    arrayItemEnumValuesText:
+      normalizedType === 'array'
+        ? (field.itemType?.enumValues ?? []).join(',')
+        : undefined,
+    objectFields:
+      normalizedType === 'object'
+        ? (field.fields ?? [])
+            .filter((nested) => nested.type !== 'object' && nested.type !== 'array')
+            .map(toBuilderObjectField)
+        : undefined,
+  };
+}
+
+function parseRuleOperator(value: unknown): RuleOperator | null {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  return ['eq', 'neq', 'gt', 'gte', 'lt', 'lte'].includes(value)
+    ? (value as RuleOperator)
+    : null;
+}
+
+function tryReadPayloadRefField(value: unknown): string | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  if (value.kind !== 'ref' || value.source !== 'payload') {
+    return null;
+  }
+  if (!Array.isArray(value.path) || value.path.length !== 1) {
+    return null;
+  }
+  return typeof value.path[0] === 'string' ? value.path[0] : null;
+}
+
+function unwrapNotCondition(value: ExpressionDoc): ExpressionDoc {
+  if (!isRecord(value)) {
+    return value;
+  }
+  if (value.kind !== 'op' || value.op !== 'not' || !Array.isArray(value.args)) {
+    return value;
+  }
+  if (value.args.length !== 1) {
+    return value;
+  }
+  return value.args[0] as ExpressionDoc;
+}
+
+function toBuilderRefinements(schemaDoc: SchemaDoc): {
+  schemaRefinements: BuilderRefinement[];
+  blocklyRefinements: BlocklyRefinement[];
+} {
+  const schemaRefinements: BuilderRefinement[] = [];
+  const blocklyRefinements: BlocklyRefinement[] = [];
+  const fallbackFieldKey = schemaDoc.fields[0]?.key ?? '';
+
+  for (const refinement of schemaDoc.refinements ?? []) {
+    const when = refinement.when;
+    if (
+      isRecord(when) &&
+      when.kind === 'op' &&
+      when.op === 'not' &&
+      Array.isArray(when.args) &&
+      when.args.length === 1 &&
+      isRecord(when.args[0]) &&
+      when.args[0].kind === 'op' &&
+      Array.isArray(when.args[0].args) &&
+      when.args[0].args.length >= 2
+    ) {
+      const operator = parseRuleOperator(when.args[0].op);
+      const leftField = tryReadPayloadRefField(when.args[0].args[0]);
+      const rightField = tryReadPayloadRefField(when.args[0].args[1]);
+      if (operator && leftField && rightField) {
+        schemaRefinements.push({
+          id: generateBuilderId(),
+          leftField,
+          operator,
+          rightField,
+          message: refinement.message || 'Validation failed',
+        });
+        continue;
+      }
+    }
+
+    const leftField =
+      refinement.path?.find((segment) => typeof segment === 'string') ??
+      fallbackFieldKey;
+
+    if (!leftField) {
+      continue;
+    }
+
+    blocklyRefinements.push({
+      id: generateBuilderId(),
+      leftField,
+      message: refinement.message || 'Validation failed',
+      condition: unwrapNotCondition(refinement.when),
+    });
+  }
+
+  return {
+    schemaRefinements,
+    blocklyRefinements,
+  };
+}
+
+function applyRevisionToBuilderState(revision: PluginDraftRevisionDoc): {
+  pluginId: string;
+  schemaBuilder: BuilderSchema;
+  schemaRefinements: BuilderRefinement[];
+  blocklyRefinements: BlocklyRefinement[];
+  schemaText: string;
+  workflowText: string;
+} {
+  const schemaDoc = revision.schemaDocs?.[0] ?? DEFAULT_SCHEMA_DOC;
+  const { schemaRefinements, blocklyRefinements } =
+    toBuilderRefinements(schemaDoc);
+
+  return {
+    pluginId: revision.pluginId,
+    schemaBuilder: {
+      schemaId: schemaDoc.schemaId,
+      title: schemaDoc.title ?? schemaDoc.schemaId,
+      fields: schemaDoc.fields.map(toBuilderField),
+    },
+    schemaRefinements,
+    blocklyRefinements,
+    schemaText: canonicalStringify(revision.schemaDocs ?? [schemaDoc]),
+    workflowText: canonicalStringify(revision.workflows ?? [DEFAULT_WORKFLOW_DOC]),
+  };
+}
+
 function PluginStudioRoute() {
   const { user, isAuthenticated } = useAuth();
   const { fire: fireConfetti } = useConfetti();
-  const actorUserId = user?.pub ?? 'anon';
+  const actorUserId = user?.pub ?? user?._?.soul ?? 'anon';
   const [pluginId, setPluginId] = useState('example.plugin');
   const [title, setTitle] = useState('Example Plugin');
   const [description, setDescription] = useState('Operational plugin release.');
@@ -735,6 +986,8 @@ function PluginStudioRoute() {
   const [debouncedHashInput, setDebouncedHashInput] =
     useState<HashPreviewInput | null>(null);
   const seededActorRef = useRef<string | null>(null);
+  const [selectedDraftId, setSelectedDraftId] = useState('');
+  const [selectedRevisionId, setSelectedRevisionId] = useState('');
 
   const {
     data: releaseRows = [],
@@ -742,6 +995,18 @@ function PluginStudioRoute() {
     refetch: refetchReleases,
   } = api.pluginRelease.useGet();
   const releases = releaseRows as PluginReleaseDoc[];
+  const {
+    data: draftRows = [],
+    isLoading: isDraftLoading,
+    refetch: refetchDrafts,
+  } = api.pluginDraft.useGet();
+  const {
+    data: draftRevisionRows = [],
+    isLoading: isDraftRevisionLoading,
+    refetch: refetchDraftRevisions,
+  } = api.pluginDraftRevision.useGet();
+  const drafts = draftRows as PluginDraftDoc[];
+  const draftRevisions = draftRevisionRows as PluginDraftRevisionDoc[];
 
   const parsed = useMemo(() => {
     try {
@@ -779,6 +1044,61 @@ function PluginStudioRoute() {
     );
   }, [parsed, pluginId, schemaBuilder.fields]);
 
+  const availableDrafts = useMemo(
+    () =>
+      drafts
+        .filter(
+          (draft) =>
+            draft.ownerUserId === actorUserId ||
+            draft.collaboratorUserIds?.includes(actorUserId),
+        )
+        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
+    [actorUserId, drafts],
+  );
+
+  const selectedDraft = useMemo(
+    () => availableDrafts.find((draft) => draft.draftId === selectedDraftId),
+    [availableDrafts, selectedDraftId],
+  );
+
+  const selectedDraftRevisions = useMemo(
+    () =>
+      draftRevisions
+        .filter((revision) => revision.draftId === selectedDraftId)
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
+    [draftRevisions, selectedDraftId],
+  );
+
+  useEffect(() => {
+    if (availableDrafts.length === 0) {
+      if (selectedDraftId) {
+        setSelectedDraftId('');
+      }
+      return;
+    }
+    if (availableDrafts.some((draft) => draft.draftId === selectedDraftId)) {
+      return;
+    }
+    setSelectedDraftId(availableDrafts[0]?.draftId ?? '');
+  }, [availableDrafts, selectedDraftId]);
+
+  useEffect(() => {
+    if (selectedDraftRevisions.length === 0) {
+      if (selectedRevisionId) {
+        setSelectedRevisionId('');
+      }
+      return;
+    }
+    if (
+      selectedDraftRevisions.some(
+        (revision) => revision.revisionId === selectedRevisionId,
+      )
+    ) {
+      return;
+    }
+    setSelectedRevisionId(selectedDraftRevisions[0]?.revisionId ?? '');
+  }, [selectedDraftRevisions, selectedRevisionId]);
+
   const { mutate: seedMarketplace } = useMutation({
     mutationKey: ['plugin-studio', 'seed-marketplace'],
     mutationFn: async (nextActorUserId: string) =>
@@ -795,6 +1115,55 @@ function PluginStudioRoute() {
       toast.error('Marketplace template sync failed.');
     },
   });
+
+  const { mutateAsync: createDraft, isPending: isCreatingDraft } = useMutation({
+    mutationKey: ['plugin-studio', 'create-draft'],
+    mutationFn: async () =>
+      createPluginDraft({
+        data: {
+          actorUserId,
+          pluginId,
+          title,
+        },
+      }),
+    onSuccess: async (draft) => {
+      await refetchDrafts();
+      setSelectedDraftId(draft.draftId);
+      toast.success('Draft created.');
+    },
+    onError: (error) => {
+      console.error(error);
+      toast.error('Draft creation failed.');
+    },
+  });
+
+  const { mutateAsync: saveDraftRevision, isPending: isSavingDraftRevision } =
+    useMutation({
+      mutationKey: ['plugin-studio', 'save-draft-revision', selectedDraftId],
+      mutationFn: async (draftId: string) => {
+        if (!parsed) {
+          throw new Error('Invalid plugin payload');
+        }
+        return createPluginDraftRevision({
+          data: {
+            actorUserId,
+            draftId,
+            schemaDocs: parsed.schemaDocs,
+            workflows: parsed.workflows,
+            adminTabs: parsed.adminTabs,
+          },
+        });
+      },
+      onSuccess: async (revision) => {
+        await refetchDraftRevisions();
+        setSelectedRevisionId(revision.revisionId);
+        toast.success('Draft revision saved.');
+      },
+      onError: (error) => {
+        console.error(error);
+        toast.error('Failed to save draft revision.');
+      },
+    });
 
   useEffect(() => {
     if (!isAuthenticated || !user) {
@@ -1439,6 +1808,56 @@ function PluginStudioRoute() {
     toast.success(`Loaded template ${template.docs.title}`);
   }
 
+  function loadRevisionIntoBuilder(revision: PluginDraftRevisionDoc) {
+    const next = applyRevisionToBuilderState(revision);
+    setPluginId(next.pluginId);
+    if (selectedDraft?.title) {
+      setTitle(selectedDraft.title);
+    }
+    setSchemaBuilder(next.schemaBuilder);
+    setSchemaRefinements(next.schemaRefinements);
+    setBlocklyRefinements(next.blocklyRefinements);
+    setSchemaText(next.schemaText);
+    setWorkflowText(next.workflowText);
+    setSelectedTemplateLabel(null);
+  }
+
+  async function handleCreateDraft() {
+    await createDraft();
+  }
+
+  async function handleSaveDraftRevision() {
+    if (!parsed || !isValidInputs) {
+      toast.error('Fix builder validation issues before saving.');
+      return;
+    }
+
+    let draftId = selectedDraftId;
+    if (!draftId) {
+      const createdDraft = await createDraft();
+      draftId = createdDraft.draftId;
+      setSelectedDraftId(draftId);
+    }
+
+    await saveDraftRevision(draftId);
+  }
+
+  function handleLoadSelectedRevision() {
+    if (!selectedDraftId || !selectedRevisionId) {
+      toast.error('Select a draft revision to load.');
+      return;
+    }
+    const selectedRevision = selectedDraftRevisions.find(
+      (revision) => revision.revisionId === selectedRevisionId,
+    );
+    if (!selectedRevision) {
+      toast.error('Selected revision could not be found.');
+      return;
+    }
+    loadRevisionIntoBuilder(selectedRevision);
+    toast.success('Draft revision loaded.');
+  }
+
   if (!isAuthenticated || !user) {
     return (
       <div className="container py-12">
@@ -1535,6 +1954,117 @@ function PluginStudioRoute() {
                 </Button>
               </div>
             ))}
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-base">Draft Workspace</CardTitle>
+            <CardDescription>
+              Persist schema/workflow edits as immutable draft revisions using
+              plugin draft tables.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 lg:grid-cols-2">
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-muted-foreground">
+                Active Draft
+              </div>
+              {isDraftLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : availableDrafts.length === 0 ? (
+                <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+                  No drafts yet. Create one to start saving revisions.
+                </div>
+              ) : (
+                <Select value={selectedDraftId} onValueChange={setSelectedDraftId}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select draft" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableDrafts.map((draft) => (
+                      <SelectItem key={draft.draftId} value={draft.draftId}>
+                        {draft.title || draft.pluginId} ({draft.draftId.slice(0, 8)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <div className="text-xs font-medium text-muted-foreground">
+                Draft Actions
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    void handleCreateDraft();
+                  }}
+                  disabled={isCreatingDraft}
+                >
+                  {isCreatingDraft ? 'Creating Draft...' : 'Create Draft'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => {
+                    void handleSaveDraftRevision();
+                  }}
+                  disabled={isSavingDraftRevision || !isValidInputs}
+                >
+                  {isSavingDraftRevision
+                    ? 'Saving Revision...'
+                    : 'Save Draft Revision'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-1 lg:col-span-2">
+              <div className="text-xs font-medium text-muted-foreground">
+                Revisions for Active Draft
+              </div>
+              {isDraftRevisionLoading ? (
+                <Skeleton className="h-10 w-full" />
+              ) : selectedDraftRevisions.length === 0 ? (
+                <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+                  {selectedDraft
+                    ? 'No revisions yet. Save your first revision.'
+                    : 'Select or create a draft to view revisions.'}
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Select
+                    value={selectedRevisionId}
+                    onValueChange={setSelectedRevisionId}
+                  >
+                    <SelectTrigger className="min-w-[320px]">
+                      <SelectValue placeholder="Select revision" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedDraftRevisions.map((revision) => (
+                        <SelectItem
+                          key={`${revision.draftId}-${revision.revisionId}`}
+                          value={revision.revisionId}
+                        >
+                          {revision.revisionId} ·{' '}
+                          {new Date(revision.createdAt).toLocaleString()}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleLoadSelectedRevision}
+                    disabled={!selectedRevisionId}
+                  >
+                    Load Revision
+                  </Button>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 

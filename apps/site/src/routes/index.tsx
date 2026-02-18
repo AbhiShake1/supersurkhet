@@ -1,5 +1,6 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { Link, createFileRoute } from '@tanstack/react-router';
 import { lazy } from 'react';
+import { Button } from '@/components/ui/button';
 
 const Features = lazy(() => import('@/components/features-3'));
 const FooterSection = lazy(() => import('@/components/footer'));
@@ -9,6 +10,11 @@ const CongestedPricing = lazy(() => import('@/components/pricing'));
 const StatsSection = lazy(() => import('@/components/stats-4'));
 const TeamSection = lazy(() => import('@/components/team'));
 const WallOfLoveSection = lazy(() => import('@/components/testimonials'));
+const pluginBuilderEntrySearch = {
+  tab: 'overview',
+  pluginId: 'plugin.restaurant.admin',
+  draftId: 'draft.local',
+} as const;
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -18,6 +24,24 @@ function Home() {
   return (
     <>
       <HeroSection />
+      <section className="px-6 pb-8">
+        <div className="mx-auto w-full max-w-5xl rounded-2xl border bg-card/60 p-6 backdrop-blur-sm sm:p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="font-semibold text-lg">Ready to build your plugin?</p>
+              <p className="text-muted-foreground text-sm">
+                Jump into the no-code plugin builder and publish your first
+                release.
+              </p>
+            </div>
+            <Button asChild size="lg" className="sm:min-w-52">
+              <Link to="/plugin-studio" search={pluginBuilderEntrySearch}>
+                Open Plugin Builder
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </section>
       <StatsSection />
       <Features />
       <WallOfLoveSection />

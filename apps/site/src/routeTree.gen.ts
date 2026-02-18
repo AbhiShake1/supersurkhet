@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as S3testRouteImport } from './routes/s3test'
 import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as PluginStudioV2RouteImport } from './routes/plugin-studio-v2'
 import { Route as PluginStudioRouteImport } from './routes/plugin-studio'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -38,11 +37,6 @@ const S3testRoute = S3testRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PluginStudioV2Route = PluginStudioV2RouteImport.update({
-  id: '/plugin-studio-v2',
-  path: '/plugin-studio-v2',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PluginStudioRoute = PluginStudioRouteImport.update({
@@ -140,7 +134,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/mcp': typeof McpRoute
   '/plugin-studio': typeof PluginStudioRoute
-  '/plugin-studio-v2': typeof PluginStudioV2Route
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
   '/auth': typeof AuthAuthRoute
@@ -160,7 +153,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/mcp': typeof McpRoute
   '/plugin-studio': typeof PluginStudioRoute
-  '/plugin-studio-v2': typeof PluginStudioV2Route
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
   '/auth': typeof AuthAuthRoute
@@ -183,7 +175,6 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/mcp': typeof McpRoute
   '/plugin-studio': typeof PluginStudioRoute
-  '/plugin-studio-v2': typeof PluginStudioV2Route
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
   '/_auth/auth': typeof AuthAuthRoute
@@ -206,7 +197,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/mcp'
     | '/plugin-studio'
-    | '/plugin-studio-v2'
     | '/privacy'
     | '/s3test'
     | '/auth'
@@ -226,7 +216,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/mcp'
     | '/plugin-studio'
-    | '/plugin-studio-v2'
     | '/privacy'
     | '/s3test'
     | '/auth'
@@ -248,7 +237,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/mcp'
     | '/plugin-studio'
-    | '/plugin-studio-v2'
     | '/privacy'
     | '/s3test'
     | '/_auth/auth'
@@ -271,7 +259,6 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   McpRoute: typeof McpRoute
   PluginStudioRoute: typeof PluginStudioRoute
-  PluginStudioV2Route: typeof PluginStudioV2Route
   PrivacyRoute: typeof PrivacyRoute
   S3testRoute: typeof S3testRoute
   BusinessChatRoute: typeof BusinessChatRoute
@@ -292,13 +279,6 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/plugin-studio-v2': {
-      id: '/plugin-studio-v2'
-      path: '/plugin-studio-v2'
-      fullPath: '/plugin-studio-v2'
-      preLoaderRoute: typeof PluginStudioV2RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/plugin-studio': {
@@ -480,7 +460,6 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   McpRoute: McpRoute,
   PluginStudioRoute: PluginStudioRoute,
-  PluginStudioV2Route: PluginStudioV2Route,
   PrivacyRoute: PrivacyRoute,
   S3testRoute: S3testRoute,
   BusinessChatRoute: BusinessChatRoute,
