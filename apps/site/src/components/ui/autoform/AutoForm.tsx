@@ -1,5 +1,4 @@
 import { AutoForm as BaseAutoForm, type AutoFormUIComponents } from './react';
-import { ZodProvider, type ZodObjectOrWrapped } from '@autoform/zod';
 import { ArrayElementWrapper } from './components/ArrayElementWrapper';
 import { ArrayWrapper } from './components/ArrayWrapper';
 import { BooleanField } from './components/BooleanField';
@@ -34,6 +33,7 @@ import { PasswordField } from './components/PasswordField';
 import { PermissionsField } from './components/PermissionsField';
 import { UnitField } from './components/UnitField';
 import React from 'react';
+import { ZodProvider, type ZodObjectOrWrapped } from './zod';
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, 'FieldWrapper'> = {
   Form,

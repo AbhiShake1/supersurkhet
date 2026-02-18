@@ -43,6 +43,15 @@ import {
   tripSchema,
 } from './schemas/retail';
 import { uiBuilderSchema } from './schemas/ui-builder-schema';
+import React from 'react';
+
+
+const OrderKanban = React.lazy(() => import('@/components/ui/admin/order-kanban'));
+const MenuManagement = React.lazy(() => import('@/components/ui/admin/menu-management'));
+const TripManagement = React.lazy(() => import('@/components/ui/admin/trip-management'));
+const PartyManagement = React.lazy(() => import('@/components/ui/admin/party-management'));
+const InvoiceManagement = React.lazy(() => import('@/components/ui/admin/invoice-management'));
+
 
 function getPermissions() {
   return ['product'] as readonly [string, ...string[]];
@@ -259,10 +268,7 @@ export const featureSchema = createSchema({
     title: 'Products',
     icon: Package,
     group: 'Products & Inventory',
-    components: async () => {
-      const { MenuManagement } = await import(
-        '@/components/ui/admin/menu-management'
-      );
+    components: () => {
       return [
         {
           name: 'Cards',
@@ -276,10 +282,7 @@ export const featureSchema = createSchema({
     title: 'Purchase Parties',
     icon: Users,
     group: 'Financial',
-    components: async () => {
-      const { PartyManagement } = await import(
-        '@/components/ui/admin/party-management'
-      );
+    components: () => {
       return [
         {
           name: 'Suppliers & Customers',
@@ -310,10 +313,7 @@ export const featureSchema = createSchema({
     title: 'Invoices',
     icon: IconMoneybag,
     group: 'Financial',
-    components: async () => {
-      const { InvoiceManagement } = await import(
-        '@/components/ui/admin/invoice-management'
-      );
+    components: () => {
       return [
         {
           name: 'Invoices By Parties',
@@ -339,10 +339,7 @@ export const featureSchema = createSchema({
     title: 'Orders',
     icon: DollarSign,
     group: 'Business Operations',
-    components: async () => {
-      const { OrderKanban } = await import(
-        '@/components/ui/admin/order-kanban'
-      );
+    components: () => {
       return [
         {
           name: 'Board',
@@ -356,11 +353,7 @@ export const featureSchema = createSchema({
     title: 'Menu Items',
     icon: Package,
     group: 'Products & Inventory',
-    components: async () => {
-      const { MenuManagement } = await import(
-        '@/components/ui/admin/menu-management'
-      );
-
+    components: () => {
       return [
         {
           name: 'Menu Items',
@@ -374,7 +367,7 @@ export const featureSchema = createSchema({
     title: 'Data Matrix Actions',
     icon: QrCode,
     group: 'System Configuration',
-    components: async () => {
+    components: () => {
       return [];
       // const { DataMatrixFlowBuilder } = await import(
       // 	"@/components/ui/admin/datamatrix-flow-builder"
@@ -434,10 +427,7 @@ export const featureSchema = createSchema({
     title: 'Trips',
     icon: MapIcon,
     group: 'Logistics',
-    components: async () => {
-      const { TripManagement } = await import(
-        '@/components/ui/admin/trip-management'
-      );
+    components: () => {
       return [
         {
           name: 'Trip Tracking',

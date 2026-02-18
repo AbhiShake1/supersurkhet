@@ -70,9 +70,6 @@ importers:
       '@autoform/core':
         specifier: 2.1.0
         version: 2.1.0
-      '@autoform/zod':
-        specifier: 2.1.0
-        version: 2.1.0(zod@3.25.76)
       '@barcode-bakery/barcode-datamatrix':
         specifier: ^2.0.0
         version: 2.0.0
@@ -533,7 +530,7 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
       zod:
-        specifier: ^3.24.3
+        specifier: 3.25.76
         version: 3.25.76
       zundo:
         specifier: ^2.3.0
@@ -806,11 +803,6 @@ packages:
 
   '@autoform/core@2.1.0':
     resolution: {integrity: sha512-8eJIa4psajV3A5reJB3MFWfqSJkEQwU5NEuG+LzJNJlwy5c/T7Q/U1D+ofswGJOGWhDdAKUrLylkcnbL8pfkpg==}
-
-  '@autoform/zod@2.1.0':
-    resolution: {integrity: sha512-HWd2AiorgvEzjsnP4e4bSnfhuVnRCXUiQwh9vJuYVpa5S/oxMdCaJihPdhMffmIaHOkapkMfxe9K3EfbLzSubg==}
-    peerDependencies:
-      zod: ^3
 
   '@babel/code-frame@7.10.4':
     resolution: {integrity: sha512-vG6SvB6oYEhvgisZNFRmRCUkLz11c7rp+tbNTynGqc6mS1d5ATd/sGyV6W0KZZnXRKMTzZDRgQT3Ou9jhpAfUg==}
@@ -1774,7 +1766,7 @@ packages:
   '@esbuild-plugins/node-globals-polyfill@0.2.3':
     resolution: {integrity: sha512-r3MIryXDeXDOZh7ih1l/yE9ZLORCd5e8vWg02azWRGj5SPTuoh69A2AIyn0Z31V/kHBfZ4HgWJ+OK3GTTwLmnw==}
     peerDependencies:
-      esbuild: '*'
+      esbuild: 0.17.19
 
   '@esbuild-plugins/node-modules-polyfill@0.2.2':
     resolution: {integrity: sha512-LXV7QsWJxRuMYvKbiznh+U1ilIop3g2TeKRzUxOG5X3YITc8JyyTa90BmLwqqv0YnX4v32CSlG+vsziZp9dMvA==}
@@ -13616,11 +13608,6 @@ snapshots:
   '@asamuzakjp/nwsapi@2.3.9': {}
 
   '@autoform/core@2.1.0': {}
-
-  '@autoform/zod@2.1.0(zod@3.25.76)':
-    dependencies:
-      '@autoform/core': 2.1.0
-      zod: 3.25.76
 
   '@babel/code-frame@7.10.4':
     dependencies:

@@ -1,6 +1,6 @@
-import type { NestedSchemaType, SchemaKeys } from '@gta/react-hooks';
+import type { NestedSchemaType, SchemaKeys, UpdaterParams } from '@gta/react-hooks';
 import { getNestedZodShape } from '@gta/react-hooks';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type MutationFunctionContext } from '@tanstack/react-query';
 import { useLocation } from '@tanstack/react-router';
 import _ from 'lodash';
 import {
@@ -29,6 +29,7 @@ import { NotFound } from '../ui/not-found';
 import { Skeleton } from '../ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { CustomUiBuilderPage } from '../ui-builder';
+import type { GunMessagePut } from 'gun';
 
 export interface AutoAdminProps {
   tabs: AutoAdminTabInput[];
@@ -150,37 +151,17 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   const currentItem =
     tabsWithHome.find((t) => t.title === tab) ?? tabsWithHome?.[0];
 
-  function _canGetComponents() {
-    return !!currentItem;
-  }
-
-  const canGetComponents = _canGetComponents();
-
-  async function getComponents() {
-    if (!canGetComponents) return null;
+  function getComponents() {
     if (!!currentItem && 'schema' in currentItem) {
       const currentSchema = appSchema[currentItem.schema as SchemaKeys];
       if ('components' in currentSchema) {
-        const components = await currentSchema.components();
-        const mappedNodes = components.map(async (c) => ({
-          ...c,
-          component: await c.component({ slug: currentItem.slug ?? basePath }),
-        }));
-        return Promise.all(mappedNodes);
+        return currentSchema.components() ?? [];
       }
     }
-    return null;
+    return []
   }
 
-  const { data: components } = useQuery({
-    enabled: canGetComponents,
-    queryFn: getComponents,
-    queryKey: [
-      'schema',
-      (!!currentItem && 'slug' in currentItem && currentItem.slug) ?? basePath,
-      !!currentItem && 'schema' in currentItem && currentItem.schema,
-    ],
-  });
+  const components = getComponents()
 
   if (!currentItem) {
     return <NotFound />;
@@ -253,14 +234,16 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                   </div>
                 </Card>
               </TabsContent>
-              {components.map(({ component, name }) => (
+              {components.map(({ component: Component, name }) => (
                 <TabsContent
                   value={name}
                   key={name}
                   className="flex-1 mt-1 sm:mt-4"
                 >
                   <Card className="border rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-0.5 sm:p-4">{component}</div>
+                    <div className="p-0.5 sm:p-4">
+                      <Component slug={business.basePath} />
+                    </div>
                   </Card>
                 </TabsContent>
               ))}
@@ -278,6 +261,7 @@ export type AutoKanbanProps<K extends SchemaKeys> = {
   cardBuilder: (data: NestedSchemaType<K>) => ReactNode;
   schema: K;
   isItemLocked?: (item: NestedSchemaType<K>) => boolean;
+  onUpdate?: (data: GunMessagePut, variables: UpdaterParams<K>, onMutateResult: unknown, context: MutationFunctionContext) => Promise<unknown> | unknown;
 };
 
 export function AutoKanban<K extends SchemaKeys>({
@@ -286,11 +270,15 @@ export function AutoKanban<K extends SchemaKeys>({
   groupKey,
   cardBuilder,
   isItemLocked,
+  onUpdate,
 }: AutoKanbanProps<K>) {
   const { data: orders = [], isLoading } = api[schemaName].useGet({
     keys: [slug],
   });
-  const { mutate: update } = api[schemaName].useUpdate({ keys: [slug] });
+  const { mutate: update } = api[schemaName].useUpdate({
+    keys: [slug],
+    onSuccess: onUpdate
+  });
   const columns = _.groupBy(orders, (o) => o[groupKey]);
   const schema = getNestedZodShape(schemaName, appSchema.schemaShape);
   const schemaObject =

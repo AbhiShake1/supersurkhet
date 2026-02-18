@@ -1,5 +1,5 @@
-import type { ZodObjectOrWrapped } from '@autoform/zod';
-import type { z, ZodObject } from 'zod';
+import type { ZodObjectOrWrapped } from '@/components/ui/auto-form/utils';
+import type { z } from 'zod';
 
 type Primitives = string | number | bigint | boolean | null | undefined;
 type JoinWithDot<K extends string, T extends Primitives> = T extends never | ''

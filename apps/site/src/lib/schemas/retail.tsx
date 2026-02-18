@@ -112,7 +112,7 @@ function createPaidAmountFieldFromFormValues(
         fieldType: 'number',
         inputProps: {
           className: 'border-none',
-          readOnly: true,
+          disabled: true,
         },
         customData: {
           derive: () => ({
@@ -312,6 +312,7 @@ export const saleSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
+      .optional()
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
@@ -401,6 +402,7 @@ export const orderSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
+      .optional()
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
@@ -470,7 +472,7 @@ function createDerivedItemTotalAmountField({
         inputProps: {
           ...(placeholder ? { placeholder } : {}),
           className,
-          readOnly: true,
+          disabled: true,
         },
         customData: {
           derive: ({ formValues, rowPath }) => {
@@ -542,6 +544,7 @@ export const stockImportSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
+      .optional()
       .describe('Payments'),
     paidAmount: z.number({ coerce: true }).nonnegative().describe('Paid Amount'),
     paymentStatus: z
@@ -655,6 +658,7 @@ export const invoiceSchema = z
             .superRefine(fieldConfig({ fieldType: 'number' })),
         }),
       )
+      .optional()
       .describe('Payments'),
     paidAmount: z
       .number({ coerce: true })

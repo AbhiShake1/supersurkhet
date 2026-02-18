@@ -16,8 +16,35 @@ import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
 import { Plus } from 'lucide-react';
 import { formatCurrency } from '@/lib/intl';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
+import { db } from '@/lib/ssr/api';
+import NepaliDate from 'nepali-datetime';
 
-export const OrderKanban: AdminComponent = ({ slug }) => {
+type PaymentInput = {
+  paidAt?: string | null;
+  paidAmount?: number | string | null;
+} | null;
+
+function normalizePaymentsWithFallback(
+  payments: PaymentInput[] | undefined,
+  fallbackPaidAmount: number | undefined,
+) {
+  if (Array.isArray(payments) && payments.length) {
+    return payments.map((payment) => ({
+      paidAt: payment?.paidAt || new Date().toISOString(),
+      paidAmount: Number(payment?.paidAmount ?? 0),
+    }));
+  }
+
+  const paidAmount = Number(fallbackPaidAmount ?? 0);
+  if (!paidAmount) return [];
+  return [{ paidAt: new Date().toISOString(), paidAmount }];
+}
+
+const OrderKanban: AdminComponent = ({ slug }) => {
+  const { data: products } = api.product.useGet({ keys: [slug] });
+  const { data: orders } = api.order.useGet({ keys: [slug] });
+  const ordersBySoul = new Map(orders?.map((o) => [o._?.soul, o]));
+  const productsBySoul = new Map(products?.map((p) => [p._?.soul, p]));
   return (
     <div className="space-y-4">
       <div className="flex justify-end">
@@ -35,9 +62,89 @@ export const OrderKanban: AdminComponent = ({ slug }) => {
         schema="order"
         isItemLocked={(order) =>
           order.orderStatus === 'done' ||
-          order.orderStatus === 'completed' ||
           order.orderStatus === 'cancelled'
         }
+        onUpdate={(_, variables) => {
+          if (variables.orderStatus !== 'done') return;
+          const order = ordersBySoul.get(variables.id);
+          if (!order?.items?.length || !order?.customerId) return;
+
+          const itemsByProductIdWithQuantity = order.items?.reduce(
+            (a, item) => {
+              const product = productsBySoul.get(item.product);
+              let adjustedQuantity = item.quantity;
+              if (product?.unit?.includes(':')) {
+                const [unitType, piecesPerUnit] = product.unit.split(':');
+                if (item.unit === unitType) {
+                  adjustedQuantity =
+                    item.quantity * parseInt(piecesPerUnit, 10);
+                }
+              }
+              a[item.product] = (a[item.product] || 0) + adjustedQuantity;
+              return a;
+            },
+            {} as Record<string, number>,
+          );
+
+          Object.entries(itemsByProductIdWithQuantity ?? {}).forEach(
+            ([productId, quantity]) => {
+              const product = productsBySoul.get(productId);
+              if (!product?._?.soul) return;
+              db.product.update(slug)({
+                id: product._.soul,
+                stockQuantity: product.stockQuantity - quantity,
+              });
+            },
+          );
+
+          const invoiceItems =
+            order.items?.map((item) => {
+              const productInfo = productsBySoul.get(item.product);
+              let adjustedQuantity = item.quantity;
+
+              if (productInfo?.unit?.includes(':')) {
+                const [unitType, piecesPerUnit] = productInfo.unit.split(':');
+                if (item.unit === unitType) {
+                  adjustedQuantity =
+                    item.quantity * parseInt(piecesPerUnit, 10);
+                }
+              }
+
+              return {
+                product: item.product,
+                quantity: adjustedQuantity,
+                rate: item.unitPrice,
+                total: item.quantity * item.unitPrice,
+              };
+            }) ?? [];
+
+          const totalAmount =
+            order.items?.reduce(
+              (sum, item) => sum + item.quantity * item.unitPrice,
+              0,
+            ) ?? 0;
+          const payments = normalizePaymentsWithFallback(
+            order.payments,
+            order.paidAmount,
+          );
+          const paidAmount = getPaidAmountFromPayments(payments);
+
+          db.invoice.create(slug)({
+            type: 'sale',
+            partyId: order.customerId,
+            issuedAt: new Date().toISOString(),
+            items: invoiceItems,
+            subTotal: totalAmount,
+            tax: 0,
+            payments,
+            paidAmount,
+            paymentStatus: getPaymentStatusFromTotals({
+              paidAmount,
+              totalAmount,
+            }),
+            fiscalYear: calculateFiscalYear(),
+          });
+        }}
       />
     </div>
   );
@@ -68,29 +175,9 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
           className:
             'bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300',
         };
-      case 'preparing':
-        return {
-          className:
-            'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
-        };
-      case 'ready':
-        return {
-          className:
-            'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
-        };
-      case 'served':
-        return {
-          className:
-            'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
-        };
       case 'cancelled':
         return {
           className: 'bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300',
-        };
-      case 'confirmed':
-        return {
-          className:
-            'bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300',
         };
 
       default:
@@ -122,9 +209,6 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
                 <span className="text-right font-semibold">Items:</span>
                 <span className="col-span-3">
                   {orderItems.map((item) => {
-                    const _menuItem = menuItems.find(
-                      (m) => m?._?.soul === item._?.soul,
-                    );
                     return (
                       <div key={item._?.soul} className="flex justify-between">
                         <span>
@@ -241,7 +325,7 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
           <span className="line-clamp-1 font-medium text-sm">
             {orderItems
               .map((i) => menuItems.find((m) => m?._?.soul === i._?.soul))
-              .map((m) => m?.name)
+              .map((m) => m?.title)
               .filter((m) => !!m)
               .join(', ')}
           </span>
@@ -291,3 +375,33 @@ function OrderCard({ order, slug }: { order: Order; slug: string }) {
     </div>
   );
 }
+
+function getPaidAmountFromPayments(payments: PaymentInput[] | undefined) {
+  if (!Array.isArray(payments) || !payments.length) return 0;
+  return payments.reduce((sum, payment) => {
+    const paidAmount = Number(payment?.paidAmount ?? 0);
+    return Number.isFinite(paidAmount) ? sum + paidAmount : sum;
+  }, 0);
+}
+
+export function getPaymentStatusFromTotals({
+  paidAmount,
+  totalAmount,
+}: {
+  paidAmount: number;
+  totalAmount: number;
+}): string {
+  if (paidAmount === totalAmount) return 'paid';
+  if (paidAmount === 0) return 'pending';
+  if (paidAmount > totalAmount) return 'overpaid (invalid)';
+  return `partial (${formatCurrency(totalAmount - paidAmount)} to pay)`;
+}
+
+function calculateFiscalYear() {
+  const year = new NepaliDate().getYear();
+  return `${year.toString().slice(0, 2)}${year
+    .toString()
+    .slice(2)}/${(year + 1).toString().slice(2)}`;
+}
+
+export default OrderKanban;

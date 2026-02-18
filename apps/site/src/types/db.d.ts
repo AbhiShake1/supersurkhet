@@ -432,10 +432,10 @@ declare global {
      readonly title: "Products";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Products & Inventory";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly party: {
      readonly schema: import("zod").ZodObject<{
@@ -491,10 +491,10 @@ declare global {
      readonly title: "Purchase Parties";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly customer: {
      readonly schema: import("zod").ZodObject<{
@@ -666,10 +666,10 @@ declare global {
      readonly title: "Invoices";
      readonly icon: React.ForwardRefExoticComponent<import("@tabler/icons-react").IconProps & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Financial";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly sale: {
      readonly schema: import("zod").ZodEffects<import("zod").ZodObject<{
@@ -1270,10 +1270,10 @@ declare global {
      readonly title: "Orders";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Business Operations";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly menuItem: {
      readonly schema: import("zod").ZodObject<{
@@ -1363,10 +1363,10 @@ declare global {
      readonly title: "Menu Items";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Products & Inventory";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: import("../components/ui/admin/index").AdminComponent;
-    }[]>;
+     component: React.LazyExoticComponent<import("../components/ui/admin/index").AdminComponent>;
+    }[];
     };
      readonly dataMatrixAction: {
      readonly schema: import("zod").ZodObject<{
@@ -2221,7 +2221,7 @@ declare global {
      readonly title: "Data Matrix Actions";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "System Configuration";
-     readonly components: () => Promise<never[]>;
+     readonly components: () => never[];
     };
      readonly recentlyUsedApp: {
      readonly schema: import("zod").ZodObject<{
@@ -2802,10 +2802,10 @@ declare global {
      readonly title: "Trips";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Logistics";
-     readonly components: () => Promise<{
+     readonly components: () => {
      name: string;
-     component: typeof import("../components/ui/admin/trip-management").TripManagement;
-    }[]>;
+     component: React.LazyExoticComponent<typeof import("../components/ui/admin/trip-management").default>;
+    }[];
     };
     }>;
 }
