@@ -787,7 +787,7 @@ export function useBusinessConfig({
           returnedProducts: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: item.product ?? '-',
+              product: productsBySoul.get(item.product)?.title ?? '-',
               totalAmount:
                 Number(item.quantity || 0) * Number(item.unitPrice || 0),
             }));
