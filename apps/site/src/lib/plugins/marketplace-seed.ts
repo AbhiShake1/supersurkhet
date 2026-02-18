@@ -26,8 +26,14 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
         'Core operations for inventory, invoicing, orders, and trip reconciliation.',
     },
     actionManifest: [
-      { actionId: 'restaurant.stock.adjust', capabilities: ['inventory:write'] },
-      { actionId: 'restaurant.invoice.set-status', capabilities: ['invoice:write'] },
+      {
+        actionId: 'restaurant.stock.adjust',
+        capabilities: ['inventory:write'],
+      },
+      {
+        actionId: 'restaurant.invoice.set-status',
+        capabilities: ['invoice:write'],
+      },
       { actionId: 'restaurant.order.finalize', capabilities: ['order:write'] },
       { actionId: 'restaurant.trip.reconcile', capabilities: ['trip:write'] },
     ],
@@ -49,8 +55,14 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
         'Enhanced restaurant operations with tighter menu-to-order synchronization.',
     },
     actionManifest: [
-      { actionId: 'restaurant.stock.adjust', capabilities: ['inventory:write'] },
-      { actionId: 'restaurant.invoice.set-status', capabilities: ['invoice:write'] },
+      {
+        actionId: 'restaurant.stock.adjust',
+        capabilities: ['inventory:write'],
+      },
+      {
+        actionId: 'restaurant.invoice.set-status',
+        capabilities: ['invoice:write'],
+      },
       { actionId: 'restaurant.order.finalize', capabilities: ['order:write'] },
       { actionId: 'restaurant.trip.reconcile', capabilities: ['trip:write'] },
       { actionId: 'restaurant.menu.sync', capabilities: ['menu:write'] },
@@ -74,7 +86,10 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
     },
     actionManifest: [
       { actionId: 'loyalty.points.add', capabilities: ['customer:write'] },
-      { actionId: 'loyalty.campaign.trigger', capabilities: ['campaign:write'] },
+      {
+        actionId: 'loyalty.campaign.trigger',
+        capabilities: ['campaign:write'],
+      },
       { actionId: 'loyalty.segment.refresh', capabilities: ['customer:read'] },
     ],
     adminTabs: [
@@ -122,7 +137,10 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
     actionManifest: [
       { actionId: 'fulfillment.order.route', capabilities: ['order:write'] },
       { actionId: 'fulfillment.trip.assign', capabilities: ['trip:write'] },
-      { actionId: 'fulfillment.stock.allocate', capabilities: ['inventory:write'] },
+      {
+        actionId: 'fulfillment.stock.allocate',
+        capabilities: ['inventory:write'],
+      },
     ],
     adminTabs: [
       { schema: 'order', title: 'Orders' },
@@ -148,7 +166,10 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
     },
     actionManifest: [
       { actionId: 'catalog.sku.audit', capabilities: ['inventory:read'] },
-      { actionId: 'catalog.restock.predict', capabilities: ['inventory:write'] },
+      {
+        actionId: 'catalog.restock.predict',
+        capabilities: ['inventory:write'],
+      },
       { actionId: 'catalog.price.watch', capabilities: ['pricing:read'] },
     ],
     adminTabs: [
@@ -227,7 +248,9 @@ const RECOMMENDED_BY_BUSINESS_TYPE: Record<string, string[]> = {
 };
 
 const SEED_IDS = new Set(
-  MARKETPLACE_SEED_RELEASES.map((release) => `${release.pluginId}@${release.version}`),
+  MARKETPLACE_SEED_RELEASES.map(
+    (release) => `${release.pluginId}@${release.version}`,
+  ),
 );
 
 export function parseReleaseId(releaseId: string) {
@@ -244,10 +267,13 @@ export function parseReleaseId(releaseId: string) {
 }
 
 export function getRecommendedSeedReleaseIds(businessType: string): string[] {
-  const prioritized = RECOMMENDED_BY_BUSINESS_TYPE[businessType] ??
+  const prioritized =
+    RECOMMENDED_BY_BUSINESS_TYPE[businessType] ??
     RECOMMENDED_BY_BUSINESS_TYPE.other;
 
-  const unique = prioritized.filter((id, index) => prioritized.indexOf(id) === index);
+  const unique = prioritized.filter(
+    (id, index) => prioritized.indexOf(id) === index,
+  );
   const existing = unique.filter((id) => SEED_IDS.has(id));
 
   if (existing.length > 0) {

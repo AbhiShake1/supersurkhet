@@ -3,8 +3,8 @@ import {
   ArrowUpCircle,
   CheckCircle2,
   CircleAlert,
-  Eye,
   ExternalLink,
+  Eye,
   FlaskConical,
   Package,
   Search,
@@ -12,10 +12,11 @@ import {
   Wrench,
   Zap,
 } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { useConfetti } from '@/components/confetti-provider';
+import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -60,7 +61,6 @@ import {
   rollbackPluginRelease,
   uninstallPluginRelease,
 } from '@/server-functions/plugins';
-import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
 
 export const Route = createFileRoute('/$businessName/admin/plugins')({
   component: PluginsRouteComponent,
@@ -126,16 +126,30 @@ function PluginsRouteComponent() {
         ? 'admin'
         : 'staff';
 
+  const ensureMarketplaceSeedIsAvailable = useCallback(async () => {
+    try {
+      await ensureMarketplaceSeedReleases({
+        data: {
+          actorUserId,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to ensure marketplace seed releases:', error);
+      toast.error('Failed to load marketplace releases. Please try again.');
+      throw error;
+    }
+  }, [actorUserId]);
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setShowInitialSkeleton(false);
     }, 1400);
 
-    // Ensure marketplace seed releases are available when component mounts
+    // Ensure marketplace seed releases are available when component mounts.
     void ensureMarketplaceSeedIsAvailable();
 
     return () => window.clearTimeout(timeoutId);
-  }, []);
+  }, [ensureMarketplaceSeedIsAvailable]);
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [businessId],
@@ -265,24 +279,6 @@ function PluginsRouteComponent() {
       }),
     [fullCatalog, drafts, draftInstalls],
   );
-
-  async function ensureMarketplaceSeedIsAvailable() {
-    try {
-      const result = await ensureMarketplaceSeedReleases({
-        data: {
-          actorUserId,
-        },
-      });
-      // Optionally log the seeding results for debugging
-      console.log('Marketplace seeds ensured:', result);
-    } catch (error) {
-      console.error('Failed to ensure marketplace seed releases:', error);
-      toast.error('Failed to load marketplace releases. Please try again.');
-      // Re-throw the error so the caller knows about the failure
-      throw error;
-    }
-  }
-
 
   async function installDraft(params: {
     pluginId: string;
@@ -540,11 +536,16 @@ function PluginsRouteComponent() {
                     <MarketplacePluginCard
                       key={entry.pluginId}
                       entry={entry}
-                      isSeedOnlyLatest={!liveReleaseIds.has(entry.latestRelease.id)}
+                      isSeedOnlyLatest={
+                        !liveReleaseIds.has(entry.latestRelease.id)
+                      }
+                      businessName={businessName}
                       actorUserId={actorUserId}
                       actorRole={actorRole}
                       businessId={businessId}
-                      ensureMarketplaceSeedIsAvailable={ensureMarketplaceSeedIsAvailable}
+                      ensureMarketplaceSeedIsAvailable={
+                        ensureMarketplaceSeedIsAvailable
+                      }
                     />
                   ))}
                 </div>
@@ -579,7 +580,9 @@ function PluginsRouteComponent() {
                         actorUserId={actorUserId}
                         actorRole={actorRole}
                         businessId={businessId}
-                        ensureMarketplaceSeedIsAvailable={ensureMarketplaceSeedIsAvailable}
+                        ensureMarketplaceSeedIsAvailable={
+                          ensureMarketplaceSeedIsAvailable
+                        }
                       />
                     );
                   })}
@@ -628,10 +631,6 @@ function PluginsRouteComponent() {
                           ? 'warn'
                           : 'secondary';
 
-                    const actionId = latestRevision
-                      ? `draft:${draft.draftId}:${latestRevision.revisionId}`
-                      : `draft:${draft.draftId}:none`;
-
                     return (
                       <Card key={draft.draftId} className="py-4 gap-4">
                         <CardHeader className="px-4 md:px-6">
@@ -647,9 +646,9 @@ function PluginsRouteComponent() {
                             <Badge
                               className={cn(
                                 statusTone === 'ok' &&
-                                'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-200',
+                                  'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-200',
                                 statusTone === 'warn' &&
-                                'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200',
+                                  'bg-amber-100 text-amber-900 border-amber-300 dark:bg-amber-950/40 dark:text-amber-200',
                               )}
                               variant={
                                 statusTone === 'secondary'
@@ -732,7 +731,9 @@ function PluginsRouteComponent() {
                   actorUserId={actorUserId}
                   actorRole={actorRole}
                   businessId={businessId}
-                  ensureMarketplaceSeedIsAvailable={ensureMarketplaceSeedIsAvailable}
+                  ensureMarketplaceSeedIsAvailable={
+                    ensureMarketplaceSeedIsAvailable
+                  }
                 />
               ))
             )}
@@ -811,7 +812,7 @@ function useIndividualPluginInstallation(
   actorUserId: string,
   actorRole: 'owner' | 'admin' | 'staff',
   businessId: string,
-  ensureMarketplaceSeedIsAvailable: () => Promise<void>
+  ensureMarketplaceSeedIsAvailable: () => Promise<void>,
 ) {
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const { fire: fireConfetti } = useConfetti();
@@ -838,10 +839,14 @@ function useIndividualPluginInstallation(
     }
   };
 
-  const installRelease = async (params: { pluginId: string; version: string }) => {
+  const installRelease = async (params: {
+    pluginId: string;
+    version: string;
+  }) => {
     await runIndividualMutation({
       actionId: `install:${params.pluginId}:${params.version}`,
       action: async () => {
+        await ensureMarketplaceSeedIsAvailable();
         return installPluginRelease({
           data: {
             actorUserId,
@@ -866,6 +871,7 @@ function useIndividualPluginInstallation(
     await runIndividualMutation({
       actionId: `repin:${params.pluginId}:${params.version}`,
       action: async () => {
+        await ensureMarketplaceSeedIsAvailable();
         return rollbackPluginRelease({
           data: {
             actorUserId,
@@ -914,6 +920,7 @@ function useIndividualPluginInstallation(
 function MarketplacePluginCard({
   entry,
   isSeedOnlyLatest,
+  businessName,
   actorUserId,
   actorRole,
   businessId,
@@ -921,6 +928,7 @@ function MarketplacePluginCard({
 }: {
   entry: PluginCatalogEntry;
   isSeedOnlyLatest: boolean;
+  businessName: string;
   actorUserId: string;
   actorRole: 'owner' | 'admin' | 'staff';
   businessId: string;
@@ -931,7 +939,7 @@ function MarketplacePluginCard({
     actorUserId,
     actorRole,
     businessId,
-    ensureMarketplaceSeedIsAvailable
+    ensureMarketplaceSeedIsAvailable,
   );
 
   const latestActionId = `install:${entry.pluginId}:${entry.latestRelease.version}`;
@@ -942,7 +950,7 @@ function MarketplacePluginCard({
       className={cn(
         'py-4 gap-4 border-border/70 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md',
         entry.isUpgradable &&
-        'border-amber-300/80 bg-amber-50/70 dark:border-amber-500/40 dark:bg-amber-950/20',
+          'border-amber-300/80 bg-amber-50/70 dark:border-amber-500/40 dark:bg-amber-950/20',
       )}
     >
       <CardHeader className="px-4 md:px-6">
@@ -1023,7 +1031,7 @@ function MarketplacePluginCard({
             onClick={() => setIsPreviewOpen(true)}
           >
             <Eye className="mr-2 size-4" />
-            Preview
+            Preview dashboard impact
           </Button>
 
           <Button
@@ -1050,7 +1058,7 @@ function MarketplacePluginCard({
             onOpenChange={setIsPreviewOpen}
             entry={entry}
             businessId={businessId}
-            businessSlug={businessId}
+            businessSlug={businessName}
             onInstall={() => {
               installRelease({
                 pluginId: entry.pluginId,
@@ -1079,12 +1087,13 @@ function InstalledPluginCard({
   businessId: string;
   ensureMarketplaceSeedIsAvailable: () => Promise<void>;
 }) {
-  const { installRelease, rollbackRelease, uninstallRelease, isActionPending } = useIndividualPluginInstallation(
-    actorUserId,
-    actorRole,
-    businessId,
-    ensureMarketplaceSeedIsAvailable
-  );
+  const { installRelease, rollbackRelease, uninstallRelease, isActionPending } =
+    useIndividualPluginInstallation(
+      actorUserId,
+      actorRole,
+      businessId,
+      ensureMarketplaceSeedIsAvailable,
+    );
 
   const repinActionId = `repin:${entry.pluginId}:${install.version}`;
   const upgradeActionId = `install:${entry.pluginId}:${entry.latestRelease.version}`;
@@ -1095,12 +1104,8 @@ function InstalledPluginCard({
       <CardHeader className="px-4 md:px-6">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <CardTitle className="text-base">
-              {entry.title}
-            </CardTitle>
-            <CardDescription>
-              {entry.pluginId}
-            </CardDescription>
+            <CardTitle className="text-base">{entry.title}</CardTitle>
+            <CardDescription>{entry.pluginId}</CardDescription>
           </div>
           <Badge
             className={cn(
@@ -1109,35 +1114,23 @@ function InstalledPluginCard({
                 : 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-200',
             )}
           >
-            {entry.isUpgradable
-              ? 'Upgrade available'
-              : 'Up to date'}
+            {entry.isUpgradable ? 'Upgrade available' : 'Up to date'}
           </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 px-4 md:px-6">
         <dl className="grid grid-cols-2 gap-x-3 gap-y-2 text-sm">
-          <dt className="text-muted-foreground">
-            Pinned version
-          </dt>
-          <dd className="text-right font-medium">
-            {install.version}
-          </dd>
-          <dt className="text-muted-foreground">
-            Latest release
-          </dt>
+          <dt className="text-muted-foreground">Pinned version</dt>
+          <dd className="text-right font-medium">{install.version}</dd>
+          <dt className="text-muted-foreground">Latest release</dt>
           <dd className="text-right font-medium">
             {entry.latestRelease.version}
           </dd>
-          <dt className="text-muted-foreground">
-            Manifest hash
-          </dt>
+          <dt className="text-muted-foreground">Manifest hash</dt>
           <dd className="text-right font-mono text-xs">
             {shortenHash(install.manifestHash)}
           </dd>
-          <dt className="text-muted-foreground">
-            Artifact hash
-          </dt>
+          <dt className="text-muted-foreground">Artifact hash</dt>
           <dd className="text-right font-mono text-xs">
             {shortenHash(install.artifactHash)}
           </dd>
@@ -1209,19 +1202,15 @@ function UpgradeQueueItem({
     actorUserId,
     actorRole,
     businessId,
-    ensureMarketplaceSeedIsAvailable
+    ensureMarketplaceSeedIsAvailable,
   );
 
   const actionId = `install:${entry.pluginId}:${entry.latestRelease.version}`;
 
   return (
-    <div
-      className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3"
-    >
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3">
       <div className="space-y-1">
-        <div className="font-medium text-sm">
-          {entry.pluginId}
-        </div>
+        <div className="font-medium text-sm">{entry.pluginId}</div>
         <div className="text-xs text-muted-foreground">
           {entry.installed?.version} → {entry.latestRelease.version}
         </div>
@@ -1261,9 +1250,9 @@ function MetricCard({
         'rounded-xl border p-4 shadow-xs backdrop-blur-sm',
         tone === 'default' && 'border-border/70 bg-background/80',
         tone === 'warn' &&
-        'border-amber-300/70 bg-amber-50/90 text-amber-950 dark:border-amber-500/35 dark:bg-amber-950/25 dark:text-amber-200',
+          'border-amber-300/70 bg-amber-50/90 text-amber-950 dark:border-amber-500/35 dark:bg-amber-950/25 dark:text-amber-200',
         tone === 'ok' &&
-        'border-emerald-300/70 bg-emerald-50/90 text-emerald-950 dark:border-emerald-500/35 dark:bg-emerald-950/25 dark:text-emerald-200',
+          'border-emerald-300/70 bg-emerald-50/90 text-emerald-950 dark:border-emerald-500/35 dark:bg-emerald-950/25 dark:text-emerald-200',
       )}
     >
       <div className="mb-2 flex items-center justify-between gap-2">

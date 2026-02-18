@@ -87,9 +87,9 @@ function normalizeTableTab(
   };
 }
 
-function toTitleCase(schema: string) {
+function toTitleCase(schema: string | undefined) {
   return schema
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    ?.replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/^./, (c) => c.toUpperCase());
 }
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  MARKETPLACE_SEED_RELEASES,
   getRecommendedSeedReleaseIds,
+  MARKETPLACE_SEED_RELEASES,
   mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
   toMarketplaceSeedReleaseDocs,
@@ -29,9 +29,15 @@ describe('marketplace seed catalog', () => {
   });
 
   it('returns non-empty recommended starter stack per business type', () => {
-    expect(getRecommendedSeedReleaseIds('retail').length).toBeGreaterThanOrEqual(2);
-    expect(getRecommendedSeedReleaseIds('food').length).toBeGreaterThanOrEqual(2);
-    expect(getRecommendedSeedReleaseIds('other').length).toBeGreaterThanOrEqual(1);
+    expect(
+      getRecommendedSeedReleaseIds('retail').length,
+    ).toBeGreaterThanOrEqual(2);
+    expect(getRecommendedSeedReleaseIds('food').length).toBeGreaterThanOrEqual(
+      2,
+    );
+    expect(getRecommendedSeedReleaseIds('other').length).toBeGreaterThanOrEqual(
+      1,
+    );
   });
 
   it('converts static seed metadata into installable release docs', () => {
