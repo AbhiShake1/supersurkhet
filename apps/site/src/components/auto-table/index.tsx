@@ -59,6 +59,7 @@ import SkeletonTableOneWrapper from '../mvpblocks/skeleton-table-1';
 import { BadgeMarquee } from '../ui/badge-marquee';
 import type { DeriveFn, FieldConfigCustomData } from '../ui/autoform';
 import { applyDerivedValuesToRow, getDeriveFn } from './derive-row';
+import { getAutoTableInitialState } from './initial-state';
 import { AutoTableActionBar } from './auto-table-action-bar';
 
 type AggregationType =
@@ -283,14 +284,11 @@ export function AutoTable<T extends SchemaKeys>({
     enableGlobalFilter: enableGlobalFiltering,
     enableRowSelection: enableRowSelection,
     enableColumnPinning: enableColumnPinning,
-    initialState: {
-      pagination: {
-        pageIndex: search?.pageIndex ?? 0,
-        pageSize: defaultPageSize,
-      },
-      columnPinning: enableColumnPinning ? { right: ['actions'] } : undefined,
-      columnVisibility: {},
-    },
+    initialState: getAutoTableInitialState({
+      pageIndex: search?.pageIndex ?? 0,
+      defaultPageSize,
+      enableColumnPinning,
+    }),
     meta: {
       updateData(rowId: string, data: Record<string, unknown>) {
         updateMutation.mutate({ id: rowId, ...data });

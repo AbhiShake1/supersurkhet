@@ -469,7 +469,7 @@ export async function ensureMarketplaceSeedReleases({ data }: { data: z.infer<ty
     createdReleaseIds,
     seededReleaseCount: MARKETPLACE_SEED_RELEASES.length,
     createdCount: createdReleaseIds.length,
-  } as const;
+  };
 }
 //
 // export const ensureMarketplaceSeedReleases = createServerFn({ method: 'POST' })

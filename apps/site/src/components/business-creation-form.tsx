@@ -600,7 +600,7 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                             variant={isSelected ? 'secondary' : 'default'}
                             onClick={() => togglePlugin(entry)}
                           >
-                            {isSelected ? 'Installed in queue' : 'Install plugin'}
+                            {isSelected ? 'Installing plugin' : 'Install plugin'}
                           </Button>
                         </div>
                       </Card>

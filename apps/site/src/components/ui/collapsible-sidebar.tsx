@@ -1,6 +1,8 @@
 import { Link, useLocation } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import {
+  ChevronDown,
+  ChevronRight,
   ChevronsRight,
   ChevronsUpDown,
   LogOut,
@@ -9,9 +11,10 @@ import {
   PlugZapIcon,
   Search,
   Settings,
+  Star,
 } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useDialog } from '@/contexts/dialog-context';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useProfile } from '@/hooks/use-profile';
@@ -45,6 +48,9 @@ function getTabIcon(tab: PossibleTabConfig): LucideIcon {
   return Menu;
 }
 
+const FREQUENT_TABS_STORAGE_KEY = 'sidebar-frequent-tabs';
+const GROUP_OPEN_STATE_STORAGE_KEY = 'sidebar-group-state';
+
 export interface CollapsibleSidebarProps {
   businessName?: string;
   slug?: string;
@@ -61,6 +67,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const [open, setOpen] = useState(!isMobile);
   const [selected, setSelected] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [frequentUsage, setFrequentUsage] = useState<Record<string, number>>(
+    {},
+  );
+  const [groupOpenState, setGroupOpenState] = useState<Record<string, boolean>>(
+    {},
+  );
+  const [isFrequentOpen, setIsFrequentOpen] = useState(true);
 
   const { search } = useLocation();
   const currentTab =
@@ -75,17 +88,38 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     }
   }, [currentTab, tabs]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const rawUsage = window.localStorage.getItem(FREQUENT_TABS_STORAGE_KEY);
+      if (rawUsage) {
+        const parsed = JSON.parse(rawUsage) as Record<string, number>;
+        setFrequentUsage(parsed);
+      }
+      const rawGroups = window.localStorage.getItem(
+        GROUP_OPEN_STATE_STORAGE_KEY,
+      );
+      if (rawGroups) {
+        const parsed = JSON.parse(rawGroups) as Record<string, boolean>;
+        setGroupOpenState(parsed);
+      }
+    } catch (_error) {
+      setFrequentUsage({});
+      setGroupOpenState({});
+    }
+  }, []);
+
   // Filter items based on search query
   const filteredItems = searchQuery
     ? tabs.filter((item) => {
-      try {
-        const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
-        return regex.test(item.title);
-      } catch (_e) {
-        // If the regex is invalid, fallback to simple string includes
-        return item.title.toLowerCase().includes(searchQuery.toLowerCase());
-      }
-    })
+        try {
+          const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
+          return regex.test(item.title);
+        } catch (_e) {
+          // If the regex is invalid, fallback to simple string includes
+          return item.title.toLowerCase().includes(searchQuery.toLowerCase());
+        }
+      })
     : tabs;
 
   // Group items by group property if available
@@ -103,10 +137,53 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     }
   });
 
+  const frequentItems = useMemo(() => {
+    const byTitle = new Map(tabs.map((item) => [item.title, item]));
+    return Object.entries(frequentUsage)
+      .sort((a, b) => b[1] - a[1])
+      .map(([title]) => byTitle.get(title))
+      .filter((item): item is PossibleTabConfig => !!item)
+      .slice(0, 5);
+  }, [frequentUsage, tabs]);
+
+  const frequentItemsBySearch = useMemo(() => {
+    if (!searchQuery.trim()) return frequentItems;
+    return frequentItems.filter((item) =>
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [frequentItems, searchQuery]);
+
+  const toggleGroup = (groupName: string) => {
+    setGroupOpenState((prev) => {
+      const next = { ...prev, [groupName]: !(prev[groupName] ?? true) };
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(
+          GROUP_OPEN_STATE_STORAGE_KEY,
+          JSON.stringify(next),
+        );
+      }
+      return next;
+    });
+  };
+
+  const incrementFrequentUsage = (title: string) => {
+    setFrequentUsage((prev) => {
+      const next = { ...prev, [title]: (prev[title] ?? 0) + 1 };
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(
+          FREQUENT_TABS_STORAGE_KEY,
+          JSON.stringify(next),
+        );
+      }
+      return next;
+    });
+  };
+
   return (
     <nav
-      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? 'w-48 sm:w-64' : 'w-10 sm:w-16'
-        } border-gray-200 dark:border-gray-800 bg-card p-0.5 sm:p-2 shadow-sm z-50 flex flex-col`}
+      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${
+        open ? 'w-52 sm:w-72' : 'w-12 sm:w-16'
+      } border-slate-200/80 dark:border-slate-800 bg-card/95 p-1.5 sm:p-2 shadow-sm z-50 flex flex-col`}
     >
       {/* User profile section at the top */}
       <div className="flex-shrink-0">
@@ -131,6 +208,49 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
       {/* Navigation items */}
       <div className="flex-grow overflow-y-auto pb-16">
+        {frequentItemsBySearch.length > 0 && (
+          <div className="mb-2 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-slate-50/40 dark:bg-slate-900/40">
+            {open ? (
+              <button
+                type="button"
+                onClick={() => setIsFrequentOpen((prev) => !prev)}
+                aria-expanded={isFrequentOpen}
+                className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Star className="h-3.5 w-3.5" />
+                  Frequently used
+                </span>
+                {isFrequentOpen ? (
+                  <ChevronDown className="h-4 w-4" />
+                ) : (
+                  <ChevronRight className="h-4 w-4" />
+                )}
+              </button>
+            ) : (
+              <div className="grid place-content-center py-2 text-slate-500">
+                <Star className="h-4 w-4" />
+              </div>
+            )}
+            {(!open || isFrequentOpen) && (
+              <div className="space-y-1 px-1 pb-1.5">
+                {frequentItemsBySearch.map((item) => (
+                  <Option
+                    key={`frequent-${item.title}`}
+                    Icon={getTabIcon(item)}
+                    title={item.title}
+                    url={item.url}
+                    selected={selected}
+                    setSelected={setSelected}
+                    open={open}
+                    onActivate={incrementFrequentUsage}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="space-y-1">
           {ungroupedItems.map((item, index) => (
             <Option
@@ -142,36 +262,56 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
               selected={selected}
               setSelected={setSelected}
               open={open}
+              onActivate={incrementFrequentUsage}
             />
           ))}
         </div>
 
         {/* Grouped navigation items */}
-        {Object.entries(groupedItems).map(([groupName, items]) => (
-          <div key={groupName} className="">
-            {open && (
-              <div className="px-3 py-2 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                {groupName}
-              </div>
-            )}
-            <div className="space-y-1">
-              {items.map((item, index) => (
-                <Option
-                  key={`${groupName}-${
-                    // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-                    index
-                    }`}
-                  Icon={getTabIcon(item)}
-                  title={item.title}
-                  url={item.url}
-                  selected={selected}
-                  setSelected={setSelected}
-                  open={open}
-                />
-              ))}
+        {Object.entries(groupedItems).map(([groupName, items]) => {
+          const isGroupOpen = groupOpenState[groupName] ?? true;
+          return (
+            <div
+              key={groupName}
+              className="mt-1 rounded-lg border border-slate-200/80 dark:border-slate-800"
+            >
+              {open ? (
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(groupName)}
+                  aria-expanded={isGroupOpen}
+                  className="flex w-full items-center justify-between px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60"
+                >
+                  <span>{groupName}</span>
+                  {isGroupOpen ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </button>
+              ) : null}
+              {(isGroupOpen || !open) && (
+                <div className="space-y-1 p-1">
+                  {items.map((item, index) => (
+                    <Option
+                      key={`${groupName}-${
+                        // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                        index
+                      }`}
+                      Icon={getTabIcon(item)}
+                      title={item.title}
+                      url={item.url}
+                      selected={selected}
+                      setSelected={setSelected}
+                      open={open}
+                      onActivate={incrementFrequentUsage}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Toggle button at the bottom */}
@@ -189,11 +329,13 @@ const Option: React.FC<{
   selected: string;
   setSelected: (title: string) => void;
   open: boolean;
-}> = ({ Icon, title, selected, setSelected, open }) => {
+  onActivate?: (title: string) => void;
+}> = ({ Icon, title, selected, setSelected, open, onActivate }) => {
   const isSelected = selected === title;
 
   const handleClick = () => {
     setSelected(title);
+    onActivate?.(title);
   };
 
   return (
@@ -201,10 +343,11 @@ const Option: React.FC<{
       onClick={handleClick}
       to="."
       search={{ tab: title }}
-      className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${isSelected
-        ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
-        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
-        }`}
+      className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${
+        isSelected
+          ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
+          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+      }`}
     >
       <div className="grid h-full w-10 sm:w-12 place-content-center">
         <Icon className="h-4 w-4" />
@@ -212,8 +355,9 @@ const Option: React.FC<{
 
       {open && (
         <span
-          className={`text-sm font-medium transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'
-            }`}
+          className={`text-sm font-medium transition-opacity duration-200 ${
+            open ? 'opacity-100' : 'opacity-0'
+          }`}
         >
           {title}
         </span>
@@ -315,19 +459,21 @@ const TitleSection: React.FC<{
               <DropdownMenuSeparator />
             </>
           )}
-          {
-            slug && (
-              <>
-                <DropdownMenuItem asChild>
-                  <Link to='/$businessName/admin/plugins' params={{ businessName: slug }} className='gap-1'>
-                    <PlugZapIcon className='size-4' />
-                    Manage Plugins
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            )
-          }
+          {slug && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link
+                  to="/$businessName/admin/plugins"
+                  params={{ businessName: slug }}
+                  className="gap-1"
+                >
+                  <PlugZapIcon className="size-4" />
+                  Manage Plugins
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
           <DropdownMenuItem className="gap-2" onClick={() => logout()}>
             <LogOut className="size-4" />
             Log out
@@ -351,14 +497,16 @@ const ToggleClose: React.FC<{
       <div className="flex items-center p-1 sm:p-3">
         <div className="grid size-6 sm:size-10 place-content-center">
           <ChevronsRight
-            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${open ? 'rotate-180' : ''
-              }`}
+            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${
+              open ? 'rotate-180' : ''
+            }`}
           />
         </div>
         {open && (
           <span
-            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'
-              }`}
+            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${
+              open ? 'opacity-100' : 'opacity-0'
+            }`}
           >
             Hide
           </span>

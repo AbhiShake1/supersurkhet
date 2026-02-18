@@ -18,6 +18,7 @@ type PluginPreviewDialogProps = {
   entry: PluginCatalogEntry;
   businessId: string;
   businessSlug: string;
+  isInstalled: boolean;
   onInstall: () => void;
 };
 
@@ -27,6 +28,7 @@ export function PluginPreviewDialog({
   entry,
   businessId,
   businessSlug,
+  isInstalled,
   onInstall,
 }: PluginPreviewDialogProps) {
   const currentConfig = useBusinessConfig({
@@ -57,13 +59,32 @@ export function PluginPreviewDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 p-0 flex flex-col !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
-        <DialogHeader className="py-2 px-4 border-b flex items-center justify-between">
-          <DialogTitle className="flex items-center gap-2">
-            {entry.title}
-            <Badge variant="secondary" className="text-xs">
-              Preview Mode
-            </Badge>
-          </DialogTitle>
+        <DialogHeader className="border-b bg-linear-to-r from-primary/10 via-primary/5 to-transparent px-4 py-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm text-foreground/90">
+              <DialogTitle className="text-base font-semibold text-foreground">
+                {entry.title}
+              </DialogTitle>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-foreground/90">
+              <span className="inline-flex size-2 animate-pulse rounded-full bg-primary" />
+              <span>Ready to enable this plugin?</span>
+              <Badge variant="outline" className="text-[11px]">
+                Recommended next step
+              </Badge>
+            </div>
+            <Button
+              size="sm"
+              className="shadow-lg shadow-primary/30 ring-1 ring-primary/40 mr-8"
+              disabled={isInstalled}
+              onClick={() => {
+                onInstall();
+                onOpenChange(false);
+              }}
+            >
+              {isInstalled ? 'Installed' : 'Install Plugin'}
+            </Button>
+          </div>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden p-0 m-0">
@@ -88,18 +109,6 @@ export function PluginPreviewDialog({
               )}
             </div>
           </div>
-        </div>
-
-        <div className="flex flex-wrap justify-end gap-2 p-2 border-t">
-          <Button
-            size="sm"
-            onClick={() => {
-              onInstall();
-              onOpenChange(false);
-            }}
-          >
-            Install Plugin
-          </Button>
         </div>
       </DialogContent>
     </Dialog>

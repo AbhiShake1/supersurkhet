@@ -1,8 +1,9 @@
+import type { SchemaKeys } from '@gta/react-hooks';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Search, Star } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
-import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
+import { AutoTable } from '@/components/auto-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,9 +11,15 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
-import { buildMarketplaceGroups, type PluginMarketItem } from '@/lib/plugins/admin-plugin-market';
+import {
+  buildMarketplaceGroups,
+  type PluginMarketItem,
+} from '@/lib/plugins/admin-plugin-market';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
-import type { BusinessPluginInstallDoc, PluginReleaseDoc } from '@/lib/plugins/types';
+import type {
+  BusinessPluginInstallDoc,
+  PluginReleaseDoc,
+} from '@/lib/plugins/types';
 import { ensureMarketplaceSeedReleases } from '@/server-functions/plugins';
 
 export const Route = createFileRoute('/$businessName/admin/plugins')({
@@ -27,14 +34,18 @@ function PluginsRouteComponent() {
   const [query, setQuery] = useState('');
   const [chartType, setChartType] = useState<ChartType>('top-free');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  const [previewPlugin, setPreviewPlugin] = useState<PluginMarketItem | null>(null);
 
-  const { data: businesses = [], isLoading } = api.business.useGet({ keys: [businessName], single: true });
+  const { data: businesses = [], isLoading } = api.business.useGet({
+    keys: [businessName],
+    single: true,
+  });
   const business = businesses[0];
   const businessId = business?.id ?? businessName;
   const actorUserId = user?._?.soul ?? 'anon';
 
-  const { data: installRows = [] } = api.businessPluginInstall.useGet({ keys: [businessId] });
+  const { data: installRows = [] } = api.businessPluginInstall.useGet({
+    keys: [businessId],
+  });
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
 
   useEffect(() => {
@@ -43,10 +54,20 @@ function PluginsRouteComponent() {
 
   const installs = installRows as BusinessPluginInstallDoc[];
   const liveReleases = releaseRows as PluginReleaseDoc[];
-  const releases = useMemo(() => mergeMarketplaceReleasesWithSeed(liveReleases), [liveReleases]);
+  const releases = useMemo(
+    () => mergeMarketplaceReleasesWithSeed(liveReleases),
+    [liveReleases],
+  );
 
   const catalog = useMemo(
-    () => buildPluginCatalog({ releases, installs, query: '', filter: 'all', sort: 'name' }),
+    () =>
+      buildPluginCatalog({
+        releases,
+        installs,
+        query: '',
+        filter: 'all',
+        sort: 'name',
+      }),
     [releases, installs],
   );
 
@@ -61,7 +82,8 @@ function PluginsRouteComponent() {
           .join(' ')
           .toLowerCase()
           .includes(normalized);
-      const matchesCategory = selectedCategory === 'All' || plugin.category === selectedCategory;
+      const matchesCategory =
+        selectedCategory === 'All' || plugin.category === selectedCategory;
       return matchesQuery && matchesCategory;
     });
   }, [marketplace, query, selectedCategory]);
@@ -82,14 +104,21 @@ function PluginsRouteComponent() {
       <section className="rounded-3xl border border-border/60 bg-gradient-to-br from-emerald-50 via-background to-cyan-50 p-6 shadow-sm dark:from-emerald-950/20 dark:to-cyan-950/20">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
-            <Badge variant="outline" className="rounded-full">Plugin Marketplace</Badge>
-            <h1 className="text-3xl font-semibold tracking-tight">Discover apps for your admin dashboard</h1>
+            <Badge variant="outline" className="rounded-full">
+              Plugin Marketplace
+            </Badge>
+            <h1 className="text-3xl font-semibold tracking-tight">
+              Discover apps for your admin dashboard
+            </h1>
             <p className="max-w-3xl text-sm text-muted-foreground">
-              Browse by charts and categories. Install is only available on plugin details pages.
+              Browse by charts and categories. Install is only available on
+              plugin details pages.
             </p>
           </div>
           <Button asChild variant="outline">
-            <Link to="/$businessName/admin" params={{ businessName }}>Back to Admin</Link>
+            <Link to="/$businessName/admin" params={{ businessName }}>
+              Back to Admin
+            </Link>
           </Button>
         </div>
 
@@ -109,7 +138,11 @@ function PluginsRouteComponent() {
                 variant={chartType === type ? 'default' : 'outline'}
                 onClick={() => setChartType(type)}
               >
-                {type === 'top-free' ? 'Top free' : type === 'top-grossing' ? 'Top grossing' : 'Top paid'}
+                {type === 'top-free'
+                  ? 'Top free'
+                  : type === 'top-grossing'
+                    ? 'Top grossing'
+                    : 'Top paid'}
               </Button>
             ))}
           </div>
@@ -125,17 +158,25 @@ function PluginsRouteComponent() {
             <Link
               key={`${plugin.pluginId}:${index.toString()}`}
               to="/$businessName/admin/plugin/$pluginId"
-              params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+              params={{
+                businessName,
+                pluginId: encodeURIComponent(plugin.pluginId),
+              }}
               className="group flex items-center gap-3 rounded-xl border p-3 transition-colors hover:border-primary/40"
             >
-              <div className="w-5 text-sm text-muted-foreground">{index + 1}</div>
-              <PluginIcon plugin={plugin} onPreview={() => setPreviewPlugin(plugin)} compact />
+              <div className="w-5 text-sm text-muted-foreground">
+                {index + 1}
+              </div>
+              <PluginIcon plugin={plugin} compact />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{plugin.title}</p>
-                <p className="truncate text-xs text-muted-foreground">{plugin.category}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {plugin.category}
+                </p>
                 <p className="flex items-center text-xs text-muted-foreground">
                   <Star className="mr-1 size-3 fill-current" />
-                  {plugin.averageRating} · {plugin.installs.toLocaleString()} installs
+                  {plugin.averageRating} · {plugin.installs.toLocaleString()}{' '}
+                  installs
                 </p>
               </div>
             </Link>
@@ -159,9 +200,14 @@ function PluginsRouteComponent() {
 
       <section className="space-y-8">
         {marketplace.categories
-          .filter((category) => selectedCategory === 'All' || selectedCategory === category)
+          .filter(
+            (category) =>
+              selectedCategory === 'All' || selectedCategory === category,
+          )
           .map((category) => {
-            const items = visibleItems.filter((plugin) => plugin.category === category);
+            const items = visibleItems.filter(
+              (plugin) => plugin.category === category,
+            );
             if (items.length === 0) return null;
             return (
               <div key={category} className="space-y-3">
@@ -171,19 +217,31 @@ function PluginsRouteComponent() {
                     <Link
                       key={plugin.pluginId}
                       to="/$businessName/admin/plugin/$pluginId"
-                      params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+                      params={{
+                        businessName,
+                        pluginId: encodeURIComponent(plugin.pluginId),
+                      }}
                       className="group rounded-2xl border border-border/70 p-4 transition-colors hover:border-primary/40"
                     >
                       <div className="mb-3 flex items-start gap-3">
-                        <PluginIcon plugin={plugin} onPreview={() => setPreviewPlugin(plugin)} />
+                        <PluginIcon plugin={plugin} />
                         <div className="min-w-0">
-                          <p className="truncate text-base font-medium">{plugin.title}</p>
-                          <p className="truncate text-xs text-muted-foreground">{plugin.publisher}</p>
+                          <p className="truncate text-base font-medium">
+                            {plugin.title}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {plugin.publisher}
+                          </p>
                         </div>
                       </div>
-                      <p className="line-clamp-2 text-sm text-muted-foreground">{plugin.description}</p>
+                      <p className="line-clamp-2 text-sm text-muted-foreground">
+                        {plugin.description}
+                      </p>
                       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="flex items-center"><Star className="mr-1 size-3 fill-current" />{plugin.averageRating}</span>
+                        <span className="flex items-center">
+                          <Star className="mr-1 size-3 fill-current" />
+                          {plugin.averageRating}
+                        </span>
                         <span>{plugin.installs.toLocaleString()} installs</span>
                       </div>
                     </Link>
@@ -193,56 +251,64 @@ function PluginsRouteComponent() {
             );
           })}
       </section>
-
-      {previewPlugin ? (
-        <PluginPreviewDialog
-          open={Boolean(previewPlugin)}
-          onOpenChange={(open) => {
-            if (!open) setPreviewPlugin(null);
-          }}
-          entry={previewPlugin}
-          businessId={businessId}
-          businessSlug={businessName}
-          onInstall={() => {
-            // Intentionally blocked in listing; installs happen in details page.
-          }}
-        />
-      ) : null}
     </div>
   );
 }
 
 function PluginIcon({
   plugin,
-  onPreview,
   compact = false,
 }: {
   plugin: PluginMarketItem;
-  onPreview: () => void;
   compact?: boolean;
 }) {
   const iconSize = compact ? 'size-11' : 'size-14';
+  const previewSchema = plugin.latestRelease.adminTabs?.[0]?.schema;
+  const previewScale = compact
+    ? 'w-[460%] scale-[0.2]'
+    : 'w-[380%] scale-[0.24]';
+
   if (plugin.iconUrl) {
     return (
       <img
         src={plugin.iconUrl}
         alt={`${plugin.title} icon`}
-        className={`${iconSize} rounded-2xl object-cover shadow-sm`}
+        className={`${iconSize} pointer-events-none rounded-2xl object-cover shadow-sm`}
       />
     );
   }
 
+  if (!previewSchema) {
+    return (
+      <div
+        className={`${iconSize} pointer-events-none flex items-center justify-center rounded-2xl border border-dashed border-border bg-muted/40 text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground`}
+      >
+        No UI
+      </div>
+    );
+  }
+
   return (
-    <button
-      type="button"
-      onClick={(event) => {
-        event.preventDefault();
-        onPreview();
-      }}
-      className={`${iconSize} rounded-2xl border border-dashed border-border bg-muted/40 text-[11px] font-medium text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground`}
+    <div
+      className={`${iconSize} pointer-events-none overflow-hidden rounded-2xl border border-border/70 bg-muted/20`}
     >
-      Preview
-    </button>
+      <div className={`${previewScale} origin-top-left`}>
+        <AutoTable<SchemaKeys>
+          schema={previewSchema as SchemaKeys}
+          data={[]}
+          readOnly
+          enableAdvancedFiltering={false}
+          enableAdvancedSorting={false}
+          enableAggregations={false}
+          enableColumnPinning={false}
+          enableRowSelection={false}
+          enableGlobalFiltering={false}
+          enablePagination={false}
+          defaultPageSize={3}
+          className="min-h-0"
+        />
+      </div>
+    </div>
   );
 }
 

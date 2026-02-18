@@ -110,6 +110,16 @@ function resolveTabMetadata(tab: AutoAdminTabInput): PossibleTabConfig {
   };
 }
 
+function dedupeTabsByTitle(tabs: PossibleTabConfig[]): PossibleTabConfig[] {
+  const seenTitles = new Set<string>();
+  return tabs.filter((tab) => {
+    const key = tab.title.trim();
+    if (seenTitles.has(key)) return false;
+    seenTitles.add(key);
+    return true;
+  });
+}
+
 export function AutoAdmin({ tabs }: AutoAdminProps) {
   'use memo';
   const { search, pathname: currentPathname } = useLocation();
@@ -121,7 +131,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
-  const tabsWithHome: PossibleTabConfig[] = [
+  const tabsWithHome: PossibleTabConfig[] = dedupeTabsByTitle([
     {
       title: 'Dashboard',
       icon: BarChart3,
@@ -142,7 +152,7 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
       children: <CustomUiBuilderPage slug={basePath} />,
       group: 'System Configuration',
     },
-  ];
+  ]);
 
   // @ts-expect-error
   const tab = (search.tab as string) ?? tabsWithHome[0].title;

@@ -3,26 +3,31 @@ import type { PluginCatalogEntry } from '@/lib/plugins/admin-plugin-catalog';
 import {
   buildMarketplaceGroups,
   buildPluginDetailView,
+  groupPluginReviewsByUser,
   pickSimilarPlugins,
   summarizeReviewStats,
   type PluginUserReview,
 } from './admin-plugin-market';
 
-function entry(overrides: Partial<PluginCatalogEntry> = {}): PluginCatalogEntry {
+function entry(
+  overrides: Partial<PluginCatalogEntry> = {},
+): PluginCatalogEntry {
   const pluginId = overrides.pluginId ?? 'acme.inventory';
-  const latestRelease = overrides.latestRelease ?? ({
+  const latestRelease = overrides.latestRelease ?? {
     id: `${pluginId}@1.0.0`,
     pluginId,
     version: '1.0.0',
     docs: { title: `Plugin ${pluginId}`, description: 'desc' },
-    actionManifest: [{ actionId: 'inventory.adjust', capabilities: ['inventory:write'] }],
+    actionManifest: [
+      { actionId: 'inventory.adjust', capabilities: ['inventory:write'] },
+    ],
     adminTabs: [{ schema: 'product', title: 'Products' }],
     manifestHash: 'm',
     artifactHash: 'a',
     author: { userId: 'u1' },
     visibility: 'public',
     publishedAt: '2026-02-15T00:00:00.000Z',
-  });
+  };
 
   return {
     pluginId,
@@ -93,20 +98,76 @@ describe('admin plugin market helpers', () => {
     ];
 
     const groups = buildMarketplaceGroups(catalog);
-    const current = groups.all[0]!;
+    const current = groups.all[0];
+    expect(current).toBeDefined();
+    if (!current) {
+      throw new Error('Expected at least one catalog entry');
+    }
     const similar = pickSimilarPlugins(current, groups.all, 5);
 
-    expect(similar.find((item) => item.pluginId === current.pluginId)).toBeUndefined();
+    expect(
+      similar.find((item) => item.pluginId === current.pluginId),
+    ).toBeUndefined();
     expect(similar.length).toBeGreaterThan(0);
-    expect(similar.every((item) => item.category === current.category)).toBe(true);
+    expect(similar.every((item) => item.category === current.category)).toBe(
+      true,
+    );
   });
 
   it('builds details view with fallback preview tabs when screenshots are missing', () => {
-    const catalog = [entry({ pluginId: 'acme.inventory', capabilities: ['inventory:write'] })];
+    const catalog = [
+      entry({ pluginId: 'acme.inventory', capabilities: ['inventory:write'] }),
+    ];
     const groups = buildMarketplaceGroups(catalog);
-    const details = buildPluginDetailView(groups.all[0]!, [], 'u1');
+    const first = groups.all[0];
+    expect(first).toBeDefined();
+    if (!first) {
+      throw new Error('Expected a plugin for detail view');
+    }
+    const details = buildPluginDetailView(first, [], 'u1');
 
     expect(details.previewScreenshots.length).toBe(0);
     expect(details.previewTabs.length).toBeGreaterThan(0);
+  });
+
+  it('groups reviews by user and prioritizes the current user at the top', () => {
+    const reviews: PluginUserReview[] = [
+      {
+        id: '1',
+        pluginId: 'acme.inventory',
+        userId: 'u2',
+        userLabel: 'Bob',
+        rating: 4,
+        comment: 'Solid release.',
+        createdAt: '2026-02-10T00:00:00.000Z',
+      },
+      {
+        id: '2',
+        pluginId: 'acme.inventory',
+        userId: 'u1',
+        userLabel: 'Alice',
+        rating: 5,
+        comment: 'Latest from me.',
+        createdAt: '2026-02-11T00:00:00.000Z',
+      },
+      {
+        id: '3',
+        pluginId: 'acme.inventory',
+        userId: 'u2',
+        userLabel: 'Bob',
+        rating: 3,
+        comment: 'Older note.',
+        createdAt: '2026-02-01T00:00:00.000Z',
+      },
+    ];
+
+    const grouped = groupPluginReviewsByUser('acme.inventory', reviews, 'u1');
+
+    expect(grouped).toHaveLength(2);
+    expect(grouped[0]?.userId).toBe('u1');
+    expect(grouped[0]?.isCurrentUser).toBe(true);
+    expect(grouped[1]?.isCurrentUser).toBe(false);
+    expect(grouped[1]?.latestReview.id).toBe('1');
+    expect(grouped[1]?.totalReviews).toBe(2);
   });
 });
