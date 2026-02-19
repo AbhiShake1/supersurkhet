@@ -3,6 +3,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import {
   ArrowRight,
   BadgePlus,
+  Pencil,
   Plus,
   Sparkles,
   Trash2,
@@ -938,8 +939,8 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
     objectFields:
       normalizedType === 'object'
         ? (field.fields ?? [])
-            .filter((nested) => nested.type !== 'object' && nested.type !== 'array')
-            .map(toBuilderObjectField)
+          .filter((nested) => nested.type !== 'object' && nested.type !== 'array')
+          .map(toBuilderObjectField)
         : undefined,
   };
 }
@@ -1082,6 +1083,14 @@ function PluginStudioRoute() {
   const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<
     string | null
   >(null);
+  const [activeSchemaId, setActiveSchemaId] = useState(
+    DEFAULT_SCHEMA_DOC.schemaId,
+  );
+  const [activeWorkflowId, setActiveWorkflowId] = useState(
+    DEFAULT_WORKFLOW_DOC.workflowId,
+  );
+  const [isSchemaEditorOpen, setIsSchemaEditorOpen] = useState(false);
+  const [isWorkflowEditorOpen, setIsWorkflowEditorOpen] = useState(false);
   const [schemaBuilder, setSchemaBuilder] = useState<BuilderSchema>({
     schemaId: DEFAULT_SCHEMA_DOC.schemaId,
     title: DEFAULT_SCHEMA_DOC.title,
@@ -1179,6 +1188,31 @@ function PluginStudioRoute() {
       return null;
     }
   }, [schemaText, workflowText, actionManifestText]);
+
+  const availableSchemaDocs = parsed?.schemaDocs ?? [];
+  const availableWorkflows = parsed?.workflows ?? [];
+
+  useEffect(() => {
+    if (availableSchemaDocs.length === 0) return;
+    if (availableSchemaDocs.some((schemaDoc) => schemaDoc.schemaId === activeSchemaId)) {
+      return;
+    }
+    setActiveSchemaId(availableSchemaDocs[0]?.schemaId ?? DEFAULT_SCHEMA_DOC.schemaId);
+  }, [activeSchemaId, availableSchemaDocs]);
+
+  useEffect(() => {
+    if (availableWorkflows.length === 0) return;
+    if (
+      availableWorkflows.some(
+        (workflowDoc) => workflowDoc.workflowId === activeWorkflowId,
+      )
+    ) {
+      return;
+    }
+    setActiveWorkflowId(
+      availableWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
+    );
+  }, [activeWorkflowId, availableWorkflows]);
 
   const isValidInputs = useMemo(() => {
     const hasInvalidFieldConfig = schemaBuilder.fields.some((field) =>
@@ -1383,7 +1417,7 @@ function PluginStudioRoute() {
     });
 
     const nextSchemaDoc: SchemaDoc = {
-      schemaId: schemaBuilder.schemaId || 'plugin.custom.table',
+      schemaId: schemaBuilder.schemaId || activeSchemaId || 'plugin.custom.table',
       title: schemaBuilder.title || 'Custom Schema',
       fields: schemaBuilder.fields.map((field) => toSchemaFieldDoc(field)),
       refinements: [
@@ -1418,8 +1452,27 @@ function PluginStudioRoute() {
         })),
       ],
     };
-    setSchemaText(canonicalStringify([nextSchemaDoc]));
-  }, [blocklyRefinements, schemaBuilder, schemaRefinements]);
+    setSchemaText((currentText) => {
+      try {
+        const currentDocs = JSON.parse(currentText) as SchemaDoc[];
+        const nextDocs = [...currentDocs];
+        const schemaIndex = nextDocs.findIndex(
+          (schemaDoc) => schemaDoc.schemaId === activeSchemaId,
+        );
+        if (schemaIndex >= 0) {
+          nextDocs[schemaIndex] = nextSchemaDoc;
+        } else {
+          nextDocs.push(nextSchemaDoc);
+        }
+        return canonicalStringify(nextDocs);
+      } catch {
+        return canonicalStringify([nextSchemaDoc]);
+      }
+    });
+    if (activeSchemaId !== nextSchemaDoc.schemaId) {
+      setActiveSchemaId(nextSchemaDoc.schemaId);
+    }
+  }, [activeSchemaId, blocklyRefinements, schemaBuilder, schemaRefinements]);
 
   useEffect(() => {
     if (!parsed) return;
@@ -1651,7 +1704,12 @@ function PluginStudioRoute() {
         })),
     [schemaRefinements],
   );
-  const workspaceWorkflow = parsed?.workflows[0] ?? DEFAULT_WORKFLOW_DOC;
+  const workspaceWorkflow =
+    parsed?.workflows.find(
+      (workflowDoc) => workflowDoc.workflowId === activeWorkflowId,
+    ) ??
+    parsed?.workflows[0] ??
+    DEFAULT_WORKFLOW_DOC;
   const workspaceActionsManifestState = useMemo(
     () =>
       createActionsManifestEditorState({
@@ -2098,6 +2156,170 @@ function PluginStudioRoute() {
     selectedBlocklyField,
   ]);
 
+  function syncBuilderFromSchemaDoc(schemaDoc: SchemaDoc) {
+    const { schemaRefinements, blocklyRefinements } =
+      toBuilderRefinements(schemaDoc);
+    setSchemaBuilder({
+      schemaId: schemaDoc.schemaId,
+      title: schemaDoc.title ?? schemaDoc.schemaId,
+      fields: schemaDoc.fields.map(toBuilderField),
+    });
+    setSchemaRefinements(schemaRefinements);
+    setBlocklyRefinements(blocklyRefinements);
+  }
+
+  function selectSchema(schemaId: string) {
+    const schemaDoc = availableSchemaDocs.find(
+      (candidate) => candidate.schemaId === schemaId,
+    );
+    if (!schemaDoc) return;
+    setActiveSchemaId(schemaId);
+    syncBuilderFromSchemaDoc(schemaDoc);
+  }
+
+  function handleAddSchema() {
+    const nextSchemaId = `plugin.${pluginId.split('.').pop() || 'custom'}.${availableSchemaDocs.length + 1}`;
+    const nextSchemaDoc: SchemaDoc = {
+      schemaId: nextSchemaId,
+      title: `Schema ${availableSchemaDocs.length + 1}`,
+      fields: [
+        {
+          key: 'name',
+          type: 'string',
+          optional: false,
+          behavior: {
+            fieldConfig: {
+              fieldType: 'string',
+              label: 'Name',
+            },
+          },
+        },
+      ],
+    };
+    setSchemaText((current) => {
+      try {
+        const currentDocs = JSON.parse(current) as SchemaDoc[];
+        return canonicalStringify([...currentDocs, nextSchemaDoc]);
+      } catch {
+        return canonicalStringify([nextSchemaDoc]);
+      }
+    });
+    setActiveSchemaId(nextSchemaId);
+    syncBuilderFromSchemaDoc(nextSchemaDoc);
+    toast.success('Schema added.');
+  }
+
+  function handleRemoveSchema(schemaId: string) {
+    if (availableSchemaDocs.length <= 1) {
+      toast.error('At least one schema is required.');
+      return;
+    }
+    const nextDocs = availableSchemaDocs.filter(
+      (schemaDoc) => schemaDoc.schemaId !== schemaId,
+    );
+    setSchemaText(canonicalStringify(nextDocs));
+    if (activeSchemaId === schemaId) {
+      const fallbackSchema = nextDocs[0];
+      if (fallbackSchema) {
+        setActiveSchemaId(fallbackSchema.schemaId);
+        syncBuilderFromSchemaDoc(fallbackSchema);
+      }
+    }
+    toast.success('Schema removed.');
+  }
+
+  function handleAddWorkflow() {
+    const nextWorkflow: WorkflowDoc = {
+      workflowId: `${pluginId}.workflow.${availableWorkflows.length + 1}`,
+      table: activeSchemaId || schemaBuilder.schemaId || DEFAULT_WORKFLOW_DOC.table,
+      hook: 'afterCreate',
+      nodes: [],
+      edges: [],
+    };
+    setWorkflowText((current) => {
+      try {
+        const currentWorkflows = JSON.parse(current) as WorkflowDoc[];
+        return canonicalStringify([...currentWorkflows, nextWorkflow]);
+      } catch {
+        return canonicalStringify([nextWorkflow]);
+      }
+    });
+    setActiveWorkflowId(nextWorkflow.workflowId);
+    toast.success('Workflow added.');
+  }
+
+  function handleRemoveWorkflow(workflowId: string) {
+    if (availableWorkflows.length <= 1) {
+      toast.error('At least one workflow is required.');
+      return;
+    }
+    const nextWorkflows = availableWorkflows.filter(
+      (workflow) => workflow.workflowId !== workflowId,
+    );
+    setWorkflowText(canonicalStringify(nextWorkflows));
+    if (activeWorkflowId === workflowId) {
+      setActiveWorkflowId(nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId);
+    }
+    toast.success('Workflow removed.');
+  }
+
+  function updateActiveWorkflow(
+    updater: (workflow: WorkflowDoc) => WorkflowDoc,
+  ) {
+    const selectedWorkflow =
+      availableWorkflows.find(
+        (workflowDoc) => workflowDoc.workflowId === activeWorkflowId,
+      ) ?? availableWorkflows[0];
+    if (!selectedWorkflow) return;
+    const nextWorkflow = updater(selectedWorkflow);
+    const nextWorkflows = availableWorkflows.map((workflowDoc) =>
+      workflowDoc.workflowId === selectedWorkflow.workflowId
+        ? nextWorkflow
+        : workflowDoc,
+    );
+    setWorkflowText(canonicalStringify(nextWorkflows));
+    if (nextWorkflow.workflowId !== activeWorkflowId) {
+      setActiveWorkflowId(nextWorkflow.workflowId);
+    }
+  }
+
+  function addWorkflowActionStep() {
+    updateActiveWorkflow((current) => {
+      const nextNodeId = `n${current.nodes.length + 1}`;
+      const nextNodes = [
+        ...current.nodes,
+        {
+          nodeId: nextNodeId,
+          type: 'action',
+          actionId: `${pluginId}.action.${current.nodes.length + 1}`,
+          input: {
+            expression: {
+              kind: 'ref',
+              source: 'payload',
+              path: [],
+            },
+          },
+        },
+      ];
+      return {
+        ...current,
+        nodes: nextNodes,
+        edges: [],
+      };
+    });
+  }
+
+  function removeWorkflowStep(nodeId: string) {
+    updateActiveWorkflow((current) => {
+      const nextNodes = current.nodes.filter((node) => node.nodeId !== nodeId);
+      return {
+        ...current,
+        nodes: nextNodes,
+        edges: [],
+      };
+    });
+  }
+
   function applyTemplatePreset(releaseId: string) {
     let parsedReleaseId = parseReleaseId(releaseId);
 
@@ -2160,11 +2382,14 @@ function PluginStudioRoute() {
         },
       ]),
     );
+    setActiveWorkflowId(`${template.pluginId}.workflow`);
 
+    const nextSchemaId =
+      templatePrimaryTab?.schema ??
+      `plugin.${template.pluginId.split('.').pop() ?? 'custom'}.table`;
     setSchemaBuilder({
       schemaId:
-        templatePrimaryTab?.schema ??
-        `plugin.${template.pluginId.split('.').pop() ?? 'custom'}.table`,
+        nextSchemaId,
       title: templatePrimaryTab?.title ?? template.docs.title,
       fields: [
         {
@@ -2193,6 +2418,39 @@ function PluginStudioRoute() {
         },
       ],
     });
+    setSchemaText(
+      canonicalStringify([
+        {
+          schemaId: nextSchemaId,
+          title: templatePrimaryTab?.title ?? template.docs.title,
+          fields: [
+            {
+              key: 'name',
+              type: 'string',
+              optional: false,
+              behavior: {
+                fieldConfig: {
+                  fieldType: 'string',
+                  label: 'Name',
+                },
+              },
+            },
+            {
+              key: 'isActive',
+              type: 'boolean',
+              optional: true,
+              behavior: {
+                fieldConfig: {
+                  fieldType: 'boolean',
+                  label: 'Active',
+                },
+              },
+            },
+          ],
+        },
+      ]),
+    );
+    setActiveSchemaId(nextSchemaId);
     setSchemaRefinements([]);
     setBlocklyRefinements([]);
     setSelectedTemplateLabel(template.docs.title);
@@ -2210,6 +2468,15 @@ function PluginStudioRoute() {
     setBlocklyRefinements(next.blocklyRefinements);
     setSchemaText(next.schemaText);
     setWorkflowText(next.workflowText);
+    setActiveSchemaId(next.schemaBuilder.schemaId);
+    try {
+      const revisionWorkflows = JSON.parse(next.workflowText) as WorkflowDoc[];
+      setActiveWorkflowId(
+        revisionWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
+      );
+    } catch {
+      setActiveWorkflowId(DEFAULT_WORKFLOW_DOC.workflowId);
+    }
     setSelectedTemplateLabel(null);
   }
 
@@ -2283,6 +2550,9 @@ function PluginStudioRoute() {
                 Start from a template, customize your schema visually, and
                 publish when ready.
               </p>
+              <p className="text-xs font-medium uppercase tracking-wide text-primary/80">
+                Build in 4 guided steps: Template, Data, Rules, Publish.
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <Button
@@ -2352,8 +2622,8 @@ function PluginStudioRoute() {
           <CardHeader>
             <CardTitle className="text-base">Draft Workspace</CardTitle>
             <CardDescription>
-              Persist schema/workflow edits as immutable draft revisions using
-              plugin draft tables.
+              Save versions of your work and load any past revision in one
+              click.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3 lg:grid-cols-2">
@@ -2455,6 +2725,141 @@ function PluginStudioRoute() {
                   </Button>
                 </div>
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/70 bg-card/90">
+          <CardHeader>
+            <CardTitle className="text-base">Data Models & Automations</CardTitle>
+            <CardDescription>
+              Manage multiple schemas and workflows for one plugin from a
+              single visual workspace.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 lg:grid-cols-2">
+            <div className="space-y-3 rounded-xl border bg-muted/20 p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium">Schema Library</div>
+                <Button type="button" size="sm" onClick={handleAddSchema}>
+                  <Plus className="mr-2 size-4" />
+                  Add Schema
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {availableSchemaDocs.map((schemaDoc) => (
+                  <div
+                    key={schemaDoc.schemaId}
+                    className={`rounded-lg border p-3 ${schemaDoc.schemaId === activeSchemaId
+                      ? 'border-primary bg-primary/5'
+                      : 'bg-card'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        className="flex-1 text-left"
+                        onClick={() => selectSchema(schemaDoc.schemaId)}
+                      >
+                        <div className="text-sm font-medium">
+                          {schemaDoc.title || schemaDoc.schemaId}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {schemaDoc.schemaId}
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            selectSchema(schemaDoc.schemaId);
+                            setIsSchemaEditorOpen(true);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                          <span className="sr-only">Edit schema</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleRemoveSchema(schemaDoc.schemaId)}
+                          disabled={availableSchemaDocs.length <= 1}
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                          <span className="sr-only">Delete schema</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-xl border bg-muted/20 p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-medium">Workflow Library</div>
+                <Button type="button" size="sm" onClick={handleAddWorkflow}>
+                  <Plus className="mr-2 size-4" />
+                  Add Workflow
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {availableWorkflows.map((workflowDoc) => (
+                  <div
+                    key={workflowDoc.workflowId}
+                    className={`rounded-lg border p-3 ${workflowDoc.workflowId === activeWorkflowId
+                      ? 'border-primary bg-primary/5'
+                      : 'bg-card'
+                      }`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        className="flex-1 text-left"
+                        onClick={() => setActiveWorkflowId(workflowDoc.workflowId)}
+                      >
+                        <div className="text-sm font-medium">
+                          {workflowDoc.workflowId}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {workflowDoc.table} · {workflowDoc.hook}
+                        </div>
+                      </button>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => {
+                            setActiveWorkflowId(workflowDoc.workflowId);
+                            setIsWorkflowEditorOpen(true);
+                          }}
+                        >
+                          <Pencil className="size-4" />
+                          <span className="sr-only">Edit workflow</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => handleRemoveWorkflow(workflowDoc.workflowId)}
+                          disabled={availableWorkflows.length <= 1}
+                        >
+                          <Trash2 className="size-4 text-destructive" />
+                          <span className="sr-only">Delete workflow</span>
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Open any workflow to customize trigger, schema binding, and action
+                steps.
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -2579,15 +2984,6 @@ function PluginStudioRoute() {
                       choiceFieldType &&
                       parseCommaSeparatedValues(field.enumValuesText).length ===
                       0;
-                    const inputPropsInvalid = isInvalidObjectJson(
-                      field.inputPropsJson,
-                    );
-                    const customDataInvalid = isInvalidObjectJson(
-                      field.customDataJson,
-                    );
-                    const fieldConfigInvalid = isInvalidObjectJson(
-                      field.fieldConfigJson,
-                    );
                     const arrayItemOptionsMissing =
                       field.type === 'array' &&
                       isChoiceFieldType(field.arrayItemType) &&
@@ -2900,69 +3296,6 @@ function PluginStudioRoute() {
                               )}
                             </>
                           )}
-                          <Input
-                            value={field.fieldConfigJson ?? '{}'}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (nextField, nextIndex) =>
-                                    nextIndex === fieldIndex
-                                      ? {
-                                        ...nextField,
-                                        fieldConfigJson: event.target.value,
-                                      }
-                                      : nextField,
-                                ),
-                              }))
-                            }
-                            className={
-                              fieldConfigInvalid ? 'border-destructive' : ''
-                            }
-                            placeholder="Field Config JSON (advanced serializable config)"
-                          />
-                          <Input
-                            value={field.inputPropsJson ?? '{}'}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (nextField, nextIndex) =>
-                                    nextIndex === fieldIndex
-                                      ? {
-                                        ...nextField,
-                                        inputPropsJson: event.target.value,
-                                      }
-                                      : nextField,
-                                ),
-                              }))
-                            }
-                            className={
-                              inputPropsInvalid ? 'border-destructive' : ''
-                            }
-                            placeholder='Input Props JSON (e.g. {"placeholder":"Name"})'
-                          />
-                          <Input
-                            value={field.customDataJson ?? '{}'}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (nextField, nextIndex) =>
-                                    nextIndex === fieldIndex
-                                      ? {
-                                        ...nextField,
-                                        customDataJson: event.target.value,
-                                      }
-                                      : nextField,
-                                ),
-                              }))
-                            }
-                            className={
-                              customDataInvalid ? 'border-destructive' : ''
-                            }
-                            placeholder="Custom Data JSON (sources/options/tabs)"
-                          />
                           {isNumericFieldType(field.type) && (
                             <>
                               <div className="flex items-center gap-2 text-sm text-foreground">
@@ -3355,21 +3688,6 @@ function PluginStudioRoute() {
                           {objectFieldsMissing && (
                             <p className="text-xs text-destructive">
                               Object fields need at least one nested field.
-                            </p>
-                          )}
-                          {fieldConfigInvalid && (
-                            <p className="text-xs text-destructive">
-                              Field Config JSON must be a valid object.
-                            </p>
-                          )}
-                          {inputPropsInvalid && (
-                            <p className="text-xs text-destructive">
-                              Input Props JSON must be a valid object.
-                            </p>
-                          )}
-                          {customDataInvalid && (
-                            <p className="text-xs text-destructive">
-                              Custom Data JSON must be a valid object.
                             </p>
                           )}
                         </div>
@@ -3802,10 +4120,10 @@ function PluginStudioRoute() {
 
         <Card className="border-border bg-gradient-to-br from-card to-muted/20">
           <CardHeader>
-            <CardTitle className="text-base">Workspace Tab Integrations</CardTitle>
+            <CardTitle className="text-base">Studio Engine Modules</CardTitle>
             <CardDescription>
-              Unified view of all plugin-builder workspace modules wired into the
-              current plugin studio state.
+              Internal engine modules are connected to your no-code builder
+              state behind the scenes.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -3815,41 +4133,47 @@ function PluginStudioRoute() {
                   <CardTitle className="text-sm">Overview</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm">
-                  <OverviewTab
-                    metadata={{
+                  {(() => {
+                    const overviewMetadata = {
                       pluginId,
                       pluginName: title,
                       namespace: schemaBuilder.schemaId,
                       status: selectedRevision ? 'review' : 'draft',
-                    }}
-                    collaborators={[
-                      {
-                        id: actorUserId,
-                        name: user.pub || actorUserId,
-                        role: 'owner',
-                        isActive: true,
-                      },
-                    ]}
-                    activeDraft={
-                      selectedDraft
-                        ? {
-                            draftId: selectedDraft.draftId,
-                            updatedAt: selectedDraft.updatedAt,
-                            updatedBy: selectedDraft.ownerUserId,
-                          }
-                        : null
-                    }
-                    latestImmutableRevision={
-                      selectedRevision
-                        ? {
-                            revisionId: selectedRevision.revisionId,
-                            publishedAt: selectedRevision.createdAt,
-                            publishedBy: selectedRevision.authorUserId,
-                            note: selectedDraft?.title,
-                          }
-                        : null
-                    }
-                  />
+                    } as const;
+
+                    return (
+                      <OverviewTab
+                        metadata={overviewMetadata}
+                        collaborators={[
+                          {
+                            id: actorUserId,
+                            name: user.pub || actorUserId,
+                            role: 'owner',
+                            isActive: true,
+                          },
+                        ]}
+                        activeDraft={
+                          selectedDraft
+                            ? {
+                              draftId: selectedDraft.draftId,
+                              updatedAt: selectedDraft.updatedAt,
+                              updatedBy: selectedDraft.ownerUserId,
+                            }
+                            : null
+                        }
+                        latestImmutableRevision={
+                          selectedRevision
+                            ? {
+                              revisionId: selectedRevision.revisionId,
+                              publishedAt: selectedRevision.createdAt,
+                              publishedBy: selectedRevision.authorUserId,
+                              note: selectedDraft?.title,
+                            }
+                            : null
+                        }
+                      />
+                    );
+                  })()}
                 </CardContent>
               </Card>
 
@@ -3899,7 +4223,7 @@ function PluginStudioRoute() {
             <div className="grid gap-4 xl:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Guarded IR Editor</CardTitle>
+                  <CardTitle className="text-sm">Rule Logic Editor</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm">
                   <GuardedIrEditor
@@ -3933,7 +4257,7 @@ function PluginStudioRoute() {
             <div className="grid gap-4 xl:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Actions Manifest</CardTitle>
+                  <CardTitle className="text-sm">Action Library</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm">
                   <ActionsManifestEditor
@@ -3960,7 +4284,7 @@ function PluginStudioRoute() {
             <div className="grid gap-4 xl:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm">Review Diagnostics</CardTitle>
+                  <CardTitle className="text-sm">Quality Review</CardTitle>
                 </CardHeader>
                 <CardContent className="text-sm">
                   <ReviewDiagnosticsTab
@@ -4018,6 +4342,288 @@ function PluginStudioRoute() {
             </p>
           </CardContent>
         </Card>
+
+        <Dialog open={isSchemaEditorOpen} onOpenChange={setIsSchemaEditorOpen}>
+          <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
+            <DialogHeader>
+              <DialogTitle>Schema Editor</DialogTitle>
+              <DialogDescription>
+                Design fields with type-safe controls for this schema.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3">
+              <div className="grid gap-2 md:grid-cols-2">
+                <Input
+                  value={schemaBuilder.schemaId}
+                  onChange={(event) =>
+                    setSchemaBuilder((current) => ({
+                      ...current,
+                      schemaId: event.target.value,
+                    }))
+                  }
+                  placeholder="Schema ID"
+                />
+                <Input
+                  value={schemaBuilder.title}
+                  onChange={(event) =>
+                    setSchemaBuilder((current) => ({
+                      ...current,
+                      title: event.target.value,
+                    }))
+                  }
+                  placeholder="Schema title"
+                />
+              </div>
+              <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium">Fields</div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() =>
+                      setSchemaBuilder((current) => ({
+                        ...current,
+                        fields: [
+                          ...current.fields,
+                          {
+                            id: generateBuilderId(),
+                            key: `field_${current.fields.length + 1}`,
+                            label: `Field ${current.fields.length + 1}`,
+                            description: '',
+                            type: 'string',
+                            fieldType: 'string',
+                            required: false,
+                            fieldConfigJson: '{}',
+                            inputPropsJson: '{}',
+                            customDataJson: '{}',
+                          },
+                        ],
+                      }))
+                    }
+                  >
+                    <Plus className="mr-2 size-4" />
+                    Add Field
+                  </Button>
+                </div>
+                {schemaBuilder.fields.map((field, fieldIndex) => (
+                  <div
+                    key={field.id}
+                    className="grid gap-2 rounded-md border bg-card p-2 md:grid-cols-5"
+                  >
+                    <Input
+                      value={field.key}
+                      onChange={(event) =>
+                        setSchemaBuilder((current) => ({
+                          ...current,
+                          fields: current.fields.map((candidate, candidateIndex) =>
+                            candidateIndex === fieldIndex
+                              ? { ...candidate, key: event.target.value }
+                              : candidate,
+                          ),
+                        }))
+                      }
+                      placeholder="Field key"
+                    />
+                    <Input
+                      value={field.label}
+                      onChange={(event) =>
+                        setSchemaBuilder((current) => ({
+                          ...current,
+                          fields: current.fields.map((candidate, candidateIndex) =>
+                            candidateIndex === fieldIndex
+                              ? { ...candidate, label: event.target.value }
+                              : candidate,
+                          ),
+                        }))
+                      }
+                      placeholder="Field label"
+                    />
+                    <Select
+                      value={field.type}
+                      onValueChange={(value) =>
+                        setSchemaBuilder((current) => ({
+                          ...current,
+                          fields: current.fields.map((candidate, candidateIndex) =>
+                            candidateIndex === fieldIndex
+                              ? {
+                                ...candidate,
+                                type: value as BuilderFieldType,
+                                fieldType: AUTOFORM_FIELD_TYPES.includes(
+                                  value as (typeof AUTOFORM_FIELD_TYPES)[number],
+                                )
+                                  ? (value as (typeof AUTOFORM_FIELD_TYPES)[number])
+                                  : 'string',
+                              }
+                              : candidate,
+                          ),
+                        }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BUILDER_FIELD_TYPES.map((fieldType) => (
+                          <SelectItem key={`dialog-${field.id}-${fieldType}`} value={fieldType}>
+                            {fieldType}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex items-center gap-2 rounded-md border px-2 text-sm">
+                      <Checkbox
+                        checked={field.required}
+                        onCheckedChange={(checked) =>
+                          setSchemaBuilder((current) => ({
+                            ...current,
+                            fields: current.fields.map((candidate, candidateIndex) =>
+                              candidateIndex === fieldIndex
+                                ? { ...candidate, required: checked === true }
+                                : candidate,
+                            ),
+                          }))
+                        }
+                      />
+                      Required
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      disabled={schemaBuilder.fields.length <= 1}
+                      onClick={() =>
+                        setSchemaBuilder((current) => ({
+                          ...current,
+                          fields: current.fields.filter(
+                            (_, candidateIndex) => candidateIndex !== fieldIndex,
+                          ),
+                        }))
+                      }
+                    >
+                      <Trash2 className="mr-2 size-4 text-destructive" />
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog
+          open={isWorkflowEditorOpen}
+          onOpenChange={setIsWorkflowEditorOpen}
+        >
+          <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
+            <DialogHeader>
+              <DialogTitle>Workflow Editor</DialogTitle>
+              <DialogDescription>
+                Configure trigger, linked schema, and action sequence visually.
+              </DialogDescription>
+            </DialogHeader>
+            {!workspaceWorkflow ? null : (
+              <div className="space-y-3">
+                <div className="grid gap-2 md:grid-cols-3">
+                  <Input
+                    value={workspaceWorkflow.workflowId}
+                    onChange={(event) =>
+                      updateActiveWorkflow((current) => ({
+                        ...current,
+                        workflowId: event.target.value,
+                      }))
+                    }
+                    placeholder="Workflow ID"
+                  />
+                  <Input
+                    value={workspaceWorkflow.table}
+                    onChange={(event) =>
+                      updateActiveWorkflow((current) => ({
+                        ...current,
+                        table: event.target.value,
+                      }))
+                    }
+                    placeholder="Connected schema ID"
+                  />
+                  <Select
+                    value={workspaceWorkflow.hook}
+                    onValueChange={(value) =>
+                      updateActiveWorkflow((current) => ({
+                        ...current,
+                        hook: value as WorkflowDoc['hook'],
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Hook" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beforeCreate">beforeCreate</SelectItem>
+                      <SelectItem value="afterCreate">afterCreate</SelectItem>
+                      <SelectItem value="beforeUpdate">beforeUpdate</SelectItem>
+                      <SelectItem value="afterUpdate">afterUpdate</SelectItem>
+                      <SelectItem value="beforeDelete">beforeDelete</SelectItem>
+                      <SelectItem value="afterDelete">afterDelete</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm font-medium">Action Steps</div>
+                    <Button type="button" size="sm" onClick={addWorkflowActionStep}>
+                      <Plus className="mr-2 size-4" />
+                      Add Step
+                    </Button>
+                  </div>
+                  {workspaceWorkflow.nodes.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">
+                      Add your first action step.
+                    </p>
+                  ) : (
+                    workspaceWorkflow.nodes.map((node) => (
+                      <div
+                        key={node.nodeId}
+                        className="grid gap-2 rounded-md border bg-card p-2 md:grid-cols-[1fr_1fr_auto]"
+                      >
+                        <Input value={node.nodeId} disabled />
+                        <Input
+                          value={node.type === 'action' ? node.actionId : ''}
+                          onChange={(event) =>
+                            updateActiveWorkflow((current) => ({
+                              ...current,
+                              nodes: current.nodes.map((candidateNode) =>
+                                candidateNode.nodeId === node.nodeId
+                                  ? {
+                                    ...candidateNode,
+                                    ...(candidateNode.type === 'action'
+                                      ? { actionId: event.target.value }
+                                      : {}),
+                                  }
+                                  : candidateNode,
+                              ),
+                              edges: [],
+                            }))
+                          }
+                          disabled={node.type !== 'action'}
+                          placeholder="Action ID"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => removeWorkflowStep(node.nodeId)}
+                        >
+                          <Trash2 className="mr-2 size-4 text-destructive" />
+                          Remove
+                        </Button>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <div className="rounded-lg border bg-card p-2">
+                  <WorkflowGraphEditor workflow={workspaceWorkflow} />
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         <Dialog
           open={isBlocklyComposerOpen}

@@ -25,6 +25,7 @@ describe('plugin-studio route contract', () => {
     expect(content).toContain('Schema Builder');
     expect(content).toContain('Cross-Field Validation Rules');
     expect(content).toContain('Blockly Logic Rules');
+    expect(content).toContain('Build in 4 guided steps');
   });
 
   it('supports draft persistence and revision loading actions', () => {
@@ -51,5 +52,23 @@ describe('plugin-studio route contract', () => {
     expect(content).toContain('api.pluginRelease.useGet');
     expect(content).toContain('api.pluginDraft.useGet');
     expect(content).toContain('api.pluginDraftRevision.useGet');
+  });
+
+  it('renders schema and workflow edit actions as icon buttons beside delete', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('<div className="flex items-center gap-1">');
+    expect(content).toContain('size="icon"');
+    expect(content).toContain('<span className="sr-only">Edit schema</span>');
+    expect(content).toContain('<span className="sr-only">Edit workflow</span>');
+  });
+
+  it('keeps advanced technical internals hidden from the default view', () => {
+    const content = getRouteContent();
+
+    expect(content).not.toContain('Workspace Tab Integrations');
+    expect(content).not.toContain('Guarded IR Editor');
+    expect(content).not.toContain('Actions Manifest');
+    expect(content).not.toContain('metadata={{');
   });
 });

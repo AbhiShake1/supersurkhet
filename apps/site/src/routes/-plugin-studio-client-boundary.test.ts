@@ -118,14 +118,20 @@ describe('plugin-studio client boundary', () => {
 
     expect(content).toContain('OverviewTab');
     expect(content).toContain('SchemasTab');
-    expect(content).toContain('serializeFieldConfigPanelDraft');
-    expect(content).toContain('ExpressionRowBuilder');
-    expect(content).toContain('GuardedIrEditor');
     expect(content).toContain('WorkflowGraphEditor');
-    expect(content).toContain('ActionsManifestEditor');
-    expect(content).toContain('RoutesTabsMapperTab');
-    expect(content).toContain('ReviewDiagnosticsTab');
     expect(content).toContain('PublishGateTab');
-    expect(content).toContain('Workspace Tab Integrations');
+    expect(content).not.toContain('Workspace Tab Integrations');
+  });
+
+  it('does not expose developer-centric metadata and internals in the no-code view', () => {
+    const content = getRouteContent();
+
+    expect(content).not.toContain('metadata={{');
+    expect(content).not.toContain('Guarded IR Editor');
+    expect(content).not.toContain('Actions Manifest');
+    expect(content).not.toContain('Review Diagnostics');
+    expect(content).not.toContain('Field Config JSON');
+    expect(content).not.toContain('Input Props JSON');
+    expect(content).not.toContain('Custom Data JSON');
   });
 });
