@@ -7,6 +7,7 @@ import {
   getRecommendedSeedReleaseIds,
   MARKETPLACE_SEED_RELEASES,
   parseReleaseId,
+  toMarketplaceSeedReleaseDocs,
 } from '@/lib/plugins/marketplace-seed';
 import {
   createInMemoryPluginPlatformStore,
@@ -926,6 +927,9 @@ export async function ensureMarketplaceSeedReleases({
   const store = await loadPublishedStore();
   const service = createPluginPlatformService({ store });
   const createdReleaseIds: string[] = [];
+  const seedDocsById = new Map(
+    toMarketplaceSeedReleaseDocs().map((release) => [release.id, release]),
+  );
 
   for (const seedRelease of MARKETPLACE_SEED_RELEASES) {
     const releaseId = toReleaseId(seedRelease.pluginId, seedRelease.version);
@@ -933,6 +937,7 @@ export async function ensureMarketplaceSeedReleases({
     if (existing) {
       continue;
     }
+    const seedReleaseDoc = seedDocsById.get(releaseId);
 
     const release = await service.publishRelease({
       actorUserId,
@@ -941,6 +946,8 @@ export async function ensureMarketplaceSeedReleases({
         version: seedRelease.version,
         docs: seedRelease.docs,
         actionManifest: seedRelease.actionManifest as ActionManifestDoc[],
+        schemaDocs: seedReleaseDoc?.schemaDocs,
+        workflows: seedReleaseDoc?.workflows,
         adminTabs: seedRelease.adminTabs as AdminTabDoc[],
       },
     });

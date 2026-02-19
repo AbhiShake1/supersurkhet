@@ -10,6 +10,7 @@ import type {
   WorkflowDoc,
 } from '@/lib/plugins/types';
 import { createServerFn } from '@tanstack/react-start';
+import { v4 as uuidv4 } from 'uuid';
 import z from 'zod';
 
 export function toReleaseId(pluginId: string, version: string) {
@@ -472,10 +473,7 @@ export function createPluginPlatformService({
     }) {
       const now = new Date().toISOString();
       const created: PluginDraftDoc = {
-        draftId: draft.draftId ?? await (async () => {
-          const { randomUUID } = await import('crypto')
-          return randomUUID();
-        })(),
+        draftId: draft.draftId ?? uuidv4(),
         pluginId: draft.pluginId,
         ownerUserId: actorUserId,
         collaboratorUserIds: draft.collaboratorUserIds ?? [],

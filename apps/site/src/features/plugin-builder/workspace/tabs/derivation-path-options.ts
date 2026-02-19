@@ -5,7 +5,64 @@ export type DerivationPathOption = {
   label: string;
 };
 
+export type DerivationSource =
+  | 'payload'
+  | 'formValues'
+  | 'context'
+  | 'sourceRow'
+  | 'row';
+
 export function buildDerivationPathOptions(
+  schemaDocs: readonly SchemaDoc[],
+  source?: DerivationSource,
+  currentSchemaFields?: readonly SchemaFieldDoc[],
+): DerivationPathOption[] {
+  const resolvedSource = source ?? 'payload';
+
+  if (resolvedSource === 'context') {
+    return buildContextPathOptions();
+  }
+
+  if (resolvedSource === 'formValues' && currentSchemaFields) {
+    return buildFormValuesPathOptions(currentSchemaFields);
+  }
+
+  return buildSchemaPathOptions(schemaDocs);
+}
+
+function buildContextPathOptions(): DerivationPathOption[] {
+  return [
+    {
+      value: 'hook',
+      label: 'hook - Lifecycle hook (e.g., beforeCreate, afterUpdate)',
+    },
+    { value: 'mode', label: 'mode - Execution mode' },
+    { value: 'businessId', label: 'businessId - Business identifier' },
+    { value: 'table', label: 'table - Target table name' },
+    { value: 'capabilities', label: 'capabilities - Available capabilities' },
+  ];
+}
+
+function buildFormValuesPathOptions(
+  fields: readonly SchemaFieldDoc[],
+): DerivationPathOption[] {
+  const seenValues = new Set<string>();
+  const options: DerivationPathOption[] = [];
+
+  for (const field of fields) {
+    appendFieldPathOptions({
+      field,
+      prefix: [],
+      schemaId: 'formValues',
+      options,
+      seenValues,
+    });
+  }
+
+  return options;
+}
+
+function buildSchemaPathOptions(
   schemaDocs: readonly SchemaDoc[],
 ): DerivationPathOption[] {
   const seenValues = new Set<string>();

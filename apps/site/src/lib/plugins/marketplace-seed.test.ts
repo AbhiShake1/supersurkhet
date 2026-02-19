@@ -90,4 +90,31 @@ describe('marketplace seed catalog', () => {
     ).toBe('Finance Ops (Live)');
     expect(merged.length).toBeGreaterThan(MARKETPLACE_SEED_RELEASES.length);
   });
+
+  it('backfills schema/workflow docs from static seed when live row is missing them', () => {
+    const liveSeedWithoutDocs = {
+      id: 'supersurkhet.plugin.restaurant-admin@1.1.0',
+      pluginId: 'supersurkhet.plugin.restaurant-admin',
+      version: '1.1.0',
+      manifestHash: 'live-restaurant-manifest',
+      artifactHash: 'live-restaurant-artifact',
+      author: { userId: 'live-user' },
+      visibility: 'public' as const,
+      docs: {
+        title: 'Restaurant Admin Core (Live)',
+        description: 'Live row exists but omitted schema/workflow docs',
+      },
+      actionManifest: [],
+      publishedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    const merged = mergeMarketplaceReleasesWithSeed([liveSeedWithoutDocs]);
+    const restaurantRelease = merged.find(
+      (release) => release.id === liveSeedWithoutDocs.id,
+    );
+
+    expect(restaurantRelease?.docs.title).toBe('Restaurant Admin Core (Live)');
+    expect(restaurantRelease?.schemaDocs?.length).toBeGreaterThan(0);
+    expect(restaurantRelease?.workflows?.length).toBeGreaterThan(0);
+  });
 });

@@ -14,7 +14,6 @@ import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { useConfetti } from '@/components/confetti-provider';
 import {
-  ActionsManifestEditor,
   createActionsManifestEditorState,
 } from '@/features/plugin-builder/workspace/tabs/actions-manifest-editor';
 import {
@@ -43,6 +42,15 @@ import {
   RoutesTabsMapperTab,
 } from '@/features/plugin-builder/workspace/tabs/routes-tabs-mapper';
 import { buildDerivationPathOptions } from '@/features/plugin-builder/workspace/tabs/derivation-path-options';
+import {
+  compileDerivedFieldToDeriveIr,
+  DERIVED_FIELD_OPERATION_OPTIONS,
+  DERIVED_FIELD_SOURCE_OPTIONS,
+  parseDerivedFieldsFromSchemaDoc,
+  type DerivedFieldOperation,
+  type DerivedFieldSource,
+  type SchemaBuilderDerivedField,
+} from '@/features/plugin-builder/workspace/tabs/derived-fields';
 import { SchemasTab } from '@/features/plugin-builder/workspace/tabs/schemas-tab';
 import { WorkflowGraphEditor } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
 import {
@@ -91,12 +99,13 @@ import type {
 import type { PluginBuildDiagnostic } from '@/features/plugin-builder/domain/validation/diagnostics-contract';
 import { api } from '@/lib/api';
 import {
-  MARKETPLACE_SEED_RELEASES,
+  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type {
   ActionManifestDoc,
   AdminTabDoc,
+  DeriveIR,
   ExpressionDoc,
   PluginDraftDoc,
   PluginDraftRevisionDoc,
@@ -173,6 +182,22 @@ function toStableWorkspaceSuffix(input: string) {
     .replace(/[^A-Za-z0-9._:-]+/g, '_')
     .replace(/^_+|_+$/g, '');
   return normalized || 'entity';
+}
+
+function formatUserHandle(userId: string): string {
+  const segments = userId.split('/');
+  const lastSegment = segments[segments.length - 1] ?? userId;
+
+  // For UUID-style IDs (anonymous users), use first 8 chars which provides sufficient uniqueness
+  // For other IDs (authenticated users), use up to 16 chars for better readability
+  const isUuidStyle = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSegment);
+  const maxLength = isUuidStyle ? 8 : 16;
+
+  const normalized = lastSegment
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return normalized.slice(0, maxLength) || 'user';
 }
 
 function toWorkspaceSchemasAndFields(schemaDocs: readonly SchemaDoc[]): {
@@ -265,9 +290,9 @@ function toWorkspaceSchemasAndFields(schemaDocs: readonly SchemaDoc[]): {
   };
 }
 
-function toLatestSeedReleases() {
-  const map = new Map<string, (typeof MARKETPLACE_SEED_RELEASES)[number]>();
-  for (const release of MARKETPLACE_SEED_RELEASES) {
+function toLatestTemplateReleases(releases: PluginReleaseDoc[]) {
+  const map = new Map<string, PluginReleaseDoc>();
+  for (const release of mergeMarketplaceReleasesWithSeed(releases)) {
     const existing = map.get(release.pluginId);
     if (!existing || release.version > existing.version) {
       map.set(release.pluginId, release);
@@ -276,6 +301,64 @@ function toLatestSeedReleases() {
   return [...map.values()].sort((left, right) =>
     left.pluginId.localeCompare(right.pluginId),
   );
+}
+
+function toFallbackTemplateSchemaDocs(template: PluginReleaseDoc): SchemaDoc[] {
+  const tabs = template.adminTabs ?? [];
+  if (tabs.length === 0) {
+    return [DEFAULT_SCHEMA_DOC];
+  }
+
+  return tabs.map((tab) => ({
+    schemaId: tab.schema || DEFAULT_SCHEMA_DOC.schemaId,
+    title: tab.title || tab.schema || DEFAULT_SCHEMA_DOC.title,
+    fields: [
+      {
+        key: 'title',
+        type: 'string',
+        behavior: {
+          fieldConfig: {
+            fieldType: 'string',
+            label: 'Title',
+          },
+        },
+      },
+    ],
+  }));
+}
+
+function toFallbackTemplateWorkflows(
+  template: PluginReleaseDoc,
+  schemaDocs: readonly SchemaDoc[],
+): WorkflowDoc[] {
+  if (schemaDocs.length === 0) {
+    return [DEFAULT_WORKFLOW_DOC];
+  }
+
+  return schemaDocs.map((schemaDoc, index) => ({
+    workflowId: `${template.pluginId}.workflow.${schemaDoc.schemaId || index + 1}`,
+    table: schemaDoc.schemaId || DEFAULT_SCHEMA_DOC.schemaId,
+    hook: 'afterCreate',
+    nodes: [
+      {
+        nodeId: 'n1',
+        type: 'action',
+        actionId:
+          template.actionManifest[index]?.actionId ??
+          template.actionManifest[0]?.actionId ??
+          DEFAULT_WORKFLOW_DOC.nodes[0]?.actionId ??
+          'example.action',
+        input: {
+          expression: {
+            kind: 'ref',
+            source: 'payload',
+            path: [],
+          },
+        },
+      },
+    ],
+    edges: [],
+  }));
 }
 
 function titleToPluginId(value: string) {
@@ -564,77 +647,6 @@ function toSinglePayloadFieldPath(value: string | undefined): string[] {
   return firstSegment ? [firstSegment] : [];
 }
 
-function toBuilderFieldDerivations(
-  behaviorJson: string | undefined,
-): BuilderFieldDerivation[] {
-  const behavior = parseJsonRecord(behaviorJson);
-  const derivations = behavior.derivations;
-  if (!Array.isArray(derivations)) return [];
-
-  const result: BuilderFieldDerivation[] = [];
-  for (const entry of derivations) {
-    if (!isRecord(entry)) continue;
-    const target = entry.target;
-    const expression = entry.expression;
-    if (
-      (target !== 'value' && target !== 'inputProps' && target !== 'customData') ||
-      !isRecord(expression)
-    ) {
-      continue;
-    }
-
-    let source: BuilderFieldDerivation['source'] = 'payload';
-    let path = '';
-    let fallbackValue: string | undefined;
-
-    if (
-      expression.kind === 'ref' &&
-      typeof expression.source === 'string' &&
-      Array.isArray(expression.path)
-    ) {
-      source = expression.source as BuilderFieldDerivation['source'];
-      path = expression.path
-        .filter((segment): segment is string => typeof segment === 'string')
-        .join('.');
-    } else if (
-      expression.kind === 'op' &&
-      expression.op === 'coalesce' &&
-      Array.isArray(expression.args) &&
-      expression.args.length >= 2 &&
-      isRecord(expression.args[0]) &&
-      expression.args[0].kind === 'ref' &&
-      typeof expression.args[0].source === 'string' &&
-      Array.isArray(expression.args[0].path)
-    ) {
-      source = expression.args[0].source as BuilderFieldDerivation['source'];
-      path = expression.args[0].path
-        .filter((segment): segment is string => typeof segment === 'string')
-        .join('.');
-      const fallback = expression.args[1];
-      fallbackValue =
-        typeof fallback === 'string' || typeof fallback === 'number'
-          ? String(fallback)
-          : fallback === true
-            ? 'true'
-            : fallback === false
-              ? 'false'
-              : undefined;
-    } else {
-      continue;
-    }
-
-    result.push({
-      id: generateBuilderId(),
-      target,
-      key: typeof entry.key === 'string' ? entry.key : '',
-      source,
-      path,
-      fallbackValue,
-    });
-  }
-  return result;
-}
-
 function toBuilderFieldRefinements(
   behaviorJson: string | undefined,
   fieldKey: string,
@@ -720,7 +732,6 @@ type BuilderField = {
   arrayItemType?: BuilderLeafFieldType;
   arrayItemEnumValuesText?: string;
   objectFields?: BuilderObjectField[];
-  derivations?: BuilderFieldDerivation[];
   fieldRefinements?: BuilderFieldRefinement[];
   useInt?: boolean;
   usePositive?: boolean;
@@ -731,6 +742,7 @@ type BuilderSchema = {
   schemaId: string;
   title: string;
   fields: BuilderField[];
+  derivedFields: SchemaBuilderDerivedField[];
 };
 
 type BuilderRefinement = {
@@ -791,15 +803,6 @@ type BuilderObjectField = {
   enumValuesText?: string;
 };
 
-type BuilderFieldDerivation = {
-  id: string;
-  target: 'value' | 'inputProps' | 'customData';
-  key: string;
-  source: 'payload' | 'formValues' | 'context' | 'sourceRow' | 'row';
-  path: string;
-  fallbackValue?: string;
-};
-
 type BuilderFieldRefinement = {
   id: string;
   operator: RuleOperator;
@@ -841,7 +844,10 @@ function toObjectFieldDoc(field: BuilderObjectField): SchemaFieldDoc {
   };
 }
 
-function toSchemaFieldDoc(field: BuilderField): SchemaFieldDoc {
+function toSchemaFieldDoc(
+  field: BuilderField,
+  derivedFieldEntries: readonly SchemaBuilderDerivedField[],
+): SchemaFieldDoc {
   const parseNumeric = (value: string | undefined) => {
     if (!value) return undefined;
     const parsedValue = Number(value);
@@ -868,32 +874,16 @@ function toSchemaFieldDoc(field: BuilderField): SchemaFieldDoc {
       ? { customData: parseJsonObject(field.customDataJson) }
       : {}),
   };
+  const compiledDerivations = derivedFieldEntries
+    .map((entry) => compileDerivedFieldToDeriveIr(entry))
+    .filter((entry): entry is DeriveIR => entry !== null);
+
   const behavior = {
     ...(parseJsonObject(field.behaviorJson) ?? {}),
     fieldConfig,
-    ...(field.derivations && field.derivations.length > 0
+    ...(compiledDerivations.length > 0
       ? {
-        derivations: field.derivations.map((derivation) => {
-          const refExpression = {
-            kind: 'ref' as const,
-            source: derivation.source,
-            path: derivation.path
-              .split('.')
-              .map((segment) => segment.trim())
-              .filter(Boolean),
-          };
-          return {
-            target: derivation.target,
-            key: derivation.key || undefined,
-            expression: derivation.fallbackValue?.trim()
-              ? ({
-                kind: 'op' as const,
-                op: 'coalesce' as const,
-                args: [refExpression, toExpressionLiteral(derivation.fallbackValue)],
-              })
-              : refExpression,
-          };
-        }),
+        derivations: compiledDerivations,
       }
       : {}),
     ...(field.fieldRefinements && field.fieldRefinements.length > 0
@@ -1006,6 +996,18 @@ function hasFieldValidationErrors(field: BuilderField) {
   if (isInvalidObjectJson(field.customDataJson)) return true;
   if (isInvalidObjectJson(field.fieldConfigJson)) return true;
   if (isInvalidObjectJson(field.behaviorJson)) return true;
+  return false;
+}
+
+function hasDerivedFieldValidationErrors(
+  derivedField: SchemaBuilderDerivedField,
+  fieldKeys: Set<string>,
+) {
+  if (!derivedField.targetFieldKey.trim()) return true;
+  if (!fieldKeys.has(derivedField.targetFieldKey.trim())) return true;
+  if (derivedField.target !== 'value' && !derivedField.key.trim()) return true;
+  if (!derivedField.sources.length) return true;
+  if (derivedField.sources.some((source) => !source.path.trim())) return true;
   return false;
 }
 
@@ -1240,9 +1242,6 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
           .filter((nested) => nested.type !== 'object' && nested.type !== 'array')
           .map(toBuilderObjectField)
         : undefined,
-    derivations: toBuilderFieldDerivations(
-      stringifyJsonInput(extraBehavior),
-    ),
     fieldRefinements: toBuilderFieldRefinements(
       stringifyJsonInput(extraBehavior),
       field.key,
@@ -1361,6 +1360,7 @@ function applyRevisionToBuilderState(revision: PluginDraftRevisionDoc): {
       schemaId: schemaDoc.schemaId,
       title: schemaDoc.title ?? schemaDoc.schemaId,
       fields: schemaDoc.fields.map(toBuilderField),
+      derivedFields: parseDerivedFieldsFromSchemaDoc(schemaDoc),
     },
     schemaRefinements,
     blocklyRefinements,
@@ -1374,8 +1374,8 @@ function PluginStudioRoute() {
   const { fire: fireConfetti } = useConfetti();
   const actorUserId = user?.pub ?? user?._?.soul ?? 'anon';
   const [pluginId, setPluginId] = useState('example.plugin');
-  const [title, setTitle] = useState('Example Plugin');
-  const [description, setDescription] = useState('Operational plugin release.');
+  const [title, setTitle] = useState<string | undefined>('Example Plugin');
+  const [description, setDescription] = useState<string | undefined>('Operational plugin release.');
   const [schemaText, setSchemaText] = useState(
     canonicalStringify([DEFAULT_SCHEMA_DOC]),
   );
@@ -1386,8 +1386,8 @@ function PluginStudioRoute() {
     canonicalStringify([]),
   );
   const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<
-    string | null
-  >(null);
+    string
+  >();
   const [activeSchemaId, setActiveSchemaId] = useState(
     DEFAULT_SCHEMA_DOC.schemaId,
   );
@@ -1415,6 +1415,7 @@ function PluginStudioRoute() {
         behaviorJson: '{}',
       },
     ],
+    derivedFields: [],
   });
   const [schemaRefinements, setSchemaRefinements] = useState<
     BuilderRefinement[]
@@ -1444,8 +1445,7 @@ function PluginStudioRoute() {
   const [debouncedHashInput, setDebouncedHashInput] =
     useState<HashPreviewInput | null>(null);
   const seededActorRef = useRef<string | null>(null);
-  const [selectedDraftId, setSelectedDraftId] = useState('');
-  const [selectedRevisionId, setSelectedRevisionId] = useState('');
+  const hasAttemptedDraftCreationRef = useRef<Set<string>>(new Set());
   const [guardedIrState, setGuardedIrState] = useState(() =>
     createGuardedIrEditorState({
       schemaDocs: [DEFAULT_SCHEMA_DOC],
@@ -1525,16 +1525,25 @@ function PluginStudioRoute() {
     const hasInvalidFieldConfig = schemaBuilder.fields.some((field) =>
       hasFieldValidationErrors(field),
     );
+    const fieldKeys = new Set(
+      schemaBuilder.fields
+        .map((field) => field.key.trim())
+        .filter((key) => key.length > 0),
+    );
+    const hasInvalidDerivedFieldConfig = schemaBuilder.derivedFields.some(
+      (derivedField) => hasDerivedFieldValidationErrors(derivedField, fieldKeys),
+    );
 
     return (
       pluginId.trim() &&
       /^[a-z0-9][a-z0-9_.-]*[a-z0-9]$/.test(pluginId) &&
       parsed &&
-      !hasInvalidFieldConfig
+      !hasInvalidFieldConfig &&
+      !hasInvalidDerivedFieldConfig
     );
-  }, [parsed, pluginId, schemaBuilder.fields]);
+  }, [parsed, pluginId, schemaBuilder]);
 
-  const availableDrafts = useMemo(
+  const activeDraft = useMemo(
     () =>
       drafts
         .filter(
@@ -1542,59 +1551,19 @@ function PluginStudioRoute() {
             draft.ownerUserId === actorUserId ||
             draft.collaboratorUserIds?.includes(actorUserId),
         )
-        .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)),
-    [actorUserId, drafts],
+        .find((draft) => draft.pluginId === pluginId) ?? null,
+    [drafts, actorUserId, pluginId],
   );
 
-  const selectedDraft = useMemo(
-    () => availableDrafts.find((draft) => draft.draftId === selectedDraftId),
-    [availableDrafts, selectedDraftId],
-  );
-
-  const selectedDraftRevisions = useMemo(
+  const activeDraftRevisions = useMemo(
     () =>
       draftRevisions
-        .filter((revision) => revision.draftId === selectedDraftId)
-        .sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
-    [draftRevisions, selectedDraftId],
+        .filter((revision) => revision.draftId === activeDraft?.draftId)
+        .sort((left, right) =>
+          (right.createdAt ?? '').localeCompare(left.createdAt ?? ''),
+        ),
+    [draftRevisions, activeDraft],
   );
-  const selectedRevision = useMemo(
-    () =>
-      selectedDraftRevisions.find(
-        (revision) => revision.revisionId === selectedRevisionId,
-      ) ?? null,
-    [selectedDraftRevisions, selectedRevisionId],
-  );
-
-  useEffect(() => {
-    if (availableDrafts.length === 0) {
-      if (selectedDraftId) {
-        setSelectedDraftId('');
-      }
-      return;
-    }
-    if (availableDrafts.some((draft) => draft.draftId === selectedDraftId)) {
-      return;
-    }
-    setSelectedDraftId(availableDrafts[0]?.draftId ?? '');
-  }, [availableDrafts, selectedDraftId]);
-
-  useEffect(() => {
-    if (selectedDraftRevisions.length === 0) {
-      if (selectedRevisionId) {
-        setSelectedRevisionId('');
-      }
-      return;
-    }
-    if (
-      selectedDraftRevisions.some(
-        (revision) => revision.revisionId === selectedRevisionId,
-      )
-    ) {
-      return;
-    }
-    setSelectedRevisionId(selectedDraftRevisions[0]?.revisionId ?? '');
-  }, [selectedDraftRevisions, selectedRevisionId]);
 
   const { mutate: seedMarketplace } = useMutation({
     mutationKey: ['plugin-studio', 'seed-marketplace'],
@@ -1615,28 +1584,34 @@ function PluginStudioRoute() {
 
   const { mutateAsync: createDraft, isPending: isCreatingDraft } = useMutation({
     mutationKey: ['plugin-studio', 'create-draft'],
-    mutationFn: async () =>
-      createPluginDraft({
+    mutationFn: async () => {
+      const userHandle = formatUserHandle(actorUserId);
+      const draftTitle = `${pluginId} (${userHandle})`;
+      return createPluginDraft({
         data: {
           actorUserId,
           pluginId,
-          title,
+          title: draftTitle,
         },
-      }),
+      });
+    },
     onSuccess: async (draft) => {
       await refetchDrafts();
-      setSelectedDraftId(draft.draftId);
-      toast.success('Draft created.');
+      hasAttemptedDraftCreationRef.current.add(pluginId);
+      toast.success('Draft auto-created.');
     },
     onError: (error) => {
       console.error(error);
-      toast.error('Draft creation failed.');
+      // Only show error toast if we explicitly tried to create (not on initial page load)
+      if (hasAttemptedDraftCreationRef.current.has(pluginId)) {
+        toast.error('Draft creation failed.');
+      }
     },
   });
 
   const { mutateAsync: saveDraftRevision, isPending: isSavingDraftRevision } =
     useMutation({
-      mutationKey: ['plugin-studio', 'save-draft-revision', selectedDraftId],
+      mutationKey: ['plugin-studio', 'save-draft-revision', activeDraft?.draftId],
       mutationFn: async (draftId: string) => {
         if (!parsed) {
           throw new Error('Invalid plugin payload');
@@ -1651,14 +1626,12 @@ function PluginStudioRoute() {
           },
         });
       },
-      onSuccess: async (revision) => {
+      onSuccess: async () => {
         await refetchDraftRevisions();
-        setSelectedRevisionId(revision.revisionId);
-        toast.success('Draft revision saved.');
       },
       onError: (error) => {
-        console.error(error);
-        toast.error('Failed to save draft revision.');
+        console.error('Auto-save failed:', error);
+        // Silent fail for auto-save to avoid spamming toasts
       },
     });
 
@@ -1672,6 +1645,41 @@ function PluginStudioRoute() {
     seededActorRef.current = actorUserId;
     seedMarketplace(actorUserId);
   }, [actorUserId, isAuthenticated, seedMarketplace, user]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !pluginId.trim()) {
+      return;
+    }
+
+    if (activeDraft || hasAttemptedDraftCreationRef.current.has(pluginId)) {
+      return;
+    }
+
+    hasAttemptedDraftCreationRef.current.add(pluginId);
+    void createDraft();
+  }, [pluginId, activeDraft, isAuthenticated, createDraft]);
+
+  useEffect(() => {
+    if (!parsed || !isValidInputs || !activeDraft) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      void saveDraftRevision(activeDraft.draftId);
+    }, 1000);
+
+    return () => {
+      clearTimeout(timeout);
+    };
+  }, [
+    parsed,
+    isValidInputs,
+    activeDraft,
+    schemaText,
+    workflowText,
+    actionManifestText,
+    saveDraftRevision,
+  ]);
 
   useEffect(() => {
     if (!parsed) {
@@ -1723,10 +1731,31 @@ function PluginStudioRoute() {
       return compatibleFields.includes(rule.rightField);
     });
 
+    const fieldKeySet = new Set(fieldTypeByKey.keys());
+    const derivationsByFieldKey = new Map<string, SchemaBuilderDerivedField[]>();
+    for (const derivedField of schemaBuilder.derivedFields) {
+      const targetFieldKey = derivedField.targetFieldKey.trim();
+      if (!fieldKeySet.has(targetFieldKey)) {
+        continue;
+      }
+      if (hasDerivedFieldValidationErrors(derivedField, fieldKeySet)) {
+        continue;
+      }
+      derivationsByFieldKey.set(targetFieldKey, [
+        ...(derivationsByFieldKey.get(targetFieldKey) ?? []),
+        derivedField,
+      ]);
+    }
+
     const nextSchemaDoc: SchemaDoc = {
       schemaId: schemaBuilder.schemaId || activeSchemaId || 'plugin.custom.table',
       title: schemaBuilder.title || 'Custom Schema',
-      fields: schemaBuilder.fields.map((field) => toSchemaFieldDoc(field)),
+      fields: schemaBuilder.fields.map((field) =>
+        toSchemaFieldDoc(
+          field,
+          derivationsByFieldKey.get(field.key.trim()) ?? [],
+        ),
+      ),
       refinements: [
         ...validRefinements.map((rule) => ({
           code: 'custom',
@@ -1843,7 +1872,7 @@ function PluginStudioRoute() {
     },
   });
 
-  const templates = useMemo(() => toLatestSeedReleases(), []);
+  const templates = useMemo(() => toLatestTemplateReleases(releases), [releases]);
   const availableRuleFieldsByType = useMemo(() => {
     const byType = new Map<BuilderFieldType, string[]>();
     for (const field of schemaBuilder.fields) {
@@ -1982,6 +2011,17 @@ function PluginStudioRoute() {
     () => buildDerivationPathOptions(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
     [parsed?.schemaDocs],
   );
+  const derivedTargetFieldOptions = useMemo(
+    () =>
+      schemaBuilder.fields
+        .map((field) => field.key.trim())
+        .filter((fieldKey): fieldKey is string => Boolean(fieldKey))
+        .map((fieldKey) => ({
+          value: fieldKey,
+          label: fieldKey,
+        })),
+    [schemaBuilder.fields],
+  );
   const workspaceActiveSchemaId =
     workspaceSchemasAndFields.schemas[0]?.id ?? null;
   const workspaceFieldConfigModel = useMemo(() => {
@@ -2073,6 +2113,14 @@ function PluginStudioRoute() {
     const invalidFieldCount = schemaBuilder.fields.filter((field) =>
       hasFieldValidationErrors(field),
     ).length;
+    const schemaFieldKeys = new Set(
+      schemaBuilder.fields
+        .map((field) => field.key.trim())
+        .filter((key) => key.length > 0),
+    );
+    const invalidDerivedCount = schemaBuilder.derivedFields.filter((derivedField) =>
+      hasDerivedFieldValidationErrors(derivedField, schemaFieldKeys),
+    ).length;
     if (invalidFieldCount > 0) {
       diagnostics.push({
         category: 'schema-compile',
@@ -2080,6 +2128,15 @@ function PluginStudioRoute() {
         severity: 'warning',
         message: `${invalidFieldCount} field(s) have incomplete or invalid configuration.`,
         path: ['schemaBuilder', 'fields'],
+      });
+    }
+    if (invalidDerivedCount > 0) {
+      diagnostics.push({
+        category: 'schema-compile',
+        code: 'derived-field-validation',
+        severity: 'warning',
+        message: `${invalidDerivedCount} derived field(s) have incomplete or invalid configuration.`,
+        path: ['schemaBuilder', 'derivedFields'],
       });
     }
 
@@ -2109,14 +2166,14 @@ function PluginStudioRoute() {
     hashPreviewQuery.error,
     hashPreviewQuery.isError,
     parsed,
-    schemaBuilder.fields,
+    schemaBuilder,
   ]);
   const workspaceArtifactDiff = useMemo(() => {
     const currentBySchema = new Map(
       (parsed?.schemaDocs ?? []).map((schemaDoc) => [schemaDoc.schemaId, schemaDoc]),
     );
     const previousBySchema = new Map(
-      (selectedRevision?.schemaDocs ?? []).map((schemaDoc) => [
+      (activeDraftRevisions[0]?.schemaDocs ?? []).map((schemaDoc) => [
         schemaDoc.schemaId,
         schemaDoc,
       ]),
@@ -2141,7 +2198,7 @@ function PluginStudioRoute() {
       changed: changed.sort((left, right) => left.localeCompare(right)),
       removed: removed.sort((left, right) => left.localeCompare(right)),
     };
-  }, [parsed?.schemaDocs, selectedRevision?.schemaDocs]);
+  }, [parsed?.schemaDocs, activeDraftRevisions]);
   const workspaceReviewChangelog = useMemo(
     () => [
       {
@@ -2186,8 +2243,8 @@ function PluginStudioRoute() {
           },
         },
         immutableRevision: {
-          revisionId: selectedRevision?.revisionId ?? 'draft.local',
-          summary: selectedDraft?.title || title || 'Plugin draft',
+          revisionId: activeDraftRevisions[0]?.revisionId ?? 'draft.local',
+          summary: activeDraft?.title ?? `${pluginId} (draft)`,
           artifactHash:
             hashPreviewQuery.data?.artifactHash ??
             'pending-artifact-hash-preview',
@@ -2197,8 +2254,9 @@ function PluginStudioRoute() {
     [
       actorUserId,
       hashPreviewQuery.data?.artifactHash,
-      selectedDraft?.title,
-      selectedRevision?.revisionId,
+      activeDraft?.title,
+      activeDraftRevisions,
+      pluginId,
       title,
       workspaceCompileDiagnostics,
       workspacePublishGateChecked,
@@ -2486,6 +2544,7 @@ function PluginStudioRoute() {
       schemaId: schemaDoc.schemaId,
       title: schemaDoc.title ?? schemaDoc.schemaId,
       fields: schemaDoc.fields.map(toBuilderField),
+      derivedFields: parseDerivedFieldsFromSchemaDoc(schemaDoc),
     });
     setSchemaRefinements(schemaRefinements);
     setBlocklyRefinements(blocklyRefinements);
@@ -2658,7 +2717,7 @@ function PluginStudioRoute() {
       return;
     }
 
-    const template = MARKETPLACE_SEED_RELEASES.find(
+    const template = templates.find(
       (release) =>
         release.pluginId === parsedReleaseId.pluginId &&
         release.version === parsedReleaseId.version,
@@ -2676,11 +2735,11 @@ function PluginStudioRoute() {
     const nextSchemaDocs =
       template.schemaDocs && template.schemaDocs.length > 0
         ? template.schemaDocs
-        : [DEFAULT_SCHEMA_DOC];
+        : toFallbackTemplateSchemaDocs(template);
     const nextWorkflows =
       template.workflows && template.workflows.length > 0
         ? template.workflows
-        : [DEFAULT_WORKFLOW_DOC];
+        : toFallbackTemplateWorkflows(template, nextSchemaDocs);
     const nextActiveSchema = nextSchemaDocs[0] ?? DEFAULT_SCHEMA_DOC;
 
     setSchemaText(canonicalStringify(nextSchemaDocs));
@@ -2688,68 +2747,8 @@ function PluginStudioRoute() {
     setActiveSchemaId(nextActiveSchema.schemaId);
     setActiveWorkflowId(nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId);
     syncBuilderFromSchemaDoc(nextActiveSchema);
-    setSelectedTemplateLabel(template.docs.title);
+    setSelectedTemplateLabel(template.docs?.title);
     setIsTemplatesDialogOpen(false);
-    toast.success(`Loaded template ${template.docs.title}`);
-  }
-
-  function loadRevisionIntoBuilder(revision: PluginDraftRevisionDoc) {
-    const next = applyRevisionToBuilderState(revision);
-    setPluginId(next.pluginId);
-    if (selectedDraft?.title) {
-      setTitle(selectedDraft.title);
-    }
-    setSchemaBuilder(next.schemaBuilder);
-    setSchemaRefinements(next.schemaRefinements);
-    setBlocklyRefinements(next.blocklyRefinements);
-    setSchemaText(next.schemaText);
-    setWorkflowText(next.workflowText);
-    setActiveSchemaId(next.schemaBuilder.schemaId);
-    try {
-      const revisionWorkflows = JSON.parse(next.workflowText) as WorkflowDoc[];
-      setActiveWorkflowId(
-        revisionWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
-      );
-    } catch {
-      setActiveWorkflowId(DEFAULT_WORKFLOW_DOC.workflowId);
-    }
-    setSelectedTemplateLabel(null);
-  }
-
-  async function handleCreateDraft() {
-    await createDraft();
-  }
-
-  async function handleSaveDraftRevision() {
-    if (!parsed || !isValidInputs) {
-      toast.error('Fix builder validation issues before saving.');
-      return;
-    }
-
-    let draftId = selectedDraftId;
-    if (!draftId) {
-      const createdDraft = await createDraft();
-      draftId = createdDraft.draftId;
-      setSelectedDraftId(draftId);
-    }
-
-    await saveDraftRevision(draftId);
-  }
-
-  function handleLoadSelectedRevision() {
-    if (!selectedDraftId || !selectedRevisionId) {
-      toast.error('Select a draft revision to load.');
-      return;
-    }
-    const selectedRevision = selectedDraftRevisions.find(
-      (revision) => revision.revisionId === selectedRevisionId,
-    );
-    if (!selectedRevision) {
-      toast.error('Selected revision could not be found.');
-      return;
-    }
-    loadRevisionIntoBuilder(selectedRevision);
-    toast.success('Draft revision loaded.');
   }
 
   function openSchemaEditor(schemaId: string) {
@@ -2819,117 +2818,6 @@ function PluginStudioRoute() {
             </div>
           </div>
         </section>
-
-        <Card className="border-border/70 bg-card/80">
-          <CardHeader>
-            <CardTitle className="text-base">Draft Workspace</CardTitle>
-            <CardDescription>
-              Save versions of your work and load any past revision in one
-              click.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 lg:grid-cols-2">
-            <div className="space-y-1">
-              <div className="text-xs font-medium text-muted-foreground">
-                Active Draft
-              </div>
-              {isDraftLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : availableDrafts.length === 0 ? (
-                <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
-                  No drafts yet. Create one to start saving revisions.
-                </div>
-              ) : (
-                <Select value={selectedDraftId} onValueChange={setSelectedDraftId}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select draft" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableDrafts.map((draft) => (
-                      <SelectItem key={draft.draftId} value={draft.draftId}>
-                        {draft.title || draft.pluginId} ({draft.draftId.slice(0, 8)})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              )}
-            </div>
-
-            <div className="space-y-1">
-              <div className="text-xs font-medium text-muted-foreground">
-                Draft Actions
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    void handleCreateDraft();
-                  }}
-                  disabled={isCreatingDraft}
-                >
-                  {isCreatingDraft ? 'Creating Draft...' : 'Create Draft'}
-                </Button>
-                <Button
-                  type="button"
-                  onClick={() => {
-                    void handleSaveDraftRevision();
-                  }}
-                  disabled={isSavingDraftRevision || !isValidInputs}
-                >
-                  {isSavingDraftRevision
-                    ? 'Saving Revision...'
-                    : 'Save Draft Revision'}
-                </Button>
-              </div>
-            </div>
-
-            <div className="space-y-1 lg:col-span-2">
-              <div className="text-xs font-medium text-muted-foreground">
-                Revisions for Active Draft
-              </div>
-              {isDraftRevisionLoading ? (
-                <Skeleton className="h-10 w-full" />
-              ) : selectedDraftRevisions.length === 0 ? (
-                <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
-                  {selectedDraft
-                    ? 'No revisions yet. Save your first revision.'
-                    : 'Select or create a draft to view revisions.'}
-                </div>
-              ) : (
-                <div className="flex flex-wrap items-center gap-2">
-                  <Select
-                    value={selectedRevisionId}
-                    onValueChange={setSelectedRevisionId}
-                  >
-                    <SelectTrigger className="min-w-[320px]">
-                      <SelectValue placeholder="Select revision" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {selectedDraftRevisions.map((revision) => (
-                        <SelectItem
-                          key={`${revision.draftId}-${revision.revisionId}`}
-                          value={revision.revisionId}
-                        >
-                          {revision.revisionId} ·{' '}
-                          {new Date(revision.createdAt).toLocaleString()}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleLoadSelectedRevision}
-                    disabled={!selectedRevisionId}
-                  >
-                    Load Revision
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
 
         <Card className="border-border/70 bg-card/90">
           <CardHeader>
@@ -3220,7 +3108,6 @@ function PluginStudioRoute() {
                     field.customDataJson,
                     'uiHint',
                   );
-                  const derivations = field.derivations ?? [];
                   const fieldRefinements = field.fieldRefinements ?? [];
                   const compatiblePayloadFieldKeys = schemaBuilder.fields
                     .filter(
@@ -3392,6 +3279,7 @@ function PluginStudioRoute() {
                           </Label>
                           <Input
                             id={`schema-field-min-${field.id}`}
+                            type={isNumericFieldType(field.type) ? 'number' : 'text'}
                             value={field.min ?? ''}
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
@@ -3413,6 +3301,7 @@ function PluginStudioRoute() {
                           </Label>
                           <Input
                             id={`schema-field-max-${field.id}`}
+                            type={isNumericFieldType(field.type) ? 'number' : 'text'}
                             value={field.max ?? ''}
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
@@ -3548,6 +3437,7 @@ function PluginStudioRoute() {
                           </Label>
                           <Input
                             id={`schema-field-input-step-${field.id}`}
+                            type={isNumericFieldType(field.type) ? 'number' : 'text'}
                             value={inputStep}
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
@@ -3677,260 +3567,6 @@ function PluginStudioRoute() {
                             placeholder="UI hint"
                           />
                         </div>
-                      </div>
-
-                      <div className="space-y-2 rounded-md border p-2">
-                        <div className="flex items-center justify-between">
-                          <div className="text-xs font-medium">Derived Values</div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            onClick={() =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      derivations: [
-                                        ...(candidate.derivations ?? []),
-                                        {
-                                          id: generateBuilderId(),
-                                          target: 'value',
-                                          key: '',
-                                          source: 'payload',
-                                          path: candidate.key || '',
-                                        },
-                                      ],
-                                    }
-                                    : candidate,
-                                ),
-                              }))
-                            }
-                          >
-                            <Plus className="mr-2 size-4" />
-                            Add Derivation
-                          </Button>
-                        </div>
-                        {derivations.map((derivation) => {
-                          const hasCustomPath =
-                            Boolean(derivation.path.trim()) &&
-                            !derivationPathOptions.some(
-                              (option) => option.value === derivation.path,
-                            );
-                          const pathOptions = hasCustomPath
-                            ? [
-                              {
-                                value: derivation.path,
-                                label: `Custom: ${derivation.path}`,
-                              },
-                              ...derivationPathOptions,
-                            ]
-                            : derivationPathOptions;
-
-                          return (
-                            <div
-                              key={derivation.id}
-                              className="grid gap-2 md:grid-cols-6 rounded border p-2"
-                            >
-                            <div className="space-y-1">
-                              <Label className="text-xs">Target</Label>
-                              <Select
-                                value={derivation.target}
-                                onValueChange={(value) =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          derivations: (candidate.derivations ?? []).map((entry) =>
-                                            entry.id === derivation.id
-                                              ? {
-                                                ...entry,
-                                                target:
-                                                  value as BuilderFieldDerivation['target'],
-                                              }
-                                              : entry,
-                                          ),
-                                        }
-                                        : candidate,
-                                    ),
-                                  }))
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Target" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="value">value</SelectItem>
-                                  <SelectItem value="inputProps">inputProps</SelectItem>
-                                  <SelectItem value="customData">customData</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Target key</Label>
-                              <Input
-                                value={derivation.key}
-                                onChange={(event) =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          derivations: (candidate.derivations ?? []).map((entry) =>
-                                            entry.id === derivation.id
-                                              ? { ...entry, key: event.target.value }
-                                              : entry,
-                                          ),
-                                        }
-                                        : candidate,
-                                    ),
-                                  }))
-                                }
-                                placeholder="Target key"
-                                disabled={derivation.target === 'value'}
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Source</Label>
-                              <Select
-                                value={derivation.source}
-                                onValueChange={(value) =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          derivations: (candidate.derivations ?? []).map((entry) =>
-                                            entry.id === derivation.id
-                                              ? {
-                                                ...entry,
-                                                source:
-                                                  value as BuilderFieldDerivation['source'],
-                                              }
-                                              : entry,
-                                          ),
-                                        }
-                                        : candidate,
-                                    ),
-                                  }))
-                                }
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Source" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="payload">payload</SelectItem>
-                                  <SelectItem value="formValues">formValues</SelectItem>
-                                  <SelectItem value="context">context</SelectItem>
-                                  <SelectItem value="sourceRow">sourceRow</SelectItem>
-                                  <SelectItem value="row">row</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs">Source path</Label>
-                                <Select
-                                  value={derivation.path}
-                                  onValueChange={(value) =>
-                                    setSchemaBuilder((current) => ({
-                                      ...current,
-                                      fields: current.fields.map(
-                                        (candidate, candidateIndex) =>
-                                          candidateIndex === fieldIndex
-                                            ? {
-                                              ...candidate,
-                                              derivations: (
-                                                candidate.derivations ?? []
-                                              ).map((entry) =>
-                                                entry.id === derivation.id
-                                                  ? { ...entry, path: value }
-                                                  : entry,
-                                              ),
-                                            }
-                                            : candidate,
-                                      ),
-                                    }))
-                                  }
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Source path (dot path)" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {pathOptions.length === 0 ? (
-                                      <SelectItem value="__no_paths__" disabled>
-                                        No schema paths available
-                                      </SelectItem>
-                                    ) : (
-                                      pathOptions.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
-                                          {option.label}
-                                        </SelectItem>
-                                      ))
-                                    )}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Fallback</Label>
-                              <Input
-                                value={derivation.fallbackValue ?? ''}
-                                onChange={(event) =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          derivations: (candidate.derivations ?? []).map((entry) =>
-                                            entry.id === derivation.id
-                                              ? {
-                                                ...entry,
-                                                fallbackValue:
-                                                  event.target.value || undefined,
-                                              }
-                                              : entry,
-                                          ),
-                                        }
-                                        : candidate,
-                                    ),
-                                  }))
-                                }
-                                placeholder="Fallback (optional)"
-                              />
-                            </div>
-                            <div className="derivation-delete-cell flex items-end justify-center">
-                              <Button
-                                type="button"
-                                size="icon"
-                                variant="ghost"
-                                onClick={() =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          derivations: (candidate.derivations ?? []).filter(
-                                            (entry) => entry.id !== derivation.id,
-                                          ),
-                                        }
-                                        : candidate,
-                                    ),
-                                  }))
-                                }
-                              >
-                                <Trash2 className="size-4 text-destructive" />
-                              </Button>
-                            </div>
-                            </div>
-                          );
-                        })}
                       </div>
 
                       <div className="space-y-2 rounded-md border p-2">
@@ -4274,6 +3910,417 @@ function PluginStudioRoute() {
                           Complete required options for safe schema generation.
                         </p>
                       ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium">Derived Fields</div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const targetFieldKey = derivedTargetFieldOptions[0]?.value ?? '';
+                      if (!targetFieldKey) {
+                        toast.error('Add a field key before creating a derived field.');
+                        return;
+                      }
+                      const initialPath =
+                        derivationPathOptions[0]?.value || targetFieldKey;
+
+                      setSchemaBuilder((current) => ({
+                        ...current,
+                        derivedFields: [
+                          ...current.derivedFields,
+                          {
+                            id: generateBuilderId(),
+                            targetFieldKey,
+                            target: 'value',
+                            key: '',
+                            operation: 'coalesce',
+                            sources: [
+                              {
+                                id: generateBuilderId(),
+                                source: 'payload',
+                                path: initialPath,
+                              },
+                            ],
+                          },
+                        ],
+                      }));
+                    }}
+                  >
+                    <Plus className="mr-2 size-4" />
+                    Add Derived Field
+                  </Button>
+                </div>
+                {schemaBuilder.derivedFields.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    Add derived fields once and map them to any target field.
+                  </p>
+                ) : null}
+                {schemaBuilder.derivedFields.map((derivedField) => {
+                  const hasCustomTargetField =
+                    Boolean(derivedField.targetFieldKey.trim()) &&
+                    !derivedTargetFieldOptions.some(
+                      (option) => option.value === derivedField.targetFieldKey,
+                    );
+                  const targetFieldOptions = hasCustomTargetField
+                    ? [
+                      {
+                        value: derivedField.targetFieldKey,
+                        label: `Custom: ${derivedField.targetFieldKey}`,
+                      },
+                      ...derivedTargetFieldOptions,
+                    ]
+                    : derivedTargetFieldOptions;
+
+                  return (
+                    <div
+                      key={derivedField.id}
+                      className="space-y-2 rounded-md border bg-card p-2"
+                    >
+                      <div className="grid gap-2 md:grid-cols-5">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Target field</Label>
+                          <Select
+                            value={derivedField.targetFieldKey}
+                            onValueChange={(value) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                derivedFields: current.derivedFields.map((entry) =>
+                                  entry.id === derivedField.id
+                                    ? { ...entry, targetFieldKey: value }
+                                    : entry,
+                                ),
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Target field" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {targetFieldOptions.length === 0 ? (
+                                <SelectItem value="__no_fields__" disabled>
+                                  No field keys available
+                                </SelectItem>
+                              ) : (
+                                targetFieldOptions.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Target branch</Label>
+                          <Select
+                            value={derivedField.target}
+                            onValueChange={(value) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                derivedFields: current.derivedFields.map((entry) =>
+                                  entry.id === derivedField.id
+                                    ? {
+                                      ...entry,
+                                      target:
+                                        value as SchemaBuilderDerivedField['target'],
+                                    }
+                                    : entry,
+                                ),
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Target branch" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="value">value</SelectItem>
+                              <SelectItem value="inputProps">inputProps</SelectItem>
+                              <SelectItem value="customData">customData</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Target key</Label>
+                          <Input
+                            value={derivedField.key}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                derivedFields: current.derivedFields.map((entry) =>
+                                  entry.id === derivedField.id
+                                    ? { ...entry, key: event.target.value }
+                                    : entry,
+                                ),
+                              }))
+                            }
+                            placeholder="Required for inputProps/customData"
+                            disabled={derivedField.target === 'value'}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Operation</Label>
+                          <Select
+                            value={derivedField.operation}
+                            onValueChange={(value) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                derivedFields: current.derivedFields.map((entry) =>
+                                  entry.id === derivedField.id
+                                    ? {
+                                      ...entry,
+                                      operation: value as DerivedFieldOperation,
+                                    }
+                                    : entry,
+                                ),
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Operation" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {DERIVED_FIELD_OPERATION_OPTIONS.map((operation) => (
+                                <SelectItem key={operation} value={operation}>
+                                  {operation}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Fallback</Label>
+                          <Input
+                            value={derivedField.fallbackValue ?? ''}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                derivedFields: current.derivedFields.map((entry) =>
+                                  entry.id === derivedField.id
+                                    ? {
+                                      ...entry,
+                                      fallbackValue:
+                                        event.target.value.trim() === ''
+                                          ? undefined
+                                          : event.target.value,
+                                    }
+                                    : entry,
+                                ),
+                              }))
+                            }
+                            placeholder="Used by coalesce"
+                            disabled={derivedField.operation !== 'coalesce'}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 rounded border p-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-medium">Source references</div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                derivedFields: current.derivedFields.map((entry) =>
+                                  entry.id === derivedField.id
+                                    ? {
+                                      ...entry,
+                                      sources: [
+                                        ...entry.sources,
+                                        {
+                                          id: generateBuilderId(),
+                                          source: 'payload',
+                                          path:
+                                            derivationPathOptions[0]?.value ||
+                                            entry.targetFieldKey,
+                                        },
+                                      ],
+                                    }
+                                    : entry,
+                                ),
+                              }))
+                            }
+                          >
+                            <Plus className="mr-2 size-4" />
+                            Add Source
+                          </Button>
+                        </div>
+
+                        {derivedField.sources.map((sourceField) => {
+                          const currentSchemaFields: SchemaFieldDoc[] = schemaBuilder.fields.map(
+                            (field) => ({
+                              key: field.key,
+                              type: field.type,
+                              fields: field.objectFields?.map((objField) => ({
+                                key: objField.key,
+                                type: objField.type,
+                                fields: [],
+                              })),
+                              itemType: field.arrayItemType
+                                ? { type: field.arrayItemType }
+                                : undefined,
+                            }),
+                          );
+                          const sourceSpecificOptions = buildDerivationPathOptions(
+                            parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC],
+                            sourceField.source,
+                            currentSchemaFields,
+                          );
+                          const hasCustomPath =
+                            Boolean(sourceField.path.trim()) &&
+                            !sourceSpecificOptions.some(
+                              (option) => option.value === sourceField.path,
+                            );
+                          const pathOptions = hasCustomPath
+                            ? [
+                              {
+                                value: sourceField.path,
+                                label: `Custom: ${sourceField.path}`,
+                              },
+                              ...sourceSpecificOptions,
+                            ]
+                            : sourceSpecificOptions;
+
+                          return (
+                            <div
+                              key={sourceField.id}
+                              className="grid gap-2 md:grid-cols-3 rounded border p-2"
+                            >
+                              <div className="space-y-1">
+                                <Label className="text-xs">Source</Label>
+                                <Select
+                                  value={sourceField.source}
+                                  onValueChange={(value) =>
+                                    setSchemaBuilder((current) => ({
+                                      ...current,
+                                      derivedFields: current.derivedFields.map((entry) =>
+                                        entry.id === derivedField.id
+                                          ? {
+                                            ...entry,
+                                            sources: entry.sources.map((candidate) =>
+                                              candidate.id === sourceField.id
+                                                ? {
+                                                  ...candidate,
+                                                  source:
+                                                    value as (typeof DERIVED_FIELD_SOURCE_OPTIONS)[number],
+                                                }
+                                                : candidate,
+                                            ),
+                                          }
+                                          : entry,
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Source" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {DERIVED_FIELD_SOURCE_OPTIONS.map((sourceOption) => (
+                                      <SelectItem key={sourceOption} value={sourceOption}>
+                                        {sourceOption}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Source path</Label>
+                                <Select
+                                  value={sourceField.path}
+                                  onValueChange={(value) =>
+                                    setSchemaBuilder((current) => ({
+                                      ...current,
+                                      derivedFields: current.derivedFields.map((entry) =>
+                                        entry.id === derivedField.id
+                                          ? {
+                                            ...entry,
+                                            sources: entry.sources.map((candidate) =>
+                                              candidate.id === sourceField.id
+                                                ? { ...candidate, path: value }
+                                                : candidate,
+                                            ),
+                                          }
+                                          : entry,
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Source path" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {pathOptions.length === 0 ? (
+                                      <SelectItem value="__no_paths__" disabled>
+                                        No paths available for this source
+                                      </SelectItem>
+                                    ) : (
+                                      pathOptions.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                          {option.label}
+                                        </SelectItem>
+                                      ))
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="flex items-end justify-center">
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  onClick={() =>
+                                    setSchemaBuilder((current) => ({
+                                      ...current,
+                                      derivedFields: current.derivedFields.map((entry) =>
+                                        entry.id === derivedField.id
+                                          ? {
+                                            ...entry,
+                                            sources: entry.sources.filter(
+                                              (candidate) =>
+                                                candidate.id !== sourceField.id,
+                                            ),
+                                          }
+                                          : entry,
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  <Trash2 className="size-4 text-destructive" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              derivedFields: current.derivedFields.filter(
+                                (entry) => entry.id !== derivedField.id,
+                              ),
+                            }))
+                          }
+                        >
+                          <Trash2 className="mr-2 size-4 text-destructive" />
+                          Remove Derived Field
+                        </Button>
+                      </div>
                     </div>
                   );
                 })}

@@ -2,6 +2,8 @@ import type {
   ActionManifestDoc,
   AdminTabDoc,
   PluginReleaseDoc,
+  SchemaDoc,
+  WorkflowDoc,
 } from '@/lib/plugins/types';
 
 export type MarketplaceSeedRelease = {
@@ -306,9 +308,92 @@ function toSeedReleaseDoc(
     visibility: 'public',
     docs: release.docs,
     actionManifest: release.actionManifest,
+    schemaDocs: toFallbackSchemaDocs(release),
+    workflows: toFallbackWorkflows(release),
     adminTabs: release.adminTabs,
     publishedAt,
   };
+}
+
+function toTemplateSchemaId(input: string) {
+  const normalized = input
+    .trim()
+    .replace(/[^a-zA-Z0-9_.-]/g, '')
+    .replace(/\s+/g, '');
+  return normalized.length > 0 ? normalized : 'example.table';
+}
+
+function toTemplateWorkflowId(pluginId: string, schemaId: string, index: number) {
+  const suffix = schemaId.replace(/[^a-zA-Z0-9_.-]/g, '') || `schema_${index + 1}`;
+  return `${pluginId}.workflow.${suffix}`;
+}
+
+function toActionIdForWorkflow(
+  actionManifest: readonly ActionManifestDoc[],
+  index: number,
+) {
+  return (
+    actionManifest[index]?.actionId ??
+    actionManifest[0]?.actionId ??
+    'plugin.action.example'
+  );
+}
+
+function toFallbackSchemaDocs(release: MarketplaceSeedRelease): SchemaDoc[] {
+  if (release.adminTabs.length === 0) {
+    return [
+      {
+        schemaId: 'example.table',
+        title: 'Example Table',
+        fields: [
+          {
+            key: 'title',
+            type: 'string',
+          },
+        ],
+      },
+    ];
+  }
+
+  return release.adminTabs.map((tab) => {
+    const schemaId = toTemplateSchemaId(tab.schema);
+    return {
+      schemaId,
+      title: tab.title || schemaId,
+      fields: [
+        {
+          key: 'title',
+          type: 'string',
+          description: `Primary label for ${tab.title || schemaId}`,
+        },
+      ],
+    };
+  });
+}
+
+function toFallbackWorkflows(release: MarketplaceSeedRelease): WorkflowDoc[] {
+  const schemaDocs = toFallbackSchemaDocs(release);
+
+  return schemaDocs.map((schemaDoc, index) => ({
+    workflowId: toTemplateWorkflowId(release.pluginId, schemaDoc.schemaId, index),
+    table: schemaDoc.schemaId,
+    hook: 'afterCreate',
+    nodes: [
+      {
+        nodeId: 'n1',
+        type: 'action',
+        actionId: toActionIdForWorkflow(release.actionManifest, index),
+        input: {
+          expression: {
+            kind: 'ref',
+            source: 'payload',
+            path: [],
+          },
+        },
+      },
+    ],
+    edges: [],
+  }));
 }
 
 export function toMarketplaceSeedReleaseDocs(): PluginReleaseDoc[] {
@@ -320,15 +405,24 @@ export function toMarketplaceSeedReleaseDocs(): PluginReleaseDoc[] {
 export function mergeMarketplaceReleasesWithSeed(
   releases: PluginReleaseDoc[],
 ): PluginReleaseDoc[] {
+  const seedById = new Map<string, PluginReleaseDoc>();
   const mergedById = new Map<string, PluginReleaseDoc>();
 
   for (const release of toMarketplaceSeedReleaseDocs()) {
+    seedById.set(release.id, release);
     mergedById.set(release.id, release);
   }
 
   // Live rows should always win over static fallbacks for the same release id.
   for (const release of releases) {
-    mergedById.set(release.id, release);
+    const seed = seedById.get(release.id);
+    mergedById.set(release.id, {
+      ...seed,
+      ...release,
+      schemaDocs: release.schemaDocs?.length ? release.schemaDocs : seed?.schemaDocs,
+      workflows: release.workflows?.length ? release.workflows : seed?.workflows,
+      adminTabs: release.adminTabs?.length ? release.adminTabs : seed?.adminTabs,
+    });
   }
 
   return [...mergedById.values()];

@@ -66,6 +66,7 @@ describe('plugin-studio client boundary', () => {
     const content = getRouteContent();
 
     expect(content).toContain('applyTemplatePreset');
+    expect(content).toContain('mergeMarketplaceReleasesWithSeed');
     expect(content).toContain('Loaded template');
   });
 
@@ -117,8 +118,9 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('value={field.label}');
     expect(content).toContain('value={field.description}');
     expect(content).toContain('placeholder="Input placeholder"');
-    expect(content).toContain('Derived Values');
-    expect(content).toContain('Add Derivation');
+    expect(content).toContain('Derived Fields');
+    expect(content).toContain('Add Derived Field');
+    expect(content).toContain('Source references');
     expect(content).toContain('Field Refinements');
     expect(content).toContain('Add Field Refinement');
   });
@@ -130,7 +132,7 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('Select payload field');
     expect(content).toContain('rightPath: value || undefined');
     expect(content).toContain('className="flex items-end justify-center"');
-    expect(content).toContain('derivation-delete-cell');
+    expect(content).toContain('Remove Derived Field');
   });
 
   it('adds explicit labels for workflow trigger fields inside workflow editor dialog', () => {
@@ -176,7 +178,7 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('api.pluginDraftRevision.useGet');
     expect(content).toContain('createPluginDraft');
     expect(content).toContain('createPluginDraftRevision');
-    expect(content).toContain('Save Draft Revision');
+    expect(content).toContain('save-draft-revision');
   });
 
   it('integrates all plugin-builder workspace modules into the studio route', () => {
