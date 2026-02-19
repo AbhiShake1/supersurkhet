@@ -42,6 +42,7 @@ import {
   mapRoutesTabsToAutoAdminConfig,
   RoutesTabsMapperTab,
 } from '@/features/plugin-builder/workspace/tabs/routes-tabs-mapper';
+import { buildDerivationPathOptions } from '@/features/plugin-builder/workspace/tabs/derivation-path-options';
 import { SchemasTab } from '@/features/plugin-builder/workspace/tabs/schemas-tab';
 import { WorkflowGraphEditor } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
 import {
@@ -551,6 +552,18 @@ function toExpressionLiteral(value: string | undefined): ExpressionDoc {
   return trimmed;
 }
 
+function toSinglePayloadFieldPath(value: string | undefined): string[] {
+  const normalized = (value ?? '').trim();
+  if (!normalized) {
+    return [];
+  }
+  const [firstSegment] = normalized
+    .split('.')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  return firstSegment ? [firstSegment] : [];
+}
+
 function toBuilderFieldDerivations(
   behaviorJson: string | undefined,
 ): BuilderFieldDerivation[] {
@@ -902,10 +915,10 @@ function toSchemaFieldDoc(field: BuilderField): SchemaFieldDoc {
                     ? {
                       kind: 'ref' as const,
                       source: 'payload' as const,
-                      path: (refinement.rightPath ?? '')
-                        .split('.')
-                        .map((segment) => segment.trim())
-                        .filter(Boolean),
+                      path:
+                        toSinglePayloadFieldPath(refinement.rightPath).length > 0
+                          ? toSinglePayloadFieldPath(refinement.rightPath)
+                          : toSinglePayloadFieldPath(field.key),
                     }
                     : toExpressionLiteral(refinement.rightLiteral),
                 ],
@@ -1963,6 +1976,10 @@ function PluginStudioRoute() {
   const firstBlocklyComparableField = blocklyComparableFields[0] ?? '';
   const workspaceSchemasAndFields = useMemo(
     () => toWorkspaceSchemasAndFields(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
+    [parsed?.schemaDocs],
+  );
+  const derivationPathOptions = useMemo(
+    () => buildDerivationPathOptions(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
     [parsed?.schemaDocs],
   );
   const workspaceActiveSchemaId =
@@ -3205,6 +3222,16 @@ function PluginStudioRoute() {
                   );
                   const derivations = field.derivations ?? [];
                   const fieldRefinements = field.fieldRefinements ?? [];
+                  const compatiblePayloadFieldKeys = schemaBuilder.fields
+                    .filter(
+                      (candidate) =>
+                        candidate.id !== field.id &&
+                        candidate.type === field.type &&
+                        candidate.key.trim().length > 0,
+                    )
+                    .map((candidate) => candidate.key.trim());
+                  const hasCompatiblePayloadField =
+                    compatiblePayloadFieldKeys.length > 0;
 
                   return (
                     <div
@@ -3686,11 +3713,27 @@ function PluginStudioRoute() {
                             Add Derivation
                           </Button>
                         </div>
-                        {derivations.map((derivation) => (
-                          <div
-                            key={derivation.id}
-                            className="grid gap-2 md:grid-cols-6 rounded border p-2"
-                          >
+                        {derivations.map((derivation) => {
+                          const hasCustomPath =
+                            Boolean(derivation.path.trim()) &&
+                            !derivationPathOptions.some(
+                              (option) => option.value === derivation.path,
+                            );
+                          const pathOptions = hasCustomPath
+                            ? [
+                              {
+                                value: derivation.path,
+                                label: `Custom: ${derivation.path}`,
+                              },
+                              ...derivationPathOptions,
+                            ]
+                            : derivationPathOptions;
+
+                          return (
+                            <div
+                              key={derivation.id}
+                              className="grid gap-2 md:grid-cols-6 rounded border p-2"
+                            >
                             <div className="space-y-1">
                               <Label className="text-xs">Target</Label>
                               <Select
@@ -3790,30 +3833,49 @@ function PluginStudioRoute() {
                                 </SelectContent>
                               </Select>
                             </div>
-                            <div className="space-y-1">
-                              <Label className="text-xs">Source path</Label>
-                              <Input
-                                value={derivation.path}
-                                onChange={(event) =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          derivations: (candidate.derivations ?? []).map((entry) =>
-                                            entry.id === derivation.id
-                                              ? { ...entry, path: event.target.value }
-                                              : entry,
-                                          ),
-                                        }
-                                        : candidate,
-                                    ),
-                                  }))
-                                }
-                                placeholder="Source path (dot path)"
-                              />
-                            </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Source path</Label>
+                                <Select
+                                  value={derivation.path}
+                                  onValueChange={(value) =>
+                                    setSchemaBuilder((current) => ({
+                                      ...current,
+                                      fields: current.fields.map(
+                                        (candidate, candidateIndex) =>
+                                          candidateIndex === fieldIndex
+                                            ? {
+                                              ...candidate,
+                                              derivations: (
+                                                candidate.derivations ?? []
+                                              ).map((entry) =>
+                                                entry.id === derivation.id
+                                                  ? { ...entry, path: value }
+                                                  : entry,
+                                              ),
+                                            }
+                                            : candidate,
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Source path (dot path)" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {pathOptions.length === 0 ? (
+                                      <SelectItem value="__no_paths__" disabled>
+                                        No schema paths available
+                                      </SelectItem>
+                                    ) : (
+                                      pathOptions.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                          {option.label}
+                                        </SelectItem>
+                                      ))
+                                    )}
+                                  </SelectContent>
+                                </Select>
+                              </div>
                             <div className="space-y-1">
                               <Label className="text-xs">Fallback</Label>
                               <Input
@@ -3842,30 +3904,33 @@ function PluginStudioRoute() {
                                 placeholder="Fallback (optional)"
                               />
                             </div>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              onClick={() =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        derivations: (candidate.derivations ?? []).filter(
-                                          (entry) => entry.id !== derivation.id,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                            >
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
-                          </div>
-                        ))}
+                            <div className="derivation-delete-cell flex items-end justify-center">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                onClick={() =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          derivations: (candidate.derivations ?? []).filter(
+                                            (entry) => entry.id !== derivation.id,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                              >
+                                <Trash2 className="size-4 text-destructive" />
+                              </Button>
+                            </div>
+                            </div>
+                          );
+                        })}
                       </div>
 
                       <div className="space-y-2 rounded-md border p-2">
@@ -3966,6 +4031,15 @@ function PluginStudioRoute() {
                                                 ...entry,
                                                 rightKind:
                                                   value as BuilderFieldRefinement['rightKind'],
+                                                rightPath:
+                                                  value === 'payloadField'
+                                                    ? compatiblePayloadFieldKeys.includes(
+                                                      entry.rightPath ?? '',
+                                                    )
+                                                      ? entry.rightPath
+                                                      : (compatiblePayloadFieldKeys[0] ??
+                                                        undefined)
+                                                    : entry.rightPath,
                                               }
                                               : entry,
                                           ),
@@ -3979,54 +4053,85 @@ function PluginStudioRoute() {
                                   <SelectValue placeholder="Right side" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="literal">Literal</SelectItem>
-                                  <SelectItem value="payloadField">
-                                    Payload field
+                                  <SelectItem value="literal">
+                                    Literal value
+                                  </SelectItem>
+                                  <SelectItem
+                                    value="payloadField"
+                                    disabled={!hasCompatiblePayloadField}
+                                  >
+                                    Payload field (same type)
                                   </SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
                             <div className="space-y-1">
                               <Label className="text-xs">Right side value</Label>
-                              <Input
-                                value={
-                                  refinement.rightKind === 'literal'
-                                    ? (refinement.rightLiteral ?? '')
-                                    : (refinement.rightPath ?? '')
-                                }
-                                onChange={(event) =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          fieldRefinements: (
-                                            candidate.fieldRefinements ?? []
-                                          ).map((entry) =>
-                                            entry.id === refinement.id
-                                              ? refinement.rightKind === 'literal'
+                              {refinement.rightKind === 'literal' ? (
+                                <Input
+                                  value={refinement.rightLiteral ?? ''}
+                                  onChange={(event) =>
+                                    setSchemaBuilder((current) => ({
+                                      ...current,
+                                      fields: current.fields.map((candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            fieldRefinements: (
+                                              candidate.fieldRefinements ?? []
+                                            ).map((entry) =>
+                                              entry.id === refinement.id
                                                 ? {
                                                   ...entry,
                                                   rightLiteral: event.target.value,
                                                 }
-                                                : {
+                                                : entry,
+                                            ),
+                                          }
+                                          : candidate,
+                                      ),
+                                    }))
+                                  }
+                                  placeholder="Literal value"
+                                />
+                              ) : (
+                                <Select
+                                  value={refinement.rightPath ?? ''}
+                                  onValueChange={(value) =>
+                                    setSchemaBuilder((current) => ({
+                                      ...current,
+                                      fields: current.fields.map((candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            fieldRefinements: (
+                                              candidate.fieldRefinements ?? []
+                                            ).map((entry) =>
+                                              entry.id === refinement.id
+                                                ? {
                                                   ...entry,
-                                                  rightPath: event.target.value,
+                                                  rightPath: value || undefined,
                                                 }
-                                              : entry,
-                                          ),
-                                        }
-                                        : candidate,
-                                    ),
-                                  }))
-                                }
-                                placeholder={
-                                  refinement.rightKind === 'literal'
-                                    ? 'Literal value'
-                                    : 'Payload path'
-                                }
-                              />
+                                                : entry,
+                                            ),
+                                          }
+                                          : candidate,
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select payload field" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {compatiblePayloadFieldKeys.map((candidateKey) => (
+                                      <SelectItem key={`${refinement.id}-${candidateKey}`} value={candidateKey}>
+                                        {candidateKey}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
                             </div>
                             <div className="space-y-1">
                               <Label className="text-xs">Error message</Label>
@@ -4054,28 +4159,30 @@ function PluginStudioRoute() {
                                 placeholder="Error message"
                               />
                             </div>
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              onClick={() =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        fieldRefinements: (
-                                          candidate.fieldRefinements ?? []
-                                        ).filter((entry) => entry.id !== refinement.id),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                            >
-                              <Trash2 className="size-4 text-destructive" />
-                            </Button>
+                            <div className="flex items-end justify-center">
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                onClick={() =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          fieldRefinements: (
+                                            candidate.fieldRefinements ?? []
+                                          ).filter((entry) => entry.id !== refinement.id),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                              >
+                                <Trash2 className="size-4 text-destructive" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>

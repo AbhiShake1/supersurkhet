@@ -123,6 +123,16 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('Add Field Refinement');
   });
 
+  it('uses safe field-refinement controls with centered delete action', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('Payload field (same type)');
+    expect(content).toContain('Select payload field');
+    expect(content).toContain('rightPath: value || undefined');
+    expect(content).toContain('className="flex items-end justify-center"');
+    expect(content).toContain('derivation-delete-cell');
+  });
+
   it('adds explicit labels for workflow trigger fields inside workflow editor dialog', () => {
     const content = getRouteContent();
 
