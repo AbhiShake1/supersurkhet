@@ -55,6 +55,8 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('Schema Editor');
     expect(content).toContain('Schema Fields');
     expect(content).toContain('Cross-Field Refinements');
+    expect(content).toContain('overflow-hidden');
+    expect(content).toContain('min-h-0 flex-1 overflow-y-auto');
     expect(content).not.toContain('No-Code Builder');
     expect(content).not.toContain('Full SchemaDoc JSON');
     expect(content).not.toContain('schema-editor-doc-json');
@@ -101,6 +103,16 @@ describe('plugin-studio client boundary', () => {
   it('keeps schema field editing controls in the schema editor dialog', () => {
     const content = getRouteContent();
 
+    expect(content).toContain(`htmlFor={\`schema-field-key-\${field.id}\`}`);
+    expect(content).toContain(`htmlFor={\`schema-field-label-\${field.id}\`}`);
+    expect(content).toContain(
+      `htmlFor={\`schema-field-description-\${field.id}\`}`,
+    );
+    expect(content).toContain(`htmlFor={\`schema-field-type-\${field.id}\`}`);
+    expect(content).toContain(`id={\`schema-field-key-\${field.id}\`}`);
+    expect(content).toContain(`id={\`schema-field-label-\${field.id}\`}`);
+    expect(content).toContain(`id={\`schema-field-description-\${field.id}\`}`);
+    expect(content).toContain(`id={\`schema-field-type-\${field.id}\`}`);
     expect(content).toContain('value={field.key}');
     expect(content).toContain('value={field.label}');
     expect(content).toContain('value={field.description}');

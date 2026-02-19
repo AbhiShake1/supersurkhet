@@ -3104,7 +3104,7 @@ function PluginStudioRoute() {
           open={isSchemaEditorOpen}
           onOpenChange={setIsSchemaEditorOpen}
         >
-          <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
+          <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col overflow-hidden !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
             <DialogHeader>
               <DialogTitle>Schema Editor</DialogTitle>
               <DialogDescription>
@@ -3112,7 +3112,7 @@ function PluginStudioRoute() {
                 validation rules with safe visual controls.
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-3">
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1 grid gap-3">
               <div className="grid gap-2 md:grid-cols-2">
                 <div className="space-y-1">
                   <Label htmlFor="schema-editor-schema-id">Schema ID</Label>
@@ -3212,178 +3212,66 @@ function PluginStudioRoute() {
                       className="rounded-md border bg-card p-3 space-y-3"
                     >
                       <div className="grid gap-2 md:grid-cols-4">
-                        <Input
-                          value={field.key}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? { ...candidate, key: event.target.value }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Field key"
-                        />
-                        <Input
-                          value={field.label}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? { ...candidate, label: event.target.value }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Field label"
-                        />
-                        <Input
-                          value={field.description}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? { ...candidate, description: event.target.value }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Description"
-                        />
-                        <Select
-                          value={field.type}
-                          onValueChange={(value) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? {
-                                    ...candidate,
-                                    type: value as BuilderFieldType,
-                                    fieldType: AUTOFORM_FIELD_TYPES.includes(
-                                      value as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                    )
-                                      ? (value as (typeof AUTOFORM_FIELD_TYPES)[number])
-                                      : candidate.fieldType,
-                                  }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Field type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {BUILDER_FIELD_TYPES.map((fieldType) => (
-                              <SelectItem key={`dialog-${field.id}-${fieldType}`} value={fieldType}>
-                                {fieldType}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="grid gap-2 md:grid-cols-4">
-                        <Select
-                          value={field.fieldType ?? 'string'}
-                          onValueChange={(value) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? {
-                                    ...candidate,
-                                    fieldType:
-                                      value as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                  }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="UI component type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {AUTOFORM_FIELD_TYPES.map((fieldType) => (
-                              <SelectItem key={`ui-${field.id}-${fieldType}`} value={fieldType}>
-                                {fieldType}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <Input
-                          value={field.defaultValue ?? ''}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? { ...candidate, defaultValue: event.target.value || undefined }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Default value"
-                        />
-                        <Input
-                          value={field.min ?? ''}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? { ...candidate, min: event.target.value || undefined }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder={showMinMax ? 'Min constraint' : 'Min (n/a)'}
-                          disabled={!showMinMax}
-                        />
-                        <Input
-                          value={field.max ?? ''}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? { ...candidate, max: event.target.value || undefined }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder={showMinMax ? 'Max constraint' : 'Max (n/a)'}
-                          disabled={!showMinMax}
-                        />
-                      </div>
-
-                      {choiceFieldType ? (
-                        <Input
-                          value={field.enumValuesText ?? ''}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? { ...candidate, enumValuesText: event.target.value }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Enum values (comma-separated)"
-                        />
-                      ) : null}
-
-                      {field.type === 'array' ? (
-                        <div className="grid gap-2 md:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-key-${field.id}`}>Field key</Label>
+                          <Input
+                            id={`schema-field-key-${field.id}`}
+                            value={field.key}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, key: event.target.value }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Field key"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-label-${field.id}`}>Field label</Label>
+                          <Input
+                            id={`schema-field-label-${field.id}`}
+                            value={field.label}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, label: event.target.value }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Field label"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-description-${field.id}`}>
+                            Description
+                          </Label>
+                          <Input
+                            id={`schema-field-description-${field.id}`}
+                            value={field.description}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, description: event.target.value }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Description"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-type-${field.id}`}>Field type</Label>
                           <Select
-                            value={field.arrayItemType ?? 'string'}
+                            value={field.type}
                             onValueChange={(value) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
@@ -3391,26 +3279,222 @@ function PluginStudioRoute() {
                                   candidateIndex === fieldIndex
                                     ? {
                                       ...candidate,
-                                      arrayItemType: value as BuilderLeafFieldType,
+                                      type: value as BuilderFieldType,
+                                      fieldType: AUTOFORM_FIELD_TYPES.includes(
+                                        value as (typeof AUTOFORM_FIELD_TYPES)[number],
+                                      )
+                                        ? (value as (typeof AUTOFORM_FIELD_TYPES)[number])
+                                        : candidate.fieldType,
                                     }
                                     : candidate,
                                 ),
                               }))
                             }
                           >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Array item type" />
+                            <SelectTrigger id={`schema-field-type-${field.id}`}>
+                              <SelectValue placeholder="Field type" />
                             </SelectTrigger>
                             <SelectContent>
-                              {BUILDER_LEAF_FIELD_TYPES.map((fieldType) => (
-                                <SelectItem key={`array-${field.id}-${fieldType}`} value={fieldType}>
+                              {BUILDER_FIELD_TYPES.map((fieldType) => (
+                                <SelectItem key={`dialog-${field.id}-${fieldType}`} value={fieldType}>
                                   {fieldType}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-2 md:grid-cols-4">
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-ui-type-${field.id}`}>
+                            UI component type
+                          </Label>
+                          <Select
+                            value={field.fieldType ?? 'string'}
+                            onValueChange={(value) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      fieldType:
+                                        value as (typeof AUTOFORM_FIELD_TYPES)[number],
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                          >
+                            <SelectTrigger id={`schema-field-ui-type-${field.id}`}>
+                              <SelectValue placeholder="UI component type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {AUTOFORM_FIELD_TYPES.map((fieldType) => (
+                                <SelectItem key={`ui-${field.id}-${fieldType}`} value={fieldType}>
+                                  {fieldType}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-default-${field.id}`}>
+                            Default value
+                          </Label>
                           <Input
-                            value={field.arrayItemEnumValuesText ?? ''}
+                            id={`schema-field-default-${field.id}`}
+                            value={field.defaultValue ?? ''}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, defaultValue: event.target.value || undefined }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Default value"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-min-${field.id}`}>
+                            Min constraint
+                          </Label>
+                          <Input
+                            id={`schema-field-min-${field.id}`}
+                            value={field.min ?? ''}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, min: event.target.value || undefined }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder={showMinMax ? 'Min constraint' : 'Min (n/a)'}
+                            disabled={!showMinMax}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-max-${field.id}`}>
+                            Max constraint
+                          </Label>
+                          <Input
+                            id={`schema-field-max-${field.id}`}
+                            value={field.max ?? ''}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, max: event.target.value || undefined }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder={showMinMax ? 'Max constraint' : 'Max (n/a)'}
+                            disabled={!showMinMax}
+                          />
+                        </div>
+                      </div>
+
+                      {choiceFieldType ? (
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-enum-values-${field.id}`}>
+                            Enum values
+                          </Label>
+                          <Input
+                            id={`schema-field-enum-values-${field.id}`}
+                            value={field.enumValuesText ?? ''}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, enumValuesText: event.target.value }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Enum values (comma-separated)"
+                          />
+                        </div>
+                      ) : null}
+
+                      {field.type === 'array' ? (
+                        <div className="grid gap-2 md:grid-cols-2">
+                          <div className="space-y-1">
+                            <Label htmlFor={`schema-field-array-item-type-${field.id}`}>
+                              Array item type
+                            </Label>
+                            <Select
+                              value={field.arrayItemType ?? 'string'}
+                              onValueChange={(value) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        arrayItemType: value as BuilderLeafFieldType,
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                            >
+                              <SelectTrigger id={`schema-field-array-item-type-${field.id}`}>
+                                <SelectValue placeholder="Array item type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {BUILDER_LEAF_FIELD_TYPES.map((fieldType) => (
+                                  <SelectItem key={`array-${field.id}-${fieldType}`} value={fieldType}>
+                                    {fieldType}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor={`schema-field-array-enum-values-${field.id}`}>
+                              Array enum values
+                            </Label>
+                            <Input
+                              id={`schema-field-array-enum-values-${field.id}`}
+                              value={field.arrayItemEnumValuesText ?? ''}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        arrayItemEnumValuesText: event.target.value,
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Array enum values (if needed)"
+                              disabled={!isChoiceFieldType(field.arrayItemType)}
+                            />
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="grid gap-2 md:grid-cols-3">
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-input-placeholder-${field.id}`}>
+                            Input placeholder
+                          </Label>
+                          <Input
+                            id={`schema-field-input-placeholder-${field.id}`}
+                            value={inputPlaceholder}
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
@@ -3418,145 +3502,154 @@ function PluginStudioRoute() {
                                   candidateIndex === fieldIndex
                                     ? {
                                       ...candidate,
-                                      arrayItemEnumValuesText: event.target.value,
+                                      inputPropsJson: setJsonStringEntry(
+                                        candidate.inputPropsJson,
+                                        'placeholder',
+                                        event.target.value,
+                                      ),
                                     }
                                     : candidate,
                                 ),
                               }))
                             }
-                            placeholder="Array enum values (if needed)"
-                            disabled={!isChoiceFieldType(field.arrayItemType)}
+                            placeholder="Input placeholder"
                           />
                         </div>
-                      ) : null}
-
-                      <div className="grid gap-2 md:grid-cols-3">
-                        <Input
-                          value={inputPlaceholder}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? {
-                                    ...candidate,
-                                    inputPropsJson: setJsonStringEntry(
-                                      candidate.inputPropsJson,
-                                      'placeholder',
-                                      event.target.value,
-                                    ),
-                                  }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Input placeholder"
-                        />
-                        <Input
-                          value={inputStep}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? {
-                                    ...candidate,
-                                    inputPropsJson: setJsonNumberEntry(
-                                      candidate.inputPropsJson,
-                                      'step',
-                                      event.target.value,
-                                    ),
-                                  }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Input step"
-                        />
-                        <Input
-                          value={inputRows}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? {
-                                    ...candidate,
-                                    inputPropsJson: setJsonNumberEntry(
-                                      candidate.inputPropsJson,
-                                      'rows',
-                                      event.target.value,
-                                    ),
-                                  }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Rows (textarea-like fields)"
-                        />
-                        <Input
-                          value={customSource}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? {
-                                    ...candidate,
-                                    customDataJson: setJsonStringEntry(
-                                      candidate.customDataJson,
-                                      'source',
-                                      event.target.value,
-                                    ),
-                                  }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Custom data source"
-                        />
-                        <Input
-                          value={customAutomationKey}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? {
-                                    ...candidate,
-                                    customDataJson: setJsonStringEntry(
-                                      candidate.customDataJson,
-                                      'automationKey',
-                                      event.target.value,
-                                    ),
-                                  }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="Automation key"
-                        />
-                        <Input
-                          value={customUiHint}
-                          onChange={(event) =>
-                            setSchemaBuilder((current) => ({
-                              ...current,
-                              fields: current.fields.map((candidate, candidateIndex) =>
-                                candidateIndex === fieldIndex
-                                  ? {
-                                    ...candidate,
-                                    customDataJson: setJsonStringEntry(
-                                      candidate.customDataJson,
-                                      'uiHint',
-                                      event.target.value,
-                                    ),
-                                  }
-                                  : candidate,
-                              ),
-                            }))
-                          }
-                          placeholder="UI hint"
-                        />
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-input-step-${field.id}`}>
+                            Input step
+                          </Label>
+                          <Input
+                            id={`schema-field-input-step-${field.id}`}
+                            value={inputStep}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      inputPropsJson: setJsonNumberEntry(
+                                        candidate.inputPropsJson,
+                                        'step',
+                                        event.target.value,
+                                      ),
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Input step"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-input-rows-${field.id}`}>
+                            Input rows
+                          </Label>
+                          <Input
+                            id={`schema-field-input-rows-${field.id}`}
+                            value={inputRows}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      inputPropsJson: setJsonNumberEntry(
+                                        candidate.inputPropsJson,
+                                        'rows',
+                                        event.target.value,
+                                      ),
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Rows (textarea-like fields)"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-custom-source-${field.id}`}>
+                            Custom data source
+                          </Label>
+                          <Input
+                            id={`schema-field-custom-source-${field.id}`}
+                            value={customSource}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      customDataJson: setJsonStringEntry(
+                                        candidate.customDataJson,
+                                        'source',
+                                        event.target.value,
+                                      ),
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Custom data source"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-automation-key-${field.id}`}>
+                            Automation key
+                          </Label>
+                          <Input
+                            id={`schema-field-automation-key-${field.id}`}
+                            value={customAutomationKey}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      customDataJson: setJsonStringEntry(
+                                        candidate.customDataJson,
+                                        'automationKey',
+                                        event.target.value,
+                                      ),
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Automation key"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor={`schema-field-ui-hint-${field.id}`}>
+                            UI hint
+                          </Label>
+                          <Input
+                            id={`schema-field-ui-hint-${field.id}`}
+                            value={customUiHint}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      customDataJson: setJsonStringEntry(
+                                        candidate.customDataJson,
+                                        'uiHint',
+                                        event.target.value,
+                                      ),
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="UI hint"
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-2 rounded-md border p-2">
@@ -3598,142 +3691,157 @@ function PluginStudioRoute() {
                             key={derivation.id}
                             className="grid gap-2 md:grid-cols-6 rounded border p-2"
                           >
-                            <Select
-                              value={derivation.target}
-                              onValueChange={(value) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        derivations: (candidate.derivations ?? []).map((entry) =>
-                                          entry.id === derivation.id
-                                            ? {
-                                              ...entry,
-                                              target:
-                                                value as BuilderFieldDerivation['target'],
-                                            }
-                                            : entry,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Target" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="value">value</SelectItem>
-                                <SelectItem value="inputProps">inputProps</SelectItem>
-                                <SelectItem value="customData">customData</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              value={derivation.key}
-                              onChange={(event) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        derivations: (candidate.derivations ?? []).map((entry) =>
-                                          entry.id === derivation.id
-                                            ? { ...entry, key: event.target.value }
-                                            : entry,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                              placeholder="Target key"
-                              disabled={derivation.target === 'value'}
-                            />
-                            <Select
-                              value={derivation.source}
-                              onValueChange={(value) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        derivations: (candidate.derivations ?? []).map((entry) =>
-                                          entry.id === derivation.id
-                                            ? {
-                                              ...entry,
-                                              source:
-                                                value as BuilderFieldDerivation['source'],
-                                            }
-                                            : entry,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Source" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="payload">payload</SelectItem>
-                                <SelectItem value="formValues">formValues</SelectItem>
-                                <SelectItem value="context">context</SelectItem>
-                                <SelectItem value="sourceRow">sourceRow</SelectItem>
-                                <SelectItem value="row">row</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              value={derivation.path}
-                              onChange={(event) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        derivations: (candidate.derivations ?? []).map((entry) =>
-                                          entry.id === derivation.id
-                                            ? { ...entry, path: event.target.value }
-                                            : entry,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                              placeholder="Source path (dot path)"
-                            />
-                            <Input
-                              value={derivation.fallbackValue ?? ''}
-                              onChange={(event) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        derivations: (candidate.derivations ?? []).map((entry) =>
-                                          entry.id === derivation.id
-                                            ? {
-                                              ...entry,
-                                              fallbackValue:
-                                                event.target.value || undefined,
-                                            }
-                                            : entry,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                              placeholder="Fallback (optional)"
-                            />
+                            <div className="space-y-1">
+                              <Label className="text-xs">Target</Label>
+                              <Select
+                                value={derivation.target}
+                                onValueChange={(value) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          derivations: (candidate.derivations ?? []).map((entry) =>
+                                            entry.id === derivation.id
+                                              ? {
+                                                ...entry,
+                                                target:
+                                                  value as BuilderFieldDerivation['target'],
+                                              }
+                                              : entry,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Target" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="value">value</SelectItem>
+                                  <SelectItem value="inputProps">inputProps</SelectItem>
+                                  <SelectItem value="customData">customData</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Target key</Label>
+                              <Input
+                                value={derivation.key}
+                                onChange={(event) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          derivations: (candidate.derivations ?? []).map((entry) =>
+                                            entry.id === derivation.id
+                                              ? { ...entry, key: event.target.value }
+                                              : entry,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                                placeholder="Target key"
+                                disabled={derivation.target === 'value'}
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Source</Label>
+                              <Select
+                                value={derivation.source}
+                                onValueChange={(value) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          derivations: (candidate.derivations ?? []).map((entry) =>
+                                            entry.id === derivation.id
+                                              ? {
+                                                ...entry,
+                                                source:
+                                                  value as BuilderFieldDerivation['source'],
+                                              }
+                                              : entry,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Source" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="payload">payload</SelectItem>
+                                  <SelectItem value="formValues">formValues</SelectItem>
+                                  <SelectItem value="context">context</SelectItem>
+                                  <SelectItem value="sourceRow">sourceRow</SelectItem>
+                                  <SelectItem value="row">row</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Source path</Label>
+                              <Input
+                                value={derivation.path}
+                                onChange={(event) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          derivations: (candidate.derivations ?? []).map((entry) =>
+                                            entry.id === derivation.id
+                                              ? { ...entry, path: event.target.value }
+                                              : entry,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                                placeholder="Source path (dot path)"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Fallback</Label>
+                              <Input
+                                value={derivation.fallbackValue ?? ''}
+                                onChange={(event) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          derivations: (candidate.derivations ?? []).map((entry) =>
+                                            entry.id === derivation.id
+                                              ? {
+                                                ...entry,
+                                                fallbackValue:
+                                                  event.target.value || undefined,
+                                              }
+                                              : entry,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                                placeholder="Fallback (optional)"
+                              />
+                            </div>
                             <Button
                               type="button"
                               size="icon"
@@ -3799,141 +3907,153 @@ function PluginStudioRoute() {
                             key={refinement.id}
                             className="grid gap-2 md:grid-cols-5 rounded border p-2"
                           >
-                            <Select
-                              value={refinement.operator}
-                              onValueChange={(value) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        fieldRefinements: (
-                                          candidate.fieldRefinements ?? []
-                                        ).map((entry) =>
-                                          entry.id === refinement.id
-                                            ? {
-                                              ...entry,
-                                              operator: value as RuleOperator,
-                                            }
-                                            : entry,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Operator" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="eq">equals</SelectItem>
-                                <SelectItem value="neq">not equals</SelectItem>
-                                <SelectItem value="gt">greater than</SelectItem>
-                                <SelectItem value="gte">greater/equal</SelectItem>
-                                <SelectItem value="lt">less than</SelectItem>
-                                <SelectItem value="lte">less/equal</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Select
-                              value={refinement.rightKind}
-                              onValueChange={(value) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        fieldRefinements: (
-                                          candidate.fieldRefinements ?? []
-                                        ).map((entry) =>
-                                          entry.id === refinement.id
-                                            ? {
-                                              ...entry,
-                                              rightKind:
-                                                value as BuilderFieldRefinement['rightKind'],
-                                            }
-                                            : entry,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Right side" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="literal">Literal</SelectItem>
-                                <SelectItem value="payloadField">
-                                  Payload field
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <Input
-                              value={
-                                refinement.rightKind === 'literal'
-                                  ? (refinement.rightLiteral ?? '')
-                                  : (refinement.rightPath ?? '')
-                              }
-                              onChange={(event) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        fieldRefinements: (
-                                          candidate.fieldRefinements ?? []
-                                        ).map((entry) =>
-                                          entry.id === refinement.id
-                                            ? refinement.rightKind === 'literal'
+                            <div className="space-y-1">
+                              <Label className="text-xs">Operator</Label>
+                              <Select
+                                value={refinement.operator}
+                                onValueChange={(value) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          fieldRefinements: (
+                                            candidate.fieldRefinements ?? []
+                                          ).map((entry) =>
+                                            entry.id === refinement.id
                                               ? {
                                                 ...entry,
-                                                rightLiteral: event.target.value,
+                                                operator: value as RuleOperator,
                                               }
-                                              : {
+                                              : entry,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Operator" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="eq">equals</SelectItem>
+                                  <SelectItem value="neq">not equals</SelectItem>
+                                  <SelectItem value="gt">greater than</SelectItem>
+                                  <SelectItem value="gte">greater/equal</SelectItem>
+                                  <SelectItem value="lt">less than</SelectItem>
+                                  <SelectItem value="lte">less/equal</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Right side type</Label>
+                              <Select
+                                value={refinement.rightKind}
+                                onValueChange={(value) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          fieldRefinements: (
+                                            candidate.fieldRefinements ?? []
+                                          ).map((entry) =>
+                                            entry.id === refinement.id
+                                              ? {
                                                 ...entry,
-                                                rightPath: event.target.value,
+                                                rightKind:
+                                                  value as BuilderFieldRefinement['rightKind'],
                                               }
-                                            : entry,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                              placeholder={
-                                refinement.rightKind === 'literal'
-                                  ? 'Literal value'
-                                  : 'Payload path'
-                              }
-                            />
-                            <Input
-                              value={refinement.message}
-                              onChange={(event) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        fieldRefinements: (
-                                          candidate.fieldRefinements ?? []
-                                        ).map((entry) =>
-                                          entry.id === refinement.id
-                                            ? { ...entry, message: event.target.value }
-                                            : entry,
-                                        ),
-                                      }
-                                      : candidate,
-                                  ),
-                                }))
-                              }
-                              placeholder="Error message"
-                            />
+                                              : entry,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Right side" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="literal">Literal</SelectItem>
+                                  <SelectItem value="payloadField">
+                                    Payload field
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Right side value</Label>
+                              <Input
+                                value={
+                                  refinement.rightKind === 'literal'
+                                    ? (refinement.rightLiteral ?? '')
+                                    : (refinement.rightPath ?? '')
+                                }
+                                onChange={(event) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          fieldRefinements: (
+                                            candidate.fieldRefinements ?? []
+                                          ).map((entry) =>
+                                            entry.id === refinement.id
+                                              ? refinement.rightKind === 'literal'
+                                                ? {
+                                                  ...entry,
+                                                  rightLiteral: event.target.value,
+                                                }
+                                                : {
+                                                  ...entry,
+                                                  rightPath: event.target.value,
+                                                }
+                                              : entry,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                                placeholder={
+                                  refinement.rightKind === 'literal'
+                                    ? 'Literal value'
+                                    : 'Payload path'
+                                }
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs">Error message</Label>
+                              <Input
+                                value={refinement.message}
+                                onChange={(event) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map((candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          fieldRefinements: (
+                                            candidate.fieldRefinements ?? []
+                                          ).map((entry) =>
+                                            entry.id === refinement.id
+                                              ? { ...entry, message: event.target.value }
+                                              : entry,
+                                          ),
+                                        }
+                                        : candidate,
+                                    ),
+                                  }))
+                                }
+                                placeholder="Error message"
+                              />
+                            </div>
                             <Button
                               type="button"
                               size="icon"
@@ -4092,27 +4212,35 @@ function PluginStudioRoute() {
                   Use the Blockly composer for nested logic; these rules cover
                   common type-safe comparisons.
                 </p>
-                <div className="flex items-center gap-2">
-                  <Select
-                    value={blocklyDraft.fieldId ?? ''}
-                    onValueChange={(value) =>
-                      setBlocklyDraft((current) => ({
-                        ...current,
-                        fieldId: value || null,
-                      }))
-                    }
-                  >
-                    <SelectTrigger className="w-[280px]">
-                      <SelectValue placeholder="Field for logic composer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {schemaBuilder.fields.map((field) => (
-                        <SelectItem key={field.id} value={field.id}>
-                          {field.key || field.label || field.id}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="flex items-end gap-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="schema-field-logic-composer-field">
+                      Field for logic composer
+                    </Label>
+                    <Select
+                      value={blocklyDraft.fieldId ?? ''}
+                      onValueChange={(value) =>
+                        setBlocklyDraft((current) => ({
+                          ...current,
+                          fieldId: value || null,
+                        }))
+                      }
+                    >
+                      <SelectTrigger
+                        id="schema-field-logic-composer-field"
+                        className="w-[280px]"
+                      >
+                        <SelectValue placeholder="Field for logic composer" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {schemaBuilder.fields.map((field) => (
+                          <SelectItem key={field.id} value={field.id}>
+                            {field.key || field.label || field.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <Button
                     type="button"
                     variant="secondary"
@@ -4124,23 +4252,35 @@ function PluginStudioRoute() {
                 </div>
                 {schemaRefinements.map((rule) => (
                   <div key={rule.id} className="grid gap-2 md:grid-cols-4 rounded-md border bg-card p-2">
-                    <Input value={rule.leftField} disabled />
-                    <Input value={rule.operator} disabled />
-                    <Input value={rule.rightField} disabled />
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={rule.message}
-                        onChange={(event) =>
-                          setSchemaRefinements((current) =>
-                            current.map((candidate) =>
-                              candidate.id === rule.id
-                                ? { ...candidate, message: event.target.value }
-                                : candidate,
-                            ),
-                          )
-                        }
-                        placeholder="Error message"
-                      />
+                    <div className="space-y-1">
+                      <Label className="text-xs">Left field</Label>
+                      <Input value={rule.leftField} disabled />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Operator</Label>
+                      <Input value={rule.operator} disabled />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Right field</Label>
+                      <Input value={rule.rightField} disabled />
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <div className="space-y-1 grow">
+                        <Label className="text-xs">Error message</Label>
+                        <Input
+                          value={rule.message}
+                          onChange={(event) =>
+                            setSchemaRefinements((current) =>
+                              current.map((candidate) =>
+                                candidate.id === rule.id
+                                  ? { ...candidate, message: event.target.value }
+                                  : candidate,
+                              ),
+                            )
+                          }
+                          placeholder="Error message"
+                        />
+                      </div>
                       <Button
                         type="button"
                         size="icon"
