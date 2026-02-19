@@ -11,15 +11,12 @@ function getRouteContent() {
   return readFileSync(pluginDetailsRoutePath, 'utf8');
 }
 
-describe('plugin details review rating input', () => {
-  it('uses RatingGroup star input instead of numeric rating input', () => {
+describe('plugin details review data source', () => {
+  it('does not render local star rating input when reviews are not DB-backed', () => {
     const content = getRouteContent();
 
-    expect(content).toContain(`from '@ark-ui/react/rating-group'`);
-    expect(content).toContain('<RatingGroup.Root');
-    expect(content).toContain('<RatingGroup.Control');
-    expect(content).toContain('<RatingGroup.Item');
-    expect(content).not.toContain('placeholder="Rating (1-5)"');
-    expect(content).not.toContain('<Input type="number" min={1} max={5}');
+    expect(content).not.toContain(`from '@ark-ui/react/rating-group'`);
+    expect(content).not.toContain('<RatingGroup.Root');
+    expect(content).toContain('not stored in the database');
   });
 });

@@ -1,4 +1,5 @@
 import type { PluginCatalogEntry } from '@/lib/plugins/admin-plugin-catalog';
+import type { BusinessPluginInstallDoc } from '@/lib/plugins/types';
 
 export type PluginUserReview = {
   id: string;
@@ -26,20 +27,9 @@ export type PluginMarketItem = PluginCatalogEntry & {
   iconUrl?: string;
   screenshotUrls: string[];
   installs: number;
-  grossingRankScore: number;
   averageRating: number;
   reviewCount: number;
-  priceModel: 'free' | 'paid';
 };
-
-function hashString(input: string): number {
-  let hash = 0;
-  if (!input?.length) return hash
-  for (let index = 0; index < input.length; index += 1) {
-    hash = (hash * 31 + input.charCodeAt(index)) >>> 0;
-  }
-  return hash;
-}
 
 function inferCategory(capabilities: string[]): string {
   const value = capabilities.join(' ').toLowerCase();
@@ -70,38 +60,16 @@ function inferCategory(capabilities: string[]): string {
   return 'Business';
 }
 
-function inferPublisher(pluginId: string): string {
-  const segments = pluginId?.split('.').filter(Boolean);
+function resolvePublisher(entry: PluginCatalogEntry): string {
+  const explicit = entry.latestRelease.author?.name?.trim();
+  if (explicit) return explicit;
+  const segments = entry.pluginId?.split('.').filter(Boolean);
   if (!segments?.length) return 'Community Publisher';
   const root = segments[1] ?? segments[0] ?? 'community';
   return `${root.charAt(0).toUpperCase()}${root.slice(1)} Labs`;
 }
 
-function inferRating(pluginId: string, capabilities: string[]): number {
-  const seed = hashString(`${pluginId}:${capabilities.join(',')}`);
-  return Math.round((3.8 + (seed % 12) / 10) * 10) / 10;
-}
-
-function inferReviewCount(pluginId: string): number {
-  return 120 + (hashString(pluginId) % 24880);
-}
-
-function inferInstalls(pluginId: string): number {
-  return 300 + (hashString(`${pluginId}:installs`) % 500000);
-}
-
-function inferGrossing(pluginId: string, capabilities: string[]): number {
-  return hashString(`${pluginId}:${capabilities.join(',')}:grossing`) % 1000;
-}
-
-function inferPriceModel(pluginId: string): 'free' | 'paid' {
-  const seed = hashString(`${pluginId}:price`);
-  return seed % 7 === 0 ? 'paid' : 'free';
-}
-
 function compareRank(left: PluginMarketItem, right: PluginMarketItem): number {
-  if (left.averageRating !== right.averageRating)
-    return right.averageRating - left.averageRating;
   if (left.installs !== right.installs) return right.installs - left.installs;
   return left.title.localeCompare(right.title);
 }
@@ -168,20 +136,48 @@ export function groupPluginReviewsByUser(
     });
 }
 
-export function buildMarketplaceGroups(catalog: PluginCatalogEntry[]) {
+function buildInstallCounts(
+  installs: readonly BusinessPluginInstallDoc[],
+): Map<string, number> {
+  const activeInstallersByPlugin = new Map<string, Set<string>>();
+  for (const install of installs) {
+    if (install.status !== 'active') continue;
+    const byPlugin = activeInstallersByPlugin.get(install.pluginId);
+    if (byPlugin) {
+      byPlugin.add(install.businessId);
+      continue;
+    }
+    activeInstallersByPlugin.set(
+      install.pluginId,
+      new Set([install.businessId]),
+    );
+  }
+
+  const counts = new Map<string, number>();
+  for (const [pluginId, businessIds] of activeInstallersByPlugin.entries()) {
+    counts.set(pluginId, businessIds.size);
+  }
+  return counts;
+}
+
+export function buildMarketplaceGroups(
+  catalog: PluginCatalogEntry[],
+  input: {
+    installs?: readonly BusinessPluginInstallDoc[];
+  } = {},
+) {
+  const installCounts = buildInstallCounts(input.installs ?? []);
   const all = catalog.map((entry) => {
     const category = inferCategory(entry.capabilities);
     return {
       ...entry,
       category,
-      publisher: inferPublisher(entry.pluginId),
+      publisher: resolvePublisher(entry),
       iconUrl: undefined,
       screenshotUrls: [],
-      installs: inferInstalls(entry.pluginId),
-      grossingRankScore: inferGrossing(entry.pluginId, entry.capabilities),
-      averageRating: inferRating(entry.pluginId, entry.capabilities),
-      reviewCount: inferReviewCount(entry.pluginId),
-      priceModel: inferPriceModel(entry.pluginId),
+      installs: installCounts.get(entry.pluginId) ?? 0,
+      averageRating: 0,
+      reviewCount: 0,
     } satisfies PluginMarketItem;
   });
 
@@ -190,11 +186,16 @@ export function buildMarketplaceGroups(catalog: PluginCatalogEntry[]) {
   );
 
   const ranked = [...all].sort(compareRank);
-  const topGrossing = [...all].sort(
-    (left, right) =>
-      right.grossingRankScore - left.grossingRankScore ||
-      compareRank(left, right),
-  );
+  const recentlyUpdated = [...all].sort((left, right) => {
+    const leftPublished = left.latestPublishedAt
+      ? Date.parse(left.latestPublishedAt)
+      : 0;
+    const rightPublished = right.latestPublishedAt
+      ? Date.parse(right.latestPublishedAt)
+      : 0;
+    if (leftPublished !== rightPublished) return rightPublished - leftPublished;
+    return compareRank(left, right);
+  });
 
   return {
     all,
@@ -203,9 +204,8 @@ export function buildMarketplaceGroups(catalog: PluginCatalogEntry[]) {
       category,
       items: ranked.filter((item) => item.category === category),
     })),
-    topFree: ranked.filter((item) => item.priceModel === 'free'),
-    topPaid: ranked.filter((item) => item.priceModel === 'paid'),
-    topGrossing,
+    topInstalled: ranked,
+    recentlyUpdated,
   };
 }
 

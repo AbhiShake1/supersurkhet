@@ -85,6 +85,52 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('Compose Logic');
   });
 
+  it('adds explicit labels for schema metadata inputs inside schema editor dialog', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain(`from '@/components/ui/label'`);
+    expect(content).toContain('htmlFor="schema-editor-schema-id"');
+    expect(content).toContain('htmlFor="schema-editor-schema-title"');
+    expect(content).toContain('id="schema-editor-schema-id"');
+    expect(content).toContain('id="schema-editor-schema-title"');
+  });
+
+  it('adds explicit labels and vertical spacing for schema field inputs in schema editor dialog', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('htmlFor={`schema-editor-field-key-${field.id}`}');
+    expect(content).toContain(
+      'htmlFor={`schema-editor-field-label-${field.id}`}',
+    );
+    expect(content).toContain('id={`schema-editor-field-key-${field.id}`}');
+    expect(content).toContain('id={`schema-editor-field-label-${field.id}`}');
+    expect(content).toContain(
+      'grid items-center gap-x-2 gap-y-3 rounded-md border bg-card p-2',
+    );
+    expect(content).toContain(
+      'htmlFor={`schema-editor-field-required-${field.id}`}',
+    );
+    expect(content).toContain('id={`schema-editor-field-required-${field.id}`}');
+  });
+
+  it('adds explicit labels for workflow trigger fields inside workflow editor dialog', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('htmlFor="workflow-editor-workflow-id"');
+    expect(content).toContain('htmlFor="workflow-editor-table"');
+    expect(content).toContain('htmlFor="workflow-editor-hook"');
+    expect(content).toContain('id="workflow-editor-workflow-id"');
+    expect(content).toContain('id="workflow-editor-table"');
+    expect(content).toContain('id="workflow-editor-hook"');
+  });
+
+  it('preserves advanced field behavior payloads like derivations while using no-code builder', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('behaviorJson');
+    expect(content).toContain('...(parseJsonObject(field.behaviorJson) ?? {})');
+  });
+
   it('adds preset logic actions inside the Blockly composer', () => {
     const content = getRouteContent();
 

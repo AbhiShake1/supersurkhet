@@ -74,6 +74,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -502,6 +503,7 @@ type BuilderField = {
   defaultValue?: string;
   enumValuesText?: string;
   fieldConfigJson?: string;
+  behaviorJson?: string;
   inputPropsJson?: string;
   customDataJson?: string;
   arrayItemType?: BuilderLeafFieldType;
@@ -635,6 +637,10 @@ function toSchemaFieldDoc(field: BuilderField): SchemaFieldDoc {
       ? { customData: parseJsonObject(field.customDataJson) }
       : {}),
   };
+  const behavior = {
+    ...(parseJsonObject(field.behaviorJson) ?? {}),
+    fieldConfig,
+  };
 
   return {
     key: field.key || 'field_key',
@@ -665,9 +671,7 @@ function toSchemaFieldDoc(field: BuilderField): SchemaFieldDoc {
           toObjectFieldDoc(nestedField),
         )
         : undefined,
-    behavior: {
-      fieldConfig,
-    },
+    behavior,
     rules: [
       ...(parseNumeric(field.min) !== undefined
         ? [{ kind: 'min' as const, value: parseNumeric(field.min) }]
@@ -713,6 +717,7 @@ function hasFieldValidationErrors(field: BuilderField) {
   if (isInvalidObjectJson(field.inputPropsJson)) return true;
   if (isInvalidObjectJson(field.customDataJson)) return true;
   if (isInvalidObjectJson(field.fieldConfigJson)) return true;
+  if (isInvalidObjectJson(field.behaviorJson)) return true;
   return false;
 }
 
@@ -893,9 +898,13 @@ function toBuilderObjectField(field: SchemaFieldDoc): BuilderObjectField {
 }
 
 function toBuilderField(field: SchemaFieldDoc): BuilderField {
-  const fieldConfig = isRecord(field.behavior?.fieldConfig)
-    ? field.behavior?.fieldConfig
+  const behavior = isRecord(field.behavior) ? field.behavior : {};
+  const fieldConfig = isRecord(behavior.fieldConfig)
+    ? behavior.fieldConfig
     : {};
+  const extraBehavior = Object.fromEntries(
+    Object.entries(behavior).filter(([key]) => key !== 'fieldConfig'),
+  );
   const { label, description, fieldType, inputProps, customData, ...extra } =
     fieldConfig;
   const normalizedType = normalizeBuilderFieldType(field.type);
@@ -926,6 +935,7 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
     defaultValue: toDefaultValueText(field.defaultValue),
     enumValuesText: (field.enumValues ?? []).join(','),
     fieldConfigJson: stringifyJsonInput(extra),
+    behaviorJson: stringifyJsonInput(extraBehavior),
     inputPropsJson: stringifyJsonInput(inputProps),
     customDataJson: stringifyJsonInput(customData),
     arrayItemType:
@@ -1106,6 +1116,7 @@ function PluginStudioRoute() {
         inputPropsJson: '{}',
         customDataJson: '{}',
         fieldConfigJson: '{}',
+        behaviorJson: '{}',
       },
     ],
   });
@@ -2403,6 +2414,7 @@ function PluginStudioRoute() {
           inputPropsJson: '{}',
           customDataJson: '{}',
           fieldConfigJson: '{}',
+          behaviorJson: '{}',
         },
         {
           id: generateBuilderId(),
@@ -2415,6 +2427,7 @@ function PluginStudioRoute() {
           inputPropsJson: '{}',
           customDataJson: '{}',
           fieldConfigJson: '{}',
+          behaviorJson: '{}',
         },
       ],
     });
@@ -2930,6 +2943,7 @@ function PluginStudioRoute() {
                             fieldType: 'string',
                             required: false,
                             fieldConfigJson: '{}',
+                            behaviorJson: '{}',
                             inputPropsJson: '{}',
                             customDataJson: '{}',
                           },
@@ -4353,26 +4367,36 @@ function PluginStudioRoute() {
             </DialogHeader>
             <div className="grid gap-3">
               <div className="grid gap-2 md:grid-cols-2">
-                <Input
-                  value={schemaBuilder.schemaId}
-                  onChange={(event) =>
-                    setSchemaBuilder((current) => ({
-                      ...current,
-                      schemaId: event.target.value,
-                    }))
-                  }
-                  placeholder="Schema ID"
-                />
-                <Input
-                  value={schemaBuilder.title}
-                  onChange={(event) =>
-                    setSchemaBuilder((current) => ({
-                      ...current,
-                      title: event.target.value,
-                    }))
-                  }
-                  placeholder="Schema title"
-                />
+                <div className="space-y-1">
+                  <Label htmlFor="schema-editor-schema-id">Schema ID</Label>
+                  <Input
+                    id="schema-editor-schema-id"
+                    value={schemaBuilder.schemaId}
+                    onChange={(event) =>
+                      setSchemaBuilder((current) => ({
+                        ...current,
+                        schemaId: event.target.value,
+                      }))
+                    }
+                    placeholder="Schema ID"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="schema-editor-schema-title">
+                    Schema title
+                  </Label>
+                  <Input
+                    id="schema-editor-schema-title"
+                    value={schemaBuilder.title}
+                    onChange={(event) =>
+                      setSchemaBuilder((current) => ({
+                        ...current,
+                        title: event.target.value,
+                      }))
+                    }
+                    placeholder="Schema title"
+                  />
+                </div>
               </div>
               <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
                 <div className="flex items-center justify-between">
@@ -4394,6 +4418,7 @@ function PluginStudioRoute() {
                             fieldType: 'string',
                             required: false,
                             fieldConfigJson: '{}',
+                            behaviorJson: '{}',
                             inputPropsJson: '{}',
                             customDataJson: '{}',
                           },
@@ -4408,36 +4433,48 @@ function PluginStudioRoute() {
                 {schemaBuilder.fields.map((field, fieldIndex) => (
                   <div
                     key={field.id}
-                    className="grid gap-2 rounded-md border bg-card p-2 md:grid-cols-5"
+                    className="grid items-center gap-x-2 gap-y-3 rounded-md border bg-card p-2 md:grid-cols-5"
                   >
-                    <Input
-                      value={field.key}
-                      onChange={(event) =>
-                        setSchemaBuilder((current) => ({
-                          ...current,
-                          fields: current.fields.map((candidate, candidateIndex) =>
-                            candidateIndex === fieldIndex
-                              ? { ...candidate, key: event.target.value }
-                              : candidate,
-                          ),
-                        }))
-                      }
-                      placeholder="Field key"
-                    />
-                    <Input
-                      value={field.label}
-                      onChange={(event) =>
-                        setSchemaBuilder((current) => ({
-                          ...current,
-                          fields: current.fields.map((candidate, candidateIndex) =>
-                            candidateIndex === fieldIndex
-                              ? { ...candidate, label: event.target.value }
-                              : candidate,
-                          ),
-                        }))
-                      }
-                      placeholder="Field label"
-                    />
+                    <div className="space-y-1">
+                      <Label htmlFor={`schema-editor-field-key-${field.id}`}>
+                        Field key
+                      </Label>
+                      <Input
+                        id={`schema-editor-field-key-${field.id}`}
+                        value={field.key}
+                        onChange={(event) =>
+                          setSchemaBuilder((current) => ({
+                            ...current,
+                            fields: current.fields.map((candidate, candidateIndex) =>
+                              candidateIndex === fieldIndex
+                                ? { ...candidate, key: event.target.value }
+                                : candidate,
+                            ),
+                          }))
+                        }
+                        placeholder="Field key"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`schema-editor-field-label-${field.id}`}>
+                        Field label
+                      </Label>
+                      <Input
+                        id={`schema-editor-field-label-${field.id}`}
+                        value={field.label}
+                        onChange={(event) =>
+                          setSchemaBuilder((current) => ({
+                            ...current,
+                            fields: current.fields.map((candidate, candidateIndex) =>
+                              candidateIndex === fieldIndex
+                                ? { ...candidate, label: event.target.value }
+                                : candidate,
+                            ),
+                          }))
+                        }
+                        placeholder="Field label"
+                      />
+                    </div>
                     <Select
                       value={field.type}
                       onValueChange={(value) =>
@@ -4470,8 +4507,12 @@ function PluginStudioRoute() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <div className="flex items-center gap-2 rounded-md border px-2 text-sm">
+                    <Label
+                      htmlFor={`schema-editor-field-required-${field.id}`}
+                      className="flex h-full cursor-pointer items-center gap-2 rounded-md border px-2 text-sm font-normal"
+                    >
                       <Checkbox
+                        id={`schema-editor-field-required-${field.id}`}
                         checked={field.required}
                         onCheckedChange={(checked) =>
                           setSchemaBuilder((current) => ({
@@ -4484,8 +4525,8 @@ function PluginStudioRoute() {
                           }))
                         }
                       />
-                      Required
-                    </div>
+                      <span>Required</span>
+                    </Label>
                     <Button
                       type="button"
                       variant="ghost"
@@ -4523,47 +4564,62 @@ function PluginStudioRoute() {
             {!workspaceWorkflow ? null : (
               <div className="space-y-3">
                 <div className="grid gap-2 md:grid-cols-3">
-                  <Input
-                    value={workspaceWorkflow.workflowId}
-                    onChange={(event) =>
-                      updateActiveWorkflow((current) => ({
-                        ...current,
-                        workflowId: event.target.value,
-                      }))
-                    }
-                    placeholder="Workflow ID"
-                  />
-                  <Input
-                    value={workspaceWorkflow.table}
-                    onChange={(event) =>
-                      updateActiveWorkflow((current) => ({
-                        ...current,
-                        table: event.target.value,
-                      }))
-                    }
-                    placeholder="Connected schema ID"
-                  />
-                  <Select
-                    value={workspaceWorkflow.hook}
-                    onValueChange={(value) =>
-                      updateActiveWorkflow((current) => ({
-                        ...current,
-                        hook: value as WorkflowDoc['hook'],
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Hook" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="beforeCreate">beforeCreate</SelectItem>
-                      <SelectItem value="afterCreate">afterCreate</SelectItem>
-                      <SelectItem value="beforeUpdate">beforeUpdate</SelectItem>
-                      <SelectItem value="afterUpdate">afterUpdate</SelectItem>
-                      <SelectItem value="beforeDelete">beforeDelete</SelectItem>
-                      <SelectItem value="afterDelete">afterDelete</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-1">
+                    <Label htmlFor="workflow-editor-workflow-id">
+                      Workflow ID
+                    </Label>
+                    <Input
+                      id="workflow-editor-workflow-id"
+                      value={workspaceWorkflow.workflowId}
+                      onChange={(event) =>
+                        updateActiveWorkflow((current) => ({
+                          ...current,
+                          workflowId: event.target.value,
+                        }))
+                      }
+                      placeholder="Workflow ID"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="workflow-editor-table">
+                      Connected schema ID
+                    </Label>
+                    <Input
+                      id="workflow-editor-table"
+                      value={workspaceWorkflow.table}
+                      onChange={(event) =>
+                        updateActiveWorkflow((current) => ({
+                          ...current,
+                          table: event.target.value,
+                        }))
+                      }
+                      placeholder="Connected schema ID"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="workflow-editor-hook">Hook</Label>
+                    <Select
+                      value={workspaceWorkflow.hook}
+                      onValueChange={(value) =>
+                        updateActiveWorkflow((current) => ({
+                          ...current,
+                          hook: value as WorkflowDoc['hook'],
+                        }))
+                      }
+                    >
+                      <SelectTrigger id="workflow-editor-hook">
+                        <SelectValue placeholder="Hook" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beforeCreate">beforeCreate</SelectItem>
+                        <SelectItem value="afterCreate">afterCreate</SelectItem>
+                        <SelectItem value="beforeUpdate">beforeUpdate</SelectItem>
+                        <SelectItem value="afterUpdate">afterUpdate</SelectItem>
+                        <SelectItem value="beforeDelete">beforeDelete</SelectItem>
+                        <SelectItem value="afterDelete">afterDelete</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
                   <div className="flex items-center justify-between">

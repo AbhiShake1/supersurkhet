@@ -16,11 +16,13 @@ describe('admin plugins loading behavior', () => {
     );
   });
 
-  it('supports pre-install preview and static marketplace fallback for owners', () => {
+  it('supports marketplace seed fallback while using install rows for ranking', () => {
     const source = readFileSync(filePath, 'utf8');
 
     expect(source).toContain('mergeMarketplaceReleasesWithSeed');
-    expect(source).toContain('Preview dashboard impact');
+    expect(source).toContain(
+      'buildMarketplaceGroups(catalog, { installs: allInstalls })',
+    );
     expect(source).toContain('ensureMarketplaceSeedReleases');
   });
 });

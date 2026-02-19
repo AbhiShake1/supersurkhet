@@ -1,6 +1,6 @@
 import type { SchemaKeys } from '@gta/react-hooks';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Search, Star } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { AutoTable } from '@/components/auto-table';
@@ -26,13 +26,13 @@ export const Route = createFileRoute('/$businessName/admin/plugins')({
   component: PluginsRouteComponent,
 });
 
-type ChartType = 'top-free' | 'top-grossing' | 'top-paid';
+type ChartType = 'top-installed' | 'recently-updated';
 
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
   const { user } = useAuth();
   const [query, setQuery] = useState('');
-  const [chartType, setChartType] = useState<ChartType>('top-free');
+  const [chartType, setChartType] = useState<ChartType>('top-installed');
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const { data: businesses = [], isLoading } = api.business.useGet({
@@ -46,6 +46,7 @@ function PluginsRouteComponent() {
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [businessId],
   });
+  const { data: allInstallRows = [] } = api.businessPluginInstall.useGet();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
 
   useEffect(() => {
@@ -53,6 +54,7 @@ function PluginsRouteComponent() {
   }, [actorUserId]);
 
   const installs = installRows as BusinessPluginInstallDoc[];
+  const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
   const liveReleases = releaseRows as PluginReleaseDoc[];
   const releases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(liveReleases),
@@ -71,7 +73,10 @@ function PluginsRouteComponent() {
     [releases, installs],
   );
 
-  const marketplace = useMemo(() => buildMarketplaceGroups(catalog), [catalog]);
+  const marketplace = useMemo(
+    () => buildMarketplaceGroups(catalog, { installs: allInstalls }),
+    [catalog, allInstalls],
+  );
 
   const visibleItems = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -89,11 +94,9 @@ function PluginsRouteComponent() {
   }, [marketplace, query, selectedCategory]);
 
   const topCharts =
-    chartType === 'top-grossing'
-      ? marketplace.topGrossing
-      : chartType === 'top-paid'
-        ? marketplace.topPaid
-        : marketplace.topFree;
+    chartType === 'recently-updated'
+      ? marketplace.recentlyUpdated
+      : marketplace.topInstalled;
 
   if (isLoading && !business) {
     return <PluginsPageSkeleton />;
@@ -131,18 +134,16 @@ function PluginsRouteComponent() {
             className="pl-9"
           />
           <div className="flex flex-wrap gap-2">
-            {(['top-free', 'top-grossing', 'top-paid'] as const).map((type) => (
+            {(['top-installed', 'recently-updated'] as const).map((type) => (
               <Button
                 key={type}
                 size="sm"
                 variant={chartType === type ? 'default' : 'outline'}
                 onClick={() => setChartType(type)}
               >
-                {type === 'top-free'
-                  ? 'Top free'
-                  : type === 'top-grossing'
-                    ? 'Top grossing'
-                    : 'Top paid'}
+                {type === 'top-installed'
+                  ? 'Top installed'
+                  : 'Recently updated'}
               </Button>
             ))}
           </div>
@@ -173,10 +174,8 @@ function PluginsRouteComponent() {
                 <p className="truncate text-xs text-muted-foreground">
                   {plugin.category}
                 </p>
-                <p className="flex items-center text-xs text-muted-foreground">
-                  <Star className="mr-1 size-3 fill-current" />
-                  {plugin.averageRating} · {plugin.installs.toLocaleString()}{' '}
-                  installs
+                <p className="text-xs text-muted-foreground">
+                  {plugin.installs.toLocaleString()} installs
                 </p>
               </div>
             </Link>
@@ -238,10 +237,7 @@ function PluginsRouteComponent() {
                         {plugin.description}
                       </p>
                       <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="flex items-center">
-                          <Star className="mr-1 size-3 fill-current" />
-                          {plugin.averageRating}
-                        </span>
+                        <span>{plugin.publisher}</span>
                         <span>{plugin.installs.toLocaleString()} installs</span>
                       </div>
                     </Link>

@@ -12,14 +12,11 @@ function getRouteContent() {
 }
 
 describe('plugin details empty reviews state', () => {
-  it('shows plugin-specific call-to-action when there are no reviews', () => {
+  it('shows DB-backed review data notice when no review table exists', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('pluginData.title');
-    expect(content).toContain('has no reviews yet.');
-    expect(content).toContain('first one to review.');
-    expect(content).not.toContain(
-      'No reviews yet. Be the first to leave feedback.',
-    );
+    expect(content).toContain('Ratings and reviews');
+    expect(content).toContain('not stored in the database');
+    expect(content).not.toContain('first one to review.');
   });
 });

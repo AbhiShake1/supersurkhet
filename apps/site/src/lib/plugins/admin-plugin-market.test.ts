@@ -4,9 +4,9 @@ import {
   buildMarketplaceGroups,
   buildPluginDetailView,
   groupPluginReviewsByUser,
+  type PluginUserReview,
   pickSimilarPlugins,
   summarizeReviewStats,
-  type PluginUserReview,
 } from './admin-plugin-market';
 
 function entry(
@@ -47,19 +47,60 @@ function entry(
 }
 
 describe('admin plugin market helpers', () => {
-  it('groups plugins by category and orders top grossing by grossing score', () => {
+  it('groups plugins by category and orders top installed by real install counts', () => {
     const catalog = [
       entry({ pluginId: 'acme.inventory', capabilities: ['inventory:write'] }),
       entry({ pluginId: 'acme.finance', capabilities: ['invoice:write'] }),
       entry({ pluginId: 'acme.loyalty', capabilities: ['customer:write'] }),
     ];
+    const installs = [
+      {
+        id: 'i-1',
+        businessId: 'b-1',
+        pluginId: 'acme.inventory',
+        version: '1.0.0',
+        manifestHash: 'm',
+        artifactHash: 'a',
+        installedAt: '2026-02-15T00:00:00.000Z',
+        installedByUserId: 'u1',
+        status: 'active',
+      },
+      {
+        id: 'i-2',
+        businessId: 'b-2',
+        pluginId: 'acme.inventory',
+        version: '1.0.0',
+        manifestHash: 'm',
+        artifactHash: 'a',
+        installedAt: '2026-02-15T00:00:00.000Z',
+        installedByUserId: 'u2',
+        status: 'active',
+      },
+      {
+        id: 'i-3',
+        businessId: 'b-3',
+        pluginId: 'acme.finance',
+        version: '1.0.0',
+        manifestHash: 'm',
+        artifactHash: 'a',
+        installedAt: '2026-02-15T00:00:00.000Z',
+        installedByUserId: 'u3',
+        status: 'paused',
+      },
+    ] as const;
 
-    const groups = buildMarketplaceGroups(catalog);
+    const groups = buildMarketplaceGroups(catalog, {
+      installs: installs as never,
+    });
 
     expect(groups.categories.length).toBeGreaterThan(0);
-    expect(groups.topGrossing[0]?.grossingRankScore).toBeGreaterThanOrEqual(
-      groups.topGrossing[1]?.grossingRankScore ?? 0,
-    );
+    expect(
+      groups.all.find((item) => item.pluginId === 'acme.inventory')?.installs,
+    ).toBe(2);
+    expect(
+      groups.all.find((item) => item.pluginId === 'acme.finance')?.installs,
+    ).toBe(0);
+    expect(groups.topInstalled[0]?.pluginId).toBe('acme.inventory');
   });
 
   it('computes review aggregate with average and total count', () => {

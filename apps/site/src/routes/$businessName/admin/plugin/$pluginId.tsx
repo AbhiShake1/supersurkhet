@@ -1,10 +1,7 @@
-import { RatingGroup } from '@ark-ui/react/rating-group';
 import type { SchemaKeys } from '@gta/react-hooks';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   CalendarDays,
-  ChevronDown,
-  Copy,
   Download,
   ExternalLink,
   MessageCircle,
@@ -13,7 +10,6 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -35,15 +31,11 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
   buildMarketplaceGroups,
   buildPluginDetailView,
-  groupPluginReviewsByUser,
-  type PluginUserReview,
   pickSimilarPlugins,
 } from '@/lib/plugins/admin-plugin-market';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
@@ -62,10 +54,6 @@ export const Route = createFileRoute('/$businessName/admin/plugin/$pluginId')({
   component: PluginDetailsPage,
 });
 
-type PluginMedia = { iconUrl?: string; screenshotUrls?: string[] };
-const STORAGE_REVIEWS = 'plugin-marketplace-reviews';
-const STORAGE_MEDIA = 'plugin-marketplace-media';
-
 function PluginDetailsPage() {
   const { businessName, pluginId } = Route.useParams();
   const search = Route.useSearch();
@@ -74,17 +62,8 @@ function PluginDetailsPage() {
   const { fire } = useConfetti();
   const actorUserId = user?._?.soul ?? 'anon';
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [reviews, setReviews] = useState<PluginUserReview[]>([]);
-  const [mediaMap, setMediaMap] = useState<Record<string, PluginMedia>>({});
-  const [ratingInput, setRatingInput] = useState(5);
-  const [commentInput, setCommentInput] = useState('');
-  const [iconInput, setIconInput] = useState('');
-  const [screenshotsInput, setScreenshotsInput] = useState('');
   const [installing, setInstalling] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
-  const [expandedReviewUserIds, setExpandedReviewUserIds] = useState<string[]>(
-    [],
-  );
 
   const { data: businesses = [] } = api.business.useGet({
     keys: [businessName],
@@ -102,30 +81,15 @@ function PluginDetailsPage() {
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [businessId],
   });
+  const { data: allInstallRows = [] } = api.businessPluginInstall.useGet();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
 
   useEffect(() => {
     void ensureMarketplaceSeedReleases({ data: { actorUserId } });
   }, [actorUserId]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const parsedReviews = JSON.parse(
-        window.localStorage.getItem(STORAGE_REVIEWS) ?? '[]',
-      ) as PluginUserReview[];
-      const parsedMedia = JSON.parse(
-        window.localStorage.getItem(STORAGE_MEDIA) ?? '{}',
-      ) as Record<string, PluginMedia>;
-      setReviews(parsedReviews);
-      setMediaMap(parsedMedia);
-    } catch {
-      setReviews([]);
-      setMediaMap({});
-    }
-  }, []);
-
   const installs = installRows as BusinessPluginInstallDoc[];
+  const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
   const liveReleases = releaseRows as PluginReleaseDoc[];
   const releases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(liveReleases),
@@ -143,35 +107,24 @@ function PluginDetailsPage() {
       }),
     [releases, installs],
   );
-  const market = useMemo(() => buildMarketplaceGroups(catalog), [catalog]);
+  const market = useMemo(
+    () => buildMarketplaceGroups(catalog, { installs: allInstalls }),
+    [catalog, allInstalls],
+  );
   const plugin = useMemo(
     () => market.all.find((item) => item.pluginId === decodedPluginId),
     [market, decodedPluginId],
   );
 
-  const decoratedPlugin = useMemo(() => {
-    if (!plugin) return null;
-    const media = mediaMap[plugin.pluginId];
-    return {
-      ...plugin,
-      iconUrl: media?.iconUrl ?? plugin.iconUrl,
-      screenshotUrls:
-        media?.screenshotUrls?.filter(Boolean) ?? plugin.screenshotUrls,
-    };
-  }, [plugin, mediaMap]);
+  const decoratedPlugin = plugin;
 
   const details = useMemo(
     () =>
       decoratedPlugin
-        ? buildPluginDetailView(decoratedPlugin, reviews, actorUserId)
+        ? buildPluginDetailView(decoratedPlugin, [], actorUserId)
         : null,
-    [decoratedPlugin, reviews, actorUserId],
+    [decoratedPlugin, actorUserId],
   );
-  const groupedReviews = useMemo(() => {
-    const currentPluginId = decoratedPlugin?.pluginId;
-    if (!currentPluginId) return [];
-    return groupPluginReviewsByUser(currentPluginId, reviews, actorUserId);
-  }, [decoratedPlugin?.pluginId, reviews, actorUserId]);
 
   const similar = useMemo(
     () =>
@@ -195,27 +148,6 @@ function PluginDetailsPage() {
       : undefined;
     return (matchingTab ?? validTabs[0])?.schema?.trim() ?? null;
   }, [details, activePreviewTabKey]);
-
-  useEffect(() => {
-    if (groupedReviews.length === 0) {
-      setExpandedReviewUserIds([]);
-      return;
-    }
-
-    setExpandedReviewUserIds((previous) => {
-      const validUserIds = new Set(groupedReviews.map((group) => group.userId));
-      const kept = previous.filter((userId) => validUserIds.has(userId));
-      const ownUserId = groupedReviews.find(
-        (group) => group.isCurrentUser,
-      )?.userId;
-
-      if (ownUserId && !kept.includes(ownUserId)) {
-        return [ownUserId, ...kept];
-      }
-
-      return kept;
-    });
-  }, [groupedReviews]);
 
   if (!decoratedPlugin || !details) {
     return (
@@ -298,59 +230,6 @@ function PluginDetailsPage() {
     toast.success('Plugin link copied');
   }
 
-  function persistReviews(next: PluginUserReview[]) {
-    setReviews(next);
-    window.localStorage.setItem(STORAGE_REVIEWS, JSON.stringify(next));
-  }
-
-  function persistMedia(next: Record<string, PluginMedia>) {
-    setMediaMap(next);
-    window.localStorage.setItem(STORAGE_MEDIA, JSON.stringify(next));
-  }
-
-  function submitReview() {
-    if (!commentInput.trim()) {
-      toast.error('Write a short review first.');
-      return;
-    }
-    const review: PluginUserReview = {
-      id: crypto.randomUUID(),
-      pluginId: pluginData.pluginId,
-      userId: actorUserId,
-      userLabel: user?.name ?? user?.email ?? 'Anonymous',
-      rating: ratingInput,
-      comment: commentInput.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    persistReviews([review, ...reviews]);
-    setCommentInput('');
-    toast.success('Review added');
-  }
-
-  function saveMedia() {
-    const screenshotUrls = screenshotsInput
-      .split('\n')
-      .map((item) => item.trim())
-      .filter(Boolean);
-    const next = {
-      ...mediaMap,
-      [pluginData.pluginId]: {
-        iconUrl: iconInput.trim() || undefined,
-        screenshotUrls,
-      },
-    };
-    persistMedia(next);
-    toast.success('Plugin media saved');
-  }
-
-  function toggleReviewGroup(userId: string) {
-    setExpandedReviewUserIds((previous) =>
-      previous.includes(userId)
-        ? previous.filter((id) => id !== userId)
-        : [...previous, userId],
-    );
-  }
-
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 md:px-8">
       <Button asChild variant="ghost">
@@ -370,12 +249,16 @@ function PluginDetailsPage() {
           <div className="grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
             <Stat
               label="Rating"
-              value={`${details.reviewStats.averageRating}★`}
+              value={
+                pluginData.averageRating > 0
+                  ? `${pluginData.averageRating}★`
+                  : 'N/A'
+              }
               icon={<Star className="size-4 text-amber-500" />}
             />
             <Stat
               label="Reviews"
-              value={details.reviewStats.totalReviews.toLocaleString()}
+              value={pluginData.reviewCount.toLocaleString()}
               icon={<MessageCircle className="size-4 text-sky-500" />}
             />
             <Stat
@@ -546,11 +429,9 @@ function PluginDetailsPage() {
                 <Badge variant="outline">
                   v{pluginData.latestRelease.version}
                 </Badge>
-                {pluginData.priceModel === 'paid' ? (
-                  <Badge>Paid</Badge>
-                ) : (
-                  <Badge variant="secondary">Free</Badge>
-                )}
+                <Badge variant="secondary">
+                  {pluginData.latestRelease.visibility}
+                </Badge>
               </div>
             </CardContent>
           </Card>
@@ -560,229 +441,15 @@ function PluginDetailsPage() {
               <CardTitle>Ratings and reviews</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 px-5">
-              {details.reviewStats.totalReviews > 0 ? (
-                <div className="grid gap-2 md:grid-cols-[140px_1fr]">
-                  <div>
-                    <p className="text-6xl font-semibold">
-                      {details.reviewStats.averageRating}
-                    </p>
-                    <p className="flex items-center text-sm text-muted-foreground">
-                      <Star className="mr-1 size-3 fill-current" />
-                      {details.reviewStats.totalReviews.toLocaleString()} reviews
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    {[5, 4, 3, 2, 1].map((value) => {
-                      const count = details.reviewStats.breakdown[value] ?? 0;
-                      const width = Math.round(
-                        (count / details.reviewStats.totalReviews) * 100,
-                      );
-                      return (
-                        <div
-                          key={value}
-                          className="flex items-center gap-2 text-xs"
-                        >
-                          <span className="w-3">{value}</span>
-                          <div className="h-2 flex-1 rounded bg-muted">
-                            <div
-                              className="h-2 rounded bg-emerald-600"
-                              style={{ width: `${width}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  This plugin ({pluginData.title}) has no reviews yet. Be the
-                  first one to review.
-                </p>
-              )}
-
-              <div className="rounded-xl border p-3">
-                <p className="mb-2 text-sm font-medium">Add your review</p>
-                <RatingGroup.Root
-                  count={5}
-                  value={ratingInput}
-                  allowHalf={false}
-                  onValueChange={({ value }) =>
-                    setRatingInput(Math.min(5, Math.max(1, value || 1)))
-                  }
-                >
-                  <RatingGroup.Control className="flex items-center gap-1">
-                    <RatingGroup.Context>
-                      {({ items }) =>
-                        items.map((item) => (
-                          <RatingGroup.Item
-                            key={item}
-                            index={item}
-                            className="cursor-pointer rounded-sm p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                          >
-                            <RatingGroup.ItemContext>
-                              {({ highlighted }) => (
-                                <Star
-                                  className={cn(
-                                    'size-5 transition-colors',
-                                    highlighted
-                                      ? 'fill-amber-400 text-amber-500'
-                                      : 'text-muted-foreground/60',
-                                  )}
-                                />
-                              )}
-                            </RatingGroup.ItemContext>
-                          </RatingGroup.Item>
-                        ))
-                      }
-                    </RatingGroup.Context>
-                  </RatingGroup.Control>
-                </RatingGroup.Root>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {ratingInput} out of 5
-                </p>
-                <Textarea
-                  className="mt-2"
-                  placeholder="Write your feedback"
-                  value={commentInput}
-                  onChange={(event) => setCommentInput(event.target.value)}
-                />
-                <Button size="sm" className="mt-2" onClick={submitReview}>
-                  Post review
-                </Button>
-              </div>
-
-              {groupedReviews.length > 0 ? (
-                <div className="space-y-3">
-                  {groupedReviews.map((group) => {
-                    const isOpen = expandedReviewUserIds.includes(group.userId);
-                    return (
-                      <motion.article
-                        key={group.userId}
-                        layout
-                        className={cn(
-                          'overflow-hidden rounded-xl border',
-                          group.isCurrentUser
-                            ? 'border-primary/35 bg-primary/[0.06] dark:bg-primary/[0.12]'
-                            : 'border-border/70 bg-card',
-                        )}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => toggleReviewGroup(group.userId)}
-                          className="flex w-full items-start justify-between gap-3 px-4 py-3 text-left"
-                        >
-                          <div className="space-y-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="text-sm font-semibold">
-                                {group.isCurrentUser
-                                  ? 'Your feedback'
-                                  : group.userLabel}
-                              </p>
-                              {group.isCurrentUser ? (
-                                <Badge className="h-5 bg-primary text-primary-foreground">
-                                  You
-                                </Badge>
-                              ) : null}
-                              {group.totalReviews > 1 ? (
-                                <Badge variant="secondary" className="h-5">
-                                  {group.totalReviews} reviews
-                                </Badge>
-                              ) : null}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(
-                                group.latestReviewedAt,
-                              ).toLocaleDateString()}{' '}
-                              · {Math.round(group.latestReview.rating)}★
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {group.latestReview.comment}
-                            </p>
-                          </div>
-                          <ChevronDown
-                            className={cn(
-                              'mt-1 size-4 text-muted-foreground transition-transform duration-200',
-                              isOpen && 'rotate-180',
-                            )}
-                          />
-                        </button>
-
-                        <AnimatePresence initial={false}>
-                          {isOpen ? (
-                            <motion.div
-                              key="content"
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: 'auto', opacity: 1 }}
-                              exit={{ height: 0, opacity: 0 }}
-                              transition={{
-                                duration: 0.25,
-                                ease: [0.16, 1, 0.3, 1],
-                              }}
-                              className="overflow-hidden"
-                            >
-                              <div className="space-y-2 border-t border-border/70 px-4 pb-4 pt-3">
-                                {group.reviews.map((review) => (
-                                  <div
-                                    key={review.id}
-                                    className={cn(
-                                      'rounded-lg border p-3',
-                                      group.isCurrentUser
-                                        ? 'border-primary/20 bg-primary/[0.03]'
-                                        : 'border-border/70 bg-muted/20',
-                                    )}
-                                  >
-                                    <div className="flex items-center justify-between gap-2 text-xs">
-                                      <span className="font-medium">
-                                        {new Date(
-                                          review.createdAt,
-                                        ).toLocaleDateString()}
-                                      </span>
-                                      <span className="text-emerald-700 dark:text-emerald-300">
-                                        {'★'.repeat(Math.round(review.rating))}
-                                      </span>
-                                    </div>
-                                    <p className="mt-2 text-sm text-muted-foreground">
-                                      {review.comment}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </motion.div>
-                          ) : null}
-                        </AnimatePresence>
-                      </motion.article>
-                    );
-                  })}
-                </div>
-              ) : null}
+              <p className="text-sm text-muted-foreground">
+                Ratings and review submissions are not stored in the database
+                yet, so marketplace ratings are hidden for now.
+              </p>
             </CardContent>
           </Card>
         </div>
 
         <aside className="space-y-4">
-          <Card className="py-4">
-            <CardHeader className="px-4 pb-2">
-              <CardTitle className="text-base">Plugin media</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 px-4">
-              <Input
-                placeholder="Icon URL"
-                value={iconInput}
-                onChange={(event) => setIconInput(event.target.value)}
-              />
-              <Textarea
-                placeholder="Screenshot URLs (one per line)"
-                value={screenshotsInput}
-                onChange={(event) => setScreenshotsInput(event.target.value)}
-              />
-              <Button size="sm" onClick={saveMedia}>
-                <Copy className="mr-2 size-4" />
-                Save media
-              </Button>
-            </CardContent>
-          </Card>
-
           <Card className="py-4">
             <CardHeader className="px-4 pb-2">
               <CardTitle className="text-base">Similar plugins</CardTitle>
@@ -807,7 +474,7 @@ function PluginDetailsPage() {
                     </p>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {item.averageRating}★
+                    {item.installs.toLocaleString()} installs
                   </span>
                 </Link>
               ))}
