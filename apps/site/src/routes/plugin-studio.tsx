@@ -490,6 +490,204 @@ function isInvalidObjectJson(rawValue: string | undefined) {
   );
 }
 
+function parseJsonRecord(value: string | undefined): Record<string, unknown> {
+  return parseJsonObject(value) ?? {};
+}
+
+function setJsonStringEntry(
+  value: string | undefined,
+  key: string,
+  nextValue: string | undefined,
+) {
+  const next = parseJsonRecord(value);
+  const normalized = nextValue?.trim() ?? '';
+  if (!normalized) {
+    delete next[key];
+  } else {
+    next[key] = normalized;
+  }
+  return stringifyJsonInput(next);
+}
+
+function setJsonNumberEntry(
+  value: string | undefined,
+  key: string,
+  nextValue: string | undefined,
+) {
+  const next = parseJsonRecord(value);
+  const normalized = nextValue?.trim() ?? '';
+  if (!normalized) {
+    delete next[key];
+  } else {
+    const parsed = Number(normalized);
+    next[key] = Number.isFinite(parsed) ? parsed : normalized;
+  }
+  return stringifyJsonInput(next);
+}
+
+function readJsonStringEntry(value: string | undefined, key: string): string {
+  const record = parseJsonRecord(value);
+  return typeof record[key] === 'string' ? (record[key] as string) : '';
+}
+
+function readJsonNumberEntry(value: string | undefined, key: string): string {
+  const record = parseJsonRecord(value);
+  const entry = record[key];
+  if (typeof entry === 'number') return String(entry);
+  if (typeof entry === 'string') return entry;
+  return '';
+}
+
+function toExpressionLiteral(value: string | undefined): ExpressionDoc {
+  if (!value) return '';
+  const trimmed = value.trim();
+  if (trimmed === '') return '';
+  if (trimmed === 'true') return true;
+  if (trimmed === 'false') return false;
+  const asNumber = Number(trimmed);
+  if (Number.isFinite(asNumber) && /^-?\d+(\.\d+)?$/.test(trimmed)) {
+    return asNumber;
+  }
+  return trimmed;
+}
+
+function toBuilderFieldDerivations(
+  behaviorJson: string | undefined,
+): BuilderFieldDerivation[] {
+  const behavior = parseJsonRecord(behaviorJson);
+  const derivations = behavior.derivations;
+  if (!Array.isArray(derivations)) return [];
+
+  const result: BuilderFieldDerivation[] = [];
+  for (const entry of derivations) {
+    if (!isRecord(entry)) continue;
+    const target = entry.target;
+    const expression = entry.expression;
+    if (
+      (target !== 'value' && target !== 'inputProps' && target !== 'customData') ||
+      !isRecord(expression)
+    ) {
+      continue;
+    }
+
+    let source: BuilderFieldDerivation['source'] = 'payload';
+    let path = '';
+    let fallbackValue: string | undefined;
+
+    if (
+      expression.kind === 'ref' &&
+      typeof expression.source === 'string' &&
+      Array.isArray(expression.path)
+    ) {
+      source = expression.source as BuilderFieldDerivation['source'];
+      path = expression.path
+        .filter((segment): segment is string => typeof segment === 'string')
+        .join('.');
+    } else if (
+      expression.kind === 'op' &&
+      expression.op === 'coalesce' &&
+      Array.isArray(expression.args) &&
+      expression.args.length >= 2 &&
+      isRecord(expression.args[0]) &&
+      expression.args[0].kind === 'ref' &&
+      typeof expression.args[0].source === 'string' &&
+      Array.isArray(expression.args[0].path)
+    ) {
+      source = expression.args[0].source as BuilderFieldDerivation['source'];
+      path = expression.args[0].path
+        .filter((segment): segment is string => typeof segment === 'string')
+        .join('.');
+      const fallback = expression.args[1];
+      fallbackValue =
+        typeof fallback === 'string' || typeof fallback === 'number'
+          ? String(fallback)
+          : fallback === true
+            ? 'true'
+            : fallback === false
+              ? 'false'
+              : undefined;
+    } else {
+      continue;
+    }
+
+    result.push({
+      id: generateBuilderId(),
+      target,
+      key: typeof entry.key === 'string' ? entry.key : '',
+      source,
+      path,
+      fallbackValue,
+    });
+  }
+  return result;
+}
+
+function toBuilderFieldRefinements(
+  behaviorJson: string | undefined,
+  fieldKey: string,
+): BuilderFieldRefinement[] {
+  const behavior = parseJsonRecord(behaviorJson);
+  const refinements = behavior.refinements;
+  if (!Array.isArray(refinements)) return [];
+
+  const result: BuilderFieldRefinement[] = [];
+  for (const entry of refinements) {
+    if (!isRecord(entry) || !isRecord(entry.when)) continue;
+    const when = entry.when;
+    if (
+      when.kind !== 'op' ||
+      when.op !== 'not' ||
+      !Array.isArray(when.args) ||
+      !isRecord(when.args[0])
+    ) {
+      continue;
+    }
+    const compare = when.args[0];
+    if (
+      compare.kind !== 'op' ||
+      !Array.isArray(compare.args) ||
+      compare.args.length < 2
+    ) {
+      continue;
+    }
+    const operator = parseRuleOperator(compare.op);
+    if (!operator) continue;
+    const left = compare.args[0];
+    const right = compare.args[1];
+    const leftField = tryReadPayloadRefField(left);
+    if (!leftField || leftField !== fieldKey) continue;
+
+    if (tryReadPayloadRefField(right)) {
+      result.push({
+        id: generateBuilderId(),
+        operator,
+        rightKind: 'payloadField',
+        rightPath: tryReadPayloadRefField(right) ?? '',
+        message:
+          typeof entry.message === 'string' ? entry.message : 'Validation failed',
+      });
+      continue;
+    }
+
+    result.push({
+      id: generateBuilderId(),
+      operator,
+      rightKind: 'literal',
+      rightLiteral:
+        typeof right === 'string' || typeof right === 'number'
+          ? String(right)
+          : right === true
+            ? 'true'
+            : right === false
+              ? 'false'
+              : '',
+      message:
+        typeof entry.message === 'string' ? entry.message : 'Validation failed',
+    });
+  }
+  return result;
+}
+
 type BuilderField = {
   id: string;
   key: string;
@@ -509,6 +707,8 @@ type BuilderField = {
   arrayItemType?: BuilderLeafFieldType;
   arrayItemEnumValuesText?: string;
   objectFields?: BuilderObjectField[];
+  derivations?: BuilderFieldDerivation[];
+  fieldRefinements?: BuilderFieldRefinement[];
   useInt?: boolean;
   usePositive?: boolean;
   useNonNegative?: boolean;
@@ -578,6 +778,24 @@ type BuilderObjectField = {
   enumValuesText?: string;
 };
 
+type BuilderFieldDerivation = {
+  id: string;
+  target: 'value' | 'inputProps' | 'customData';
+  key: string;
+  source: 'payload' | 'formValues' | 'context' | 'sourceRow' | 'row';
+  path: string;
+  fallbackValue?: string;
+};
+
+type BuilderFieldRefinement = {
+  id: string;
+  operator: RuleOperator;
+  rightKind: 'literal' | 'payloadField';
+  rightLiteral?: string;
+  rightPath?: string;
+  message: string;
+};
+
 type HashPreviewInput = {
   pluginId: string;
   version: string;
@@ -640,6 +858,63 @@ function toSchemaFieldDoc(field: BuilderField): SchemaFieldDoc {
   const behavior = {
     ...(parseJsonObject(field.behaviorJson) ?? {}),
     fieldConfig,
+    ...(field.derivations && field.derivations.length > 0
+      ? {
+        derivations: field.derivations.map((derivation) => {
+          const refExpression = {
+            kind: 'ref' as const,
+            source: derivation.source,
+            path: derivation.path
+              .split('.')
+              .map((segment) => segment.trim())
+              .filter(Boolean),
+          };
+          return {
+            target: derivation.target,
+            key: derivation.key || undefined,
+            expression: derivation.fallbackValue?.trim()
+              ? ({
+                kind: 'op' as const,
+                op: 'coalesce' as const,
+                args: [refExpression, toExpressionLiteral(derivation.fallbackValue)],
+              })
+              : refExpression,
+          };
+        }),
+      }
+      : {}),
+    ...(field.fieldRefinements && field.fieldRefinements.length > 0
+      ? {
+        refinements: field.fieldRefinements.map((refinement) => ({
+          code: 'custom' as const,
+          path: field.key ? [field.key] : undefined,
+          message: refinement.message || 'Validation failed',
+          when: {
+            kind: 'op' as const,
+            op: 'not' as const,
+            args: [
+              {
+                kind: 'op' as const,
+                op: refinement.operator,
+                args: [
+                  { kind: 'ref' as const, source: 'payload' as const, path: [field.key] },
+                  refinement.rightKind === 'payloadField'
+                    ? {
+                      kind: 'ref' as const,
+                      source: 'payload' as const,
+                      path: (refinement.rightPath ?? '')
+                        .split('.')
+                        .map((segment) => segment.trim())
+                        .filter(Boolean),
+                    }
+                    : toExpressionLiteral(refinement.rightLiteral),
+                ],
+              },
+            ],
+          },
+        })),
+      }
+      : {}),
   };
 
   return {
@@ -952,6 +1227,13 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
           .filter((nested) => nested.type !== 'object' && nested.type !== 'array')
           .map(toBuilderObjectField)
         : undefined,
+    derivations: toBuilderFieldDerivations(
+      stringifyJsonInput(extraBehavior),
+    ),
+    fieldRefinements: toBuilderFieldRefinements(
+      stringifyJsonInput(extraBehavior),
+      field.key,
+    ),
   };
 }
 
@@ -1100,6 +1382,7 @@ function PluginStudioRoute() {
     DEFAULT_WORKFLOW_DOC.workflowId,
   );
   const [isSchemaEditorOpen, setIsSchemaEditorOpen] = useState(false);
+  const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
   const [isWorkflowEditorOpen, setIsWorkflowEditorOpen] = useState(false);
   const [schemaBuilder, setSchemaBuilder] = useState<BuilderSchema>({
     schemaId: DEFAULT_SCHEMA_DOC.schemaId,
@@ -1596,6 +1879,18 @@ function PluginStudioRoute() {
     [availableRuleFields, compatibleRuleFieldsByLeftField],
   );
   const isInitialLoading = isReleaseLoading && releases.length === 0;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const storageKey = 'plugin-studio.templates-tour-seen.v1';
+    if (window.localStorage.getItem(storageKey) === '1') {
+      return;
+    }
+    setIsTemplatesDialogOpen(true);
+    window.localStorage.setItem(storageKey, '1');
+  }, []);
 
   useEffect(() => {
     if (leftRuleFields.length === 0) {
@@ -2361,112 +2656,23 @@ function PluginStudioRoute() {
     setTitle(template.docs.title);
     setDescription(template.docs.description);
     setActionManifestText(canonicalStringify(template.actionManifest));
-    const templatePrimaryTab = template.adminTabs[0];
-    const workflowTable =
-      templatePrimaryTab?.schema ?? DEFAULT_WORKFLOW_DOC.table;
-    const firstAction = template.actionManifest[0];
-    const workflowNodes = firstAction
-      ? [
-        {
-          nodeId: 'n1',
-          type: 'action' as const,
-          actionId: firstAction.actionId,
-          input: {
-            expression: {
-              kind: 'ref' as const,
-              source: 'payload' as const,
-              path: [],
-            },
-          },
-        },
-      ]
-      : DEFAULT_WORKFLOW_DOC.nodes;
+    const nextSchemaDocs =
+      template.schemaDocs && template.schemaDocs.length > 0
+        ? template.schemaDocs
+        : [DEFAULT_SCHEMA_DOC];
+    const nextWorkflows =
+      template.workflows && template.workflows.length > 0
+        ? template.workflows
+        : [DEFAULT_WORKFLOW_DOC];
+    const nextActiveSchema = nextSchemaDocs[0] ?? DEFAULT_SCHEMA_DOC;
 
-    setWorkflowText(
-      canonicalStringify([
-        {
-          workflowId: `${template.pluginId}.workflow`,
-          table: workflowTable,
-          hook: 'afterCreate',
-          nodes: workflowNodes,
-          edges: [],
-        },
-      ]),
-    );
-    setActiveWorkflowId(`${template.pluginId}.workflow`);
-
-    const nextSchemaId =
-      templatePrimaryTab?.schema ??
-      `plugin.${template.pluginId.split('.').pop() ?? 'custom'}.table`;
-    setSchemaBuilder({
-      schemaId:
-        nextSchemaId,
-      title: templatePrimaryTab?.title ?? template.docs.title,
-      fields: [
-        {
-          id: generateBuilderId(),
-          key: 'name',
-          label: 'Name',
-          description: 'Primary label for this record.',
-          type: 'string',
-          fieldType: 'string',
-          required: true,
-          inputPropsJson: '{}',
-          customDataJson: '{}',
-          fieldConfigJson: '{}',
-          behaviorJson: '{}',
-        },
-        {
-          id: generateBuilderId(),
-          key: 'isActive',
-          label: 'Active',
-          description: 'Whether this item is enabled in the app.',
-          type: 'boolean',
-          fieldType: 'boolean',
-          required: false,
-          inputPropsJson: '{}',
-          customDataJson: '{}',
-          fieldConfigJson: '{}',
-          behaviorJson: '{}',
-        },
-      ],
-    });
-    setSchemaText(
-      canonicalStringify([
-        {
-          schemaId: nextSchemaId,
-          title: templatePrimaryTab?.title ?? template.docs.title,
-          fields: [
-            {
-              key: 'name',
-              type: 'string',
-              optional: false,
-              behavior: {
-                fieldConfig: {
-                  fieldType: 'string',
-                  label: 'Name',
-                },
-              },
-            },
-            {
-              key: 'isActive',
-              type: 'boolean',
-              optional: true,
-              behavior: {
-                fieldConfig: {
-                  fieldType: 'boolean',
-                  label: 'Active',
-                },
-              },
-            },
-          ],
-        },
-      ]),
-    );
-    setActiveSchemaId(nextSchemaId);
-    setSchemaRefinements([]);
-    setBlocklyRefinements([]);
+    setSchemaText(canonicalStringify(nextSchemaDocs));
+    setWorkflowText(canonicalStringify(nextWorkflows));
+    setActiveSchemaId(nextActiveSchema.schemaId);
+    setActiveWorkflowId(nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId);
+    syncBuilderFromSchemaDoc(nextActiveSchema);
     setSelectedTemplateLabel(template.docs.title);
+    setIsTemplatesDialogOpen(false);
     toast.success(`Loaded template ${template.docs.title}`);
   }
 
@@ -2529,6 +2735,15 @@ function PluginStudioRoute() {
     toast.success('Draft revision loaded.');
   }
 
+  function openSchemaEditor(schemaId: string) {
+    const schemaDoc = availableSchemaDocs.find(
+      (candidate) => candidate.schemaId === schemaId,
+    );
+    if (!schemaDoc) return;
+    selectSchema(schemaId);
+    setIsSchemaEditorOpen(true);
+  }
+
   if (!isAuthenticated || !user) {
     return (
       <div className="container py-12">
@@ -2557,17 +2772,22 @@ function PluginStudioRoute() {
                 Plugin Studio
               </div>
               <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-                Build Powerful Plugins With No Code.
+                Build Powerful Plugin Data Models.
               </h1>
               <p className="text-sm text-muted-foreground">
-                Start from a template, customize your schema visually, and
-                publish when ready.
-              </p>
-              <p className="text-xs font-medium uppercase tracking-wide text-primary/80">
-                Build in 4 guided steps: Template, Data, Rules, Publish.
+                Use full metadata-powered schema and automation dialogs with
+                type safety and advanced customization.
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsTemplatesDialogOpen(true)}
+              >
+                <Wand2 className="mr-2 size-4" />
+                Templates
+              </Button>
               <Button
                 size="lg"
                 disabled={!isValidInputs || isPublishing}
@@ -2582,54 +2802,6 @@ function PluginStudioRoute() {
             </div>
           </div>
         </section>
-
-        <Card className="border-border bg-gradient-to-br from-card via-card to-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Wand2 className="size-4" />
-              Starter Templates
-            </CardTitle>
-            <CardDescription>
-              Choose a starter. It preloads plugin behavior instantly.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {templates.map((template) => (
-              <div
-                key={`${template.pluginId}@${template.version}`}
-                className={`rounded-xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedTemplateLabel === template.docs.title
-                  ? 'ring-2 ring-primary'
-                  : ''
-                  }`}
-              >
-                <div className="space-y-0.5">
-                  <div className="font-medium text-sm">
-                    {template.docs.title}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {template.pluginId}
-                  </div>
-                </div>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {template.docs.description}
-                </p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="mt-3 w-full"
-                  onClick={() =>
-                    applyTemplatePreset(
-                      `${template.pluginId}@${template.version}`,
-                    )
-                  }
-                >
-                  <BadgePlus className="mr-2 size-4" />
-                  Load Template
-                </Button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
 
         <Card className="border-border/70 bg-card/80">
           <CardHeader>
@@ -2786,10 +2958,7 @@ function PluginStudioRoute() {
                           type="button"
                           size="icon"
                           variant="ghost"
-                          onClick={() => {
-                            selectSchema(schemaDoc.schemaId);
-                            setIsSchemaEditorOpen(true);
-                          }}
+                          onClick={() => openSchemaEditor(schemaDoc.schemaId)}
                         >
                           <Pencil className="size-4" />
                           <span className="sr-only">Edit schema</span>
@@ -2877,1492 +3046,70 @@ function PluginStudioRoute() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">No-Code Builder</CardTitle>
-              <CardDescription>
-                Configure your plugin with guided controls.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-3">
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-muted-foreground">
-                  Plugin Name
-                </div>
-                <Input
-                  value={title}
-                  onChange={(event) => {
-                    const nextTitle = event.target.value;
-                    setTitle(nextTitle);
-                    if (
-                      pluginId === 'example.plugin' ||
-                      pluginId.startsWith('plugin.')
-                    ) {
-                      setPluginId(titleToPluginId(nextTitle));
-                    }
-                  }}
-                  placeholder="Plugin title"
-                />
-              </div>
-              <div className="space-y-1">
-                <div className="text-xs font-medium text-muted-foreground">
-                  Plugin Description
-                </div>
-                <Input
-                  value={description}
-                  onChange={(event) => setDescription(event.target.value)}
-                  placeholder="What does your plugin do?"
-                />
-              </div>
-              {selectedTemplateLabel && (
-                <div className="rounded-lg border bg-muted/30 p-3 text-sm text-foreground">
-                  Template applied:{' '}
-                  <span className="font-medium">{selectedTemplateLabel}</span>
-                </div>
-              )}
-              <div className="space-y-2 rounded-xl border bg-card p-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">Schema Builder</div>
+        <Dialog
+          open={isTemplatesDialogOpen}
+          onOpenChange={setIsTemplatesDialogOpen}
+        >
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Wand2 className="size-4" />
+                Starter Templates
+              </DialogTitle>
+              <DialogDescription>
+                Load template releases on demand without blocking the main
+                workspace.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-3 md:grid-cols-2">
+              {templates.map((template) => (
+                <div
+                  key={`${template.pluginId}@${template.version}`}
+                  className={`rounded-xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedTemplateLabel === template.docs.title
+                    ? 'ring-2 ring-primary'
+                    : ''
+                    }`}
+                >
+                  <div className="space-y-0.5">
+                    <div className="font-medium text-sm">
+                      {template.docs.title}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {template.pluginId}
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {template.docs.description}
+                  </p>
                   <Button
-                    type="button"
                     size="sm"
-                    variant="default"
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={() => {
-                      setSchemaBuilder((current) => ({
-                        ...current,
-                        fields: [
-                          ...current.fields,
-                          {
-                            id: generateBuilderId(),
-                            key: `field_${current.fields.length + 1}`,
-                            label: `Field ${current.fields.length + 1}`,
-                            description: '',
-                            type: 'string',
-                            fieldType: 'string',
-                            required: false,
-                            fieldConfigJson: '{}',
-                            behaviorJson: '{}',
-                            inputPropsJson: '{}',
-                            customDataJson: '{}',
-                          },
-                        ],
-                      }));
-                    }}
-                  >
-                    <Plus className="mr-2 size-4" />
-                    Add Field
-                  </Button>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Schema ID
-                  </div>
-                  <Input
-                    value={schemaBuilder.schemaId}
-                    onChange={(event) =>
-                      setSchemaBuilder((current) => ({
-                        ...current,
-                        schemaId: event.target.value,
-                      }))
-                    }
-                    placeholder="Schema ID (e.g. plugin.orders)"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Schema Title
-                  </div>
-                  <Input
-                    value={schemaBuilder.title}
-                    onChange={(event) =>
-                      setSchemaBuilder((current) => ({
-                        ...current,
-                        title: event.target.value,
-                      }))
-                    }
-                    placeholder="Schema title"
-                  />
-                </div>
-                <div className="space-y-2">
-                  {schemaBuilder.fields.map((field, fieldIndex) => {
-                    const choiceFieldType = isChoiceFieldType(field.type);
-                    const showMinMax =
-                      isNumericFieldType(field.type) ||
-                      field.type === 'string' ||
-                      field.type === 'array' ||
-                      field.type === 'tags';
-                    const keyInvalid = !field.key.trim();
-                    const enumValuesMissing =
-                      choiceFieldType &&
-                      parseCommaSeparatedValues(field.enumValuesText).length ===
-                      0;
-                    const arrayItemOptionsMissing =
-                      field.type === 'array' &&
-                      isChoiceFieldType(field.arrayItemType) &&
-                      parseCommaSeparatedValues(field.arrayItemEnumValuesText)
-                        .length === 0;
-                    const objectFieldsMissing =
-                      field.type === 'object' &&
-                      (field.objectFields ?? []).length === 0;
-
-                    return (
-                      <div
-                        key={field.id}
-                        className="rounded-lg border bg-muted/20 p-3"
-                      >
-                        <div className="grid gap-2 md:grid-cols-3">
-                          <Input
-                            value={field.key}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (nextField, nextIndex) =>
-                                    nextIndex === fieldIndex
-                                      ? {
-                                        ...nextField,
-                                        key: event.target.value,
-                                      }
-                                      : nextField,
-                                ),
-                              }))
-                            }
-                            className={keyInvalid ? 'border-destructive' : ''}
-                            placeholder="Field key"
-                          />
-                          <Input
-                            value={field.label}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (nextField, nextIndex) =>
-                                    nextIndex === fieldIndex
-                                      ? {
-                                        ...nextField,
-                                        label: event.target.value,
-                                      }
-                                      : nextField,
-                                ),
-                              }))
-                            }
-                            placeholder="Field label"
-                          />
-                          <Input
-                            value={field.description}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (nextField, nextIndex) =>
-                                    nextIndex === fieldIndex
-                                      ? {
-                                        ...nextField,
-                                        description: event.target.value,
-                                      }
-                                      : nextField,
-                                ),
-                              }))
-                            }
-                            placeholder="Field help text"
-                          />
-                          <Select
-                            value={field.type}
-                            onValueChange={(value) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (nextField, nextIndex) => {
-                                    if (nextIndex !== fieldIndex) {
-                                      return nextField;
-                                    }
-                                    const nextType = value as BuilderFieldType;
-                                    return {
-                                      ...nextField,
-                                      type: nextType,
-                                      fieldType: AUTOFORM_FIELD_TYPES.includes(
-                                        nextType as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                      )
-                                        ? (nextType as (typeof AUTOFORM_FIELD_TYPES)[number])
-                                        : (nextField.fieldType ?? 'string'),
-                                      arrayItemType:
-                                        nextType === 'array'
-                                          ? (nextField.arrayItemType ??
-                                            'string')
-                                          : nextField.arrayItemType,
-                                      objectFields:
-                                        nextType === 'object'
-                                          ? (nextField.objectFields ?? [])
-                                          : nextField.objectFields,
-                                    };
-                                  },
-                                ),
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Field type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {BUILDER_FIELD_TYPES.map((fieldType) => (
-                                <SelectItem key={fieldType} value={fieldType}>
-                                  {fieldType}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            value={field.fieldType ?? 'string'}
-                            onValueChange={(value) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (nextField, nextIndex) =>
-                                    nextIndex === fieldIndex
-                                      ? {
-                                        ...nextField,
-                                        fieldType:
-                                          value as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                      }
-                                      : nextField,
-                                ),
-                              }))
-                            }
-                          >
-                            <SelectTrigger className="w-full">
-                              <SelectValue placeholder="AutoForm component type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {AUTOFORM_FIELD_TYPES.map((fieldType) => (
-                                <SelectItem key={fieldType} value={fieldType}>
-                                  {fieldType}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <div className="flex items-center gap-2 text-sm text-foreground">
-                            <Checkbox
-                              checked={field.required}
-                              onCheckedChange={(checked) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map(
-                                    (nextField, nextIndex) =>
-                                      nextIndex === fieldIndex
-                                        ? {
-                                          ...nextField,
-                                          required: checked === true,
-                                        }
-                                        : nextField,
-                                  ),
-                                }))
-                              }
-                            />
-                            <span>Required</span>
-                          </div>
-                          {showMinMax && (
-                            <>
-                              <Input
-                                type="number"
-                                value={field.min ?? ''}
-                                onChange={(event) =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map(
-                                      (nextField, nextIndex) =>
-                                        nextIndex === fieldIndex
-                                          ? {
-                                            ...nextField,
-                                            min:
-                                              event.target.value || undefined,
-                                          }
-                                          : nextField,
-                                    ),
-                                  }))
-                                }
-                                placeholder="Min constraint"
-                              />
-                              <Input
-                                type="number"
-                                value={field.max ?? ''}
-                                onChange={(event) =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map(
-                                      (nextField, nextIndex) =>
-                                        nextIndex === fieldIndex
-                                          ? {
-                                            ...nextField,
-                                            max:
-                                              event.target.value || undefined,
-                                          }
-                                          : nextField,
-                                    ),
-                                  }))
-                                }
-                                placeholder="Max constraint"
-                              />
-                            </>
-                          )}
-                          <Input
-                            value={field.defaultValue ?? ''}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (nextField, nextIndex) =>
-                                    nextIndex === fieldIndex
-                                      ? {
-                                        ...nextField,
-                                        defaultValue:
-                                          event.target.value || undefined,
-                                      }
-                                      : nextField,
-                                ),
-                              }))
-                            }
-                            placeholder="Default value (optional)"
-                          />
-                          {choiceFieldType && (
-                            <Input
-                              value={field.enumValuesText ?? ''}
-                              onChange={(event) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map(
-                                    (nextField, nextIndex) =>
-                                      nextIndex === fieldIndex
-                                        ? {
-                                          ...nextField,
-                                          enumValuesText: event.target.value,
-                                        }
-                                        : nextField,
-                                  ),
-                                }))
-                              }
-                              className={
-                                enumValuesMissing ? 'border-destructive' : ''
-                              }
-                              placeholder="Enum values: draft,published,archived"
-                            />
-                          )}
-                          {field.type === 'array' && (
-                            <>
-                              <Select
-                                value={field.arrayItemType ?? 'string'}
-                                onValueChange={(value) =>
-                                  setSchemaBuilder((current) => ({
-                                    ...current,
-                                    fields: current.fields.map(
-                                      (nextField, nextIndex) =>
-                                        nextIndex === fieldIndex
-                                          ? {
-                                            ...nextField,
-                                            arrayItemType:
-                                              value as BuilderLeafFieldType,
-                                          }
-                                          : nextField,
-                                    ),
-                                  }))
-                                }
-                              >
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="Array item type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {BUILDER_LEAF_FIELD_TYPES.map((fieldType) => (
-                                    <SelectItem
-                                      key={`array-${fieldType}`}
-                                      value={fieldType}
-                                    >
-                                      {fieldType}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              {isChoiceFieldType(field.arrayItemType) && (
-                                <Input
-                                  value={field.arrayItemEnumValuesText ?? ''}
-                                  onChange={(event) =>
-                                    setSchemaBuilder((current) => ({
-                                      ...current,
-                                      fields: current.fields.map(
-                                        (nextField, nextIndex) =>
-                                          nextIndex === fieldIndex
-                                            ? {
-                                              ...nextField,
-                                              arrayItemEnumValuesText:
-                                                event.target.value,
-                                            }
-                                            : nextField,
-                                      ),
-                                    }))
-                                  }
-                                  className={
-                                    arrayItemOptionsMissing
-                                      ? 'border-destructive'
-                                      : ''
-                                  }
-                                  placeholder="Array item enum values"
-                                />
-                              )}
-                            </>
-                          )}
-                          {isNumericFieldType(field.type) && (
-                            <>
-                              <div className="flex items-center gap-2 text-sm text-foreground">
-                                <Checkbox
-                                  checked={field.useInt ?? false}
-                                  onCheckedChange={(checked) =>
-                                    setSchemaBuilder((current) => ({
-                                      ...current,
-                                      fields: current.fields.map(
-                                        (nextField, nextIndex) =>
-                                          nextIndex === fieldIndex
-                                            ? {
-                                              ...nextField,
-                                              useInt: checked === true,
-                                            }
-                                            : nextField,
-                                      ),
-                                    }))
-                                  }
-                                />
-                                <span>Integer only</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-foreground">
-                                <Checkbox
-                                  checked={field.usePositive ?? false}
-                                  onCheckedChange={(checked) =>
-                                    setSchemaBuilder((current) => ({
-                                      ...current,
-                                      fields: current.fields.map(
-                                        (nextField, nextIndex) =>
-                                          nextIndex === fieldIndex
-                                            ? {
-                                              ...nextField,
-                                              usePositive: checked === true,
-                                            }
-                                            : nextField,
-                                      ),
-                                    }))
-                                  }
-                                />
-                                <span>Positive only</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-foreground">
-                                <Checkbox
-                                  checked={field.useNonNegative ?? false}
-                                  onCheckedChange={(checked) =>
-                                    setSchemaBuilder((current) => ({
-                                      ...current,
-                                      fields: current.fields.map(
-                                        (nextField, nextIndex) =>
-                                          nextIndex === fieldIndex
-                                            ? {
-                                              ...nextField,
-                                              useNonNegative:
-                                                checked === true,
-                                            }
-                                            : nextField,
-                                      ),
-                                    }))
-                                  }
-                                />
-                                <span>Non-negative</span>
-                              </div>
-                            </>
-                          )}
-                          {field.type === 'object' && (
-                            <div className="space-y-2 rounded-lg border bg-card p-3 md:col-span-3">
-                              <div className="flex items-center justify-between">
-                                <div className="text-sm font-medium">
-                                  Object Fields
-                                </div>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setSchemaBuilder((current) => ({
-                                      ...current,
-                                      fields: current.fields.map(
-                                        (nextField, nextIndex) =>
-                                          nextIndex === fieldIndex
-                                            ? {
-                                              ...nextField,
-                                              objectFields: [
-                                                ...(nextField.objectFields ??
-                                                  []),
-                                                {
-                                                  id: generateBuilderId(),
-                                                  key: `nested_${(nextField.objectFields ?? []).length + 1}`,
-                                                  label: 'Nested Field',
-                                                  description: '',
-                                                  type: 'string',
-                                                  required: false,
-                                                },
-                                              ],
-                                            }
-                                            : nextField,
-                                      ),
-                                    }))
-                                  }
-                                >
-                                  <Plus className="mr-2 size-4" />
-                                  Add Object Field
-                                </Button>
-                              </div>
-                              {(field.objectFields ?? []).map(
-                                (nestedField, nestedIndex) => (
-                                  <div
-                                    key={nestedField.id}
-                                    className="grid gap-2 rounded-md border bg-muted/20 p-2 md:grid-cols-5"
-                                  >
-                                    <Input
-                                      value={nestedField.key}
-                                      onChange={(event) =>
-                                        setSchemaBuilder((current) => ({
-                                          ...current,
-                                          fields: current.fields.map(
-                                            (nextField, nextIndex) =>
-                                              nextIndex === fieldIndex
-                                                ? {
-                                                  ...nextField,
-                                                  objectFields: (
-                                                    nextField.objectFields ??
-                                                    []
-                                                  ).map(
-                                                    (
-                                                      nextNestedField,
-                                                      nextNestedIndex,
-                                                    ) =>
-                                                      nextNestedIndex ===
-                                                        nestedIndex
-                                                        ? {
-                                                          ...nextNestedField,
-                                                          key: event.target
-                                                            .value,
-                                                        }
-                                                        : nextNestedField,
-                                                  ),
-                                                }
-                                                : nextField,
-                                          ),
-                                        }))
-                                      }
-                                      placeholder="Nested key"
-                                    />
-                                    <Input
-                                      value={nestedField.label}
-                                      onChange={(event) =>
-                                        setSchemaBuilder((current) => ({
-                                          ...current,
-                                          fields: current.fields.map(
-                                            (nextField, nextIndex) =>
-                                              nextIndex === fieldIndex
-                                                ? {
-                                                  ...nextField,
-                                                  objectFields: (
-                                                    nextField.objectFields ??
-                                                    []
-                                                  ).map(
-                                                    (
-                                                      nextNestedField,
-                                                      nextNestedIndex,
-                                                    ) =>
-                                                      nextNestedIndex ===
-                                                        nestedIndex
-                                                        ? {
-                                                          ...nextNestedField,
-                                                          label:
-                                                            event.target
-                                                              .value,
-                                                        }
-                                                        : nextNestedField,
-                                                  ),
-                                                }
-                                                : nextField,
-                                          ),
-                                        }))
-                                      }
-                                      placeholder="Nested label"
-                                    />
-                                    <Input
-                                      value={nestedField.description}
-                                      onChange={(event) =>
-                                        setSchemaBuilder((current) => ({
-                                          ...current,
-                                          fields: current.fields.map(
-                                            (nextField, nextIndex) =>
-                                              nextIndex === fieldIndex
-                                                ? {
-                                                  ...nextField,
-                                                  objectFields: (
-                                                    nextField.objectFields ??
-                                                    []
-                                                  ).map(
-                                                    (
-                                                      nextNestedField,
-                                                      nextNestedIndex,
-                                                    ) =>
-                                                      nextNestedIndex ===
-                                                        nestedIndex
-                                                        ? {
-                                                          ...nextNestedField,
-                                                          description:
-                                                            event.target
-                                                              .value,
-                                                        }
-                                                        : nextNestedField,
-                                                  ),
-                                                }
-                                                : nextField,
-                                          ),
-                                        }))
-                                      }
-                                      placeholder="Nested description"
-                                    />
-                                    <Select
-                                      value={nestedField.type}
-                                      onValueChange={(value) =>
-                                        setSchemaBuilder((current) => ({
-                                          ...current,
-                                          fields: current.fields.map(
-                                            (nextField, nextIndex) =>
-                                              nextIndex === fieldIndex
-                                                ? {
-                                                  ...nextField,
-                                                  objectFields: (
-                                                    nextField.objectFields ??
-                                                    []
-                                                  ).map(
-                                                    (
-                                                      nextNestedField,
-                                                      nextNestedIndex,
-                                                    ) =>
-                                                      nextNestedIndex ===
-                                                        nestedIndex
-                                                        ? {
-                                                          ...nextNestedField,
-                                                          type: value as BuilderLeafFieldType,
-                                                        }
-                                                        : nextNestedField,
-                                                  ),
-                                                }
-                                                : nextField,
-                                          ),
-                                        }))
-                                      }
-                                    >
-                                      <SelectTrigger className="w-full">
-                                        <SelectValue placeholder="Nested type" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {BUILDER_LEAF_FIELD_TYPES.map(
-                                          (fieldType) => (
-                                            <SelectItem
-                                              key={`nested-${nestedField.id}-${fieldType}`}
-                                              value={fieldType}
-                                            >
-                                              {fieldType}
-                                            </SelectItem>
-                                          ),
-                                        )}
-                                      </SelectContent>
-                                    </Select>
-                                    <Button
-                                      type="button"
-                                      size="sm"
-                                      variant="destructive"
-                                      onClick={() =>
-                                        setSchemaBuilder((current) => ({
-                                          ...current,
-                                          fields: current.fields.map(
-                                            (nextField, nextIndex) =>
-                                              nextIndex === fieldIndex
-                                                ? {
-                                                  ...nextField,
-                                                  objectFields: (
-                                                    nextField.objectFields ??
-                                                    []
-                                                  ).filter(
-                                                    (_, nextNestedIndex) =>
-                                                      nextNestedIndex !==
-                                                      nestedIndex,
-                                                  ),
-                                                }
-                                                : nextField,
-                                          ),
-                                        }))
-                                      }
-                                    >
-                                      Remove
-                                    </Button>
-                                    <div className="flex items-center gap-2 text-xs text-foreground">
-                                      <Checkbox
-                                        checked={nestedField.required}
-                                        onCheckedChange={(checked) =>
-                                          setSchemaBuilder((current) => ({
-                                            ...current,
-                                            fields: current.fields.map(
-                                              (nextField, nextIndex) =>
-                                                nextIndex === fieldIndex
-                                                  ? {
-                                                    ...nextField,
-                                                    objectFields: (
-                                                      nextField.objectFields ??
-                                                      []
-                                                    ).map(
-                                                      (
-                                                        nextNestedField,
-                                                        nextNestedIndex,
-                                                      ) =>
-                                                        nextNestedIndex ===
-                                                          nestedIndex
-                                                          ? {
-                                                            ...nextNestedField,
-                                                            required:
-                                                              checked ===
-                                                              true,
-                                                          }
-                                                          : nextNestedField,
-                                                    ),
-                                                  }
-                                                  : nextField,
-                                            ),
-                                          }))
-                                        }
-                                      />
-                                      <span>Required</span>
-                                    </div>
-                                    {isChoiceFieldType(nestedField.type) && (
-                                      <Input
-                                        value={nestedField.enumValuesText ?? ''}
-                                        onChange={(event) =>
-                                          setSchemaBuilder((current) => ({
-                                            ...current,
-                                            fields: current.fields.map(
-                                              (nextField, nextIndex) =>
-                                                nextIndex === fieldIndex
-                                                  ? {
-                                                    ...nextField,
-                                                    objectFields: (
-                                                      nextField.objectFields ??
-                                                      []
-                                                    ).map(
-                                                      (
-                                                        nextNestedField,
-                                                        nextNestedIndex,
-                                                      ) =>
-                                                        nextNestedIndex ===
-                                                          nestedIndex
-                                                          ? {
-                                                            ...nextNestedField,
-                                                            enumValuesText:
-                                                              event.target
-                                                                .value,
-                                                          }
-                                                          : nextNestedField,
-                                                    ),
-                                                  }
-                                                  : nextField,
-                                            ),
-                                          }))
-                                        }
-                                        className="md:col-span-5"
-                                        placeholder="Nested enum values"
-                                      />
-                                    )}
-                                  </div>
-                                ),
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="mt-2 space-y-1">
-                          {keyInvalid && (
-                            <p className="text-xs text-destructive">
-                              Field key is required.
-                            </p>
-                          )}
-                          {enumValuesMissing && (
-                            <p className="text-xs text-destructive">
-                              Enum/select fields must include at least one
-                              option.
-                            </p>
-                          )}
-                          {arrayItemOptionsMissing && (
-                            <p className="text-xs text-destructive">
-                              Array item enum/select requires option values.
-                            </p>
-                          )}
-                          {objectFieldsMissing && (
-                            <p className="text-xs text-destructive">
-                              Object fields need at least one nested field.
-                            </p>
-                          )}
-                        </div>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={!field.key.trim()}
-                            onClick={() => {
-                              const comparableFieldKeys = schemaBuilder.fields
-                                .filter(
-                                  (nextField) =>
-                                    nextField.id !== field.id &&
-                                    nextField.type === field.type &&
-                                    nextField.key.trim().length > 0,
-                                )
-                                .map((nextField) => nextField.key.trim());
-                              const presets = getBlocklyPresets(field.type);
-                              setBlocklyDraft({
-                                fieldId: field.id,
-                                operator:
-                                  presets[0]?.operator ??
-                                  getAllowedOperators(field.type)[0] ??
-                                  'eq',
-                                rightField: comparableFieldKeys[0] ?? '',
-                                message:
-                                  presets[0]?.message ??
-                                  `${field.label || field.key} validation failed`,
-                              });
-                              setIsBlocklyComposerOpen(true);
-                            }}
-                          >
-                            Compose Logic
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="ghost"
-                                disabled={schemaBuilder.fields.length === 1}
-                              >
-                                <Trash2 className="mr-2 size-4 text-destructive" />
-                                Remove Field
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Remove this field?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will remove the field and its
-                                  validations.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    setSchemaBuilder((current) => ({
-                                      ...current,
-                                      fields: current.fields.filter(
-                                        (_, nextIndex) =>
-                                          nextIndex !== fieldIndex,
-                                      ),
-                                    }))
-                                  }
-                                >
-                                  Remove
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-              <div className="grid gap-2 rounded-xl border bg-muted/20 p-3 text-sm md:grid-cols-3">
-                <div>
-                  <div className="text-muted-foreground">Schemas</div>
-                  <div className="font-semibold">
-                    {parsed?.schemaDocs.length ?? 0}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">Workflows</div>
-                  <div className="font-semibold">
-                    {parsed?.workflows.length ?? 0}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-muted-foreground">Actions</div>
-                  <div className="font-semibold">
-                    {parsed?.actionManifest.length ?? 0}
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2 rounded-xl border bg-card p-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">
-                    Cross-Field Validation Rules
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="default"
-                    className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    variant="outline"
+                    className="mt-3 w-full"
                     onClick={() =>
-                      setSchemaRefinements((current) => {
-                        const leftField = leftRuleFields[0] ?? '';
-                        const firstType = fieldTypeByRuleField.get(leftField);
-                        const compatibleFields = firstType
-                          ? (
-                            availableRuleFieldsByType.get(firstType) ?? []
-                          ).filter((fieldKey) => fieldKey !== leftField)
-                          : [];
-                        const rightField = compatibleFields[0] ?? '';
-                        const operator =
-                          getAllowedOperators(firstType)[0] ?? 'eq';
-                        return [
-                          ...current,
-                          {
-                            id: generateBuilderId(),
-                            leftField,
-                            operator,
-                            rightField,
-                            message: 'Validation rule failed',
-                          },
-                        ];
-                      })
-                    }
-                    disabled={leftRuleFields.length === 0}
-                  >
-                    <Plus className="mr-2 size-4" />
-                    Add Rule
-                  </Button>
-                </div>
-                {schemaRefinements.length === 0 ? (
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">
-                      Add rules like “endDate must be greater than startDate”
-                      without code.
-                    </p>
-                    {leftRuleFields.length === 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        Create at least two fields with the same data type to
-                        enable cross-field rules.
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  schemaRefinements.map((rule) => {
-                    const leftFieldType = fieldTypeByRuleField.get(
-                      rule.leftField,
-                    );
-                    const compatibleFields = leftFieldType
-                      ? (
-                        availableRuleFieldsByType.get(leftFieldType) ?? []
-                      ).filter((fieldKey) => fieldKey !== rule.leftField)
-                      : [];
-                    const allowedOperators = getAllowedOperators(leftFieldType);
-
-                    return (
-                      <div
-                        key={rule.id}
-                        className="rounded-lg border bg-muted/20 p-3"
-                      >
-                        <div className="grid gap-2 md:grid-cols-4">
-                          <div className="space-y-1">
-                            <div className="text-xs font-medium text-muted-foreground">
-                              Left Field
-                            </div>
-                            <Select
-                              value={rule.leftField}
-                              onValueChange={(value) =>
-                                setSchemaRefinements((current) =>
-                                  current.map((nextRule) => {
-                                    if (nextRule.id !== rule.id)
-                                      return nextRule;
-                                    const nextType =
-                                      fieldTypeByRuleField.get(value);
-                                    const nextCompatibleFields = nextType
-                                      ? (
-                                        availableRuleFieldsByType.get(
-                                          nextType,
-                                        ) ?? []
-                                      ).filter(
-                                        (fieldKey) => fieldKey !== value,
-                                      )
-                                      : [];
-                                    const nextOperators =
-                                      getAllowedOperators(nextType);
-                                    return {
-                                      ...nextRule,
-                                      leftField: value,
-                                      rightField: nextCompatibleFields.includes(
-                                        nextRule.rightField,
-                                      )
-                                        ? nextRule.rightField
-                                        : (nextCompatibleFields[0] ?? ''),
-                                      operator: nextOperators.includes(
-                                        nextRule.operator,
-                                      )
-                                        ? nextRule.operator
-                                        : (nextOperators[0] ?? 'eq'),
-                                    };
-                                  }),
-                                )
-                              }
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Left field" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {leftRuleFields.map((fieldKey) => (
-                                  <SelectItem
-                                    key={`left-${rule.id}-${fieldKey}`}
-                                    value={fieldKey}
-                                  >
-                                    {fieldKey}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="text-xs font-medium text-muted-foreground">
-                              Operator
-                            </div>
-                            <Select
-                              value={rule.operator}
-                              onValueChange={(value) =>
-                                setSchemaRefinements((current) =>
-                                  current.map((nextRule) =>
-                                    nextRule.id === rule.id
-                                      ? {
-                                        ...nextRule,
-                                        operator:
-                                          value as BuilderRefinement['operator'],
-                                      }
-                                      : nextRule,
-                                  ),
-                                )
-                              }
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Rule operator" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {allowedOperators.includes('eq') && (
-                                  <SelectItem value="eq">equals</SelectItem>
-                                )}
-                                {allowedOperators.includes('neq') && (
-                                  <SelectItem value="neq">
-                                    not equals
-                                  </SelectItem>
-                                )}
-                                {allowedOperators.includes('gt') && (
-                                  <SelectItem value="gt">
-                                    greater than
-                                  </SelectItem>
-                                )}
-                                {allowedOperators.includes('gte') && (
-                                  <SelectItem value="gte">
-                                    greater than or equal
-                                  </SelectItem>
-                                )}
-                                {allowedOperators.includes('lt') && (
-                                  <SelectItem value="lt">less than</SelectItem>
-                                )}
-                                {allowedOperators.includes('lte') && (
-                                  <SelectItem value="lte">
-                                    less than or equal
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="text-xs font-medium text-muted-foreground">
-                              Right Field
-                            </div>
-                            <Select
-                              value={rule.rightField}
-                              onValueChange={(value) =>
-                                setSchemaRefinements((current) =>
-                                  current.map((nextRule) =>
-                                    nextRule.id === rule.id
-                                      ? { ...nextRule, rightField: value }
-                                      : nextRule,
-                                  ),
-                                )
-                              }
-                            >
-                              <SelectTrigger
-                                className="w-full"
-                                disabled={compatibleFields.length === 0}
-                              >
-                                <SelectValue placeholder="Right field" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {compatibleFields.map((fieldKey) => (
-                                  <SelectItem
-                                    key={`right-${rule.id}-${fieldKey}`}
-                                    value={fieldKey}
-                                  >
-                                    {fieldKey}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {compatibleFields.length === 0 && (
-                              <p className="text-xs text-muted-foreground">
-                                Add another field with the same type to compare
-                                against.
-                              </p>
-                            )}
-                          </div>
-                          <div className="space-y-1">
-                            <div className="text-xs font-medium text-muted-foreground">
-                              Error Message
-                            </div>
-                            <Input
-                              value={rule.message}
-                              onChange={(event) =>
-                                setSchemaRefinements((current) =>
-                                  current.map((nextRule) =>
-                                    nextRule.id === rule.id
-                                      ? {
-                                        ...nextRule,
-                                        message: event.target.value,
-                                      }
-                                      : nextRule,
-                                  ),
-                                )
-                              }
-                              placeholder="Validation error shown to users"
-                            />
-                          </div>
-                        </div>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              className="mt-2"
-                            >
-                              <Trash2 className="mr-2 size-4 text-destructive" />
-                              Remove Rule
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Remove this rule?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This validation rule will no longer run.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() =>
-                                  setSchemaRefinements((current) =>
-                                    current.filter(
-                                      (nextRule) => nextRule.id !== rule.id,
-                                    ),
-                                  )
-                                }
-                              >
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-              <div className="space-y-2 rounded-xl border bg-card p-3">
-                <div className="text-sm font-medium">Blockly Logic Rules</div>
-                {blocklyRefinements.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Use the Blockly Composer to add advanced nested logic.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {blocklyRefinements.map((rule) => (
-                      <div
-                        key={rule.id}
-                        className="rounded-lg border bg-muted/20 p-3"
-                      >
-                        <div className="text-sm text-foreground">
-                          {rule.message}
-                        </div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          Applies to: {rule.leftField}
-                        </div>
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          className="mt-2"
-                          onClick={() =>
-                            setBlocklyRefinements((current) =>
-                              current.filter(
-                                (nextRule) => nextRule.id !== rule.id,
-                              ),
-                            )
-                          }
-                        >
-                          <Trash2 className="mr-2 size-4 text-destructive" />
-                          Remove Logic
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Card className="border-border bg-gradient-to-br from-card to-muted/20">
-          <CardHeader>
-            <CardTitle className="text-base">Studio Engine Modules</CardTitle>
-            <CardDescription>
-              Internal engine modules are connected to your no-code builder
-              state behind the scenes.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="grid gap-4 xl:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Overview</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  {(() => {
-                    const overviewMetadata = {
-                      pluginId,
-                      pluginName: title,
-                      namespace: schemaBuilder.schemaId,
-                      status: selectedRevision ? 'review' : 'draft',
-                    } as const;
-
-                    return (
-                      <OverviewTab
-                        metadata={overviewMetadata}
-                        collaborators={[
-                          {
-                            id: actorUserId,
-                            name: user.pub || actorUserId,
-                            role: 'owner',
-                            isActive: true,
-                          },
-                        ]}
-                        activeDraft={
-                          selectedDraft
-                            ? {
-                              draftId: selectedDraft.draftId,
-                              updatedAt: selectedDraft.updatedAt,
-                              updatedBy: selectedDraft.ownerUserId,
-                            }
-                            : null
-                        }
-                        latestImmutableRevision={
-                          selectedRevision
-                            ? {
-                              revisionId: selectedRevision.revisionId,
-                              publishedAt: selectedRevision.createdAt,
-                              publishedBy: selectedRevision.authorUserId,
-                              note: selectedDraft?.title,
-                            }
-                            : null
-                        }
-                      />
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Schemas</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <SchemasTab
-                    schemas={workspaceSchemasAndFields.schemas}
-                    fields={workspaceSchemasAndFields.fields}
-                    activeSchemaId={workspaceActiveSchemaId}
-                    expandedFieldIds={[]}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid gap-4 xl:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Field Config Panel</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-xs">
-                  <p className="text-muted-foreground">
-                    Model and serialized payload from current first schema field.
-                  </p>
-                  <pre className="overflow-x-auto rounded border bg-muted/20 p-2">
-                    {canonicalStringify(workspaceFieldConfigModel.model)}
-                  </pre>
-                  <pre className="overflow-x-auto rounded border bg-muted/20 p-2">
-                    {canonicalStringify(workspaceFieldConfigModel.draft)}
-                  </pre>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Expression Row Builder</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <ExpressionRowBuilder rows={expressionRows} />
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid gap-4 xl:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Rule Logic Editor</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <GuardedIrEditor
-                    state={guardedIrState}
-                    onModeChange={(mode) =>
-                      setGuardedIrState((current) =>
-                        switchGuardedIrEditorMode(current, mode),
+                      applyTemplatePreset(
+                        `${template.pluginId}@${template.version}`,
                       )
                     }
-                    onIrTextChange={(nextText) => {
-                      const next = applyGuardedIrDraftText(guardedIrState, nextText);
-                      setGuardedIrState(next);
-                      if (next.canSave) {
-                        setSchemaText(next.irText);
-                      }
-                    }}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Workflow Graph Editor</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <WorkflowGraphEditor workflow={workspaceWorkflow} />
-                </CardContent>
-              </Card>
+                  >
+                    <BadgePlus className="mr-2 size-4" />
+                    Load Template
+                  </Button>
+                </div>
+              ))}
             </div>
+          </DialogContent>
+        </Dialog>
 
-            <div className="grid gap-4 xl:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Action Library</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <ActionsManifestEditor
-                    actionManifest={workspaceActionsManifestState.actionManifest}
-                    workflows={workspaceActionsManifestState.workflows}
-                    capabilityEnvelope={
-                      workspaceActionsManifestState.capabilityEnvelope
-                    }
-                    runtimeTarget={workspaceActionsManifestState.runtimeTarget}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Routes & Tabs Mapper</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <RoutesTabsMapperTab result={workspaceRoutesTabsResult} />
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid gap-4 xl:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Quality Review</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <ReviewDiagnosticsTab
-                    diagnostics={workspaceCompileDiagnostics}
-                    artifactDiff={workspaceArtifactDiff}
-                    hashPreview={{
-                      manifestHash:
-                        hashPreviewQuery.data?.manifestHash ??
-                        'pending-manifest-hash-preview',
-                      artifactHash:
-                        hashPreviewQuery.data?.artifactHash ??
-                        'pending-artifact-hash-preview',
-                    }}
-                    changelog={workspaceReviewChangelog}
-                  />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Publish Gate</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm">
-                  <PublishGateTab
-                    state={workspacePublishGateState}
-                    onPublishConfirmationChange={(checked) => {
-                      const nextPublishGateState = setPublishConfirmationChecked(
-                        workspacePublishGateState,
-                        checked,
-                      );
-                      setWorkspacePublishGateChecked(
-                        nextPublishGateState.isPublishConfirmationChecked,
-                      );
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/80 bg-gradient-to-br from-card to-accent/20">
-          <CardHeader>
-            <CardTitle>Ready to Publish</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {parsed && hashPreviewQuery.data && (
-              <p className="text-sm text-muted-foreground">
-                Schema checks passed. Your plugin is ready to publish.
-              </p>
-            )}
-            <p className="text-sm text-muted-foreground">
-              Advanced no-code logic is powered by field rules and cross-field
-              validations above.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Dialog open={isSchemaEditorOpen} onOpenChange={setIsSchemaEditorOpen}>
+        <Dialog
+          open={isSchemaEditorOpen}
+          onOpenChange={setIsSchemaEditorOpen}
+        >
           <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
             <DialogHeader>
               <DialogTitle>Schema Editor</DialogTitle>
               <DialogDescription>
-                Design fields with type-safe controls for this schema.
+                Build schema fields, advanced field config, derivations, and
+                validation rules with safe visual controls.
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-3">
@@ -4400,7 +3147,7 @@ function PluginStudioRoute() {
               </div>
               <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">Fields</div>
+                  <div className="text-sm font-medium">Schema Fields</div>
                   <Button
                     type="button"
                     size="sm"
@@ -4430,119 +3177,983 @@ function PluginStudioRoute() {
                     Add Field
                   </Button>
                 </div>
-                {schemaBuilder.fields.map((field, fieldIndex) => (
-                  <div
-                    key={field.id}
-                    className="grid items-center gap-x-2 gap-y-3 rounded-md border bg-card p-2 md:grid-cols-5"
-                  >
-                    <div className="space-y-1">
-                      <Label htmlFor={`schema-editor-field-key-${field.id}`}>
-                        Field key
-                      </Label>
-                      <Input
-                        id={`schema-editor-field-key-${field.id}`}
-                        value={field.key}
-                        onChange={(event) =>
-                          setSchemaBuilder((current) => ({
-                            ...current,
-                            fields: current.fields.map((candidate, candidateIndex) =>
-                              candidateIndex === fieldIndex
-                                ? { ...candidate, key: event.target.value }
-                                : candidate,
-                            ),
-                          }))
-                        }
-                        placeholder="Field key"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor={`schema-editor-field-label-${field.id}`}>
-                        Field label
-                      </Label>
-                      <Input
-                        id={`schema-editor-field-label-${field.id}`}
-                        value={field.label}
-                        onChange={(event) =>
-                          setSchemaBuilder((current) => ({
-                            ...current,
-                            fields: current.fields.map((candidate, candidateIndex) =>
-                              candidateIndex === fieldIndex
-                                ? { ...candidate, label: event.target.value }
-                                : candidate,
-                            ),
-                          }))
-                        }
-                        placeholder="Field label"
-                      />
-                    </div>
-                    <Select
-                      value={field.type}
-                      onValueChange={(value) =>
-                        setSchemaBuilder((current) => ({
-                          ...current,
-                          fields: current.fields.map((candidate, candidateIndex) =>
-                            candidateIndex === fieldIndex
-                              ? {
-                                ...candidate,
-                                type: value as BuilderFieldType,
-                                fieldType: AUTOFORM_FIELD_TYPES.includes(
-                                  value as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                )
-                                  ? (value as (typeof AUTOFORM_FIELD_TYPES)[number])
-                                  : 'string',
+                {schemaBuilder.fields.map((field, fieldIndex) => {
+                  const choiceFieldType = isChoiceFieldType(field.type);
+                  const showMinMax =
+                    isNumericFieldType(field.type) ||
+                    field.type === 'string' ||
+                    field.type === 'array' ||
+                    field.type === 'tags';
+                  const invalidField = hasFieldValidationErrors(field);
+                  const inputPlaceholder = readJsonStringEntry(
+                    field.inputPropsJson,
+                    'placeholder',
+                  );
+                  const inputRows = readJsonNumberEntry(field.inputPropsJson, 'rows');
+                  const inputStep = readJsonNumberEntry(field.inputPropsJson, 'step');
+                  const customSource = readJsonStringEntry(
+                    field.customDataJson,
+                    'source',
+                  );
+                  const customAutomationKey = readJsonStringEntry(
+                    field.customDataJson,
+                    'automationKey',
+                  );
+                  const customUiHint = readJsonStringEntry(
+                    field.customDataJson,
+                    'uiHint',
+                  );
+                  const derivations = field.derivations ?? [];
+                  const fieldRefinements = field.fieldRefinements ?? [];
+
+                  return (
+                    <div
+                      key={field.id}
+                      className="rounded-md border bg-card p-3 space-y-3"
+                    >
+                      <div className="grid gap-2 md:grid-cols-4">
+                        <Input
+                          value={field.key}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? { ...candidate, key: event.target.value }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Field key"
+                        />
+                        <Input
+                          value={field.label}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? { ...candidate, label: event.target.value }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Field label"
+                        />
+                        <Input
+                          value={field.description}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? { ...candidate, description: event.target.value }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Description"
+                        />
+                        <Select
+                          value={field.type}
+                          onValueChange={(value) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? {
+                                    ...candidate,
+                                    type: value as BuilderFieldType,
+                                    fieldType: AUTOFORM_FIELD_TYPES.includes(
+                                      value as (typeof AUTOFORM_FIELD_TYPES)[number],
+                                    )
+                                      ? (value as (typeof AUTOFORM_FIELD_TYPES)[number])
+                                      : candidate.fieldType,
+                                  }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Field type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {BUILDER_FIELD_TYPES.map((fieldType) => (
+                              <SelectItem key={`dialog-${field.id}-${fieldType}`} value={fieldType}>
+                                {fieldType}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="grid gap-2 md:grid-cols-4">
+                        <Select
+                          value={field.fieldType ?? 'string'}
+                          onValueChange={(value) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? {
+                                    ...candidate,
+                                    fieldType:
+                                      value as (typeof AUTOFORM_FIELD_TYPES)[number],
+                                  }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="UI component type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {AUTOFORM_FIELD_TYPES.map((fieldType) => (
+                              <SelectItem key={`ui-${field.id}-${fieldType}`} value={fieldType}>
+                                {fieldType}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          value={field.defaultValue ?? ''}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? { ...candidate, defaultValue: event.target.value || undefined }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Default value"
+                        />
+                        <Input
+                          value={field.min ?? ''}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? { ...candidate, min: event.target.value || undefined }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder={showMinMax ? 'Min constraint' : 'Min (n/a)'}
+                          disabled={!showMinMax}
+                        />
+                        <Input
+                          value={field.max ?? ''}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? { ...candidate, max: event.target.value || undefined }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder={showMinMax ? 'Max constraint' : 'Max (n/a)'}
+                          disabled={!showMinMax}
+                        />
+                      </div>
+
+                      {choiceFieldType ? (
+                        <Input
+                          value={field.enumValuesText ?? ''}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? { ...candidate, enumValuesText: event.target.value }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Enum values (comma-separated)"
+                        />
+                      ) : null}
+
+                      {field.type === 'array' ? (
+                        <div className="grid gap-2 md:grid-cols-2">
+                          <Select
+                            value={field.arrayItemType ?? 'string'}
+                            onValueChange={(value) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      arrayItemType: value as BuilderLeafFieldType,
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Array item type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {BUILDER_LEAF_FIELD_TYPES.map((fieldType) => (
+                                <SelectItem key={`array-${field.id}-${fieldType}`} value={fieldType}>
+                                  {fieldType}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            value={field.arrayItemEnumValuesText ?? ''}
+                            onChange={(event) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      arrayItemEnumValuesText: event.target.value,
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                            placeholder="Array enum values (if needed)"
+                            disabled={!isChoiceFieldType(field.arrayItemType)}
+                          />
+                        </div>
+                      ) : null}
+
+                      <div className="grid gap-2 md:grid-cols-3">
+                        <Input
+                          value={inputPlaceholder}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? {
+                                    ...candidate,
+                                    inputPropsJson: setJsonStringEntry(
+                                      candidate.inputPropsJson,
+                                      'placeholder',
+                                      event.target.value,
+                                    ),
+                                  }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Input placeholder"
+                        />
+                        <Input
+                          value={inputStep}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? {
+                                    ...candidate,
+                                    inputPropsJson: setJsonNumberEntry(
+                                      candidate.inputPropsJson,
+                                      'step',
+                                      event.target.value,
+                                    ),
+                                  }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Input step"
+                        />
+                        <Input
+                          value={inputRows}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? {
+                                    ...candidate,
+                                    inputPropsJson: setJsonNumberEntry(
+                                      candidate.inputPropsJson,
+                                      'rows',
+                                      event.target.value,
+                                    ),
+                                  }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Rows (textarea-like fields)"
+                        />
+                        <Input
+                          value={customSource}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? {
+                                    ...candidate,
+                                    customDataJson: setJsonStringEntry(
+                                      candidate.customDataJson,
+                                      'source',
+                                      event.target.value,
+                                    ),
+                                  }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Custom data source"
+                        />
+                        <Input
+                          value={customAutomationKey}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? {
+                                    ...candidate,
+                                    customDataJson: setJsonStringEntry(
+                                      candidate.customDataJson,
+                                      'automationKey',
+                                      event.target.value,
+                                    ),
+                                  }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="Automation key"
+                        />
+                        <Input
+                          value={customUiHint}
+                          onChange={(event) =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.map((candidate, candidateIndex) =>
+                                candidateIndex === fieldIndex
+                                  ? {
+                                    ...candidate,
+                                    customDataJson: setJsonStringEntry(
+                                      candidate.customDataJson,
+                                      'uiHint',
+                                      event.target.value,
+                                    ),
+                                  }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                          placeholder="UI hint"
+                        />
+                      </div>
+
+                      <div className="space-y-2 rounded-md border p-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-medium">Derived Values</div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      derivations: [
+                                        ...(candidate.derivations ?? []),
+                                        {
+                                          id: generateBuilderId(),
+                                          target: 'value',
+                                          key: '',
+                                          source: 'payload',
+                                          path: candidate.key || '',
+                                        },
+                                      ],
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                          >
+                            <Plus className="mr-2 size-4" />
+                            Add Derivation
+                          </Button>
+                        </div>
+                        {derivations.map((derivation) => (
+                          <div
+                            key={derivation.id}
+                            className="grid gap-2 md:grid-cols-6 rounded border p-2"
+                          >
+                            <Select
+                              value={derivation.target}
+                              onValueChange={(value) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        derivations: (candidate.derivations ?? []).map((entry) =>
+                                          entry.id === derivation.id
+                                            ? {
+                                              ...entry,
+                                              target:
+                                                value as BuilderFieldDerivation['target'],
+                                            }
+                                            : entry,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
                               }
-                              : candidate,
-                          ),
-                        }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {BUILDER_FIELD_TYPES.map((fieldType) => (
-                          <SelectItem key={`dialog-${field.id}-${fieldType}`} value={fieldType}>
-                            {fieldType}
-                          </SelectItem>
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Target" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="value">value</SelectItem>
+                                <SelectItem value="inputProps">inputProps</SelectItem>
+                                <SelectItem value="customData">customData</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              value={derivation.key}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        derivations: (candidate.derivations ?? []).map((entry) =>
+                                          entry.id === derivation.id
+                                            ? { ...entry, key: event.target.value }
+                                            : entry,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Target key"
+                              disabled={derivation.target === 'value'}
+                            />
+                            <Select
+                              value={derivation.source}
+                              onValueChange={(value) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        derivations: (candidate.derivations ?? []).map((entry) =>
+                                          entry.id === derivation.id
+                                            ? {
+                                              ...entry,
+                                              source:
+                                                value as BuilderFieldDerivation['source'],
+                                            }
+                                            : entry,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Source" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="payload">payload</SelectItem>
+                                <SelectItem value="formValues">formValues</SelectItem>
+                                <SelectItem value="context">context</SelectItem>
+                                <SelectItem value="sourceRow">sourceRow</SelectItem>
+                                <SelectItem value="row">row</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              value={derivation.path}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        derivations: (candidate.derivations ?? []).map((entry) =>
+                                          entry.id === derivation.id
+                                            ? { ...entry, path: event.target.value }
+                                            : entry,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Source path (dot path)"
+                            />
+                            <Input
+                              value={derivation.fallbackValue ?? ''}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        derivations: (candidate.derivations ?? []).map((entry) =>
+                                          entry.id === derivation.id
+                                            ? {
+                                              ...entry,
+                                              fallbackValue:
+                                                event.target.value || undefined,
+                                            }
+                                            : entry,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Fallback (optional)"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        derivations: (candidate.derivations ?? []).filter(
+                                          (entry) => entry.id !== derivation.id,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                            >
+                              <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                          </div>
                         ))}
-                      </SelectContent>
-                    </Select>
-                    <Label
-                      htmlFor={`schema-editor-field-required-${field.id}`}
-                      className="flex h-full cursor-pointer items-center gap-2 rounded-md border px-2 text-sm font-normal"
-                    >
-                      <Checkbox
-                        id={`schema-editor-field-required-${field.id}`}
-                        checked={field.required}
-                        onCheckedChange={(checked) =>
-                          setSchemaBuilder((current) => ({
-                            ...current,
-                            fields: current.fields.map((candidate, candidateIndex) =>
-                              candidateIndex === fieldIndex
-                                ? { ...candidate, required: checked === true }
+                      </div>
+
+                      <div className="space-y-2 rounded-md border p-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-medium">Field Refinements</div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? {
+                                      ...candidate,
+                                      fieldRefinements: [
+                                        ...(candidate.fieldRefinements ?? []),
+                                        {
+                                          id: generateBuilderId(),
+                                          operator: 'eq',
+                                          rightKind: 'literal',
+                                          rightLiteral: '',
+                                          message: 'Validation failed',
+                                        },
+                                      ],
+                                    }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                          >
+                            <Plus className="mr-2 size-4" />
+                            Add Field Refinement
+                          </Button>
+                        </div>
+                        {fieldRefinements.map((refinement) => (
+                          <div
+                            key={refinement.id}
+                            className="grid gap-2 md:grid-cols-5 rounded border p-2"
+                          >
+                            <Select
+                              value={refinement.operator}
+                              onValueChange={(value) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        fieldRefinements: (
+                                          candidate.fieldRefinements ?? []
+                                        ).map((entry) =>
+                                          entry.id === refinement.id
+                                            ? {
+                                              ...entry,
+                                              operator: value as RuleOperator,
+                                            }
+                                            : entry,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Operator" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="eq">equals</SelectItem>
+                                <SelectItem value="neq">not equals</SelectItem>
+                                <SelectItem value="gt">greater than</SelectItem>
+                                <SelectItem value="gte">greater/equal</SelectItem>
+                                <SelectItem value="lt">less than</SelectItem>
+                                <SelectItem value="lte">less/equal</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={refinement.rightKind}
+                              onValueChange={(value) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        fieldRefinements: (
+                                          candidate.fieldRefinements ?? []
+                                        ).map((entry) =>
+                                          entry.id === refinement.id
+                                            ? {
+                                              ...entry,
+                                              rightKind:
+                                                value as BuilderFieldRefinement['rightKind'],
+                                            }
+                                            : entry,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Right side" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="literal">Literal</SelectItem>
+                                <SelectItem value="payloadField">
+                                  Payload field
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              value={
+                                refinement.rightKind === 'literal'
+                                  ? (refinement.rightLiteral ?? '')
+                                  : (refinement.rightPath ?? '')
+                              }
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        fieldRefinements: (
+                                          candidate.fieldRefinements ?? []
+                                        ).map((entry) =>
+                                          entry.id === refinement.id
+                                            ? refinement.rightKind === 'literal'
+                                              ? {
+                                                ...entry,
+                                                rightLiteral: event.target.value,
+                                              }
+                                              : {
+                                                ...entry,
+                                                rightPath: event.target.value,
+                                              }
+                                            : entry,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder={
+                                refinement.rightKind === 'literal'
+                                  ? 'Literal value'
+                                  : 'Payload path'
+                              }
+                            />
+                            <Input
+                              value={refinement.message}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        fieldRefinements: (
+                                          candidate.fieldRefinements ?? []
+                                        ).map((entry) =>
+                                          entry.id === refinement.id
+                                            ? { ...entry, message: event.target.value }
+                                            : entry,
+                                        ),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Error message"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map((candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        fieldRefinements: (
+                                          candidate.fieldRefinements ?? []
+                                        ).filter((entry) => entry.id !== refinement.id),
+                                      }
+                                      : candidate,
+                                  ),
+                                }))
+                              }
+                            >
+                              <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3">
+                        <Label className="flex items-center gap-2 text-sm font-normal">
+                          <Checkbox
+                            checked={field.required}
+                            onCheckedChange={(checked) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, required: checked === true }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                          />
+                          Required
+                        </Label>
+                        <Label className="flex items-center gap-2 text-sm font-normal">
+                          <Checkbox
+                            checked={field.useInt === true}
+                            onCheckedChange={(checked) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, useInt: checked === true }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                          />
+                          Integer
+                        </Label>
+                        <Label className="flex items-center gap-2 text-sm font-normal">
+                          <Checkbox
+                            checked={field.usePositive === true}
+                            onCheckedChange={(checked) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, usePositive: checked === true }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                          />
+                          Positive
+                        </Label>
+                        <Label className="flex items-center gap-2 text-sm font-normal">
+                          <Checkbox
+                            checked={field.useNonNegative === true}
+                            onCheckedChange={(checked) =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map((candidate, candidateIndex) =>
+                                  candidateIndex === fieldIndex
+                                    ? { ...candidate, useNonNegative: checked === true }
+                                    : candidate,
+                                ),
+                              }))
+                            }
+                          />
+                          Non-negative
+                        </Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          disabled={schemaBuilder.fields.length <= 1}
+                          onClick={() =>
+                            setSchemaBuilder((current) => ({
+                              ...current,
+                              fields: current.fields.filter(
+                                (_, candidateIndex) => candidateIndex !== fieldIndex,
+                              ),
+                            }))
+                          }
+                        >
+                          <Trash2 className="mr-2 size-4 text-destructive" />
+                          Remove Field
+                        </Button>
+                      </div>
+                      {invalidField ? (
+                        <p className="text-xs text-destructive">
+                          Complete required options for safe schema generation.
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium">Cross-Field Refinements</div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const nextLeftField = leftRuleFields[0] ?? '';
+                      if (!nextLeftField) {
+                        toast.error('Add compatible fields before adding a refinement.');
+                        return;
+                      }
+                      const nextLeftType = fieldTypeByRuleField.get(nextLeftField);
+                      const nextCompatibleFields = nextLeftType
+                        ? (availableRuleFieldsByType.get(nextLeftType) ?? []).filter(
+                          (fieldKey) => fieldKey !== nextLeftField,
+                        )
+                        : [];
+                      setSchemaRefinements((current) => [
+                        ...current,
+                        {
+                          id: generateBuilderId(),
+                          leftField: nextLeftField,
+                          operator: getAllowedOperators(nextLeftType)[0] ?? 'eq',
+                          rightField: nextCompatibleFields[0] ?? '',
+                          message: 'Validation failed',
+                        },
+                      ]);
+                    }}
+                    disabled={leftRuleFields.length === 0}
+                  >
+                    <Plus className="mr-2 size-4" />
+                    Add Refinement
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Use the Blockly composer for nested logic; these rules cover
+                  common type-safe comparisons.
+                </p>
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={blocklyDraft.fieldId ?? ''}
+                    onValueChange={(value) =>
+                      setBlocklyDraft((current) => ({
+                        ...current,
+                        fieldId: value || null,
+                      }))
+                    }
+                  >
+                    <SelectTrigger className="w-[280px]">
+                      <SelectValue placeholder="Field for logic composer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {schemaBuilder.fields.map((field) => (
+                        <SelectItem key={field.id} value={field.id}>
+                          {field.key || field.label || field.id}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setIsBlocklyComposerOpen(true)}
+                    disabled={!selectedBlocklyField}
+                  >
+                    Compose Logic
+                  </Button>
+                </div>
+                {schemaRefinements.map((rule) => (
+                  <div key={rule.id} className="grid gap-2 md:grid-cols-4 rounded-md border bg-card p-2">
+                    <Input value={rule.leftField} disabled />
+                    <Input value={rule.operator} disabled />
+                    <Input value={rule.rightField} disabled />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={rule.message}
+                        onChange={(event) =>
+                          setSchemaRefinements((current) =>
+                            current.map((candidate) =>
+                              candidate.id === rule.id
+                                ? { ...candidate, message: event.target.value }
                                 : candidate,
                             ),
-                          }))
+                          )
                         }
+                        placeholder="Error message"
                       />
-                      <span>Required</span>
-                    </Label>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      disabled={schemaBuilder.fields.length <= 1}
-                      onClick={() =>
-                        setSchemaBuilder((current) => ({
-                          ...current,
-                          fields: current.fields.filter(
-                            (_, candidateIndex) => candidateIndex !== fieldIndex,
-                          ),
-                        }))
-                      }
-                    >
-                      <Trash2 className="mr-2 size-4 text-destructive" />
-                      Remove
-                    </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        onClick={() =>
+                          setSchemaRefinements((current) =>
+                            current.filter((candidate) => candidate.id !== rule.id),
+                          )
+                        }
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

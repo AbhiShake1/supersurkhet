@@ -18,14 +18,16 @@ describe('plugin-studio route contract', () => {
     expect(content).toContain("createFileRoute('/plugin-studio')");
   });
 
-  it('renders no-code builder sections and guided schema tooling', () => {
+  it('renders dialog-first schema tooling and template trigger flow', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('No-Code Builder');
-    expect(content).toContain('Schema Builder');
-    expect(content).toContain('Cross-Field Validation Rules');
-    expect(content).toContain('Blockly Logic Rules');
-    expect(content).toContain('Build in 4 guided steps');
+    expect(content).toContain('Schema Editor');
+    expect(content).toContain('Schema Fields');
+    expect(content).toContain('Cross-Field Refinements');
+    expect(content).toContain('Build Powerful Plugin Data Models.');
+    expect(content).toContain('isTemplatesDialogOpen');
+    expect(content).not.toContain('No-Code Builder');
+    expect(content).not.toContain('Studio Engine Modules');
   });
 
   it('supports draft persistence and revision loading actions', () => {

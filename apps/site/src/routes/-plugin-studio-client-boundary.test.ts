@@ -49,12 +49,15 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('mx-auto w-full max-w-7xl');
   });
 
-  it('supports a no-code plugin builder flow and hides JSON editing', () => {
+  it('supports a dialog-first schema builder flow and hides raw schema docs', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('No-Code Builder');
-    expect(content).not.toContain('Advanced JSON');
-    expect(content).not.toContain('<textarea');
+    expect(content).toContain('Schema Editor');
+    expect(content).toContain('Schema Fields');
+    expect(content).toContain('Cross-Field Refinements');
+    expect(content).not.toContain('No-Code Builder');
+    expect(content).not.toContain('Full SchemaDoc JSON');
+    expect(content).not.toContain('schema-editor-doc-json');
   });
 
   it('applies template presets through a dedicated template handler', () => {
@@ -68,7 +71,7 @@ describe('plugin-studio client boundary', () => {
     const content = getRouteContent();
 
     expect(content).toContain('availableRuleFieldsByType');
-    expect(content).toContain('Cross-Field Validation Rules');
+    expect(content).toContain('Cross-Field Refinements');
   });
 
   it('restricts cross-field comparisons to a different compatible field', () => {
@@ -95,22 +98,17 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('id="schema-editor-schema-title"');
   });
 
-  it('adds explicit labels and vertical spacing for schema field inputs in schema editor dialog', () => {
+  it('keeps schema field editing controls in the schema editor dialog', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('htmlFor={`schema-editor-field-key-${field.id}`}');
-    expect(content).toContain(
-      'htmlFor={`schema-editor-field-label-${field.id}`}',
-    );
-    expect(content).toContain('id={`schema-editor-field-key-${field.id}`}');
-    expect(content).toContain('id={`schema-editor-field-label-${field.id}`}');
-    expect(content).toContain(
-      'grid items-center gap-x-2 gap-y-3 rounded-md border bg-card p-2',
-    );
-    expect(content).toContain(
-      'htmlFor={`schema-editor-field-required-${field.id}`}',
-    );
-    expect(content).toContain('id={`schema-editor-field-required-${field.id}`}');
+    expect(content).toContain('value={field.key}');
+    expect(content).toContain('value={field.label}');
+    expect(content).toContain('value={field.description}');
+    expect(content).toContain('placeholder="Input placeholder"');
+    expect(content).toContain('Derived Values');
+    expect(content).toContain('Add Derivation');
+    expect(content).toContain('Field Refinements');
+    expect(content).toContain('Add Field Refinement');
   });
 
   it('adds explicit labels for workflow trigger fields inside workflow editor dialog', () => {
@@ -146,7 +144,7 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('plugin_logic_and');
     expect(content).toContain('plugin_logic_or');
     expect(content).toContain('plugin_logic_not');
-    expect(content).toContain('Blockly Logic Rules');
+    expect(content).toContain('Cross-Field Refinements');
   });
 
   it('wires draft CRUD through app api schema tables and draft server functions', () => {
