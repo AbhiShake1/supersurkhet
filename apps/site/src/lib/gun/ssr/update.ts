@@ -9,6 +9,7 @@ import { encrypt } from '../utils/sea';
 function omitMeta<T>(obj: T): T {
   if (!obj) return obj;
   return _.transform(obj, (result, value, key) => {
+    if (value === undefined) return;
     if (key === '_') return; // skip this key
     if (_.isArray(value)) {
       result[key] = value.map(omitMeta);
@@ -40,14 +41,12 @@ export function update<const T extends SchemaKeys>(
 
     const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
     const _encrypted = await encrypt(value, schema);
-    const encrypted = Object.fromEntries(
-      Object.entries(_encrypted).filter(([, v]) => v !== undefined),
-    );
-    console.log('update', encrypted);
+    const encrypted = omitMeta(_encrypted);
+    console.log('update', keys, encrypted);
     return new Promise<GunMessagePut>((resolve, reject) => {
       getGunRef(keys)
         .get(id)
-        .put(omitMeta(encrypted), (ack) => {
+        .put(encrypted, (ack) => {
           if ('err' in ack && !!ack.err) {
             reject(ack.err);
           } else {

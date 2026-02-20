@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrayElementWrapper } from './components/ArrayElementWrapper';
 import { ArrayWrapper } from './components/ArrayWrapper';
 import { BooleanField } from './components/BooleanField';
+import { ClassNameField } from './components/ClassNameField';
 import { ColorField } from './components/ColorField';
 import { CurrencyField } from './components/CurrencyField';
 import { DateField } from './components/DateField';
@@ -48,6 +49,7 @@ export const ShadcnAutoFormFieldComponents = {
   string: StringField,
   number: NumberField,
   boolean: BooleanField,
+  className: ClassNameField,
   date: DateField,
   datetime: DateTimeField,
   select: SelectField,

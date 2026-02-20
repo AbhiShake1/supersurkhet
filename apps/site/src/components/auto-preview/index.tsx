@@ -320,6 +320,7 @@ const autoPreviewComponents: Record<
   AutoPreviewComponent<any>
 > = {
   boolean: BooleanPreview,
+  className: StringPreview,
   date: DatePreview,
   datetime: DatePreview,
   image: ImagePreview,

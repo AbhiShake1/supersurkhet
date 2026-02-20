@@ -16,6 +16,6 @@ describe('home plugin builder call-to-action contract', () => {
     expect(content).toContain('Open Plugin Builder');
     expect(content).toContain("tab: 'overview'");
     expect(content).toContain("pluginId: 'plugin.restaurant.admin'");
-    expect(content).toContain("draftId: 'draft.local'");
+    expect(content).not.toContain("draftId: 'draft.local'");
   });
 });

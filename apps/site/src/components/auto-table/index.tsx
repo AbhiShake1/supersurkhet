@@ -124,6 +124,11 @@ export type AutoTableProps<T extends SchemaKeys> = {
   actions?: (
     ctx: CellContext<NestedSchemaType<T>, unknown>,
   ) => Promise<React.ReactNode>;
+  editable?: boolean;
+  onAddColumn?: () => void;
+  onEditColumn?: (columnKey: string) => void;
+  onDeleteColumn?: (columnKey: string) => void;
+  onReorderColumns?: (sourceColumnKey: string, targetColumnKey: string) => void;
 } & (
     | {
       schema: T;
@@ -269,6 +274,12 @@ export function AutoTable<T extends SchemaKeys>({
     previewOverrides: props.previewOverrides,
     readOnly: props.readOnly,
     actions: props.actions,
+    onEditColumn:
+      props.editable && !props.readOnly ? props.onEditColumn : undefined,
+    onDeleteColumn:
+      props.editable && !props.readOnly ? props.onDeleteColumn : undefined,
+    onReorderColumns:
+      props.editable && !props.readOnly ? props.onReorderColumns : undefined,
   });
 
   // @ts-expect-error
@@ -314,7 +325,21 @@ export function AutoTable<T extends SchemaKeys>({
         actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
         className={className}
       >
-        <DataTableAdvancedToolbar table={table}>
+        <DataTableAdvancedToolbar
+          table={table}
+          endSlot={
+            props.editable && !props.readOnly && props.onAddColumn ? (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={props.onAddColumn}
+              >
+                Add Column
+              </Button>
+            ) : null
+          }
+        >
           {enableAdvancedFiltering && (
             <DataTableFilterList
               table={table}
@@ -381,6 +406,9 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
   readOnly?: boolean;
   derivedFieldKeys: Set<string>;
   previewOverrides?: PreviewOverrides<T>;
+  onEditColumn?: (columnKey: string) => void;
+  onDeleteColumn?: (columnKey: string) => void;
+  onReorderColumns?: (sourceColumnKey: string, targetColumnKey: string) => void;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
@@ -391,6 +419,9 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   previewOverrides,
   actions,
   readOnly,
+  onEditColumn,
+  onDeleteColumn,
+  onReorderColumns,
 }: GetAutoTableColumnsProps<T, S>): EnhancedColumnDef<NestedSchemaType<T>>[] {
   'use memo';
   const columns: EnhancedColumnDef<NestedSchemaType<T>>[] = [
@@ -440,6 +471,13 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
           className="capitalize text-center"
           column={column}
           title={description || key}
+          onEditColumn={
+            onEditColumn ? () => onEditColumn(key) : undefined
+          }
+          onDeleteColumn={
+            onDeleteColumn ? () => onDeleteColumn(key) : undefined
+          }
+          onMoveColumn={onReorderColumns}
         />
       ),
       cell: ({ cell, table, row }) => {

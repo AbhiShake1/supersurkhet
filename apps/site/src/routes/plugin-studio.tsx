@@ -1,58 +1,6 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
-import {
-  ArrowRight,
-  BadgePlus,
-  Pencil,
-  Plus,
-  Sparkles,
-  Trash2,
-  Wand2,
-} from 'lucide-react';
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
+import { AutoAdmin } from '@/components/auto-admin';
 import { useConfetti } from '@/components/confetti-provider';
-import {
-  createActionsManifestEditorState,
-} from '@/features/plugin-builder/workspace/tabs/actions-manifest-editor';
-import {
-  type ExpressionRow,
-  ExpressionRowBuilder,
-} from '@/features/plugin-builder/workspace/tabs/expression-row-builder';
-import {
-  createFieldConfigPanelModel,
-  serializeFieldConfigPanelDraft,
-} from '@/features/plugin-builder/workspace/tabs/field-config-panel';
-import {
-  applyGuardedIrDraftText,
-  createGuardedIrEditorState,
-  GuardedIrEditor,
-  switchGuardedIrEditorMode,
-} from '@/features/plugin-builder/workspace/tabs/guarded-ir-editor';
-import { OverviewTab } from '@/features/plugin-builder/workspace/tabs/overview-tab';
-import {
-  createPublishGateTabState,
-  PublishGateTab,
-  setPublishConfirmationChecked,
-} from '@/features/plugin-builder/workspace/tabs/publish-gate-tab';
-import { ReviewDiagnosticsTab } from '@/features/plugin-builder/workspace/tabs/review-diagnostics-tab';
-import {
-  mapRoutesTabsToAutoAdminConfig,
-  RoutesTabsMapperTab,
-} from '@/features/plugin-builder/workspace/tabs/routes-tabs-mapper';
-import { buildDerivationPathOptions } from '@/features/plugin-builder/workspace/tabs/derivation-path-options';
-import {
-  compileDerivedFieldToDeriveIr,
-  DERIVED_FIELD_OPERATION_OPTIONS,
-  DERIVED_FIELD_SOURCE_OPTIONS,
-  parseDerivedFieldsFromSchemaDoc,
-  type DerivedFieldOperation,
-  type DerivedFieldSource,
-  type SchemaBuilderDerivedField,
-} from '@/features/plugin-builder/workspace/tabs/derived-fields';
-import { SchemasTab } from '@/features/plugin-builder/workspace/tabs/schemas-tab';
-import { WorkflowGraphEditor } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -62,9 +10,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { AUTOFORM_FIELD_TYPES } from '@/components/ui/autoform';
+import { ClassNameFieldControl } from '@/components/ui/autoform/components/ClassNameField';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -91,17 +39,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { PluginBuildDiagnostic } from '@/features/plugin-builder/domain/validation/diagnostics-contract';
+import { validateWorkflowDags } from '@/features/plugin-builder/domain/validation/workflow-dag-validator';
 import type {
   FieldEntity,
   SchemaEntity,
 } from '@/features/plugin-builder/domain/workspace/workspace-entities';
-import type { PluginBuildDiagnostic } from '@/features/plugin-builder/domain/validation/diagnostics-contract';
+import { createActionsManifestEditorState } from '@/features/plugin-builder/workspace/tabs/actions-manifest-editor';
+import { buildDerivationPathOptions } from '@/features/plugin-builder/workspace/tabs/derivation-path-options';
+import {
+  compileDerivedFieldToDeriveIr,
+  DERIVED_FIELD_OPERATION_OPTIONS,
+  DERIVED_FIELD_SOURCE_OPTIONS,
+  parseDerivedFieldsFromSchemaDoc,
+  type DerivedFieldOperation,
+  type SchemaBuilderDerivedField
+} from '@/features/plugin-builder/workspace/tabs/derived-fields';
+import {
+  type ExpressionRow
+} from '@/features/plugin-builder/workspace/tabs/expression-row-builder';
+import {
+  createFieldConfigPanelModel,
+  serializeFieldConfigPanelDraft,
+} from '@/features/plugin-builder/workspace/tabs/field-config-panel';
+import {
+  createGuardedIrEditorState
+} from '@/features/plugin-builder/workspace/tabs/guarded-ir-editor';
+import {
+  createPublishGateTabState
+} from '@/features/plugin-builder/workspace/tabs/publish-gate-tab';
+import {
+  mapRoutesTabsToAutoAdminConfig
+} from '@/features/plugin-builder/workspace/tabs/routes-tabs-mapper';
+import {
+  validateWorkflowReferencePaths,
+  WorkflowGraphEditor,
+} from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
 import { api } from '@/lib/api';
 import {
   mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
+import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
 import type {
   ActionManifestDoc,
   AdminTabDoc,
@@ -117,11 +105,32 @@ import type {
 import {
   createPluginDraft,
   createPluginDraftRevision,
-  ensureMarketplaceSeedReleases,
   previewPluginReleaseHashes,
   publishPluginRelease,
 } from '@/server-functions/plugins';
 import type { CompileVerifyDiagnostic } from '@/server-functions/plugins-v2-compile-verify';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { createFileRoute } from '@tanstack/react-router';
+import * as LucideIcons from 'lucide-react';
+import {
+  ArrowRight,
+  BadgePlus,
+  Pencil,
+  Plus,
+  Sparkles,
+  Trash2,
+  Wand2,
+  type LucideIcon
+} from 'lucide-react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import {
+  buildPluginStudioSidebarSnapshotStorageKey,
+  pickLatestPluginStudioSidebarSnapshot,
+  PLUGIN_STUDIO_SIDEBAR_SNAPSHOT_VERSION,
+  shouldApplyPluginStudioSidebarSnapshot,
+  type PluginStudioSidebarSnapshot,
+} from './-plugin-studio-sidebar-snapshot';
 
 export const Route = createFileRoute('/plugin-studio')({
   component: PluginStudioRoute,
@@ -165,15 +174,93 @@ const DEFAULT_WORKFLOW_DOC = {
   edges: [],
 } satisfies WorkflowDoc;
 
+type SystemTabKey = 'dashboard' | 'qr' | 'website';
+
+type SystemTabState = Record<
+  SystemTabKey,
+  {
+    title: string;
+    group?: string;
+    iconName?: string;
+  }
+>;
+
+const DEFAULT_SYSTEM_TABS: SystemTabState = {
+  dashboard: {
+    title: 'Dashboard',
+  },
+  qr: {
+    title: 'QR Management',
+    group: 'System Configuration',
+  },
+  website: {
+    title: 'Website UI',
+    group: 'System Configuration',
+  },
+};
+
+const DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_group__/';
+const DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_system__/';
+const DEFAULT_DRAFT_ADMIN_TABS = serializeDraftAdminTabs({
+  schemaTabs: [
+    {
+      schema: DEFAULT_SCHEMA_DOC.schemaId,
+      title: DEFAULT_SCHEMA_DOC.title,
+    },
+  ],
+  orderedGroups: [],
+  systemTabs: DEFAULT_SYSTEM_TABS,
+});
+
 function canonicalStringify(input: unknown) {
   return JSON.stringify(input, null, 2);
 }
 
 function toErrorMessage(error: unknown) {
+  if (typeof error === 'string' && error.trim()) {
+    return error.trim();
+  }
   if (error instanceof Error && error.message.trim()) {
     return error.message;
   }
+  if (error && typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const messageCandidates = [
+      record.message,
+      record.error,
+      record.reason,
+      record.details,
+    ];
+    for (const candidate of messageCandidates) {
+      if (typeof candidate === 'string' && candidate.trim()) {
+        return candidate.trim();
+      }
+    }
+    if (Array.isArray(record.issues)) {
+      const firstIssue = record.issues[0] as { message?: unknown } | undefined;
+      if (typeof firstIssue?.message === 'string' && firstIssue.message.trim()) {
+        return firstIssue.message.trim();
+      }
+    }
+  }
   return 'Unknown error';
+}
+
+function isMissingPluginDraftError(error: unknown) {
+  const message = toErrorMessage(error);
+  return (
+    message.includes('Plugin draft "') && message.includes('" does not exist')
+  );
+}
+
+function isDuplicatePersistenceError(error: unknown) {
+  const message = toErrorMessage(error).toLowerCase();
+  return (
+    message.includes('duplicate') ||
+    message.includes('already exists') ||
+    message.includes('unique constraint') ||
+    message.includes('conflict')
+  );
 }
 
 function toStableWorkspaceSuffix(input: string) {
@@ -184,13 +271,54 @@ function toStableWorkspaceSuffix(input: string) {
   return normalized || 'entity';
 }
 
+function toStableDraftIdSuffix(value: string | undefined) {
+  const normalized = (value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._:-]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return normalized || 'anon';
+}
+
+function toDraftId({
+  actorUserId,
+}: {
+  actorUserId: string;
+}) {
+  return `draft.${toStableDraftIdSuffix(actorUserId)}`;
+}
+
+function parseVersionParts(version: string): [number, number, number] | null {
+  const parts = version.split('.');
+  if (parts.length !== 3) return null;
+  const numeric = parts.map((part) => Number(part));
+  if (numeric.some((part) => !Number.isInteger(part) || part < 0)) {
+    return null;
+  }
+  return [numeric[0], numeric[1], numeric[2]];
+}
+
+function isVersionGreater(left: string, right: string): boolean {
+  const leftParts = parseVersionParts(left);
+  const rightParts = parseVersionParts(right);
+  if (!leftParts && !rightParts) return left > right;
+  if (!leftParts) return false;
+  if (!rightParts) return true;
+  if (leftParts[0] !== rightParts[0]) return leftParts[0] > rightParts[0];
+  if (leftParts[1] !== rightParts[1]) return leftParts[1] > rightParts[1];
+  return leftParts[2] > rightParts[2];
+}
+
 function formatUserHandle(userId: string): string {
   const segments = userId.split('/');
   const lastSegment = segments[segments.length - 1] ?? userId;
 
   // For UUID-style IDs (anonymous users), use first 8 chars which provides sufficient uniqueness
   // For other IDs (authenticated users), use up to 16 chars for better readability
-  const isUuidStyle = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(lastSegment);
+  const isUuidStyle =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      lastSegment,
+    );
   const maxLength = isUuidStyle ? 8 : 16;
 
   const normalized = lastSegment
@@ -198,6 +326,300 @@ function formatUserHandle(userId: string): string {
     .replace(/[^a-z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
   return normalized.slice(0, maxLength) || 'user';
+}
+
+function appendActorUserIdAliases(
+  aliases: Set<string>,
+  value: string | undefined,
+) {
+  const normalized = value?.trim();
+  if (!normalized) return;
+  aliases.add(normalized);
+  const slashSegments = normalized
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  const slashTail = slashSegments[slashSegments.length - 1];
+  if (slashTail) {
+    aliases.add(slashTail);
+  }
+}
+
+function buildActorUserIdAliases(user: {
+  pub?: string;
+  _?: { soul?: string };
+} | null | undefined): string[] {
+  const aliases = new Set<string>();
+  appendActorUserIdAliases(aliases, user?.pub);
+  appendActorUserIdAliases(aliases, user?._?.soul);
+  return [...aliases];
+}
+
+function readSearchParamString(
+  search: unknown,
+  key: string,
+): string | undefined {
+  if (!search || typeof search !== 'object') return undefined;
+  const value = (search as Record<string, unknown>)[key];
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function toDraftHydrationKey({
+  draftId,
+  revision,
+}: {
+  draftId: string;
+  revision?: Pick<PluginDraftRevisionDoc, 'revisionId' | 'createdAt'> | null;
+}) {
+  if (!revision) {
+    return `${draftId}:empty`;
+  }
+  return `${draftId}:${revision.revisionId ?? revision.createdAt ?? 'latest'}`;
+}
+
+function toDraftRevisionRecencyKey(
+  revision: Pick<PluginDraftRevisionDoc, 'createdAt' | 'revisionId'>,
+) {
+  return `${revision.createdAt ?? ''}:${revision.revisionId ?? ''}`;
+}
+
+function toDraftSnapshotString({
+  schemaDocs,
+  workflows,
+  adminTabs,
+}: {
+  schemaDocs: readonly SchemaDoc[];
+  workflows: readonly WorkflowDoc[];
+  adminTabs: readonly AdminTabDoc[];
+}) {
+  return canonicalStringify({
+    schemaDocs,
+    workflows,
+    adminTabs,
+  });
+}
+
+function computeOrderedGroupNames({
+  customGroups,
+  groupOrder,
+  schemaGroupById,
+  schemaOrder,
+  systemTabs,
+}: {
+  customGroups: readonly string[];
+  groupOrder: readonly string[];
+  schemaGroupById: Record<string, string>;
+  schemaOrder: readonly string[];
+  systemTabs: SystemTabState;
+}): string[] {
+  const discoveredBySchemaOrder: string[] = [];
+  for (const schemaId of schemaOrder) {
+    const normalized = (schemaGroupById[schemaId] ?? '').trim();
+    if (!normalized || discoveredBySchemaOrder.includes(normalized)) continue;
+    discoveredBySchemaOrder.push(normalized);
+  }
+  const discoveredBySystemOrder: string[] = [];
+  for (const key of ['dashboard', 'qr', 'website'] as const) {
+    const normalized = systemTabs[key].group?.trim();
+    if (!normalized || discoveredBySystemOrder.includes(normalized)) continue;
+    discoveredBySystemOrder.push(normalized);
+  }
+
+  const pool = new Set<string>();
+  for (const groupName of customGroups) {
+    const normalized = groupName.trim();
+    if (normalized) pool.add(normalized);
+  }
+  for (const groupName of Object.values(schemaGroupById)) {
+    const normalized = groupName.trim();
+    if (normalized) pool.add(normalized);
+  }
+  for (const key of ['dashboard', 'qr', 'website'] as const) {
+    const normalized = systemTabs[key].group?.trim();
+    if (normalized) pool.add(normalized);
+  }
+
+  const preferred = groupOrder.filter((groupName) => pool.has(groupName));
+  const append: string[] = [
+    ...customGroups,
+    ...discoveredBySchemaOrder,
+    ...discoveredBySystemOrder,
+  ];
+  for (const groupName of append) {
+    const normalized = groupName.trim();
+    if (
+      !normalized ||
+      !pool.has(normalized) ||
+      preferred.includes(normalized)
+    ) {
+      continue;
+    }
+    preferred.push(normalized);
+  }
+  return preferred;
+}
+
+function isGroupSentinelSchemaId(schemaId: string): boolean {
+  return schemaId.startsWith(DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX);
+}
+
+function toGroupSentinelSchemaId(index: number): string {
+  return `${DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX}${index}`;
+}
+
+function isSystemSentinelSchemaId(schemaId: string): boolean {
+  return schemaId.startsWith(DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX);
+}
+
+function toSystemSentinelSchemaId(key: SystemTabKey): string {
+  return `${DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX}${key}`;
+}
+
+function parseSystemSentinelSchemaId(schemaId: string): SystemTabKey | null {
+  if (!isSystemSentinelSchemaId(schemaId)) return null;
+  const key = schemaId.slice(DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX.length);
+  if (key === 'dashboard' || key === 'qr' || key === 'website') {
+    return key;
+  }
+  return null;
+}
+
+function serializeDraftAdminTabs({
+  schemaTabs,
+  orderedGroups,
+  systemTabs,
+}: {
+  schemaTabs: readonly AdminTabDoc[];
+  orderedGroups: readonly string[];
+  systemTabs: SystemTabState;
+}): AdminTabDoc[] {
+  const groupSentinels: AdminTabDoc[] = orderedGroups.map(
+    (groupName, index) => ({
+      schema: toGroupSentinelSchemaId(index),
+      group: groupName,
+    }),
+  );
+  const systemSentinels: AdminTabDoc[] = (
+    Object.entries(systemTabs) as Array<
+      [SystemTabKey, SystemTabState[SystemTabKey]]
+    >
+  ).map(([key, value]) => ({
+    schema: toSystemSentinelSchemaId(key),
+    title: value.title,
+    group: value.group,
+    icon: value.iconName,
+  }));
+  return [...groupSentinels, ...schemaTabs, ...systemSentinels];
+}
+
+function deserializeDraftAdminTabs(
+  adminTabs: readonly AdminTabDoc[] | undefined,
+): {
+  schemaTabs: AdminTabDoc[];
+  orderedGroups: string[];
+  systemTabs: SystemTabState;
+} {
+  const tabs = adminTabs ?? [];
+  const schemaTabs: AdminTabDoc[] = [];
+  const orderedGroups: string[] = [];
+  const systemTabs: SystemTabState = { ...DEFAULT_SYSTEM_TABS };
+
+  for (const tab of tabs) {
+    if (isGroupSentinelSchemaId(tab.schema)) {
+      const groupName = tab.group?.trim();
+      if (groupName && !orderedGroups.includes(groupName)) {
+        orderedGroups.push(groupName);
+      }
+      continue;
+    }
+
+    const systemKey = parseSystemSentinelSchemaId(tab.schema);
+    if (systemKey) {
+      const normalizedTitle = tab.title?.trim();
+      const normalizedGroup = tab.group?.trim();
+      const normalizedIcon = tab.icon?.trim();
+      systemTabs[systemKey] = {
+        title: normalizedTitle || DEFAULT_SYSTEM_TABS[systemKey].title,
+        group: normalizedGroup || undefined,
+        iconName: normalizedIcon || undefined,
+      };
+      continue;
+    }
+
+    schemaTabs.push(tab);
+  }
+
+  if (orderedGroups.length === 0) {
+    for (const tab of schemaTabs) {
+      const groupName = tab.group?.trim();
+      if (!groupName || orderedGroups.includes(groupName)) continue;
+      orderedGroups.push(groupName);
+    }
+  }
+
+  return {
+    schemaTabs,
+    orderedGroups,
+    systemTabs,
+  };
+}
+
+function toRouteSegmentFromSchemaId(schemaId: string) {
+  return schemaId
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'tab';
+}
+
+function toDraftRoutesFromAdminTabs(
+  adminTabs: readonly AdminTabDoc[],
+): Array<{
+  id: string;
+  schema: string;
+  title: string;
+  group?: string;
+  order: number;
+  routeSegment: string;
+  routePath: string;
+  iconName?: string;
+}> {
+  return adminTabs.map((tab, index) => {
+    const routeSegment = toRouteSegmentFromSchemaId(`${tab.schema}-${index}`);
+    return {
+      id: `${tab.schema}:${index}`,
+      schema: tab.schema,
+      title: tab.title ?? tab.schema,
+      group: tab.group?.trim() || undefined,
+      order: index,
+      routeSegment,
+      routePath: `/plugin-studio/${routeSegment}`,
+      iconName: tab.icon?.trim() || undefined,
+    };
+  });
+}
+
+function toAdminTabsFromDraftRoutes(
+  routes:
+    | Array<{
+      schema: string;
+      title: string;
+      group?: string;
+      order: number;
+      iconName?: string;
+    }>
+    | undefined,
+): AdminTabDoc[] {
+  if (!routes || routes.length === 0) return DEFAULT_DRAFT_ADMIN_TABS;
+  return [...routes]
+    .sort((left, right) => left.order - right.order)
+    .map((route) => ({
+      schema: route.schema,
+      title: route.title,
+      group: route.group?.trim() || undefined,
+      icon: route.iconName?.trim() || undefined,
+    }));
 }
 
 function toWorkspaceSchemasAndFields(schemaDocs: readonly SchemaDoc[]): {
@@ -294,12 +716,12 @@ function toLatestTemplateReleases(releases: PluginReleaseDoc[]) {
   const map = new Map<string, PluginReleaseDoc>();
   for (const release of mergeMarketplaceReleasesWithSeed(releases)) {
     const existing = map.get(release.pluginId);
-    if (!existing || release.version > existing.version) {
+    if (!existing || isVersionGreater(release.version, existing.version)) {
       map.set(release.pluginId, release);
     }
   }
   return [...map.values()].sort((left, right) =>
-    left.pluginId.localeCompare(right.pluginId),
+    (left.pluginId ?? '').localeCompare(right?.pluginId ?? ''),
   );
 }
 
@@ -419,8 +841,12 @@ function parseJsonObject(value: string | undefined) {
   }
 }
 
+const BUILDER_SCHEMA_FIELD_TYPES = AUTOFORM_FIELD_TYPES.filter(
+  (fieldType) => fieldType !== 'className',
+) as Exclude<(typeof AUTOFORM_FIELD_TYPES)[number], 'className'>[];
+
 const BUILDER_FIELD_TYPES = [
-  ...AUTOFORM_FIELD_TYPES,
+  ...BUILDER_SCHEMA_FIELD_TYPES,
   'enum',
   'array',
   'object',
@@ -609,6 +1035,20 @@ function setJsonNumberEntry(
   return stringifyJsonInput(next);
 }
 
+function setJsonBooleanEntry(
+  value: string | undefined,
+  key: string,
+  nextValue: boolean | undefined,
+) {
+  const next = parseJsonRecord(value);
+  if (nextValue === undefined) {
+    delete next[key];
+  } else {
+    next[key] = nextValue;
+  }
+  return stringifyJsonInput(next);
+}
+
 function readJsonStringEntry(value: string | undefined, key: string): string {
   const record = parseJsonRecord(value);
   return typeof record[key] === 'string' ? (record[key] as string) : '';
@@ -621,6 +1061,132 @@ function readJsonNumberEntry(value: string | undefined, key: string): string {
   if (typeof entry === 'string') return entry;
   return '';
 }
+
+function readJsonBooleanEntry(value: string | undefined, key: string): boolean {
+  const record = parseJsonRecord(value);
+  const entry = record[key];
+  return entry === true || entry === 'true';
+}
+
+function stringifyJsonEntryValue(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (value === null) return 'null';
+  if (Array.isArray(value) || (value && typeof value === 'object')) {
+    return JSON.stringify(value);
+  }
+  return '';
+}
+
+function parseJsonEntryValue(rawValue: string): unknown {
+  const trimmed = rawValue.trim();
+
+  if (trimmed === 'true') return true;
+  if (trimmed === 'false') return false;
+  if (trimmed === 'null') return null;
+  if (/^-?\d+(\.\d+)?$/.test(trimmed)) {
+    return Number(trimmed);
+  }
+
+  if (
+    (trimmed.startsWith('{') && trimmed.endsWith('}')) ||
+    (trimmed.startsWith('[') && trimmed.endsWith(']'))
+  ) {
+    try {
+      return JSON.parse(trimmed) as unknown;
+    } catch {
+      return rawValue;
+    }
+  }
+
+  return rawValue;
+}
+
+function listJsonEntries(
+  value: string | undefined,
+  options?: {
+    excludeKeys?: ReadonlySet<string>;
+  },
+): Array<{ key: string; value: string }> {
+  return Object.entries(parseJsonRecord(value))
+    .filter(([key]) => !options?.excludeKeys?.has(key))
+    .sort(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+    .map(([key, entryValue]) => ({
+      key,
+      value: stringifyJsonEntryValue(entryValue),
+    }));
+}
+
+function getNextJsonEntryKey(
+  record: Record<string, unknown>,
+  prefix: string,
+  blockedKeys?: ReadonlySet<string>,
+): string {
+  const normalizedPrefix = prefix.trim() || 'key';
+  let counter = 0;
+  while (true) {
+    const candidate =
+      counter === 0 ? normalizedPrefix : `${normalizedPrefix}${counter}`;
+    if (!(candidate in record) && !blockedKeys?.has(candidate)) {
+      return candidate;
+    }
+    counter += 1;
+  }
+}
+
+function upsertJsonEntry(
+  value: string | undefined,
+  currentKey: string,
+  nextKey: string,
+  nextValue: string,
+): string {
+  const record = parseJsonRecord(value);
+  const normalizedCurrentKey = currentKey.trim();
+  const normalizedNextKey = nextKey.trim();
+
+  if (
+    normalizedCurrentKey &&
+    normalizedCurrentKey !== normalizedNextKey &&
+    normalizedCurrentKey in record
+  ) {
+    delete record[normalizedCurrentKey];
+  }
+
+  if (!normalizedNextKey) {
+    return stringifyJsonInput(record);
+  }
+
+  record[normalizedNextKey] = parseJsonEntryValue(nextValue);
+  return stringifyJsonInput(record);
+}
+
+function removeJsonEntry(value: string | undefined, key: string): string {
+  const record = parseJsonRecord(value);
+  const normalizedKey = key.trim();
+  if (normalizedKey) {
+    delete record[normalizedKey];
+  }
+  return stringifyJsonInput(record);
+}
+
+const BUILDER_INPUT_PROP_RESERVED_KEYS = new Set<string>([
+  'placeholder',
+  'step',
+  'rows',
+  'readOnly',
+  'disabled',
+  'className',
+]);
+
+const BUILDER_FIELD_CONFIG_RESERVED_KEYS = new Set<string>([
+  'fieldType',
+  'label',
+  'description',
+  'inputProps',
+  'customData',
+]);
 
 function toExpressionLiteral(value: string | undefined): ExpressionDoc {
   if (!value) return '';
@@ -689,7 +1255,9 @@ function toBuilderFieldRefinements(
         rightKind: 'payloadField',
         rightPath: tryReadPayloadRefField(right) ?? '',
         message:
-          typeof entry.message === 'string' ? entry.message : 'Validation failed',
+          typeof entry.message === 'string'
+            ? entry.message
+            : 'Validation failed',
       });
       continue;
     }
@@ -812,6 +1380,54 @@ type BuilderFieldRefinement = {
   message: string;
 };
 
+type AddColumnDraft = {
+  key: string;
+  label: string;
+  description: string;
+  type: BuilderFieldType;
+  fieldType: BuilderLeafFieldType;
+  required: boolean;
+  defaultValue: string;
+  enumValuesText: string;
+  min: string;
+  max: string;
+};
+
+type ColumnSheetMode = 'add' | 'edit';
+
+function createAddColumnDraft(fieldCount: number): AddColumnDraft {
+  const nextIndex = fieldCount + 1;
+  return {
+    key: `field_${nextIndex}`,
+    label: `Field ${nextIndex}`,
+    description: '',
+    type: 'string',
+    fieldType: 'string',
+    required: false,
+    defaultValue: '',
+    enumValuesText: '',
+    min: '',
+    max: '',
+  };
+}
+
+function toAddColumnDraftFromField(field: BuilderField): AddColumnDraft {
+  return {
+    key: field.key,
+    label: field.label,
+    description: field.description,
+    type: field.type,
+    fieldType: normalizeBuilderLeafFieldType(
+      typeof field.fieldType === 'string' ? field.fieldType : field.type,
+    ),
+    required: field.required,
+    defaultValue: field.defaultValue ?? '',
+    enumValuesText: field.enumValuesText ?? '',
+    min: field.min ?? '',
+    max: field.max ?? '',
+  };
+}
+
 type HashPreviewInput = {
   pluginId: string;
   version: string;
@@ -900,13 +1516,18 @@ function toSchemaFieldDoc(
                 kind: 'op' as const,
                 op: refinement.operator,
                 args: [
-                  { kind: 'ref' as const, source: 'payload' as const, path: [field.key] },
+                  {
+                    kind: 'ref' as const,
+                    source: 'payload' as const,
+                    path: [field.key],
+                  },
                   refinement.rightKind === 'payloadField'
                     ? {
                       kind: 'ref' as const,
                       source: 'payload' as const,
                       path:
-                        toSinglePayloadFieldPath(refinement.rightPath).length > 0
+                        toSinglePayloadFieldPath(refinement.rightPath)
+                          .length > 0
                           ? toSinglePayloadFieldPath(refinement.rightPath)
                           : toSinglePayloadFieldPath(field.key),
                     }
@@ -1149,6 +1770,20 @@ function normalizeBuilderLeafFieldType(
   return 'string';
 }
 
+function resolveLucideIconByName(
+  iconName: string | undefined,
+): LucideIcon | undefined {
+  if (!iconName) return undefined;
+  const fromIconMap = (
+    LucideIcons.icons as Record<string, LucideIcon | undefined>
+  )[iconName];
+  if (fromIconMap) return fromIconMap;
+  const fromNamespace = (LucideIcons as Record<string, LucideIcon | undefined>)[
+    iconName
+  ];
+  return fromNamespace;
+}
+
 function getRuleValue(
   field: SchemaFieldDoc,
   kind: 'min' | 'max',
@@ -1175,10 +1810,7 @@ function toBuilderObjectField(field: SchemaFieldDoc): BuilderObjectField {
     id: generateBuilderId(),
     key: field.key,
     label:
-      field.behavior?.fieldConfig?.label ??
-      field.label ??
-      field.key ??
-      'Field',
+      field.behavior?.fieldConfig?.label ?? field.label ?? field.key ?? 'Field',
     description:
       field.behavior?.fieldConfig?.description ?? field.description ?? '',
     type: normalizeBuilderLeafFieldType(field.type),
@@ -1207,9 +1839,7 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
     key: field.key,
     label: typeof label === 'string' ? label : field.key,
     description:
-      typeof description === 'string'
-        ? description
-        : (field.description ?? ''),
+      typeof description === 'string' ? description : (field.description ?? ''),
     type: normalizedType,
     fieldType: AUTOFORM_FIELD_TYPES.includes(normalizedFieldType)
       ? normalizedFieldType
@@ -1239,7 +1869,9 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
     objectFields:
       normalizedType === 'object'
         ? (field.fields ?? [])
-          .filter((nested) => nested.type !== 'object' && nested.type !== 'array')
+          .filter(
+            (nested) => nested.type !== 'object' && nested.type !== 'array',
+          )
           .map(toBuilderObjectField)
         : undefined,
     fieldRefinements: toBuilderFieldRefinements(
@@ -1365,64 +1997,116 @@ function applyRevisionToBuilderState(revision: PluginDraftRevisionDoc): {
     schemaRefinements,
     blocklyRefinements,
     schemaText: canonicalStringify(revision.schemaDocs ?? [schemaDoc]),
-    workflowText: canonicalStringify(revision.workflows ?? [DEFAULT_WORKFLOW_DOC]),
+    workflowText: canonicalStringify(
+      revision.workflows ?? [DEFAULT_WORKFLOW_DOC],
+    ),
   };
 }
 
+type PluginStudioPresenterProps = {
+  user: NonNullable<ReturnType<typeof useAuth>['user']>;
+  isAuthenticated: boolean;
+};
+
 function PluginStudioRoute() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+
+  if (isAuthLoading) {
+    return <PluginStudioSkeleton />;
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="container py-12">
+        <Card>
+          <CardHeader>
+            <CardTitle>Plugin Studio</CardTitle>
+          </CardHeader>
+          <CardContent>Sign in to access the plugin studio.</CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return <PluginStudioPresenter user={user} isAuthenticated={isAuthenticated} />;
+}
+
+function PluginStudioPresenter({
+  user,
+  isAuthenticated,
+}: PluginStudioPresenterProps) {
   const { fire: fireConfetti } = useConfetti();
-  const actorUserId = user?.pub ?? user?._?.soul ?? 'anon';
-  const [pluginId, setPluginId] = useState('example.plugin');
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const actorUserIdAliases = useMemo(
+    () => buildActorUserIdAliases(user),
+    [user?.pub, user?._?.soul],
+  );
+  const actorUserId = actorUserIdAliases[0] ?? 'anon';
+  const isActorIdentityReady = !isAuthenticated || actorUserIdAliases.length > 0;
+  const requestedPluginId = useMemo(
+    () => readSearchParamString(search, 'pluginId'),
+    [search],
+  );
+  const [pluginId, setPluginId] = useState(
+    () => requestedPluginId ?? 'example.plugin',
+  );
+  const draftId = useMemo(
+    () => toDraftId({ actorUserId }),
+    [actorUserId],
+  );
   const [title, setTitle] = useState<string | undefined>('Example Plugin');
-  const [description, setDescription] = useState<string | undefined>('Operational plugin release.');
-  const [schemaText, setSchemaText] = useState(
-    canonicalStringify([DEFAULT_SCHEMA_DOC]),
+  const [description, setDescription] = useState<string | undefined>(
+    'Operational plugin release.',
   );
-  const [workflowText, setWorkflowText] = useState(
-    canonicalStringify([DEFAULT_WORKFLOW_DOC]),
+  const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string>();
+  const [draggingSchemaId, setDraggingSchemaId] = useState<string | null>(null);
+  const [renamingSchemaId, setRenamingSchemaId] = useState<string | null>(null);
+  const [renamingGroupName, setRenamingGroupName] = useState<string | null>(
+    null,
   );
-  const [actionManifestText, setActionManifestText] = useState(
-    canonicalStringify([]),
-  );
-  const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<
-    string
-  >();
+  const [coreExtensionSchemaIds, setCoreExtensionSchemaIds] = useState<
+    Record<string, true>
+  >({});
+  const [lockedCoreFieldKeysBySchemaId, setLockedCoreFieldKeysBySchemaId] =
+    useState<Record<string, string[]>>({});
   const [activeSchemaId, setActiveSchemaId] = useState(
     DEFAULT_SCHEMA_DOC.schemaId,
   );
   const [activeWorkflowId, setActiveWorkflowId] = useState(
     DEFAULT_WORKFLOW_DOC.workflowId,
   );
+  const [isAddColumnSheetOpen, setIsAddColumnSheetOpen] = useState(false);
+  const [addColumnDraft, setAddColumnDraft] = useState<AddColumnDraft>({
+    key: '',
+    label: '',
+    description: '',
+    type: 'string',
+    fieldType: 'string',
+    required: false,
+    defaultValue: '',
+    enumValuesText: '',
+    min: '',
+    max: '',
+  });
+  const [columnSheetMode, setColumnSheetMode] =
+    useState<ColumnSheetMode>('add');
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [isDeleteColumnDialogOpen, setIsDeleteColumnDialogOpen] =
+    useState(false);
+  const [pendingDeleteColumnKey, setPendingDeleteColumnKey] = useState<
+    string | null
+  >(null);
+  const [pendingDeleteTable, setPendingDeleteTable] = useState<{
+    schemaId: string;
+    tabTitle: string;
+  } | null>(null);
   const [isSchemaEditorOpen, setIsSchemaEditorOpen] = useState(false);
   const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
   const [isWorkflowEditorOpen, setIsWorkflowEditorOpen] = useState(false);
-  const [schemaBuilder, setSchemaBuilder] = useState<BuilderSchema>({
-    schemaId: DEFAULT_SCHEMA_DOC.schemaId,
-    title: DEFAULT_SCHEMA_DOC.title,
-    fields: [
-      {
-        id: generateBuilderId(),
-        key: 'title',
-        label: 'Title',
-        description: '',
-        type: 'string',
-        fieldType: 'string',
-        required: true,
-        inputPropsJson: '{}',
-        customDataJson: '{}',
-        fieldConfigJson: '{}',
-        behaviorJson: '{}',
-      },
-    ],
-    derivedFields: [],
-  });
-  const [schemaRefinements, setSchemaRefinements] = useState<
-    BuilderRefinement[]
-  >([]);
-  const [blocklyRefinements, setBlocklyRefinements] = useState<
-    BlocklyRefinement[]
-  >([]);
+  const [workflowEditorLockedTable, setWorkflowEditorLockedTable] = useState<
+    string | null
+  >(null);
   const [blocklyDraft, setBlocklyDraft] = useState<BlocklyDraft>({
     fieldId: null,
     operator: 'eq',
@@ -1435,7 +2119,9 @@ function PluginStudioRoute() {
   const blocklyWorkspaceId = useId();
   const [blocklyMountElement, setBlocklyMountElement] =
     useState<HTMLDivElement | null>(null);
-  const blocklyContainerRef = useRef<HTMLDivElement | null>(null);
+  const schemaEditorOpenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const blocklyRuntimeRef = useRef<BlocklyRuntime | null>(null);
   const blocklyRightFieldOptionsRef = useRef<[string, string][]>([
     ['No compatible fields', ''],
@@ -1444,8 +2130,20 @@ function PluginStudioRoute() {
   const blocklyInitialRightFieldRef = useRef('');
   const [debouncedHashInput, setDebouncedHashInput] =
     useState<HashPreviewInput | null>(null);
-  const seededActorRef = useRef<string | null>(null);
   const hasAttemptedDraftCreationRef = useRef<Set<string>>(new Set());
+  const hydratedRevisionKeyRef = useRef<string | null>(null);
+  const lastHydratedRevisionRecencyRef = useRef<{
+    draftId: string;
+    recencyKey: string;
+  } | null>(null);
+  const initialSnapshotByDraftRef = useRef<Record<string, string | null>>({});
+  const sidebarSnapshotSeededDraftIdRef = useRef<string | null>(null);
+  const lastRequestedDraftSnapshotRef = useRef<string | null>(null);
+  const lastAutosaveErrorAtRef = useRef<number>(0);
+  const lastPersistenceErrorAtRef = useRef<number>(0);
+  const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(
+    null,
+  );
   const [guardedIrState, setGuardedIrState] = useState(() =>
     createGuardedIrEditorState({
       schemaDocs: [DEFAULT_SCHEMA_DOC],
@@ -1453,6 +2151,12 @@ function PluginStudioRoute() {
   );
   const [workspacePublishGateChecked, setWorkspacePublishGateChecked] =
     useState(false);
+  const handleBlocklyContainerRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      setBlocklyMountElement((current) => (current === node ? current : node));
+    },
+    [],
+  );
 
   const {
     data: releaseRows = [],
@@ -1460,52 +2164,371 @@ function PluginStudioRoute() {
     refetch: refetchReleases,
   } = api.pluginRelease.useGet();
   const releases = releaseRows as PluginReleaseDoc[];
+  const marketplaceReleases = useMemo(
+    () => mergeMarketplaceReleasesWithSeed(releases),
+    [releases],
+  );
   const {
     data: draftRows = [],
     isLoading: isDraftLoading,
     refetch: refetchDrafts,
   } = api.pluginDraft.useGet();
-  const {
-    data: draftRevisionRows = [],
-    isLoading: isDraftRevisionLoading,
-    refetch: refetchDraftRevisions,
-  } = api.pluginDraftRevision.useGet();
   const drafts = draftRows as PluginDraftDoc[];
-  const draftRevisions = draftRevisionRows as PluginDraftRevisionDoc[];
+  const draftDocScopeKeys = useMemo(() => [draftId], [draftId]);
+  const {
+    data: schemaDocRows = [],
+    refetch: refetchSchemaDocs,
+  } = api.pluginSchemaDoc.useGet({
+    keys: draftDocScopeKeys,
+  });
+  const {
+    data: workflowDocRows = [],
+    refetch: refetchWorkflowDocs,
+  } = api.pluginWorkflowDoc.useGet({
+    keys: draftDocScopeKeys,
+  });
+  const {
+    data: actionManifestDocRows = [],
+    refetch: refetchActionManifestDocs,
+  } = api.pluginActionManifestDoc.useGet({
+    keys: draftDocScopeKeys,
+  });
+  const {
+    data: routesTabsConfigRows = [],
+    refetch: refetchRoutesTabsConfig,
+  } = api.pluginRoutesTabsConfig.useGet({
+    keys: draftDocScopeKeys,
+  });
+  const createSchemaDocMutation = api.pluginSchemaDoc.useCreate({
+    keys: draftDocScopeKeys,
+  });
+  const updateSchemaDocMutation = api.pluginSchemaDoc.useUpdate({
+    keys: draftDocScopeKeys,
+  });
+  const deleteSchemaDocMutation = api.pluginSchemaDoc.useDelete({
+    keys: draftDocScopeKeys,
+  });
+  const createWorkflowDocMutation = api.pluginWorkflowDoc.useCreate({
+    keys: draftDocScopeKeys,
+  });
+  const updateWorkflowDocMutation = api.pluginWorkflowDoc.useUpdate({
+    keys: draftDocScopeKeys,
+  });
+  const deleteWorkflowDocMutation = api.pluginWorkflowDoc.useDelete({
+    keys: draftDocScopeKeys,
+  });
+  const createActionManifestDocMutation = api.pluginActionManifestDoc.useCreate({
+    keys: draftDocScopeKeys,
+  });
+  const updateActionManifestDocMutation = api.pluginActionManifestDoc.useUpdate({
+    keys: draftDocScopeKeys,
+  });
+  const deleteActionManifestDocMutation = api.pluginActionManifestDoc.useDelete({
+    keys: draftDocScopeKeys,
+  });
+  const createRoutesTabsConfigMutation = api.pluginRoutesTabsConfig.useCreate({
+    keys: draftDocScopeKeys,
+  });
+  const updateRoutesTabsConfigMutation = api.pluginRoutesTabsConfig.useUpdate({
+    keys: draftDocScopeKeys,
+  });
+  const deleteRoutesTabsConfigMutation = api.pluginRoutesTabsConfig.useDelete({
+    keys: draftDocScopeKeys,
+  });
+
+  const workspaceSchemaDocs = useMemo(() => {
+    const rows = schemaDocRows as Array<{
+      id?: string;
+      schemaId?: string;
+      doc?: unknown;
+    }>;
+    const docs = rows
+      .map((row) => row.doc as SchemaDoc | undefined)
+      .filter((doc): doc is SchemaDoc => Boolean(doc?.schemaId));
+    if (docs.length > 0) {
+      return docs;
+    }
+    return [DEFAULT_SCHEMA_DOC];
+  }, [schemaDocRows]);
+
+  const workspaceWorkflows = useMemo(() => {
+    const rows = workflowDocRows as Array<{
+      id?: string;
+      workflowId?: string;
+      doc?: unknown;
+    }>;
+    const docs = rows
+      .map((row) => row.doc as WorkflowDoc | undefined)
+      .filter((doc): doc is WorkflowDoc => Boolean(doc?.workflowId));
+    if (docs.length > 0) {
+      return docs;
+    }
+    return [DEFAULT_WORKFLOW_DOC];
+  }, [workflowDocRows]);
+
+  const workspaceActionManifest = useMemo(() => {
+    const rows = actionManifestDocRows as Array<{
+      actionId?: string;
+      doc?: unknown;
+    }>;
+    return rows
+      .map((row) => row.doc as ActionManifestDoc | undefined)
+      .filter((doc): doc is ActionManifestDoc => Boolean(doc?.actionId));
+  }, [actionManifestDocRows]);
+
+  const canonicalRoutesTabsConfigId = draftId;
+  const legacyRoutesTabsConfigId = useMemo(
+    () => `${draftId}@live`,
+    [draftId],
+  );
+
+  const activeRoutesTabsConfigRow = useMemo(() => {
+    const rows = routesTabsConfigRows as Array<{
+      id?: string;
+      draftId?: string;
+      revisionId?: string;
+      routes?: Array<{
+        schema: string;
+        title: string;
+        group?: string;
+        order: number;
+        iconName?: string;
+      }>;
+    }>;
+    const candidates = rows.filter(
+      (row) =>
+        row.draftId === draftId &&
+          (row.revisionId === 'live' ||
+          row.id === canonicalRoutesTabsConfigId ||
+          row.id === legacyRoutesTabsConfigId),
+    );
+    const canonical = candidates.find(
+      (row) => row.id === canonicalRoutesTabsConfigId,
+    );
+    if (canonical) return canonical;
+
+    const legacy = candidates.find((row) => row.id === legacyRoutesTabsConfigId);
+    if (legacy) return legacy;
+
+    return candidates.find((row) => row.revisionId === 'live') ?? null;
+  }, [
+    canonicalRoutesTabsConfigId,
+    legacyRoutesTabsConfigId,
+    draftId,
+    routesTabsConfigRows,
+  ]);
+
+  const adminTabsText = useMemo(
+    () =>
+      canonicalStringify(
+        toAdminTabsFromDraftRoutes(activeRoutesTabsConfigRow?.routes),
+      ),
+    [activeRoutesTabsConfigRow],
+  );
+
+  useEffect(() => {
+    if (!requestedPluginId || requestedPluginId === pluginId) {
+      return;
+    }
+    setPluginId(requestedPluginId);
+  }, [requestedPluginId, pluginId]);
+
+  useEffect(() => {
+    return () => {
+      if (schemaEditorOpenTimeoutRef.current !== null) {
+        clearTimeout(schemaEditorOpenTimeoutRef.current);
+        schemaEditorOpenTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const parsed = useMemo(() => {
     try {
-      const schemaDocs = JSON.parse(schemaText) as SchemaDoc[];
-      const workflows = JSON.parse(workflowText) as WorkflowDoc[];
-      const actionManifest = JSON.parse(
-        actionManifestText,
-      ) as ActionManifestDoc[];
-      const adminTabs: AdminTabDoc[] = schemaDocs.map((doc) => ({
-        schema: doc.schemaId,
-        title: doc.title,
+      const schemaDocs = workspaceSchemaDocs;
+      const workflows = workspaceWorkflows;
+      const actionManifest = workspaceActionManifest;
+      const parsedDraftAdminTabs = JSON.parse(adminTabsText) as AdminTabDoc[];
+      const {
+        schemaTabs: storedSchemaTabs,
+        orderedGroups: storedGroupOrder,
+        systemTabs,
+      } = deserializeDraftAdminTabs(parsedDraftAdminTabs);
+      const schemaIdSet = new Set(schemaDocs.map((schemaDoc) => schemaDoc.schemaId));
+      const storedSchemaOrder = storedSchemaTabs
+        .map((tab) => tab.schema)
+        .filter((schemaId) => schemaIdSet.has(schemaId));
+      const missingSchemaOrder = schemaDocs
+        .map((schemaDoc) => schemaDoc.schemaId)
+        .filter((schemaId) => !storedSchemaOrder.includes(schemaId));
+      const schemaOrder = [...storedSchemaOrder, ...missingSchemaOrder];
+      const tabBySchema = new Map(
+        storedSchemaTabs.map((tab) => [tab.schema, tab]),
+      );
+      const schemaTitleById = Object.fromEntries(
+        schemaDocs.map((schemaDoc) => [
+          schemaDoc.schemaId,
+          schemaDoc.title ??
+          tabBySchema.get(schemaDoc.schemaId)?.title ??
+          schemaDoc.schemaId,
+        ]),
+      );
+      const schemaGroupById = Object.fromEntries(
+        schemaDocs.flatMap((schemaDoc) => {
+          const normalizedGroup = tabBySchema.get(schemaDoc.schemaId)?.group?.trim();
+          return normalizedGroup ? [[schemaDoc.schemaId, normalizedGroup]] : [];
+        }),
+      );
+      const schemaIconNameById = Object.fromEntries(
+        schemaDocs.flatMap((schemaDoc) => {
+          const normalizedIcon = tabBySchema.get(schemaDoc.schemaId)?.icon?.trim();
+          return normalizedIcon ? [[schemaDoc.schemaId, normalizedIcon]] : [];
+        }),
+      );
+      const orderedGroups = computeOrderedGroupNames({
+        customGroups: storedGroupOrder,
+        groupOrder: storedGroupOrder,
+        schemaGroupById,
+        schemaOrder,
+        systemTabs,
+      });
+      const adminTabs: AdminTabDoc[] = schemaOrder.map((schemaId) => ({
+        schema: schemaId,
+        title: schemaTitleById[schemaId],
+        group: schemaGroupById[schemaId],
+        icon: schemaIconNameById[schemaId],
       }));
+      const draftAdminTabs = serializeDraftAdminTabs({
+        schemaTabs: adminTabs,
+        orderedGroups,
+        systemTabs,
+      });
       return {
         schemaDocs,
         workflows,
         actionManifest,
+        schemaOrder,
+        schemaTitleById,
+        schemaGroupById,
+        schemaIconNameById,
+        customGroups: orderedGroups,
+        groupOrder: orderedGroups,
+        systemTabs,
         adminTabs,
+        draftAdminTabs,
       };
     } catch (error) {
       console.error('Error parsing JSON:', error);
       return null;
     }
-  }, [schemaText, workflowText, actionManifestText]);
+  }, [
+    adminTabsText,
+    workspaceActionManifest,
+    workspaceSchemaDocs,
+    workspaceWorkflows,
+  ]);
+  const schemaTitleById = parsed?.schemaTitleById ?? {};
+  const schemaGroupById = parsed?.schemaGroupById ?? {};
+  const schemaIconNameById = parsed?.schemaIconNameById ?? {};
+  const customGroups = parsed?.customGroups ?? [];
+  const groupOrder = parsed?.groupOrder ?? [];
+  const systemTabs = parsed?.systemTabs ?? DEFAULT_SYSTEM_TABS;
+  const schemaOrder = parsed?.schemaOrder ?? [DEFAULT_SCHEMA_DOC.schemaId];
 
   const availableSchemaDocs = parsed?.schemaDocs ?? [];
   const availableWorkflows = parsed?.workflows ?? [];
+  const availableGroups = groupOrder;
+  const activeSchemaDocForEditor = useMemo(
+    () =>
+      availableSchemaDocs.find((schemaDoc) => schemaDoc.schemaId === activeSchemaId) ??
+      availableSchemaDocs[0] ??
+      DEFAULT_SCHEMA_DOC,
+    [activeSchemaId, availableSchemaDocs],
+  );
+  const schemaBuilder = useMemo(
+    () => ({
+      schemaId: activeSchemaDocForEditor.schemaId,
+      title: activeSchemaDocForEditor.title ?? activeSchemaDocForEditor.schemaId,
+      fields: activeSchemaDocForEditor.fields.map(toBuilderField),
+      derivedFields: parseDerivedFieldsFromSchemaDoc(activeSchemaDocForEditor),
+    }),
+    [activeSchemaDocForEditor],
+  );
+  const schemaEditorRefinements = useMemo(
+    () => toBuilderRefinements(activeSchemaDocForEditor),
+    [activeSchemaDocForEditor],
+  );
+  const schemaRefinements = schemaEditorRefinements.schemaRefinements;
+  const blocklyRefinements = schemaEditorRefinements.blocklyRefinements;
+  const setSchemaBuilder = useCallback(
+    (
+      value:
+        | BuilderSchema
+        | ((current: BuilderSchema) => BuilderSchema),
+    ) => {
+      const nextBuilder =
+        typeof value === 'function' ? value(schemaBuilder) : value;
+      persistSchemaEditorState(
+        nextBuilder,
+        schemaRefinements,
+        blocklyRefinements,
+      );
+    },
+    [blocklyRefinements, schemaBuilder, schemaRefinements],
+  );
+  const setSchemaRefinements = useCallback(
+    (
+      value:
+        | BuilderRefinement[]
+        | ((current: BuilderRefinement[]) => BuilderRefinement[]),
+    ) => {
+      const nextSchemaRefinements =
+        typeof value === 'function' ? value(schemaRefinements) : value;
+      persistSchemaEditorState(
+        schemaBuilder,
+        nextSchemaRefinements,
+        blocklyRefinements,
+      );
+    },
+    [blocklyRefinements, schemaBuilder, schemaRefinements],
+  );
+  const setBlocklyRefinements = useCallback(
+    (
+      value:
+        | BlocklyRefinement[]
+        | ((current: BlocklyRefinement[]) => BlocklyRefinement[]),
+    ) => {
+      const nextBlocklyRefinements =
+        typeof value === 'function' ? value(blocklyRefinements) : value;
+      persistSchemaEditorState(
+        schemaBuilder,
+        schemaRefinements,
+        nextBlocklyRefinements,
+      );
+    },
+    [blocklyRefinements, schemaBuilder, schemaRefinements],
+  );
+  const activeSchemaLockedCoreFields = useMemo(
+    () => new Set(lockedCoreFieldKeysBySchemaId[activeSchemaId] ?? []),
+    [activeSchemaId, lockedCoreFieldKeysBySchemaId],
+  );
+  const isActiveSchemaCoreExtension = Boolean(
+    coreExtensionSchemaIds[activeSchemaId],
+  );
 
   useEffect(() => {
     if (availableSchemaDocs.length === 0) return;
-    if (availableSchemaDocs.some((schemaDoc) => schemaDoc.schemaId === activeSchemaId)) {
+    if (
+      availableSchemaDocs.some(
+        (schemaDoc) => schemaDoc.schemaId === activeSchemaId,
+      )
+    ) {
       return;
     }
-    setActiveSchemaId(availableSchemaDocs[0]?.schemaId ?? DEFAULT_SCHEMA_DOC.schemaId);
+    setActiveSchemaId(
+      availableSchemaDocs[0]?.schemaId ?? DEFAULT_SCHEMA_DOC.schemaId,
+    );
   }, [activeSchemaId, availableSchemaDocs]);
+
 
   useEffect(() => {
     if (availableWorkflows.length === 0) return;
@@ -1531,7 +2554,8 @@ function PluginStudioRoute() {
         .filter((key) => key.length > 0),
     );
     const hasInvalidDerivedFieldConfig = schemaBuilder.derivedFields.some(
-      (derivedField) => hasDerivedFieldValidationErrors(derivedField, fieldKeys),
+      (derivedField) =>
+        hasDerivedFieldValidationErrors(derivedField, fieldKeys),
     );
 
     return (
@@ -1542,48 +2566,425 @@ function PluginStudioRoute() {
       !hasInvalidDerivedFieldConfig
     );
   }, [parsed, pluginId, schemaBuilder]);
+  const isDraftSaveable = useMemo(
+    () =>
+      Boolean(
+        parsed &&
+        pluginId.trim() &&
+        /^[a-z0-9][a-z0-9_.-]*[a-z0-9]$/.test(pluginId),
+      ),
+    [parsed, pluginId],
+  );
 
   const activeDraft = useMemo(
-    () =>
-      drafts
-        .filter(
-          (draft) =>
-            draft.ownerUserId === actorUserId ||
-            draft.collaboratorUserIds?.includes(actorUserId),
-        )
-        .find((draft) => draft.pluginId === pluginId) ?? null,
-    [drafts, actorUserId, pluginId],
+    () => drafts.find((candidate) => candidate.draftId === draftId) ?? null,
+    [draftId, drafts],
   );
+
+  const {
+    data: draftRevisionRows = [],
+    isLoading: isDraftRevisionLoading,
+    refetch: refetchDraftRevisions,
+  } = api.pluginDraftRevision.useGet({
+    keys: [draftId],
+  });
+  const draftRevisions = draftRevisionRows as PluginDraftRevisionDoc[];
 
   const activeDraftRevisions = useMemo(
     () =>
-      draftRevisions
-        .filter((revision) => revision.draftId === activeDraft?.draftId)
-        .sort((left, right) =>
-          (right.createdAt ?? '').localeCompare(left.createdAt ?? ''),
+      [...draftRevisions].sort((left, right) =>
+        toDraftRevisionRecencyKey(right).localeCompare(
+          toDraftRevisionRecencyKey(left),
         ),
-    [draftRevisions, activeDraft],
+      ),
+    [draftRevisions],
   );
+  const expectedHydratedDraftKey = useMemo(() => {
+    if (isDraftRevisionLoading) return null;
+    return toDraftHydrationKey({
+      draftId,
+      revision: activeDraftRevisions[0] ?? null,
+    });
+  }, [draftId, activeDraftRevisions, isDraftRevisionLoading]);
+  const isDraftHydrated = Boolean(
+    expectedHydratedDraftKey && hydratedDraftKey === expectedHydratedDraftKey,
+  );
+  const latestActiveDraftRevision = activeDraftRevisions[0] ?? null;
+  const localDraftSnapshotRef = useRef<string | null>(null);
 
-  const { mutate: seedMarketplace } = useMutation({
-    mutationKey: ['plugin-studio', 'seed-marketplace'],
-    mutationFn: async (nextActorUserId: string) =>
-      ensureMarketplaceSeedReleases({
-        data: {
-          actorUserId: nextActorUserId,
-        },
+  useEffect(() => {
+    localDraftSnapshotRef.current = parsed
+      ? toDraftSnapshotString({
+        schemaDocs: parsed.schemaDocs,
+        workflows: parsed.workflows,
+        adminTabs: parsed.draftAdminTabs,
+      })
+      : null;
+  }, [parsed]);
+
+  const sidebarSnapshotStorageKey = useMemo(() => {
+    return buildPluginStudioSidebarSnapshotStorageKey({
+      actorUserId,
+      pluginId,
+      draftId,
+    });
+  }, [actorUserId, draftId, pluginId]);
+
+  useEffect(() => {
+    const searchPluginId = readSearchParamString(search, 'pluginId');
+    const searchRecord = (search ?? {}) as Record<string, unknown>;
+    const searchDraftId =
+      typeof searchRecord.draftId === 'string' ? searchRecord.draftId : '';
+    const hasSearchDraftId = Boolean(
+      search &&
+      typeof search === 'object' &&
+      searchDraftId.trim().length > 0,
+    );
+    const nextPluginId = pluginId;
+    if (!nextPluginId) return;
+    if (searchPluginId === nextPluginId && !hasSearchDraftId) {
+      return;
+    }
+    navigate({
+      search: (current: unknown) => {
+        const next = {
+          ...(current as Record<string, unknown>),
+          pluginId: nextPluginId,
+        } as Record<string, unknown>;
+        delete next.draftId;
+        return next;
+      },
+      replace: true,
+    });
+  }, [pluginId, search, navigate]);
+
+  useEffect(() => {
+    if (isDraftRevisionLoading) {
+      return;
+    }
+    const latestRevision = latestActiveDraftRevision;
+    if (!latestRevision) {
+      const lastHydratedRevision = lastHydratedRevisionRecencyRef.current;
+      if (lastHydratedRevision && lastHydratedRevision.draftId === draftId) {
+        return;
+      }
+      const emptyHydrationKey = toDraftHydrationKey({
+        draftId,
+      });
+      hydratedRevisionKeyRef.current = emptyHydrationKey;
+      setHydratedDraftKey((current) =>
+        current === emptyHydrationKey ? current : emptyHydrationKey,
+      );
+      return;
+    }
+    const latestRevisionRecencyKey = toDraftRevisionRecencyKey(latestRevision);
+    const lastHydratedRevision = lastHydratedRevisionRecencyRef.current;
+    const latestRevisionSnapshot = toDraftSnapshotString({
+      schemaDocs: latestRevision.schemaDocs ?? [],
+      workflows: latestRevision.workflows ?? [],
+      adminTabs: latestRevision.adminTabs ?? [],
+    });
+    const localDraftSnapshot = localDraftSnapshotRef.current;
+    if (
+      localDraftSnapshot &&
+      localDraftSnapshot !== latestRevisionSnapshot &&
+      lastHydratedRevision &&
+      lastHydratedRevision.draftId === draftId
+    ) {
+      return;
+    }
+    if (
+      lastHydratedRevision &&
+      lastHydratedRevision.draftId === draftId &&
+      latestRevisionRecencyKey.localeCompare(lastHydratedRevision.recencyKey) <
+      0
+    ) {
+      return;
+    }
+
+    const hydrationKey = toDraftHydrationKey({
+      draftId,
+      revision: latestRevision,
+    });
+    if (hydratedRevisionKeyRef.current === hydrationKey) {
+      setHydratedDraftKey((current) =>
+        current === hydrationKey ? current : hydrationKey,
+      );
+      return;
+    }
+    hydratedRevisionKeyRef.current = hydrationKey;
+
+    let nextSchemaDocs = latestRevision.schemaDocs ?? [DEFAULT_SCHEMA_DOC];
+    const nextWorkflows = latestRevision.workflows ?? [DEFAULT_WORKFLOW_DOC];
+    const nextActiveSchema = nextSchemaDocs[0] ?? DEFAULT_SCHEMA_DOC;
+
+    let {
+      schemaTabs: hydratedSchemaTabs,
+      orderedGroups: hydratedGroups,
+      systemTabs: hydratedSystemTabs,
+    } = deserializeDraftAdminTabs(latestRevision.adminTabs);
+    const tabBySchema = new Map(
+      hydratedSchemaTabs.map((tab) => [tab.schema, tab]),
+    );
+    let nextSchemaOrder = nextSchemaDocs.map((schemaDoc) => schemaDoc.schemaId);
+    let nextSchemaGroupById = Object.fromEntries(
+      nextSchemaDocs.flatMap((schemaDoc) => {
+        const groupName = tabBySchema.get(schemaDoc.schemaId)?.group?.trim();
+        return groupName ? [[schemaDoc.schemaId, groupName]] : [];
       }),
-    onSuccess: () => {
-      void refetchReleases();
-    },
-    onError: (error) => {
-      console.error(error);
-      toast.error('Marketplace template sync failed.');
-    },
-  });
+    );
+    let nextSchemaIconNameById = Object.fromEntries(
+      nextSchemaDocs.flatMap((schemaDoc) => {
+        const iconName = tabBySchema.get(schemaDoc.schemaId)?.icon?.trim();
+        return iconName ? [[schemaDoc.schemaId, iconName]] : [];
+      }),
+    );
+    const groupsFromSchemas = Array.from(
+      new Set(
+        hydratedSchemaTabs
+          .map((tab) => tab.group?.trim())
+          .filter((groupName): groupName is string => Boolean(groupName)),
+      ),
+    );
+    let nextGroupOrder =
+      hydratedGroups.length > 0 ? hydratedGroups : groupsFromSchemas;
+    let nextCustomGroups = Array.from(
+      new Set([...nextGroupOrder, ...groupsFromSchemas]),
+    );
+
+    let sidebarSnapshot: PluginStudioSidebarSnapshot | null = null;
+    const resolvedPluginId = latestRevision.pluginId || pluginId;
+    if (typeof window !== 'undefined') {
+      sidebarSnapshot = pickLatestPluginStudioSidebarSnapshot({
+        raws: [
+          window.localStorage.getItem(
+            buildPluginStudioSidebarSnapshotStorageKey({
+              actorUserId,
+              pluginId: resolvedPluginId,
+              draftId,
+            }),
+          ),
+          window.localStorage.getItem(
+            buildPluginStudioSidebarSnapshotStorageKey({
+              actorUserId,
+              pluginId: resolvedPluginId,
+            }),
+          ),
+        ],
+        defaultSystemTabs: DEFAULT_SYSTEM_TABS,
+      });
+    }
+
+    if (sidebarSnapshot?.pluginId !== resolvedPluginId) {
+      sidebarSnapshot = null;
+    }
+
+    if (
+      sidebarSnapshot &&
+      shouldApplyPluginStudioSidebarSnapshot({
+        snapshot: sidebarSnapshot,
+        draftId,
+        latestRevisionCreatedAt: latestRevision.createdAt,
+      })
+    ) {
+      const schemaIdSet = new Set(nextSchemaOrder);
+      const snapshotSchemaOrder = sidebarSnapshot.schemaOrder.filter(
+        (schemaId) => schemaIdSet.has(schemaId),
+      );
+      const missingSchemaOrder = nextSchemaOrder.filter(
+        (schemaId) => !snapshotSchemaOrder.includes(schemaId),
+      );
+      nextSchemaOrder = [...snapshotSchemaOrder, ...missingSchemaOrder];
+
+      const snapshotSchemaTitleById = Object.fromEntries(
+        Object.entries(sidebarSnapshot.schemaTitleById).flatMap(
+          ([schemaId, titleValue]) => {
+            const normalizedTitle = titleValue.trim();
+            if (!schemaIdSet.has(schemaId) || !normalizedTitle) return [];
+            return [[schemaId, normalizedTitle]];
+          },
+        ),
+      );
+      const snapshotSchemaGroupById = Object.fromEntries(
+        Object.entries(sidebarSnapshot.schemaGroupById).flatMap(
+          ([schemaId, groupValue]) => {
+            const normalizedGroup = groupValue.trim();
+            if (!schemaIdSet.has(schemaId) || !normalizedGroup) return [];
+            return [[schemaId, normalizedGroup]];
+          },
+        ),
+      );
+      const snapshotSchemaIconNameById = Object.fromEntries(
+        Object.entries(sidebarSnapshot.schemaIconNameById).flatMap(
+          ([schemaId, iconValue]) => {
+            const normalizedIcon = iconValue.trim();
+            if (!schemaIdSet.has(schemaId) || !normalizedIcon) return [];
+            return [[schemaId, normalizedIcon]];
+          },
+        ),
+      );
+
+      nextSchemaDocs = nextSchemaDocs.map((schemaDoc) => {
+        const snapshotTitle = snapshotSchemaTitleById[schemaDoc.schemaId];
+        if (!snapshotTitle) return schemaDoc;
+        return {
+          ...schemaDoc,
+          title: snapshotTitle,
+        };
+      });
+      nextSchemaGroupById = snapshotSchemaGroupById;
+      nextSchemaIconNameById = snapshotSchemaIconNameById;
+
+      const snapshotCustomGroups = sidebarSnapshot.customGroups
+        .map((groupName) => groupName.trim())
+        .filter(Boolean);
+      const snapshotGroupOrder = sidebarSnapshot.groupOrder
+        .map((groupName) => groupName.trim())
+        .filter(Boolean);
+      const snapshotSchemaGroups = Object.values(snapshotSchemaGroupById).map(
+        (groupName) => groupName.trim(),
+      );
+      const snapshotSystemGroups = Object.values(sidebarSnapshot.systemTabs)
+        .map((tab) => tab.group?.trim())
+        .filter((groupName): groupName is string => Boolean(groupName));
+      const snapshotGroupPool = new Set<string>([
+        ...snapshotCustomGroups,
+        ...snapshotSchemaGroups,
+        ...snapshotSystemGroups,
+      ]);
+      nextGroupOrder = snapshotGroupOrder.filter((groupName) =>
+        snapshotGroupPool.has(groupName),
+      );
+      for (const groupName of snapshotGroupPool) {
+        if (!nextGroupOrder.includes(groupName)) {
+          nextGroupOrder.push(groupName);
+        }
+      }
+      nextCustomGroups = Array.from(
+        new Set([...snapshotCustomGroups, ...nextGroupOrder]),
+      );
+      hydratedSystemTabs = sidebarSnapshot.systemTabs;
+    }
+
+    setPluginId(latestRevision.pluginId || pluginId);
+    persistSchemaDocs(nextSchemaDocs);
+    persistWorkflowDocs(nextWorkflows);
+    persistActionManifestDocs(latestRevision.actionManifest ?? []);
+    const schemaDocById = new Map(
+      nextSchemaDocs.map((schemaDoc) => [schemaDoc.schemaId, schemaDoc]),
+    );
+    persistSidebarAdminTabs(
+      serializeDraftAdminTabs({
+        schemaTabs: nextSchemaOrder.map((schemaId) => {
+          const schemaDoc = schemaDocById.get(schemaId);
+          return {
+            schema: schemaId,
+            title: schemaDoc?.title ?? schemaId,
+            group: nextSchemaGroupById[schemaId],
+            icon: nextSchemaIconNameById[schemaId],
+          } satisfies AdminTabDoc;
+        }),
+        orderedGroups: nextCustomGroups.length > 0 ? nextCustomGroups : nextGroupOrder,
+        systemTabs: hydratedSystemTabs,
+      }),
+    );
+    setActiveSchemaId(nextActiveSchema.schemaId);
+    setActiveWorkflowId(
+      nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
+    );
+    syncBuilderFromSchemaDoc(nextActiveSchema);
+    lastHydratedRevisionRecencyRef.current = {
+      draftId,
+      recencyKey: latestRevisionRecencyKey,
+    };
+    setHydratedDraftKey((current) =>
+      current === hydrationKey ? current : hydrationKey,
+    );
+  }, [
+    latestActiveDraftRevision,
+    actorUserId,
+    draftId,
+    pluginId,
+    isDraftRevisionLoading,
+  ]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!sidebarSnapshotStorageKey) return;
+    if (!parsed) return;
+
+    if (sidebarSnapshotSeededDraftIdRef.current !== draftId) {
+      sidebarSnapshotSeededDraftIdRef.current = draftId;
+      return;
+    }
+
+    const latestRevision = activeDraftRevisions[0];
+    const latestPersistedSnapshot = latestRevision
+      ? canonicalStringify({
+        schemaDocs: latestRevision.schemaDocs ?? [],
+        workflows: latestRevision.workflows ?? [],
+        adminTabs: latestRevision.adminTabs ?? [],
+      })
+      : null;
+    const currentSnapshot = canonicalStringify({
+      schemaDocs: parsed.schemaDocs,
+      workflows: parsed.workflows,
+      adminTabs: parsed.draftAdminTabs,
+    });
+    if (latestPersistedSnapshot === currentSnapshot) {
+      try {
+        window.localStorage.removeItem(sidebarSnapshotStorageKey);
+      } catch (_error) {
+        // Ignore storage failures.
+      }
+      return;
+    }
+
+    const snapshot: PluginStudioSidebarSnapshot = {
+      version: PLUGIN_STUDIO_SIDEBAR_SNAPSHOT_VERSION,
+      pluginId,
+      draftId,
+      updatedAt: new Date().toISOString(),
+      schemaOrder,
+      schemaTitleById: Object.fromEntries(
+        parsed.schemaDocs.map((schemaDoc) => [
+          schemaDoc.schemaId,
+          schemaDoc.title ?? schemaDoc.schemaId,
+        ]),
+      ),
+      schemaGroupById,
+      schemaIconNameById,
+      customGroups,
+      groupOrder,
+      systemTabs,
+    };
+
+    try {
+      window.localStorage.setItem(
+        sidebarSnapshotStorageKey,
+        JSON.stringify(snapshot),
+      );
+    } catch (_error) {
+      // Ignore storage quota and serialization failures.
+    }
+  }, [
+    activeDraftRevisions,
+    customGroups,
+    draftId,
+    groupOrder,
+    parsed,
+    pluginId,
+    schemaGroupById,
+    schemaIconNameById,
+    schemaOrder,
+    sidebarSnapshotStorageKey,
+    systemTabs,
+  ]);
 
   const { mutateAsync: createDraft, isPending: isCreatingDraft } = useMutation({
-    mutationKey: ['plugin-studio', 'create-draft'],
+    mutationKey: ['plugin-studio', 'create-draft', draftId],
+    onMutate: () => {
+    },
     mutationFn: async () => {
       const userHandle = formatUserHandle(actorUserId);
       const draftTitle = `${pluginId} (${userHandle})`;
@@ -1595,89 +2996,197 @@ function PluginStudioRoute() {
         },
       });
     },
-    onSuccess: async (draft) => {
+    onSuccess: async () => {
       await refetchDrafts();
-      hasAttemptedDraftCreationRef.current.add(pluginId);
-      toast.success('Draft auto-created.');
+      hasAttemptedDraftCreationRef.current.add(draftId);
     },
     onError: (error) => {
+      hasAttemptedDraftCreationRef.current.delete(draftId);
       console.error(error);
-      // Only show error toast if we explicitly tried to create (not on initial page load)
-      if (hasAttemptedDraftCreationRef.current.has(pluginId)) {
-        toast.error('Draft creation failed.');
-      }
+      toast.error('Draft creation failed.');
     },
   });
 
   const { mutateAsync: saveDraftRevision, isPending: isSavingDraftRevision } =
     useMutation({
-      mutationKey: ['plugin-studio', 'save-draft-revision', activeDraft?.draftId],
-      mutationFn: async (draftId: string) => {
+      mutationKey: [
+        'plugin-studio',
+        'save-draft-revision',
+        draftId,
+      ],
+      onMutate: (targetDraftId) => {
+      },
+      mutationFn: async (targetDraftId: string) => {
         if (!parsed) {
           throw new Error('Invalid plugin payload');
         }
-        return createPluginDraftRevision({
-          data: {
-            actorUserId,
-            draftId,
-            schemaDocs: parsed.schemaDocs,
-            workflows: parsed.workflows,
-            adminTabs: parsed.adminTabs,
-          },
-        });
+        const revisionPayload = {
+          schemaDocs: parsed.schemaDocs,
+          workflows: parsed.workflows,
+          adminTabs: parsed.draftAdminTabs,
+        };
+        const createRevisionForDraft = (targetDraftId: string) =>
+          createPluginDraftRevision({
+            data: {
+              actorUserId,
+              draftId: targetDraftId,
+              ...revisionPayload,
+            },
+          });
+
+        try {
+          return await createRevisionForDraft(targetDraftId);
+        } catch (error) {
+          if (!isMissingPluginDraftError(error)) {
+            throw error;
+          }
+
+          const userHandle = formatUserHandle(actorUserId);
+          const recoveredDraft = await createPluginDraft({
+            data: {
+              actorUserId,
+              pluginId,
+              title: `${pluginId} (${userHandle})`,
+            },
+          });
+          await refetchDrafts();
+          return createRevisionForDraft(recoveredDraft.draftId);
+        }
       },
       onSuccess: async () => {
-        await refetchDraftRevisions();
+        await Promise.all([refetchDraftRevisions(), refetchDrafts()]);
       },
       onError: (error) => {
+        lastRequestedDraftSnapshotRef.current = null;
         console.error('Auto-save failed:', error);
-        // Silent fail for auto-save to avoid spamming toasts
+        const now = Date.now();
+        if (now - lastAutosaveErrorAtRef.current > 5_000) {
+          lastAutosaveErrorAtRef.current = now;
+          toast.error(`Draft auto-save failed: ${toErrorMessage(error)}`);
+        }
       },
     });
 
-  useEffect(() => {
-    if (!isAuthenticated || !user) {
-      return;
-    }
-    if (seededActorRef.current === actorUserId) {
-      return;
-    }
-    seededActorRef.current = actorUserId;
-    seedMarketplace(actorUserId);
-  }, [actorUserId, isAuthenticated, seedMarketplace, user]);
+  const latestPersistedDraftSnapshot = useMemo(() => {
+    const latestRevision = activeDraftRevisions[0];
+    if (!latestRevision) return null;
+    return toDraftSnapshotString({
+      schemaDocs: latestRevision.schemaDocs ?? [],
+      workflows: latestRevision.workflows ?? [],
+      adminTabs: latestRevision.adminTabs ?? [],
+    });
+  }, [activeDraftRevisions]);
+
+  const currentDraftSnapshot = useMemo(() => {
+    if (!parsed) return null;
+    return toDraftSnapshotString({
+      schemaDocs: parsed.schemaDocs,
+      workflows: parsed.workflows,
+      adminTabs: parsed.draftAdminTabs,
+    });
+  }, [parsed]);
+
+  const hasPendingDraftChanges = useMemo(() => {
+    if (!activeDraft || !currentDraftSnapshot) return false;
+    if (!latestPersistedDraftSnapshot) return true;
+    return currentDraftSnapshot !== latestPersistedDraftSnapshot;
+  }, [activeDraft, currentDraftSnapshot, latestPersistedDraftSnapshot]);
 
   useEffect(() => {
-    if (!isAuthenticated || !pluginId.trim()) {
+    if (!pluginId.trim()) {
+      return;
+    }
+    if (isDraftLoading) {
+      return;
+    }
+    if (!isActorIdentityReady) {
+      return;
+    }
+    if (activeDraft && activeDraft.pluginId === pluginId) {
+      return;
+    }
+    if (hasAttemptedDraftCreationRef.current.has(draftId)) {
       return;
     }
 
-    if (activeDraft || hasAttemptedDraftCreationRef.current.has(pluginId)) {
-      return;
-    }
-
-    hasAttemptedDraftCreationRef.current.add(pluginId);
+    hasAttemptedDraftCreationRef.current.add(draftId);
     void createDraft();
-  }, [pluginId, activeDraft, isAuthenticated, createDraft]);
+  }, [
+    pluginId,
+    activeDraft,
+    isAuthenticated,
+    isDraftLoading,
+    isActorIdentityReady,
+    draftId,
+    actorUserId,
+    createDraft,
+  ]);
 
   useEffect(() => {
-    if (!parsed || !isValidInputs || !activeDraft) {
+    if (!hasPendingDraftChanges) {
+      lastRequestedDraftSnapshotRef.current = null;
+    }
+  }, [hasPendingDraftChanges]);
+
+  useEffect(() => {
+    if (!activeDraft) return;
+    if (activeDraft.draftId in initialSnapshotByDraftRef.current) {
       return;
     }
-
-    const timeout = setTimeout(() => {
-      void saveDraftRevision(activeDraft.draftId);
-    }, 1000);
-
-    return () => {
-      clearTimeout(timeout);
+    initialSnapshotByDraftRef.current = {
+      ...initialSnapshotByDraftRef.current,
+      [activeDraft.draftId]: currentDraftSnapshot,
     };
+  }, [activeDraft, currentDraftSnapshot]);
+
+  useEffect(() => {
+    if (!parsed || !isDraftSaveable || !activeDraft) {
+      return;
+    }
+    if (!isActorIdentityReady) {
+      return;
+    }
+    if (!isDraftHydrated) {
+      return;
+    }
+    if (!currentDraftSnapshot) {
+      return;
+    }
+    if (activeDraftRevisions.length === 0) {
+      if (isDraftRevisionLoading) {
+        return;
+      }
+      const initialSnapshot =
+        initialSnapshotByDraftRef.current[activeDraft.draftId] ?? null;
+      // Avoid creating synthetic "default" revisions from transient empty states.
+      // For brand-new drafts, save only after the user changes from activation baseline.
+      if (initialSnapshot === currentDraftSnapshot) {
+        return;
+      }
+    }
+    if (!hasPendingDraftChanges || isSavingDraftRevision) {
+      return;
+    }
+    const requestedSnapshotKey = `${activeDraft.draftId}:${currentDraftSnapshot}`;
+    if (lastRequestedDraftSnapshotRef.current === requestedSnapshotKey) {
+      return;
+    }
+    lastRequestedDraftSnapshotRef.current = requestedSnapshotKey;
+    void saveDraftRevision(activeDraft.draftId);
   }, [
+    pluginId,
+    actorUserId,
+    draftId,
     parsed,
-    isValidInputs,
+    isDraftHydrated,
+    currentDraftSnapshot,
+    isDraftSaveable,
     activeDraft,
-    schemaText,
-    workflowText,
-    actionManifestText,
+    activeDraftRevisions.length,
+    hasPendingDraftChanges,
+    isActorIdentityReady,
+    isDraftRevisionLoading,
+    isSavingDraftRevision,
     saveDraftRevision,
   ]);
 
@@ -1690,7 +3199,7 @@ function PluginStudioRoute() {
     const timeout = setTimeout(() => {
       setDebouncedHashInput({
         pluginId,
-        version: getNextVersion(releases, pluginId),
+        version: getNextVersion(marketplaceReleases, pluginId),
         docs: {
           title,
           description,
@@ -1705,110 +3214,7 @@ function PluginStudioRoute() {
     return () => {
       clearTimeout(timeout);
     };
-  }, [description, parsed, pluginId, releases, title]);
-
-  useEffect(() => {
-    const fieldTypeByKey = new Map<string, BuilderFieldType>();
-    const fieldsByType = new Map<BuilderFieldType, string[]>();
-    for (const field of schemaBuilder.fields) {
-      const fieldKey = field.key.trim();
-      if (!fieldKey) continue;
-      fieldTypeByKey.set(fieldKey, field.type);
-      fieldsByType.set(field.type, [
-        ...(fieldsByType.get(field.type) ?? []),
-        fieldKey,
-      ]);
-    }
-
-    const validRefinements = schemaRefinements.filter((rule) => {
-      const leftFieldType = fieldTypeByKey.get(rule.leftField);
-      if (!leftFieldType) return false;
-      if (!getAllowedOperators(leftFieldType).includes(rule.operator))
-        return false;
-      const compatibleFields = (fieldsByType.get(leftFieldType) ?? []).filter(
-        (fieldKey) => fieldKey !== rule.leftField,
-      );
-      return compatibleFields.includes(rule.rightField);
-    });
-
-    const fieldKeySet = new Set(fieldTypeByKey.keys());
-    const derivationsByFieldKey = new Map<string, SchemaBuilderDerivedField[]>();
-    for (const derivedField of schemaBuilder.derivedFields) {
-      const targetFieldKey = derivedField.targetFieldKey.trim();
-      if (!fieldKeySet.has(targetFieldKey)) {
-        continue;
-      }
-      if (hasDerivedFieldValidationErrors(derivedField, fieldKeySet)) {
-        continue;
-      }
-      derivationsByFieldKey.set(targetFieldKey, [
-        ...(derivationsByFieldKey.get(targetFieldKey) ?? []),
-        derivedField,
-      ]);
-    }
-
-    const nextSchemaDoc: SchemaDoc = {
-      schemaId: schemaBuilder.schemaId || activeSchemaId || 'plugin.custom.table',
-      title: schemaBuilder.title || 'Custom Schema',
-      fields: schemaBuilder.fields.map((field) =>
-        toSchemaFieldDoc(
-          field,
-          derivationsByFieldKey.get(field.key.trim()) ?? [],
-        ),
-      ),
-      refinements: [
-        ...validRefinements.map((rule) => ({
-          code: 'custom',
-          path: rule.leftField ? [rule.leftField] : undefined,
-          message: rule.message || 'Validation failed',
-          when: {
-            kind: 'op',
-            op: 'not',
-            args: [
-              {
-                kind: 'op',
-                op: rule.operator,
-                args: [
-                  { kind: 'ref', source: 'payload', path: [rule.leftField] },
-                  { kind: 'ref', source: 'payload', path: [rule.rightField] },
-                ],
-              },
-            ],
-          },
-        })),
-        ...blocklyRefinements.map((rule) => ({
-          code: 'custom',
-          path: rule.leftField ? [rule.leftField] : undefined,
-          message: rule.message || 'Validation failed',
-          when: {
-            kind: 'op',
-            op: 'not',
-            args: [rule.condition],
-          },
-        })),
-      ],
-    };
-    setSchemaText((currentText) => {
-      try {
-        const currentDocs = JSON.parse(currentText) as SchemaDoc[];
-        const nextDocs = [...currentDocs];
-        const schemaIndex = nextDocs.findIndex(
-          (schemaDoc) => schemaDoc.schemaId === activeSchemaId,
-        );
-        if (schemaIndex >= 0) {
-          nextDocs[schemaIndex] = nextSchemaDoc;
-        } else {
-          nextDocs.push(nextSchemaDoc);
-        }
-        return canonicalStringify(nextDocs);
-      } catch {
-        return canonicalStringify([nextSchemaDoc]);
-      }
-    });
-    if (activeSchemaId !== nextSchemaDoc.schemaId) {
-      setActiveSchemaId(nextSchemaDoc.schemaId);
-    }
-  }, [activeSchemaId, blocklyRefinements, schemaBuilder, schemaRefinements]);
+  }, [description, marketplaceReleases, parsed, pluginId, title]);
 
   useEffect(() => {
     if (!parsed) return;
@@ -1849,7 +3255,7 @@ function PluginStudioRoute() {
         data: {
           actorUserId,
           pluginId,
-          version: getNextVersion(releases, pluginId),
+          version: getNextVersion(marketplaceReleases, pluginId),
           docs: {
             title,
             description,
@@ -1864,7 +3270,6 @@ function PluginStudioRoute() {
     onSuccess: async () => {
       await refetchReleases();
       fireConfetti();
-      toast.success(`${title} has been published.`);
     },
     onError: (error) => {
       console.error(error);
@@ -1872,7 +3277,10 @@ function PluginStudioRoute() {
     },
   });
 
-  const templates = useMemo(() => toLatestTemplateReleases(releases), [releases]);
+  const templates = useMemo(
+    () => toLatestTemplateReleases(marketplaceReleases),
+    [marketplaceReleases],
+  );
   const availableRuleFieldsByType = useMemo(() => {
     const byType = new Map<BuilderFieldType, string[]>();
     for (const field of schemaBuilder.fields) {
@@ -2004,11 +3412,13 @@ function PluginStudioRoute() {
   );
   const firstBlocklyComparableField = blocklyComparableFields[0] ?? '';
   const workspaceSchemasAndFields = useMemo(
-    () => toWorkspaceSchemasAndFields(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
+    () =>
+      toWorkspaceSchemasAndFields(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
     [parsed?.schemaDocs],
   );
   const derivationPathOptions = useMemo(
-    () => buildDerivationPathOptions(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
+    () =>
+      buildDerivationPathOptions(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
     [parsed?.schemaDocs],
   );
   const derivedTargetFieldOptions = useMemo(
@@ -2028,7 +3438,8 @@ function PluginStudioRoute() {
     const firstField = schemaBuilder.fields[0];
     const fallbackFieldType = 'string';
     const fieldType =
-      firstField?.fieldType && AUTOFORM_FIELD_TYPES.includes(firstField.fieldType)
+      firstField?.fieldType &&
+        AUTOFORM_FIELD_TYPES.includes(firstField.fieldType)
         ? firstField.fieldType
         : fallbackFieldType;
 
@@ -2050,7 +3461,8 @@ function PluginStudioRoute() {
     () =>
       schemaRefinements
         .filter(
-          (rule) => Boolean(rule.leftField.trim()) && Boolean(rule.rightField.trim()),
+          (rule) =>
+            Boolean(rule.leftField.trim()) && Boolean(rule.rightField.trim()),
         )
         .map((rule) => ({
           operator: rule.operator,
@@ -2073,6 +3485,17 @@ function PluginStudioRoute() {
     ) ??
     parsed?.workflows[0] ??
     DEFAULT_WORKFLOW_DOC;
+  const workflowEditorTable =
+    workflowEditorLockedTable ?? workspaceWorkflow.table;
+  const workflowEditorScopedWorkflows = useMemo(() => {
+    if (!workflowEditorLockedTable) {
+      return availableWorkflows;
+    }
+    const scoped = availableWorkflows.filter(
+      (workflowDoc) => workflowDoc.table === workflowEditorLockedTable,
+    );
+    return scoped.length > 0 ? scoped : availableWorkflows;
+  }, [availableWorkflows, workflowEditorLockedTable]);
   const workspaceActionsManifestState = useMemo(
     () =>
       createActionsManifestEditorState({
@@ -2092,11 +3515,52 @@ function PluginStudioRoute() {
           schema: tab.schema,
           title: tab.title,
           group: tab.group,
+          iconName: tab.icon,
           order: index,
         })),
       }),
     [parsed?.adminTabs, pluginId],
   );
+  const livePreviewTabs = useMemo(() => {
+    const schemaById = new Map(
+      (parsed?.schemaDocs ?? []).map((schemaDoc) => [
+        schemaDoc.schemaId,
+        schemaDoc,
+      ]),
+    );
+    return (parsed?.adminTabs ?? []).flatMap((tab) => {
+      const schemaDoc = schemaById.get(tab.schema);
+      if (!schemaDoc) return [];
+      try {
+        return [
+          {
+            title: schemaDoc.title || tab.title || schemaDoc.schemaId,
+            group: tab.group,
+            iconName: tab.icon,
+            icon: resolveLucideIconByName(tab.icon),
+            parsedSchema: compileSchemaDoc(schemaDoc),
+            slug: `plugin-studio/${actorUserId}/${pluginId}/${schemaDoc.schemaId}`,
+            treatSlugAsAbsolute: true,
+            editable: true,
+            onAddColumn: openAddColumnSheet,
+            onEditColumn: openEditColumnSheet,
+            onDeleteColumn: requestDeleteColumn,
+            onReorderColumns: handleReorderColumns,
+          },
+        ];
+      } catch (error) {
+        console.error('Failed to compile schema for live preview', error);
+        return [];
+      }
+    });
+  }, [
+    actorUserId,
+    parsed?.adminTabs,
+    parsed?.schemaDocs,
+    pluginId,
+    schemaBuilder.derivedFields,
+    schemaBuilder.fields,
+  ]);
   const workspaceCompileDiagnostics = useMemo<CompileVerifyDiagnostic[]>(() => {
     const diagnostics: CompileVerifyDiagnostic[] = [];
 
@@ -2118,8 +3582,9 @@ function PluginStudioRoute() {
         .map((field) => field.key.trim())
         .filter((key) => key.length > 0),
     );
-    const invalidDerivedCount = schemaBuilder.derivedFields.filter((derivedField) =>
-      hasDerivedFieldValidationErrors(derivedField, schemaFieldKeys),
+    const invalidDerivedCount = schemaBuilder.derivedFields.filter(
+      (derivedField) =>
+        hasDerivedFieldValidationErrors(derivedField, schemaFieldKeys),
     ).length;
     if (invalidFieldCount > 0) {
       diagnostics.push({
@@ -2160,6 +3625,35 @@ function PluginStudioRoute() {
       });
     }
 
+    if (parsed) {
+      const workflowDagDiagnostics = validateWorkflowDags(
+        parsed.workflows,
+      ).diagnostics;
+      for (const diagnostic of workflowDagDiagnostics) {
+        diagnostics.push({
+          category: 'workflow-validation',
+          code: diagnostic.code,
+          severity: 'error',
+          message: diagnostic.message,
+          path: diagnostic.path,
+        });
+      }
+
+      const workflowReferenceDiagnostics = validateWorkflowReferencePaths({
+        workflows: parsed.workflows,
+        schemaDocs: parsed.schemaDocs,
+      });
+      for (const diagnostic of workflowReferenceDiagnostics) {
+        diagnostics.push({
+          category: 'workflow-validation',
+          code: diagnostic.code,
+          severity: diagnostic.severity,
+          message: diagnostic.message,
+          path: diagnostic.path,
+        });
+      }
+    }
+
     return diagnostics;
   }, [
     hashPreviewQuery.data,
@@ -2170,7 +3664,10 @@ function PluginStudioRoute() {
   ]);
   const workspaceArtifactDiff = useMemo(() => {
     const currentBySchema = new Map(
-      (parsed?.schemaDocs ?? []).map((schemaDoc) => [schemaDoc.schemaId, schemaDoc]),
+      (parsed?.schemaDocs ?? []).map((schemaDoc) => [
+        schemaDoc.schemaId,
+        schemaDoc,
+      ]),
     );
     const previousBySchema = new Map(
       (activeDraftRevisions[0]?.schemaDocs ?? []).map((schemaDoc) => [
@@ -2243,7 +3740,9 @@ function PluginStudioRoute() {
           },
         },
         immutableRevision: {
-          revisionId: activeDraftRevisions[0]?.revisionId ?? 'draft.local',
+          revisionId:
+            activeDraftRevisions[0]?.revisionId ??
+            `draft.${formatUserHandle(actorUserId)}.${pluginId.replace(/[^a-z0-9_.-]+/gi, '_')}`,
           summary: activeDraft?.title ?? `${pluginId} (draft)`,
           artifactHash:
             hashPreviewQuery.data?.artifactHash ??
@@ -2538,16 +4037,7 @@ function PluginStudioRoute() {
   ]);
 
   function syncBuilderFromSchemaDoc(schemaDoc: SchemaDoc) {
-    const { schemaRefinements, blocklyRefinements } =
-      toBuilderRefinements(schemaDoc);
-    setSchemaBuilder({
-      schemaId: schemaDoc.schemaId,
-      title: schemaDoc.title ?? schemaDoc.schemaId,
-      fields: schemaDoc.fields.map(toBuilderField),
-      derivedFields: parseDerivedFieldsFromSchemaDoc(schemaDoc),
-    });
-    setSchemaRefinements(schemaRefinements);
-    setBlocklyRefinements(blocklyRefinements);
+    setActiveSchemaId(schemaDoc.schemaId);
   }
 
   function selectSchema(schemaId: string) {
@@ -2555,12 +4045,969 @@ function PluginStudioRoute() {
       (candidate) => candidate.schemaId === schemaId,
     );
     if (!schemaDoc) return;
-    setActiveSchemaId(schemaId);
     syncBuilderFromSchemaDoc(schemaDoc);
   }
 
-  function handleAddSchema() {
+  function reportPersistenceError(context: string, error: unknown) {
+    console.error(`[plugin-studio] ${context} failed`, error);
+    const now = Date.now();
+    if (now - lastPersistenceErrorAtRef.current > 3_000) {
+      lastPersistenceErrorAtRef.current = now;
+      toast.error(`${context} failed: ${toErrorMessage(error)}`);
+    }
+  }
+
+  function persistSchemaDocs(nextSchemaDocs: readonly SchemaDoc[]) {
+    const nextBySchemaId = new Map(
+      nextSchemaDocs.map((schemaDoc) => [schemaDoc.schemaId, schemaDoc]),
+    );
+    const currentRows = schemaDocRows as Array<{
+      id?: string;
+      schemaId?: string;
+      doc?: unknown;
+    }>;
+    const writes: Array<Promise<unknown>> = [];
+
+    for (const row of currentRows) {
+      const schemaId =
+        row.schemaId ||
+        ((row.doc as { schemaId?: string } | undefined)?.schemaId ?? '');
+      const rowId = row.id || schemaId;
+      if (!schemaId || !rowId) continue;
+      const nextDoc = nextBySchemaId.get(schemaId);
+      if (!nextDoc) {
+        writes.push(deleteSchemaDocMutation.mutateAsync(rowId));
+        continue;
+      }
+      writes.push(updateSchemaDocMutation.mutateAsync({
+        id: rowId,
+        pluginId,
+        version: draftId,
+        schemaId,
+        doc: nextDoc,
+      }));
+      nextBySchemaId.delete(schemaId);
+    }
+
+    for (const [schemaId, nextDoc] of nextBySchemaId) {
+      writes.push(createSchemaDocMutation.mutateAsync({
+        id: schemaId,
+        pluginId,
+        version: draftId,
+        schemaId,
+        doc: nextDoc,
+      }));
+    }
+
+    if (writes.length === 0) {
+      return;
+    }
+    void Promise.allSettled(writes)
+      .then(() => refetchSchemaDocs())
+      .catch((error) => reportPersistenceError('Schema persistence', error));
+  }
+
+  function persistWorkflowDocs(nextWorkflowDocs: readonly WorkflowDoc[]) {
+    const nextByWorkflowId = new Map(
+      nextWorkflowDocs.map((workflowDoc) => [workflowDoc.workflowId, workflowDoc]),
+    );
+    const currentRows = workflowDocRows as Array<{
+      id?: string;
+      workflowId?: string;
+      doc?: unknown;
+    }>;
+    const writes: Array<Promise<unknown>> = [];
+
+    for (const row of currentRows) {
+      const workflowId =
+        row.workflowId ||
+        ((row.doc as { workflowId?: string } | undefined)?.workflowId ?? '');
+      const rowId = row.id || workflowId;
+      if (!workflowId || !rowId) continue;
+      const nextDoc = nextByWorkflowId.get(workflowId);
+      if (!nextDoc) {
+        writes.push(deleteWorkflowDocMutation.mutateAsync(rowId));
+        continue;
+      }
+      writes.push(updateWorkflowDocMutation.mutateAsync({
+        id: rowId,
+        pluginId,
+        version: draftId,
+        workflowId,
+        doc: nextDoc,
+      }));
+      nextByWorkflowId.delete(workflowId);
+    }
+
+    for (const [workflowId, nextDoc] of nextByWorkflowId) {
+      writes.push(createWorkflowDocMutation.mutateAsync({
+        id: workflowId,
+        pluginId,
+        version: draftId,
+        workflowId,
+        doc: nextDoc,
+      }));
+    }
+
+    if (writes.length === 0) {
+      return;
+    }
+    void Promise.allSettled(writes)
+      .then(() => refetchWorkflowDocs())
+      .catch((error) => reportPersistenceError('Workflow persistence', error));
+  }
+
+  function persistActionManifestDocs(nextActionManifest: readonly ActionManifestDoc[]) {
+    const nextByActionId = new Map(
+      nextActionManifest.map((manifestDoc) => [manifestDoc.actionId, manifestDoc]),
+    );
+    const currentRows = actionManifestDocRows as Array<{
+      id?: string;
+      actionId?: string;
+      doc?: unknown;
+    }>;
+    const writes: Array<Promise<unknown>> = [];
+
+    for (const row of currentRows) {
+      const actionId =
+        row.actionId ||
+        ((row.doc as { actionId?: string } | undefined)?.actionId ?? '');
+      const rowId = row.id || actionId;
+      if (!actionId || !rowId) continue;
+      const nextDoc = nextByActionId.get(actionId);
+      if (!nextDoc) {
+        writes.push(deleteActionManifestDocMutation.mutateAsync(rowId));
+        continue;
+      }
+      writes.push(updateActionManifestDocMutation.mutateAsync({
+        id: rowId,
+        pluginId,
+        version: draftId,
+        actionId,
+        doc: nextDoc,
+      }));
+      nextByActionId.delete(actionId);
+    }
+
+    for (const [actionId, nextDoc] of nextByActionId) {
+      writes.push(createActionManifestDocMutation.mutateAsync({
+        id: actionId,
+        pluginId,
+        version: draftId,
+        actionId,
+        doc: nextDoc,
+      }));
+    }
+
+    if (writes.length === 0) {
+      return;
+    }
+    void Promise.allSettled(writes)
+      .then(() => refetchActionManifestDocs())
+      .catch((error) =>
+        reportPersistenceError('Action manifest persistence', error),
+      );
+  }
+
+  function persistSchemaEditorState(
+    nextSchemaBuilder: BuilderSchema,
+    nextSchemaRefinements: BuilderRefinement[],
+    nextBlocklyRefinements: BlocklyRefinement[],
+  ) {
+    const fieldTypeByKey = new Map<string, BuilderFieldType>();
+    const fieldsByType = new Map<BuilderFieldType, string[]>();
+    for (const field of nextSchemaBuilder.fields) {
+      const fieldKey = field.key.trim();
+      if (!fieldKey) continue;
+      fieldTypeByKey.set(fieldKey, field.type);
+      fieldsByType.set(field.type, [
+        ...(fieldsByType.get(field.type) ?? []),
+        fieldKey,
+      ]);
+    }
+
+    const validRefinements = nextSchemaRefinements.filter((rule) => {
+      const leftFieldType = fieldTypeByKey.get(rule.leftField);
+      if (!leftFieldType) return false;
+      if (!getAllowedOperators(leftFieldType).includes(rule.operator))
+        return false;
+      const compatibleFields = (fieldsByType.get(leftFieldType) ?? []).filter(
+        (fieldKey) => fieldKey !== rule.leftField,
+      );
+      return compatibleFields.includes(rule.rightField);
+    });
+
+    const fieldKeySet = new Set(fieldTypeByKey.keys());
+    const derivationsByFieldKey = new Map<string, SchemaBuilderDerivedField[]>();
+    for (const derivedField of nextSchemaBuilder.derivedFields) {
+      const targetFieldKey = derivedField.targetFieldKey.trim();
+      if (!fieldKeySet.has(targetFieldKey)) {
+        continue;
+      }
+      if (hasDerivedFieldValidationErrors(derivedField, fieldKeySet)) {
+        continue;
+      }
+      derivationsByFieldKey.set(targetFieldKey, [
+        ...(derivationsByFieldKey.get(targetFieldKey) ?? []),
+        derivedField,
+      ]);
+    }
+
+    const nextSchemaDoc: SchemaDoc = {
+      schemaId:
+        nextSchemaBuilder.schemaId || activeSchemaId || 'plugin.custom.table',
+      title: nextSchemaBuilder.title || 'Custom Schema',
+      fields: nextSchemaBuilder.fields.map((field) =>
+        toSchemaFieldDoc(
+          field,
+          derivationsByFieldKey.get(field.key.trim()) ?? [],
+        ),
+      ),
+      refinements: [
+        ...validRefinements.map((rule) => ({
+          code: 'custom',
+          path: rule.leftField ? [rule.leftField] : undefined,
+          message: rule.message || 'Validation failed',
+          when: {
+            kind: 'op',
+            op: 'not',
+            args: [
+              {
+                kind: 'op',
+                op: rule.operator,
+                args: [
+                  { kind: 'ref', source: 'payload', path: [rule.leftField] },
+                  { kind: 'ref', source: 'payload', path: [rule.rightField] },
+                ],
+              },
+            ],
+          },
+        })),
+        ...nextBlocklyRefinements.map((rule) => ({
+          code: 'custom',
+          path: rule.leftField ? [rule.leftField] : undefined,
+          message: rule.message || 'Validation failed',
+          when: {
+            kind: 'op',
+            op: 'not',
+            args: [rule.condition],
+          },
+        })),
+      ],
+    };
+    const schemaIndex = availableSchemaDocs.findIndex(
+      (schemaDoc) => schemaDoc.schemaId === activeSchemaId,
+    );
+    const nextDocs =
+      schemaIndex >= 0
+        ? availableSchemaDocs.map((schemaDoc, index) =>
+          index === schemaIndex ? nextSchemaDoc : schemaDoc,
+        )
+        : [...availableSchemaDocs, nextSchemaDoc];
+    persistSchemaDocs(nextDocs);
+    if (activeSchemaId !== nextSchemaDoc.schemaId) {
+      setActiveSchemaId(nextSchemaDoc.schemaId);
+    }
+  }
+
+  function persistSidebarAdminTabs(nextAdminTabs: readonly AdminTabDoc[]) {
+    const rowId = canonicalRoutesTabsConfigId;
+    const payload = {
+      id: rowId,
+      draftId: draftId,
+      revisionId: 'live',
+      pluginId,
+      businessSlug: 'draft',
+      routes: toDraftRoutesFromAdminTabs(nextAdminTabs),
+      diagnostics: [],
+      savedByUserId: actorUserId,
+      savedAt: new Date().toISOString(),
+    };
+
+    void (async () => {
+      if (activeRoutesTabsConfigRow?.id === canonicalRoutesTabsConfigId) {
+        await updateRoutesTabsConfigMutation.mutateAsync(payload);
+      } else {
+        try {
+          await createRoutesTabsConfigMutation.mutateAsync(payload);
+        } catch (error) {
+          if (!isDuplicatePersistenceError(error)) {
+            throw error;
+          }
+          await updateRoutesTabsConfigMutation.mutateAsync(payload);
+        }
+      }
+
+      // Cleanup legacy row key shape (`draftId@live`) after canonical write (`draftId`).
+      if (
+        activeRoutesTabsConfigRow?.id &&
+        activeRoutesTabsConfigRow.id !== canonicalRoutesTabsConfigId
+      ) {
+        try {
+          await deleteRoutesTabsConfigMutation.mutateAsync(
+            activeRoutesTabsConfigRow.id,
+          );
+        } catch (_error) {
+          // Best-effort cleanup only; canonical write has already succeeded.
+        }
+      }
+
+      await refetchRoutesTabsConfig();
+    })().catch((error) =>
+      reportPersistenceError('Sidebar tab persistence', error),
+    );
+  }
+
+  function updateSchemaDoc(
+    schemaId: string,
+    updater: (schemaDoc: SchemaDoc) => SchemaDoc,
+  ) {
+    persistSchemaDocs(
+      availableSchemaDocs.map((schemaDoc) =>
+        schemaDoc.schemaId === schemaId ? updater(schemaDoc) : schemaDoc,
+      ),
+    );
+  }
+
+  function updateSidebarAdminTabs(
+    updater: (state: {
+      schemaTabs: AdminTabDoc[];
+      orderedGroups: string[];
+      systemTabs: SystemTabState;
+    }) => void,
+  ) {
+    let currentTabs: AdminTabDoc[] = [];
+    try {
+      currentTabs = JSON.parse(adminTabsText) as AdminTabDoc[];
+    } catch {
+      currentTabs = [];
+    }
+
+    const state = deserializeDraftAdminTabs(currentTabs);
+    updater(state);
+
+    const availableSchemaById = new Map(
+      availableSchemaDocs.map((schemaDoc) => [schemaDoc.schemaId, schemaDoc]),
+    );
+    const filteredSchemaTabs = state.schemaTabs.filter((tab) =>
+      availableSchemaById.has(tab.schema),
+    );
+    const existingSchemaIds = new Set(filteredSchemaTabs.map((tab) => tab.schema));
+    const appendedSchemaTabs = [
+      ...filteredSchemaTabs,
+      ...availableSchemaDocs
+        .filter((schemaDoc) => !existingSchemaIds.has(schemaDoc.schemaId))
+        .map(
+          (schemaDoc) =>
+            ({
+              schema: schemaDoc.schemaId,
+              title: schemaDoc.title ?? schemaDoc.schemaId,
+            }) satisfies AdminTabDoc,
+        ),
+    ];
+
+    const schemaOrder = appendedSchemaTabs.map((tab) => tab.schema);
+    const schemaGroupById = Object.fromEntries(
+      appendedSchemaTabs.flatMap((tab) => {
+        const groupName = tab.group?.trim();
+        return groupName ? [[tab.schema, groupName]] : [];
+      }),
+    );
+    const orderedGroups = computeOrderedGroupNames({
+      customGroups: state.orderedGroups,
+      groupOrder: state.orderedGroups,
+      schemaGroupById,
+      schemaOrder,
+      systemTabs: state.systemTabs,
+    });
+
+    persistSidebarAdminTabs(
+      serializeDraftAdminTabs({
+        schemaTabs: appendedSchemaTabs,
+        orderedGroups,
+        systemTabs: state.systemTabs,
+      }),
+    );
+  }
+
+  function applySchemaRename(schemaId: string, nextTitle: string) {
+    updateSidebarAdminTabs((state) => {
+      state.schemaTabs = state.schemaTabs.map((tab) =>
+        tab.schema === schemaId ? { ...tab, title: nextTitle } : tab,
+      );
+    });
+    updateSchemaDoc(schemaId, (schemaDoc) => ({
+      ...schemaDoc,
+      title: nextTitle,
+    }));
+  }
+
+  function handleDropSchemaOnSchema(targetSchemaId: string) {
+    if (!draggingSchemaId || draggingSchemaId === targetSchemaId) return;
+    updateSidebarAdminTabs((state) => {
+      const current = state.schemaTabs.map((tab) => tab.schema);
+      const next = current.filter((schemaId) => schemaId !== draggingSchemaId);
+      const targetIndex = next.indexOf(targetSchemaId);
+      if (targetIndex < 0) {
+        next.push(draggingSchemaId);
+      } else {
+        next.splice(targetIndex + 1, 0, draggingSchemaId);
+      }
+      const tabBySchema = new Map(state.schemaTabs.map((tab) => [tab.schema, tab]));
+      state.schemaTabs = next
+        .map((schemaId) => tabBySchema.get(schemaId))
+        .filter((tab): tab is AdminTabDoc => Boolean(tab));
+    });
+    setDraggingSchemaId(null);
+  }
+
+  function handleDropSchemaOnGroup(targetGroup: string) {
+    if (!draggingSchemaId) return;
+    updateSidebarAdminTabs((state) => {
+      state.schemaTabs = state.schemaTabs.map((tab) =>
+        tab.schema === draggingSchemaId
+          ? { ...tab, group: targetGroup }
+          : tab,
+      );
+    });
+    setDraggingSchemaId(null);
+  }
+
+  function applyGroupRename(previousGroup: string, nextGroup: string) {
+    const from = previousGroup.trim();
+    const to = nextGroup.trim();
+    if (!from || !to || from === to) return;
+    updateSidebarAdminTabs((state) => {
+      state.schemaTabs = state.schemaTabs.map((tab) =>
+        tab.group === from ? { ...tab, group: to } : tab,
+      );
+      state.orderedGroups = state.orderedGroups.map((groupName) =>
+        groupName === from ? to : groupName,
+      );
+    });
+  }
+
+  function handleRenameGroup(previousGroupName: string, nextGroupName: string) {
+    applyGroupRename(previousGroupName, nextGroupName);
+  }
+
+  function handleDeleteGroup(groupName: string) {
+    const normalized = groupName.trim();
+    if (!normalized) return;
+    updateSidebarAdminTabs((state) => {
+      state.orderedGroups = state.orderedGroups.filter(
+        (candidate) => candidate !== normalized,
+      );
+      state.schemaTabs = state.schemaTabs.map((tab) =>
+        tab.group === normalized ? { ...tab, group: undefined } : tab,
+      );
+    });
+  }
+
+  function handleRenameTab(previousTabTitle: string, nextTabTitle: string) {
+    const normalized = nextTabTitle.trim();
+    if (!normalized) return;
+    const previousNormalized = previousTabTitle.trim().toLowerCase();
+    const schemaTitleById = new Map(
+      availableSchemaDocs.map((schemaDoc) => [
+        schemaDoc.schemaId,
+        schemaDoc.title ?? schemaDoc.schemaId,
+      ]),
+    );
+    const matchedSchemaIds: string[] = [];
+    updateSidebarAdminTabs((state) => {
+      state.schemaTabs = state.schemaTabs.map((tab) => {
+        const currentTitle = (
+          tab.title ??
+          schemaTitleById.get(tab.schema) ??
+          tab.schema
+        ).trim();
+        if (currentTitle.toLowerCase() !== previousNormalized) {
+          return tab;
+        }
+        matchedSchemaIds.push(tab.schema);
+        return { ...tab, title: normalized };
+      });
+    });
+
+    if (matchedSchemaIds.length === 0) {
+      const fallbackSchemaId = resolveSchemaIdForTabTitle(previousTabTitle);
+      if (!fallbackSchemaId) {
+        return;
+      }
+      applySchemaRename(fallbackSchemaId, normalized);
+      return;
+    }
+
+    const matchedSet = new Set(matchedSchemaIds);
+    persistSchemaDocs(
+      availableSchemaDocs.map((schemaDoc) =>
+        matchedSet.has(schemaDoc.schemaId)
+          ? { ...schemaDoc, title: normalized }
+          : schemaDoc,
+      ),
+    );
+  }
+
+  function handleRenameTabIcon(tabTitle: string, iconName: string) {
+    const schemaId = resolveSchemaIdForTabTitle(tabTitle);
+    if (!schemaId) return;
+    updateSidebarAdminTabs((state) => {
+      state.schemaTabs = state.schemaTabs.map((tab) =>
+        tab.schema === schemaId
+          ? { ...tab, icon: iconName.trim() || undefined }
+          : tab,
+      );
+    });
+  }
+
+  function handleSystemTabChange(
+    key: SystemTabKey,
+    next: SystemTabState[SystemTabKey],
+  ) {
+    updateSidebarAdminTabs((state) => {
+      state.systemTabs = {
+        ...state.systemTabs,
+        [key]: {
+          title: next.title,
+          group: next.group?.trim() || undefined,
+          iconName: next.iconName?.trim() || undefined,
+        },
+      };
+    });
+  }
+
+  function openAddColumnSheet() {
+    setColumnSheetMode('add');
+    setEditingColumnId(null);
+    setAddColumnDraft(createAddColumnDraft(schemaBuilder.fields.length));
+    setIsAddColumnSheetOpen(true);
+  }
+
+  function openEditColumnSheet(columnKey: string) {
+    const normalizedColumnKey = columnKey.trim();
+    if (!normalizedColumnKey) return;
+    const targetField = schemaBuilder.fields.find(
+      (field) => field.key.trim() === normalizedColumnKey,
+    );
+    if (!targetField) {
+      toast.error(`Column ${normalizedColumnKey} was not found.`);
+      return;
+    }
+    setColumnSheetMode('edit');
+    setEditingColumnId(targetField.id);
+    setAddColumnDraft(toAddColumnDraftFromField(targetField));
+    setIsAddColumnSheetOpen(true);
+  }
+
+  function resetColumnSheetState() {
+    setColumnSheetMode('add');
+    setEditingColumnId(null);
+  }
+
+  function closeColumnSheet() {
+    setIsAddColumnSheetOpen(false);
+    resetColumnSheetState();
+  }
+
+  function handleColumnSheetOpenChange(nextOpen: boolean) {
+    setIsAddColumnSheetOpen(nextOpen);
+    if (!nextOpen) {
+      resetColumnSheetState();
+    }
+  }
+
+  function handleReorderColumns(
+    sourceColumnKey: string,
+    targetColumnKey: string,
+  ) {
+    const source = sourceColumnKey.trim();
+    const target = targetColumnKey.trim();
+    if (!source || !target || source === target) return;
+
+    setSchemaBuilder((current) => {
+      const sourceIndex = current.fields.findIndex(
+        (field) => field.key.trim() === source,
+      );
+      const targetIndex = current.fields.findIndex(
+        (field) => field.key.trim() === target,
+      );
+      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
+        return current;
+      }
+
+      const nextFields = [...current.fields];
+      const [movedField] = nextFields.splice(sourceIndex, 1);
+      if (!movedField) return current;
+      nextFields.splice(targetIndex, 0, movedField);
+
+      return {
+        ...current,
+        fields: nextFields,
+      };
+    });
+  }
+
+  function requestDeleteColumn(columnKey: string) {
+    const normalizedColumnKey = columnKey.trim();
+    if (!normalizedColumnKey) return;
+    if (schemaBuilder.fields.length <= 1) {
+      toast.error('At least one column is required.');
+      return;
+    }
+    if (
+      !schemaBuilder.fields.some(
+        (field) => field.key.trim() === normalizedColumnKey,
+      )
+    ) {
+      toast.error(`Column ${normalizedColumnKey} was not found.`);
+      return;
+    }
+    setPendingDeleteColumnKey(normalizedColumnKey);
+    setIsDeleteColumnDialogOpen(true);
+  }
+
+  function handleDeleteColumnDialogOpenChange(nextOpen: boolean) {
+    setIsDeleteColumnDialogOpen(nextOpen);
+    if (!nextOpen) {
+      setPendingDeleteColumnKey(null);
+    }
+  }
+
+  function confirmDeleteColumn() {
+    const normalizedColumnKey = pendingDeleteColumnKey?.trim();
+    if (!normalizedColumnKey) {
+      handleDeleteColumnDialogOpenChange(false);
+      return;
+    }
+    if (schemaBuilder.fields.length <= 1) {
+      toast.error('At least one column is required.');
+      handleDeleteColumnDialogOpenChange(false);
+      return;
+    }
+    if (
+      !schemaBuilder.fields.some(
+        (field) => field.key.trim() === normalizedColumnKey,
+      )
+    ) {
+      toast.error(`Column ${normalizedColumnKey} was not found.`);
+      handleDeleteColumnDialogOpenChange(false);
+      return;
+    }
+    setSchemaBuilder((current) => ({
+      ...current,
+      fields: current.fields.filter(
+        (field) => field.key.trim() !== normalizedColumnKey,
+      ),
+      derivedFields: current.derivedFields.filter(
+        (derivedField) =>
+          derivedField.targetFieldKey.trim() !== normalizedColumnKey,
+      ),
+    }));
+    setSchemaRefinements((current) =>
+      current.filter(
+        (rule) =>
+          rule.leftField !== normalizedColumnKey &&
+          rule.rightField !== normalizedColumnKey,
+      ),
+    );
+    setBlocklyRefinements((current) =>
+      current.filter((rule) => rule.leftField !== normalizedColumnKey),
+    );
+    handleDeleteColumnDialogOpenChange(false);
+  }
+
+  function submitAddColumnFromSheet() {
+    const nextKey = addColumnDraft.key.trim();
+    if (!nextKey) {
+      toast.error('Column key is required.');
+      return;
+    }
+    const editingField =
+      columnSheetMode === 'edit' && editingColumnId
+        ? schemaBuilder.fields.find((field) => field.id === editingColumnId)
+        : undefined;
+    const conflictingField = schemaBuilder.fields.find(
+      (field) =>
+        field.key.trim() === nextKey &&
+        (!editingField || field.id !== editingField.id),
+    );
+    if (conflictingField) {
+      toast.error('A column with this key already exists.');
+      return;
+    }
+
+    if (editingField) {
+      const previousKey = editingField.key.trim();
+      setSchemaBuilder((current) => {
+        const nextDerivedFields = current.derivedFields.map((derivedField) =>
+          derivedField.targetFieldKey.trim() === previousKey
+            ? {
+              ...derivedField,
+              targetFieldKey: nextKey,
+            }
+            : derivedField,
+        );
+
+        return {
+          ...current,
+          fields: current.fields.map((field) =>
+            field.id === editingField.id
+              ? {
+                ...field,
+                key: nextKey,
+                label: addColumnDraft.label.trim() || nextKey,
+                description: addColumnDraft.description.trim(),
+                type: addColumnDraft.type,
+                fieldType: addColumnDraft.fieldType,
+                required: addColumnDraft.required,
+                defaultValue: addColumnDraft.defaultValue.trim() || undefined,
+                enumValuesText:
+                  addColumnDraft.enumValuesText.trim() || undefined,
+                min: addColumnDraft.min.trim() || undefined,
+                max: addColumnDraft.max.trim() || undefined,
+              }
+              : field,
+          ),
+          derivedFields: nextDerivedFields,
+        };
+      });
+      if (previousKey !== nextKey) {
+        setSchemaRefinements((current) =>
+          current.map((rule) => ({
+            ...rule,
+            leftField:
+              rule.leftField === previousKey ? nextKey : rule.leftField,
+            rightField:
+              rule.rightField === previousKey ? nextKey : rule.rightField,
+          })),
+        );
+        setBlocklyRefinements((current) =>
+          current.map((rule) => ({
+            ...rule,
+            leftField:
+              rule.leftField === previousKey ? nextKey : rule.leftField,
+          })),
+        );
+      }
+      closeColumnSheet();
+      return;
+    }
+
+    const nextField: BuilderField = {
+      id: generateBuilderId(),
+      key: nextKey,
+      label: addColumnDraft.label.trim() || nextKey,
+      description: addColumnDraft.description.trim(),
+      type: addColumnDraft.type,
+      fieldType: addColumnDraft.fieldType,
+      required: addColumnDraft.required,
+      defaultValue: addColumnDraft.defaultValue.trim() || undefined,
+      enumValuesText: addColumnDraft.enumValuesText.trim() || undefined,
+      min: addColumnDraft.min.trim() || undefined,
+      max: addColumnDraft.max.trim() || undefined,
+      inputPropsJson: '{}',
+      customDataJson: '{}',
+      fieldConfigJson: '{}',
+      behaviorJson: '{}',
+    };
+    setSchemaBuilder((current) => ({
+      ...current,
+      fields: [...current.fields, nextField],
+      derivedFields: current.derivedFields,
+    }));
+    closeColumnSheet();
+  }
+
+  function handleAddGroup(
+    nextGroupName?: string,
+    options?: { relativeTo?: string; position?: 'above' | 'below' },
+  ) {
+    const fallbackGroupName = `Group ${availableGroups.length + 1}`;
+    const normalized = (nextGroupName ?? fallbackGroupName).trim();
+    if (!normalized) {
+      toast.error('Enter a group name first.');
+      return;
+    }
+    updateSidebarAdminTabs((state) => {
+      const current = state.orderedGroups;
+      const withCandidate = current.includes(normalized)
+        ? current
+        : [...current, normalized];
+      // Build order from persisted state plus currently visible groups so relative
+      // insertion works even when a target group was not yet persisted in groupOrder.
+      const base = [
+        ...withCandidate,
+        ...availableGroups.filter((groupName) => !withCandidate.includes(groupName)),
+      ].filter((groupName) => groupName !== normalized);
+      const relativeTo = options?.relativeTo?.trim();
+      const relativeIndex = relativeTo ? base.indexOf(relativeTo) : -1;
+      if (relativeIndex >= 0) {
+        const insertAt =
+          options?.position === 'above' ? relativeIndex : relativeIndex + 1;
+        base.splice(insertAt, 0, normalized);
+        state.orderedGroups = base;
+        return;
+      }
+      state.orderedGroups = [...base, normalized];
+    });
+  }
+
+  function handleReorderGroups(
+    fromGroupName: string,
+    toGroupName: string,
+    position: 'above' | 'below' = 'below',
+  ) {
+    const from = fromGroupName.trim();
+    const to = toGroupName.trim();
+    if (!from || !to || from === to) return;
+    updateSidebarAdminTabs((state) => {
+      const current = state.orderedGroups;
+      const baseline = [...current];
+      if (!baseline.includes(from)) baseline.push(from);
+      if (!baseline.includes(to)) baseline.push(to);
+      const next = baseline.filter((groupName) => groupName !== from);
+      const toIndex = next.indexOf(to);
+      if (toIndex < 0) return;
+      const insertAt = position === 'above' ? toIndex : toIndex + 1;
+      next.splice(insertAt, 0, from);
+      state.orderedGroups = next;
+    });
+  }
+
+  function resolveSchemaIdForTabTitle(tabTitle: string): string | undefined {
+    const normalized = tabTitle.trim();
+    if (!normalized) return undefined;
+    const normalizedLower = normalized.toLowerCase();
+    const matchingTab = (parsed?.adminTabs ?? []).find(
+      (tab) =>
+        (tab.title ?? tab.schema).trim() === normalized ||
+        (tab.title ?? tab.schema).trim().toLowerCase() === normalizedLower,
+    );
+    return (
+      matchingTab?.schema ??
+      Object.entries(
+        Object.fromEntries(
+          availableSchemaDocs.map((schemaDoc) => [
+            schemaDoc.schemaId,
+            schemaDoc.title ?? schemaDoc.schemaId,
+          ]),
+        ),
+      ).find(
+        ([, titleValue]) =>
+          titleValue.trim() === normalized ||
+          titleValue.trim().toLowerCase() === normalizedLower,
+      )?.[0]
+    );
+  }
+
+  function getNextWorkflowId() {
+    let counter = availableWorkflows.length + 1;
+    while (true) {
+      const candidate = `${pluginId}.workflow.${counter}`;
+      if (!availableWorkflows.some((workflow) => workflow.workflowId === candidate)) {
+        return candidate;
+      }
+      counter += 1;
+    }
+  }
+
+  function openWorkflowEditorForTable(table: string) {
+    const trimmedTable = table.trim();
+    if (!trimmedTable) return;
+    const preferredWorkflow =
+      availableWorkflows.find(
+        (workflowDoc) =>
+          workflowDoc.workflowId === activeWorkflowId &&
+          workflowDoc.table === trimmedTable,
+      ) ??
+      availableWorkflows.find(
+        (workflowDoc) => workflowDoc.table === trimmedTable,
+      );
+    if (preferredWorkflow) {
+      setActiveWorkflowId(preferredWorkflow.workflowId);
+      setWorkflowEditorLockedTable(trimmedTable);
+      setIsWorkflowEditorOpen(true);
+      return;
+    }
+    const nextWorkflow: WorkflowDoc = {
+      workflowId: getNextWorkflowId(),
+      table: trimmedTable,
+      hook: 'afterCreate',
+      nodes: [],
+      edges: [],
+    };
+    persistWorkflowDocs([...availableWorkflows, nextWorkflow]);
+    setActiveWorkflowId(nextWorkflow.workflowId);
+    setWorkflowEditorLockedTable(trimmedTable);
+    setIsWorkflowEditorOpen(true);
+  }
+
+  function handleOpenWorkflowEditorForTab(tabTitle: string) {
+    const schemaId = resolveSchemaIdForTabTitle(tabTitle);
+    if (!schemaId) {
+      toast.error(`Could not resolve schema for "${tabTitle}".`);
+      return;
+    }
+    openWorkflowEditorForTable(schemaId);
+  }
+
+  function handleDeleteTableFromTab(tabTitle: string) {
+    const normalizedTabTitle = tabTitle.trim();
+    if (!normalizedTabTitle) return;
+    const schemaId = resolveSchemaIdForTabTitle(normalizedTabTitle);
+    if (!schemaId) {
+      toast.error(`Could not resolve schema for "${tabTitle}".`);
+      return;
+    }
+    const matchingSchemaDoc = availableSchemaDocs.find(
+      (schemaDoc) => schemaDoc.schemaId === schemaId,
+    );
+    if (!matchingSchemaDoc) {
+      toast.error(`Table "${normalizedTabTitle}" was not found.`);
+      return;
+    }
+    setPendingDeleteTable({
+      schemaId,
+      tabTitle: matchingSchemaDoc.title?.trim() || normalizedTabTitle,
+    });
+  }
+
+  function handleDeleteTableDialogOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      setPendingDeleteTable(null);
+    }
+  }
+
+  function confirmDeleteTable() {
+    const schemaId = pendingDeleteTable?.schemaId?.trim();
+    if (!schemaId) {
+      handleDeleteTableDialogOpenChange(false);
+      return;
+    }
+    handleRemoveSchema(schemaId);
+    handleDeleteTableDialogOpenChange(false);
+  }
+
+  function handleMoveTabToGroup(tabTitle: string, nextGroup?: string) {
+    const normalizedGroup = nextGroup?.trim();
+    const schemaId = resolveSchemaIdForTabTitle(tabTitle);
+    if (!schemaId) return;
+    updateSidebarAdminTabs((state) => {
+      state.schemaTabs = state.schemaTabs.map((tab) =>
+        tab.schema === schemaId
+          ? {
+            ...tab,
+            group: normalizedGroup || undefined,
+          }
+          : tab,
+      );
+    });
+  }
+
+  function handleAddSchema(targetGroupName?: string) {
     const nextSchemaId = `plugin.${pluginId.split('.').pop() || 'custom'}.${availableSchemaDocs.length + 1}`;
+    const normalizedGroupName = targetGroupName?.trim();
     const nextSchemaDoc: SchemaDoc = {
       schemaId: nextSchemaId,
       title: `Schema ${availableSchemaDocs.length + 1}`,
@@ -2578,17 +5025,19 @@ function PluginStudioRoute() {
         },
       ],
     };
-    setSchemaText((current) => {
-      try {
-        const currentDocs = JSON.parse(current) as SchemaDoc[];
-        return canonicalStringify([...currentDocs, nextSchemaDoc]);
-      } catch {
-        return canonicalStringify([nextSchemaDoc]);
-      }
+    persistSchemaDocs([...availableSchemaDocs, nextSchemaDoc]);
+    updateSidebarAdminTabs((state) => {
+      state.schemaTabs = [
+        ...state.schemaTabs.filter((tab) => tab.schema !== nextSchemaId),
+        {
+          schema: nextSchemaId,
+          title: nextSchemaDoc.title ?? nextSchemaId,
+          group: normalizedGroupName,
+        },
+      ];
     });
     setActiveSchemaId(nextSchemaId);
     syncBuilderFromSchemaDoc(nextSchemaDoc);
-    toast.success('Schema added.');
   }
 
   function handleRemoveSchema(schemaId: string) {
@@ -2599,7 +5048,22 @@ function PluginStudioRoute() {
     const nextDocs = availableSchemaDocs.filter(
       (schemaDoc) => schemaDoc.schemaId !== schemaId,
     );
-    setSchemaText(canonicalStringify(nextDocs));
+    persistSchemaDocs(nextDocs);
+    updateSidebarAdminTabs((state) => {
+      state.schemaTabs = state.schemaTabs.filter(
+        (tab) => tab.schema !== schemaId,
+      );
+    });
+    setCoreExtensionSchemaIds((current) => {
+      const next = { ...current };
+      delete next[schemaId];
+      return next;
+    });
+    setLockedCoreFieldKeysBySchemaId((current) => {
+      const next = { ...current };
+      delete next[schemaId];
+      return next;
+    });
     if (activeSchemaId === schemaId) {
       const fallbackSchema = nextDocs[0];
       if (fallbackSchema) {
@@ -2607,27 +5071,22 @@ function PluginStudioRoute() {
         syncBuilderFromSchemaDoc(fallbackSchema);
       }
     }
-    toast.success('Schema removed.');
   }
 
   function handleAddWorkflow() {
     const nextWorkflow: WorkflowDoc = {
-      workflowId: `${pluginId}.workflow.${availableWorkflows.length + 1}`,
-      table: activeSchemaId || schemaBuilder.schemaId || DEFAULT_WORKFLOW_DOC.table,
+      workflowId: getNextWorkflowId(),
+      table:
+        workflowEditorLockedTable ||
+        activeSchemaId ||
+        schemaBuilder.schemaId ||
+        DEFAULT_WORKFLOW_DOC.table,
       hook: 'afterCreate',
       nodes: [],
       edges: [],
     };
-    setWorkflowText((current) => {
-      try {
-        const currentWorkflows = JSON.parse(current) as WorkflowDoc[];
-        return canonicalStringify([...currentWorkflows, nextWorkflow]);
-      } catch {
-        return canonicalStringify([nextWorkflow]);
-      }
-    });
+    persistWorkflowDocs([...availableWorkflows, nextWorkflow]);
     setActiveWorkflowId(nextWorkflow.workflowId);
-    toast.success('Workflow added.');
   }
 
   function handleRemoveWorkflow(workflowId: string) {
@@ -2638,11 +5097,26 @@ function PluginStudioRoute() {
     const nextWorkflows = availableWorkflows.filter(
       (workflow) => workflow.workflowId !== workflowId,
     );
-    setWorkflowText(canonicalStringify(nextWorkflows));
+    persistWorkflowDocs(nextWorkflows);
     if (activeWorkflowId === workflowId) {
-      setActiveWorkflowId(nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId);
+      setActiveWorkflowId(
+        nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
+      );
     }
-    toast.success('Workflow removed.');
+  }
+
+  function handleDuplicateActiveWorkflow() {
+    if (!workspaceWorkflow) return;
+    const nextWorkflow: WorkflowDoc = {
+      ...workspaceWorkflow,
+      workflowId: getNextWorkflowId(),
+      hook: workspaceWorkflow.hook,
+      table: workflowEditorTable,
+      nodes: workspaceWorkflow.nodes.map((node) => ({ ...node })),
+      edges: workspaceWorkflow.edges.map((edge) => ({ ...edge })),
+    };
+    persistWorkflowDocs([...availableWorkflows, nextWorkflow]);
+    setActiveWorkflowId(nextWorkflow.workflowId);
   }
 
   function updateActiveWorkflow(
@@ -2659,7 +5133,7 @@ function PluginStudioRoute() {
         ? nextWorkflow
         : workflowDoc,
     );
-    setWorkflowText(canonicalStringify(nextWorkflows));
+    persistWorkflowDocs(nextWorkflows);
     if (nextWorkflow.workflowId !== activeWorkflowId) {
       setActiveWorkflowId(nextWorkflow.workflowId);
     }
@@ -2731,7 +5205,7 @@ function PluginStudioRoute() {
     setPluginId(template.pluginId);
     setTitle(template.docs.title);
     setDescription(template.docs.description);
-    setActionManifestText(canonicalStringify(template.actionManifest));
+    persistActionManifestDocs(template.actionManifest);
     const nextSchemaDocs =
       template.schemaDocs && template.schemaDocs.length > 0
         ? template.schemaDocs
@@ -2742,35 +5216,74 @@ function PluginStudioRoute() {
         : toFallbackTemplateWorkflows(template, nextSchemaDocs);
     const nextActiveSchema = nextSchemaDocs[0] ?? DEFAULT_SCHEMA_DOC;
 
-    setSchemaText(canonicalStringify(nextSchemaDocs));
-    setWorkflowText(canonicalStringify(nextWorkflows));
+    persistSchemaDocs(nextSchemaDocs);
+    persistWorkflowDocs(nextWorkflows);
     setActiveSchemaId(nextActiveSchema.schemaId);
-    setActiveWorkflowId(nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId);
+    setActiveWorkflowId(
+      nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
+    );
     syncBuilderFromSchemaDoc(nextActiveSchema);
     setSelectedTemplateLabel(template.docs?.title);
     setIsTemplatesDialogOpen(false);
+    persistSidebarAdminTabs(
+      serializeDraftAdminTabs({
+        schemaTabs: nextSchemaDocs.map((schemaDoc) => {
+          const templateTab = (template.adminTabs ?? []).find(
+            (tab) => tab.schema === schemaDoc.schemaId,
+          );
+          return {
+            schema: schemaDoc.schemaId,
+            title: schemaDoc.title ?? schemaDoc.schemaId,
+            group: templateTab?.group,
+            icon: templateTab?.icon,
+          } satisfies AdminTabDoc;
+        }),
+        orderedGroups: Array.from(
+          new Set(
+            (template.adminTabs ?? [])
+              .map((tab) => tab.group?.trim())
+              .filter((group): group is string => Boolean(group)),
+          ),
+        ),
+        systemTabs,
+      }),
+    );
   }
 
-  function openSchemaEditor(schemaId: string) {
+  function openSchemaEditor(
+    schemaId: string,
+    options?: { closeWorkflowEditor?: boolean },
+  ) {
+    if (coreExtensionSchemaIds[schemaId]) {
+      toast.info('Core extension tables are edited inline in the sidebar.');
+      return;
+    }
     const schemaDoc = availableSchemaDocs.find(
       (candidate) => candidate.schemaId === schemaId,
     );
     if (!schemaDoc) return;
-    selectSchema(schemaId);
-    setIsSchemaEditorOpen(true);
-  }
-
-  if (!isAuthenticated || !user) {
-    return (
-      <div className="container py-12">
-        <Card>
-          <CardHeader>
-            <CardTitle>Plugin Studio</CardTitle>
-          </CardHeader>
-          <CardContent>Sign in to access the plugin studio.</CardContent>
-        </Card>
-      </div>
-    );
+    const openEditor = () => {
+      selectSchema(schemaId);
+      setIsSchemaEditorOpen(true);
+    };
+    if (options?.closeWorkflowEditor) {
+      setIsWorkflowEditorOpen(false);
+      setWorkflowEditorLockedTable(null);
+      if (schemaEditorOpenTimeoutRef.current !== null) {
+        clearTimeout(schemaEditorOpenTimeoutRef.current);
+        schemaEditorOpenTimeoutRef.current = null;
+      }
+      if (typeof window === 'undefined') {
+        openEditor();
+        return;
+      }
+      schemaEditorOpenTimeoutRef.current = window.setTimeout(() => {
+        schemaEditorOpenTimeoutRef.current = null;
+        openEditor();
+      }, 260);
+      return;
+    }
+    openEditor();
   }
 
   if (isInitialLoading) return <PluginStudioSkeleton />;
@@ -2794,6 +5307,9 @@ function PluginStudioRoute() {
                 Use full metadata-powered schema and automation dialogs with
                 type safety and advanced customization.
               </p>
+              <p className="text-xs font-medium text-muted-foreground">
+                Draft Workspace
+              </p>
             </div>
             <div className="flex items-center gap-3">
               <Button
@@ -2816,140 +5332,300 @@ function PluginStudioRoute() {
                 {!isPublishing && <ArrowRight className="ml-2 size-4" />}
               </Button>
             </div>
+            <div className="flex w-full items-center gap-2 md:justify-end">
+              <Button type="button" size="sm" variant="outline" disabled>
+                Save Draft Revision
+              </Button>
+              <Button type="button" size="sm" variant="ghost" disabled>
+                Load Revision
+              </Button>
+            </div>
           </div>
         </section>
 
         <Card className="border-border/70 bg-card/90">
           <CardHeader>
-            <CardTitle className="text-base">Data Models & Automations</CardTitle>
+            <CardTitle className="text-base">Sidebar Builder</CardTitle>
             <CardDescription>
-              Manage multiple schemas and workflows for one plugin from a
-              single visual workspace.
+              Design tables, columns, and workflows inline while the admin UI
+              renders from the same schema docs in real time.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 lg:grid-cols-2">
-            <div className="space-y-3 rounded-xl border bg-muted/20 p-3">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Schema Library</div>
-                <Button type="button" size="sm" onClick={handleAddSchema}>
-                  <Plus className="mr-2 size-4" />
-                  Add Schema
-                </Button>
+          <CardContent className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
+            {parsed === null ? (
+              <div className="p-4 text-sm text-muted-foreground">
+                Fix schema/workflow JSON parse issues to render preview.
               </div>
-              <div className="space-y-2">
-                {availableSchemaDocs.map((schemaDoc) => (
-                  <div
-                    key={schemaDoc.schemaId}
-                    className={`rounded-lg border p-3 ${schemaDoc.schemaId === activeSchemaId
-                      ? 'border-primary bg-primary/5'
-                      : 'bg-card'
-                      }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        className="flex-1 text-left"
-                        onClick={() => selectSchema(schemaDoc.schemaId)}
-                      >
-                        <div className="text-sm font-medium">
-                          {schemaDoc.title || schemaDoc.schemaId}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {schemaDoc.schemaId}
-                        </div>
-                      </button>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => openSchemaEditor(schemaDoc.schemaId)}
-                        >
-                          <Pencil className="size-4" />
-                          <span className="sr-only">Edit schema</span>
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleRemoveSchema(schemaDoc.schemaId)}
-                          disabled={availableSchemaDocs.length <= 1}
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                          <span className="sr-only">Delete schema</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            ) : livePreviewTabs.length === 0 ? (
+              <div className="p-4 text-sm text-muted-foreground">
+                Add at least one table schema to render live preview.
               </div>
-            </div>
-
-            <div className="space-y-3 rounded-xl border bg-muted/20 p-3">
-              <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">Workflow Library</div>
-                <Button type="button" size="sm" onClick={handleAddWorkflow}>
-                  <Plus className="mr-2 size-4" />
-                  Add Workflow
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {availableWorkflows.map((workflowDoc) => (
-                  <div
-                    key={workflowDoc.workflowId}
-                    className={`rounded-lg border p-3 ${workflowDoc.workflowId === activeWorkflowId
-                      ? 'border-primary bg-primary/5'
-                      : 'bg-card'
-                      }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <button
-                        type="button"
-                        className="flex-1 text-left"
-                        onClick={() => setActiveWorkflowId(workflowDoc.workflowId)}
-                      >
-                        <div className="text-sm font-medium">
-                          {workflowDoc.workflowId}
-                        </div>
-                        <div className="text-xs text-muted-foreground">
-                          {workflowDoc.table} · {workflowDoc.hook}
-                        </div>
-                      </button>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setActiveWorkflowId(workflowDoc.workflowId);
-                            setIsWorkflowEditorOpen(true);
-                          }}
-                        >
-                          <Pencil className="size-4" />
-                          <span className="sr-only">Edit workflow</span>
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => handleRemoveWorkflow(workflowDoc.workflowId)}
-                          disabled={availableWorkflows.length <= 1}
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                          <span className="sr-only">Delete workflow</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Open any workflow to customize trigger, schema binding, and action
-                steps.
-              </p>
-            </div>
+            ) : (
+              <AutoAdmin
+                tabs={livePreviewTabs}
+                editable
+                onAddTable={handleAddSchema}
+                onAddGroup={handleAddGroup}
+                onReorderGroups={handleReorderGroups}
+                onMoveTabToGroup={handleMoveTabToGroup}
+                onRenameGroup={handleRenameGroup}
+                onDeleteGroup={handleDeleteGroup}
+                onRenameTab={handleRenameTab}
+                onRenameTabIcon={handleRenameTabIcon}
+                onOpenWorkflowEditorForTab={handleOpenWorkflowEditorForTab}
+                onDeleteTableForTab={handleDeleteTableFromTab}
+                systemTabs={systemTabs}
+                onSystemTabChange={handleSystemTabChange}
+                groups={availableGroups}
+              />
+            )}
           </CardContent>
         </Card>
+
+        <Sheet
+          open={isAddColumnSheetOpen}
+          onOpenChange={handleColumnSheetOpenChange}
+        >
+          <SheetContent
+            side="right"
+            className="w-full overflow-y-auto sm:max-w-lg"
+          >
+            <SheetHeader>
+              <SheetTitle>
+                {columnSheetMode === 'edit' ? 'Edit Column' : 'Add Column'}
+              </SheetTitle>
+              <SheetDescription>
+                {columnSheetMode === 'edit'
+                  ? 'Update this column using the same form used when creating new columns.'
+                  : 'Add a new column to the end of the active table with full field customization.'}
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-4 grid gap-3">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="add-column-key">Column key</Label>
+                  <Input
+                    id="add-column-key"
+                    value={addColumnDraft.key}
+                    onChange={(event) =>
+                      setAddColumnDraft((current) => ({
+                        ...current,
+                        key: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="add-column-label">Label</Label>
+                  <Input
+                    id="add-column-label"
+                    value={addColumnDraft.label}
+                    onChange={(event) =>
+                      setAddColumnDraft((current) => ({
+                        ...current,
+                        label: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="add-column-description">Description</Label>
+                <Input
+                  id="add-column-description"
+                  value={addColumnDraft.description}
+                  onChange={(event) =>
+                    setAddColumnDraft((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label>Data type</Label>
+                  <Select
+                    value={addColumnDraft.type}
+                    onValueChange={(value) =>
+                      setAddColumnDraft((current) => ({
+                        ...current,
+                        type: value as BuilderFieldType,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Data type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BUILDER_FIELD_TYPES.map((fieldType) => (
+                        <SelectItem
+                          key={`sheet-type-${fieldType}`}
+                          value={fieldType}
+                        >
+                          {fieldType}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label>UI field type</Label>
+                  <Select
+                    value={addColumnDraft.fieldType}
+                    onValueChange={(value) =>
+                      setAddColumnDraft((current) => ({
+                        ...current,
+                        fieldType: value as BuilderLeafFieldType,
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="UI field type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BUILDER_LEAF_FIELD_TYPES.map((fieldType) => (
+                        <SelectItem
+                          key={`sheet-ui-${fieldType}`}
+                          value={fieldType}
+                        >
+                          {fieldType}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="add-column-default">Default value</Label>
+                  <Input
+                    id="add-column-default"
+                    value={addColumnDraft.defaultValue}
+                    onChange={(event) =>
+                      setAddColumnDraft((current) => ({
+                        ...current,
+                        defaultValue: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="add-column-enum">Enum values</Label>
+                  <Input
+                    id="add-column-enum"
+                    value={addColumnDraft.enumValuesText}
+                    onChange={(event) =>
+                      setAddColumnDraft((current) => ({
+                        ...current,
+                        enumValuesText: event.target.value,
+                      }))
+                    }
+                    placeholder="comma,separated"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="space-y-1">
+                  <Label htmlFor="add-column-min">Min</Label>
+                  <Input
+                    id="add-column-min"
+                    value={addColumnDraft.min}
+                    onChange={(event) =>
+                      setAddColumnDraft((current) => ({
+                        ...current,
+                        min: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="add-column-max">Max</Label>
+                  <Input
+                    id="add-column-max"
+                    value={addColumnDraft.max}
+                    onChange={(event) =>
+                      setAddColumnDraft((current) => ({
+                        ...current,
+                        max: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <Label className="flex items-center gap-2 text-sm font-normal">
+                  <Checkbox
+                    checked={addColumnDraft.required}
+                    onCheckedChange={(checked) =>
+                      setAddColumnDraft((current) => ({
+                        ...current,
+                        required: checked === true,
+                      }))
+                    }
+                  />
+                  Required
+                </Label>
+              </div>
+            </div>
+            <SheetFooter className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeColumnSheet}
+              >
+                Cancel
+              </Button>
+              <Button type="button" onClick={submitAddColumnFromSheet}>
+                {columnSheetMode === 'edit' ? 'Save Column' : 'Add Column'}
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+
+        <AlertDialog
+          open={pendingDeleteTable !== null}
+          onOpenChange={handleDeleteTableDialogOpenChange}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete table?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {pendingDeleteTable
+                  ? `Table "${pendingDeleteTable.tabTitle}" will be removed from this draft. This action cannot be undone.`
+                  : 'This table will be removed from this draft. This action cannot be undone.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteTable}>
+                Delete Table
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog
+          open={isDeleteColumnDialogOpen}
+          onOpenChange={handleDeleteColumnDialogOpenChange}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete column?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {pendingDeleteColumnKey
+                  ? `Column "${pendingDeleteColumnKey}" will be removed from this table. Existing rows may lose this value. This action cannot be undone.`
+                  : 'This column will be removed from this table. This action cannot be undone.'}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteColumn}>
+                Delete Column
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <Dialog
           open={isTemplatesDialogOpen}
@@ -2970,21 +5646,21 @@ function PluginStudioRoute() {
               {templates.map((template) => (
                 <div
                   key={`${template.pluginId}@${template.version}`}
-                  className={`rounded-xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedTemplateLabel === template.docs.title
+                  className={`rounded-xl border bg-card p-3 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${selectedTemplateLabel === template.docs?.title
                     ? 'ring-2 ring-primary'
                     : ''
                     }`}
                 >
                   <div className="space-y-0.5">
                     <div className="font-medium text-sm">
-                      {template.docs.title}
+                      {template.docs?.title}
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {template.pluginId}
                     </div>
                   </div>
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {template.docs.description}
+                    {template.docs?.description}
                   </p>
                   <Button
                     size="sm"
@@ -3005,10 +5681,7 @@ function PluginStudioRoute() {
           </DialogContent>
         </Dialog>
 
-        <Dialog
-          open={isSchemaEditorOpen}
-          onOpenChange={setIsSchemaEditorOpen}
-        >
+        <Dialog open={isSchemaEditorOpen} onOpenChange={setIsSchemaEditorOpen}>
           <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col overflow-hidden !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
             <DialogHeader>
               <DialogTitle>Schema Editor</DialogTitle>
@@ -3094,19 +5767,40 @@ function PluginStudioRoute() {
                     field.inputPropsJson,
                     'placeholder',
                   );
-                  const inputRows = readJsonNumberEntry(field.inputPropsJson, 'rows');
-                  const inputStep = readJsonNumberEntry(field.inputPropsJson, 'step');
-                  const customSource = readJsonStringEntry(
-                    field.customDataJson,
-                    'source',
+                  const inputRows = readJsonNumberEntry(
+                    field.inputPropsJson,
+                    'rows',
                   );
-                  const customAutomationKey = readJsonStringEntry(
-                    field.customDataJson,
-                    'automationKey',
+                  const inputStep = readJsonNumberEntry(
+                    field.inputPropsJson,
+                    'step',
                   );
-                  const customUiHint = readJsonStringEntry(
+                  const inputReadOnly = readJsonBooleanEntry(
+                    field.inputPropsJson,
+                    'readOnly',
+                  );
+                  const inputDisabled = readJsonBooleanEntry(
+                    field.inputPropsJson,
+                    'disabled',
+                  );
+                  const inputClassName = readJsonStringEntry(
+                    field.inputPropsJson,
+                    'className',
+                  );
+                  const additionalInputPropsEntries = listJsonEntries(
+                    field.inputPropsJson,
+                    {
+                      excludeKeys: BUILDER_INPUT_PROP_RESERVED_KEYS,
+                    },
+                  );
+                  const customDataEntries = listJsonEntries(
                     field.customDataJson,
-                    'uiHint',
+                  );
+                  const fieldConfigExtraEntries = listJsonEntries(
+                    field.fieldConfigJson,
+                    {
+                      excludeKeys: BUILDER_FIELD_CONFIG_RESERVED_KEYS,
+                    },
                   );
                   const fieldRefinements = field.fieldRefinements ?? [];
                   const compatiblePayloadFieldKeys = schemaBuilder.fields
@@ -3127,17 +5821,23 @@ function PluginStudioRoute() {
                     >
                       <div className="grid gap-2 md:grid-cols-4">
                         <div className="space-y-1">
-                          <Label htmlFor={`schema-field-key-${field.id}`}>Field key</Label>
+                          <Label htmlFor={`schema-field-key-${field.id}`}>
+                            Field key
+                          </Label>
                           <Input
                             id={`schema-field-key-${field.id}`}
                             value={field.key}
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, key: event.target.value }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        key: event.target.value,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3145,17 +5845,23 @@ function PluginStudioRoute() {
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label htmlFor={`schema-field-label-${field.id}`}>Field label</Label>
+                          <Label htmlFor={`schema-field-label-${field.id}`}>
+                            Field label
+                          </Label>
                           <Input
                             id={`schema-field-label-${field.id}`}
                             value={field.label}
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, label: event.target.value }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        label: event.target.value,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3163,7 +5869,9 @@ function PluginStudioRoute() {
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label htmlFor={`schema-field-description-${field.id}`}>
+                          <Label
+                            htmlFor={`schema-field-description-${field.id}`}
+                          >
                             Description
                           </Label>
                           <Input
@@ -3172,10 +5880,14 @@ function PluginStudioRoute() {
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, description: event.target.value }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        description: event.target.value,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3183,24 +5895,28 @@ function PluginStudioRoute() {
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label htmlFor={`schema-field-type-${field.id}`}>Field type</Label>
+                          <Label htmlFor={`schema-field-type-${field.id}`}>
+                            Field type
+                          </Label>
                           <Select
                             value={field.type}
                             onValueChange={(value) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      type: value as BuilderFieldType,
-                                      fieldType: AUTOFORM_FIELD_TYPES.includes(
-                                        value as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                      )
-                                        ? (value as (typeof AUTOFORM_FIELD_TYPES)[number])
-                                        : candidate.fieldType,
-                                    }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        type: value as BuilderFieldType,
+                                        fieldType:
+                                          AUTOFORM_FIELD_TYPES.includes(
+                                            value as (typeof AUTOFORM_FIELD_TYPES)[number],
+                                          )
+                                            ? (value as (typeof AUTOFORM_FIELD_TYPES)[number])
+                                            : candidate.fieldType,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3210,7 +5926,10 @@ function PluginStudioRoute() {
                             </SelectTrigger>
                             <SelectContent>
                               {BUILDER_FIELD_TYPES.map((fieldType) => (
-                                <SelectItem key={`dialog-${field.id}-${fieldType}`} value={fieldType}>
+                                <SelectItem
+                                  key={`dialog-${field.id}-${fieldType}`}
+                                  value={fieldType}
+                                >
                                   {fieldType}
                                 </SelectItem>
                               ))}
@@ -3229,24 +5948,30 @@ function PluginStudioRoute() {
                             onValueChange={(value) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      fieldType:
-                                        value as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                    }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        fieldType:
+                                          value as (typeof AUTOFORM_FIELD_TYPES)[number],
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
                           >
-                            <SelectTrigger id={`schema-field-ui-type-${field.id}`}>
+                            <SelectTrigger
+                              id={`schema-field-ui-type-${field.id}`}
+                            >
                               <SelectValue placeholder="UI component type" />
                             </SelectTrigger>
                             <SelectContent>
                               {AUTOFORM_FIELD_TYPES.map((fieldType) => (
-                                <SelectItem key={`ui-${field.id}-${fieldType}`} value={fieldType}>
+                                <SelectItem
+                                  key={`ui-${field.id}-${fieldType}`}
+                                  value={fieldType}
+                                >
                                   {fieldType}
                                 </SelectItem>
                               ))}
@@ -3263,10 +5988,15 @@ function PluginStudioRoute() {
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, defaultValue: event.target.value || undefined }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        defaultValue:
+                                          event.target.value || undefined,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3279,19 +6009,27 @@ function PluginStudioRoute() {
                           </Label>
                           <Input
                             id={`schema-field-min-${field.id}`}
-                            type={isNumericFieldType(field.type) ? 'number' : 'text'}
+                            type={
+                              isNumericFieldType(field.type) ? 'number' : 'text'
+                            }
                             value={field.min ?? ''}
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, min: event.target.value || undefined }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        min: event.target.value || undefined,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
-                            placeholder={showMinMax ? 'Min constraint' : 'Min (n/a)'}
+                            placeholder={
+                              showMinMax ? 'Min constraint' : 'Min (n/a)'
+                            }
                             disabled={!showMinMax}
                           />
                         </div>
@@ -3301,19 +6039,27 @@ function PluginStudioRoute() {
                           </Label>
                           <Input
                             id={`schema-field-max-${field.id}`}
-                            type={isNumericFieldType(field.type) ? 'number' : 'text'}
+                            type={
+                              isNumericFieldType(field.type) ? 'number' : 'text'
+                            }
                             value={field.max ?? ''}
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, max: event.target.value || undefined }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        max: event.target.value || undefined,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
-                            placeholder={showMinMax ? 'Max constraint' : 'Max (n/a)'}
+                            placeholder={
+                              showMinMax ? 'Max constraint' : 'Max (n/a)'
+                            }
                             disabled={!showMinMax}
                           />
                         </div>
@@ -3321,7 +6067,9 @@ function PluginStudioRoute() {
 
                       {choiceFieldType ? (
                         <div className="space-y-1">
-                          <Label htmlFor={`schema-field-enum-values-${field.id}`}>
+                          <Label
+                            htmlFor={`schema-field-enum-values-${field.id}`}
+                          >
                             Enum values
                           </Label>
                           <Input
@@ -3330,10 +6078,14 @@ function PluginStudioRoute() {
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, enumValuesText: event.target.value }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        enumValuesText: event.target.value,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3345,7 +6097,9 @@ function PluginStudioRoute() {
                       {field.type === 'array' ? (
                         <div className="grid gap-2 md:grid-cols-2">
                           <div className="space-y-1">
-                            <Label htmlFor={`schema-field-array-item-type-${field.id}`}>
+                            <Label
+                              htmlFor={`schema-field-array-item-type-${field.id}`}
+                            >
                               Array item type
                             </Label>
                             <Select
@@ -3353,23 +6107,30 @@ function PluginStudioRoute() {
                               onValueChange={(value) =>
                                 setSchemaBuilder((current) => ({
                                   ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        arrayItemType: value as BuilderLeafFieldType,
-                                      }
-                                      : candidate,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          arrayItemType:
+                                            value as BuilderLeafFieldType,
+                                        }
+                                        : candidate,
                                   ),
                                 }))
                               }
                             >
-                              <SelectTrigger id={`schema-field-array-item-type-${field.id}`}>
+                              <SelectTrigger
+                                id={`schema-field-array-item-type-${field.id}`}
+                              >
                                 <SelectValue placeholder="Array item type" />
                               </SelectTrigger>
                               <SelectContent>
                                 {BUILDER_LEAF_FIELD_TYPES.map((fieldType) => (
-                                  <SelectItem key={`array-${field.id}-${fieldType}`} value={fieldType}>
+                                  <SelectItem
+                                    key={`array-${field.id}-${fieldType}`}
+                                    value={fieldType}
+                                  >
                                     {fieldType}
                                   </SelectItem>
                                 ))}
@@ -3377,7 +6138,9 @@ function PluginStudioRoute() {
                             </Select>
                           </div>
                           <div className="space-y-1">
-                            <Label htmlFor={`schema-field-array-enum-values-${field.id}`}>
+                            <Label
+                              htmlFor={`schema-field-array-enum-values-${field.id}`}
+                            >
                               Array enum values
                             </Label>
                             <Input
@@ -3386,13 +6149,15 @@ function PluginStudioRoute() {
                               onChange={(event) =>
                                 setSchemaBuilder((current) => ({
                                   ...current,
-                                  fields: current.fields.map((candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        arrayItemEnumValuesText: event.target.value,
-                                      }
-                                      : candidate,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          arrayItemEnumValuesText:
+                                            event.target.value,
+                                        }
+                                        : candidate,
                                   ),
                                 }))
                               }
@@ -3403,175 +6168,219 @@ function PluginStudioRoute() {
                         </div>
                       ) : null}
 
-                      <div className="grid gap-2 md:grid-cols-3">
-                        <div className="space-y-1">
-                          <Label htmlFor={`schema-field-input-placeholder-${field.id}`}>
-                            Input placeholder
+                      <div className="space-y-2 rounded-md border p-2">
+                        <div className="text-xs font-medium">Input props</div>
+                        <div className="grid gap-2 md:grid-cols-3">
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor={`schema-field-input-placeholder-${field.id}`}
+                            >
+                              Input placeholder
+                            </Label>
+                            <Input
+                              id={`schema-field-input-placeholder-${field.id}`}
+                              value={inputPlaceholder}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          inputPropsJson: setJsonStringEntry(
+                                            candidate.inputPropsJson,
+                                            'placeholder',
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Input placeholder"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor={`schema-field-input-step-${field.id}`}
+                            >
+                              Input step
+                            </Label>
+                            <Input
+                              id={`schema-field-input-step-${field.id}`}
+                              type={
+                                isNumericFieldType(field.type)
+                                  ? 'number'
+                                  : 'text'
+                              }
+                              value={inputStep}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          inputPropsJson: setJsonNumberEntry(
+                                            candidate.inputPropsJson,
+                                            'step',
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Input step"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor={`schema-field-input-rows-${field.id}`}
+                            >
+                              Input rows
+                            </Label>
+                            <Input
+                              id={`schema-field-input-rows-${field.id}`}
+                              value={inputRows}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          inputPropsJson: setJsonNumberEntry(
+                                            candidate.inputPropsJson,
+                                            'rows',
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Rows (textarea-like fields)"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-4">
+                          <Label className="flex items-center gap-2 text-sm font-normal">
+                            <Checkbox
+                              checked={inputReadOnly}
+                              onCheckedChange={(checked) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          inputPropsJson: setJsonBooleanEntry(
+                                            candidate.inputPropsJson,
+                                            'readOnly',
+                                            checked === true
+                                              ? true
+                                              : undefined,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                            />
+                            Read only
                           </Label>
-                          <Input
-                            id={`schema-field-input-placeholder-${field.id}`}
-                            value={inputPlaceholder}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      inputPropsJson: setJsonStringEntry(
-                                        candidate.inputPropsJson,
-                                        'placeholder',
-                                        event.target.value,
-                                      ),
-                                    }
-                                    : candidate,
-                                ),
-                              }))
-                            }
-                            placeholder="Input placeholder"
-                          />
+                          <Label className="flex items-center gap-2 text-sm font-normal">
+                            <Checkbox
+                              checked={inputDisabled}
+                              onCheckedChange={(checked) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          inputPropsJson: setJsonBooleanEntry(
+                                            candidate.inputPropsJson,
+                                            'disabled',
+                                            checked === true
+                                              ? true
+                                              : undefined,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                            />
+                            Disabled
+                          </Label>
                         </div>
                         <div className="space-y-1">
-                          <Label htmlFor={`schema-field-input-step-${field.id}`}>
-                            Input step
+                          <Label
+                            htmlFor={`schema-field-input-classname-${field.id}`}
+                          >
+                            Input className
                           </Label>
-                          <Input
-                            id={`schema-field-input-step-${field.id}`}
-                            type={isNumericFieldType(field.type) ? 'number' : 'text'}
-                            value={inputStep}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      inputPropsJson: setJsonNumberEntry(
-                                        candidate.inputPropsJson,
-                                        'step',
-                                        event.target.value,
-                                      ),
-                                    }
-                                    : candidate,
-                                ),
-                              }))
-                            }
-                            placeholder="Input step"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor={`schema-field-input-rows-${field.id}`}>
-                            Input rows
-                          </Label>
-                          <Input
-                            id={`schema-field-input-rows-${field.id}`}
-                            value={inputRows}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      inputPropsJson: setJsonNumberEntry(
-                                        candidate.inputPropsJson,
-                                        'rows',
-                                        event.target.value,
-                                      ),
-                                    }
-                                    : candidate,
-                                ),
-                              }))
-                            }
-                            placeholder="Rows (textarea-like fields)"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor={`schema-field-custom-source-${field.id}`}>
-                            Custom data source
-                          </Label>
-                          <Input
-                            id={`schema-field-custom-source-${field.id}`}
-                            value={customSource}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      customDataJson: setJsonStringEntry(
-                                        candidate.customDataJson,
-                                        'source',
-                                        event.target.value,
-                                      ),
-                                    }
-                                    : candidate,
-                                ),
-                              }))
-                            }
-                            placeholder="Custom data source"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor={`schema-field-automation-key-${field.id}`}>
-                            Automation key
-                          </Label>
-                          <Input
-                            id={`schema-field-automation-key-${field.id}`}
-                            value={customAutomationKey}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      customDataJson: setJsonStringEntry(
-                                        candidate.customDataJson,
-                                        'automationKey',
-                                        event.target.value,
-                                      ),
-                                    }
-                                    : candidate,
-                                ),
-                              }))
-                            }
-                            placeholder="Automation key"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor={`schema-field-ui-hint-${field.id}`}>
-                            UI hint
-                          </Label>
-                          <Input
-                            id={`schema-field-ui-hint-${field.id}`}
-                            value={customUiHint}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      customDataJson: setJsonStringEntry(
-                                        candidate.customDataJson,
-                                        'uiHint',
-                                        event.target.value,
-                                      ),
-                                    }
-                                    : candidate,
-                                ),
-                              }))
-                            }
-                            placeholder="UI hint"
-                          />
+                          <div id={`schema-field-input-classname-${field.id}`}>
+                            <ClassNameFieldControl
+                              value={inputClassName}
+                              onChange={(value) =>
+                                setSchemaBuilder((current) => {
+                                  let changed = false;
+                                  const nextFields = current.fields.map(
+                                    (candidate, candidateIndex) => {
+                                      if (candidateIndex !== fieldIndex) {
+                                        return candidate;
+                                      }
+
+                                      const nextInputPropsJson =
+                                        setJsonStringEntry(
+                                          candidate.inputPropsJson,
+                                          'className',
+                                          value,
+                                        );
+
+                                      if (
+                                        nextInputPropsJson ===
+                                        candidate.inputPropsJson
+                                      ) {
+                                        return candidate;
+                                      }
+
+                                      changed = true;
+                                      return {
+                                        ...candidate,
+                                        inputPropsJson: nextInputPropsJson,
+                                      };
+                                    },
+                                  );
+
+                                  if (!changed) {
+                                    return current;
+                                  }
+
+                                  return {
+                                    ...current,
+                                    fields: nextFields,
+                                  };
+                                })
+                              }
+                            />
+                          </div>
                         </div>
                       </div>
 
                       <div className="space-y-2 rounded-md border p-2">
                         <div className="flex items-center justify-between">
-                          <div className="text-xs font-medium">Field Refinements</div>
+                          <div className="text-xs font-medium">
+                            Additional Input Props
+                          </div>
                           <Button
                             type="button"
                             size="sm"
@@ -3579,22 +6388,396 @@ function PluginStudioRoute() {
                             onClick={() =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? {
-                                      ...candidate,
-                                      fieldRefinements: [
-                                        ...(candidate.fieldRefinements ?? []),
-                                        {
-                                          id: generateBuilderId(),
-                                          operator: 'eq',
-                                          rightKind: 'literal',
-                                          rightLiteral: '',
-                                          message: 'Validation failed',
-                                        },
-                                      ],
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) => {
+                                    if (candidateIndex !== fieldIndex) {
+                                      return candidate;
                                     }
-                                    : candidate,
+                                    const nextRecord = parseJsonRecord(
+                                      candidate.inputPropsJson,
+                                    );
+                                    const nextKey = getNextJsonEntryKey(
+                                      nextRecord,
+                                      'prop',
+                                      BUILDER_INPUT_PROP_RESERVED_KEYS,
+                                    );
+                                    nextRecord[nextKey] = '';
+                                    return {
+                                      ...candidate,
+                                      inputPropsJson:
+                                        stringifyJsonInput(nextRecord),
+                                    };
+                                  },
+                                ),
+                              }))
+                            }
+                          >
+                            <Plus className="mr-2 size-4" />
+                            Add Prop
+                          </Button>
+                        </div>
+                        {additionalInputPropsEntries.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            Add input prop entries as key/value pairs.
+                          </p>
+                        ) : null}
+                        {additionalInputPropsEntries.map(
+                          (entry, entryIndex) => (
+                            <div
+                              key={`${field.id}-input-prop-${entryIndex}-${entry.key}`}
+                              className="grid gap-2 md:grid-cols-[1fr_1fr_auto] rounded border p-2"
+                            >
+                              <Input
+                                value={entry.key}
+                                onChange={(event) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            inputPropsJson: upsertJsonEntry(
+                                              candidate.inputPropsJson,
+                                              entry.key,
+                                              event.target.value,
+                                              entry.value,
+                                            ),
+                                          }
+                                          : candidate,
+                                    ),
+                                  }))
+                                }
+                                placeholder="Input prop key"
+                              />
+                              <Input
+                                value={entry.value}
+                                onChange={(event) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            inputPropsJson: upsertJsonEntry(
+                                              candidate.inputPropsJson,
+                                              entry.key,
+                                              entry.key,
+                                              event.target.value,
+                                            ),
+                                          }
+                                          : candidate,
+                                    ),
+                                  }))
+                                }
+                                placeholder="Input prop value"
+                              />
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="ghost"
+                                onClick={() =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            inputPropsJson: removeJsonEntry(
+                                              candidate.inputPropsJson,
+                                              entry.key,
+                                            ),
+                                          }
+                                          : candidate,
+                                    ),
+                                  }))
+                                }
+                              >
+                                <Trash2 className="size-4 text-destructive" />
+                              </Button>
+                            </div>
+                          ),
+                        )}
+                      </div>
+
+                      <div className="space-y-2 rounded-md border p-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-medium">Custom data</div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) => {
+                                    if (candidateIndex !== fieldIndex) {
+                                      return candidate;
+                                    }
+                                    const nextRecord = parseJsonRecord(
+                                      candidate.customDataJson,
+                                    );
+                                    const nextKey = getNextJsonEntryKey(
+                                      nextRecord,
+                                      'custom',
+                                    );
+                                    nextRecord[nextKey] = '';
+                                    return {
+                                      ...candidate,
+                                      customDataJson:
+                                        stringifyJsonInput(nextRecord),
+                                    };
+                                  },
+                                ),
+                              }))
+                            }
+                          >
+                            <Plus className="mr-2 size-4" />
+                            Add Custom Data
+                          </Button>
+                        </div>
+                        {customDataEntries.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            Add custom data entries as key/value pairs.
+                          </p>
+                        ) : null}
+                        {customDataEntries.map((entry, entryIndex) => (
+                          <div
+                            key={`${field.id}-custom-data-${entryIndex}-${entry.key}`}
+                            className="grid gap-2 md:grid-cols-[1fr_1fr_auto] rounded border p-2"
+                          >
+                            <Input
+                              value={entry.key}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          customDataJson: upsertJsonEntry(
+                                            candidate.customDataJson,
+                                            entry.key,
+                                            event.target.value,
+                                            entry.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Custom data key"
+                            />
+                            <Input
+                              value={entry.value}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          customDataJson: upsertJsonEntry(
+                                            candidate.customDataJson,
+                                            entry.key,
+                                            entry.key,
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Custom data value"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          customDataJson: removeJsonEntry(
+                                            candidate.customDataJson,
+                                            entry.key,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                            >
+                              <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="space-y-2 rounded-md border p-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-medium">
+                            Field Config Extras
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) => {
+                                    if (candidateIndex !== fieldIndex) {
+                                      return candidate;
+                                    }
+                                    const nextRecord = parseJsonRecord(
+                                      candidate.fieldConfigJson,
+                                    );
+                                    const nextKey = getNextJsonEntryKey(
+                                      nextRecord,
+                                      'config',
+                                      BUILDER_FIELD_CONFIG_RESERVED_KEYS,
+                                    );
+                                    nextRecord[nextKey] = '';
+                                    return {
+                                      ...candidate,
+                                      fieldConfigJson:
+                                        stringifyJsonInput(nextRecord),
+                                    };
+                                  },
+                                ),
+                              }))
+                            }
+                          >
+                            <Plus className="mr-2 size-4" />
+                            Add Config Key
+                          </Button>
+                        </div>
+                        {fieldConfigExtraEntries.length === 0 ? (
+                          <p className="text-xs text-muted-foreground">
+                            Add additional field-config entries as key/value
+                            pairs.
+                          </p>
+                        ) : null}
+                        {fieldConfigExtraEntries.map((entry, entryIndex) => (
+                          <div
+                            key={`${field.id}-field-config-${entryIndex}-${entry.key}`}
+                            className="grid gap-2 md:grid-cols-[1fr_1fr_auto] rounded border p-2"
+                          >
+                            <Input
+                              value={entry.key}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          fieldConfigJson: upsertJsonEntry(
+                                            candidate.fieldConfigJson,
+                                            entry.key,
+                                            event.target.value,
+                                            entry.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Field config key"
+                            />
+                            <Input
+                              value={entry.value}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          fieldConfigJson: upsertJsonEntry(
+                                            candidate.fieldConfigJson,
+                                            entry.key,
+                                            entry.key,
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Field config value"
+                            />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          fieldConfigJson: removeJsonEntry(
+                                            candidate.fieldConfigJson,
+                                            entry.key,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                            >
+                              <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="space-y-2 rounded-md border p-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs font-medium">
+                            Field Refinements
+                          </div>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setSchemaBuilder((current) => ({
+                                ...current,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        fieldRefinements: [
+                                          ...(candidate.fieldRefinements ??
+                                            []),
+                                          {
+                                            id: generateBuilderId(),
+                                            operator: 'eq',
+                                            rightKind: 'literal',
+                                            rightLiteral: '',
+                                            message: 'Validation failed',
+                                          },
+                                        ],
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3615,22 +6798,24 @@ function PluginStudioRoute() {
                                 onValueChange={(value) =>
                                   setSchemaBuilder((current) => ({
                                     ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          fieldRefinements: (
-                                            candidate.fieldRefinements ?? []
-                                          ).map((entry) =>
-                                            entry.id === refinement.id
-                                              ? {
-                                                ...entry,
-                                                operator: value as RuleOperator,
-                                              }
-                                              : entry,
-                                          ),
-                                        }
-                                        : candidate,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            fieldRefinements: (
+                                              candidate.fieldRefinements ?? []
+                                            ).map((entry) =>
+                                              entry.id === refinement.id
+                                                ? {
+                                                  ...entry,
+                                                  operator:
+                                                    value as RuleOperator,
+                                                }
+                                                : entry,
+                                            ),
+                                          }
+                                          : candidate,
                                     ),
                                   }))
                                 }
@@ -3640,11 +6825,19 @@ function PluginStudioRoute() {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="eq">equals</SelectItem>
-                                  <SelectItem value="neq">not equals</SelectItem>
-                                  <SelectItem value="gt">greater than</SelectItem>
-                                  <SelectItem value="gte">greater/equal</SelectItem>
+                                  <SelectItem value="neq">
+                                    not equals
+                                  </SelectItem>
+                                  <SelectItem value="gt">
+                                    greater than
+                                  </SelectItem>
+                                  <SelectItem value="gte">
+                                    greater/equal
+                                  </SelectItem>
                                   <SelectItem value="lt">less than</SelectItem>
-                                  <SelectItem value="lte">less/equal</SelectItem>
+                                  <SelectItem value="lte">
+                                    less/equal
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -3655,32 +6848,34 @@ function PluginStudioRoute() {
                                 onValueChange={(value) =>
                                   setSchemaBuilder((current) => ({
                                     ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          fieldRefinements: (
-                                            candidate.fieldRefinements ?? []
-                                          ).map((entry) =>
-                                            entry.id === refinement.id
-                                              ? {
-                                                ...entry,
-                                                rightKind:
-                                                  value as BuilderFieldRefinement['rightKind'],
-                                                rightPath:
-                                                  value === 'payloadField'
-                                                    ? compatiblePayloadFieldKeys.includes(
-                                                      entry.rightPath ?? '',
-                                                    )
-                                                      ? entry.rightPath
-                                                      : (compatiblePayloadFieldKeys[0] ??
-                                                        undefined)
-                                                    : entry.rightPath,
-                                              }
-                                              : entry,
-                                          ),
-                                        }
-                                        : candidate,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            fieldRefinements: (
+                                              candidate.fieldRefinements ?? []
+                                            ).map((entry) =>
+                                              entry.id === refinement.id
+                                                ? {
+                                                  ...entry,
+                                                  rightKind:
+                                                    value as BuilderFieldRefinement['rightKind'],
+                                                  rightPath:
+                                                    value === 'payloadField'
+                                                      ? compatiblePayloadFieldKeys.includes(
+                                                        entry.rightPath ??
+                                                        '',
+                                                      )
+                                                        ? entry.rightPath
+                                                        : (compatiblePayloadFieldKeys[0] ??
+                                                          undefined)
+                                                      : entry.rightPath,
+                                                }
+                                                : entry,
+                                            ),
+                                          }
+                                          : candidate,
                                     ),
                                   }))
                                 }
@@ -3702,29 +6897,34 @@ function PluginStudioRoute() {
                               </Select>
                             </div>
                             <div className="space-y-1">
-                              <Label className="text-xs">Right side value</Label>
+                              <Label className="text-xs">
+                                Right side value
+                              </Label>
                               {refinement.rightKind === 'literal' ? (
                                 <Input
                                   value={refinement.rightLiteral ?? ''}
                                   onChange={(event) =>
                                     setSchemaBuilder((current) => ({
                                       ...current,
-                                      fields: current.fields.map((candidate, candidateIndex) =>
-                                        candidateIndex === fieldIndex
-                                          ? {
-                                            ...candidate,
-                                            fieldRefinements: (
-                                              candidate.fieldRefinements ?? []
-                                            ).map((entry) =>
-                                              entry.id === refinement.id
-                                                ? {
-                                                  ...entry,
-                                                  rightLiteral: event.target.value,
-                                                }
-                                                : entry,
-                                            ),
-                                          }
-                                          : candidate,
+                                      fields: current.fields.map(
+                                        (candidate, candidateIndex) =>
+                                          candidateIndex === fieldIndex
+                                            ? {
+                                              ...candidate,
+                                              fieldRefinements: (
+                                                candidate.fieldRefinements ??
+                                                []
+                                              ).map((entry) =>
+                                                entry.id === refinement.id
+                                                  ? {
+                                                    ...entry,
+                                                    rightLiteral:
+                                                      event.target.value,
+                                                  }
+                                                  : entry,
+                                              ),
+                                            }
+                                            : candidate,
                                       ),
                                     }))
                                   }
@@ -3736,22 +6936,25 @@ function PluginStudioRoute() {
                                   onValueChange={(value) =>
                                     setSchemaBuilder((current) => ({
                                       ...current,
-                                      fields: current.fields.map((candidate, candidateIndex) =>
-                                        candidateIndex === fieldIndex
-                                          ? {
-                                            ...candidate,
-                                            fieldRefinements: (
-                                              candidate.fieldRefinements ?? []
-                                            ).map((entry) =>
-                                              entry.id === refinement.id
-                                                ? {
-                                                  ...entry,
-                                                  rightPath: value || undefined,
-                                                }
-                                                : entry,
-                                            ),
-                                          }
-                                          : candidate,
+                                      fields: current.fields.map(
+                                        (candidate, candidateIndex) =>
+                                          candidateIndex === fieldIndex
+                                            ? {
+                                              ...candidate,
+                                              fieldRefinements: (
+                                                candidate.fieldRefinements ??
+                                                []
+                                              ).map((entry) =>
+                                                entry.id === refinement.id
+                                                  ? {
+                                                    ...entry,
+                                                    rightPath:
+                                                      value || undefined,
+                                                  }
+                                                  : entry,
+                                              ),
+                                            }
+                                            : candidate,
                                       ),
                                     }))
                                   }
@@ -3760,11 +6963,16 @@ function PluginStudioRoute() {
                                     <SelectValue placeholder="Select payload field" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {compatiblePayloadFieldKeys.map((candidateKey) => (
-                                      <SelectItem key={`${refinement.id}-${candidateKey}`} value={candidateKey}>
-                                        {candidateKey}
-                                      </SelectItem>
-                                    ))}
+                                    {compatiblePayloadFieldKeys.map(
+                                      (candidateKey) => (
+                                        <SelectItem
+                                          key={`${refinement.id}-${candidateKey}`}
+                                          value={candidateKey}
+                                        >
+                                          {candidateKey}
+                                        </SelectItem>
+                                      ),
+                                    )}
                                   </SelectContent>
                                 </Select>
                               )}
@@ -3776,19 +6984,24 @@ function PluginStudioRoute() {
                                 onChange={(event) =>
                                   setSchemaBuilder((current) => ({
                                     ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          fieldRefinements: (
-                                            candidate.fieldRefinements ?? []
-                                          ).map((entry) =>
-                                            entry.id === refinement.id
-                                              ? { ...entry, message: event.target.value }
-                                              : entry,
-                                          ),
-                                        }
-                                        : candidate,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            fieldRefinements: (
+                                              candidate.fieldRefinements ?? []
+                                            ).map((entry) =>
+                                              entry.id === refinement.id
+                                                ? {
+                                                  ...entry,
+                                                  message:
+                                                    event.target.value,
+                                                }
+                                                : entry,
+                                            ),
+                                          }
+                                          : candidate,
                                     ),
                                   }))
                                 }
@@ -3803,15 +7016,19 @@ function PluginStudioRoute() {
                                 onClick={() =>
                                   setSchemaBuilder((current) => ({
                                     ...current,
-                                    fields: current.fields.map((candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          fieldRefinements: (
-                                            candidate.fieldRefinements ?? []
-                                          ).filter((entry) => entry.id !== refinement.id),
-                                        }
-                                        : candidate,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            fieldRefinements: (
+                                              candidate.fieldRefinements ?? []
+                                            ).filter(
+                                              (entry) =>
+                                                entry.id !== refinement.id,
+                                            ),
+                                          }
+                                          : candidate,
                                     ),
                                   }))
                                 }
@@ -3830,10 +7047,14 @@ function PluginStudioRoute() {
                             onCheckedChange={(checked) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, required: checked === true }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        required: checked === true,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3846,10 +7067,14 @@ function PluginStudioRoute() {
                             onCheckedChange={(checked) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, useInt: checked === true }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        useInt: checked === true,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3862,10 +7087,14 @@ function PluginStudioRoute() {
                             onCheckedChange={(checked) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, usePositive: checked === true }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        usePositive: checked === true,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3878,10 +7107,14 @@ function PluginStudioRoute() {
                             onCheckedChange={(checked) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                fields: current.fields.map((candidate, candidateIndex) =>
-                                  candidateIndex === fieldIndex
-                                    ? { ...candidate, useNonNegative: checked === true }
-                                    : candidate,
+                                fields: current.fields.map(
+                                  (candidate, candidateIndex) =>
+                                    candidateIndex === fieldIndex
+                                      ? {
+                                        ...candidate,
+                                        useNonNegative: checked === true,
+                                      }
+                                      : candidate,
                                 ),
                               }))
                             }
@@ -3896,7 +7129,8 @@ function PluginStudioRoute() {
                             setSchemaBuilder((current) => ({
                               ...current,
                               fields: current.fields.filter(
-                                (_, candidateIndex) => candidateIndex !== fieldIndex,
+                                (_, candidateIndex) =>
+                                  candidateIndex !== fieldIndex,
                               ),
                             }))
                           }
@@ -3923,9 +7157,12 @@ function PluginStudioRoute() {
                     size="sm"
                     variant="outline"
                     onClick={() => {
-                      const targetFieldKey = derivedTargetFieldOptions[0]?.value ?? '';
+                      const targetFieldKey =
+                        derivedTargetFieldOptions[0]?.value ?? '';
                       if (!targetFieldKey) {
-                        toast.error('Add a field key before creating a derived field.');
+                        toast.error(
+                          'Add a field key before creating a derived field.',
+                        );
                         return;
                       }
                       const initialPath =
@@ -3991,10 +7228,11 @@ function PluginStudioRoute() {
                             onValueChange={(value) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                derivedFields: current.derivedFields.map((entry) =>
-                                  entry.id === derivedField.id
-                                    ? { ...entry, targetFieldKey: value }
-                                    : entry,
+                                derivedFields: current.derivedFields.map(
+                                  (entry) =>
+                                    entry.id === derivedField.id
+                                      ? { ...entry, targetFieldKey: value }
+                                      : entry,
                                 ),
                               }))
                             }
@@ -4009,7 +7247,10 @@ function PluginStudioRoute() {
                                 </SelectItem>
                               ) : (
                                 targetFieldOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
+                                  <SelectItem
+                                    key={option.value}
+                                    value={option.value}
+                                  >
                                     {option.label}
                                   </SelectItem>
                                 ))
@@ -4024,14 +7265,15 @@ function PluginStudioRoute() {
                             onValueChange={(value) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                derivedFields: current.derivedFields.map((entry) =>
-                                  entry.id === derivedField.id
-                                    ? {
-                                      ...entry,
-                                      target:
-                                        value as SchemaBuilderDerivedField['target'],
-                                    }
-                                    : entry,
+                                derivedFields: current.derivedFields.map(
+                                  (entry) =>
+                                    entry.id === derivedField.id
+                                      ? {
+                                        ...entry,
+                                        target:
+                                          value as SchemaBuilderDerivedField['target'],
+                                      }
+                                      : entry,
                                 ),
                               }))
                             }
@@ -4041,8 +7283,12 @@ function PluginStudioRoute() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="value">value</SelectItem>
-                              <SelectItem value="inputProps">inputProps</SelectItem>
-                              <SelectItem value="customData">customData</SelectItem>
+                              <SelectItem value="inputProps">
+                                inputProps
+                              </SelectItem>
+                              <SelectItem value="customData">
+                                customData
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -4053,10 +7299,11 @@ function PluginStudioRoute() {
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                derivedFields: current.derivedFields.map((entry) =>
-                                  entry.id === derivedField.id
-                                    ? { ...entry, key: event.target.value }
-                                    : entry,
+                                derivedFields: current.derivedFields.map(
+                                  (entry) =>
+                                    entry.id === derivedField.id
+                                      ? { ...entry, key: event.target.value }
+                                      : entry,
                                 ),
                               }))
                             }
@@ -4071,13 +7318,15 @@ function PluginStudioRoute() {
                             onValueChange={(value) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                derivedFields: current.derivedFields.map((entry) =>
-                                  entry.id === derivedField.id
-                                    ? {
-                                      ...entry,
-                                      operation: value as DerivedFieldOperation,
-                                    }
-                                    : entry,
+                                derivedFields: current.derivedFields.map(
+                                  (entry) =>
+                                    entry.id === derivedField.id
+                                      ? {
+                                        ...entry,
+                                        operation:
+                                          value as DerivedFieldOperation,
+                                      }
+                                      : entry,
                                 ),
                               }))
                             }
@@ -4086,11 +7335,13 @@ function PluginStudioRoute() {
                               <SelectValue placeholder="Operation" />
                             </SelectTrigger>
                             <SelectContent>
-                              {DERIVED_FIELD_OPERATION_OPTIONS.map((operation) => (
-                                <SelectItem key={operation} value={operation}>
-                                  {operation}
-                                </SelectItem>
-                              ))}
+                              {DERIVED_FIELD_OPERATION_OPTIONS.map(
+                                (operation) => (
+                                  <SelectItem key={operation} value={operation}>
+                                    {operation}
+                                  </SelectItem>
+                                ),
+                              )}
                             </SelectContent>
                           </Select>
                         </div>
@@ -4101,16 +7352,17 @@ function PluginStudioRoute() {
                             onChange={(event) =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                derivedFields: current.derivedFields.map((entry) =>
-                                  entry.id === derivedField.id
-                                    ? {
-                                      ...entry,
-                                      fallbackValue:
-                                        event.target.value.trim() === ''
-                                          ? undefined
-                                          : event.target.value,
-                                    }
-                                    : entry,
+                                derivedFields: current.derivedFields.map(
+                                  (entry) =>
+                                    entry.id === derivedField.id
+                                      ? {
+                                        ...entry,
+                                        fallbackValue:
+                                          event.target.value.trim() === ''
+                                            ? undefined
+                                            : event.target.value,
+                                      }
+                                      : entry,
                                 ),
                               }))
                             }
@@ -4122,7 +7374,9 @@ function PluginStudioRoute() {
 
                       <div className="space-y-2 rounded border p-2">
                         <div className="flex items-center justify-between">
-                          <div className="text-xs font-medium">Source references</div>
+                          <div className="text-xs font-medium">
+                            Source references
+                          </div>
                           <Button
                             type="button"
                             size="sm"
@@ -4130,22 +7384,24 @@ function PluginStudioRoute() {
                             onClick={() =>
                               setSchemaBuilder((current) => ({
                                 ...current,
-                                derivedFields: current.derivedFields.map((entry) =>
-                                  entry.id === derivedField.id
-                                    ? {
-                                      ...entry,
-                                      sources: [
-                                        ...entry.sources,
-                                        {
-                                          id: generateBuilderId(),
-                                          source: 'payload',
-                                          path:
-                                            derivationPathOptions[0]?.value ||
-                                            entry.targetFieldKey,
-                                        },
-                                      ],
-                                    }
-                                    : entry,
+                                derivedFields: current.derivedFields.map(
+                                  (entry) =>
+                                    entry.id === derivedField.id
+                                      ? {
+                                        ...entry,
+                                        sources: [
+                                          ...entry.sources,
+                                          {
+                                            id: generateBuilderId(),
+                                            source: 'payload',
+                                            path:
+                                              derivationPathOptions[0]
+                                                ?.value ||
+                                              entry.targetFieldKey,
+                                          },
+                                        ],
+                                      }
+                                      : entry,
                                 ),
                               }))
                             }
@@ -4156,8 +7412,8 @@ function PluginStudioRoute() {
                         </div>
 
                         {derivedField.sources.map((sourceField) => {
-                          const currentSchemaFields: SchemaFieldDoc[] = schemaBuilder.fields.map(
-                            (field) => ({
+                          const currentSchemaFields: SchemaFieldDoc[] =
+                            schemaBuilder.fields.map((field) => ({
                               key: field.key,
                               type: field.type,
                               fields: field.objectFields?.map((objField) => ({
@@ -4168,13 +7424,13 @@ function PluginStudioRoute() {
                               itemType: field.arrayItemType
                                 ? { type: field.arrayItemType }
                                 : undefined,
-                            }),
-                          );
-                          const sourceSpecificOptions = buildDerivationPathOptions(
-                            parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC],
-                            sourceField.source,
-                            currentSchemaFields,
-                          );
+                            }));
+                          const sourceSpecificOptions =
+                            buildDerivationPathOptions(
+                              parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC],
+                              sourceField.source,
+                              currentSchemaFields,
+                            );
                           const hasCustomPath =
                             Boolean(sourceField.path.trim()) &&
                             !sourceSpecificOptions.some(
@@ -4202,21 +7458,24 @@ function PluginStudioRoute() {
                                   onValueChange={(value) =>
                                     setSchemaBuilder((current) => ({
                                       ...current,
-                                      derivedFields: current.derivedFields.map((entry) =>
-                                        entry.id === derivedField.id
-                                          ? {
-                                            ...entry,
-                                            sources: entry.sources.map((candidate) =>
-                                              candidate.id === sourceField.id
-                                                ? {
-                                                  ...candidate,
-                                                  source:
-                                                    value as (typeof DERIVED_FIELD_SOURCE_OPTIONS)[number],
-                                                }
-                                                : candidate,
-                                            ),
-                                          }
-                                          : entry,
+                                      derivedFields: current.derivedFields.map(
+                                        (entry) =>
+                                          entry.id === derivedField.id
+                                            ? {
+                                              ...entry,
+                                              sources: entry.sources.map(
+                                                (candidate) =>
+                                                  candidate.id ===
+                                                    sourceField.id
+                                                    ? {
+                                                      ...candidate,
+                                                      source:
+                                                        value as (typeof DERIVED_FIELD_SOURCE_OPTIONS)[number],
+                                                    }
+                                                    : candidate,
+                                              ),
+                                            }
+                                            : entry,
                                       ),
                                     }))
                                   }
@@ -4225,11 +7484,16 @@ function PluginStudioRoute() {
                                     <SelectValue placeholder="Source" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {DERIVED_FIELD_SOURCE_OPTIONS.map((sourceOption) => (
-                                      <SelectItem key={sourceOption} value={sourceOption}>
-                                        {sourceOption}
-                                      </SelectItem>
-                                    ))}
+                                    {DERIVED_FIELD_SOURCE_OPTIONS.map(
+                                      (sourceOption) => (
+                                        <SelectItem
+                                          key={sourceOption}
+                                          value={sourceOption}
+                                        >
+                                          {sourceOption}
+                                        </SelectItem>
+                                      ),
+                                    )}
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -4240,17 +7504,23 @@ function PluginStudioRoute() {
                                   onValueChange={(value) =>
                                     setSchemaBuilder((current) => ({
                                       ...current,
-                                      derivedFields: current.derivedFields.map((entry) =>
-                                        entry.id === derivedField.id
-                                          ? {
-                                            ...entry,
-                                            sources: entry.sources.map((candidate) =>
-                                              candidate.id === sourceField.id
-                                                ? { ...candidate, path: value }
-                                                : candidate,
-                                            ),
-                                          }
-                                          : entry,
+                                      derivedFields: current.derivedFields.map(
+                                        (entry) =>
+                                          entry.id === derivedField.id
+                                            ? {
+                                              ...entry,
+                                              sources: entry.sources.map(
+                                                (candidate) =>
+                                                  candidate.id ===
+                                                    sourceField.id
+                                                    ? {
+                                                      ...candidate,
+                                                      path: value,
+                                                    }
+                                                    : candidate,
+                                              ),
+                                            }
+                                            : entry,
                                       ),
                                     }))
                                   }
@@ -4265,7 +7535,10 @@ function PluginStudioRoute() {
                                       </SelectItem>
                                     ) : (
                                       pathOptions.map((option) => (
-                                        <SelectItem key={option.value} value={option.value}>
+                                        <SelectItem
+                                          key={option.value}
+                                          value={option.value}
+                                        >
                                           {option.label}
                                         </SelectItem>
                                       ))
@@ -4281,16 +7554,18 @@ function PluginStudioRoute() {
                                   onClick={() =>
                                     setSchemaBuilder((current) => ({
                                       ...current,
-                                      derivedFields: current.derivedFields.map((entry) =>
-                                        entry.id === derivedField.id
-                                          ? {
-                                            ...entry,
-                                            sources: entry.sources.filter(
-                                              (candidate) =>
-                                                candidate.id !== sourceField.id,
-                                            ),
-                                          }
-                                          : entry,
+                                      derivedFields: current.derivedFields.map(
+                                        (entry) =>
+                                          entry.id === derivedField.id
+                                            ? {
+                                              ...entry,
+                                              sources: entry.sources.filter(
+                                                (candidate) =>
+                                                  candidate.id !==
+                                                  sourceField.id,
+                                              ),
+                                            }
+                                            : entry,
                                       ),
                                     }))
                                   }
@@ -4328,7 +7603,9 @@ function PluginStudioRoute() {
 
               <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">Cross-Field Refinements</div>
+                  <div className="text-sm font-medium">
+                    Cross-Field Refinements
+                  </div>
                   <Button
                     type="button"
                     size="sm"
@@ -4336,21 +7613,25 @@ function PluginStudioRoute() {
                     onClick={() => {
                       const nextLeftField = leftRuleFields[0] ?? '';
                       if (!nextLeftField) {
-                        toast.error('Add compatible fields before adding a refinement.');
+                        toast.error(
+                          'Add compatible fields before adding a refinement.',
+                        );
                         return;
                       }
-                      const nextLeftType = fieldTypeByRuleField.get(nextLeftField);
+                      const nextLeftType =
+                        fieldTypeByRuleField.get(nextLeftField);
                       const nextCompatibleFields = nextLeftType
-                        ? (availableRuleFieldsByType.get(nextLeftType) ?? []).filter(
-                          (fieldKey) => fieldKey !== nextLeftField,
-                        )
+                        ? (
+                          availableRuleFieldsByType.get(nextLeftType) ?? []
+                        ).filter((fieldKey) => fieldKey !== nextLeftField)
                         : [];
                       setSchemaRefinements((current) => [
                         ...current,
                         {
                           id: generateBuilderId(),
                           leftField: nextLeftField,
-                          operator: getAllowedOperators(nextLeftType)[0] ?? 'eq',
+                          operator:
+                            getAllowedOperators(nextLeftType)[0] ?? 'eq',
                           rightField: nextCompatibleFields[0] ?? '',
                           message: 'Validation failed',
                         },
@@ -4405,7 +7686,10 @@ function PluginStudioRoute() {
                   </Button>
                 </div>
                 {schemaRefinements.map((rule) => (
-                  <div key={rule.id} className="grid gap-2 md:grid-cols-4 rounded-md border bg-card p-2">
+                  <div
+                    key={rule.id}
+                    className="grid gap-2 md:grid-cols-4 rounded-md border bg-card p-2"
+                  >
                     <div className="space-y-1">
                       <Label className="text-xs">Left field</Label>
                       <Input value={rule.leftField} disabled />
@@ -4427,7 +7711,10 @@ function PluginStudioRoute() {
                             setSchemaRefinements((current) =>
                               current.map((candidate) =>
                                 candidate.id === rule.id
-                                  ? { ...candidate, message: event.target.value }
+                                  ? {
+                                    ...candidate,
+                                    message: event.target.value,
+                                  }
                                   : candidate,
                               ),
                             )
@@ -4441,7 +7728,9 @@ function PluginStudioRoute() {
                         variant="ghost"
                         onClick={() =>
                           setSchemaRefinements((current) =>
-                            current.filter((candidate) => candidate.id !== rule.id),
+                            current.filter(
+                              (candidate) => candidate.id !== rule.id,
+                            ),
                           )
                         }
                       >
@@ -4457,132 +7746,176 @@ function PluginStudioRoute() {
 
         <Dialog
           open={isWorkflowEditorOpen}
-          onOpenChange={setIsWorkflowEditorOpen}
+          onOpenChange={(open) => {
+            setIsWorkflowEditorOpen(open);
+            if (!open) setWorkflowEditorLockedTable(null);
+          }}
         >
-          <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
+          <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col overflow-hidden !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
             <DialogHeader>
               <DialogTitle>Workflow Editor</DialogTitle>
               <DialogDescription>
                 Configure trigger, linked schema, and action sequence visually.
               </DialogDescription>
             </DialogHeader>
-            {!workspaceWorkflow ? null : (
-              <div className="space-y-3">
-                <div className="grid gap-2 md:grid-cols-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="workflow-editor-workflow-id">
-                      Workflow ID
-                    </Label>
-                    <Input
-                      id="workflow-editor-workflow-id"
-                      value={workspaceWorkflow.workflowId}
-                      onChange={(event) =>
-                        updateActiveWorkflow((current) => ({
-                          ...current,
-                          workflowId: event.target.value,
-                        }))
-                      }
-                      placeholder="Workflow ID"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="workflow-editor-table">
-                      Connected schema ID
-                    </Label>
-                    <Input
-                      id="workflow-editor-table"
-                      value={workspaceWorkflow.table}
-                      onChange={(event) =>
-                        updateActiveWorkflow((current) => ({
-                          ...current,
-                          table: event.target.value,
-                        }))
-                      }
-                      placeholder="Connected schema ID"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="workflow-editor-hook">Hook</Label>
-                    <Select
-                      value={workspaceWorkflow.hook}
-                      onValueChange={(value) =>
-                        updateActiveWorkflow((current) => ({
-                          ...current,
-                          hook: value as WorkflowDoc['hook'],
-                        }))
-                      }
-                    >
-                      <SelectTrigger id="workflow-editor-hook">
-                        <SelectValue placeholder="Hook" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="beforeCreate">beforeCreate</SelectItem>
-                        <SelectItem value="afterCreate">afterCreate</SelectItem>
-                        <SelectItem value="beforeUpdate">beforeUpdate</SelectItem>
-                        <SelectItem value="afterUpdate">afterUpdate</SelectItem>
-                        <SelectItem value="beforeDelete">beforeDelete</SelectItem>
-                        <SelectItem value="afterDelete">afterDelete</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2 rounded-lg border bg-muted/20 p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="text-sm font-medium">Action Steps</div>
-                    <Button type="button" size="sm" onClick={addWorkflowActionStep}>
-                      <Plus className="mr-2 size-4" />
-                      Add Step
-                    </Button>
-                  </div>
-                  {workspaceWorkflow.nodes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      Add your first action step.
-                    </p>
-                  ) : (
-                    workspaceWorkflow.nodes.map((node) => (
-                      <div
-                        key={node.nodeId}
-                        className="grid gap-2 rounded-md border bg-card p-2 md:grid-cols-[1fr_1fr_auto]"
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              {!workspaceWorkflow ? null : (
+                <div className="space-y-3">
+                  <div className="rounded-lg border bg-muted/25 p-3 space-y-3">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="text-sm font-medium">Workflow Library</div>
+                        <p className="text-xs text-muted-foreground">
+                          Pick a workflow, then create, duplicate, or remove it.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="shrink-0"
+                        onClick={() =>
+                          openSchemaEditor(workspaceWorkflow.table, {
+                            closeWorkflowEditor: true,
+                          })
+                        }
                       >
-                        <Input value={node.nodeId} disabled />
-                        <Input
-                          value={node.type === 'action' ? node.actionId : ''}
-                          onChange={(event) =>
-                            updateActiveWorkflow((current) => ({
-                              ...current,
-                              nodes: current.nodes.map((candidateNode) =>
-                                candidateNode.nodeId === node.nodeId
-                                  ? {
-                                    ...candidateNode,
-                                    ...(candidateNode.type === 'action'
-                                      ? { actionId: event.target.value }
-                                      : {}),
-                                  }
-                                  : candidateNode,
-                              ),
-                              edges: [],
-                            }))
-                          }
-                          disabled={node.type !== 'action'}
-                          placeholder="Action ID"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          onClick={() => removeWorkflowStep(node.nodeId)}
+                        <Pencil className="mr-2 size-4" />
+                        Edit Connected Schema
+                      </Button>
+                    </div>
+                    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
+                      <div className="space-y-1">
+                        <Label htmlFor="workflow-editor-selector">Workflow</Label>
+                        <Select
+                          value={workspaceWorkflow.workflowId}
+                          onValueChange={(value) => setActiveWorkflowId(value)}
                         >
-                          <Trash2 className="mr-2 size-4 text-destructive" />
-                          Remove
+                          <SelectTrigger id="workflow-editor-selector">
+                            <SelectValue placeholder="Select workflow" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {workflowEditorScopedWorkflows.map((workflow) => (
+                              <SelectItem
+                                key={workflow.workflowId}
+                                value={workflow.workflowId}
+                              >
+                                {workflow.workflowId} ({workflow.table} · {workflow.hook})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-end">
+                        <Button type="button" size="sm" onClick={handleAddWorkflow}>
+                          <Plus className="mr-2 size-4" />
+                          New Workflow
                         </Button>
                       </div>
-                    ))
-                  )}
+                      <div className="flex items-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={handleDuplicateActiveWorkflow}
+                        >
+                          Duplicate Selected
+                        </Button>
+                      </div>
+                      <div className="flex items-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleRemoveWorkflow(workspaceWorkflow.workflowId)}
+                        >
+                          Remove Selected
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      New starts blank for this schema. Duplicate copies nodes
+                      and connections.
+                    </p>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="workflow-editor-workflow-id">
+                        Workflow ID
+                      </Label>
+                      <Input
+                        id="workflow-editor-workflow-id"
+                        value={workspaceWorkflow.workflowId}
+                        onChange={(event) =>
+                          updateActiveWorkflow((current) => ({
+                            ...current,
+                            workflowId: event.target.value,
+                          }))
+                        }
+                        placeholder="Workflow ID"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="workflow-editor-table">
+                        Connected schema ID
+                      </Label>
+                      <Input
+                        id="workflow-editor-table"
+                        value={workflowEditorTable}
+                        onChange={(event) => {
+                          if (workflowEditorLockedTable) return;
+                          updateActiveWorkflow((current) => ({
+                            ...current,
+                            table: event.target.value,
+                          }));
+                        }}
+                        placeholder="Connected schema ID"
+                        disabled={Boolean(workflowEditorLockedTable)}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="workflow-editor-hook">Hook</Label>
+                      <Select
+                        value={workspaceWorkflow.hook}
+                        onValueChange={(value) =>
+                          updateActiveWorkflow((current) => ({
+                            ...current,
+                            hook: value as WorkflowDoc['hook'],
+                          }))
+                        }
+                      >
+                        <SelectTrigger id="workflow-editor-hook">
+                          <SelectValue placeholder="Hook" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="beforeCreate">
+                            beforeCreate
+                          </SelectItem>
+                          <SelectItem value="afterCreate">afterCreate</SelectItem>
+                          <SelectItem value="beforeUpdate">
+                            beforeUpdate
+                          </SelectItem>
+                          <SelectItem value="afterUpdate">afterUpdate</SelectItem>
+                          <SelectItem value="beforeDelete">
+                            beforeDelete
+                          </SelectItem>
+                          <SelectItem value="afterDelete">afterDelete</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border bg-card p-2">
+                    <WorkflowGraphEditor
+                      workflow={workspaceWorkflow}
+                      onWorkflowChange={(nextWorkflow) => updateActiveWorkflow(() => nextWorkflow)}
+                      schemaDocs={availableSchemaDocs}
+                      actionManifest={parsed?.actionManifest ?? []}
+                      lockedTable={Boolean(workflowEditorLockedTable)}
+                    />
+                  </div>
                 </div>
-                <div className="rounded-lg border bg-card p-2">
-                  <WorkflowGraphEditor workflow={workspaceWorkflow} />
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </DialogContent>
         </Dialog>
 
@@ -4590,7 +7923,7 @@ function PluginStudioRoute() {
           open={isBlocklyComposerOpen}
           onOpenChange={setIsBlocklyComposerOpen}
         >
-          <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
+          <DialogContent className="!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col overflow-hidden !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0">
             <DialogHeader>
               <DialogTitle>Blockly Composer</DialogTitle>
               <DialogDescription>
@@ -4598,93 +7931,92 @@ function PluginStudioRoute() {
                 blocks.
               </DialogDescription>
             </DialogHeader>
-            {!selectedBlocklyField ? (
-              <p className="text-sm text-muted-foreground">
-                Choose a field from the builder and click `Compose Logic`.
-              </p>
-            ) : (
-              <div className="grid gap-3">
-                <div className="rounded-lg border bg-muted/20 p-3">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Building Logic For Field
+            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+              {!selectedBlocklyField ? (
+                <p className="text-sm text-muted-foreground">
+                  Choose a field from the builder and click `Compose Logic`.
+                </p>
+              ) : (
+                <div className="grid gap-3">
+                  <div className="rounded-lg border bg-muted/20 p-3">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      Building Logic For Field
+                    </div>
+                    <div className="mt-1 text-sm font-medium text-foreground">
+                      {selectedBlocklyField.key}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm font-medium text-foreground">
-                    {selectedBlocklyField.key}
+                  <div className="rounded-lg border bg-card p-2">
+                    <div
+                      id={blocklyWorkspaceId}
+                      ref={handleBlocklyContainerRef}
+                      className="h-[360px] w-full rounded-md"
+                    />
+                    {!isBlocklyReady && !blocklyError && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        Loading Blockly workspace...
+                      </p>
+                    )}
+                    {blocklyError && (
+                      <p className="mt-2 text-xs text-destructive">
+                        {blocklyError}
+                      </p>
+                    )}
                   </div>
-                </div>
-                <div className="rounded-lg border bg-card p-2">
-                  <div
-                    id={blocklyWorkspaceId}
-                    ref={(node) => {
-                      blocklyContainerRef.current = node;
-                      setBlocklyMountElement(node);
-                    }}
-                    className="h-[360px] w-full rounded-md"
-                  />
-                  {!isBlocklyReady && !blocklyError && (
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      Loading Blockly workspace...
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      Preset Logic
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {blocklyPresets.map((preset) => (
+                        <Button
+                          key={`${preset.label}-${preset.operator}`}
+                          type="button"
+                          size="sm"
+                          variant={
+                            blocklyDraft.operator === preset.operator &&
+                              blocklyDraft.message === preset.message
+                              ? 'default'
+                              : 'outline'
+                          }
+                          onClick={() =>
+                            setBlocklyDraft((current) => ({
+                              ...current,
+                              operator: preset.operator,
+                              message: preset.message,
+                            }))
+                          }
+                        >
+                          {preset.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="text-xs font-medium text-muted-foreground">
+                      Error Message
+                    </div>
+                    <Input
+                      value={blocklyDraft.message}
+                      onChange={(event) =>
+                        setBlocklyDraft((current) => ({
+                          ...current,
+                          message: event.target.value,
+                        }))
+                      }
+                      placeholder="Message shown when this logic fails"
+                    />
+                  </div>
+                  {blocklyComparableFields.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Field-to-field compare needs another `
+                      {selectedBlocklyField.type}` field. Literal blocks can still
+                      be used right now.
                     </p>
                   )}
-                  {blocklyError && (
-                    <p className="mt-2 text-xs text-destructive">
-                      {blocklyError}
-                    </p>
-                  )}
                 </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Preset Logic
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {blocklyPresets.map((preset) => (
-                      <Button
-                        key={`${preset.label}-${preset.operator}`}
-                        type="button"
-                        size="sm"
-                        variant={
-                          blocklyDraft.operator === preset.operator &&
-                            blocklyDraft.message === preset.message
-                            ? 'default'
-                            : 'outline'
-                        }
-                        onClick={() =>
-                          setBlocklyDraft((current) => ({
-                            ...current,
-                            operator: preset.operator,
-                            message: preset.message,
-                          }))
-                        }
-                      >
-                        {preset.label}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Error Message
-                  </div>
-                  <Input
-                    value={blocklyDraft.message}
-                    onChange={(event) =>
-                      setBlocklyDraft((current) => ({
-                        ...current,
-                        message: event.target.value,
-                      }))
-                    }
-                    placeholder="Message shown when this logic fails"
-                  />
-                </div>
-                {blocklyComparableFields.length === 0 && (
-                  <p className="text-xs text-muted-foreground">
-                    Field-to-field compare needs another `
-                    {selectedBlocklyField.type}` field. Literal blocks can still
-                    be used right now.
-                  </p>
-                )}
-              </div>
-            )}
+              )}
+            </div>
             <DialogFooter>
               <Button
                 type="button"
@@ -4722,7 +8054,6 @@ function PluginStudioRoute() {
                     },
                   ]);
                   fireConfetti();
-                  toast.success('Blockly logic added.');
                   setIsBlocklyComposerOpen(false);
                 }}
                 disabled={!selectedBlocklyField}
@@ -4743,7 +8074,8 @@ function PluginStudioSkeleton() {
   const editorSkeletonIds = ['editor-a', 'editor-b', 'editor-c'];
 
   return (
-    <div className="container py-6 space-y-6">
+    <div className="w-full py-6">
+      <div className="mx-auto w-full max-w-7xl px-4 space-y-6">
       <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/10 via-background to-accent/15 p-5 md:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2 max-w-2xl w-full">
@@ -4844,6 +8176,7 @@ function PluginStudioSkeleton() {
           <Skeleton className="h-[120px] w-full rounded-md" />
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

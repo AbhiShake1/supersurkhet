@@ -4,6 +4,8 @@ import type { NestedSchemaType, SchemaKeys } from '..';
 import { mergeOptionsWithDefaults } from '../options';
 import type { QueryObserverOptions } from '@tanstack/react-query';
 
+const SSR_GET_TIMEOUT_MS = 1500;
+
 export type GetBuilder<T extends SchemaKeys> = {
   separator?: string;
   filter?: (item: NestedSchemaType<T>) => boolean;
@@ -70,20 +72,33 @@ export function get<const T extends SchemaKeys>(
 
   return new Promise<NestedSchemaType<T>[]>((resolve) => {
     const node = getGunRef(keys);
+    let settled = false;
+    const timeout = setTimeout(() => {
+      settle([]);
+    }, SSR_GET_TIMEOUT_MS);
 
-    node.once((data: any) => {
-      if (data === undefined) resolve([]);
-    })
+    const settle = (value: NestedSchemaType<T>[]) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      resolve(value);
+    };
 
     node.load(async (data) => {
-      if (!data || typeof data !== 'object') return;
+      if (!data || typeof data !== 'object') {
+        settle([]);
+        return;
+      }
 
       if (isSingle) {
         const decrypted = await decrypt<NestedSchemaType<T>>(data, schema);
         if (decrypted) {
           const item = attachSouls(decrypted, keys);
-          resolve([item]);
+          settle([item]);
+          return;
         }
+        settle([]);
+        return;
       } else {
         const items: NestedSchemaType<T>[] = [];
         for (const [soul, val] of Object.entries(data)) {
@@ -102,8 +117,8 @@ export function get<const T extends SchemaKeys>(
             items.push(item);
           }
         }
-        resolve(items);
+        settle(items);
       }
-    }).not(() => resolve([]));
+    }).not(() => settle([]));
   });
 }

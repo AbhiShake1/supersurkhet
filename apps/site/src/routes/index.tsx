@@ -13,7 +13,6 @@ const WallOfLoveSection = lazy(() => import('@/components/testimonials'));
 const pluginBuilderEntrySearch = {
   tab: 'overview',
   pluginId: 'plugin.restaurant.admin',
-  draftId: 'draft.local',
 } as const;
 
 export const Route = createFileRoute('/')({
@@ -28,7 +27,9 @@ function Home() {
         <div className="mx-auto w-full max-w-5xl rounded-2xl border bg-card/60 p-6 backdrop-blur-sm sm:p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
-              <p className="font-semibold text-lg">Ready to build your plugin?</p>
+              <p className="font-semibold text-lg">
+                Ready to build your plugin?
+              </p>
               <p className="text-muted-foreground text-sm">
                 Jump into the no-code plugin builder and publish your first
                 release.

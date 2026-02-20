@@ -62,12 +62,28 @@ describe('plugin-studio client boundary', () => {
     expect(content).not.toContain('schema-editor-doc-json');
   });
 
+  it('keeps full-screen editors scrollable with internal overflow containers', () => {
+    const content = getRouteContent();
+
+    const fullScreenDialogWithOverflowClass =
+      /!w-screen !h-screen !max-w-none !max-h-none gap-0 flex flex-col overflow-hidden !translate-x-0 !translate-y-0 !top-0 !left-0 !rounded-none !m-0/g;
+    const overflowContainers = /min-h-0 flex-1 overflow-y-auto/g;
+
+    const fullScreenDialogMatches =
+      content.match(fullScreenDialogWithOverflowClass) ?? [];
+    const overflowContainerMatches = content.match(overflowContainers) ?? [];
+
+    expect(fullScreenDialogMatches.length).toBeGreaterThanOrEqual(3);
+    expect(overflowContainerMatches.length).toBeGreaterThanOrEqual(3);
+  });
+
   it('applies template presets through a dedicated template handler', () => {
     const content = getRouteContent();
 
     expect(content).toContain('applyTemplatePreset');
     expect(content).toContain('mergeMarketplaceReleasesWithSeed');
-    expect(content).toContain('Loaded template');
+    expect(content).toContain('Template was not found.');
+    expect(content).toContain('setIsTemplatesDialogOpen(false);');
   });
 
   it('uses type-aware rule field selectors instead of free text', () => {
@@ -118,6 +134,13 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('value={field.label}');
     expect(content).toContain('value={field.description}');
     expect(content).toContain('placeholder="Input placeholder"');
+    expect(content).toContain('Input props');
+    expect(content).toContain('Read only');
+    expect(content).toContain('Additional Input Props');
+    expect(content).toContain('Custom data');
+    expect(content).toContain('Field Config Extras');
+    expect(content).toContain('ClassNameFieldControl');
+    expect(content).not.toContain('addColumnDraft.derived');
     expect(content).toContain('Derived Fields');
     expect(content).toContain('Add Derived Field');
     expect(content).toContain('Source references');
@@ -130,7 +153,8 @@ describe('plugin-studio client boundary', () => {
 
     expect(content).toContain('Payload field (same type)');
     expect(content).toContain('Select payload field');
-    expect(content).toContain('rightPath: value || undefined');
+    expect(content).toContain('rightPath:');
+    expect(content).toContain('value || undefined');
     expect(content).toContain('className="flex items-end justify-center"');
     expect(content).toContain('Remove Derived Field');
   });
@@ -144,6 +168,65 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('id="workflow-editor-workflow-id"');
     expect(content).toContain('id="workflow-editor-table"');
     expect(content).toContain('id="workflow-editor-hook"');
+  });
+
+  it('opens workflow editor from sidebar table settings and locks connected schema field', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain(
+      'onOpenWorkflowEditorForTab={handleOpenWorkflowEditorForTab}',
+    );
+    expect(content).toContain('onDeleteTableForTab={handleDeleteTableFromTab}');
+    expect(content).toContain(
+      'function handleDeleteTableFromTab(tabTitle: string)',
+    );
+    expect(content).toContain(
+      'const [workflowEditorLockedTable, setWorkflowEditorLockedTable] = useState<',
+    );
+    expect(content).toContain('string | null');
+    expect(content).toContain('const workflowEditorTable =');
+    expect(content).toContain(
+      'workflowEditorLockedTable ?? workspaceWorkflow.table;',
+    );
+    expect(content).toContain('disabled={Boolean(workflowEditorLockedTable)}');
+  });
+
+  it('wires interactive workflow graph editor with schema and action context', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('Workflow Library');
+    expect(content).toContain('Edit Connected Schema');
+    expect(content).toContain('id="workflow-editor-selector"');
+    expect(content).toContain('New Workflow');
+    expect(content).toContain('Duplicate Selected');
+    expect(content).toContain('Remove Selected');
+    expect(content).toContain('New starts blank for this schema.');
+    expect(content).toContain('onClick={handleAddWorkflow}');
+    expect(content).toContain(
+      'onWorkflowChange={(nextWorkflow) => updateActiveWorkflow(() => nextWorkflow)}',
+    );
+    expect(content).toContain('schemaDocs={availableSchemaDocs}');
+    expect(content).toContain('actionManifest={parsed?.actionManifest ?? []}');
+    expect(content).toContain(
+      'lockedTable={Boolean(workflowEditorLockedTable)}',
+    );
+  });
+
+  it('closes workflow editor before opening schema editor from workflow context', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('closeWorkflowEditor?: boolean');
+    expect(content).toContain('options?.closeWorkflowEditor');
+    expect(content).toContain('setIsWorkflowEditorOpen(false)');
+    expect(content).toContain('setWorkflowEditorLockedTable(null)');
+  });
+
+  it('defers schema editor open until after workflow dialog begins closing', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('window.setTimeout(() => {');
+    expect(content).toContain('}, 260);');
+    expect(content).toContain('setIsSchemaEditorOpen(true);');
   });
 
   it('preserves advanced field behavior payloads like derivations while using no-code builder', () => {
@@ -181,13 +264,74 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('save-draft-revision');
   });
 
+  it('persists sidebar group/system metadata in draft revisions', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('serializeDraftAdminTabs');
+    expect(content).toContain('deserializeDraftAdminTabs');
+    expect(content).toContain('__plugin_studio_group__/');
+    expect(content).toContain('__plugin_studio_system__/');
+    expect(content).toContain('adminTabs: parsed.draftAdminTabs');
+  });
+
+  it('waits for drafts to finish loading before auto-creating a new draft', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('if (!pluginId.trim())');
+    expect(content).toContain('if (!isActorIdentityReady)');
+    expect(content).toContain(
+      'if (!parsed || !isDraftSaveable || !activeDraft)',
+    );
+    expect(content).toContain('if (!isDraftHydrated)');
+    expect(content).toContain('if (isDraftRevisionLoading)');
+    expect(content).toContain('Draft auto-save failed:');
+    expect(content).toContain('isMissingPluginDraftError');
+    expect(content).toContain('lastHydratedRevisionRecencyRef');
+    expect(content).toContain('initialSnapshotByDraftRef');
+    expect(content).toContain('activeDraftRevisions.length === 0');
+    expect(content).toContain('if (isDraftLoading)');
+    expect(content).toContain('localDraftSnapshot !== latestRevisionSnapshot');
+    expect(content).toContain('toDraftSnapshotString');
+    expect(content).toContain('lastRequestedDraftSnapshotRef');
+    expect(content).toContain('void saveDraftRevision(activeDraft.draftId);');
+  });
+
+  it('resolves the active draft from URL draftId and syncs search with real draft ids', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain("readSearchParamString(search, 'pluginId')");
+    expect(content).toContain('delete next.draftId');
+    expect(content).not.toContain("readSearchParamString(search, 'draftId')");
+    expect(content).toContain('pluginId: nextPluginId');
+  });
+
+  it('keeps draft identity stable using a single per-user draft id', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('buildActorUserIdAliases');
+    expect(content).toContain('toDraftId');
+    expect(content).toContain(
+      'drafts.find((candidate) => candidate.draftId === draftId)',
+    );
+    expect(content).toContain('return `draft.${toStableDraftIdSuffix(actorUserId)}`;');
+    expect(content).not.toContain('toStableDraftIdSuffix(pluginId)');
+    expect(content).not.toContain('pickActiveDraftForPlugin');
+  });
+
+  it('chooses latest template release using semantic version ordering', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('parseVersionParts(');
+    expect(content).toContain('isVersionGreater(');
+    expect(content).not.toContain('release.version > existing.version');
+  });
+
   it('integrates all plugin-builder workspace modules into the studio route', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('OverviewTab');
-    expect(content).toContain('SchemasTab');
+    expect(content).toContain('AutoAdmin');
     expect(content).toContain('WorkflowGraphEditor');
-    expect(content).toContain('PublishGateTab');
+    expect(content).toContain('createPublishGateTabState');
     expect(content).not.toContain('Workspace Tab Integrations');
   });
 

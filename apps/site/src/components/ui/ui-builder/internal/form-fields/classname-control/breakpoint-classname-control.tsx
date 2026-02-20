@@ -47,6 +47,7 @@ export const BreakpointClassNameControl = ({
 
   // State for the full class string
   const [classString, setClassString] = useState(value || '');
+  const [lastEmittedValue, setLastEmittedValue] = useState(value || '');
   // State for the tab
   const [tab, setTab] = useState<'base' | 'md'>('base');
 
@@ -100,8 +101,11 @@ export const BreakpointClassNameControl = ({
 
   // When classString changes, call parent onChange
   useEffect(() => {
-    if (onChange) onChange(classString);
-  }, [classString, onChange]);
+    if (!onChange) return;
+    if (classString === lastEmittedValue) return;
+    onChange(classString);
+    setLastEmittedValue(classString);
+  }, [classString, lastEmittedValue, onChange]);
 
   // When multiselect changes, update classString (and tabs will re-parse)
   const handleMultiselectChange = useCallback((newClassString: string) => {

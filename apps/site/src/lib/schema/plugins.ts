@@ -448,6 +448,15 @@ export const pluginWorkflowDocStorageSchema = z
   })
   .extend(table);
 
+export const pluginActionManifestDocStorageSchema = z
+  .object({
+    pluginId: z.string(),
+    version: z.string(),
+    actionId: z.string(),
+    doc: jsonValueSchema.describe('Canonical serializable action manifest doc'),
+  })
+  .extend(table);
+
 export function compilePluginSchemasFromDocs(schemaDocs: SchemaDoc[]) {
   return compileSchemaDocs(schemaDocs);
 }

@@ -22,6 +22,7 @@ import {
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
   pluginActionCapabilityEnvelopeSchema,
+  pluginActionManifestDocStorageSchema,
   pluginDraftRevisionSchema,
   pluginDraftSchema,
   pluginPublishReviewSchema,
@@ -333,6 +334,12 @@ export const coreSchema = createSchema({
     icon: MapIcon,
     group: 'Plugin Platform',
   },
+  pluginActionManifestDoc: {
+    schema: pluginActionManifestDocStorageSchema,
+    title: 'Plugin Action Manifest Docs',
+    icon: List,
+    group: 'Plugin Platform',
+  },
 });
 
 export const featureSchema = createSchema({
@@ -563,6 +570,7 @@ export {
   businessPluginInstallSchema,
   compilePluginSchemasFromDocs,
   pluginActionCapabilityEnvelopeSchema,
+  pluginActionManifestDocStorageSchema,
   pluginDraftRevisionSchema,
   pluginDraftSchema,
   pluginPublishReviewSchema,
