@@ -11,7 +11,7 @@ const authFile = path.join(__dirname, "tests/.auth/user.json");
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: "**/*.spec.ts",
+  testMatch: ["setup/**/*.setup.ts", "routes/**/*.spec.ts"],
   timeout: 60_000,
   expect: {
     timeout: 15_000,
