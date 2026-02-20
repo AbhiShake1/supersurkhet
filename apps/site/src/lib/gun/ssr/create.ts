@@ -45,14 +45,15 @@ export function create<const T extends SchemaKeys>(
   ) => {
     const _encrypted = await encrypt(value, schema);
     const encrypted = omitEmptyObject(_encrypted);
+    const id = encrypted?.id ?? `${keys}/${Date.now().toString()}`;
     return new Promise<GunMessagePut>((resolve, reject) => {
       getGunRef(keys)
-        .get(encrypted?.id ?? `${keys}/${Date.now().toString()}`)
+        .get(id)
         .put(encrypted, (ack) => {
           if ('err' in ack && !!ack.err) {
             reject(ack.err);
           } else {
-            resolve(ack);
+            resolve({ id, ...ack });
           }
         });
     });
