@@ -56,6 +56,7 @@ import {
 } from '@/lib/plugins/business-onboarding-plugin-catalog';
 import {
   getRecommendedSeedReleaseIds,
+  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
@@ -391,7 +392,10 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
   const businessType = form.watch('businessType');
   const fileInputId = useId();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
-  const releases = releaseRows as PluginReleaseDoc[];
+  const releases = useMemo(
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    [releaseRows],
+  );
 
   const recommendedReleaseIds = useMemo(
     () => getRecommendedSeedReleaseIds(businessType),
