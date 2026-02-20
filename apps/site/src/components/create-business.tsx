@@ -19,6 +19,7 @@ import {
 import { api } from '@/lib/api';
 import { gun } from '@/lib/gun';
 import { getGunRef } from '@/lib/gun/utils';
+import { getBusinessDataFieldFromSelectedReleases } from '@/lib/plugins/business-onboarding-prepopulate';
 import {
   mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
@@ -31,7 +32,6 @@ import {
   BusinessCreationForm,
   type BusinessCreationValues,
   businessCreationSchema,
-  getBusinessDataFieldFromSelectedReleases,
 } from './business-creation-form';
 import { Button } from './ui/button';
 import { Form } from './ui/form';
@@ -129,22 +129,24 @@ export function CreateBusiness({
       selectedReleaseIds: selectedPluginReleaseIds,
       releases,
     });
-    for (const [key, value] of Object.entries(prepopulateData ?? {})) {
-      if (!value) continue;
-      if (key === 'undefined') continue;
-      gun.get(key).load((data) => {
-        if (!data) return;
-        const keyParts = key.split('/');
-        const indexOfField = keyParts.indexOf(prepopulateField);
-        if (indexOfField < 0 || indexOfField + 1 >= keyParts.length) return;
-        keyParts[indexOfField + 1] = businessData.name;
-        const newKey = keyParts.join('/');
-        getGunRef(newKey).put(data, (ack) => {
-          if ('err' in ack && !!ack.err) {
-            console.error('Error updating prepopulated data:', ack.err);
-          }
+    if (prepopulateField) {
+      for (const [key, value] of Object.entries(prepopulateData ?? {})) {
+        if (!value) continue;
+        if (key === 'undefined') continue;
+        gun.get(key).load((data) => {
+          if (!data) return;
+          const keyParts = key.split('/');
+          const indexOfField = keyParts.indexOf(prepopulateField);
+          if (indexOfField < 0 || indexOfField + 1 >= keyParts.length) return;
+          keyParts[indexOfField + 1] = businessData.name;
+          const newKey = keyParts.join('/');
+          getGunRef(newKey).put(data, (ack) => {
+            if ('err' in ack && !!ack.err) {
+              console.error('Error updating prepopulated data:', ack.err);
+            }
+          });
         });
-      });
+      }
     }
     if (!user) {
       toast.error('You must be logged in to create a business.');

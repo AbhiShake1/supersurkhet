@@ -51,6 +51,7 @@ import {
   businessOnboardingPluginCategoryOptions,
   filterBusinessOnboardingCatalog,
 } from '@/lib/plugins/business-onboarding-plugin-catalog';
+import { getBusinessDataFieldFromSelectedReleases } from '@/lib/plugins/business-onboarding-prepopulate';
 import {
   getRecommendedSeedReleaseIds,
   mergeMarketplaceReleasesWithSeed,
@@ -96,17 +97,6 @@ interface PrePopulateItem {
   description?: string;
   isActive?: boolean;
 }
-
-const PREPOPULATE_DATA_TABLE_PRIORITY: readonly SchemaKeys[] = [
-  'product',
-  'menuItem',
-];
-
-const PREPOPULATE_DATA_TABLE_SET = new Set<SchemaKeys>(
-  PREPOPULATE_DATA_TABLE_PRIORITY,
-);
-
-const DEFAULT_PREPOPULATE_DATA_TABLE: SchemaKeys = 'product';
 
 interface BusinessCreationFormProps {
   step: number;
@@ -830,7 +820,10 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
       }),
     [selectedReleaseIds, releases],
   );
-  const { data: allItems = [], isLoading } = useBusinessData(prepopulateField);
+  const { data: allItems = [], isLoading } = useBusinessData(
+    prepopulateField ?? 'product',
+    Boolean(prepopulateField),
+  );
 
   // Transform data as specified in the requirements
   const transformedData = useMemo(
@@ -942,6 +935,15 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
     return <div>Loading pre-population data...</div>;
   }
 
+  if (!prepopulateField) {
+    return (
+      <div>
+        Select a plugin that includes a Products or Menu Items table to enable
+        pre-population suggestions.
+      </div>
+    );
+  }
+
   if (!similarItems.length) {
     return <div>No similar data found for pre-population.</div>;
   }
@@ -949,7 +951,7 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
   return (
     <div
       className="grid grid-cols-1 md:grid-cols-2 gap-3"
-      key={`${prepopulateField}-similar-items`}
+      key={`${prepopulateField ?? 'none'}-similar-items`}
     >
       {similarItems.map(
         (item) =>
@@ -1019,29 +1021,8 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
   );
 }
 
-export function getBusinessDataFieldFromSelectedReleases({
-  selectedReleaseIds,
-  releases,
-}: {
-  selectedReleaseIds: string[];
-  releases: PluginReleaseDoc[];
-}): SchemaKeys {
-  const releaseById = new Map(releases.map((release) => [release.id, release]));
-
-  for (const releaseId of selectedReleaseIds) {
-    const release = releaseById.get(releaseId);
-    if (!release) continue;
-    for (const tab of release.adminTabs ?? []) {
-      const schema = tab.schema as SchemaKeys;
-      if (PREPOPULATE_DATA_TABLE_SET.has(schema)) {
-        return schema;
-      }
-    }
-  }
-
-  return DEFAULT_PREPOPULATE_DATA_TABLE;
-}
-
-function useBusinessData(field: SchemaKeys) {
-  return api[field].useGet();
+function useBusinessData(field: SchemaKeys, enabled = true) {
+  return api[field].useGet({
+    queryOptions: { enabled },
+  });
 }
