@@ -80,7 +80,7 @@
 - [ ] T030 Implement business creation functionality with useCreate('business') hook in apps/site/src/lib/api/business.ts
 - [ ] T031 Implement business retrieval functionality with useGet('business') hook in apps/site/src/lib/api/business.ts
 - [ ] T032 Implement business update functionality with useUpdate('business') hook in apps/site/src/lib/api/business.ts
-- [ ] T033 Create unified business type page component in apps/site/src/routes/$businessType/index.tsx
+- [ ] T033 Create unified business discovery page component in apps/site/src/routes/category/$categorySlug/index.tsx
 - [ ] T034 Create individual business page component in apps/site/src/routes/$businessName/index.tsx
 - [ ] T035 Create business admin panel component using schema-driven approach in apps/site/src/components/ui/admin/business-admin.tsx
 - [ ] T036 Implement membership functionality with useCreate/useGet/useUpdate hooks in apps/site/src/lib/api/membership.ts

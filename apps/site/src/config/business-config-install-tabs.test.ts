@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { resolveInstallDrivenTabs } from '@/config/business-config-resolver';
-import type { BusinessPluginInstallDoc, PluginReleaseDoc } from '@/lib/plugins/types';
+import type {
+  BusinessPluginInstallDoc,
+  PluginReleaseDoc,
+} from '@/lib/plugins/types';
 
 function release(overrides: Partial<PluginReleaseDoc> = {}): PluginReleaseDoc {
   const pluginId = overrides.pluginId ?? 'acme.admin';
@@ -55,7 +58,6 @@ describe('business config install-driven tab resolver', () => {
     const tabs = resolveInstallDrivenTabs({
       businessId: 'business-1',
       businessSlug: 'shop-1',
-      businessType: 'retail',
       installs: [install()],
       releases: [release()],
     });
@@ -68,7 +70,6 @@ describe('business config install-driven tab resolver', () => {
     const tabs = resolveInstallDrivenTabs({
       businessId: 'business-1',
       businessSlug: 'shop-1',
-      businessType: 'retail',
       installs: [],
       releases: [],
       allowLegacyFallback: true,
@@ -82,7 +83,6 @@ describe('business config install-driven tab resolver', () => {
     const tabs = resolveInstallDrivenTabs({
       businessId: 'business-1',
       businessSlug: 'shop-1',
-      businessType: 'retail',
       installs: [],
       releases: [],
       allowLegacyFallback: false,

@@ -25,7 +25,6 @@ export interface AssistantTurnResponse {
 }
 
 export interface BuildAssistantFallbackParams {
-  businessType: string;
   selectedReleaseIds: string[];
   availableReleaseIds: string[];
   prompt: string;
@@ -49,7 +48,6 @@ export function deriveTodoProgress(items: TodoItem[]): number {
 }
 
 export function buildAssistantFallbackResponse({
-  businessType,
   selectedReleaseIds,
   availableReleaseIds,
   prompt,
@@ -104,7 +102,7 @@ export function buildAssistantFallbackResponse({
   return {
     assistantMessage:
       suggestedReleaseIds.length > 0
-        ? `I found plugin suggestions for your ${businessType.replace('_', ' ')} goals. You can apply them directly and refine further.`
+        ? 'I found plugin suggestions for your goals. You can apply them directly and refine further.'
         : `I could not find an exact plugin match yet. I can propose a scaffold next if you want to continue.`,
     quickOptions: {
       questionId: 'business-goal-next-step',

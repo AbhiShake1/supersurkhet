@@ -1,15 +1,16 @@
 import type { SchemaKeys } from '@gta/react-hooks';
-import type { AutoAdminTabInput } from '@/components/auto-admin';
 import { getLegacyRetailTabs } from '@/lib/plugins/legacy-retail-adapter';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
 } from '@/lib/plugins/types';
-import type { BusinessType } from '@/lib/schema';
 
 type AnyAutoTableTab = {
-  [K in SchemaKeys]: AutoAdminTabInput;
-}[SchemaKeys];
+  schema: SchemaKeys;
+  slug: string;
+  title?: string;
+  group?: string;
+};
 
 function toReleaseKey(pluginId: string, version: string) {
   return `${pluginId}@${version}`;
@@ -43,14 +44,12 @@ function dedupeTabs(tabs: AnyAutoTableTab[]) {
 export function resolveInstallDrivenTabs({
   businessId,
   businessSlug,
-  businessType,
   installs,
   releases,
   allowLegacyFallback = false,
 }: {
   businessId: string;
   businessSlug: string;
-  businessType: BusinessType;
   installs: BusinessPluginInstallDoc[];
   releases: PluginReleaseDoc[];
   allowLegacyFallback?: boolean;
@@ -82,8 +81,21 @@ export function resolveInstallDrivenTabs({
     return dedupeTabs(installedTabs);
   }
 
-  if (allowLegacyFallback && businessType === 'retail') {
-    return getLegacyRetailTabs(businessSlug);
+  if (allowLegacyFallback) {
+    return getLegacyRetailTabs(businessSlug).flatMap((tab) => {
+      if (!('schema' in tab)) return [];
+      return [
+        {
+          schema: tab.schema as SchemaKeys,
+          slug:
+            'slug' in tab && typeof tab.slug === 'string'
+              ? tab.slug
+              : businessSlug,
+          title: 'title' in tab ? tab.title : undefined,
+          group: 'group' in tab ? tab.group : undefined,
+        },
+      ];
+    });
   }
 
   return [];

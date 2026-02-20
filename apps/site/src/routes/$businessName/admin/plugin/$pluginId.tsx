@@ -488,7 +488,6 @@ function PluginDetailsPage() {
         open={isPreviewOpen}
         onOpenChange={setIsPreviewOpen}
         entry={pluginData}
-        businessId={businessId}
         businessSlug={businessName}
         isInstalled={pluginData.isInstalled}
         onInstall={installCurrent}

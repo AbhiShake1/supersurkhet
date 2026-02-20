@@ -379,7 +379,6 @@ const bootstrapDefaultsInputSchema = z.object({
   actorUserId: z.string(),
   actorRole: z.enum(['owner', 'admin', 'staff']).default('owner'),
   businessId: z.string(),
-  businessType: z.string(),
 });
 
 const ensureMarketplaceInputSchema = z.object({
@@ -871,15 +870,12 @@ export async function createPluginDraft({
   const canonicalActorUserId =
     [...actorAliases][0] ?? data.actorUserId ?? 'anon';
   const stableDraftId = `draft.${toStableDraftIdSuffix(canonicalActorUserId)}`;
-  const existingDrafts = service
-    .listDrafts()
-    .filter(
-      (draft) =>
-        matchesUserIdAlias({
-          aliases: actorAliases,
-          candidate: draft.ownerUserId,
-        }),
-    );
+  const existingDrafts = service.listDrafts().filter((draft) =>
+    matchesUserIdAlias({
+      aliases: actorAliases,
+      candidate: draft.ownerUserId,
+    }),
+  );
   const canonicalDraft = existingDrafts.find(
     (draft) => draft.draftId === stableDraftId,
   );
@@ -1138,7 +1134,7 @@ export async function bootstrapDefaultPluginsForBusiness({
   data: z.infer<typeof bootstrapDefaultsInputSchema>;
 }) {
   const actorUserId = data.actorUserId ?? 'system-seed';
-  const recommendations = getRecommendedSeedReleaseIds(data.businessType);
+  const recommendations = getRecommendedSeedReleaseIds();
   const defaultReleaseId = recommendations[0];
   if (!defaultReleaseId) {
     return { installed: false, reason: 'missing-recommendation' } as const;

@@ -132,12 +132,6 @@ export const businessInvitationSchema = z.object({
 
 export type BusinessInvitation = NonNullable<Business['invitations']>[string];
 
-export const businessTypeSchema = z
-  .enum(['retail'])
-  .describe('The primary category of the business');
-
-export type BusinessType = Business['businessType'];
-
 export const businessSchema = z
   .object({
     name: z.string().describe('Official name of the business'),
@@ -146,7 +140,6 @@ export const businessSchema = z
       .string()
       .describe('Unique URL path for the business (e.g., /my-shop)')
       .optional(),
-    businessType: businessTypeSchema,
     features: z
       .record(z.string(), z.boolean())
       .optional()
@@ -561,7 +554,8 @@ export type BusinessPluginDraftInstall =
 export type PluginRecord = InferredTable<'pluginRecord'>;
 export type PluginV2Diagnostics = InferredTable<'pluginV2Diagnostics'>;
 export type PluginPublishReview = InferredTable<'pluginPublishReview'>;
-export type PluginActionCapabilityEnvelope = InferredTable<'pluginActionCapabilityEnvelope'>;
+export type PluginActionCapabilityEnvelope =
+  InferredTable<'pluginActionCapabilityEnvelope'>;
 export type PluginRoutesTabsConfig = InferredTable<'pluginRoutesTabsConfig'>;
 // #endregion
 

@@ -9,7 +9,7 @@ declare global {
      email: import("zod").ZodString;
      password: import("zod").ZodString;
      name: import("zod").ZodOptional<import("zod").ZodString>;
-     avatar: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, any, string | undefined>;
+     avatar: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      phone: import("zod").ZodOptional<import("zod").ZodString>;
      isActive: import("zod").ZodOptional<import("zod").ZodDefault<import("zod").ZodBoolean>>;
      role: import("zod").ZodOptional<import("zod").ZodDefault<import("zod").ZodEnum<["user", "internal-staff", "admin"]>>>;
@@ -30,7 +30,7 @@ declare global {
      email: string;
      password: string;
      name?: string | undefined;
-     avatar?: any;
+     avatar?: string | undefined;
      phone?: string | undefined;
      timestamp?: number | undefined;
      role?: "user" | "internal-staff" | "admin" | undefined;
@@ -64,11 +64,10 @@ declare global {
      name: import("zod").ZodString;
      id: import("zod").ZodString;
      basePath: import("zod").ZodOptional<import("zod").ZodString>;
-     businessType: import("zod").ZodEnum<["retail"]>;
-     features: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodBoolean>>, any, Record<string, boolean> | undefined>;
+     features: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodBoolean>>, Record<string, boolean> | undefined, Record<string, boolean> | undefined>;
      isActive: import("zod").ZodDefault<import("zod").ZodBoolean>;
      icon: import("zod").ZodOptional<import("zod").ZodString>;
-     locationCoordinates: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, any, string | undefined>;
+     locationCoordinates: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      members: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodObject<{
      role: import("zod").ZodEnum<["owner", "staff"]>;
      permissions: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodBoolean>>;
@@ -156,7 +155,6 @@ declare global {
      name: string;
      isActive: boolean;
      id: string;
-     businessType: "retail";
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
@@ -164,9 +162,9 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      basePath?: string | undefined;
-     features?: any;
+     features?: Record<string, boolean> | undefined;
      icon?: string | undefined;
-     locationCoordinates?: any;
+     locationCoordinates?: string | undefined;
      members?: Record<string, {
      role: "owner" | "staff";
      userId: string;
@@ -193,7 +191,6 @@ declare global {
     }, {
      name: string;
      id: string;
-     businessType: "retail";
      timestamp?: number | undefined;
      isActive?: boolean | undefined;
      created_by?: string | undefined;
@@ -1747,13 +1744,13 @@ declare global {
      readonly schema: import("zod").ZodObject<{
      title: import("zod").ZodString;
      hsCode: import("zod").ZodString;
-     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, any, string | undefined>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      costPrice: import("zod").ZodNumber;
-     sellingPrice: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, any, number | undefined>;
-     stockQuantity: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, any, number | undefined>;
+     sellingPrice: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, number | undefined, number | undefined>;
+     stockQuantity: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>;
      barcode: import("zod").ZodOptional<import("zod").ZodString>;
-     reorderLevel: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, any, number | undefined>;
-     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, any, string | undefined>;
+     reorderLevel: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, number | undefined, number | undefined>;
+     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      category: import("zod").ZodOptional<import("zod").ZodDefault<import("zod").ZodString>>;
      sku: import("zod").ZodOptional<import("zod").ZodString>;
      imageUrl: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodString, string, string>>;
@@ -1777,19 +1774,19 @@ declare global {
      title: string;
      hsCode: string;
      costPrice: number;
-     unit?: any;
+     stockQuantity: number;
+     unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     description?: any;
+     description?: string | undefined;
      category?: string | undefined;
-     sellingPrice?: any;
-     stockQuantity?: any;
+     sellingPrice?: number | undefined;
      barcode?: string | undefined;
-     reorderLevel?: any;
+     reorderLevel?: number | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
      isFeatured?: boolean | undefined;
@@ -1875,13 +1872,13 @@ declare global {
      readonly schema: import("zod").ZodObject<{
      title: import("zod").ZodString;
      hsCode: import("zod").ZodString;
-     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, any, string | undefined>;
+     unit: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      costPrice: import("zod").ZodNumber;
-     sellingPrice: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, any, number | undefined>;
-     stockQuantity: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, any, number | undefined>;
+     sellingPrice: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, number | undefined, number | undefined>;
+     stockQuantity: import("zod").ZodEffects<import("zod").ZodDefault<import("zod").ZodNumber>, number, number | undefined>;
      barcode: import("zod").ZodOptional<import("zod").ZodString>;
-     reorderLevel: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, any, number | undefined>;
-     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, any, string | undefined>;
+     reorderLevel: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodNumber>, number | undefined, number | undefined>;
+     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
      category: import("zod").ZodOptional<import("zod").ZodDefault<import("zod").ZodString>>;
      sku: import("zod").ZodOptional<import("zod").ZodString>;
      imageUrl: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodString, string, string>>;
@@ -1910,21 +1907,21 @@ declare global {
      title: string;
      hsCode: string;
      costPrice: number;
+     stockQuantity: number;
      isVegetarian: boolean;
      isSpicy: boolean;
-     unit?: any;
+     unit?: string | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     description?: any;
+     description?: string | undefined;
      category?: string | undefined;
-     sellingPrice?: any;
-     stockQuantity?: any;
+     sellingPrice?: number | undefined;
      barcode?: string | undefined;
-     reorderLevel?: any;
+     reorderLevel?: number | undefined;
      sku?: string | undefined;
      imageUrl?: string | undefined;
      isFeatured?: boolean | undefined;
@@ -3174,7 +3171,7 @@ declare global {
      readonly schema: import("zod").ZodObject<{
      name: import("zod").ZodString;
      licensePlate: import("zod").ZodString;
-     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, any, string | undefined>;
+     description: import("zod").ZodEffects<import("zod").ZodOptional<import("zod").ZodString>, string | undefined, string | undefined>;
     } & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
@@ -3197,7 +3194,7 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     description?: any;
+     description?: string | undefined;
     }, {
      name: string;
      licensePlate: string;

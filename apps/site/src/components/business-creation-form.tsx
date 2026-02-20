@@ -1,8 +1,6 @@
 import type { SchemaKeys } from '@gta/react-hooks';
 import { Link } from '@tanstack/react-router';
 import {
-  Building,
-  CheckCircle,
   ChevronDown,
   ChevronUp,
   FileUp,
@@ -10,7 +8,6 @@ import {
   Package,
   Search,
   Sparkles,
-  Store,
 } from 'lucide-react';
 import {
   type ChangeEvent,
@@ -60,7 +57,7 @@ import {
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
-import { businessSchema, featureSchema } from '@/lib/schema';
+import { businessSchema } from '@/lib/schema';
 import { cn } from '@/lib/utils';
 import { getBusinessCreationAssistantTurn } from '@/server-functions/ai';
 import { MapField } from './ui/autoform/components/MapField';
@@ -78,7 +75,6 @@ import { Textarea } from './ui/textarea';
 export const businessCreationSchema = businessSchema
   .pick({
     name: true,
-    businessType: true,
     features: true,
     locationCoordinates: true,
   })
@@ -101,49 +97,16 @@ interface PrePopulateItem {
   isActive?: boolean;
 }
 
-const featureKeys = Object.keys(
-  featureSchema.rawShape,
-) as (keyof typeof featureSchema.rawShape)[];
+const PREPOPULATE_DATA_TABLE_PRIORITY: readonly SchemaKeys[] = [
+  'product',
+  'menuItem',
+];
 
-const businessTypeIcons = {
-  retail: Store,
-};
+const PREPOPULATE_DATA_TABLE_SET = new Set<SchemaKeys>(
+  PREPOPULATE_DATA_TABLE_PRIORITY,
+);
 
-const businessTypeGroups = {
-  'Retail & Commerce': ['retail'],
-  'Food & Hospitality': ['food', 'hotel'],
-  'Transportation & Logistics': ['logistics', 'ride_sharing'],
-  'Real Estate': ['real_estate'],
-  Education: ['education'],
-  Healthcare: ['healthcare'],
-  'Financial Services': ['financial_firm'],
-  'Fitness & Recreation': ['gym', 'cinema'],
-  'Energy & Utilities': ['petrol_pump'],
-  'Community & Cooperatives': ['cooperative'],
-  'Professional Services': ['service'],
-  Other: ['other'],
-};
-
-const recommendedFeatures: Record<
-  z.infer<typeof businessSchema.shape.businessType>,
-  (keyof typeof featureSchema.rawShape)[]
-> = {
-  retail: ['product', 'order', 'expense'],
-  food: ['menuItem', 'order', 'appointment', 'expense'],
-  service: ['service', 'appointment', 'expense'],
-  logistics: ['driverProfile', 'trip', 'expense'],
-  education: ['studentProfile', 'expense'],
-  healthcare: ['service', 'appointment', 'expense'],
-  real_estate: ['propertyListing', 'expense'],
-  cooperative: ['coOpMemberProfile', 'expense'],
-  other: ['expense'],
-  hotel: ['hotel', 'order', 'expense'],
-  petrol_pump: ['petrolPump', 'expense'],
-  gym: ['gym', 'appointment', 'expense'],
-  cinema: ['cinema', 'order', 'expense'],
-  financial_firm: ['financialFirm', 'appointment', 'expense'],
-  ride_sharing: ['rideSharing', 'driverProfile', 'trip', 'expense'],
-};
+const DEFAULT_PREPOPULATE_DATA_TABLE: SchemaKeys = 'product';
 
 interface BusinessCreationFormProps {
   step: number;
@@ -156,8 +119,7 @@ interface BusinessCreationFormProps {
 export function BusinessCreationForm({
   step,
   form,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  isSubmitting,
+  isSubmitting: _isSubmitting,
   createdBusiness,
 }: BusinessCreationFormProps) {
   if (step === 3) {
@@ -231,6 +193,9 @@ export function BusinessCreationForm({
                   <MapField
                     {...field}
                     label="Set Location on Map"
+                    // MapField consumes AutoFormFieldProps, but this route uses it in a RHF form.
+                    field={{} as never}
+                    path={['locationCoordinates']}
                     inputProps={{
                       key: 'locationCoordinates',
                       onChange: field.onChange,
@@ -239,84 +204,6 @@ export function BusinessCreationForm({
                     id="locationCoordinates"
                   />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="businessType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Business Type</FormLabel>
-                <div className="space-y-6 pt-2">
-                  {Object.entries(businessTypeGroups).map(([group, types]) => {
-                    const groupTypes = types.filter((type) =>
-                      businessSchema.shape.businessType.options.includes(
-                        type as z.infer<
-                          typeof businessSchema.shape.businessType
-                        >,
-                      ),
-                    );
-
-                    if (groupTypes.length === 0) return null;
-
-                    return (
-                      <div key={group} className="space-y-3">
-                        <h3 className="text-sm font-medium text-muted-foreground">
-                          {group}
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {groupTypes.map((type) => {
-                            const isSelected = field.value === type;
-                            const Icon =
-                              businessTypeIcons[
-                                type as keyof typeof businessTypeIcons
-                              ] || Building;
-                            return (
-                              <Card
-                                key={type}
-                                className={cn(
-                                  'relative cursor-pointer',
-                                  isSelected
-                                    ? 'border-primary shadow-sm'
-                                    : 'border-input',
-                                  'flex flex-col items-center justify-center p-4 text-center h-full',
-                                )}
-                                onClick={() => {
-                                  field.onChange(type);
-                                  const businessType =
-                                    type as keyof typeof recommendedFeatures;
-                                  const recommended =
-                                    recommendedFeatures[businessType] || [];
-                                  const newFeatures: Record<string, boolean> =
-                                    {};
-                                  for (const key of featureKeys) {
-                                    newFeatures[key] =
-                                      recommended.includes(key);
-                                  }
-                                  form.setValue('features', newFeatures);
-                                }}
-                              >
-                                <CardHeader className="p-0 flex-grow flex flex-col items-center justify-center gap-2">
-                                  <Icon className="h-6 w-6 text-muted-foreground" />
-                                  <CardTitle className="capitalize text-sm font-semibold">
-                                    {type.replace('_', ' ')}
-                                  </CardTitle>
-                                </CardHeader>
-                                {isSelected && (
-                                  <div className="absolute top-1 right-1 text-primary">
-                                    <CheckCircle className="h-4 w-4" />
-                                  </div>
-                                )}
-                              </Card>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
                 <FormMessage />
               </FormItem>
             )}
@@ -389,7 +276,6 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
     },
   ]);
 
-  const businessType = form.watch('businessType');
   const fileInputId = useId();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const releases = useMemo(
@@ -398,8 +284,8 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
   );
 
   const recommendedReleaseIds = useMemo(
-    () => getRecommendedSeedReleaseIds(businessType),
-    [businessType],
+    () => getRecommendedSeedReleaseIds(),
+    [],
   );
 
   const recommendedPluginIds = useMemo(
@@ -511,7 +397,6 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
           try {
             const response = await getBusinessCreationAssistantTurn({
               data: {
-                businessType,
                 userPrompt: trimmedPrompt,
                 selectedReleaseIds,
                 availableReleaseIds,
@@ -703,6 +588,7 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                     <Input
                       id={fileInputId}
                       type="file"
+                      placeholder=""
                       className="sr-only"
                       multiple
                       onChange={handleFileUpload}
@@ -912,9 +798,7 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                             variant={isSelected ? 'secondary' : 'default'}
                             onClick={() => togglePlugin(entry)}
                           >
-                            {isSelected
-                              ? 'Installing plugin'
-                              : 'Install plugin'}
+                            {isSelected ? 'Remove from queue' : 'Add to queue'}
                           </Button>
                         </div>
                       </Card>
@@ -932,55 +816,88 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
 }
 
 function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
-  const businessType = form.watch('businessType');
-  const { data: allItems = [], isLoading } = useBusinessTypeData(businessType);
-  const { data: allBusinesses = [] } = api.business.useGet();
+  const selectedReleaseIds = form.watch('selectedPluginReleaseIds') ?? [];
+  const { data: releaseRows = [] } = api.pluginRelease.useGet();
+  const releases = useMemo(
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    [releaseRows],
+  );
+  const prepopulateField = useMemo(
+    () =>
+      getBusinessDataFieldFromSelectedReleases({
+        selectedReleaseIds,
+        releases,
+      }),
+    [selectedReleaseIds, releases],
+  );
+  const { data: allItems = [], isLoading } = useBusinessData(prepopulateField);
 
   // Transform data as specified in the requirements
   const transformedData = useMemo(
     () =>
       allItems
-        .flatMap((d) => {
-          const business = d._?.soul;
-          return Object.values(d).map((d) =>
-            !d || typeof d !== 'object' ? null : { ...d, business },
+        .flatMap((row) => {
+          const rowRecord = row as Record<string, unknown> & {
+            _?: { soul?: string };
+          };
+          const business = rowRecord._?.soul;
+          return Object.values(rowRecord).map((item) =>
+            !item || typeof item !== 'object'
+              ? null
+              : ({
+                  ...(item as PrePopulateItem),
+                  business,
+                } as PrePopulateItem & {
+                  business?: string;
+                }),
           );
         })
-        .filter((d) => !!d && typeof d === 'object' && !('soul' in d)),
+        .filter(
+          (
+            item,
+          ): item is PrePopulateItem & {
+            business?: string;
+          } => item !== null && typeof item === 'object' && !('soul' in item),
+        ),
     [allItems],
   );
 
   // Filter to items and calculate occurrence percentage
   const similarItems = useMemo(() => {
-    const businessesOfType = allBusinesses.filter(
-      (b) => b.businessType === businessType,
-    );
-
-    // Group items by title and calculate occurrence percentage for similar business types
     const itemsByTitle: Record<
       string,
-      { count: number; items: PrePopulateItem[]; businesses: string[] }
+      {
+        items: Array<
+          PrePopulateItem & {
+            business?: string;
+          }
+        >;
+        businesses: string[];
+      }
     > = {};
+    const totalBusinessIds = new Set<string>();
 
-    for (const d of transformedData) {
-      const title = d?.title?.toLowerCase();
+    for (const item of transformedData) {
+      const title = item?.title?.toLowerCase();
       if (!title) continue;
+      const businessId =
+        typeof item.business === 'string' ? item.business : undefined;
 
       if (!itemsByTitle[title]) {
-        itemsByTitle[title] = { count: 0, items: [], businesses: [] };
+        itemsByTitle[title] = { items: [], businesses: [] };
       }
-      itemsByTitle[title].count++;
-      if (!itemsByTitle[title].businesses.includes(d.business)) {
-        itemsByTitle[title].businesses.push(d.business);
+
+      if (businessId) {
+        totalBusinessIds.add(businessId);
       }
-      if (!businessesOfType.includes(d.business)) {
-        businessesOfType.push(d.business);
+
+      if (businessId && !itemsByTitle[title].businesses.includes(businessId)) {
+        itemsByTitle[title].businesses.push(businessId);
       }
-      // Use the first occurrence of the item to preserve its properties
-      itemsByTitle[title].items.push(d);
+      itemsByTitle[title].items.push(item);
     }
 
-    const totalBusinesses = businessesOfType.length;
+    const totalBusinesses = Math.max(totalBusinessIds.size, 1);
 
     return Object.values(itemsByTitle)
       .map((data) => {
@@ -996,7 +913,7 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
       })
       .sort((a, b) => b.occurrencePercentage - a.occurrencePercentage) // Sort by most common first
       .filter((item) => item.title);
-  }, [transformedData, allBusinesses, businessType]);
+  }, [transformedData]);
 
   const newSimilarItemsValue = useMemo(
     () =>
@@ -1032,7 +949,7 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
   return (
     <div
       className="grid grid-cols-1 md:grid-cols-2 gap-3"
-      key={`${businessType}-similar-items`}
+      key={`${prepopulateField}-similar-items`}
     >
       {similarItems.map(
         (item) =>
@@ -1102,36 +1019,29 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
   );
 }
 
-export function getBusinessTypeDataField(
-  businessType: string | undefined,
-): SchemaKeys {
-  switch (businessType) {
-    case 'food':
-    case 'hotel':
-      return 'menuItem';
-    case 'retail':
-      return 'product';
-    case 'service':
-    case 'healthcare':
-      return 'service';
-    case 'education':
-      return 'studentProfile';
-    case 'logistics':
-    case 'ride_sharing':
-      return 'driverProfile';
-    case 'real_estate':
-      return 'propertyListing';
-    case 'cooperative':
-      return 'coOpMemberProfile';
-    case 'petrol_pump':
-      return 'petrolPump';
-    default:
-      return 'menuItem';
+export function getBusinessDataFieldFromSelectedReleases({
+  selectedReleaseIds,
+  releases,
+}: {
+  selectedReleaseIds: string[];
+  releases: PluginReleaseDoc[];
+}): SchemaKeys {
+  const releaseById = new Map(releases.map((release) => [release.id, release]));
+
+  for (const releaseId of selectedReleaseIds) {
+    const release = releaseById.get(releaseId);
+    if (!release) continue;
+    for (const tab of release.adminTabs ?? []) {
+      const schema = tab.schema as SchemaKeys;
+      if (PREPOPULATE_DATA_TABLE_SET.has(schema)) {
+        return schema;
+      }
+    }
   }
+
+  return DEFAULT_PREPOPULATE_DATA_TABLE;
 }
 
-// Custom hook to fetch data based on business type
-function useBusinessTypeData(businessType: string | undefined) {
-  const field = getBusinessTypeDataField(businessType);
+function useBusinessData(field: SchemaKeys) {
   return api[field].useGet();
 }

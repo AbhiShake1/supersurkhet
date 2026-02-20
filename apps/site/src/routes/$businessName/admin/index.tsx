@@ -19,7 +19,6 @@ import {
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
-import type { BusinessType } from '@/lib/schema';
 import { installPluginRelease } from '@/server-functions/plugins';
 
 export const Route = createFileRoute('/$businessName/admin/')({
@@ -63,7 +62,6 @@ export const Route = createFileRoute('/$businessName/admin/')({
         <Child
           businessName={businessName}
           businessId={business.id}
-          businessType={business.businessType}
           actorUserId={user._?.soul ?? 'anon'}
         />
       </BusinessProvider>
@@ -74,19 +72,16 @@ export const Route = createFileRoute('/$businessName/admin/')({
 function Child({
   businessName,
   businessId,
-  businessType,
   actorUserId,
 }: {
   businessName: string;
   businessId: string;
-  businessType: BusinessType;
   actorUserId: string;
 }) {
   const config = useBusinessConfig({
     slug: businessName,
     businessId,
-    businessType,
-  })[businessType];
+  });
   if (!config?.length)
     return (
       <div className="mx-auto w-full max-w-7xl p-4 md:p-6">

@@ -1,25 +1,25 @@
 import type React from 'react';
+import { Combobox } from '@/components/ui/combobox';
 import {
   FormControl,
   FormDescription,
   FormItem,
   FormLabel,
 } from '@/components/ui/form';
+import { MentionInput } from '@/components/ui/mention-input';
+import { MentionInputTextarea } from '@/components/ui/mention-input-textarea';
+import { MinimalTiptapEditor } from '@/components/ui/minimal-tiptap/minimal-tiptap';
 import { ChildrenSearchableSelect } from '@/components/ui/ui-builder/internal/form-fields/children-searchable-select';
+import BreakpointClassNameControl from '@/components/ui/ui-builder/internal/form-fields/classname-control';
+import IconNameField from '@/components/ui/ui-builder/internal/form-fields/iconname-field';
 import type {
   AutoFormInputComponentProps,
   ComponentLayer,
   FieldConfigFunction,
 } from '@/components/ui/ui-builder/types';
-import IconNameField from '@/components/ui/ui-builder/internal/form-fields/iconname-field';
-import { MinimalTiptapEditor } from '@/components/ui/minimal-tiptap/minimal-tiptap';
-import { useLayerStore } from '../store/layer-store';
-import BreakpointClassNameControl from '@/components/ui/ui-builder/internal/form-fields/classname-control';
-import { MentionInput } from '@/components/ui/mention-input';
-import { MentionInputTextarea } from '@/components/ui/mention-input-textarea';
-import { Combobox } from '@/components/ui/combobox';
-import { useBusiness } from '@/contexts/business-context';
 import { useBusinessConfig } from '@/config/business-config';
+import { useBusiness } from '@/contexts/business-context';
+import { useLayerStore } from '../store/layer-store';
 
 export const classNameFieldOverrides: FieldConfigFunction = () => {
   return {
@@ -246,19 +246,17 @@ export const tablePickerFieldOverrides = (_layer: ComponentLayer) => {
       fieldProps,
     }: AutoFormInputComponentProps) => {
       const { business } = useBusiness();
-      const businessType = business?.businessType;
 
       // Use basePath as the slug, fallback to id if basePath is not available
-      const slug = business?.basePath || business?.id;
+      const slug = business?.basePath || business?.id || '';
 
       const businessConfig = useBusinessConfig({
         slug,
         businessId: business?.id,
-        businessType: businessType ?? 'retail',
       });
 
       // Get the business config for the current business
-      const config = businessType && slug ? businessConfig[businessType] : [];
+      const config = slug.length > 0 ? businessConfig : [];
 
       // Extract schema names from the business config for options
       const options =

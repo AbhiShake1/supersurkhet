@@ -16,7 +16,6 @@ type PluginPreviewDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   entry: PluginCatalogEntry;
-  businessId: string;
   businessSlug: string;
   isInstalled: boolean;
   onInstall: () => void;
@@ -26,7 +25,6 @@ export function PluginPreviewDialog({
   open,
   onOpenChange,
   entry,
-  businessId,
   businessSlug,
   isInstalled,
   onInstall,
@@ -35,12 +33,10 @@ export function PluginPreviewDialog({
     slug: businessSlug,
   });
 
-  const currentBusinessTabs = useMemo(() => {
-    const firstTabSet = Object.values(currentConfig).find((tabs) =>
-      Array.isArray(tabs),
-    );
-    return (firstTabSet ?? []) as AutoAdminTabInput[];
-  }, [currentConfig]);
+  const currentBusinessTabs = useMemo(
+    () => currentConfig as AutoAdminTabInput[],
+    [currentConfig],
+  );
 
   const simulatedTabs = useMemo(() => {
     if (!open) return [];

@@ -30,7 +30,6 @@ const assistantResponseSchema = z.object({
 const assistantTurnInputSchema = z.object({
   providerApiKey: z.string().optional(),
   model: z.string().default('gpt-4o-mini'),
-  businessType: z.string(),
   userPrompt: z.string(),
   selectedReleaseIds: z.array(z.string()).default([]),
   availableReleaseIds: z.array(z.string()).default([]),
@@ -50,7 +49,6 @@ export const getBusinessCreationAssistantTurn = createServerFn({
   .inputValidator(assistantTurnInputSchema)
   .handler(async ({ data }) => {
     const fallback = buildAssistantFallbackResponse({
-      businessType: data.businessType,
       selectedReleaseIds: data.selectedReleaseIds,
       availableReleaseIds: data.availableReleaseIds,
       prompt: data.userPrompt,
@@ -83,7 +81,7 @@ export const getBusinessCreationAssistantTurn = createServerFn({
           'You are a business onboarding AI assistant for plugin recommendations.',
           'Return JSON only matching the schema.',
           'Use multi-step questioning and keep options keyboard-friendly.',
-          `Business type: ${data.businessType}`,
+          'The onboarding flow is plugin-first (no fixed business-type presets).',
           `Available release IDs (choose only from these): ${data.availableReleaseIds.join(', ') || 'none'}`,
           `Already selected release IDs: ${data.selectedReleaseIds.join(', ') || 'none'}`,
           `Conversation history:\n${contextHistory || 'none'}`,

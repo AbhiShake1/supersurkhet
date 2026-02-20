@@ -3,6 +3,7 @@ import { getNestedZodShape } from '@gta/react-hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from '@tanstack/react-router';
 import _ from 'lodash';
+import * as LucideIcons from 'lucide-react';
 import {
   BarChart3,
   GripVertical,
@@ -10,8 +11,7 @@ import {
   QrCodeIcon,
   Sigma,
 } from 'lucide-react';
-import * as LucideIcons from 'lucide-react';
-import { useMemo, useState, type ReactNode } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { ZodEffects } from 'zod';
 import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
 import * as Kanban from '@/components/ui/kanban';
@@ -251,9 +251,7 @@ export function AutoAdmin({
       group: dashboardTab.group,
       iconName: dashboardTab.iconName,
       icon: resolveLucideIconByName(dashboardTab.iconName) ?? BarChart3,
-      children: business ? (
-        <AdminDashboard slug={basePath} businessType={business.businessType} />
-      ) : null,
+      children: business ? <AdminDashboard slug={basePath} /> : null,
     },
     ...tabs.map(resolveTabMetadata),
     {

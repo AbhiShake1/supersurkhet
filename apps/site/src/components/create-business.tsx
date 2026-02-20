@@ -1,3 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useEffect, useMemo, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import type { z } from 'zod';
 import { useConfetti } from '@/components/confetti-provider';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import {
@@ -7,31 +12,30 @@ import {
   CredenzaDescription,
   CredenzaFooter,
   CredenzaHeader,
+  type CredenzaProps,
   CredenzaTitle,
   CredenzaTrigger,
-  type CredenzaProps,
 } from '@/components/ui/credenza';
 import { api } from '@/lib/api';
+import { gun } from '@/lib/gun';
+import { getGunRef } from '@/lib/gun/utils';
+import {
+  mergeMarketplaceReleasesWithSeed,
+  parseReleaseId,
+} from '@/lib/plugins/marketplace-seed';
+import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import type { businessSchema } from '@/lib/schema';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import type { z } from 'zod';
+import { installPluginRelease } from '@/server-functions/plugins';
+import { useAuth } from './auth-provider';
 import {
   BusinessCreationForm,
-  businessCreationSchema,
-  getBusinessTypeDataField,
   type BusinessCreationValues,
+  businessCreationSchema,
+  getBusinessDataFieldFromSelectedReleases,
 } from './business-creation-form';
 import { Button } from './ui/button';
 import { Form } from './ui/form';
 import { ScrollArea } from './ui/scroll-area';
-import { toast } from 'sonner';
-import { useAuth } from './auth-provider';
-import { gun } from '@/lib/gun';
-import { getGunRef } from '@/lib/gun/utils';
-import { parseReleaseId } from '@/lib/plugins/marketplace-seed';
-import { installPluginRelease } from '@/server-functions/plugins';
 
 const stepContent = {
   1: {
@@ -60,16 +64,19 @@ export function CreateBusiness({
     useState<z.infer<typeof businessSchema>>();
 
   const { data: existingBusinesses = [], isLoading } = api.business.useGet();
+  const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const { fire: fireConfetti } = useConfetti();
   const { promptLogin } = useLoginPrompt();
+  const releases = useMemo(
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    [releaseRows],
+  );
 
   const form = useForm<BusinessCreationValues>({
     resolver: zodResolver(businessCreationSchema),
     defaultValues: {
       name: '',
-      businessType: 'retail',
       features: {},
-      location: '',
       locationCoordinates: '',
       selectedPluginReleaseIds: [],
     },
@@ -118,14 +125,18 @@ export function CreateBusiness({
     // Extract prepopulateData to avoid including it in the business creation
     const { prepopulateData, selectedPluginReleaseIds, ...businessData } =
       values;
+    const prepopulateField = getBusinessDataFieldFromSelectedReleases({
+      selectedReleaseIds: selectedPluginReleaseIds,
+      releases,
+    });
     for (const [key, value] of Object.entries(prepopulateData ?? {})) {
       if (!value) continue;
       if (key === 'undefined') continue;
       gun.get(key).load((data) => {
         if (!data) return;
-        const field = getBusinessTypeDataField(businessData.businessType);
         const keyParts = key.split('/');
-        const indexOfField = keyParts.indexOf(field);
+        const indexOfField = keyParts.indexOf(prepopulateField);
+        if (indexOfField < 0 || indexOfField + 1 >= keyParts.length) return;
         keyParts[indexOfField + 1] = businessData.name;
         const newKey = keyParts.join('/');
         getGunRef(newKey).put(data, (ack) => {
@@ -258,10 +269,7 @@ export function CreateBusiness({
         </CredenzaBody>
         <CredenzaFooter>
           {step === 1 && (
-            <Button
-              onClick={handleNextStep1}
-              disabled={!form.watch('name') || !form.watch('businessType')}
-            >
+            <Button onClick={handleNextStep1} disabled={!form.watch('name')}>
               Next
             </Button>
           )}

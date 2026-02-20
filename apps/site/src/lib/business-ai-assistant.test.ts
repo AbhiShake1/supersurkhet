@@ -31,7 +31,6 @@ describe('business-ai-assistant helpers', () => {
 
   it('builds multistep fallback response with quick options', () => {
     const response = buildAssistantFallbackResponse({
-      businessType: 'ride_sharing',
       selectedReleaseIds: [],
       availableReleaseIds: [
         'supersurkhet.plugin.customer-loyalty@1.0.0',
@@ -40,6 +39,7 @@ describe('business-ai-assistant helpers', () => {
       prompt: 'I want stronger loyalty and retention outcomes',
     });
 
+    expect(response.assistantMessage).toContain('plugin suggestions');
     expect(response.quickOptions.options).toHaveLength(3);
     expect(response.quickOptions.otherOptionLabel).toContain('Something else');
     expect(response.suggestedReleaseIds).toContain(

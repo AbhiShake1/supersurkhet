@@ -15,7 +15,6 @@ export type MarketplaceSeedRelease = {
   };
   actionManifest: ActionManifestDoc[];
   adminTabs: AdminTabDoc[];
-  recommendedFor: string[];
 };
 
 export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
@@ -46,7 +45,6 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
       { schema: 'order', title: 'Orders' },
       { schema: 'trip', title: 'Trips' },
     ],
-    recommendedFor: ['retail', 'food', 'hotel'],
   },
   {
     pluginId: 'supersurkhet.plugin.restaurant-admin',
@@ -76,7 +74,6 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
       { schema: 'order', title: 'Orders' },
       { schema: 'trip', title: 'Trips' },
     ],
-    recommendedFor: ['retail', 'food', 'hotel'],
   },
   {
     pluginId: 'supersurkhet.plugin.customer-loyalty',
@@ -99,7 +96,6 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
       { schema: 'sale', title: 'Sales' },
       { schema: 'order', title: 'Orders' },
     ],
-    recommendedFor: ['retail', 'food', 'service', 'hotel', 'gym', 'cinema'],
   },
   {
     pluginId: 'supersurkhet.plugin.finance-ops',
@@ -118,14 +114,6 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
       { schema: 'invoice', title: 'Invoices' },
       { schema: 'sale', title: 'Sales' },
       { schema: 'party', title: 'Parties' },
-    ],
-    recommendedFor: [
-      'retail',
-      'food',
-      'service',
-      'financial_firm',
-      'cooperative',
-      'hotel',
     ],
   },
   {
@@ -149,14 +137,6 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
       { schema: 'trip', title: 'Trips' },
       { schema: 'stockImport', title: 'Stock Imports' },
     ],
-    recommendedFor: [
-      'retail',
-      'logistics',
-      'ride_sharing',
-      'petrol_pump',
-      'hotel',
-      'food',
-    ],
   },
   {
     pluginId: 'supersurkhet.plugin.catalog-intelligence',
@@ -179,81 +159,20 @@ export const MARKETPLACE_SEED_RELEASES: MarketplaceSeedRelease[] = [
       { schema: 'stockImport', title: 'Stock Imports' },
       { schema: 'sale', title: 'Sales' },
     ],
-    recommendedFor: ['retail', 'food', 'petrol_pump', 'cooperative', 'other'],
   },
 ];
-
-const RECOMMENDED_BY_BUSINESS_TYPE: Record<string, string[]> = {
-  retail: [
-    'supersurkhet.plugin.restaurant-admin@1.1.0',
-    'supersurkhet.plugin.finance-ops@1.0.0',
-    'supersurkhet.plugin.catalog-intelligence@1.0.0',
-  ],
-  food: [
-    'supersurkhet.plugin.restaurant-admin@1.1.0',
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-    'supersurkhet.plugin.fulfillment-ops@1.0.0',
-  ],
-  service: [
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-    'supersurkhet.plugin.finance-ops@1.0.0',
-  ],
-  logistics: [
-    'supersurkhet.plugin.fulfillment-ops@1.0.0',
-    'supersurkhet.plugin.finance-ops@1.0.0',
-  ],
-  education: [
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-    'supersurkhet.plugin.finance-ops@1.0.0',
-  ],
-  healthcare: [
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-    'supersurkhet.plugin.finance-ops@1.0.0',
-  ],
-  real_estate: [
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-    'supersurkhet.plugin.finance-ops@1.0.0',
-  ],
-  cooperative: [
-    'supersurkhet.plugin.finance-ops@1.0.0',
-    'supersurkhet.plugin.catalog-intelligence@1.0.0',
-  ],
-  other: [
-    'supersurkhet.plugin.finance-ops@1.0.0',
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-  ],
-  hotel: [
-    'supersurkhet.plugin.restaurant-admin@1.1.0',
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-    'supersurkhet.plugin.fulfillment-ops@1.0.0',
-  ],
-  petrol_pump: [
-    'supersurkhet.plugin.fulfillment-ops@1.0.0',
-    'supersurkhet.plugin.catalog-intelligence@1.0.0',
-  ],
-  gym: [
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-    'supersurkhet.plugin.finance-ops@1.0.0',
-  ],
-  cinema: [
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-    'supersurkhet.plugin.finance-ops@1.0.0',
-  ],
-  financial_firm: [
-    'supersurkhet.plugin.finance-ops@1.0.0',
-    'supersurkhet.plugin.customer-loyalty@1.0.0',
-  ],
-  ride_sharing: [
-    'supersurkhet.plugin.fulfillment-ops@1.0.0',
-    'supersurkhet.plugin.finance-ops@1.0.0',
-  ],
-};
 
 const SEED_IDS = new Set(
   MARKETPLACE_SEED_RELEASES.map(
     (release) => `${release.pluginId}@${release.version}`,
   ),
 );
+
+const DEFAULT_RECOMMENDED_RELEASE_IDS = [
+  'supersurkhet.plugin.restaurant-admin@1.1.0',
+  'supersurkhet.plugin.finance-ops@1.0.0',
+  'supersurkhet.plugin.customer-loyalty@1.0.0',
+];
 
 export function parseReleaseId(releaseId: string) {
   const splitAt = releaseId.lastIndexOf('@');
@@ -268,13 +187,9 @@ export function parseReleaseId(releaseId: string) {
   return { pluginId, version };
 }
 
-export function getRecommendedSeedReleaseIds(businessType: string): string[] {
-  const prioritized =
-    RECOMMENDED_BY_BUSINESS_TYPE[businessType] ??
-    RECOMMENDED_BY_BUSINESS_TYPE.other;
-
-  const unique = prioritized.filter(
-    (id, index) => prioritized.indexOf(id) === index,
+export function getRecommendedSeedReleaseIds(): string[] {
+  const unique = DEFAULT_RECOMMENDED_RELEASE_IDS.filter(
+    (id, index) => DEFAULT_RECOMMENDED_RELEASE_IDS.indexOf(id) === index,
   );
   const existing = unique.filter((id) => SEED_IDS.has(id));
 
@@ -323,8 +238,13 @@ function toTemplateSchemaId(input: string) {
   return normalized.length > 0 ? normalized : 'example.table';
 }
 
-function toTemplateWorkflowId(pluginId: string, schemaId: string, index: number) {
-  const suffix = schemaId.replace(/[^a-zA-Z0-9_.-]/g, '') || `schema_${index + 1}`;
+function toTemplateWorkflowId(
+  pluginId: string,
+  schemaId: string,
+  index: number,
+) {
+  const suffix =
+    schemaId.replace(/[^a-zA-Z0-9_.-]/g, '') || `schema_${index + 1}`;
   return `${pluginId}.workflow.${suffix}`;
 }
 
@@ -375,7 +295,11 @@ function toFallbackWorkflows(release: MarketplaceSeedRelease): WorkflowDoc[] {
   const schemaDocs = toFallbackSchemaDocs(release);
 
   return schemaDocs.map((schemaDoc, index) => ({
-    workflowId: toTemplateWorkflowId(release.pluginId, schemaDoc.schemaId, index),
+    workflowId: toTemplateWorkflowId(
+      release.pluginId,
+      schemaDoc.schemaId,
+      index,
+    ),
     table: schemaDoc.schemaId,
     hook: 'afterCreate',
     nodes: [
@@ -419,9 +343,15 @@ export function mergeMarketplaceReleasesWithSeed(
     mergedById.set(release.id, {
       ...seed,
       ...release,
-      schemaDocs: release.schemaDocs?.length ? release.schemaDocs : seed?.schemaDocs,
-      workflows: release.workflows?.length ? release.workflows : seed?.workflows,
-      adminTabs: release.adminTabs?.length ? release.adminTabs : seed?.adminTabs,
+      schemaDocs: release.schemaDocs?.length
+        ? release.schemaDocs
+        : seed?.schemaDocs,
+      workflows: release.workflows?.length
+        ? release.workflows
+        : seed?.workflows,
+      adminTabs: release.adminTabs?.length
+        ? release.adminTabs
+        : seed?.adminTabs,
     });
   }
 

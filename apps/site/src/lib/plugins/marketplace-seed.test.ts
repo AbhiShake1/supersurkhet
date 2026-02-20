@@ -28,16 +28,9 @@ describe('marketplace seed catalog', () => {
     expect(parseReleaseId('@1.0.0')).toBeNull();
   });
 
-  it('returns non-empty recommended starter stack per business type', () => {
-    expect(
-      getRecommendedSeedReleaseIds('retail').length,
-    ).toBeGreaterThanOrEqual(2);
-    expect(getRecommendedSeedReleaseIds('food').length).toBeGreaterThanOrEqual(
-      2,
-    );
-    expect(getRecommendedSeedReleaseIds('other').length).toBeGreaterThanOrEqual(
-      1,
-    );
+  it('returns non-empty recommended starter stack', () => {
+    expect(getRecommendedSeedReleaseIds.length).toBe(0);
+    expect(getRecommendedSeedReleaseIds().length).toBeGreaterThanOrEqual(2);
   });
 
   it('converts static seed metadata into installable release docs', () => {
