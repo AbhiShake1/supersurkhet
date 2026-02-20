@@ -1,41 +1,17 @@
-import { applyFilters } from '@/lib/filter';
-import type { DataTableRowAction, FilterVariant } from '@/types/data-table';
-import * as React from 'react';
-
-import { DataTable } from '@/components/data-table';
-import { useDataTable } from '@/hooks/use-data-table';
-
-import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
-import { AutoFormWithoutLabel } from '@/components/ui/autoform';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import * as Editable from '@/components/ui/editable';
-import { api } from '@/lib/api';
-import { appSchema } from '@/lib/schema';
-import { applySorting } from '@/lib/sort';
-import { getSchemaDerivations } from '@/lib/zod/with-derivations';
-import { parseSchema, type ZodObjectOrWrapped } from '@autoform/zod';
-import {
+  getNestedZodShape,
+  getSchema,
+  getShape,
   type NestedSchema,
   type NestedSchemaType,
   type SchemaKeys,
   type UpdaterParams,
-  getNestedZodShape,
-  getSchema,
-  getShape,
   useDelete,
   useGet,
   useUpdate,
 } from '@gta/react-hooks';
 import { DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
-import { useQuery, type MutationFunctionContext } from '@tanstack/react-query';
+import { type MutationFunctionContext, useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import type { CellContext, ColumnDef } from '@tanstack/react-table';
 import type { GunMessagePut } from 'gun';
@@ -47,7 +23,32 @@ import {
   Ellipsis,
   Text,
 } from 'lucide-react';
-import { z, ZodEffects } from 'zod';
+import * as React from 'react';
+import { ZodEffects, z } from 'zod';
+import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
+import { DataTable } from '@/components/data-table';
+import { AutoFormWithoutLabel } from '@/components/ui/autoform';
+import {
+  parseSchema,
+  type ZodObjectOrWrapped,
+} from '@/components/ui/autoform/zod';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import * as Editable from '@/components/ui/editable';
+import { useDataTable } from '@/hooks/use-data-table';
+import { api } from '@/lib/api';
+import { applyFilters } from '@/lib/filter';
+import { appSchema } from '@/lib/schema';
+import { applySorting } from '@/lib/sort';
+import { getSchemaDerivations } from '@/lib/zod/with-derivations';
+import type { DataTableRowAction, FilterVariant } from '@/types/data-table';
 import { AutoPreview } from '../auto-preview';
 import { DataTableAdvancedToolbar } from '../data-table/data-table-advanced-toolbar';
 import { DataTableColumnHeader } from '../data-table/data-table-column-header';
@@ -56,11 +57,11 @@ import { DataTableSortList } from '../data-table/data-table-sort-list';
 import { DeleteRowDialog } from '../data-table/delete-row-dialog';
 import { EditRowDialog } from '../data-table/edit-row-dialog';
 import SkeletonTableOneWrapper from '../mvpblocks/skeleton-table-1';
-import { BadgeMarquee } from '../ui/badge-marquee';
 import type { DeriveFn, FieldConfigCustomData } from '../ui/autoform';
+import { BadgeMarquee } from '../ui/badge-marquee';
+import { AutoTableActionBar } from './auto-table-action-bar';
 import { applyDerivedValuesToRow, getDeriveFn } from './derive-row';
 import { getAutoTableInitialState } from './initial-state';
-import { AutoTableActionBar } from './auto-table-action-bar';
 
 type AggregationType =
   | 'sum'
@@ -130,23 +131,23 @@ export type AutoTableProps<T extends SchemaKeys> = {
   onDeleteColumn?: (columnKey: string) => void;
   onReorderColumns?: (sourceColumnKey: string, targetColumnKey: string) => void;
 } & (
-    | {
+  | {
       schema: T;
     }
-    | {
+  | {
       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       parsedSchema: z.ZodObject<any>;
     }
-  ) &
+) &
   (
     | {
-      slug: string;
-      data?: undefined;
-    }
+        slug: string;
+        data?: undefined;
+      }
     | {
-      data: NestedSchemaType<T>[];
-      slug?: undefined;
-    }
+        data: NestedSchemaType<T>[];
+        slug?: undefined;
+      }
   );
 
 export function AutoTable<T extends SchemaKeys>({
@@ -452,15 +453,15 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
     },
   ];
 
-  const { data: users } = api.user.useGet()
+  const { data: users } = api.user.useGet();
 
-  const usersById = new Map(users?.map(u => [u._?.soul, u]))
+  const usersById = new Map(users?.map((u) => [u._?.soul, u]));
 
   const parsedSchema = parseSchema(getSchema(schema));
 
   for (const field of parsedSchema.fields) {
     const { key, description } = field;
-    const childSchema = z.object({ [key]: getShape(schema)[key] });
+    const childSchema = z.object({ [key]: getShape(schema)?.[key] });
     if (['_'].includes(key)) continue;
 
     const column: ColumnDef<NestedSchemaType<T>> = {
@@ -471,9 +472,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
           className="capitalize text-center"
           column={column}
           title={description || key}
-          onEditColumn={
-            onEditColumn ? () => onEditColumn(key) : undefined
-          }
+          onEditColumn={onEditColumn ? () => onEditColumn(key) : undefined}
           onDeleteColumn={
             onDeleteColumn ? () => onDeleteColumn(key) : undefined
           }
@@ -488,15 +487,15 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
           table.options.meta?.updateData(row.id, value);
         }
 
-        if (field.key === "created_by" && typeof value === "string") {
+        if (field.key === 'created_by' && typeof value === 'string') {
           return (
             <AutoPreview
               field={field}
               key={field.key}
-              value={usersById?.get(value?.substring(1))?.name ?? "-"}
+              value={usersById?.get(value?.substring(1))?.name ?? '-'}
               baseSchema={schema.shape[field.key]}
             />
-          )
+          );
         }
 
         if (readOnly || derivedFieldKeys.has(key)) {
@@ -661,12 +660,12 @@ export function AddDataSuggestions({
       Object.fromEntries(
         othersData.map((d) => [
           d?.title ||
-          d?.name ||
-          d?.label ||
-          d?.text ||
-          d?.displayName ||
-          d?.heading ||
-          '',
+            d?.name ||
+            d?.label ||
+            d?.text ||
+            d?.displayName ||
+            d?.heading ||
+            '',
           d,
         ]),
       ),

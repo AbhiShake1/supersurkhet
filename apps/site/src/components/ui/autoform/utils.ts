@@ -1,31 +1,36 @@
+import type { FieldConfig } from '@autoform/core';
+import type { ReactNode } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { PossibleTabConfig } from '@/components/auto-admin';
 import type { NestedSchemaType, SchemaKeys } from '@/lib/gun/index';
 import type { FieldTypes } from './AutoForm';
-import { buildZodFieldConfig } from './react';
+import type { FieldWrapperProps } from './react';
+import { fieldConfig as zodFieldConfig } from './zod';
+
+export const ZOD_FIELD_CONFIG_SYMBOL = Symbol('GetFieldConfig');
 
 export type DeepNullableRequired<T> = T extends Array<infer U>
   ? Array<DeepNullableRequired<U> | null> | null
   : T extends object
-  ? {
-    [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
-  }
-  : T | null;
+    ? {
+        [K in keyof T]-?: DeepNullableRequired<T[K]> | null;
+      }
+    : T | null;
 
 export type SourceConfigFor<K extends SchemaKeys> = {
   table: K;
   key?: string;
 } & (
-    | {
+  | {
       displayKey: keyof NestedSchemaType<K>;
     }
-    | {
+  | {
       displayKey?: never;
       displayKeys: Array<keyof NestedSchemaType<K>>;
       separator: string;
       suffix?: string;
     }
-  );
+);
 
 export type SourceConfig = {
   [K in SchemaKeys]: SourceConfigFor<K>;
@@ -67,7 +72,7 @@ export type DeriveConfig<
 type FieldConfigCustomDataBase = {
   tabs?: PossibleTabConfig[];
   disableWhenValueIn?: string[];
-  displayKey?: string
+  displayKey?: string;
 } & {
   onValueChange?: (value: string, path: string[], form: UseFormReturn) => any;
   // onValueChange?: LogicExprWithContext<{
@@ -108,17 +113,38 @@ type FieldConfigCustomDataWithoutSource = FieldConfigCustomDataBase & {
 
 export type FieldConfigCustomData =
   | {
-    [K in SchemaKeys]: FieldConfigCustomDataWithSource<K>;
-  }[SchemaKeys]
+      [K in SchemaKeys]: FieldConfigCustomDataWithSource<K>;
+    }[SchemaKeys]
   | {
-    [K in SchemaKeys]: FieldConfigCustomDataWithSources<K>;
-  }[SchemaKeys]
+      [K in SchemaKeys]: FieldConfigCustomDataWithSources<K>;
+    }[SchemaKeys]
   | FieldConfigCustomDataWithoutSource;
 
 export function withSourceCustomData<K extends SchemaKeys>(
   data: FieldConfigCustomDataWithSource<K>,
 ): FieldConfigCustomDataWithSource<K> {
   return data;
+}
+
+export function buildZodFieldConfig<
+  FieldTypes = string,
+  // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+  CustomData = Record<string, any>,
+>(): (
+  config: FieldConfig<
+    ReactNode,
+    FieldTypes,
+    React.ComponentType<FieldWrapperProps>,
+    CustomData
+  >,
+) => ReturnType<typeof zodFieldConfig> {
+  return (config) =>
+    zodFieldConfig<
+      ReactNode,
+      FieldTypes,
+      React.ComponentType<FieldWrapperProps>,
+      CustomData
+    >(config);
 }
 
 export const fieldConfig = buildZodFieldConfig<

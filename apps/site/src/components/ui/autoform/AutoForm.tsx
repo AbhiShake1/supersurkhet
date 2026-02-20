@@ -1,4 +1,3 @@
-import { type ZodObjectOrWrapped, ZodProvider } from '@autoform/zod';
 import React from 'react';
 import { ArrayElementWrapper } from './components/ArrayElementWrapper';
 import { ArrayWrapper } from './components/ArrayWrapper';
@@ -35,6 +34,7 @@ import { UnitField } from './components/UnitField';
 import { UrlField } from './components/UrlField';
 import { type AutoFormUIComponents, AutoForm as BaseAutoForm } from './react';
 import type { AutoFormProps } from './types';
+import { type ZodObjectOrWrapped, ZodProvider } from './zod';
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, 'FieldWrapper'> = {
   Form,

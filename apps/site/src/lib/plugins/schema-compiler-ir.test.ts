@@ -1,7 +1,7 @@
-import { parseSchema } from '@autoform/zod';
 import { describe, expect, it } from 'vitest';
-import type { SchemaDoc } from '@/lib/plugins/types';
+import { parseSchema } from '@/components/ui/autoform/zod';
 import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
+import type { SchemaDoc } from '@/lib/plugins/types';
 
 describe('schema compiler pure JSON IR behavior', () => {
   it('rehydrates fieldConfig derive behavior from JSON IR', () => {

@@ -1,9 +1,12 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import '@/lib/zod/with-derivations';
-import { parseSchema } from '@autoform/zod';
-import { getSchemaDerivations, runDeriveWithRuntimeFormValues } from './with-derivations';
 import { fieldConfig } from '@/components/ui/autoform';
+import { parseSchema } from '@/components/ui/autoform/zod';
+import {
+  getSchemaDerivations,
+  runDeriveWithRuntimeFormValues,
+} from './with-derivations';
 
 type IsAny<T> = 0 extends 1 & T ? true : false;
 

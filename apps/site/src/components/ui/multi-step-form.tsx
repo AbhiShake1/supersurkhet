@@ -1,19 +1,19 @@
 'use client';
 
+import { parseSchema } from '@autoform/core';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeft, ArrowRight, CheckCircle2 } from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import type { z } from 'zod';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { cn } from '@/lib/utils';
+import type { z } from 'zod';
+import { ZodProvider } from '@/components/ui/autoform/zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
-import { parseSchema } from '@autoform/core';
-import { ZodProvider } from '@autoform/zod';
+import { cn } from '@/lib/utils';
 
 interface PossibleStep {
   id: string;
