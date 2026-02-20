@@ -12,12 +12,14 @@ function getFormContent() {
 }
 
 describe('business creation plugin catalog data source', () => {
-  it('uses DB release rows for plugin options without static merge fallback', () => {
+  it('uses DB release rows for AI context and avoids manual catalog browsing UI', () => {
     const content = getFormContent();
 
     expect(content).toContain('api.pluginRelease.useGet');
-    expect(content).toContain('buildPluginCatalog({');
-    expect(content).toContain('getRecommendedSeedReleaseIds');
+    expect(content).toContain('availableReleaseIds');
+    expect(content).not.toContain('buildPluginCatalog({');
+    expect(content).not.toContain('filterBusinessOnboardingCatalog');
+    expect(content).not.toContain('getRecommendedSeedReleaseIds');
     expect(content).not.toContain('mergeMarketplaceReleasesWithSeed');
   });
 });

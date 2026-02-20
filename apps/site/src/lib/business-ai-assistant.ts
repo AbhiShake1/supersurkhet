@@ -53,6 +53,24 @@ export function buildAssistantFallbackResponse({
   prompt,
 }: BuildAssistantFallbackParams): AssistantTurnResponse {
   const normalizedPrompt = prompt.toLowerCase();
+  const hasBusinessSignal =
+    normalizedPrompt.includes('restaurant') ||
+    normalizedPrompt.includes('shop') ||
+    normalizedPrompt.includes('store') ||
+    normalizedPrompt.includes('salon') ||
+    normalizedPrompt.includes('gym') ||
+    normalizedPrompt.includes('clinic') ||
+    normalizedPrompt.includes('service') ||
+    prompt.trim().length > 16;
+  const hasOperationSignal =
+    normalizedPrompt.includes('sell') ||
+    normalizedPrompt.includes('offer') ||
+    normalizedPrompt.includes('book') ||
+    normalizedPrompt.includes('delivery') ||
+    normalizedPrompt.includes('inventory') ||
+    normalizedPrompt.includes('billing') ||
+    normalizedPrompt.includes('manage') ||
+    prompt.trim().length > 32;
 
   const selectedByIntent = availableReleaseIds.filter((releaseId) => {
     if (
@@ -83,43 +101,58 @@ export function buildAssistantFallbackResponse({
 
   const todoItems: TodoItem[] = [
     {
-      id: 'intent',
-      title: 'Capture business intent from conversation',
-      done: prompt.trim().length > 0,
+      id: 'business-kind',
+      title: 'Understand what business you are creating',
+      done: hasBusinessSignal,
     },
     {
-      id: 'suggestions',
-      title: 'Generate plugin suggestions from marketplace',
-      done: suggestedReleaseIds.length > 0,
+      id: 'business-operations',
+      title: 'Capture what the business does day-to-day',
+      done: hasOperationSignal,
     },
     {
-      id: 'selection',
-      title: 'Confirm at least one plugin in install queue',
-      done: selectedReleaseIds.length > 0,
+      id: 'setup-plan',
+      title: 'Draft an optional setup plan for launch',
+      done:
+        hasOperationSignal &&
+        (selectedReleaseIds.length > 0 ||
+          suggestedReleaseIds.length > 0 ||
+          availableReleaseIds.length === 0),
     },
   ];
 
+  let assistantMessage =
+    'What kind of business are you creating? Tell me what it does day-to-day so I can draft the setup.';
+
+  if (hasBusinessSignal && !hasOperationSignal) {
+    assistantMessage =
+      'Great start. What does your team do every day, and what should customers be able to do first?';
+  } else if (hasOperationSignal && suggestedReleaseIds.length > 0) {
+    assistantMessage =
+      'Great, I drafted an optional setup plan based on that workflow. We can refine it before you create the business.';
+  } else if (hasOperationSignal) {
+    assistantMessage =
+      'Understood. I can keep refining your launch setup in chat, even if no exact plugin match is available yet.';
+  }
+
   return {
-    assistantMessage:
-      suggestedReleaseIds.length > 0
-        ? 'I found plugin suggestions for your goals. You can apply them directly and refine further.'
-        : `I could not find an exact plugin match yet. I can propose a scaffold next if you want to continue.`,
+    assistantMessage,
     quickOptions: {
-      questionId: 'business-goal-next-step',
-      prompt: 'Which direction should we optimize next?',
+      questionId: 'business-onboarding-next-step',
+      prompt: 'Choose a quick follow-up or type your own.',
       options: [
-        'Lower costs',
-        'Faster operations',
-        'Higher customer retention',
+        'Describe my daily workflow',
+        'List my top pain points',
+        'Focus on customer experience',
       ],
-      otherOptionLabel: 'Something else (type your own)',
+      otherOptionLabel: 'Type custom follow-up',
     },
     suggestedReleaseIds,
     scaffoldProposal:
       suggestedReleaseIds.length === 0
         ? {
-            title: 'Custom plugin scaffold',
-            reason: 'No exact marketplace plugin matched your current request.',
+            title: 'Custom workflow scaffold',
+            reason: 'No exact marketplace plugin matched this onboarding input.',
           }
         : null,
     todoItems,

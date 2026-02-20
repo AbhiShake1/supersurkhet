@@ -1,40 +1,25 @@
-import type { SchemaKeys } from '@gta/react-hooks';
 import { Link } from '@tanstack/react-router';
 import {
   ChevronDown,
   ChevronUp,
-  FileUp,
   LoaderCircle,
-  Package,
-  Search,
+  SendHorizontal,
   Sparkles,
 } from 'lucide-react';
-import {
-  type ChangeEvent,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useState,
-} from 'react';
+import { type KeyboardEvent, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  type AssistantAuthMode,
+  BUSINESS_ONBOARDING_MODEL_OPTIONS,
+  type BusinessOnboardingProviderId,
+  DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
+  PROVIDER_SUPPORTED_AUTH_MODES,
+  resolveAssistantModelOption,
+  resolveProviderDefaultAuthMode,
+  resolveProviderDefaultBaseUrl,
+} from '@/lib/ai/business-onboarding-models';
 import { api } from '@/lib/api';
 import {
   type AssistantQuickOptionSet,
@@ -42,20 +27,6 @@ import {
   mergeSelectedReleaseIds,
   type TodoItem,
 } from '@/lib/business-ai-assistant';
-import {
-  buildPluginCatalog,
-  type PluginCatalogSort,
-} from '@/lib/plugins/admin-plugin-catalog';
-import {
-  type BusinessOnboardingPluginFilter,
-  businessOnboardingPluginCategoryOptions,
-  filterBusinessOnboardingCatalog,
-} from '@/lib/plugins/business-onboarding-plugin-catalog';
-import { getBusinessDataFieldFromSelectedReleases } from '@/lib/plugins/business-onboarding-prepopulate';
-import {
-  getRecommendedSeedReleaseIds,
-  parseReleaseId,
-} from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import { businessSchema } from '@/lib/schema';
 import { cn } from '@/lib/utils';
@@ -63,14 +34,28 @@ import { getBusinessCreationAssistantTurn } from '@/server-functions/ai';
 import { MapField } from './ui/autoform/components/MapField';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Card, CardHeader, CardTitle } from './ui/card';
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from './ui/collapsible';
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from './ui/form';
+import { Input } from './ui/input';
 import { Progress } from './ui/progress';
-import { Textarea } from './ui/textarea';
+import { ScrollArea } from './ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select';
 
 export const businessCreationSchema = businessSchema
   .pick({
@@ -80,22 +65,10 @@ export const businessCreationSchema = businessSchema
   })
   .extend({
     prepopulateData: z.record(z.string(), z.boolean()).optional(),
-    selectedPluginReleaseIds: z
-      .array(z.string())
-      .min(1, 'Install at least one plugin before creating your business.'),
+    selectedPluginReleaseIds: z.array(z.string()),
   });
 
 export type BusinessCreationValues = z.infer<typeof businessCreationSchema>;
-
-// Define types for pre-population data
-interface PrePopulateItem {
-  '#': string;
-  title: string;
-  price: number;
-  category?: string;
-  description?: string;
-  isActive?: boolean;
-}
 
 interface BusinessCreationFormProps {
   step: number;
@@ -105,9 +78,78 @@ interface BusinessCreationFormProps {
   isSubmitting: boolean;
 }
 
+interface AssistantMessage {
+  role: 'assistant' | 'user';
+  content: string;
+}
+
+interface StepTwoFormProps {
+  form: UseFormReturn<BusinessCreationValues>;
+}
+
+const starterQuickOptions: AssistantQuickOptionSet = {
+  questionId: 'business-basics',
+  prompt: 'Pick a quick start, or type your own in the chip.',
+  options: ['I run a restaurant', 'I run a salon', 'I run a retail shop'],
+  otherOptionLabel: 'Type custom follow-up',
+};
+
+const starterTodoItems: TodoItem[] = [
+  {
+    id: 'business-kind',
+    title: 'Understand what business you are creating',
+    done: false,
+  },
+  {
+    id: 'business-operations',
+    title: 'Capture what the business does day-to-day',
+    done: false,
+  },
+  {
+    id: 'setup-plan',
+    title: 'Draft an optional setup plan for launch',
+    done: false,
+  },
+];
+
+const providerLabelById: Record<BusinessOnboardingProviderId, string> = {
+  openai: 'OpenAI',
+  anthropic: 'Anthropic',
+  google: 'Google Gemini',
+  bedrock: 'AWS Bedrock',
+  openrouter: 'OpenRouter',
+  groq: 'Groq',
+  together: 'Together AI',
+  deepseek: 'DeepSeek',
+  xai: 'xAI',
+  mistral: 'Mistral',
+  requesty: 'Requesty',
+  ollama: 'Ollama',
+  lmstudio: 'LM Studio',
+  'custom-openai-compatible': 'Custom OpenAI-compatible',
+};
+
+const authModeLabelById: Record<AssistantAuthMode, string> = {
+  'api-key': 'API key',
+  'oauth-access-token': 'OAuth access token',
+  'aws-credential-chain': 'AWS credential chain',
+  none: 'No auth',
+};
+
+function toReleaseId(pluginId: string, version: string) {
+  return `${pluginId}@${version}`;
+}
+
+function getReleaseIdTitle(releaseId: string) {
+  const [pluginId, version] = releaseId.split('@');
+  if (!pluginId || !version) return releaseId;
+  return `${pluginId}@${version}`;
+}
+
 export function BusinessCreationForm({
   step,
   form,
+  setStep: _setStep,
   isSubmitting: _isSubmitting,
   createdBusiness,
 }: BusinessCreationFormProps) {
@@ -202,131 +244,318 @@ export function BusinessCreationForm({
 
       {step === 2 && (
         <div className="space-y-6">
-          <PluginInstallSelectionForm form={form} />
-          <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Optional data pre-population
-            </h3>
-            <DataPrepopulateForm form={form} key="prepopulate-form" />
-          </div>
+          <BusinessOnboardingAssistantForm form={form} />
         </div>
       )}
     </div>
   );
 }
 
-interface DataPrepopulateFormProps {
-  form: UseFormReturn<BusinessCreationValues>;
-}
+function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
+  const defaultModelOption = resolveAssistantModelOption(
+    DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
+  );
 
-function toReleaseId(pluginId: string, version: string) {
-  return `${pluginId}@${version}`;
-}
-
-function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
-  const [query, setQuery] = useState('');
-  const [category, setCategory] =
-    useState<BusinessOnboardingPluginFilter>('recommended');
-  const [sortBy, setSortBy] = useState<PluginCatalogSort>('recent');
   const [assistantInput, setAssistantInput] = useState('');
+  const [customQuickPrompt, setCustomQuickPrompt] = useState('');
   const [todoExpanded, setTodoExpanded] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
-  const [uploadedFileNames, setUploadedFileNames] = useState<string[]>([]);
+  const [selectedAssistantProviderId, setSelectedAssistantProviderId] =
+    useState<BusinessOnboardingProviderId>(defaultModelOption.provider);
+  const [selectedAssistantModelId, setSelectedAssistantModelId] = useState(
+    defaultModelOption.id,
+  );
+  const [selectedAssistantAuthMode, setSelectedAssistantAuthMode] =
+    useState<AssistantAuthMode>(() =>
+      resolveProviderDefaultAuthMode(defaultModelOption.provider),
+    );
+  const [providerApiKey, setProviderApiKey] = useState('');
+  const [providerOauthAccessToken, setProviderOauthAccessToken] = useState('');
+  const [providerBaseUrl, setProviderBaseUrl] = useState(
+    resolveProviderDefaultBaseUrl(defaultModelOption.provider) ?? '',
+  );
+  const [providerRegion, setProviderRegion] = useState('');
+  const [providerOrganization, setProviderOrganization] = useState('');
+  const [providerProject, setProviderProject] = useState('');
+  const [isSavingProviderCredential, setIsSavingProviderCredential] =
+    useState(false);
+  const [isCreatingAuthSession, setIsCreatingAuthSession] = useState(false);
+  const [isRevokingAuthSession, setIsRevokingAuthSession] = useState(false);
+  const [providerCredentialSavedAt, setProviderCredentialSavedAt] = useState<
+    number | null
+  >(null);
+  const [authSessionToken, setAuthSessionToken] = useState('');
+  const [authSessionExpiresAt, setAuthSessionExpiresAt] = useState<
+    number | null
+  >(null);
+
   const [assistantMessages, setAssistantMessages] = useState<
-    Array<{ role: 'assistant' | 'user'; content: string }>
+    AssistantMessage[]
   >([
     {
       role: 'assistant',
       content:
-        'Tell me what you want to optimize. I can suggest plugins or propose a scaffold if needed.',
+        'What kind of business are you creating? Tell me what it does day-to-day so I can draft your launch setup.',
     },
   ]);
-  const [quickOptions, setQuickOptions] = useState<AssistantQuickOptionSet>({
-    questionId: 'starter',
-    prompt: 'Which direction should we optimize first?',
-    options: ['Faster operations', 'Higher revenue', 'Better retention'],
-    otherOptionLabel: 'Something else (type your own)',
-  });
-  const [assistantTodoItems, setAssistantTodoItems] = useState<TodoItem[]>([
-    {
-      id: 'intent',
-      title: 'Capture business intent from conversation',
-      done: false,
-    },
-    {
-      id: 'suggestions',
-      title: 'Generate plugin suggestions from marketplace',
-      done: false,
-    },
-    {
-      id: 'selection',
-      title: 'Confirm at least one plugin in install queue',
-      done: false,
-    },
-  ]);
+  const [quickOptions, setQuickOptions] =
+    useState<AssistantQuickOptionSet>(starterQuickOptions);
+  const [assistantTodoItems, setAssistantTodoItems] =
+    useState<TodoItem[]>(starterTodoItems);
 
-  const fileInputId = useId();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const releases = useMemo(
     () => releaseRows as PluginReleaseDoc[],
     [releaseRows],
   );
-
-  const recommendedReleaseIds = useMemo(
-    () => getRecommendedSeedReleaseIds(),
-    [],
-  );
-
-  const recommendedPluginIds = useMemo(
-    () =>
-      new Set(
-        recommendedReleaseIds
-          .map((releaseId) => parseReleaseId(releaseId)?.pluginId)
-          .filter((pluginId): pluginId is string => Boolean(pluginId)),
-      ),
-    [recommendedReleaseIds],
-  );
-
-  const catalog = useMemo(
-    () =>
-      buildPluginCatalog({
-        releases,
-        installs: [],
-        query,
-        filter: 'all',
-        sort: sortBy,
-      }),
-    [releases, query, sortBy],
-  );
-
-  const visibleCatalog = useMemo(
-    () =>
-      filterBusinessOnboardingCatalog({
-        catalog,
-        category,
-        recommendedPluginIds,
-      }),
-    [catalog, category, recommendedPluginIds],
-  );
-
   const availableReleaseIds = useMemo(
     () =>
-      catalog.map((entry) =>
-        toReleaseId(entry.pluginId, entry.latestRelease.version),
-      ),
-    [catalog],
+      releases.map((release) => toReleaseId(release.pluginId, release.version)),
+    [releases],
   );
+  const providerOptions = useMemo(
+    () =>
+      (
+        Object.keys(
+          PROVIDER_SUPPORTED_AUTH_MODES,
+        ) as BusinessOnboardingProviderId[]
+      ).map((providerId) => ({
+        providerId,
+        label: providerLabelById[providerId] ?? providerId,
+      })),
+    [],
+  );
+  const providerModelOptions = useMemo(
+    () =>
+      BUSINESS_ONBOARDING_MODEL_OPTIONS.filter(
+        (option) => option.provider === selectedAssistantProviderId,
+      ),
+    [selectedAssistantProviderId],
+  );
+  const selectedModelOption = useMemo(
+    () =>
+      providerModelOptions.find(
+        (option) => option.id === selectedAssistantModelId,
+      ) ??
+      providerModelOptions[0] ??
+      resolveAssistantModelOption(DEFAULT_BUSINESS_ONBOARDING_MODEL_ID),
+    [providerModelOptions, selectedAssistantModelId],
+  );
+  const supportedAuthModes =
+    PROVIDER_SUPPORTED_AUTH_MODES[selectedAssistantProviderId];
 
   const todoProgress = deriveTodoProgress(assistantTodoItems);
 
-  function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    if (files.length === 0) return;
+  function buildProviderPayload() {
+    const payload: {
+      providerId: BusinessOnboardingProviderId;
+      model: string;
+      authMode: AssistantAuthMode;
+      apiKey?: string;
+      oauthAccessToken?: string;
+      baseURL?: string;
+      region?: string;
+      organization?: string;
+      project?: string;
+    } = {
+      providerId: selectedAssistantProviderId,
+      model: selectedAssistantModelId,
+      authMode: selectedAssistantAuthMode,
+    };
 
-    const nextNames = files.map((file) => file.name);
-    setUploadedFileNames((current) => [...current, ...nextNames]);
-    toast.success(
-      `Attached ${nextNames.length} file${nextNames.length === 1 ? '' : 's'} for AI context.`,
+    const trimmedBaseUrl = providerBaseUrl.trim();
+    if (trimmedBaseUrl.length > 0) {
+      payload.baseURL = trimmedBaseUrl;
+    }
+
+    const trimmedApiKey = providerApiKey.trim();
+    if (selectedAssistantAuthMode === 'api-key' && trimmedApiKey.length > 0) {
+      payload.apiKey = trimmedApiKey;
+    }
+
+    const trimmedOauthAccessToken = providerOauthAccessToken.trim();
+    if (
+      selectedAssistantAuthMode === 'oauth-access-token' &&
+      trimmedOauthAccessToken.length > 0
+    ) {
+      payload.oauthAccessToken = trimmedOauthAccessToken;
+    }
+
+    const trimmedRegion = providerRegion.trim();
+    if (trimmedRegion.length > 0) {
+      payload.region = trimmedRegion;
+    }
+
+    const trimmedOrganization = providerOrganization.trim();
+    if (trimmedOrganization.length > 0) {
+      payload.organization = trimmedOrganization;
+    }
+
+    const trimmedProject = providerProject.trim();
+    if (trimmedProject.length > 0) {
+      payload.project = trimmedProject;
+    }
+
+    return payload;
+  }
+
+  async function readErrorMessage(response: Response) {
+    try {
+      const parsed = (await response.json()) as {
+        error?: {
+          message?: string;
+        };
+      };
+      return parsed.error?.message || `Request failed (${response.status})`;
+    } catch {
+      return `Request failed (${response.status})`;
+    }
+  }
+
+  async function saveProviderCredential() {
+    const payload = buildProviderPayload();
+
+    if (payload.authMode === 'api-key' && !payload.apiKey) {
+      toast.error('Enter an API key before saving.');
+      return;
+    }
+    if (
+      payload.authMode === 'oauth-access-token' &&
+      !payload.oauthAccessToken
+    ) {
+      toast.error('Enter an OAuth access token before saving.');
+      return;
+    }
+
+    setIsSavingProviderCredential(true);
+    try {
+      const response = await fetch('/v1/auth/providers', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        toast.error(await readErrorMessage(response));
+        return;
+      }
+
+      setProviderCredentialSavedAt(Date.now());
+      setAuthSessionToken('');
+      setAuthSessionExpiresAt(null);
+      if (payload.authMode === 'api-key') {
+        setProviderApiKey('');
+      }
+      if (payload.authMode === 'oauth-access-token') {
+        setProviderOauthAccessToken('');
+      }
+      toast.success('Provider credentials saved for this signed-in session.');
+    } catch {
+      toast.error('Failed to save provider credentials.');
+    } finally {
+      setIsSavingProviderCredential(false);
+    }
+  }
+
+  async function createAuthSession() {
+    const payload = buildProviderPayload();
+    const hasInlineSecret = Boolean(payload.apiKey || payload.oauthAccessToken);
+    const requestBody =
+      hasInlineSecret || !providerCredentialSavedAt
+        ? {
+            provider: payload,
+            ttlSeconds: 3600,
+          }
+        : {
+            providerId: payload.providerId,
+            model: payload.model,
+            ttlSeconds: 3600,
+          };
+
+    setIsCreatingAuthSession(true);
+    try {
+      const response = await fetch('/v1/auth/sessions', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        toast.error(await readErrorMessage(response));
+        return;
+      }
+
+      const parsed = (await response.json()) as {
+        sessionToken?: string;
+        expiresAt?: number;
+      };
+      if (!parsed.sessionToken) {
+        toast.error('Session token was not returned.');
+        return;
+      }
+
+      setAuthSessionToken(parsed.sessionToken);
+      setAuthSessionExpiresAt(parsed.expiresAt ?? null);
+      toast.success('Auth session created for OpenAPI-compatible calls.');
+    } catch {
+      toast.error('Failed to create auth session.');
+    } finally {
+      setIsCreatingAuthSession(false);
+    }
+  }
+
+  async function revokeAuthSession() {
+    if (!authSessionToken) return;
+
+    setIsRevokingAuthSession(true);
+    try {
+      const response = await fetch('/v1/auth/sessions', {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          authorization: `Bearer ${authSessionToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        toast.error(await readErrorMessage(response));
+        return;
+      }
+
+      setAuthSessionToken('');
+      setAuthSessionExpiresAt(null);
+      toast.success('Auth session revoked.');
+    } catch {
+      toast.error('Failed to revoke auth session.');
+    } finally {
+      setIsRevokingAuthSession(false);
+    }
+  }
+
+  function handleProviderChange(nextProviderIdValue: string) {
+    const nextProviderId = nextProviderIdValue as BusinessOnboardingProviderId;
+    const nextModelOptions = BUSINESS_ONBOARDING_MODEL_OPTIONS.filter(
+      (option) => option.provider === nextProviderId,
+    );
+
+    setSelectedAssistantProviderId(nextProviderId);
+    setSelectedAssistantAuthMode(
+      resolveProviderDefaultAuthMode(nextProviderId),
+    );
+    setProviderBaseUrl(resolveProviderDefaultBaseUrl(nextProviderId) ?? '');
+    setProviderCredentialSavedAt(null);
+    setAuthSessionToken('');
+    setAuthSessionExpiresAt(null);
+    setSelectedAssistantModelId((currentModel) =>
+      nextModelOptions.some((option) => option.id === currentModel)
+        ? currentModel
+        : (nextModelOptions[0]?.id ?? currentModel),
     );
   }
 
@@ -336,70 +565,40 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
       name="selectedPluginReleaseIds"
       render={({ field }) => {
         const selectedReleaseIds = field.value ?? [];
-        const selectedReleaseIdsSet = new Set(selectedReleaseIds);
-
-        const selectedCards = catalog.filter((entry) =>
-          selectedReleaseIdsSet.has(
-            toReleaseId(entry.pluginId, entry.latestRelease.version),
-          ),
-        );
-
-        function togglePlugin(entry: (typeof catalog)[number]) {
-          const releaseId = toReleaseId(
-            entry.pluginId,
-            entry.latestRelease.version,
-          );
-          if (selectedReleaseIdsSet.has(releaseId)) {
-            field.onChange(
-              selectedReleaseIds.filter((current) => current !== releaseId),
-            );
-            return;
-          }
-          field.onChange([...selectedReleaseIds, releaseId]);
-        }
-
-        function selectRecommended() {
-          const recommendedIds = catalog
-            .filter((entry) => recommendedPluginIds.has(entry.pluginId))
-            .map((entry) =>
-              toReleaseId(entry.pluginId, entry.latestRelease.version),
-            );
-          if (recommendedIds.length === 0) return;
-          field.onChange(
-            recommendedIds.filter(
-              (id, index) => recommendedIds.indexOf(id) === index,
-            ),
-          );
-        }
 
         async function runAssistant(prompt: string) {
           const trimmedPrompt = prompt.trim();
-          if (!trimmedPrompt) return;
+          if (!trimmedPrompt || isThinking) return;
 
+          const nextConversationHistory = [
+            ...assistantMessages,
+            { role: 'user' as const, content: trimmedPrompt },
+          ];
+
+          setAssistantMessages(nextConversationHistory);
+          setAssistantInput('');
+          setCustomQuickPrompt('');
           setIsThinking(true);
-          setAssistantInput(trimmedPrompt);
-          setAssistantMessages((current) => [
-            ...current,
-            { role: 'user', content: trimmedPrompt },
-          ]);
 
           try {
             const response = await getBusinessCreationAssistantTurn({
               data: {
                 userPrompt: trimmedPrompt,
+                model: selectedAssistantModelId,
+                provider: buildProviderPayload(),
+                authSessionToken: authSessionToken || undefined,
                 selectedReleaseIds,
                 availableReleaseIds,
-                conversationHistory: assistantMessages,
+                conversationHistory: nextConversationHistory,
               },
             });
 
-            field.onChange(
-              mergeSelectedReleaseIds(
-                selectedReleaseIds,
-                response.suggestedReleaseIds,
-              ),
+            const mergedReleaseIds = mergeSelectedReleaseIds(
+              selectedReleaseIds,
+              response.suggestedReleaseIds,
             );
 
+            field.onChange(mergedReleaseIds);
             setQuickOptions(response.quickOptions);
             setAssistantTodoItems(response.todoItems);
             setAssistantMessages((current) => [
@@ -407,15 +606,17 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
               { role: 'assistant', content: response.assistantMessage },
             ]);
 
+            const addedCount =
+              mergedReleaseIds.length - selectedReleaseIds.length;
+            if (addedCount > 0) {
+              toast.success(
+                `AI updated your setup plan with ${addedCount} optional plugin${addedCount === 1 ? '' : 's'}.`,
+              );
+            }
+
             if (response.scaffoldProposal) {
               toast.message(
-                `Scaffold proposed: ${response.scaffoldProposal.title}`,
-              );
-            } else if (response.suggestedReleaseIds.length > 0) {
-              toast.success(
-                `Added ${response.suggestedReleaseIds.length} plugin suggestion${
-                  response.suggestedReleaseIds.length === 1 ? '' : 's'
-                } from AI assistant.`,
+                `Drafted scaffold idea: ${response.scaffoldProposal.title}`,
               );
             }
           } catch {
@@ -425,21 +626,287 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
           }
         }
 
+        function handleMessageInputKeyDown(
+          event: KeyboardEvent<HTMLInputElement>,
+        ) {
+          if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+            event.preventDefault();
+            runAssistant(assistantInput);
+            return;
+          }
+
+          if (event.altKey && ['1', '2', '3'].includes(event.key)) {
+            event.preventDefault();
+            const optionIndex = Number(event.key) - 1;
+            const option = quickOptions.options[optionIndex];
+            if (option) runAssistant(option);
+            return;
+          }
+
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            runAssistant(assistantInput);
+          }
+        }
+
         return (
           <FormItem className="space-y-4">
             <div className="rounded-lg border bg-background/60 p-4 space-y-4">
-              <div className="flex items-start justify-between gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-medium">AI Plugin Assistant</p>
+                  <p className="text-sm font-medium">AI Business Onboarding</p>
                   <p className="text-xs text-muted-foreground">
-                    Multistep AI-guided onboarding with keyboard-first controls.
-                    Press Ctrl/Cmd+Enter to send, Alt+1/2/3 for quick options.
+                    Chat-first setup. Press Ctrl/Cmd+Enter to send and Alt+1/2/3
+                    for quick options.
                   </p>
                 </div>
                 <Badge variant="secondary" className="gap-1">
                   <Sparkles className="h-3 w-3" />
-                  Model ready
+                  {selectedModelOption.label}
                 </Badge>
+              </div>
+
+              <div className="grid gap-2">
+                <p className="text-xs text-muted-foreground">
+                  Choose provider auth and model. Credentials can be stored in
+                  an encrypted HttpOnly cookie, then reused without retyping.
+                </p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <FormLabel className="text-xs text-muted-foreground">
+                      AI provider
+                    </FormLabel>
+                    <Select
+                      value={selectedAssistantProviderId}
+                      onValueChange={handleProviderChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Choose provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {providerOptions.map((option) => (
+                          <SelectItem
+                            key={option.providerId}
+                            value={option.providerId}
+                          >
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <FormLabel className="text-xs text-muted-foreground">
+                      AI model
+                    </FormLabel>
+                    {providerModelOptions.length > 0 ? (
+                      <Select
+                        value={selectedAssistantModelId}
+                        onValueChange={(value) => {
+                          setSelectedAssistantModelId(value);
+                          setAuthSessionToken('');
+                          setAuthSessionExpiresAt(null);
+                        }}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Choose model" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {providerModelOptions.map((option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <Input
+                        placeholder="Model id (e.g., gpt-4o-mini)"
+                        value={selectedAssistantModelId}
+                        onChange={(event) =>
+                          setSelectedAssistantModelId(event.target.value)
+                        }
+                      />
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <FormLabel className="text-xs text-muted-foreground">
+                      Auth mode
+                    </FormLabel>
+                    <Select
+                      value={selectedAssistantAuthMode}
+                      onValueChange={(value) => {
+                        setSelectedAssistantAuthMode(
+                          value as AssistantAuthMode,
+                        );
+                        setProviderCredentialSavedAt(null);
+                        setAuthSessionToken('');
+                        setAuthSessionExpiresAt(null);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Choose auth mode" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {supportedAuthModes.map((authMode) => (
+                          <SelectItem key={authMode} value={authMode}>
+                            {authModeLabelById[authMode]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <FormLabel className="text-xs text-muted-foreground">
+                      Base URL (optional override)
+                    </FormLabel>
+                    <Input
+                      placeholder="https://api.openai.com/v1"
+                      value={providerBaseUrl}
+                      onChange={(event) =>
+                        setProviderBaseUrl(event.target.value)
+                      }
+                    />
+                  </div>
+
+                  {selectedAssistantAuthMode === 'api-key' && (
+                    <div className="space-y-1 md:col-span-2">
+                      <FormLabel className="text-xs text-muted-foreground">
+                        API key
+                      </FormLabel>
+                      <Input
+                        type="password"
+                        placeholder="sk-..."
+                        value={providerApiKey}
+                        onChange={(event) =>
+                          setProviderApiKey(event.target.value)
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {selectedAssistantAuthMode === 'oauth-access-token' && (
+                    <div className="space-y-1 md:col-span-2">
+                      <FormLabel className="text-xs text-muted-foreground">
+                        OAuth access token
+                      </FormLabel>
+                      <Input
+                        type="password"
+                        placeholder="Bearer token"
+                        value={providerOauthAccessToken}
+                        onChange={(event) =>
+                          setProviderOauthAccessToken(event.target.value)
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {selectedAssistantProviderId === 'bedrock' && (
+                    <div className="space-y-1">
+                      <FormLabel className="text-xs text-muted-foreground">
+                        AWS region
+                      </FormLabel>
+                      <Input
+                        placeholder="us-east-1"
+                        value={providerRegion}
+                        onChange={(event) =>
+                          setProviderRegion(event.target.value)
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {selectedAssistantProviderId === 'openai' && (
+                    <>
+                      <div className="space-y-1">
+                        <FormLabel className="text-xs text-muted-foreground">
+                          Organization (optional)
+                        </FormLabel>
+                        <Input
+                          placeholder="org_..."
+                          value={providerOrganization}
+                          onChange={(event) =>
+                            setProviderOrganization(event.target.value)
+                          }
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <FormLabel className="text-xs text-muted-foreground">
+                          Project (optional)
+                        </FormLabel>
+                        <Input
+                          placeholder="proj_..."
+                          value={providerProject}
+                          onChange={(event) =>
+                            setProviderProject(event.target.value)
+                          }
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={saveProviderCredential}
+                    disabled={isSavingProviderCredential}
+                  >
+                    {isSavingProviderCredential
+                      ? 'Saving...'
+                      : 'Save credential'}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={createAuthSession}
+                    disabled={isCreatingAuthSession}
+                  >
+                    {isCreatingAuthSession
+                      ? 'Creating session...'
+                      : 'Create auth session'}
+                  </Button>
+                  {authSessionToken && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={revokeAuthSession}
+                      disabled={isRevokingAuthSession}
+                    >
+                      {isRevokingAuthSession
+                        ? 'Revoking...'
+                        : 'Revoke auth session'}
+                    </Button>
+                  )}
+                  {providerCredentialSavedAt && (
+                    <Badge variant="outline" className="text-xs">
+                      Credential saved
+                    </Badge>
+                  )}
+                  {authSessionToken && (
+                    <Badge variant="secondary" className="text-xs">
+                      Session token active
+                    </Badge>
+                  )}
+                </div>
+                {authSessionToken && (
+                  <p className="text-[11px] text-muted-foreground break-all">
+                    Session token: {authSessionToken.slice(0, 18)}...
+                    {authSessionToken.slice(-10)}
+                    {authSessionExpiresAt
+                      ? ` (expires at ${new Date(
+                          authSessionExpiresAt * 1000,
+                        ).toLocaleTimeString()})`
+                      : ''}
+                  </p>
+                )}
               </div>
 
               <Collapsible open={todoExpanded} onOpenChange={setTodoExpanded}>
@@ -447,7 +914,7 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Agent progress
+                        Assistant progress
                       </p>
                       <p className="text-sm font-medium truncate">
                         {todoProgress === 100
@@ -505,296 +972,125 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                       {option}
                     </Button>
                   ))}
-                  <Badge variant="outline" className="text-xs py-1.5 px-2">
-                    {quickOptions.otherOptionLabel}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="max-h-40 overflow-y-auto rounded-md border bg-muted/10 p-2 space-y-2">
-                {assistantMessages.slice(-6).map((message, index) => (
-                  <div
-                    key={`${message.role}-${index}`}
-                    className={cn(
-                      'text-xs rounded px-2 py-1',
-                      message.role === 'assistant'
-                        ? 'bg-muted text-foreground'
-                        : 'bg-primary/10 text-primary-foreground',
-                    )}
-                  >
-                    <span className="font-medium mr-1">{message.role}:</span>
-                    {message.content}
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-2">
-                <Textarea
-                  value={assistantInput}
-                  onChange={(event) => setAssistantInput(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (
-                      (event.metaKey || event.ctrlKey) &&
-                      event.key === 'Enter'
-                    ) {
-                      event.preventDefault();
-                      runAssistant(assistantInput);
-                      return;
-                    }
-
-                    if (event.altKey && ['1', '2', '3'].includes(event.key)) {
-                      event.preventDefault();
-                      const optionIndex = Number(event.key) - 1;
-                      const option = quickOptions.options[optionIndex];
-                      if (option) {
-                        runAssistant(option);
-                      }
-                    }
-                  }}
-                  placeholder="Tell AI what your business needs. Example: We need inventory alerts, recurring billing, and loyalty rewards."
-                  className="min-h-24"
-                />
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    onClick={() => runAssistant(assistantInput)}
-                    disabled={isThinking || assistantInput.trim().length === 0}
-                    className="gap-2"
-                  >
-                    {isThinking ? (
-                      <>
-                        <LoaderCircle className="h-4 w-4 animate-spin" />
-                        Thinking...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="h-4 w-4" />
-                        Suggest plugins
-                      </>
-                    )}
-                  </Button>
-                  <label className="inline-flex" htmlFor={fileInputId}>
+                  <div className="inline-flex h-8 items-center gap-1 rounded-full border bg-background px-2">
                     <Input
-                      id={fileInputId}
-                      type="file"
-                      placeholder=""
-                      className="sr-only"
-                      multiple
-                      onChange={handleFileUpload}
+                      value={customQuickPrompt}
+                      onChange={(event) =>
+                        setCustomQuickPrompt(event.target.value)
+                      }
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          runAssistant(customQuickPrompt);
+                        }
+                      }}
+                      placeholder={quickOptions.otherOptionLabel}
+                      className="h-6 w-40 border-0 bg-transparent px-1 text-xs focus-visible:ring-0"
                     />
                     <Button
                       type="button"
-                      variant="outline"
-                      className="gap-2"
-                      asChild
+                      variant="ghost"
+                      size="icon"
+                      className="size-6"
+                      onClick={() => runAssistant(customQuickPrompt)}
+                      disabled={
+                        customQuickPrompt.trim().length === 0 || isThinking
+                      }
                     >
-                      <span>
-                        <FileUp className="h-4 w-4" />
-                        Attach files
-                      </span>
+                      <SendHorizontal className="size-3" />
                     </Button>
-                  </label>
-                  {uploadedFileNames.slice(-2).map((fileName) => (
-                    <Badge key={fileName} variant="secondary">
-                      {fileName}
-                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              <ScrollArea className="h-52 rounded-md border bg-muted/10 p-3">
+                <div className="space-y-2">
+                  {assistantMessages.slice(-12).map((message, index) => (
+                    <div
+                      key={`${message.role}-${index}`}
+                      className={cn(
+                        'flex',
+                        message.role === 'assistant'
+                          ? 'justify-start'
+                          : 'justify-end',
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          'max-w-[90%] rounded-2xl px-3 py-2 text-xs',
+                          message.role === 'assistant'
+                            ? 'bg-muted text-foreground'
+                            : 'bg-primary text-primary-foreground',
+                        )}
+                      >
+                        {message.content}
+                      </div>
+                    </div>
                   ))}
+                  {isThinking && (
+                    <div className="flex justify-start">
+                      <div className="inline-flex items-center gap-2 rounded-2xl bg-muted px-3 py-2 text-xs text-muted-foreground">
+                        <LoaderCircle className="h-3 w-3 animate-spin" />
+                        Thinking...
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </ScrollArea>
 
-              <div className="rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">
-                <strong className="text-foreground">
-                  Proposed plugin scaffold if needed:
-                </strong>{' '}
-                If no exact plugin exists, the assistant can draft a plugin
-                proposal and add it to the business creation payload for review.
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <FormLabel className="text-base">
-                    Plugin stack (required)
-                  </FormLabel>
-                  <p className="text-sm text-muted-foreground">
-                    Choose at least one plugin to install during business
-                    creation.
-                  </p>
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  value={assistantInput}
+                  onChange={(event) => setAssistantInput(event.target.value)}
+                  onKeyDown={handleMessageInputKeyDown}
+                  placeholder="Describe your business and what it does."
+                />
                 <Button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={selectRecommended}
+                  className="gap-2"
+                  onClick={() => runAssistant(assistantInput)}
+                  disabled={isThinking || assistantInput.trim().length === 0}
                 >
-                  <Sparkles className="mr-1 h-4 w-4" /> Use recommended stack
+                  <Sparkles className="h-4 w-4" />
+                  Send
                 </Button>
               </div>
 
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div className="relative md:col-span-2 xl:col-span-2">
-                  <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={query}
-                    onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search plugins"
-                    className="pl-8"
-                  />
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {businessOnboardingPluginCategoryOptions.map((option) => (
-                    <Button
-                      key={option.value}
-                      size="sm"
-                      type="button"
-                      variant={
-                        category === option.value ? 'default' : 'outline'
-                      }
-                      onClick={() => setCategory(option.value)}
-                    >
-                      {option.label}
-                    </Button>
-                  ))}
-                </div>
-
-                <Select
-                  value={sortBy}
-                  onValueChange={(value) =>
-                    setSortBy(value as PluginCatalogSort)
-                  }
-                >
-                  <SelectTrigger className="w-full md:w-[180px]">
-                    <SelectValue placeholder="Sort plugins" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="recent">Most recent</SelectItem>
-                    <SelectItem value="name">Name</SelectItem>
-                    <SelectItem value="capabilities">Capabilities</SelectItem>
-                    <SelectItem value="versions">Version count</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {selectedCards.length > 0 && (
-                <div className="rounded-lg border bg-background/70 p-3">
-                  <div className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-                    Install queue ({selectedCards.length})
-                  </div>
+              <div className="rounded-md border bg-muted/20 p-3 space-y-2">
+                <p className="text-xs font-medium text-foreground">
+                  AI-selected setup plan (optional)
+                </p>
+                {selectedReleaseIds.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    The assistant will add optional plugins only when needed.
+                  </p>
+                ) : (
                   <div className="flex flex-wrap gap-2">
-                    {selectedCards.map((entry) => {
-                      const releaseId = toReleaseId(
-                        entry.pluginId,
-                        entry.latestRelease.version,
-                      );
-                      return (
-                        <Badge
-                          key={releaseId}
-                          variant="outline"
-                          className="gap-2 py-1"
-                        >
-                          <Package className="size-3" />
-                          {entry.title}@{entry.latestRelease.version}
-                          <button
-                            type="button"
-                            className="rounded-sm px-1 text-muted-foreground hover:bg-muted"
-                            onClick={() =>
-                              field.onChange(
-                                selectedReleaseIds.filter(
-                                  (current) => current !== releaseId,
-                                ),
-                              )
-                            }
-                          >
-                            x
-                          </button>
-                        </Badge>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {visibleCatalog.length === 0 ? (
-                <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                  No plugins matched this filter.
-                </div>
-              ) : (
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                  {visibleCatalog.map((entry) => {
-                    const releaseId = toReleaseId(
-                      entry.pluginId,
-                      entry.latestRelease.version,
-                    );
-                    const isSelected = selectedReleaseIdsSet.has(releaseId);
-                    const isRecommended = recommendedPluginIds.has(
-                      entry.pluginId,
-                    );
-
-                    return (
-                      <Card
+                    {selectedReleaseIds.map((releaseId) => (
+                      <Badge
                         key={releaseId}
-                        className={cn(
-                          'border-border/70 py-4 gap-3 transition-colors',
-                          isSelected && 'border-primary bg-primary/5',
-                        )}
+                        variant="outline"
+                        className="gap-2 py-1"
                       >
-                        <CardHeader className="px-4">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="space-y-1">
-                              <CardTitle className="text-sm leading-tight">
-                                {entry.title}
-                              </CardTitle>
-                              <p className="text-xs text-muted-foreground">
-                                {entry.pluginId}
-                              </p>
-                            </div>
-                            <Badge variant="outline">
-                              {entry.latestRelease.version}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <div className="px-4 space-y-3">
-                          <p className="text-xs text-muted-foreground min-h-10">
-                            {entry.description || 'No description available.'}
-                          </p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {entry.capabilities
-                              .slice(0, 3)
-                              .map((capability) => (
-                                <Badge
-                                  key={capability}
-                                  variant="secondary"
-                                  className="text-[10px]"
-                                >
-                                  {capability}
-                                </Badge>
-                              ))}
-                            {entry.capabilityCount > 3 && (
-                              <Badge variant="outline" className="text-[10px]">
-                                +{entry.capabilityCount - 3}
-                              </Badge>
-                            )}
-                            {isRecommended && (
-                              <Badge className="text-[10px]">Recommended</Badge>
-                            )}
-                          </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            className="w-full"
-                            variant={isSelected ? 'secondary' : 'default'}
-                            onClick={() => togglePlugin(entry)}
-                          >
-                            {isSelected ? 'Remove from queue' : 'Add to queue'}
-                          </Button>
-                        </div>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
+                        {getReleaseIdTitle(releaseId)}
+                        <button
+                          type="button"
+                          className="rounded-sm px-1 text-muted-foreground hover:bg-muted"
+                          onClick={() =>
+                            field.onChange(
+                              selectedReleaseIds.filter(
+                                (current) => current !== releaseId,
+                              ),
+                            )
+                          }
+                        >
+                          x
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <FormMessage />
           </FormItem>
@@ -802,226 +1098,4 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
       }}
     />
   );
-}
-
-function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
-  const selectedReleaseIds = form.watch('selectedPluginReleaseIds') ?? [];
-  const { data: releaseRows = [] } = api.pluginRelease.useGet();
-  const releases = useMemo(
-    () => releaseRows as PluginReleaseDoc[],
-    [releaseRows],
-  );
-  const prepopulateField = useMemo(
-    () =>
-      getBusinessDataFieldFromSelectedReleases({
-        selectedReleaseIds,
-        releases,
-      }),
-    [selectedReleaseIds, releases],
-  );
-  const { data: allItems = [], isLoading } = useBusinessData(
-    prepopulateField ?? 'product',
-    Boolean(prepopulateField),
-  );
-
-  // Transform data as specified in the requirements
-  const transformedData = useMemo(
-    () =>
-      allItems
-        .flatMap((row) => {
-          const rowRecord = row as Record<string, unknown> & {
-            _?: { soul?: string };
-          };
-          const business = rowRecord._?.soul;
-          return Object.values(rowRecord).map((item) =>
-            !item || typeof item !== 'object'
-              ? null
-              : ({
-                  ...(item as PrePopulateItem),
-                  business,
-                } as PrePopulateItem & {
-                  business?: string;
-                }),
-          );
-        })
-        .filter(
-          (
-            item,
-          ): item is PrePopulateItem & {
-            business?: string;
-          } => item !== null && typeof item === 'object' && !('soul' in item),
-        ),
-    [allItems],
-  );
-
-  // Filter to items and calculate occurrence percentage
-  const similarItems = useMemo(() => {
-    const itemsByTitle: Record<
-      string,
-      {
-        items: Array<
-          PrePopulateItem & {
-            business?: string;
-          }
-        >;
-        businesses: string[];
-      }
-    > = {};
-    const totalBusinessIds = new Set<string>();
-
-    for (const item of transformedData) {
-      const title = item?.title?.toLowerCase();
-      if (!title) continue;
-      const businessId =
-        typeof item.business === 'string' ? item.business : undefined;
-
-      if (!itemsByTitle[title]) {
-        itemsByTitle[title] = { items: [], businesses: [] };
-      }
-
-      if (businessId) {
-        totalBusinessIds.add(businessId);
-      }
-
-      if (businessId && !itemsByTitle[title].businesses.includes(businessId)) {
-        itemsByTitle[title].businesses.push(businessId);
-      }
-      itemsByTitle[title].items.push(item);
-    }
-
-    const totalBusinesses = Math.max(totalBusinessIds.size, 1);
-
-    return Object.values(itemsByTitle)
-      .map((data) => {
-        // Use the first occurrence of the item as the base to show in the UI
-        const commonItem = data.items[0];
-        const occurrencePercentage =
-          (data.businesses.length / totalBusinesses) * 100;
-        return {
-          ...commonItem,
-          occurrencePercentage,
-          isPreselected: occurrencePercentage >= 40,
-        };
-      })
-      .sort((a, b) => b.occurrencePercentage - a.occurrencePercentage) // Sort by most common first
-      .filter((item) => item.title);
-  }, [transformedData]);
-
-  const newSimilarItemsValue = useMemo(
-    () =>
-      similarItems.reduce(
-        (acc, item) => ({
-          // biome-ignore lint/performance/noAccumulatingSpread: lint debt cleanup
-          ...acc,
-          [item['#']]: item.isPreselected,
-        }),
-        {} as Record<string, boolean>,
-      ),
-    [similarItems],
-  );
-
-  useLayoutEffect(() => {
-    for (const [key, val] of Object.entries(newSimilarItemsValue)) {
-      form.setValue(`prepopulateData.${key}`, val, {
-        shouldDirty: true,
-        shouldTouch: true,
-        shouldValidate: true,
-      });
-    }
-  }, [newSimilarItemsValue, form.setValue]);
-
-  if (isLoading) {
-    return <div>Loading pre-population data...</div>;
-  }
-
-  if (!prepopulateField) {
-    return (
-      <div>
-        Select a plugin that includes a Products or Menu Items table to enable
-        pre-population suggestions.
-      </div>
-    );
-  }
-
-  if (!similarItems.length) {
-    return <div>No similar data found for pre-population.</div>;
-  }
-
-  return (
-    <div
-      className="grid grid-cols-1 md:grid-cols-2 gap-3"
-      key={`${prepopulateField ?? 'none'}-similar-items`}
-    >
-      {similarItems.map(
-        (item) =>
-          item['#'] && (
-            <FormField
-              key={item['#']}
-              control={form.control}
-              name={`prepopulateData.${item['#']}`}
-              render={({ field }) => {
-                const value = field.value;
-
-                return (
-                  <FormItem
-                    className={cn(
-                      'flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 cursor-pointer transition-colors',
-                      value && 'border-primary/50 bg-primary/5',
-                    )}
-                    onClick={(e) => {
-                      if (
-                        !(e.target as HTMLElement).closest(
-                          'input[type="checkbox"]',
-                        )
-                      ) {
-                        field.onChange(!value);
-                      }
-                    }}
-                  >
-                    <FormControl>
-                      <Checkbox
-                        checked={value}
-                        onCheckedChange={(checked) => field.onChange(!!checked)}
-                      />
-                    </FormControl>
-
-                    <div className="space-y-1 leading-none flex-1">
-                      <span className="capitalize text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        {item.title}
-                      </span>
-
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {item.description}
-                        </p>
-                      )}
-
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Available at{' '}
-                        <span className="font-semibold text-md">
-                          {item.occurrencePercentage.toFixed(0)}%
-                        </span>{' '}
-                        of similar businesses
-                      </p>
-
-                      {item.isPreselected && (
-                        <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary mt-1">
-                          Recommended
-                        </span>
-                      )}
-                    </div>
-                  </FormItem>
-                );
-              }}
-            />
-          ),
-      )}
-    </div>
-  );
-}
-
-function useBusinessData(field: SchemaKeys, enabled = true) {
-  return api[field].useGet({
-    queryOptions: { enabled },
-  });
 }

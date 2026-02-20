@@ -8,11 +8,14 @@ const filePath = resolve(
 );
 
 describe('business creation plugin selection label contract', () => {
-  it('uses queue selection labels instead of in-progress install labels', () => {
+  it('keeps step 2 assistant-first and removes required manual queue labels', () => {
     const source = readFileSync(filePath, 'utf8');
 
-    expect(source).toContain('Add to queue');
-    expect(source).toContain('Remove from queue');
+    expect(source).toContain('AI-selected setup plan (optional)');
+    expect(source).not.toContain('Plugin stack (required)');
+    expect(source).not.toContain('Use recommended stack');
+    expect(source).not.toContain('Add to queue');
+    expect(source).not.toContain('Remove from queue');
     expect(source).not.toContain('Installing plugin');
     expect(source).not.toContain('Install plugin');
   });

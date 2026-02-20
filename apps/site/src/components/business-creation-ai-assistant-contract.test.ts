@@ -8,14 +8,21 @@ const filePath = resolve(
 );
 
 describe('business creation AI assistant contract', () => {
-  it('renders ai-sdk driven multistep assistant with keyboard UX hooks', () => {
+  it('renders ai-first onboarding chat with provider auth controls and inline custom chip', () => {
     const source = readFileSync(filePath, 'utf8');
 
     expect(source).toContain('getBusinessCreationAssistantTurn');
+    expect(source).toContain('AI Business Onboarding');
+    expect(source).toContain('selectedAssistantProviderId');
+    expect(source).toContain('selectedAssistantModelId');
+    expect(source).toContain('selectedAssistantAuthMode');
+    expect(source).toContain('customQuickPrompt');
+    expect(source).toContain('Save credential');
+    expect(source).toContain('Create auth session');
+    expect(source).toContain('What kind of business are you creating?');
     expect(source).toContain('Ctrl/Cmd+Enter');
-    expect(source).toContain('Alt+1/2/3');
     expect(source).toContain('quickOptions');
-    expect(source).toContain('Attach files');
+    expect(source).toContain('AI-selected setup plan (optional)');
     expect(source).toContain('onKeyDown');
   });
 });

@@ -1,6 +1,22 @@
 import { createServerFn } from '@tanstack/react-start';
+import { getCookie } from '@tanstack/react-start/server';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import {
+  DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
+  resolveAssistantModelOption,
+} from '@/lib/ai/business-onboarding-models';
+import {
+  type AssistantProviderConfig,
+  assistantProviderConfigSchema,
+  createAssistantLanguageModel,
+  normalizeAssistantProviderConfig,
+} from '@/lib/ai/business-onboarding-provider-runtime';
+import {
+  AI_PROVIDER_STORE_COOKIE_NAME,
+  decodeAiAuthSessionToken,
+  decryptProviderCredentialStore,
+} from '@/lib/ai/provider-auth-store';
 import { buildAssistantFallbackResponse } from '@/lib/business-ai-assistant';
 
 const assistantResponseSchema = z.object({
@@ -29,7 +45,9 @@ const assistantResponseSchema = z.object({
 
 const assistantTurnInputSchema = z.object({
   providerApiKey: z.string().optional(),
-  model: z.string().default('gpt-4o-mini'),
+  model: z.string().default(DEFAULT_BUSINESS_ONBOARDING_MODEL_ID),
+  provider: assistantProviderConfigSchema.optional(),
+  authSessionToken: z.string().optional(),
   userPrompt: z.string(),
   selectedReleaseIds: z.array(z.string()).default([]),
   availableReleaseIds: z.array(z.string()).default([]),
@@ -54,19 +72,50 @@ export const getBusinessCreationAssistantTurn = createServerFn({
       prompt: data.userPrompt,
     });
 
-    const apiKey = data.providerApiKey || process.env.OPENAI_API_KEY;
-    if (!apiKey) return fallback;
+    const sessionProvider = decodeAiAuthSessionToken(data.authSessionToken, {
+      now: Math.floor(Date.now() / 1000),
+    })?.provider;
+    const legacyModelOption = resolveAssistantModelOption(data.model);
+    const provider = normalizeAssistantProviderConfig(
+      data.provider ??
+        sessionProvider ?? {
+          providerId: legacyModelOption.provider,
+          model: data.model,
+          apiKey: data.providerApiKey,
+        },
+      data.model,
+    );
+
+    const providerStore = decryptProviderCredentialStore(
+      getCookie(AI_PROVIDER_STORE_COOKIE_NAME),
+    );
+    const storedCredential = providerStore[provider.providerId];
+    const providerFromStore: AssistantProviderConfig | null =
+      storedCredential &&
+      !provider.apiKey &&
+      !provider.oauthAccessToken &&
+      !sessionProvider
+        ? normalizeAssistantProviderConfig(
+            {
+              ...storedCredential,
+              ...provider,
+              model: provider.model || storedCredential.model,
+            },
+            provider.model,
+          )
+        : null;
+
+    const normalizedProvider =
+      !provider.apiKey && data.providerApiKey
+        ? {
+            ...(providerFromStore ?? provider),
+            apiKey: data.providerApiKey.trim() || undefined,
+          }
+        : (providerFromStore ?? provider);
 
     try {
-      const moduleName = '@ai-sdk/openai';
-      const openaiModule = (await import(moduleName)) as {
-        createOpenAI?: (config: {
-          apiKey: string;
-        }) => (model: string) => unknown;
-      };
-
-      if (!openaiModule.createOpenAI) return fallback;
-      const openai = openaiModule.createOpenAI({ apiKey });
+      const model = createAssistantLanguageModel(normalizedProvider);
+      if (!model) return fallback;
 
       const contextHistory = data.conversationHistory
         .slice(-8)
@@ -74,19 +123,22 @@ export const getBusinessCreationAssistantTurn = createServerFn({
         .join('\n');
 
       const { object } = await generateObject({
-        // biome-ignore lint/suspicious/noExplicitAny: dynamic provider model contract
-        model: openai(data.model) as any,
+        // biome-ignore lint/suspicious/noExplicitAny: ai sdk generic model interface
+        model: model as any,
         schema: assistantResponseSchema,
         prompt: [
-          'You are a business onboarding AI assistant for plugin recommendations.',
-          'Return JSON only matching the schema.',
-          'Use multi-step questioning and keep options keyboard-friendly.',
-          'The onboarding flow is plugin-first (no fixed business-type presets).',
+          'You are a business onboarding assistant inside a business creation wizard.',
+          'Focus first on understanding what business the user runs and what it does daily.',
+          'Ask concise follow-up questions, one step at a time, and keep the tone conversational.',
+          'Do not ask users to manually browse or install plugins. If relevant, suggest release IDs directly.',
+          'Return strict JSON only, matching the schema.',
+          `Provider selected: ${normalizedProvider.providerId}`,
+          `Model selected: ${normalizedProvider.model}`,
           `Available release IDs (choose only from these): ${data.availableReleaseIds.join(', ') || 'none'}`,
           `Already selected release IDs: ${data.selectedReleaseIds.join(', ') || 'none'}`,
           `Conversation history:\n${contextHistory || 'none'}`,
           `Latest user message: ${data.userPrompt}`,
-          'If no exact plugin exists, provide scaffoldProposal.',
+          'Set scaffoldProposal only when no available release IDs match the request.',
         ].join('\n\n'),
       });
 

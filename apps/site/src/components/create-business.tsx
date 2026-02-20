@@ -42,9 +42,9 @@ const stepContent = {
     description: 'What is your business and what does it do?',
   },
   2: {
-    title: 'Install Your Plugin Stack.',
+    title: 'AI Onboarding Setup.',
     description:
-      'Pick your required plugins first, then optionally pre-populate data from similar businesses.',
+      'Describe your business in chat and let AI draft your optional setup plan.',
   },
   3: {
     title: 'Congratulations!',
@@ -286,10 +286,7 @@ export function CreateBusiness({
               <Button
                 type="submit"
                 form="business-creation-form"
-                disabled={
-                  isPending ||
-                  (form.watch('selectedPluginReleaseIds')?.length ?? 0) === 0
-                }
+                disabled={isPending}
               >
                 {isPending ? 'Creating...' : 'Create Business'}
               </Button>
