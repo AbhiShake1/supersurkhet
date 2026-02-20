@@ -1,121 +1,104 @@
-// import { google } from "@ai-sdk/google";
 import { createServerFn } from '@tanstack/react-start';
-// import { convertToModelMessages, streamText } from "ai";
-import z from 'zod';
-// import { createStreamableValue } from "@ai-sdk/rsc"
+import { generateObject } from 'ai';
+import { z } from 'zod';
+import { buildAssistantFallbackResponse } from '@/lib/business-ai-assistant';
 
-export const getBuilderChat = createServerFn({ method: 'POST' })
-  .inputValidator(
+const assistantResponseSchema = z.object({
+  assistantMessage: z.string(),
+  quickOptions: z.object({
+    questionId: z.string(),
+    prompt: z.string(),
+    options: z.tuple([z.string(), z.string(), z.string()]),
+    otherOptionLabel: z.string(),
+  }),
+  suggestedReleaseIds: z.array(z.string()),
+  scaffoldProposal: z
+    .object({
+      title: z.string(),
+      reason: z.string(),
+    })
+    .nullable(),
+  todoItems: z.array(
     z.object({
-      messages: z.array(z.string()),
-      model: z.string().optional(),
-      webSearch: z.boolean().optional(),
-      businessName: z.string().optional(),
-      businessType: z.string().optional(),
-      businessDescription: z.string().optional(),
+      id: z.string(),
+      title: z.string(),
+      done: z.boolean(),
     }),
-  )
-  .handler(
-    async ({
-      data: {
-        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-        messages,
-        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-        model = 'gemini-2.5-flash',
-        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-        webSearch = false,
-        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-        businessName = '',
-        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-        businessType = '',
-        // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-        businessDescription = '',
-      },
-    }) => {
-      //     try {
-      //       const apiKey = process.env.GEMINI_API_KEY;
-      //       if (!apiKey) {
-      //         throw new Error('GEMINI_API_KEY environment variable is required');
-      //       }
-      //
-      //       const aiModel = google("gemini-2.0-flash-lite");
-      //
-      //       const systemPrompt = `You are an expert UI developer working with a UI builder system. Your task is to generate UI configurations in JSON format for the UI builder.
-      //
-      // # Business Context:
-      // - Business Name: ${businessName}
-      // - Business Type: ${businessType || 'Not specified'}
-      // - Business Description: ${businessDescription || 'Not specified'}
-      //
-      // # Component Rules:
-      // - Always include id, name, type, props, children
-      // - Root must be a JSON array
-      // - Output JSON only (no prose)
-      //
-      // # Design Guidelines:
-      // - Mobile-first
-      // - Accessible
-      // - Clean, modern UI
-      // - Tailwind-based spacing and layout
-      // - Industry-aligned design (${businessType || 'unspecified'})
-      // `;
-      //       (async () => {
-      //         const { textStream } = streamText({
-      //           model: aiModel,
-      //           prompt: prompt,
-      //           messages: aiMessages,
-      //         });
-      //
-      //         for await (const delta of textStream) {
-      //           // 3. Update the value as it streams
-      //           stream.update(delta);
-      //         }
-      //
-      //         // 4. Mark it as finished
-      //         stream.done();
-      //       })();
-      //
-      //       const streamable = createStreamableValue()
-      //       const aiMessages = [
-      //         { role: 'system', content: systemPrompt },
-      //         ...convertToModelMessages(messages),
-      //       ];
-      //
-      //       const result = streamText({
-      //         model: aiModel,
-      //         messages: aiMessages,
-      //         maxTokens: 2048,
-      //       });
-      //
-      //       for await (const chunk of result?.fullStream) {
-      //         streamable.append(chunk)
-      //       }
-      //
-      //       streamable.done()
-      //
-      //       return streamable
-      //
-      //       // return result.toDataStreamResponse({
-      //       //   sendUsage: true,
-      //       //   sendReasoning: true,
-      //       //   sendTools: true,
-      //       //   sendImages: true,
-      //       // });
-      //     } catch (error) {
-      //       console.error('Error in builder chat:', error);
-      //
-      //       // return new Response(
-      //       //   JSON.stringify({
-      //       //     error:
-      //       //       error instanceof Error
-      //       //         ? error.message
-      //       //         : 'Internal server error',
-      //       //   }),
-      //       //   {
-      //       //     status: 500,
-      //       //     headers: { 'Content-Type': 'application/json' },
-      //       //   }
-      //       // );
-      //     }
-    },
-  );
+  ),
+});
+
+const assistantTurnInputSchema = z.object({
+  providerApiKey: z.string().optional(),
+  model: z.string().default('gpt-4o-mini'),
+  businessType: z.string(),
+  userPrompt: z.string(),
+  selectedReleaseIds: z.array(z.string()).default([]),
+  availableReleaseIds: z.array(z.string()).default([]),
+  conversationHistory: z
+    .array(
+      z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string(),
+      }),
+    )
+    .default([]),
+});
+
+export const getBusinessCreationAssistantTurn = createServerFn({
+  method: 'POST',
+})
+  .inputValidator(assistantTurnInputSchema)
+  .handler(async ({ data }) => {
+    const fallback = buildAssistantFallbackResponse({
+      businessType: data.businessType,
+      selectedReleaseIds: data.selectedReleaseIds,
+      availableReleaseIds: data.availableReleaseIds,
+      prompt: data.userPrompt,
+    });
+
+    const apiKey = data.providerApiKey || process.env.OPENAI_API_KEY;
+    if (!apiKey) return fallback;
+
+    try {
+      const moduleName = '@ai-sdk/openai';
+      const openaiModule = (await import(moduleName)) as {
+        createOpenAI?: (config: {
+          apiKey: string;
+        }) => (model: string) => unknown;
+      };
+
+      if (!openaiModule.createOpenAI) return fallback;
+      const openai = openaiModule.createOpenAI({ apiKey });
+
+      const contextHistory = data.conversationHistory
+        .slice(-8)
+        .map((message) => `${message.role}: ${message.content}`)
+        .join('\n');
+
+      const { object } = await generateObject({
+        // biome-ignore lint/suspicious/noExplicitAny: dynamic provider model contract
+        model: openai(data.model) as any,
+        schema: assistantResponseSchema,
+        prompt: [
+          'You are a business onboarding AI assistant for plugin recommendations.',
+          'Return JSON only matching the schema.',
+          'Use multi-step questioning and keep options keyboard-friendly.',
+          `Business type: ${data.businessType}`,
+          `Available release IDs (choose only from these): ${data.availableReleaseIds.join(', ') || 'none'}`,
+          `Already selected release IDs: ${data.selectedReleaseIds.join(', ') || 'none'}`,
+          `Conversation history:\n${contextHistory || 'none'}`,
+          `Latest user message: ${data.userPrompt}`,
+          'If no exact plugin exists, provide scaffoldProposal.',
+        ].join('\n\n'),
+      });
+
+      return {
+        ...object,
+        suggestedReleaseIds: object.suggestedReleaseIds.filter((releaseId) =>
+          data.availableReleaseIds.includes(releaseId),
+        ),
+      };
+    } catch {
+      return fallback;
+    }
+  });
