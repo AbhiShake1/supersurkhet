@@ -18,5 +18,8 @@ describe('admin empty state plugin onboarding contract', () => {
     expect(source).toContain('installPluginRelease');
     expect(source).toContain("actorUserId={user._?.soul ?? 'anon'}");
     expect(source).toContain('Open full plugin marketplace');
+    expect(source).toContain('api.pluginRelease.useGet');
+    expect(source).toContain('releaseRows as PluginReleaseDoc[]');
+    expect(source).not.toContain('mergeMarketplaceReleasesWithSeed');
   });
 });

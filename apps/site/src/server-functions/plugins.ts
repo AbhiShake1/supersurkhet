@@ -747,12 +747,6 @@ export async function installPluginRelease({ data }: { data: unknown }) {
     data,
     entrypoint: 'installPluginRelease',
   });
-  // Ensure marketplace seed releases are available before attempting installation
-  await ensureMarketplaceSeedReleases({
-    data: { actorUserId: parsedInput.actorUserId },
-  });
-
-  // Now load the store with the ensured seed releases
   const store = await loadPublishedStore(parsedInput.businessId);
   const service = createPluginPlatformService({ store });
 
@@ -762,15 +756,13 @@ export async function installPluginRelease({ data }: { data: unknown }) {
 
   if (!release) {
     // Log available releases for debugging
-    console.error(
-      `Release ${releaseId} not found after ensuring marketplace seeds.`,
-    );
+    console.error(`Release ${releaseId} not found in pluginRelease table.`);
     console.error(
       `Available releases:`,
       store.listReleases().map((r) => r.id),
     );
     throw new Error(
-      `Release ${releaseId} not found after ensuring marketplace seeds. Available releases: ${store.listReleases().length}`,
+      `Release ${releaseId} not found in pluginRelease table. Available releases: ${store.listReleases().length}`,
     );
   }
 
@@ -807,11 +799,6 @@ export async function rollbackPluginRelease({ data }: { data: unknown }) {
     data,
     entrypoint: 'rollbackPluginRelease',
   });
-  // Ensure marketplace seed releases are available before attempting rollback
-  await ensureMarketplaceSeedReleases({
-    data: { actorUserId: parsedInput.actorUserId },
-  });
-
   const store = await loadPublishedStore(parsedInput.businessId);
   const service = createPluginPlatformService({ store });
 
@@ -821,15 +808,13 @@ export async function rollbackPluginRelease({ data }: { data: unknown }) {
 
   if (!release) {
     // Log available releases for debugging
-    console.error(
-      `Release ${releaseId} not found after ensuring marketplace seeds.`,
-    );
+    console.error(`Release ${releaseId} not found in pluginRelease table.`);
     console.error(
       `Available releases:`,
       store.listReleases().map((r) => r.id),
     );
     throw new Error(
-      `Release ${releaseId} not found after ensuring marketplace seeds. Available releases: ${store.listReleases().length}`,
+      `Release ${releaseId} not found in pluginRelease table. Available releases: ${store.listReleases().length}`,
     );
   }
 
@@ -1128,6 +1113,25 @@ export async function ensureMarketplaceSeedReleases({
 //   .handler(async ({ data }) => {
 //   });
 
+const MARKETPLACE_SEED_MIGRATION_ID = '2026-02-20-marketplace-seed-releases-v1';
+
+export async function migrateMarketplaceSeedReleases({
+  data,
+}: {
+  data?: z.infer<typeof ensureMarketplaceInputSchema>;
+} = {}) {
+  const ensured = await ensureMarketplaceSeedReleases({
+    data: {
+      actorUserId: data?.actorUserId ?? 'system-migration',
+    },
+  });
+
+  return {
+    migrationId: MARKETPLACE_SEED_MIGRATION_ID,
+    ...ensured,
+  } as const;
+}
+
 export async function bootstrapDefaultPluginsForBusiness({
   data,
 }: {
@@ -1144,13 +1148,6 @@ export async function bootstrapDefaultPluginsForBusiness({
   if (!parsed) {
     return { installed: false, reason: 'invalid-release-id' } as const;
   }
-
-  // Ensure marketplace seed releases are available before attempting installation
-  await ensureMarketplaceSeedReleases({
-    data: { actorUserId },
-  });
-
-  // Load the store again to ensure the seed releases are available
   const store = await loadPublishedStore(data.businessId);
   const service = createPluginPlatformService({ store });
   const releaseId = toReleaseId(parsed.pluginId, parsed.version);

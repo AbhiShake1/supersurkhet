@@ -21,7 +21,6 @@ import { gun } from '@/lib/gun';
 import { getGunRef } from '@/lib/gun/utils';
 import { getBusinessDataFieldFromSelectedReleases } from '@/lib/plugins/business-onboarding-prepopulate';
 import {
-  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
@@ -68,7 +67,7 @@ export function CreateBusiness({
   const { fire: fireConfetti } = useConfetti();
   const { promptLogin } = useLoginPrompt();
   const releases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    () => releaseRows as PluginReleaseDoc[],
     [releaseRows],
   );
 

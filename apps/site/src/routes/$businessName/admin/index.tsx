@@ -15,7 +15,6 @@ import { BusinessProvider } from '@/contexts/business-context';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
-  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
@@ -114,7 +113,7 @@ function PluginOnboarding({
   );
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const releases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    () => releaseRows as PluginReleaseDoc[],
     [releaseRows],
   );
 

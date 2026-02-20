@@ -38,6 +38,7 @@ import {
 } from '@/contexts/theme-context';
 import { ThemeProvider as ThemeModeProvider } from '@/contexts/theme-context';
 import { defaultPresets } from '@/lib/theme';
+import { migrateMarketplaceSeedReleases } from '@/server-functions/plugins';
 import { getUser, removeUser } from '@/server-functions/user';
 import type { IGunUserInstance } from 'gun/types';
 import z from 'zod';
@@ -48,6 +49,59 @@ import type { QueryClient } from '@tanstack/react-query';
 import { UserLoading } from '@/components/ui/user-loading';
 
 setGTADefaultOptions({ schema: transformSchema(appSchema), gun });
+
+const MARKETPLACE_SEED_MIGRATION_STORAGE_KEY =
+  'supersurkhet.marketplace-seed-migration.v1';
+let marketplaceSeedMigrationPromise: Promise<void> | null = null;
+
+function hasMarketplaceSeedMigrationMarker() {
+  try {
+    return (
+      window.localStorage.getItem(MARKETPLACE_SEED_MIGRATION_STORAGE_KEY) !==
+      null
+    );
+  } catch {
+    return false;
+  }
+}
+
+function setMarketplaceSeedMigrationMarker() {
+  try {
+    window.localStorage.setItem(
+      MARKETPLACE_SEED_MIGRATION_STORAGE_KEY,
+      new Date().toISOString(),
+    );
+  } catch {
+    // Ignore storage write failures and rely on idempotent migration.
+  }
+}
+
+function runMarketplaceSeedMigrationOnce(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+
+  if (hasMarketplaceSeedMigrationMarker()) {
+    return Promise.resolve();
+  }
+
+  if (!marketplaceSeedMigrationPromise) {
+    marketplaceSeedMigrationPromise = migrateMarketplaceSeedReleases({
+      data: { actorUserId: 'system-migration' },
+    })
+      .then(() => {
+        setMarketplaceSeedMigrationMarker();
+      })
+      .catch((error) => {
+        console.error('Marketplace seed migration failed:', error);
+      })
+      .finally(() => {
+        marketplaceSeedMigrationPromise = null;
+      });
+  }
+
+  return marketplaceSeedMigrationPromise;
+}
 
 export interface UserProfile {
   avatar: string;
@@ -315,6 +369,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   useEffect(() => {
+    void runMarketplaceSeedMigrationOnce();
     recallUser();
 
     // Set up message listener for communication with Expo app

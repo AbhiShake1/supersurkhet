@@ -54,7 +54,6 @@ import {
 import { getBusinessDataFieldFromSelectedReleases } from '@/lib/plugins/business-onboarding-prepopulate';
 import {
   getRecommendedSeedReleaseIds,
-  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
@@ -269,7 +268,7 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
   const fileInputId = useId();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const releases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    () => releaseRows as PluginReleaseDoc[],
     [releaseRows],
   );
 
@@ -809,7 +808,7 @@ function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
   const selectedReleaseIds = form.watch('selectedPluginReleaseIds') ?? [];
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const releases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    () => releaseRows as PluginReleaseDoc[],
     [releaseRows],
   );
   const prepopulateField = useMemo(
