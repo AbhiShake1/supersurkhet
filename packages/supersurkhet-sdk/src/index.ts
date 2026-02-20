@@ -260,9 +260,22 @@ export type SchemaDoc = {
   tokens?: Record<string, JsonValue>;
 };
 
+export type SchemaDataType = 'string' | 'number' | 'boolean' | 'date' | 'enum' | 'array' | 'object';
+
 export type SchemaFieldDoc = {
   key: string;
+  /**
+   * Data type used for validation/storage semantics.
+   */
+  dataType?: SchemaDataType;
+  /**
+   * @deprecated Use dataType for storage semantics.
+   */
   type: SchemaFieldType;
+  /**
+   * UI presentation field type.
+   */
+  fieldType?: SchemaFieldType;
   label?: string;
   description?: string;
   optional?: boolean;
@@ -435,4 +448,348 @@ export function defineSchemaDoc<T extends SchemaDoc>(doc: T): T {
 
 export function defineWorkflowDoc<T extends WorkflowDoc>(doc: T): T {
   return doc;
+}
+
+export type DefineZodSchemaDocInput<TSchema extends ZodLikeObjectSchema = ZodLikeObjectSchema> = {
+  schemaId: string;
+  schema: TSchema;
+  title?: string;
+  description?: string;
+  tokens?: Record<string, JsonValue>;
+};
+
+export type InferSchemaType<TInput extends DefineZodSchemaDocInput> = TInput['schema'] extends {
+  _output: infer TOutput;
+}
+  ? TOutput
+  : unknown;
+
+type ZodLikeType = {
+  _def?: {
+    typeName?: string;
+    schema?: ZodLikeType;
+    innerType?: ZodLikeType;
+    shape?: (() => Record<string, ZodLikeType>) | Record<string, ZodLikeType>;
+    checks?: Array<{
+      kind?: string;
+      value?: number;
+      message?: string;
+    }>;
+    values?: Set<string>;
+  };
+  unwrap?: () => ZodLikeType;
+  isOptional?: () => boolean;
+  shape?: Record<string, ZodLikeType>;
+  element?: ZodLikeType;
+  options?: readonly string[];
+};
+
+export type ZodLikeObjectSchema = ZodLikeType & {
+  shape?: Record<string, ZodLikeType>;
+  _def?: {
+    shape?: (() => Record<string, ZodLikeType>) | Record<string, ZodLikeType>;
+  } & ZodLikeType['_def'];
+};
+
+const zodTypeName = (schema: ZodLikeType): string | undefined => schema._def?.typeName;
+
+const isWrappedZodType = (schema: ZodLikeType): boolean =>
+  zodTypeName(schema) === 'ZodOptional' ||
+  zodTypeName(schema) === 'ZodNullable' ||
+  zodTypeName(schema) === 'ZodDefault' ||
+  zodTypeName(schema) === 'ZodEffects';
+
+const unwrappedZodType = (schema: ZodLikeType): ZodLikeType => {
+  if (!isWrappedZodType(schema)) {
+    return schema;
+  }
+
+  const unwrapped =
+    schema.unwrap?.() ?? schema._def?.innerType ?? schema._def?.schema ?? schema;
+
+  if (unwrapped === schema) {
+    return schema;
+  }
+
+  return unwrappedZodType(unwrapped);
+};
+
+const readFieldRules = (schema: ZodLikeType): SchemaRuleDoc[] | undefined => {
+  if (zodTypeName(schema) !== 'ZodNumber') {
+    return undefined;
+  }
+
+  const rules: SchemaRuleDoc[] = [];
+  for (const check of schema._def?.checks ?? []) {
+    if (check.kind === 'min') {
+      rules.push({ kind: 'min', value: check.value, message: check.message });
+    }
+    if (check.kind === 'max') {
+      rules.push({ kind: 'max', value: check.value, message: check.message });
+    }
+    if (check.kind === 'int') {
+      rules.push({ kind: 'int', message: check.message });
+    }
+  }
+  return rules.length > 0 ? rules : undefined;
+};
+
+const getObjectShape = (schema: ZodLikeType): Record<string, ZodLikeType> => {
+  const fromDef = schema._def?.shape;
+  if (typeof fromDef === 'function') {
+    return fromDef();
+  }
+  if (fromDef) {
+    return fromDef;
+  }
+  return schema.shape ?? {};
+};
+
+const zodFieldToSchemaField = (
+  key: string,
+  schema: ZodLikeType,
+): SchemaFieldDoc => {
+  const optional = schema.isOptional?.() ?? zodTypeName(schema) === 'ZodOptional';
+  const base = unwrappedZodType(schema);
+  const baseType = zodTypeName(base);
+
+  const common = {
+    key,
+    optional,
+  };
+
+  if (baseType === 'ZodString') {
+    return { ...common, type: 'string', dataType: 'string', fieldType: 'string' };
+  }
+
+  if (baseType === 'ZodNumber') {
+    return { ...common, type: 'number', dataType: 'number', fieldType: 'number', rules: readFieldRules(base) };
+  }
+
+  if (baseType === 'ZodBoolean') {
+    return { ...common, type: 'boolean', dataType: 'boolean', fieldType: 'boolean' };
+  }
+
+  if (baseType === 'ZodDate') {
+    return { ...common, type: 'date', dataType: 'date', fieldType: 'date' };
+  }
+
+  if (baseType === 'ZodEnum') {
+    const enumValues = base.options ? [...base.options] : [...(base._def?.values ?? [])];
+    return { ...common, type: 'enum', dataType: 'enum', fieldType: 'select', enumValues };
+  }
+
+  if (baseType === 'ZodArray') {
+    const item = zodFieldToSchemaField('item', base.element ?? (base._def?.innerType as ZodLikeType));
+    return {
+      ...common,
+      type: 'array',
+      dataType: 'array',
+      fieldType: 'array',
+      itemType: {
+        type: item.type,
+        label: item.label,
+        description: item.description,
+        optional: item.optional,
+        defaultValue: item.defaultValue,
+        enumValues: item.enumValues,
+        itemType: item.itemType,
+        fields: item.fields,
+        tokens: item.tokens,
+        behavior: item.behavior,
+        rules: item.rules,
+      },
+    };
+  }
+
+  if (baseType === 'ZodObject') {
+    const shape = getObjectShape(base);
+    return {
+      ...common,
+      type: 'object',
+      dataType: 'object',
+      fieldType: 'object',
+      fields: Object.entries(shape).map(([fieldKey, fieldSchema]) =>
+        zodFieldToSchemaField(fieldKey, fieldSchema),
+      ),
+    };
+  }
+
+  throw new Error(`Unsupported zod field type for "${key}": ${baseType ?? 'unknown'}`);
+};
+
+export function defineZodSchemaDoc<TSchema extends ZodLikeObjectSchema>(
+  input: DefineZodSchemaDocInput<TSchema>,
+): SchemaDoc {
+  const fields = Object.entries(getObjectShape(input.schema)).map(([key, schema]) =>
+    zodFieldToSchemaField(key, schema),
+  );
+
+  return {
+    schemaId: input.schemaId,
+    title: input.title,
+    description: input.description,
+    fields,
+    tokens: input.tokens,
+  };
+}
+
+export type SchemaSyncOperation =
+  | {
+      op: 'upsertSchema';
+      schema: SchemaDoc;
+    }
+  | {
+      op: 'removeSchema';
+      schemaId: string;
+    };
+
+export type SchemaSyncEnvelope = {
+  source: 'cli' | 'ui' | 'relay' | 'sdk';
+  timestamp: string;
+  operations: SchemaSyncOperation[];
+};
+
+export type SchemaSyncSubscriber = (envelope: SchemaSyncEnvelope) => void;
+
+export interface SchemaSyncStore {
+  list(): SchemaDoc[];
+  get(schemaId: string): SchemaDoc | undefined;
+  upsert(schema: SchemaDoc, source?: SchemaSyncEnvelope['source']): void;
+  remove(schemaId: string, source?: SchemaSyncEnvelope['source']): void;
+  apply(envelope: SchemaSyncEnvelope): void;
+  subscribe(subscriber: SchemaSyncSubscriber): () => void;
+}
+
+export type CreateSchemaSyncStoreInput = {
+  initialSchemas?: SchemaDoc[];
+};
+
+export function createSchemaSyncStore(
+  input: CreateSchemaSyncStoreInput = {},
+): SchemaSyncStore {
+  const schemas = new Map<string, SchemaDoc>();
+  const subscribers = new Set<SchemaSyncSubscriber>();
+
+  for (const schema of input.initialSchemas ?? []) {
+    schemas.set(schema.schemaId, schema);
+  }
+
+  const emit = (envelope: SchemaSyncEnvelope): void => {
+    for (const subscriber of subscribers) {
+      subscriber(envelope);
+    }
+  };
+
+  return {
+    list() {
+      return [...schemas.values()];
+    },
+    get(schemaId: string) {
+      return schemas.get(schemaId);
+    },
+    upsert(schema, source = 'sdk') {
+      schemas.set(schema.schemaId, schema);
+      emit({
+        source,
+        timestamp: new Date().toISOString(),
+        operations: [{ op: 'upsertSchema', schema }],
+      });
+    },
+    remove(schemaId, source = 'sdk') {
+      const deleted = schemas.delete(schemaId);
+      if (!deleted) {
+        return;
+      }
+      emit({
+        source,
+        timestamp: new Date().toISOString(),
+        operations: [{ op: 'removeSchema', schemaId }],
+      });
+    },
+    apply(envelope) {
+      for (const operation of envelope.operations) {
+        if (operation.op === 'upsertSchema') {
+          schemas.set(operation.schema.schemaId, operation.schema);
+        }
+        if (operation.op === 'removeSchema') {
+          schemas.delete(operation.schemaId);
+        }
+      }
+      emit(envelope);
+    },
+    subscribe(subscriber) {
+      subscribers.add(subscriber);
+      return () => {
+        subscribers.delete(subscriber);
+      };
+    },
+  };
+}
+
+const schemaDataTypeToTsType = (field: SchemaFieldDoc): string => {
+  const dataType = field.dataType ?? (field.type as SchemaDataType);
+
+  switch (dataType) {
+    case 'string':
+    case 'date':
+      return 'string';
+    case 'number':
+      return 'number';
+    case 'boolean':
+      return 'boolean';
+    case 'enum':
+      return field.enumValues?.map((value) => JSON.stringify(value)).join(' | ') ?? 'string';
+    case 'array': {
+      const itemType = field.itemType
+        ? schemaDataTypeToTsType({ ...field.itemType, key: 'item' })
+        : 'unknown';
+      return `${itemType}[]`;
+    }
+    case 'object': {
+      const shape = field.fields
+        ?.map(
+          (nestedField) =>
+            `${nestedField.key}${nestedField.optional ? '?' : ''}: ${schemaDataTypeToTsType(nestedField)};`,
+        )
+        .join(' ');
+      return `{ ${shape ?? ''} }`;
+    }
+    default:
+      return 'unknown';
+  }
+};
+
+export function generateSchemaTypes(
+  schemaDocs: SchemaDoc[],
+  options: {
+    rootTypeName?: string;
+  } = {},
+): string {
+  const rootTypeName = options.rootTypeName ?? 'SupersurkhetSchemaMap';
+
+  const lines = [
+    '// Auto-generated by supersurkhet-sdk. Do not edit manually.',
+    `export type ${rootTypeName} = {`,
+  ];
+
+  for (const schema of schemaDocs) {
+    const fields = schema.fields
+      .map((field) =>
+        `    ${field.key}${field.optional ? '?' : ''}: ${schemaDataTypeToTsType(field)};`,
+      )
+      .join('\n');
+
+    lines.push(`  ${JSON.stringify(schema.schemaId)}: {`);
+    lines.push(fields);
+    lines.push('  };');
+  }
+
+  lines.push('};');
+  lines.push(`export type SupersurkhetSchemaIds = keyof ${rootTypeName};`);
+  lines.push(
+    `export type SupersurkhetSchemaRow<TSchemaId extends SupersurkhetSchemaIds> = ${rootTypeName}[TSchemaId];`,
+  );
+
+  return lines.join('\n');
 }
