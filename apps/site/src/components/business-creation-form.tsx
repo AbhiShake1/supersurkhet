@@ -3,13 +3,24 @@ import { Link } from '@tanstack/react-router';
 import {
   Building,
   CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  FileUp,
+  LoaderCircle,
   Package,
   Search,
   Sparkles,
   Store,
 } from 'lucide-react';
-import { useLayoutEffect, useMemo, useState } from 'react';
+import {
+  type ChangeEvent,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 import type { UseFormReturn } from 'react-hook-form';
+import { toast } from 'sonner';
 import { z } from 'zod';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -29,6 +40,12 @@ import {
 } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import {
+  type AssistantQuickOptionSet,
+  deriveTodoProgress,
+  mergeSelectedReleaseIds,
+  type TodoItem,
+} from '@/lib/business-ai-assistant';
+import {
   buildPluginCatalog,
   type PluginCatalogSort,
 } from '@/lib/plugins/admin-plugin-catalog';
@@ -44,10 +61,18 @@ import {
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import { businessSchema, featureSchema } from '@/lib/schema';
 import { cn } from '@/lib/utils';
+import { getBusinessCreationAssistantTurn } from '@/server-functions/ai';
 import { MapField } from './ui/autoform/components/MapField';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardHeader, CardTitle } from './ui/card';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from './ui/collapsible';
+import { Progress } from './ui/progress';
+import { Textarea } from './ui/textarea';
 
 export const businessCreationSchema = businessSchema
   .pick({
@@ -201,6 +226,7 @@ export function BusinessCreationForm({
               <FormItem>
                 <FormLabel>Set Location on Map</FormLabel>
                 <FormControl>
+                  {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
                   <MapField
                     {...field}
                     label="Set Location on Map"
@@ -325,7 +351,45 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
   const [category, setCategory] =
     useState<BusinessOnboardingPluginFilter>('recommended');
   const [sortBy, setSortBy] = useState<PluginCatalogSort>('recent');
+  const [assistantInput, setAssistantInput] = useState('');
+  const [todoExpanded, setTodoExpanded] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [uploadedFileNames, setUploadedFileNames] = useState<string[]>([]);
+  const [assistantMessages, setAssistantMessages] = useState<
+    Array<{ role: 'assistant' | 'user'; content: string }>
+  >([
+    {
+      role: 'assistant',
+      content:
+        'Tell me what you want to optimize. I can suggest plugins or propose a scaffold if needed.',
+    },
+  ]);
+  const [quickOptions, setQuickOptions] = useState<AssistantQuickOptionSet>({
+    questionId: 'starter',
+    prompt: 'Which direction should we optimize first?',
+    options: ['Faster operations', 'Higher revenue', 'Better retention'],
+    otherOptionLabel: 'Something else (type your own)',
+  });
+  const [assistantTodoItems, setAssistantTodoItems] = useState<TodoItem[]>([
+    {
+      id: 'intent',
+      title: 'Capture business intent from conversation',
+      done: false,
+    },
+    {
+      id: 'suggestions',
+      title: 'Generate plugin suggestions from marketplace',
+      done: false,
+    },
+    {
+      id: 'selection',
+      title: 'Confirm at least one plugin in install queue',
+      done: false,
+    },
+  ]);
+
   const businessType = form.watch('businessType');
+  const fileInputId = useId();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const releases = releaseRows as PluginReleaseDoc[];
 
@@ -365,6 +429,27 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
       }),
     [catalog, category, recommendedPluginIds],
   );
+
+  const availableReleaseIds = useMemo(
+    () =>
+      catalog.map((entry) =>
+        toReleaseId(entry.pluginId, entry.latestRelease.version),
+      ),
+    [catalog],
+  );
+
+  const todoProgress = deriveTodoProgress(assistantTodoItems);
+
+  function handleFileUpload(event: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    if (files.length === 0) return;
+
+    const nextNames = files.map((file) => file.name);
+    setUploadedFileNames((current) => [...current, ...nextNames]);
+    toast.success(
+      `Attached ${nextNames.length} file${nextNames.length === 1 ? '' : 's'} for AI context.`,
+    );
+  }
 
   return (
     <FormField
@@ -408,42 +493,274 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
           );
         }
 
+        async function runAssistant(prompt: string) {
+          const trimmedPrompt = prompt.trim();
+          if (!trimmedPrompt) return;
+
+          setIsThinking(true);
+          setAssistantInput(trimmedPrompt);
+          setAssistantMessages((current) => [
+            ...current,
+            { role: 'user', content: trimmedPrompt },
+          ]);
+
+          try {
+            const response = await getBusinessCreationAssistantTurn({
+              data: {
+                businessType,
+                userPrompt: trimmedPrompt,
+                selectedReleaseIds,
+                availableReleaseIds,
+                conversationHistory: assistantMessages,
+              },
+            });
+
+            field.onChange(
+              mergeSelectedReleaseIds(
+                selectedReleaseIds,
+                response.suggestedReleaseIds,
+              ),
+            );
+
+            setQuickOptions(response.quickOptions);
+            setAssistantTodoItems(response.todoItems);
+            setAssistantMessages((current) => [
+              ...current,
+              { role: 'assistant', content: response.assistantMessage },
+            ]);
+
+            if (response.scaffoldProposal) {
+              toast.message(
+                `Scaffold proposed: ${response.scaffoldProposal.title}`,
+              );
+            } else if (response.suggestedReleaseIds.length > 0) {
+              toast.success(
+                `Added ${response.suggestedReleaseIds.length} plugin suggestion${
+                  response.suggestedReleaseIds.length === 1 ? '' : 's'
+                } from AI assistant.`,
+              );
+            }
+          } catch {
+            toast.error('Assistant request failed. Please try again.');
+          } finally {
+            setIsThinking(false);
+          }
+        }
+
         return (
           <FormItem className="space-y-4">
-            <div className="space-y-2">
-              <FormLabel className="text-base">
-                Plugin stack (required)
-              </FormLabel>
-              <p className="text-sm text-muted-foreground">
-                Pick the plugins to install as soon as the business is created.
-                You need at least one plugin to continue.
-              </p>
+            <div className="rounded-lg border bg-background/60 p-4 space-y-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium">AI Plugin Assistant</p>
+                  <p className="text-xs text-muted-foreground">
+                    Multistep AI-guided onboarding with keyboard-first controls.
+                    Press Ctrl/Cmd+Enter to send, Alt+1/2/3 for quick options.
+                  </p>
+                </div>
+                <Badge variant="secondary" className="gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Model ready
+                </Badge>
+              </div>
+
+              <Collapsible open={todoExpanded} onOpenChange={setTodoExpanded}>
+                <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Agent progress
+                      </p>
+                      <p className="text-sm font-medium truncate">
+                        {todoProgress === 100
+                          ? 'Ready to create business'
+                          : assistantTodoItems.find((item) => !item.done)
+                              ?.title}
+                      </p>
+                    </div>
+                    <CollapsibleTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-7 w-7">
+                        {todoExpanded ? (
+                          <ChevronUp className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </CollapsibleTrigger>
+                  </div>
+                  <Progress value={todoProgress} className="h-2" />
+                  <CollapsibleContent className="space-y-2 pt-1">
+                    {assistantTodoItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center gap-2 text-xs text-muted-foreground"
+                      >
+                        <span
+                          className={cn(
+                            'inline-block h-2 w-2 rounded-full',
+                            item.done ? 'bg-green-500' : 'bg-amber-500',
+                          )}
+                        />
+                        {item.title}
+                      </div>
+                    ))}
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  {quickOptions.prompt}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {quickOptions.options.map((option, index) => (
+                    <Button
+                      key={option}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => runAssistant(option)}
+                    >
+                      <span className="text-[10px] text-muted-foreground mr-1">
+                        {index + 1}.
+                      </span>
+                      {option}
+                    </Button>
+                  ))}
+                  <Badge variant="outline" className="text-xs py-1.5 px-2">
+                    {quickOptions.otherOptionLabel}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="max-h-40 overflow-y-auto rounded-md border bg-muted/10 p-2 space-y-2">
+                {assistantMessages.slice(-6).map((message, index) => (
+                  <div
+                    key={`${message.role}-${index}`}
+                    className={cn(
+                      'text-xs rounded px-2 py-1',
+                      message.role === 'assistant'
+                        ? 'bg-muted text-foreground'
+                        : 'bg-primary/10 text-primary-foreground',
+                    )}
+                  >
+                    <span className="font-medium mr-1">{message.role}:</span>
+                    {message.content}
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-2">
+                <Textarea
+                  value={assistantInput}
+                  onChange={(event) => setAssistantInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (
+                      (event.metaKey || event.ctrlKey) &&
+                      event.key === 'Enter'
+                    ) {
+                      event.preventDefault();
+                      runAssistant(assistantInput);
+                      return;
+                    }
+
+                    if (event.altKey && ['1', '2', '3'].includes(event.key)) {
+                      event.preventDefault();
+                      const optionIndex = Number(event.key) - 1;
+                      const option = quickOptions.options[optionIndex];
+                      if (option) {
+                        runAssistant(option);
+                      }
+                    }
+                  }}
+                  placeholder="Tell AI what your business needs. Example: We need inventory alerts, recurring billing, and loyalty rewards."
+                  className="min-h-24"
+                />
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={() => runAssistant(assistantInput)}
+                    disabled={isThinking || assistantInput.trim().length === 0}
+                    className="gap-2"
+                  >
+                    {isThinking ? (
+                      <>
+                        <LoaderCircle className="h-4 w-4 animate-spin" />
+                        Thinking...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4" />
+                        Suggest plugins
+                      </>
+                    )}
+                  </Button>
+                  <label className="inline-flex" htmlFor={fileInputId}>
+                    <Input
+                      id={fileInputId}
+                      type="file"
+                      className="sr-only"
+                      multiple
+                      onChange={handleFileUpload}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="gap-2"
+                      asChild
+                    >
+                      <span>
+                        <FileUp className="h-4 w-4" />
+                        Attach files
+                      </span>
+                    </Button>
+                  </label>
+                  {uploadedFileNames.slice(-2).map((fileName) => (
+                    <Badge key={fileName} variant="secondary">
+                      {fileName}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              <div className="rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground">
+                <strong className="text-foreground">
+                  Proposed plugin scaffold if needed:
+                </strong>{' '}
+                If no exact plugin exists, the assistant can draft a plugin
+                proposal and add it to the business creation payload for review.
+              </div>
             </div>
 
-            <div className="rounded-xl border border-border/70 bg-gradient-to-br from-cyan-50/70 via-background to-amber-50/70 p-4 space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="inline-flex items-center gap-2 rounded-full border bg-background/80 px-3 py-1 text-xs font-medium">
-                  <Sparkles className="size-3.5" />
-                  Starter plugin marketplace
+            <div className="space-y-2">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <FormLabel className="text-base">
+                    Plugin stack (required)
+                  </FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    Choose at least one plugin to install during business
+                    creation.
+                  </p>
                 </div>
                 <Button
-                  size="sm"
-                  variant="outline"
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={selectRecommended}
                 >
-                  Apply recommended stack
+                  <Sparkles className="mr-1 h-4 w-4" /> Use recommended stack
                 </Button>
               </div>
 
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                <div className="relative flex-1">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <div className="relative md:col-span-2 xl:col-span-2">
+                  <Search className="pointer-events-none absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search plugins by name, id, or capability"
-                    className="pl-9"
+                    placeholder="Search plugins"
+                    className="pl-8"
                   />
                 </div>
 
@@ -612,7 +929,6 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
 
 function DataPrepopulateForm({ form }: DataPrepopulateFormProps) {
   const businessType = form.watch('businessType');
-
   const { data: allItems = [], isLoading } = useBusinessTypeData(businessType);
   const { data: allBusinesses = [] } = api.business.useGet();
 

@@ -53,3 +53,4 @@ This directory contains atomic one-task plans split for parallel execution.
 - [035 - Runtime Plugin Schema Route](./035-runtime-plugin-schema-route.md)
 - [036 - Namespace Hash Pinning Guard](./036-namespace-hash-pinning-guard.md)
 - [037 - V2 Lifecycle Verification Suite](./037-v2-lifecycle-verification-suite.md)
+- [038 - BYOAIA Plugin Agent Step 1 (Business Creation)](./038-byoaia-plugin-agent-step1.md)
