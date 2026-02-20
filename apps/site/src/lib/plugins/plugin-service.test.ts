@@ -13,9 +13,9 @@ function createService() {
 }
 
 describe('plugin platform service', () => {
-  it('publishes immutable release with deterministic pluginId@version id', () => {
+  it('publishes immutable release with deterministic pluginId@version id', async () => {
     const service = createService();
-    const release = service.publishRelease({
+    const release = await service.publishRelease({
       actorUserId: 'user-1',
       release: {
         pluginId: 'acme.inventory',
@@ -29,9 +29,9 @@ describe('plugin platform service', () => {
     expect(release.author.userId).toBe('user-1');
   });
 
-  it('rejects duplicate pluginId@version release publish with conflict semantics', () => {
+  it('rejects duplicate pluginId@version release publish with conflict semantics', async () => {
     const service = createService();
-    service.publishRelease({
+    await service.publishRelease({
       actorUserId: 'user-1',
       release: {
         pluginId: 'acme.inventory',
@@ -40,7 +40,7 @@ describe('plugin platform service', () => {
       },
     });
 
-    expect(() =>
+    await expect(
       service.publishRelease({
         actorUserId: 'user-2',
         release: {
@@ -49,12 +49,12 @@ describe('plugin platform service', () => {
           actionManifest: [],
         },
       }),
-    ).toThrowError(DuplicateReleaseConflictError);
+    ).rejects.toThrowError(DuplicateReleaseConflictError);
   });
 
-  it('requires owner/admin role for published release install', () => {
+  it('requires owner/admin role for published release install', async () => {
     const service = createService();
-    const release = service.publishRelease({
+    const release = await service.publishRelease({
       actorUserId: 'user-1',
       release: {
         pluginId: 'acme.inventory',
@@ -77,9 +77,9 @@ describe('plugin platform service', () => {
     ).toThrowError(AuthorizationError);
   });
 
-  it('allows draft install for draft team members and owners/admins', () => {
+  it('allows draft install for draft team members and owners/admins', async () => {
     const service = createService();
-    const draft = service.createDraft({
+    const draft = await service.createDraft({
       actorUserId: 'owner-1',
       draft: {
         pluginId: 'acme.inventory',
@@ -87,7 +87,7 @@ describe('plugin platform service', () => {
         collaboratorUserIds: ['staff-team-1'],
       },
     });
-    const revision = service.createDraftRevision({
+    const revision = await service.createDraftRevision({
       actorUserId: 'owner-1',
       draftId: draft.draftId,
       revision: {

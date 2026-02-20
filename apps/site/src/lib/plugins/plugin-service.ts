@@ -265,12 +265,14 @@ export function canonicalizeJson(value: unknown) {
   return JSON.stringify(normalizeJson(value));
 }
 
+export async function hashCanonicalJsonValue(value: unknown) {
+  const { createHash } = await import('node:crypto');
+  return createHash('sha256').update(canonicalizeJson(value)).digest('hex');
+}
+
 export const hashCanonicalJson = createServerFn({ method: 'POST' })
   .inputValidator(z.unknown())
-  .handler(async ({ data: value }) => {
-    const { createHash } = await import('crypto')
-    return createHash('sha256').update(canonicalizeJson(value)).digest('hex');
-  });
+  .handler(async ({ data: value }) => hashCanonicalJsonValue(value));
 
 function assertCanInstallPublishedRelease(actorRole: ActorRole) {
   if (actorRole === 'owner' || actorRole === 'admin') {
@@ -364,25 +366,24 @@ export function createPluginPlatformService({
         throw new DuplicateReleaseConflictError(releaseId);
       }
 
-      const manifestHash = await hashCanonicalJson({
-        data:
-          toManifestPayload({
-            pluginId: release.pluginId,
-            version: release.version,
-            docs: release.docs,
-            actionManifest: release.actionManifest ?? [],
-            schemaDocs: release.schemaDocs,
-            workflows: release.workflows,
-            adminTabs: release.adminTabs,
-          }),
-      });
-      const artifactHash = await hashCanonicalJson({
-        data: toArtifactPayload({
+      const manifestHash = await hashCanonicalJsonValue(
+        toManifestPayload({
+          pluginId: release.pluginId,
+          version: release.version,
+          docs: release.docs,
+          actionManifest: release.actionManifest ?? [],
           schemaDocs: release.schemaDocs,
           workflows: release.workflows,
           adminTabs: release.adminTabs,
         }),
-      });
+      );
+      const artifactHash = await hashCanonicalJsonValue(
+        toArtifactPayload({
+          schemaDocs: release.schemaDocs,
+          workflows: release.workflows,
+          adminTabs: release.adminTabs,
+        }),
+      );
       const now = new Date().toISOString();
 
       const created: PluginReleaseDoc = {
@@ -524,17 +525,17 @@ export function createPluginPlatformService({
       const created: PluginDraftRevisionDoc = {
         revisionId:
           revision.revisionId ??
-          `${Date.now().toString(36)}-${(await hashCanonicalJson({ data: revisionManifest })).slice(0, 8)}`,
+          `${Date.now().toString(36)}-${(await hashCanonicalJsonValue(revisionManifest)).slice(0, 8)}`,
         draftId,
         pluginId: draft.pluginId,
-        manifestHash: await hashCanonicalJson({ data: revisionManifest }),
-        artifactHash: await hashCanonicalJson({
-          data: toArtifactPayload({
+        manifestHash: await hashCanonicalJsonValue(revisionManifest),
+        artifactHash: await hashCanonicalJsonValue(
+          toArtifactPayload({
             schemaDocs: revision.schemaDocs,
             workflows: revision.workflows,
             adminTabs: revision.adminTabs,
           }),
-        }),
+        ),
         schemaDocs: revision.schemaDocs,
         workflows: revision.workflows,
         adminTabs: revision.adminTabs,
@@ -613,7 +614,7 @@ export function createPluginPlatformService({
     },
 
     async uninstallPublishedRelease({
-      actorUserId,
+      actorUserId: _actorUserId,
       actorRole,
       businessId,
       pluginId,
