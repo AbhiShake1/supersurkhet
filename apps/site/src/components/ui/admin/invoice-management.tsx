@@ -214,19 +214,25 @@ function _InvoiceManagement({ slug }: InvoiceManagementProps) {
                 <p className="truncate text-xs text-muted-foreground">
                   {displayName}
                 </p>
+                <div className="tabular-nums text-lg font-bold text-primary">
+                  {formatCurrency(totalAmount)}
+                </div>
+
               </div>
             </div>
+
             <div className="text-right">
-              <div className="tabular-nums text-lg font-bold text-primary">
-                {formatCurrency(totalAmount)}
-              </div>
-              <div className="mt-1 flex items-center justify-end gap-1.5">
+              <div className="mt-1 flex flex-col items-end gap-1.5">
                 <Badge
                   variant={getInvoiceTypeBadgeVariant(invoice.type)}
-                  className="text-[10px] uppercase tracking-wide"
-                >
+                  className={cn(
+                    'text-[10px] uppercase tracking-wide',
+                    invoice.type === 'purchase' &&
+                    'bg-indigo-100 text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/40 dark:text-indigo-300'
+                  )}  >
                   {invoice.type}
                 </Badge>
+
                 <Badge
                   variant={isSettled ? 'default' : 'secondary'}
                   className={cn(

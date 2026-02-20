@@ -1,6 +1,3 @@
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
 import type { ParsedField } from '@autoform/core';
 import {
   CheckCircle2,
@@ -11,13 +8,17 @@ import {
 } from 'lucide-react';
 import type { FC, ReactNode } from 'react';
 import { z } from 'zod';
-import { AutoTable } from '../auto-table';
-import type { fieldConfig } from '../ui/autoform';
-import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
-import { CredenzaBody } from '../ui/credenza';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { useDrawer } from '@/contexts/dialog-context';
-import { MapPreview } from '../ui/autoform/components/MapPreview';
+import { AutoTable } from '../auto-table';
 import type { ZodObjectOrWrapped } from '../ui/auto-form/utils';
+import type { fieldConfig } from '../ui/autoform';
+import { MapPreview } from '../ui/autoform/components/MapPreview';
+import { CredenzaBody } from '../ui/credenza';
+import { Drawer, DrawerContent, DrawerTrigger } from '../ui/drawer';
+
 type FieldType = NonNullable<Parameters<typeof fieldConfig>[0]['fieldType']>;
 
 export type AutoPreviewComponent<T, S extends ParsedField = ParsedField> = FC<{
@@ -123,9 +124,28 @@ const ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
   const fullKey = (value as any)?.['#'] as string;
   if (!fullKey) return null;
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  const arraySchema: z.ZodArray<any> =
+  let arraySchema: z.ZodArray<any> =
     schema instanceof z.ZodEffects ? schema.innerType() : schema;
-  const parsedSchema = arraySchema._def.type || arraySchema._def.innerType;
+
+  // Handle ZodOptional, ZodNullable wrappers
+  if ('innerType' in arraySchema._def) {
+    arraySchema = arraySchema._def.innerType;
+  }
+
+  // For ZodArray, the element type is in _def.type (ZodType)
+  // We need to unwrap it through all layers (ZodEffects, ZodOptional, etc.)
+  let elementType = arraySchema._def.type;
+
+  // Unwrap ZodEffects
+  if (elementType instanceof z.ZodEffects) {
+    elementType = elementType.innerType();
+  }
+  // Unwrap ZodOptional/ZodNullable
+  if ('innerType' in elementType._def) {
+    elementType = elementType._def.innerType;
+  }
+
+  const parsedSchema = elementType;
   // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
   const { openDialog } = useDrawer();
 
@@ -216,10 +236,11 @@ const RatingPreview: AutoPreviewComponent<number> = ({ value }) => {
           <Star
             // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
             key={i}
-            className={`h-4 w-4 ${i < Math.floor(value)
+            className={`h-4 w-4 ${
+              i < Math.floor(value)
                 ? 'fill-yellow-400 text-yellow-400'
                 : 'text-gray-300'
-              }`}
+            }`}
           />
         ))}
       </div>

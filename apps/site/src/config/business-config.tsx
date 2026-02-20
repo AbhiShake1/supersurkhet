@@ -380,7 +380,7 @@ export function useBusinessConfig({
             }
           }
         }),
-        async onCreate(_, variables) {
+        async onCreate(data, variables) {
           const itemsByProductIdWithQuantity = variables.items?.reduce(
             (a, { product, quantity, unit }) => {
               const productInfo = productsBySoul.get(product);
@@ -446,6 +446,7 @@ export function useBusinessConfig({
           const paidAmount = getPaidAmountFromPayments(payments);
 
           void db.invoice.create(slug)({
+            id: data.id,
             type: 'sale',
             partyId: variables.customerId,
             issuedAt: variables.saleDate,
@@ -461,8 +462,28 @@ export function useBusinessConfig({
             fiscalYear: calculateFiscalYear(),
           });
         },
-        onUpdate(_) {
-          return;
+        onUpdate(_, variables) {
+          const totalAmount =
+            variables.items?.reduce(
+              (sum, item) => sum + item.quantity * item.unitPrice,
+              0,
+            ) ?? 0;
+          const payments = normalizePaymentsWithFallback(
+            variables.payments,
+            variables.paidAmount,
+          );
+          const paidAmount = getPaidAmountFromPayments(payments);
+
+          db.invoice.update(slug)({
+            id: variables.id,
+            payments,
+            paidAmount,
+            paymentStatus: getPaymentStatusFromTotals({
+              paidAmount,
+              totalAmount,
+            }),
+
+          });
         },
       },
       {
@@ -766,7 +787,7 @@ export function useBusinessConfig({
           returnedProducts: (items) => {
             const mapped = items?.map((item: SalesItem) => ({
               ...item,
-              product: item.product ?? '-',
+              product: productsBySoul.get(item.product)?.title ?? '-',
               totalAmount:
                 Number(item.quantity || 0) * Number(item.unitPrice || 0),
             }));
@@ -1054,10 +1075,11 @@ export function useBusinessConfig({
                                 });
                               }
 
-                              const closeBtn = document.querySelector(
-                                '[data-state="open"] [data-dismiss]',
-                              );
-                              if (closeBtn) (closeBtn as HTMLElement).click();
+                              // const closeBtn = document.querySelector(
+                              //   '[data-state="open"] [data-dismiss]',
+                              // );
+                              // if (closeBtn) (closeBtn as HTMLElement).click();
+                              closeDialog();
                             }}
                           >
                             <AutoFormSubmit className="w-full">

@@ -179,10 +179,10 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5)
       .map(([productId, revenue]) => {
-        const product = products.find((p) => p._?.soul === productId);
+        const product = productsBySoul.get(productId);
         return { name: product?.title || "Deleted Product", revenue };
       });
-  }, [filteredSales, products]);
+  }, [filteredSales, productsBySoul]);
 
   // Sales Trends - Group sales by date
   const salesTrends = useMemo(() => {
