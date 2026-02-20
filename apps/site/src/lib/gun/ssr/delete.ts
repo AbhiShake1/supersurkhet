@@ -2,19 +2,25 @@ import type { GunMessagePut } from 'gun';
 import { runLifecycleHookPipeline } from '@/lib/plugins/runtime-pipeline';
 import type { SchemaKeys } from '..';
 import { getGunRef, mergeKeys } from '../utils';
+import {
+  resolveAfterNextTick,
+  resolveLifecycleBusinessId,
+} from './lifecycle';
 
 export function remove<const T extends SchemaKeys>(
   key: T,
   ...restKeys: string[]
 ) {
   return async (id: string) => {
-    const businessId = restKeys[0];
-    await runLifecycleHookPipeline({
-      businessId,
-      table: key,
-      hook: 'beforeDelete',
-      payload: { id },
-    });
+    const businessId = resolveLifecycleBusinessId({ table: key, restKeys });
+    if (businessId) {
+      await runLifecycleHookPipeline({
+        businessId,
+        table: key,
+        hook: 'beforeDelete',
+        payload: { id },
+      });
+    }
 
     const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
     return new Promise<{ deleted: true; id: string }>((resolve, reject) => {
@@ -23,6 +29,10 @@ export function remove<const T extends SchemaKeys>(
         .put(null, (ack: GunMessagePut) => {
           if ('err' in ack && !!ack.err) {
             reject(ack.err);
+            return;
+          }
+          if (!businessId) {
+            void resolveAfterNextTick({ deleted: true, id }).then(resolve);
             return;
           }
           void runLifecycleHookPipeline({

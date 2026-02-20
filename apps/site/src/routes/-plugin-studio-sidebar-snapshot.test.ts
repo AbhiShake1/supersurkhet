@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PLUGIN_STUDIO_SIDEBAR_SNAPSHOT_VERSION,
   buildPluginStudioSidebarSnapshotStorageKey,
+  PLUGIN_STUDIO_SIDEBAR_SNAPSHOT_VERSION,
+  type PluginStudioSidebarSnapshot,
+  type PluginStudioSystemTabState,
   parsePluginStudioSidebarSnapshot,
   pickLatestPluginStudioSidebarSnapshot,
   shouldApplyPluginStudioSidebarSnapshot,
-  type PluginStudioSidebarSnapshot,
-  type PluginStudioSystemTabState,
 } from './-plugin-studio-sidebar-snapshot';
 
 const DEFAULT_SYSTEM_TABS: PluginStudioSystemTabState = {
@@ -104,8 +104,8 @@ describe('plugin studio sidebar snapshot helpers', () => {
     expect(parsed?.schemaOrder).toEqual(['orders']);
   });
 
-  it('only applies snapshots newer than server revision and matching draft', () => {
-    const snapshot: PluginStudioSidebarSnapshot = {
+  it('does not let client snapshot timestamps override persisted revisions', () => {
+    const legacySnapshot: PluginStudioSidebarSnapshot = {
       version: PLUGIN_STUDIO_SIDEBAR_SNAPSHOT_VERSION,
       pluginId: 'plugin.sales',
       draftId: 'draft-1',
@@ -118,12 +118,24 @@ describe('plugin studio sidebar snapshot helpers', () => {
       groupOrder: [],
       systemTabs: DEFAULT_SYSTEM_TABS,
     };
+    const snapshot: PluginStudioSidebarSnapshot = {
+      ...legacySnapshot,
+      baseRevisionRecencyKey: '2026-02-19T10:00:01.000Z:rev-1',
+    };
+
+    expect(
+      shouldApplyPluginStudioSidebarSnapshot({
+        snapshot: legacySnapshot,
+        draftId: 'draft-1',
+        latestRevisionRecencyKey: '2026-02-19T10:00:01.000Z:rev-1',
+      }),
+    ).toBe(false);
 
     expect(
       shouldApplyPluginStudioSidebarSnapshot({
         snapshot,
         draftId: 'draft-1',
-        latestRevisionCreatedAt: '2026-02-19T10:00:01.000Z',
+        latestRevisionRecencyKey: '2026-02-19T10:00:01.000Z:rev-1',
       }),
     ).toBe(true);
 
@@ -131,7 +143,7 @@ describe('plugin studio sidebar snapshot helpers', () => {
       shouldApplyPluginStudioSidebarSnapshot({
         snapshot,
         draftId: 'draft-2',
-        latestRevisionCreatedAt: '2026-02-19T10:00:01.000Z',
+        latestRevisionRecencyKey: '2026-02-19T10:00:01.000Z:rev-1',
       }),
     ).toBe(false);
 
@@ -139,8 +151,15 @@ describe('plugin studio sidebar snapshot helpers', () => {
       shouldApplyPluginStudioSidebarSnapshot({
         snapshot,
         draftId: 'draft-1',
-        latestRevisionCreatedAt: '2026-02-19T10:00:02.000Z',
+        latestRevisionRecencyKey: '2026-02-19T10:00:02.000Z:rev-2',
       }),
     ).toBe(false);
+
+    expect(
+      shouldApplyPluginStudioSidebarSnapshot({
+        snapshot,
+        draftId: 'draft-1',
+      }),
+    ).toBe(true);
   });
 });

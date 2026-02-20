@@ -45,7 +45,7 @@ describe('plugin-studio route contract', () => {
 
     expect(content).toContain('previewPluginReleaseHashes');
     expect(content).toContain('publishPluginRelease');
-    expect(content).toContain('mergeMarketplaceReleasesWithSeed');
+    expect(content).not.toContain('mergeMarketplaceReleasesWithSeed');
     expect(content).not.toContain('ensureMarketplaceSeedReleases');
   });
 
@@ -81,6 +81,14 @@ describe('plugin-studio route contract', () => {
     expect(content).not.toContain('Extend Core');
   });
 
+  it('does not squeeze auto-admin preview into a fixed xl sidebar column', () => {
+    const content = getRouteContent();
+
+    expect(content).not.toContain(
+      'grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]',
+    );
+  });
+
   it('wires column edit/delete actions for the live preview table columns', () => {
     const content = getRouteContent();
 
@@ -89,6 +97,20 @@ describe('plugin-studio route contract', () => {
     expect(content).toContain('onReorderColumns: handleReorderColumns');
     expect(content).toContain('isDeleteColumnDialogOpen');
     expect(content).toContain('confirmDeleteColumn');
+  });
+
+  it('guards schema editor persistence against no-op updates', () => {
+    const content = getRouteContent();
+
+    expect(content).toMatch(
+      /canonicalStringify\(nextBuilder\)\s*===\s*canonicalStringify\(schemaBuilder\)/,
+    );
+    expect(content).toMatch(
+      /canonicalStringify\(nextSchemaRefinements\)\s*===\s*canonicalStringify\(schemaRefinements\)/,
+    );
+    expect(content).toMatch(
+      /canonicalStringify\(nextBlocklyRefinements\)\s*===\s*canonicalStringify\(blocklyRefinements\)/,
+    );
   });
 
   it('keeps advanced technical internals hidden from the default view', () => {

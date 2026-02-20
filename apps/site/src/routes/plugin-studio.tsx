@@ -86,7 +86,6 @@ import {
 } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
 import { api } from '@/lib/api';
 import {
-  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
@@ -124,6 +123,11 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { throwOnFailedPersistenceWrites } from './-plugin-studio-persistence';
+import {
+  resolvePluginStudioPluginId,
+  shouldSyncPluginStudioSearch,
+} from './-plugin-studio-plugin-id';
 import {
   buildPluginStudioSidebarSnapshotStorageKey,
   pickLatestPluginStudioSidebarSnapshot,
@@ -289,8 +293,8 @@ function toDraftId({
 }
 
 function parseVersionParts(version: string): [number, number, number] | null {
-  const parts = version.split('.');
-  if (parts.length !== 3) return null;
+  const parts = version?.split('.');
+  if (parts?.length !== 3) return null;
   const numeric = parts.map((part) => Number(part));
   if (numeric.some((part) => !Number.isInteger(part) || part < 0)) {
     return null;
@@ -714,7 +718,7 @@ function toWorkspaceSchemasAndFields(schemaDocs: readonly SchemaDoc[]): {
 
 function toLatestTemplateReleases(releases: PluginReleaseDoc[]) {
   const map = new Map<string, PluginReleaseDoc>();
-  for (const release of mergeMarketplaceReleasesWithSeed(releases)) {
+  for (const release of releases) {
     const existing = map.get(release.pluginId);
     if (!existing || isVersionGreater(release.version, existing.version)) {
       map.set(release.pluginId, release);
@@ -2048,9 +2052,6 @@ function PluginStudioPresenter({
     () => readSearchParamString(search, 'pluginId'),
     [search],
   );
-  const [pluginId, setPluginId] = useState(
-    () => requestedPluginId ?? 'example.plugin',
-  );
   const draftId = useMemo(
     () => toDraftId({ actorUserId }),
     [actorUserId],
@@ -2164,16 +2165,26 @@ function PluginStudioPresenter({
     refetch: refetchReleases,
   } = api.pluginRelease.useGet();
   const releases = releaseRows as PluginReleaseDoc[];
-  const marketplaceReleases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(releases),
-    [releases],
-  );
+  const marketplaceReleases = releases;
   const {
     data: draftRows = [],
     isLoading: isDraftLoading,
     refetch: refetchDrafts,
   } = api.pluginDraft.useGet();
   const drafts = draftRows as PluginDraftDoc[];
+  const activeDraft = useMemo(
+    () => drafts.find((candidate) => candidate.draftId === draftId) ?? null,
+    [draftId, drafts],
+  );
+  const pluginId = useMemo(
+    () =>
+      resolvePluginStudioPluginId({
+        searchPluginId: requestedPluginId,
+        persistedPluginId: activeDraft?.pluginId,
+        fallbackPluginId: 'example.plugin',
+      }),
+    [requestedPluginId, activeDraft?.pluginId],
+  );
   const draftDocScopeKeys = useMemo(() => [draftId], [draftId]);
   const {
     data: schemaDocRows = [],
@@ -2298,7 +2309,7 @@ function PluginStudioPresenter({
     const candidates = rows.filter(
       (row) =>
         row.draftId === draftId &&
-          (row.revisionId === 'live' ||
+        (row.revisionId === 'live' ||
           row.id === canonicalRoutesTabsConfigId ||
           row.id === legacyRoutesTabsConfigId),
     );
@@ -2326,12 +2337,26 @@ function PluginStudioPresenter({
     [activeRoutesTabsConfigRow],
   );
 
-  useEffect(() => {
-    if (!requestedPluginId || requestedPluginId === pluginId) {
-      return;
-    }
-    setPluginId(requestedPluginId);
-  }, [requestedPluginId, pluginId]);
+  const updatePluginIdInSearch = useCallback(
+    (candidatePluginId: string) => {
+      const normalizedPluginId = candidatePluginId.trim();
+      if (!normalizedPluginId) return;
+      const nextPluginId = normalizedPluginId;
+
+      navigate({
+        search: (current: unknown) => {
+          const next = {
+            ...(current as Record<string, unknown>),
+            pluginId: nextPluginId,
+          } as Record<string, unknown>;
+          delete next.draftId;
+          return next;
+        },
+        replace: true,
+      });
+    },
+    [navigate],
+  );
 
   useEffect(() => {
     return () => {
@@ -2467,6 +2492,9 @@ function PluginStudioPresenter({
     ) => {
       const nextBuilder =
         typeof value === 'function' ? value(schemaBuilder) : value;
+      if (canonicalStringify(nextBuilder) === canonicalStringify(schemaBuilder)) {
+        return;
+      }
       persistSchemaEditorState(
         nextBuilder,
         schemaRefinements,
@@ -2483,6 +2511,12 @@ function PluginStudioPresenter({
     ) => {
       const nextSchemaRefinements =
         typeof value === 'function' ? value(schemaRefinements) : value;
+      if (
+        canonicalStringify(nextSchemaRefinements) ===
+        canonicalStringify(schemaRefinements)
+      ) {
+        return;
+      }
       persistSchemaEditorState(
         schemaBuilder,
         nextSchemaRefinements,
@@ -2499,6 +2533,12 @@ function PluginStudioPresenter({
     ) => {
       const nextBlocklyRefinements =
         typeof value === 'function' ? value(blocklyRefinements) : value;
+      if (
+        canonicalStringify(nextBlocklyRefinements) ===
+        canonicalStringify(blocklyRefinements)
+      ) {
+        return;
+      }
       persistSchemaEditorState(
         schemaBuilder,
         schemaRefinements,
@@ -2576,11 +2616,6 @@ function PluginStudioPresenter({
     [parsed, pluginId],
   );
 
-  const activeDraft = useMemo(
-    () => drafts.find((candidate) => candidate.draftId === draftId) ?? null,
-    [draftId, drafts],
-  );
-
   const {
     data: draftRevisionRows = [],
     isLoading: isDraftRevisionLoading,
@@ -2631,32 +2666,24 @@ function PluginStudioPresenter({
   }, [actorUserId, draftId, pluginId]);
 
   useEffect(() => {
+    if (isDraftLoading) {
+      return;
+    }
     const searchPluginId = readSearchParamString(search, 'pluginId');
     const searchRecord = (search ?? {}) as Record<string, unknown>;
     const searchDraftId =
-      typeof searchRecord.draftId === 'string' ? searchRecord.draftId : '';
-    const hasSearchDraftId = Boolean(
-      search &&
-      typeof search === 'object' &&
-      searchDraftId.trim().length > 0,
-    );
-    const nextPluginId = pluginId;
-    if (!nextPluginId) return;
-    if (searchPluginId === nextPluginId && !hasSearchDraftId) {
+      typeof searchRecord.draftId === 'string' ? searchRecord.draftId : undefined;
+    if (
+      !shouldSyncPluginStudioSearch({
+        pluginId,
+        searchPluginId,
+        searchDraftId,
+      })
+    ) {
       return;
     }
-    navigate({
-      search: (current: unknown) => {
-        const next = {
-          ...(current as Record<string, unknown>),
-          pluginId: nextPluginId,
-        } as Record<string, unknown>;
-        delete next.draftId;
-        return next;
-      },
-      replace: true,
-    });
-  }, [pluginId, search, navigate]);
+    updatePluginIdInSearch(pluginId);
+  }, [isDraftLoading, pluginId, search, updatePluginIdInSearch]);
 
   useEffect(() => {
     if (isDraftRevisionLoading) {
@@ -2784,7 +2811,7 @@ function PluginStudioPresenter({
       shouldApplyPluginStudioSidebarSnapshot({
         snapshot: sidebarSnapshot,
         draftId,
-        latestRevisionCreatedAt: latestRevision.createdAt,
+        latestRevisionRecencyKey,
       })
     ) {
       const schemaIdSet = new Set(nextSchemaOrder);
@@ -2866,7 +2893,6 @@ function PluginStudioPresenter({
       hydratedSystemTabs = sidebarSnapshot.systemTabs;
     }
 
-    setPluginId(latestRevision.pluginId || pluginId);
     persistSchemaDocs(nextSchemaDocs);
     persistWorkflowDocs(nextWorkflows);
     persistActionManifestDocs(latestRevision.actionManifest ?? []);
@@ -2919,6 +2945,9 @@ function PluginStudioPresenter({
     }
 
     const latestRevision = activeDraftRevisions[0];
+    const latestRevisionRecencyKey = latestRevision
+      ? toDraftRevisionRecencyKey(latestRevision)
+      : undefined;
     const latestPersistedSnapshot = latestRevision
       ? canonicalStringify({
         schemaDocs: latestRevision.schemaDocs ?? [],
@@ -2945,6 +2974,9 @@ function PluginStudioPresenter({
       pluginId,
       draftId,
       updatedAt: new Date().toISOString(),
+      ...(latestRevisionRecencyKey
+        ? { baseRevisionRecencyKey: latestRevisionRecencyKey }
+        : {}),
       schemaOrder,
       schemaTitleById: Object.fromEntries(
         parsed.schemaDocs.map((schemaDoc) => [
@@ -4103,7 +4135,13 @@ function PluginStudioPresenter({
       return;
     }
     void Promise.allSettled(writes)
-      .then(() => refetchSchemaDocs())
+      .then((settled) => {
+        throwOnFailedPersistenceWrites({
+          context: 'Schema persistence',
+          settled,
+        });
+        return refetchSchemaDocs();
+      })
       .catch((error) => reportPersistenceError('Schema persistence', error));
   }
 
@@ -4153,7 +4191,13 @@ function PluginStudioPresenter({
       return;
     }
     void Promise.allSettled(writes)
-      .then(() => refetchWorkflowDocs())
+      .then((settled) => {
+        throwOnFailedPersistenceWrites({
+          context: 'Workflow persistence',
+          settled,
+        });
+        return refetchWorkflowDocs();
+      })
       .catch((error) => reportPersistenceError('Workflow persistence', error));
   }
 
@@ -4203,7 +4247,13 @@ function PluginStudioPresenter({
       return;
     }
     void Promise.allSettled(writes)
-      .then(() => refetchActionManifestDocs())
+      .then((settled) => {
+        throwOnFailedPersistenceWrites({
+          context: 'Action manifest persistence',
+          settled,
+        });
+        return refetchActionManifestDocs();
+      })
       .catch((error) =>
         reportPersistenceError('Action manifest persistence', error),
       );
@@ -5202,7 +5252,7 @@ function PluginStudioPresenter({
       return;
     }
 
-    setPluginId(template.pluginId);
+    updatePluginIdInSearch(template.pluginId);
     setTitle(template.docs.title);
     setDescription(template.docs.description);
     persistActionManifestDocs(template.actionManifest);
@@ -5351,7 +5401,7 @@ function PluginStudioPresenter({
               renders from the same schema docs in real time.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]">
+          <CardContent className="grid gap-4">
             {parsed === null ? (
               <div className="p-4 text-sm text-muted-foreground">
                 Fix schema/workflow JSON parse issues to render preview.

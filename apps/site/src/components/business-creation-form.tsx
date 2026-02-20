@@ -1,3 +1,16 @@
+import type { SchemaKeys } from '@gta/react-hooks';
+import { Link } from '@tanstack/react-router';
+import {
+  Building,
+  CheckCircle,
+  Package,
+  Search,
+  Sparkles,
+  Store,
+} from 'lucide-react';
+import { useLayoutEffect, useMemo, useState } from 'react';
+import type { UseFormReturn } from 'react-hook-form';
+import { z } from 'zod';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   FormControl,
@@ -20,30 +33,21 @@ import {
   type PluginCatalogSort,
 } from '@/lib/plugins/admin-plugin-catalog';
 import {
+  type BusinessOnboardingPluginFilter,
+  businessOnboardingPluginCategoryOptions,
+  filterBusinessOnboardingCatalog,
+} from '@/lib/plugins/business-onboarding-plugin-catalog';
+import {
   getRecommendedSeedReleaseIds,
-  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import { businessSchema, featureSchema } from '@/lib/schema';
 import { cn } from '@/lib/utils';
-import type { SchemaKeys } from '@gta/react-hooks';
-import { Link } from '@tanstack/react-router';
-import {
-  Building,
-  CheckCircle,
-  Package,
-  Search,
-  Sparkles,
-  Store,
-} from 'lucide-react';
-import { useLayoutEffect, useMemo, useState } from 'react';
-import type { UseFormReturn } from 'react-hook-form';
-import { z } from 'zod';
+import { MapField } from './ui/autoform/components/MapField';
+import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { MapField } from './ui/autoform/components/MapField';
 
 export const businessCreationSchema = businessSchema
   .pick({
@@ -114,23 +118,6 @@ const recommendedFeatures: Record<
   financial_firm: ['financialFirm', 'appointment', 'expense'],
   ride_sharing: ['rideSharing', 'driverProfile', 'trip', 'expense'],
 };
-
-const pluginCategoryById: Record<string, string> = {
-  'supersurkhet.plugin.restaurant-admin': 'operations',
-  'supersurkhet.plugin.customer-loyalty': 'growth',
-  'supersurkhet.plugin.finance-ops': 'finance',
-  'supersurkhet.plugin.fulfillment-ops': 'operations',
-  'supersurkhet.plugin.catalog-intelligence': 'inventory',
-};
-
-const pluginCategoryOptions = [
-  { value: 'all', label: 'All' },
-  { value: 'recommended', label: 'Recommended' },
-  { value: 'operations', label: 'Operations' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'inventory', label: 'Inventory' },
-  { value: 'growth', label: 'Growth' },
-] as const;
 
 interface BusinessCreationFormProps {
   step: number;
@@ -257,7 +244,7 @@ export function BusinessCreationForm({
                             const isSelected = field.value === type;
                             const Icon =
                               businessTypeIcons[
-                              type as keyof typeof businessTypeIcons
+                                type as keyof typeof businessTypeIcons
                               ] || Building;
                             return (
                               <Card
@@ -335,16 +322,12 @@ function toReleaseId(pluginId: string, version: string) {
 
 function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
   const [query, setQuery] = useState('');
-  const [category, setCategory] = useState<(typeof pluginCategoryOptions)[number]['value']>(
-    'recommended',
-  );
+  const [category, setCategory] =
+    useState<BusinessOnboardingPluginFilter>('recommended');
   const [sortBy, setSortBy] = useState<PluginCatalogSort>('recent');
   const businessType = form.watch('businessType');
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
-  const releases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
-    [releaseRows],
-  );
+  const releases = releaseRows as PluginReleaseDoc[];
 
   const recommendedReleaseIds = useMemo(
     () => getRecommendedSeedReleaseIds(businessType),
@@ -375,12 +358,10 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
 
   const visibleCatalog = useMemo(
     () =>
-      catalog.filter((entry) => {
-        if (category === 'all') return true;
-        if (category === 'recommended') {
-          return recommendedPluginIds.has(entry.pluginId);
-        }
-        return (pluginCategoryById[entry.pluginId] ?? 'other') === category;
+      filterBusinessOnboardingCatalog({
+        catalog,
+        category,
+        recommendedPluginIds,
       }),
     [catalog, category, recommendedPluginIds],
   );
@@ -416,7 +397,9 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
         function selectRecommended() {
           const recommendedIds = catalog
             .filter((entry) => recommendedPluginIds.has(entry.pluginId))
-            .map((entry) => toReleaseId(entry.pluginId, entry.latestRelease.version));
+            .map((entry) =>
+              toReleaseId(entry.pluginId, entry.latestRelease.version),
+            );
           if (recommendedIds.length === 0) return;
           field.onChange(
             recommendedIds.filter(
@@ -428,7 +411,9 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
         return (
           <FormItem className="space-y-4">
             <div className="space-y-2">
-              <FormLabel className="text-base">Plugin stack (required)</FormLabel>
+              <FormLabel className="text-base">
+                Plugin stack (required)
+              </FormLabel>
               <p className="text-sm text-muted-foreground">
                 Pick the plugins to install as soon as the business is created.
                 You need at least one plugin to continue.
@@ -463,12 +448,14 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {pluginCategoryOptions.map((option) => (
+                  {businessOnboardingPluginCategoryOptions.map((option) => (
                     <Button
                       key={option.value}
                       size="sm"
                       type="button"
-                      variant={category === option.value ? 'default' : 'outline'}
+                      variant={
+                        category === option.value ? 'default' : 'outline'
+                      }
                       onClick={() => setCategory(option.value)}
                     >
                       {option.label}
@@ -545,7 +532,9 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                       entry.latestRelease.version,
                     );
                     const isSelected = selectedReleaseIdsSet.has(releaseId);
-                    const isRecommended = recommendedPluginIds.has(entry.pluginId);
+                    const isRecommended = recommendedPluginIds.has(
+                      entry.pluginId,
+                    );
 
                     return (
                       <Card
@@ -575,15 +564,17 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                             {entry.description || 'No description available.'}
                           </p>
                           <div className="flex flex-wrap gap-1.5">
-                            {entry.capabilities.slice(0, 3).map((capability) => (
-                              <Badge
-                                key={capability}
-                                variant="secondary"
-                                className="text-[10px]"
-                              >
-                                {capability}
-                              </Badge>
-                            ))}
+                            {entry.capabilities
+                              .slice(0, 3)
+                              .map((capability) => (
+                                <Badge
+                                  key={capability}
+                                  variant="secondary"
+                                  className="text-[10px]"
+                                >
+                                  {capability}
+                                </Badge>
+                              ))}
                             {entry.capabilityCount > 3 && (
                               <Badge variant="outline" className="text-[10px]">
                                 +{entry.capabilityCount - 3}
@@ -600,7 +591,9 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                             variant={isSelected ? 'secondary' : 'default'}
                             onClick={() => togglePlugin(entry)}
                           >
-                            {isSelected ? 'Installing plugin' : 'Install plugin'}
+                            {isSelected
+                              ? 'Installing plugin'
+                              : 'Install plugin'}
                           </Button>
                         </div>
                       </Card>

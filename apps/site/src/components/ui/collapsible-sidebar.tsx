@@ -23,6 +23,10 @@ import { useDialog } from '@/contexts/dialog-context';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useProfile } from '@/hooks/use-profile';
 import { appSchema } from '@/lib/schema';
+import {
+  loadSidebarPreferences,
+  saveSidebarPreferences,
+} from '@/lib/sidebar-preferences';
 import { useAuth } from '../auth-provider';
 import type { PossibleTabConfig } from '../auto-admin';
 import { ThemeToggle } from '../theme/theme-toggle';
@@ -46,7 +50,12 @@ import {
   DropdownMenuTrigger,
 } from './dropdown-menu';
 import { Input } from './input';
-import { Popover, PopoverContent, PopoverTrigger } from './popover';
+import {
+  Popover,
+  PopoverClose,
+  PopoverContent,
+  PopoverTrigger,
+} from './popover';
 import { ManageOrganization } from './organizations/manage-organization';
 
 function isLucideIcon(value: unknown): value is LucideIcon {
@@ -63,8 +72,6 @@ function getTabIcon(tab: PossibleTabConfig): LucideIcon {
   return Menu;
 }
 
-const FREQUENT_TABS_STORAGE_KEY = 'sidebar-frequent-tabs';
-const GROUP_OPEN_STATE_STORAGE_KEY = 'sidebar-group-state';
 const SECTION_TOGGLE_BUTTON_CLASS =
   'flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 active:bg-slate-200/60 dark:active:bg-slate-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset';
 
@@ -144,6 +151,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     );
     return entries.sort(([left], [right]) => left.localeCompare(right));
   }, []);
+  const { user, anonymousUserId } = useAuth();
+  const preferenceOwnerId = user?.pub ?? anonymousUserId ?? null;
 
   const { search } = useLocation();
   const currentTab =
@@ -159,25 +168,16 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   }, [currentTab, tabs]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    try {
-      const rawUsage = window.localStorage.getItem(FREQUENT_TABS_STORAGE_KEY);
-      if (rawUsage) {
-        const parsed = JSON.parse(rawUsage) as Record<string, number>;
-        setFrequentUsage(parsed);
-      }
-      const rawGroups = window.localStorage.getItem(
-        GROUP_OPEN_STATE_STORAGE_KEY,
-      );
-      if (rawGroups) {
-        const parsed = JSON.parse(rawGroups) as Record<string, boolean>;
-        setGroupOpenState(parsed);
-      }
-    } catch (_error) {
-      setFrequentUsage({});
-      setGroupOpenState({});
-    }
-  }, []);
+    let isCancelled = false;
+    void loadSidebarPreferences(preferenceOwnerId).then((next) => {
+      if (isCancelled) return;
+      setFrequentUsage(next.frequentUsage);
+      setGroupOpenState(next.groupOpenState);
+    });
+    return () => {
+      isCancelled = true;
+    };
+  }, [preferenceOwnerId]);
 
   // Filter items based on search query
   const filteredItems = searchQuery
@@ -260,12 +260,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const toggleGroup = (groupName: string) => {
     setGroupOpenState((prev) => {
       const next = { ...prev, [groupName]: !(prev[groupName] ?? true) };
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(
-          GROUP_OPEN_STATE_STORAGE_KEY,
-          JSON.stringify(next),
-        );
-      }
+      saveSidebarPreferences(preferenceOwnerId, {
+        groupOpenState: next,
+      });
       return next;
     });
   };
@@ -273,12 +270,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const incrementFrequentUsage = (title: string) => {
     setFrequentUsage((prev) => {
       const next = { ...prev, [title]: (prev[title] ?? 0) + 1 };
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem(
-          FREQUENT_TABS_STORAGE_KEY,
-          JSON.stringify(next),
-        );
-      }
+      saveSidebarPreferences(preferenceOwnerId, {
+        frequentUsage: next,
+      });
       return next;
     });
   };
@@ -899,10 +893,9 @@ const QuickAddPopover: React.FC<{
   onAddTable?: (targetGroupName?: string) => void;
   onAddGroup?: (groupName?: string, options?: GroupAddOptions) => void;
 }> = ({ editable, targetGroupName, onAddTable, onAddGroup }) => {
-  const [open, setOpen] = useState(false);
   if (!editable || (!onAddTable && !onAddGroup)) return null;
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
@@ -917,58 +910,62 @@ const QuickAddPopover: React.FC<{
       <PopoverContent align="end" className="w-44 p-1">
         <div className="space-y-1">
           {onAddTable ? (
-            <button
-              type="button"
-              className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
-              onClick={() => {
-                onAddTable(targetGroupName);
-                setOpen(false);
-              }}
-            >
-              Add Table
-            </button>
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddTable(targetGroupName);
+                }}
+              >
+                Add Table
+              </button>
+            </PopoverClose>
           ) : null}
           {onAddGroup ? (
-            <button
-              type="button"
-              className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
-              onClick={() => {
-                onAddGroup();
-                setOpen(false);
-              }}
-            >
-              Add Group
-            </button>
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddGroup();
+                }}
+              >
+                Add Group
+              </button>
+            </PopoverClose>
           ) : null}
           {onAddGroup && targetGroupName ? (
-            <button
-              type="button"
-              className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
-              onClick={() => {
-                onAddGroup(undefined, {
-                  relativeTo: targetGroupName,
-                  position: 'above',
-                });
-                setOpen(false);
-              }}
-            >
-              Add Group Above
-            </button>
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddGroup(undefined, {
+                    relativeTo: targetGroupName,
+                    position: 'above',
+                  });
+                }}
+              >
+                Add Group Above
+              </button>
+            </PopoverClose>
           ) : null}
           {onAddGroup && targetGroupName ? (
-            <button
-              type="button"
-              className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
-              onClick={() => {
-                onAddGroup(undefined, {
-                  relativeTo: targetGroupName,
-                  position: 'below',
-                });
-                setOpen(false);
-              }}
-            >
-              Add Group Below
-            </button>
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddGroup(undefined, {
+                    relativeTo: targetGroupName,
+                    position: 'below',
+                  });
+                }}
+              >
+                Add Group Below
+              </button>
+            </PopoverClose>
           ) : null}
         </div>
       </PopoverContent>
@@ -1008,11 +1005,12 @@ const Option: React.FC<{
   const hasWorkflowAction = Boolean(onOpenWorkflowEditor);
   const hasDeleteAction = Boolean(onRequestDeleteTable);
   const hasHoverActions = hasWorkflowAction || hasDeleteAction;
-  const actionPaddingClass = hasWorkflowAction && hasDeleteAction
-    ? 'pr-16'
-    : hasHoverActions
-      ? 'pr-8'
-      : '';
+  const actionPaddingClass =
+    hasWorkflowAction && hasDeleteAction
+      ? 'pr-16'
+      : hasHoverActions
+        ? 'pr-8'
+        : '';
   const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
   const [iconSearch, setIconSearch] = useState('');
 

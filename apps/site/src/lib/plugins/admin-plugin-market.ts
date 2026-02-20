@@ -27,8 +27,8 @@ export type PluginMarketItem = PluginCatalogEntry & {
   iconUrl?: string;
   screenshotUrls: string[];
   installs: number;
-  averageRating: number;
-  reviewCount: number;
+  averageRating: number | null;
+  reviewCount: number | null;
 };
 
 function inferCategory(capabilities: string[]): string {
@@ -76,7 +76,7 @@ function compareRank(left: PluginMarketItem, right: PluginMarketItem): number {
 
 export function summarizeReviewStats(
   pluginId: string,
-  reviews: PluginUserReview[],
+  reviews: readonly PluginUserReview[],
 ) {
   const related = reviews.filter((review) => review.pluginId === pluginId);
   const totalReviews = related.length;
@@ -93,7 +93,7 @@ export function summarizeReviewStats(
 
 export function groupPluginReviewsByUser(
   pluginId: string,
-  reviews: PluginUserReview[],
+  reviews: readonly PluginUserReview[],
   currentUserId: string,
 ): PluginUserReviewGroup[] {
   const filtered = reviews.filter((review) => review.pluginId === pluginId);
@@ -164,11 +164,16 @@ export function buildMarketplaceGroups(
   catalog: PluginCatalogEntry[],
   input: {
     installs?: readonly BusinessPluginInstallDoc[];
+    reviews?: readonly PluginUserReview[];
   } = {},
 ) {
   const installCounts = buildInstallCounts(input.installs ?? []);
+  const allReviews = input.reviews;
   const all = catalog.map((entry) => {
     const category = inferCategory(entry.capabilities);
+    const reviewStats = allReviews
+      ? summarizeReviewStats(entry.pluginId, allReviews)
+      : null;
     return {
       ...entry,
       category,
@@ -176,8 +181,8 @@ export function buildMarketplaceGroups(
       iconUrl: undefined,
       screenshotUrls: [],
       installs: installCounts.get(entry.pluginId) ?? 0,
-      averageRating: 0,
-      reviewCount: 0,
+      averageRating: reviewStats?.averageRating ?? null,
+      reviewCount: reviewStats?.totalReviews ?? null,
     } satisfies PluginMarketItem;
   });
 
@@ -226,9 +231,13 @@ export function pickSimilarPlugins(
 
 export function buildPluginDetailView(
   plugin: PluginMarketItem,
-  reviews: PluginUserReview[],
-  userId: string,
+  options: {
+    reviews?: readonly PluginUserReview[];
+    userId?: string;
+  } = {},
 ) {
+  const reviews = options.reviews ?? [];
+  const userId = options.userId ?? '';
   const stats = summarizeReviewStats(plugin.pluginId, reviews);
   const userReview = reviews.find(
     (review) => review.pluginId === plugin.pluginId && review.userId === userId,

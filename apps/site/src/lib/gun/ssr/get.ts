@@ -1,10 +1,17 @@
-import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
-import { decrypt } from '../utils/sea';
+import type { QueryObserverOptions } from '@tanstack/react-query';
 import type { NestedSchemaType, SchemaKeys } from '..';
 import { mergeOptionsWithDefaults } from '../options';
-import type { QueryObserverOptions } from '@tanstack/react-query';
+import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
+import { decrypt } from '../utils/sea';
 
 const SSR_GET_TIMEOUT_MS = 1500;
+
+export class SSRGetTimeoutError extends Error {
+  constructor(path: string, timeoutMs: number) {
+    super(`fetch timed out after ${timeoutMs}ms for "${path}"`);
+    this.name = 'SSRGetTimeoutError';
+  }
+}
 
 export type GetBuilder<T extends SchemaKeys> = {
   separator?: string;
@@ -70,11 +77,11 @@ export function get<const T extends SchemaKeys>(
       ? _keys.replaceAll('/', key.separator)
       : _keys;
 
-  return new Promise<NestedSchemaType<T>[]>((resolve) => {
+  return new Promise<NestedSchemaType<T>[]>((resolve, reject) => {
     const node = getGunRef(keys);
     let settled = false;
     const timeout = setTimeout(() => {
-      settle([]);
+      fail(new SSRGetTimeoutError(keys, SSR_GET_TIMEOUT_MS));
     }, SSR_GET_TIMEOUT_MS);
 
     const settle = (value: NestedSchemaType<T>[]) => {
@@ -84,41 +91,60 @@ export function get<const T extends SchemaKeys>(
       resolve(value);
     };
 
-    node.load(async (data) => {
-      if (!data || typeof data !== 'object') {
-        settle([]);
-        return;
-      }
+    const fail = (error: unknown) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      reject(
+        error instanceof Error
+          ? error
+          : new Error(
+            `SSR get failed for "${keys}" with non-Error rejection: ${String(error)}`,
+          ),
+      );
+    };
 
-      if (isSingle) {
-        const decrypted = await decrypt<NestedSchemaType<T>>(data, schema);
-        if (decrypted) {
-          const item = attachSouls(decrypted, keys);
-          settle([item]);
-          return;
-        }
-        settle([]);
-        return;
-      } else {
-        const items: NestedSchemaType<T>[] = [];
-        for (const [soul, val] of Object.entries(data)) {
-          if (soul === '_' || val === null) continue;
-
-          const decrypted = await decrypt<NestedSchemaType<T>>(
-            {
-              ...val,
-              _: { soul },
-            },
-            schema,
-          );
-
-          if (decrypted) {
-            const item = attachSouls(decrypted, `${keys}/${soul}`);
-            items.push(item);
+    node
+      .load(async (data) => {
+        try {
+          if (!data || typeof data !== 'object') {
+            settle([]);
+            return;
           }
+
+          if (isSingle) {
+            const decrypted = await decrypt<NestedSchemaType<T>>(data, schema);
+            if (decrypted) {
+              const item = attachSouls(decrypted, keys);
+              settle([item]);
+              return;
+            }
+            settle([]);
+            return;
+          } else {
+            const items: NestedSchemaType<T>[] = [];
+            for (const [soul, val] of Object.entries(data)) {
+              if (soul === '_' || val === null) continue;
+
+              const decrypted = await decrypt<NestedSchemaType<T>>(
+                {
+                  ...val,
+                  _: { soul },
+                },
+                schema,
+              );
+
+              if (decrypted) {
+                const item = attachSouls(decrypted, `${keys}/${soul}`);
+                items.push(item);
+              }
+            }
+            settle(items);
+          }
+        } catch (error) {
+          fail(error);
         }
-        settle(items);
-      }
-    }).not(() => settle([]));
+      })
+      .not(() => settle([]));
   });
 }

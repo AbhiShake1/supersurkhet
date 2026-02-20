@@ -20,6 +20,7 @@ export type PluginStudioSidebarSnapshot = {
   pluginId: string;
   draftId?: string;
   updatedAt: string;
+  baseRevisionRecencyKey?: string;
   schemaOrder: string[];
   schemaTitleById: Record<string, string>;
   schemaGroupById: Record<string, string>;
@@ -155,6 +156,12 @@ export function parsePluginStudioSidebarSnapshot({
     typeof parsed.updatedAt === 'string' ? parsed.updatedAt.trim() : '';
   if (!updatedAt) return null;
 
+  const baseRevisionRecencyKey =
+    typeof parsed.baseRevisionRecencyKey === 'string' &&
+    parsed.baseRevisionRecencyKey.trim()
+      ? parsed.baseRevisionRecencyKey.trim()
+      : undefined;
+
   const schemaOrder = parseStringArray(parsed.schemaOrder);
   if (!schemaOrder) return null;
 
@@ -184,6 +191,7 @@ export function parsePluginStudioSidebarSnapshot({
     pluginId,
     draftId,
     updatedAt,
+    ...(baseRevisionRecencyKey ? { baseRevisionRecencyKey } : {}),
     schemaOrder,
     schemaTitleById,
     schemaGroupById,
@@ -220,11 +228,11 @@ export function pickLatestPluginStudioSidebarSnapshot({
 export function shouldApplyPluginStudioSidebarSnapshot({
   snapshot,
   draftId,
-  latestRevisionCreatedAt,
+  latestRevisionRecencyKey,
 }: {
   snapshot: PluginStudioSidebarSnapshot;
   draftId?: string;
-  latestRevisionCreatedAt?: string;
+  latestRevisionRecencyKey?: string;
 }) {
   if (snapshot.draftId && draftId && snapshot.draftId !== draftId) {
     return false;
@@ -233,10 +241,10 @@ export function shouldApplyPluginStudioSidebarSnapshot({
     return false;
   }
 
-  const latest = latestRevisionCreatedAt?.trim();
+  const latest = latestRevisionRecencyKey?.trim();
   if (!latest) {
     return true;
   }
 
-  return snapshot.updatedAt.localeCompare(latest) > 0;
+  return snapshot.baseRevisionRecencyKey?.trim() === latest;
 }

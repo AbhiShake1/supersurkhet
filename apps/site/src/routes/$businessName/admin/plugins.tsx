@@ -1,8 +1,7 @@
 import type { SchemaKeys } from '@gta/react-hooks';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Search } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '@/components/auth-provider';
+import { useMemo, useState } from 'react';
 import { AutoTable } from '@/components/auto-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,12 +14,10 @@ import {
   buildMarketplaceGroups,
   type PluginMarketItem,
 } from '@/lib/plugins/admin-plugin-market';
-import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
 } from '@/lib/plugins/types';
-import { ensureMarketplaceSeedReleases } from '@/server-functions/plugins';
 
 export const Route = createFileRoute('/$businessName/admin/plugins')({
   component: PluginsRouteComponent,
@@ -30,7 +27,6 @@ type ChartType = 'top-installed' | 'recently-updated';
 
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
-  const { user } = useAuth();
   const [query, setQuery] = useState('');
   const [chartType, setChartType] = useState<ChartType>('top-installed');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -41,7 +37,6 @@ function PluginsRouteComponent() {
   });
   const business = businesses[0];
   const businessId = business?.id ?? businessName;
-  const actorUserId = user?._?.soul ?? 'anon';
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [businessId],
@@ -49,17 +44,9 @@ function PluginsRouteComponent() {
   const { data: allInstallRows = [] } = api.businessPluginInstall.useGet();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
 
-  useEffect(() => {
-    void ensureMarketplaceSeedReleases({ data: { actorUserId } });
-  }, [actorUserId]);
-
   const installs = installRows as BusinessPluginInstallDoc[];
   const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
-  const liveReleases = releaseRows as PluginReleaseDoc[];
-  const releases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(liveReleases),
-    [liveReleases],
-  );
+  const releases = releaseRows as PluginReleaseDoc[];
 
   const catalog = useMemo(
     () =>

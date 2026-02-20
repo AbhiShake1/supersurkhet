@@ -81,7 +81,7 @@ describe('plugin-studio client boundary', () => {
     const content = getRouteContent();
 
     expect(content).toContain('applyTemplatePreset');
-    expect(content).toContain('mergeMarketplaceReleasesWithSeed');
+    expect(content).not.toContain('mergeMarketplaceReleasesWithSeed');
     expect(content).toContain('Template was not found.');
     expect(content).toContain('setIsTemplatesDialogOpen(false);');
   });

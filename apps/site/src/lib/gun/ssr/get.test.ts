@@ -16,7 +16,7 @@ vi.mock('../utils/sea', () => ({
   decrypt: vi.fn(async (value: unknown) => value),
 }));
 
-import { get } from './get';
+import { get, SSRGetTimeoutError } from './get';
 
 function timeout(ms = 30) {
   return new Promise<'timed-out'>((resolve) => {
@@ -42,7 +42,7 @@ describe('ssr get', () => {
     expect(result).toEqual([]);
   });
 
-  it('resolves empty arrays when gun never calls load or not', async () => {
+  it('rejects when gun never calls load or not before timeout', async () => {
     vi.useFakeTimers();
     loadMock.mockImplementation(() => ({
       not: () => {
@@ -51,8 +51,10 @@ describe('ssr get', () => {
     }));
 
     const pending = get('pluginRelease');
+    const assertion =
+      expect(pending).rejects.toBeInstanceOf(SSRGetTimeoutError);
     await vi.advanceTimersByTimeAsync(1500);
-    await expect(pending).resolves.toEqual([]);
+    await assertion;
   });
 
   it('resolves once when not callback fires', async () => {
@@ -63,7 +65,7 @@ describe('ssr get', () => {
     await expect(get('pluginRelease')).resolves.toEqual([]);
   });
 
-  it('ignores late load callback after timeout settle', async () => {
+  it('ignores late load callback after timeout rejection', async () => {
     vi.useFakeTimers();
     let loadCallback: ((data?: unknown) => void) | undefined;
 
@@ -77,8 +79,10 @@ describe('ssr get', () => {
     });
 
     const pending = get('pluginRelease');
+    const assertion =
+      expect(pending).rejects.toBeInstanceOf(SSRGetTimeoutError);
     await vi.advanceTimersByTimeAsync(1500);
-    await expect(pending).resolves.toEqual([]);
+    await assertion;
 
     loadCallback?.({ id: 'late' });
     await vi.advanceTimersByTimeAsync(1);

@@ -5,10 +5,10 @@ import { describe, expect, it } from 'vitest';
 const filePath = resolve(process.cwd(), 'src/components/create-business.tsx');
 
 describe('create-business plugin installation flow', () => {
-  it('seeds marketplace plugins and installs user-selected releases on create', () => {
+  it('installs user-selected releases on create without mount-time marketplace seeding', () => {
     const source = readFileSync(filePath, 'utf8');
 
-    expect(source).toContain('ensureMarketplaceSeedReleases');
+    expect(source).not.toContain('ensureMarketplaceSeedReleases');
     expect(source).toContain('selectedPluginReleaseIds');
     expect(source).toContain('installPluginRelease');
   });

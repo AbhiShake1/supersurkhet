@@ -18,5 +18,9 @@ describe('plugin details review data source', () => {
     expect(content).not.toContain(`from '@ark-ui/react/rating-group'`);
     expect(content).not.toContain('<RatingGroup.Root');
     expect(content).toContain('not stored in the database');
+    expect(content).toMatch(/buildPluginDetailView\(\s*decoratedPlugin\s*\)/);
+    expect(content).not.toContain(
+      'buildPluginDetailView(decoratedPlugin, [], actorUserId)',
+    );
   });
 });

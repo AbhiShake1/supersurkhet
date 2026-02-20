@@ -31,10 +31,7 @@ import { useAuth } from './auth-provider';
 import { gun } from '@/lib/gun';
 import { getGunRef } from '@/lib/gun/utils';
 import { parseReleaseId } from '@/lib/plugins/marketplace-seed';
-import {
-  ensureMarketplaceSeedReleases,
-  installPluginRelease,
-} from '@/server-functions/plugins';
+import { installPluginRelease } from '@/server-functions/plugins';
 
 const stepContent = {
   1: {
@@ -90,18 +87,6 @@ export function CreateBusiness({
       });
     },
   });
-
-  useEffect(() => {
-    if (!open) return;
-
-    ensureMarketplaceSeedReleases({
-      data: {
-        actorUserId: user?._?.soul ?? 'system-seed',
-      },
-    }).catch((error) => {
-      console.error('Error seeding marketplace plugins:', error);
-    });
-  }, [open, user?._?.soul]);
 
   const handleNextStep1 = async () => {
     if (isLoading) {

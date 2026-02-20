@@ -16,13 +16,16 @@ describe('admin plugins loading behavior', () => {
     );
   });
 
-  it('supports marketplace seed fallback while using install rows for ranking', () => {
+  it('uses DB plugin releases as marketplace source while keeping install ranking rows', () => {
     const source = readFileSync(filePath, 'utf8');
 
-    expect(source).toContain('mergeMarketplaceReleasesWithSeed');
+    expect(source).toContain('api.pluginRelease.useGet');
+    expect(source).toContain('releaseRows as PluginReleaseDoc[]');
+    expect(source).not.toContain('mergeMarketplaceReleasesWithSeed');
+    expect(source).not.toContain('ensureMarketplaceSeedReleases');
+    expect(source).not.toContain('void ensureMarketplaceSeedReleases');
     expect(source).toContain(
       'buildMarketplaceGroups(catalog, { installs: allInstalls })',
     );
-    expect(source).toContain('ensureMarketplaceSeedReleases');
   });
 });
