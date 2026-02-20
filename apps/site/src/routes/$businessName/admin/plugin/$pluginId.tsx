@@ -11,7 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { AutoTable } from '@/components/auto-table';
@@ -31,16 +31,20 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
   buildMarketplaceGroups,
   buildPluginDetailView,
+  groupPluginReviewsByUser,
+  type PluginUserReview,
   pickSimilarPlugins,
 } from '@/lib/plugins/admin-plugin-market';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
+  PluginUserReviewDoc,
 } from '@/lib/plugins/types';
 import { cn } from '@/lib/utils';
 import {
@@ -56,12 +60,20 @@ function PluginDetailsPage() {
   const { businessName, pluginId } = Route.useParams();
   const search = Route.useSearch();
   const decodedPluginId = decodeURIComponent(pluginId);
-  const { user } = useAuth();
+  const { user, anonymousUserId } = useAuth();
   const { fire } = useConfetti();
-  const actorUserId = user?._?.soul ?? 'anon';
+  const actorUserId = user?._?.soul ?? user?.pub ?? anonymousUserId ?? 'anon';
+  const actorUserLabel =
+    user?.name?.trim() ||
+    user?.email?.trim() ||
+    (typeof user?.alias === 'string' ? user.alias.trim() : '') ||
+    'Anonymous user';
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [installing, setInstalling] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
+  const [savingReview, setSavingReview] = useState(false);
 
   const { data: businesses = [] } = api.business.useGet({
     keys: [businessName],
@@ -81,10 +93,36 @@ function PluginDetailsPage() {
   });
   const { data: allInstallRows = [] } = api.businessPluginInstall.useGet();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
+  const { data: reviewRows = [], refetch: refetchReviews } =
+    api.pluginUserReview.useGet();
+  const createReviewMutation = api.pluginUserReview.useCreate();
 
   const installs = installRows as BusinessPluginInstallDoc[];
   const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
   const releases = releaseRows as PluginReleaseDoc[];
+  const reviews = useMemo(
+    () =>
+      (reviewRows as PluginUserReviewDoc[])
+        .filter(
+          (review) =>
+            typeof review.pluginId === 'string' &&
+            typeof review.userId === 'string' &&
+            Number.isFinite(review.rating),
+        )
+        .map(
+          (review) =>
+            ({
+              id: review.id,
+              pluginId: review.pluginId,
+              userId: review.userId,
+              userLabel: review.userLabel?.trim() || 'Anonymous user',
+              rating: review.rating,
+              comment: review.comment ?? '',
+              createdAt: review.updatedAt ?? review.createdAt,
+            }) satisfies PluginUserReview,
+        ),
+    [reviewRows],
+  );
 
   const catalog = useMemo(
     () =>
@@ -98,8 +136,12 @@ function PluginDetailsPage() {
     [releases, installs],
   );
   const market = useMemo(
-    () => buildMarketplaceGroups(catalog, { installs: allInstalls }),
-    [catalog, allInstalls],
+    () =>
+      buildMarketplaceGroups(catalog, {
+        installs: allInstalls,
+        reviews,
+      }),
+    [catalog, allInstalls, reviews],
   );
   const plugin = useMemo(
     () => market.all.find((item) => item.pluginId === decodedPluginId),
@@ -111,9 +153,16 @@ function PluginDetailsPage() {
   const details = useMemo(
     () =>
       decoratedPlugin
-        ? buildPluginDetailView(decoratedPlugin, [], actorUserId)
+        ? buildPluginDetailView(decoratedPlugin, {
+            reviews,
+            userId: actorUserId,
+          })
         : null,
-    [decoratedPlugin, actorUserId],
+    [decoratedPlugin, reviews, actorUserId],
+  );
+  const reviewGroups = useMemo(
+    () => groupPluginReviewsByUser(decodedPluginId, reviews, actorUserId),
+    [decodedPluginId, reviews, actorUserId],
   );
 
   const similar = useMemo(
@@ -138,6 +187,19 @@ function PluginDetailsPage() {
       : undefined;
     return (matchingTab ?? validTabs[0])?.schema?.trim() ?? null;
   }, [details, activePreviewTabKey]);
+
+  useEffect(() => {
+    if (!details?.userReview) {
+      setReviewRating(0);
+      setReviewComment('');
+      return;
+    }
+
+    setReviewRating(
+      Math.max(1, Math.min(5, Math.round(details.userReview.rating))),
+    );
+    setReviewComment(details.userReview.comment ?? '');
+  }, [details?.userReview]);
 
   if (!decoratedPlugin || !details) {
     return (
@@ -220,6 +282,38 @@ function PluginDetailsPage() {
     toast.success('Plugin link copied');
   }
 
+  async function saveReview() {
+    if (reviewRating <= 0) {
+      toast.error('Select a star rating before saving your review.');
+      return;
+    }
+
+    const now = new Date().toISOString();
+    const reviewId = `${encodeURIComponent(pluginData.pluginId)}::${encodeURIComponent(actorUserId)}`;
+
+    try {
+      setSavingReview(true);
+      await createReviewMutation.mutateAsync({
+        id: reviewId,
+        pluginId: pluginData.pluginId,
+        businessId,
+        userId: actorUserId,
+        userLabel: actorUserLabel,
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+        createdAt: details.userReview?.createdAt ?? now,
+        updatedAt: now,
+      });
+      await refetchReviews();
+      toast.success(details.userReview ? 'Review updated' : 'Review submitted');
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to save review');
+    } finally {
+      setSavingReview(false);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 px-4 py-6 md:px-8">
       <Button asChild variant="ghost">
@@ -248,7 +342,7 @@ function PluginDetailsPage() {
             />
             <Stat
               label="Reviews"
-              value={pluginData.reviewCount.toLocaleString()}
+              value={(pluginData.reviewCount ?? 0).toLocaleString()}
               icon={<MessageCircle className="size-4 text-sky-500" />}
             />
             <Stat
@@ -431,10 +525,118 @@ function PluginDetailsPage() {
               <CardTitle>Ratings and reviews</CardTitle>
             </CardHeader>
             <CardContent className="space-y-5 px-5">
-              <p className="text-sm text-muted-foreground">
-                Ratings and review submissions are not stored in the database
-                yet, so marketplace ratings are hidden for now.
-              </p>
+              <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+                <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+                  <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                    Marketplace average
+                  </p>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <p className="text-3xl font-semibold">
+                      {details.reviewStats.averageRating.toFixed(1)}
+                    </p>
+                    <span className="text-xs text-muted-foreground">/5</span>
+                  </div>
+                  <div className="mt-2">
+                    <Stars rating={details.reviewStats.averageRating} />
+                  </div>
+                  <p className="mt-3 text-xs text-muted-foreground">
+                    {details.reviewStats.totalReviews.toLocaleString()} reviews
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="rounded-xl border border-border/70 p-3">
+                    <p className="text-sm font-medium">Your review</p>
+                    <div className="mt-2 flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, index) => {
+                        const value = index + 1;
+                        const active = value <= reviewRating;
+                        return (
+                          <button
+                            key={`rating-star-${value.toString()}`}
+                            type="button"
+                            aria-label={`Rate ${value} star${value === 1 ? '' : 's'}`}
+                            className="rounded p-0.5 hover:bg-muted"
+                            onClick={() => setReviewRating(value)}
+                          >
+                            <Star
+                              className={cn(
+                                'size-5 transition-colors',
+                                active
+                                  ? 'fill-amber-400 text-amber-500'
+                                  : 'text-muted-foreground/40',
+                              )}
+                            />
+                          </button>
+                        );
+                      })}
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {reviewRating > 0
+                          ? `${reviewRating.toString()}/5`
+                          : 'Select rating'}
+                      </span>
+                    </div>
+                    <Textarea
+                      className="mt-3 min-h-24"
+                      value={reviewComment}
+                      onChange={(event) => setReviewComment(event.target.value)}
+                      placeholder="Share details about your experience with this plugin."
+                      maxLength={2000}
+                    />
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        You can edit and resave your review any time.
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={saveReview}
+                        loading={savingReview}
+                        disabled={savingReview || reviewRating <= 0}
+                      >
+                        Save review
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Latest reviews</p>
+                    {reviewGroups.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        Be the first one to review this plugin.
+                      </p>
+                    ) : (
+                      <div className="space-y-2">
+                        {reviewGroups.map((group) => (
+                          <div
+                            key={group.userId}
+                            className="rounded-xl border border-border/70 p-3"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="text-sm font-medium text-foreground">
+                                {group.userLabel}
+                                {group.isCurrentUser ? ' (You)' : ''}
+                              </p>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(
+                                  group.latestReview.createdAt,
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="mt-1">
+                              <Stars rating={group.latestReview.rating} />
+                            </div>
+                            {group.latestReview.comment ? (
+                              <p className="mt-2 text-sm text-muted-foreground">
+                                {group.latestReview.comment}
+                              </p>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -512,6 +714,26 @@ function Stat({
         {label}
       </p>
       <p className="text-2xl font-semibold">{value}</p>
+    </div>
+  );
+}
+
+function Stars({ rating }: { rating: number }) {
+  const rounded = Math.max(0, Math.min(5, Math.round(rating)));
+
+  return (
+    <div className="flex items-center gap-1">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Star
+          key={`stars-${index.toString()}`}
+          className={cn(
+            'size-4',
+            index < rounded
+              ? 'fill-amber-400 text-amber-500'
+              : 'text-muted-foreground/35',
+          )}
+        />
+      ))}
     </div>
   );
 }

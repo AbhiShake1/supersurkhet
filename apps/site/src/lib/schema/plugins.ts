@@ -86,7 +86,10 @@ const expressionDocSchema: z.ZodType<unknown> = z.lazy(() =>
   ]),
 );
 
-const jsonOrExpressionValueSchema = z.union([expressionDocSchema, jsonValueSchema]);
+const jsonOrExpressionValueSchema = z.union([
+  expressionDocSchema,
+  jsonValueSchema,
+]);
 
 const fieldConfigIRSchema = z.object({
   fieldType: z.enum(pluginSchemaFieldTypes).optional(),
@@ -385,9 +388,7 @@ export const pluginPublishReviewSchema = z
   .object({
     id: z
       .string()
-      .describe(
-        'Deterministic review id: draftId@revisionId@environment',
-      ),
+      .describe('Deterministic review id: draftId@revisionId@environment'),
     draftId: z.string(),
     revisionId: z.string(),
     pluginId: z.string(),
@@ -399,11 +400,27 @@ export const pluginPublishReviewSchema = z
   })
   .extend(table);
 
+export const pluginUserReviewSchema = z
+  .object({
+    id: z.string().describe('Deterministic review id: pluginId::userId'),
+    pluginId: z.string(),
+    businessId: z.string().optional(),
+    userId: z.string(),
+    userLabel: z.string(),
+    rating: z.number().int().min(1).max(5),
+    comment: z.string().max(2000).default(''),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
 export const pluginActionCapabilityEnvelopeSchema = z
   .object({
     id: z
       .string()
-      .describe('Deterministic capability envelope id: businessId::environment'),
+      .describe(
+        'Deterministic capability envelope id: businessId::environment',
+      ),
     businessId: z.string(),
     environment: z.string().default('production'),
     runtimeTarget: z.enum(['sandbox-worker', 'core']).default('sandbox-worker'),

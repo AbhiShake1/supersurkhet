@@ -13,10 +13,12 @@ import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
   buildMarketplaceGroups,
   type PluginMarketItem,
+  type PluginUserReview,
 } from '@/lib/plugins/admin-plugin-market';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
+  PluginUserReviewDoc,
 } from '@/lib/plugins/types';
 
 export const Route = createFileRoute('/$businessName/admin/plugins')({
@@ -43,10 +45,34 @@ function PluginsRouteComponent() {
   });
   const { data: allInstallRows = [] } = api.businessPluginInstall.useGet();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
+  const { data: reviewRows = [] } = api.pluginUserReview.useGet();
 
   const installs = installRows as BusinessPluginInstallDoc[];
   const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
   const releases = releaseRows as PluginReleaseDoc[];
+  const reviews = useMemo(
+    () =>
+      (reviewRows as PluginUserReviewDoc[])
+        .filter(
+          (review) =>
+            typeof review.pluginId === 'string' &&
+            typeof review.userId === 'string' &&
+            Number.isFinite(review.rating),
+        )
+        .map(
+          (review) =>
+            ({
+              id: review.id,
+              pluginId: review.pluginId,
+              userId: review.userId,
+              userLabel: review.userLabel?.trim() || 'Anonymous user',
+              rating: review.rating,
+              comment: review.comment ?? '',
+              createdAt: review.updatedAt ?? review.createdAt,
+            }) satisfies PluginUserReview,
+        ),
+    [reviewRows],
+  );
 
   const catalog = useMemo(
     () =>
@@ -61,8 +87,8 @@ function PluginsRouteComponent() {
   );
 
   const marketplace = useMemo(
-    () => buildMarketplaceGroups(catalog, { installs: allInstalls }),
-    [catalog, allInstalls],
+    () => buildMarketplaceGroups(catalog, { installs: allInstalls, reviews }),
+    [catalog, allInstalls, reviews],
   );
 
   const visibleItems = useMemo(() => {

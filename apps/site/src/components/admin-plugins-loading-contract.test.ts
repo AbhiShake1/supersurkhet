@@ -25,7 +25,7 @@ describe('admin plugins loading behavior', () => {
     expect(source).not.toContain('ensureMarketplaceSeedReleases');
     expect(source).not.toContain('void ensureMarketplaceSeedReleases');
     expect(source).toContain(
-      'buildMarketplaceGroups(catalog, { installs: allInstalls })',
+      'buildMarketplaceGroups(catalog, { installs: allInstalls, reviews })',
     );
   });
 });

@@ -7,6 +7,7 @@ describe('plugin v2 api scaffolding contracts', () => {
     const transformed = transformSchema(appSchema);
     expect(transformed.shape).toHaveProperty('pluginV2Diagnostics');
     expect(transformed.shape).toHaveProperty('pluginPublishReview');
+    expect(transformed.shape).toHaveProperty('pluginUserReview');
     expect(transformed.shape).toHaveProperty('pluginActionCapabilityEnvelope');
     expect(transformed.shape).toHaveProperty('pluginRoutesTabsConfig');
   });
@@ -14,6 +15,7 @@ describe('plugin v2 api scaffolding contracts', () => {
   it('exposes new plugin v2 tables in ssr db adapter', () => {
     expect(db).toHaveProperty('pluginV2Diagnostics');
     expect(db).toHaveProperty('pluginPublishReview');
+    expect(db).toHaveProperty('pluginUserReview');
     expect(db).toHaveProperty('pluginActionCapabilityEnvelope');
     expect(db).toHaveProperty('pluginRoutesTabsConfig');
   });

@@ -30,6 +30,7 @@ import {
   pluginReleaseSchema,
   pluginRoutesTabsConfigSchema,
   pluginSchemaDocStorageSchema,
+  pluginUserReviewSchema,
   pluginV2DiagnosticsSchema,
   pluginWorkflowDocStorageSchema,
 } from './schema/plugins';
@@ -303,6 +304,12 @@ export const coreSchema = createSchema({
     icon: Clock,
     group: 'Plugin Platform',
   },
+  pluginUserReview: {
+    schema: pluginUserReviewSchema,
+    title: 'Plugin User Reviews',
+    icon: List,
+    group: 'Plugin Platform',
+  },
   pluginActionCapabilityEnvelope: {
     schema: pluginActionCapabilityEnvelopeSchema,
     title: 'Plugin Capability Envelopes',
@@ -554,6 +561,7 @@ export type BusinessPluginDraftInstall =
 export type PluginRecord = InferredTable<'pluginRecord'>;
 export type PluginV2Diagnostics = InferredTable<'pluginV2Diagnostics'>;
 export type PluginPublishReview = InferredTable<'pluginPublishReview'>;
+export type PluginUserReview = InferredTable<'pluginUserReview'>;
 export type PluginActionCapabilityEnvelope =
   InferredTable<'pluginActionCapabilityEnvelope'>;
 export type PluginRoutesTabsConfig = InferredTable<'pluginRoutesTabsConfig'>;
@@ -572,6 +580,7 @@ export {
   pluginReleaseSchema,
   pluginRoutesTabsConfigSchema,
   pluginSchemaDocStorageSchema,
+  pluginUserReviewSchema,
   pluginV2DiagnosticsSchema,
   pluginWorkflowDocStorageSchema,
 } from './schema/plugins';

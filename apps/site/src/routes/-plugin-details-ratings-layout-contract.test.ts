@@ -12,11 +12,11 @@ function getRouteContent() {
 }
 
 describe('plugin details ratings layout', () => {
-  it('keeps the original layout flow but reduces spacing in the ratings summary grid', () => {
+  it('uses a two-column ratings summary and review composer layout', () => {
     const content = getRouteContent();
 
     expect(content).toContain(
-      'className="grid gap-2 md:grid-cols-[140px_1fr]"',
+      'className="grid gap-4 md:grid-cols-[220px_1fr]"',
     );
   });
 });

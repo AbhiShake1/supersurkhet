@@ -48,6 +48,18 @@ export type PluginDocsBundle = {
   adminTabs?: AdminTabDoc[];
 };
 
+export type PluginUserReviewDoc = {
+  id: string;
+  pluginId: string;
+  businessId?: string;
+  userId: string;
+  userLabel: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type RuntimeActionHandler = (
   input: unknown,
   ctx: PluginExecutionContext,

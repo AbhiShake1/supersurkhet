@@ -10,6 +10,7 @@ import {
   pluginRecordSchema,
   pluginReleaseSchema,
   pluginRoutesTabsConfigSchema,
+  pluginUserReviewSchema,
   pluginV2DiagnosticsSchema,
 } from '@/lib/schema';
 
@@ -23,7 +24,10 @@ describe('plugin storage schema contracts', () => {
     expect(coreSchema.rawShape).toHaveProperty('pluginRecord');
     expect(coreSchema.rawShape).toHaveProperty('pluginV2Diagnostics');
     expect(coreSchema.rawShape).toHaveProperty('pluginPublishReview');
-    expect(coreSchema.rawShape).toHaveProperty('pluginActionCapabilityEnvelope');
+    expect(coreSchema.rawShape).toHaveProperty('pluginUserReview');
+    expect(coreSchema.rawShape).toHaveProperty(
+      'pluginActionCapabilityEnvelope',
+    );
     expect(coreSchema.rawShape).toHaveProperty('pluginRoutesTabsConfig');
   });
 
@@ -169,6 +173,23 @@ describe('plugin storage schema contracts', () => {
     });
 
     expect(parsed.status).toBe('approved');
+  });
+
+  it('stores user ratings and review text for marketplace plugins', () => {
+    const parsed = pluginUserReviewSchema.parse({
+      id: 'acme.inventory::owner-1',
+      pluginId: 'acme.inventory',
+      businessId: 'business-1',
+      userId: 'owner-1',
+      userLabel: 'Alice',
+      rating: 5,
+      comment: 'Improved order speed.',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(parsed.rating).toBe(5);
+    expect(parsed.pluginId).toBe('acme.inventory');
   });
 
   it('stores capability envelopes for action manifest validation', () => {

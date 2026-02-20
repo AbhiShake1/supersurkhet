@@ -12,15 +12,17 @@ function getRouteContent() {
 }
 
 describe('plugin details review data source', () => {
-  it('does not render local star rating input when reviews are not DB-backed', () => {
+  it('loads and saves plugin reviews from DB-backed rows', () => {
     const content = getRouteContent();
 
-    expect(content).not.toContain(`from '@ark-ui/react/rating-group'`);
-    expect(content).not.toContain('<RatingGroup.Root');
-    expect(content).toContain('not stored in the database');
-    expect(content).toMatch(/buildPluginDetailView\(\s*decoratedPlugin\s*\)/);
-    expect(content).not.toContain(
-      'buildPluginDetailView(decoratedPlugin, [], actorUserId)',
-    );
+    expect(content).toContain('api.pluginUserReview.useGet');
+    expect(content).toContain('api.pluginUserReview.useCreate');
+    expect(content).toContain('groupPluginReviewsByUser');
+    expect(content).toContain('Save review');
+    expect(content).toContain('buildPluginDetailView(');
+    expect(content).toContain('reviews');
+    expect(content).toContain('userId: actorUserId');
+    expect(content).not.toContain('not stored in the database');
+    expect(content).not.toContain('buildPluginDetailView(decoratedPlugin)');
   });
 });
