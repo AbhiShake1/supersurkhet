@@ -7,11 +7,13 @@ import { DataTableViewOptions } from './data-table-view-options';
 interface DataTableAdvancedToolbarProps<TData>
   extends React.ComponentProps<'div'> {
   table: Table<TData>;
+  endSlot?: React.ReactNode;
 }
 
 export function DataTableAdvancedToolbar<TData>({
   table,
   children,
+  endSlot,
   className,
   ...props
 }: DataTableAdvancedToolbarProps<TData>) {
@@ -28,6 +30,7 @@ export function DataTableAdvancedToolbar<TData>({
       <div className="flex flex-1 flex-wrap items-center gap-2">{children}</div>
       <div className="flex items-center gap-2">
         <DataTableViewOptions table={table} />
+        {endSlot}
       </div>
     </div>
   );

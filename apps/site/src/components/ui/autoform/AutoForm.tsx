@@ -1,8 +1,8 @@
-import { type ZodObjectOrWrapped, ZodProvider } from '@autoform/zod';
 import React from 'react';
 import { ArrayElementWrapper } from './components/ArrayElementWrapper';
 import { ArrayWrapper } from './components/ArrayWrapper';
 import { BooleanField } from './components/BooleanField';
+import { ClassNameField } from './components/ClassNameField';
 import { ColorField } from './components/ColorField';
 import { CurrencyField } from './components/CurrencyField';
 import { DateField } from './components/DateField';
@@ -34,6 +34,7 @@ import { UnitField } from './components/UnitField';
 import { UrlField } from './components/UrlField';
 import { type AutoFormUIComponents, AutoForm as BaseAutoForm } from './react';
 import type { AutoFormProps } from './types';
+import { type ZodObjectOrWrapped, ZodProvider } from './zod';
 
 const ShadcnUIComponents: Omit<AutoFormUIComponents, 'FieldWrapper'> = {
   Form,
@@ -48,6 +49,7 @@ export const ShadcnAutoFormFieldComponents = {
   string: StringField,
   number: NumberField,
   boolean: BooleanField,
+  className: ClassNameField,
   date: DateField,
   datetime: DateTimeField,
   select: SelectField,

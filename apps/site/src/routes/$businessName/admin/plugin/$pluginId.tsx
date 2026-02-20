@@ -11,7 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { AutoTable } from '@/components/auto-table';
@@ -38,14 +38,12 @@ import {
   buildPluginDetailView,
   pickSimilarPlugins,
 } from '@/lib/plugins/admin-plugin-market';
-import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
 } from '@/lib/plugins/types';
 import { cn } from '@/lib/utils';
 import {
-  ensureMarketplaceSeedReleases,
   installPluginRelease,
   uninstallPluginRelease,
 } from '@/server-functions/plugins';
@@ -84,17 +82,9 @@ function PluginDetailsPage() {
   const { data: allInstallRows = [] } = api.businessPluginInstall.useGet();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
 
-  useEffect(() => {
-    void ensureMarketplaceSeedReleases({ data: { actorUserId } });
-  }, [actorUserId]);
-
   const installs = installRows as BusinessPluginInstallDoc[];
   const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
-  const liveReleases = releaseRows as PluginReleaseDoc[];
-  const releases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(liveReleases),
-    [liveReleases],
-  );
+  const releases = releaseRows as PluginReleaseDoc[];
 
   const catalog = useMemo(
     () =>

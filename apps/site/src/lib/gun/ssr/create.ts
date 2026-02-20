@@ -5,6 +5,10 @@ import { mergeOptionsWithDefaults } from '../options';
 import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
 import { encrypt } from '../utils/sea';
 import { omitUndefined } from '@/lib/utils/undefined-to-null';
+import {
+  resolveAfterNextTick,
+  resolveLifecycleBusinessId,
+} from './lifecycle';
 
 export function create<const T extends SchemaKeys>(
   key: T,
@@ -19,13 +23,15 @@ export function create<const T extends SchemaKeys>(
   return async (
     value: Omit<NestedSchemaType<T>, '_'> & { id?: string | number },
   ) => {
-    const businessId = restKeys[0];
-    await runLifecycleHookPipeline({
-      businessId,
-      table: key,
-      hook: 'beforeCreate',
-      payload: value,
-    });
+    const businessId = resolveLifecycleBusinessId({ table: key, restKeys });
+    if (businessId) {
+      await runLifecycleHookPipeline({
+        businessId,
+        table: key,
+        hook: 'beforeCreate',
+        payload: value,
+      });
+    }
 
     const _encrypted = await encrypt(value, schema);
     const encrypted = omitUndefined(_encrypted)
@@ -36,6 +42,10 @@ export function create<const T extends SchemaKeys>(
           if ('err' in ack && !!ack.err) {
             reject(ack.err);
           } else {
+            if (!businessId) {
+              void resolveAfterNextTick(ack).then(resolve);
+              return;
+            }
             void runLifecycleHookPipeline({
               businessId,
               table: key,

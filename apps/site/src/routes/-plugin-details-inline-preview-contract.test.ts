@@ -36,4 +36,14 @@ describe('plugin details inline preview contract', () => {
       'className="size-44 rounded-3xl border border-dashed border-border bg-muted/40 text-sm font-medium text-muted-foreground"',
     );
   });
+
+  it('loads marketplace releases directly from DB rows without seed merge fallback', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('api.pluginRelease.useGet');
+    expect(content).toContain('releaseRows as PluginReleaseDoc[]');
+    expect(content).not.toContain('mergeMarketplaceReleasesWithSeed');
+    expect(content).not.toContain('ensureMarketplaceSeedReleases');
+    expect(content).not.toContain('void ensureMarketplaceSeedReleases');
+  });
 });

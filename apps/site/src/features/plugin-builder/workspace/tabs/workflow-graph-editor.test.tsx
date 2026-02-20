@@ -1,14 +1,16 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { WorkflowDoc } from '@/lib/plugins/types';
+import type { SchemaDoc, WorkflowDoc } from '@/lib/plugins/types';
 import { validateWorkflowDag } from '../../domain/validation/workflow-dag-validator';
 import {
+  buildWorkflowReferenceOptions,
   connectWorkflowGraphNodes,
   createWorkflowGraphNode,
   getWorkflowGraphCompileHealth,
   removeWorkflowGraphEdge,
   updateWorkflowGraphEdgeCondition,
   updateWorkflowGraphNodeRunIf,
+  validateWorkflowReferencePaths,
   WorkflowGraphEditor,
 } from './workflow-graph-editor';
 
@@ -150,5 +152,197 @@ describe('workflow-graph-editor', () => {
     expect(html).toContain('Compile health: passing');
     expect(html).toContain('start');
     expect(html).toContain('done');
+  });
+
+  it('builds typed payload and cross-table context reference options', () => {
+    const schemaDocs: SchemaDoc[] = [
+      {
+        schemaId: 'sale',
+        fields: [
+          {
+            key: 'amount',
+            type: 'number',
+          },
+          {
+            key: 'customerId',
+            type: 'string',
+          },
+        ],
+      },
+      {
+        schemaId: 'invoice',
+        fields: [
+          {
+            key: 'saleId',
+            type: 'string',
+          },
+          {
+            key: 'total',
+            type: 'number',
+          },
+        ],
+      },
+    ];
+
+    const options = buildWorkflowReferenceOptions({
+      schemaDocs,
+      workflowTable: 'sale',
+    });
+
+    expect(options).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          key: 'payload:amount',
+          source: 'payload',
+          path: ['amount'],
+        }),
+        expect.objectContaining({
+          key: 'context:invoice.saleId',
+          source: 'context',
+          path: ['invoice', 'saleId'],
+        }),
+      ]),
+    );
+  });
+
+  it('validates workflow references against table schemas with deterministic diagnostics', () => {
+    const schemaDocs: SchemaDoc[] = [
+      {
+        schemaId: 'sale',
+        fields: [
+          {
+            key: 'amount',
+            type: 'number',
+          },
+        ],
+      },
+      {
+        schemaId: 'invoice',
+        fields: [
+          {
+            key: 'saleId',
+            type: 'string',
+          },
+        ],
+      },
+    ];
+
+    const workflows: WorkflowDoc[] = [
+      {
+        workflowId: 'sale.afterCreate.main',
+        table: 'sale',
+        hook: 'afterCreate',
+        nodes: [
+          {
+            nodeId: 'n1',
+            type: 'action',
+            actionId: 'invoice.create',
+            runIf: {
+              kind: 'op',
+              op: 'eq',
+              args: [
+                { kind: 'ref', source: 'payload', path: ['missingField'] },
+                true,
+              ],
+            },
+          },
+        ],
+        edges: [
+          {
+            from: 'n1',
+            to: 'n1',
+            condition: {
+              kind: 'op',
+              op: 'eq',
+              args: [
+                {
+                  kind: 'ref',
+                  source: 'context',
+                  path: ['unknown_table', 'saleId'],
+                },
+                'x',
+              ],
+            },
+          },
+        ],
+      },
+    ];
+
+    const diagnostics = validateWorkflowReferencePaths({
+      workflows,
+      schemaDocs,
+    });
+
+    expect(diagnostics).toEqual([
+      {
+        code: 'unknown-ref-path',
+        message:
+          'Reference path "missingField" does not exist on table "sale" for source "payload".',
+        path: ['workflows', 'sale.afterCreate.main', 'nodes', 'n1', 'runIf'],
+        severity: 'error',
+      },
+      {
+        code: 'unknown-context-table',
+        message: 'Reference table "unknown_table" is not a known schema.',
+        path: ['workflows', 'sale.afterCreate.main', 'edges', '0', 'condition'],
+        severity: 'error',
+      },
+    ]);
+  });
+
+  it('renders interactive node and edge controls for plugin studio editor mode', () => {
+    const workflow = createWorkflow({
+      nodes: [
+        {
+          nodeId: 'start',
+          type: 'action',
+          actionId: 'invoice.create',
+        },
+      ],
+      edges: [],
+    });
+
+    const html = renderToStaticMarkup(
+      <WorkflowGraphEditor
+        workflow={workflow}
+        onWorkflowChange={() => undefined}
+        schemaDocs={[
+          {
+            schemaId: 'orders',
+            fields: [
+              {
+                key: 'total',
+                type: 'number',
+              },
+            ],
+          },
+          {
+            schemaId: 'invoice',
+            fields: [
+              {
+                key: 'orderId',
+                type: 'string',
+              },
+            ],
+          },
+        ]}
+        actionManifest={[
+          {
+            actionId: 'invoice.create',
+            description: 'Create invoice',
+          },
+          {
+            actionId: 'stock.increase',
+            description: 'Increase stock',
+          },
+        ]}
+      />,
+    );
+
+    expect(html).toContain('Workflow Blueprint');
+    expect(html).toContain('Add Node');
+    expect(html).toContain('Add Edge');
+    expect(html).toContain('Edit with Blockly');
+    expect(html).toContain('Action');
   });
 });

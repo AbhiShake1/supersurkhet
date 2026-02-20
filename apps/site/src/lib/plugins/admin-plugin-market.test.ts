@@ -100,7 +100,59 @@ describe('admin plugin market helpers', () => {
     expect(
       groups.all.find((item) => item.pluginId === 'acme.finance')?.installs,
     ).toBe(0);
+    expect(
+      groups.all.find((item) => item.pluginId === 'acme.inventory')
+        ?.averageRating,
+    ).toBeNull();
+    expect(
+      groups.all.find((item) => item.pluginId === 'acme.inventory')
+        ?.reviewCount,
+    ).toBeNull();
     expect(groups.topInstalled[0]?.pluginId).toBe('acme.inventory');
+  });
+
+  it('hydrates marketplace ratings when DB-backed reviews are provided', () => {
+    const catalog = [
+      entry({ pluginId: 'acme.inventory', capabilities: ['inventory:write'] }),
+      entry({ pluginId: 'acme.finance', capabilities: ['invoice:write'] }),
+    ];
+    const reviews: PluginUserReview[] = [
+      {
+        id: '1',
+        pluginId: 'acme.inventory',
+        userId: 'u1',
+        userLabel: 'A',
+        rating: 5,
+        comment: 'Great',
+        createdAt: '2026-02-10T00:00:00.000Z',
+      },
+      {
+        id: '2',
+        pluginId: 'acme.inventory',
+        userId: 'u2',
+        userLabel: 'B',
+        rating: 3,
+        comment: 'Okay',
+        createdAt: '2026-02-11T00:00:00.000Z',
+      },
+    ];
+
+    const groups = buildMarketplaceGroups(catalog, { reviews });
+
+    expect(
+      groups.all.find((item) => item.pluginId === 'acme.inventory')
+        ?.averageRating,
+    ).toBe(4);
+    expect(
+      groups.all.find((item) => item.pluginId === 'acme.inventory')
+        ?.reviewCount,
+    ).toBe(2);
+    expect(
+      groups.all.find((item) => item.pluginId === 'acme.finance')?.averageRating,
+    ).toBe(0);
+    expect(
+      groups.all.find((item) => item.pluginId === 'acme.finance')?.reviewCount,
+    ).toBe(0);
   });
 
   it('computes review aggregate with average and total count', () => {
@@ -165,7 +217,7 @@ describe('admin plugin market helpers', () => {
     if (!first) {
       throw new Error('Expected a plugin for detail view');
     }
-    const details = buildPluginDetailView(first, [], 'u1');
+    const details = buildPluginDetailView(first);
 
     expect(details.previewScreenshots.length).toBe(0);
     expect(details.previewTabs.length).toBeGreaterThan(0);

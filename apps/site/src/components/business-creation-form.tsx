@@ -50,8 +50,12 @@ import {
   type PluginCatalogSort,
 } from '@/lib/plugins/admin-plugin-catalog';
 import {
+  type BusinessOnboardingPluginFilter,
+  businessOnboardingPluginCategoryOptions,
+  filterBusinessOnboardingCatalog,
+} from '@/lib/plugins/business-onboarding-plugin-catalog';
+import {
   getRecommendedSeedReleaseIds,
-  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
@@ -139,23 +143,6 @@ const recommendedFeatures: Record<
   financial_firm: ['financialFirm', 'appointment', 'expense'],
   ride_sharing: ['rideSharing', 'driverProfile', 'trip', 'expense'],
 };
-
-const pluginCategoryById: Record<string, string> = {
-  'supersurkhet.plugin.restaurant-admin': 'operations',
-  'supersurkhet.plugin.customer-loyalty': 'growth',
-  'supersurkhet.plugin.finance-ops': 'finance',
-  'supersurkhet.plugin.fulfillment-ops': 'operations',
-  'supersurkhet.plugin.catalog-intelligence': 'inventory',
-};
-
-const pluginCategoryOptions = [
-  { value: 'all', label: 'All' },
-  { value: 'recommended', label: 'Recommended' },
-  { value: 'operations', label: 'Operations' },
-  { value: 'finance', label: 'Finance' },
-  { value: 'inventory', label: 'Inventory' },
-  { value: 'growth', label: 'Growth' },
-] as const;
 
 interface BusinessCreationFormProps {
   step: number;
@@ -362,7 +349,7 @@ function toReleaseId(pluginId: string, version: string) {
 function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
   const [query, setQuery] = useState('');
   const [category, setCategory] =
-    useState<(typeof pluginCategoryOptions)[number]['value']>('recommended');
+    useState<BusinessOnboardingPluginFilter>('recommended');
   const [sortBy, setSortBy] = useState<PluginCatalogSort>('recent');
   const [assistantInput, setAssistantInput] = useState('');
   const [todoExpanded, setTodoExpanded] = useState(false);
@@ -404,10 +391,7 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
   const businessType = form.watch('businessType');
   const fileInputId = useId();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
-  const releases = useMemo(
-    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
-    [releaseRows],
-  );
+  const releases = releaseRows as PluginReleaseDoc[];
 
   const recommendedReleaseIds = useMemo(
     () => getRecommendedSeedReleaseIds(businessType),
@@ -438,12 +422,10 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
 
   const visibleCatalog = useMemo(
     () =>
-      catalog.filter((entry) => {
-        if (category === 'all') return true;
-        if (category === 'recommended') {
-          return recommendedPluginIds.has(entry.pluginId);
-        }
-        return (pluginCategoryById[entry.pluginId] ?? 'other') === category;
+      filterBusinessOnboardingCatalog({
+        catalog,
+        category,
+        recommendedPluginIds,
       }),
     [catalog, category, recommendedPluginIds],
   );
@@ -782,25 +764,21 @@ function PluginInstallSelectionForm({ form }: DataPrepopulateFormProps) {
                   />
                 </div>
 
-                <Select
-                  value={category}
-                  onValueChange={(value) =>
-                    setCategory(
-                      value as (typeof pluginCategoryOptions)[number]['value'],
-                    )
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {pluginCategoryOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="flex flex-wrap gap-2">
+                  {businessOnboardingPluginCategoryOptions.map((option) => (
+                    <Button
+                      key={option.value}
+                      size="sm"
+                      type="button"
+                      variant={
+                        category === option.value ? 'default' : 'outline'
+                      }
+                      onClick={() => setCategory(option.value)}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
 
                 <Select
                   value={sortBy}

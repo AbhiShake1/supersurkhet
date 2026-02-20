@@ -45,7 +45,8 @@ describe('plugin-studio route contract', () => {
 
     expect(content).toContain('previewPluginReleaseHashes');
     expect(content).toContain('publishPluginRelease');
-    expect(content).toContain('ensureMarketplaceSeedReleases');
+    expect(content).not.toContain('mergeMarketplaceReleasesWithSeed');
+    expect(content).not.toContain('ensureMarketplaceSeedReleases');
   });
 
   it('uses app api tables for releases and draft data', () => {
@@ -56,13 +57,60 @@ describe('plugin-studio route contract', () => {
     expect(content).toContain('api.pluginDraftRevision.useGet');
   });
 
-  it('renders schema and workflow edit actions as icon buttons beside delete', () => {
+  it('renders explicit workflow management actions with schema editor CTA', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('<div className="flex items-center gap-1">');
-    expect(content).toContain('size="icon"');
-    expect(content).toContain('<span className="sr-only">Edit schema</span>');
-    expect(content).toContain('<span className="sr-only">Edit workflow</span>');
+    expect(content).toContain('Workflow Library');
+    expect(content).toContain('Edit Connected Schema');
+    expect(content).toContain('New Workflow');
+    expect(content).toContain('Duplicate Selected');
+    expect(content).toContain('Remove Selected');
+  });
+
+  it('keeps auto-admin preview while removing inline live-preview controls', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('Sidebar Builder');
+    expect(content).toContain('Add Column');
+    expect(content).toContain('<AutoAdmin');
+    expect(content).not.toContain('Auto-Admin Live Preview');
+    expect(content).not.toContain('Drop table here');
+    expect(content).not.toContain('Table Columns');
+    expect(content).not.toContain('Add Group');
+    expect(content).not.toContain('Add Table');
+    expect(content).not.toContain('Extend Core');
+  });
+
+  it('does not squeeze auto-admin preview into a fixed xl sidebar column', () => {
+    const content = getRouteContent();
+
+    expect(content).not.toContain(
+      'grid gap-4 xl:grid-cols-[380px_minmax(0,1fr)]',
+    );
+  });
+
+  it('wires column edit/delete actions for the live preview table columns', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('onEditColumn: openEditColumnSheet');
+    expect(content).toContain('onDeleteColumn: requestDeleteColumn');
+    expect(content).toContain('onReorderColumns: handleReorderColumns');
+    expect(content).toContain('isDeleteColumnDialogOpen');
+    expect(content).toContain('confirmDeleteColumn');
+  });
+
+  it('guards schema editor persistence against no-op updates', () => {
+    const content = getRouteContent();
+
+    expect(content).toMatch(
+      /canonicalStringify\(nextBuilder\)\s*===\s*canonicalStringify\(schemaBuilder\)/,
+    );
+    expect(content).toMatch(
+      /canonicalStringify\(nextSchemaRefinements\)\s*===\s*canonicalStringify\(schemaRefinements\)/,
+    );
+    expect(content).toMatch(
+      /canonicalStringify\(nextBlocklyRefinements\)\s*===\s*canonicalStringify\(blocklyRefinements\)/,
+    );
   });
 
   it('keeps advanced technical internals hidden from the default view', () => {

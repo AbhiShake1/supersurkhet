@@ -1,21 +1,11 @@
-import * as React from 'react';
-import { useAuth } from '@/components/auth-provider';
-import { AutoForm } from '@/components/ui/autoform';
-import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
-import { Button } from '@/components/ui/button';
-import { ButtonGroup } from '@/components/ui/button-group';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { appSchema } from '@/lib/schema';
-import { getSoulFromUnknown } from '@/lib/utils';
 import {
-  type SchemaKeys,
-  type NestedSchema,
-  type NestedSchemaType,
   getNestedZodShape,
   getSchema,
+  type NestedSchema,
+  type NestedSchemaType,
+  type SchemaKeys,
   useCreate,
 } from '@gta/react-hooks';
-import { ZodEffects } from 'zod';
 import {
   ArrowBigUpDash,
   FileJson,
@@ -24,6 +14,32 @@ import {
   Save,
   Sheet,
 } from 'lucide-react';
+import * as React from 'react';
+import { ZodEffects } from 'zod';
+import { useAuth } from '@/components/auth-provider';
+import { AutoForm } from '@/components/ui/autoform';
+import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
+import type { ZodObjectOrWrapped } from '@/components/ui/autoform/zod';
+import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { api } from '@/lib/api';
+import {
+  parseCSVFile,
+  parseExcelFile,
+  parseJSONFile,
+  validateDataAgainstSchema,
+} from '@/lib/import';
+import { appSchema } from '@/lib/schema';
+import { getSoulFromUnknown } from '@/lib/utils';
+import type { AutoTableProps } from '../auto-table';
+import { BadgeMarquee } from '../ui/badge-marquee';
 import {
   Credenza,
   CredenzaBody,
@@ -34,22 +50,6 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
 } from '../ui/credenza';
-import { BadgeMarquee } from '../ui/badge-marquee';
-import { api } from '@/lib/api';
-import {
-  parseCSVFile,
-  parseExcelFile,
-  parseJSONFile,
-  validateDataAgainstSchema,
-} from '@/lib/import';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import type { AutoTableProps } from '../auto-table';
-import type { ZodObjectOrWrapped } from '@autoform/zod';
 
 export type AddRowDialogProps<T extends SchemaKeys> = Pick<
   AutoTableProps<T>,

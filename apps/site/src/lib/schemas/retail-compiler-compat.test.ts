@@ -1,5 +1,5 @@
-import { parseSchema } from '@autoform/zod';
 import { describe, expect, it } from 'vitest';
+import { parseSchema } from '@/components/ui/autoform/zod';
 import '@/lib/zod/with-derivations';
 import { orderSchema, saleSchema, stockImportSchema } from './retail';
 

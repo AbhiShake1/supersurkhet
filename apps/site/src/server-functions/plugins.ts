@@ -386,6 +386,47 @@ const ensureMarketplaceInputSchema = z.object({
   actorUserId: z.string().optional(),
 });
 
+function appendUserIdAliases(aliases: Set<string>, value: string | undefined) {
+  const normalized = value?.trim();
+  if (!normalized) return;
+  aliases.add(normalized);
+  const slashSegments = normalized
+    .split('/')
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+  const slashTail = slashSegments[slashSegments.length - 1];
+  if (slashTail) {
+    aliases.add(slashTail);
+  }
+}
+
+function buildUserIdAliases(value: string | undefined): Set<string> {
+  const aliases = new Set<string>();
+  appendUserIdAliases(aliases, value);
+  return aliases;
+}
+
+function toStableDraftIdSuffix(value: string | undefined) {
+  const normalized = (value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9._:-]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+  return normalized || 'anon';
+}
+
+function matchesUserIdAlias({
+  aliases,
+  candidate,
+}: {
+  aliases: Set<string>;
+  candidate: string | undefined;
+}) {
+  const normalized = candidate?.trim();
+  if (!normalized) return false;
+  return aliases.has(normalized);
+}
+
 export type PluginInputValidationEntrypoint =
   | 'publishPluginRelease'
   | 'previewPluginReleaseHashes'
@@ -826,9 +867,128 @@ export async function createPluginDraft({
 }) {
   const store = await loadDraftStore();
   const service = createPluginPlatformService({ store });
+  const actorAliases = buildUserIdAliases(data.actorUserId);
+  const canonicalActorUserId =
+    [...actorAliases][0] ?? data.actorUserId ?? 'anon';
+  const stableDraftId = `draft.${toStableDraftIdSuffix(canonicalActorUserId)}`;
+  const existingDrafts = service
+    .listDrafts()
+    .filter(
+      (draft) =>
+        matchesUserIdAlias({
+          aliases: actorAliases,
+          candidate: draft.ownerUserId,
+        }),
+    );
+  const canonicalDraft = existingDrafts.find(
+    (draft) => draft.draftId === stableDraftId,
+  );
+  if (canonicalDraft) {
+    const hasSameCollaboratorIds = (
+      left: readonly string[] | undefined,
+      right: readonly string[] | undefined,
+    ) => {
+      const leftValues = left ?? [];
+      const rightValues = right ?? [];
+      if (leftValues.length !== rightValues.length) return false;
+      return leftValues.every((value, index) => value === rightValues[index]);
+    };
+    const nextTitle = data.title ?? canonicalDraft.title;
+    const nextCollaboratorUserIds =
+      data.collaboratorUserIds ?? canonicalDraft.collaboratorUserIds;
+    const shouldUpdateCanonicalDraft =
+      canonicalDraft.pluginId !== data.pluginId ||
+      canonicalDraft.title !== nextTitle ||
+      !hasSameCollaboratorIds(
+        canonicalDraft.collaboratorUserIds,
+        nextCollaboratorUserIds,
+      );
+
+    if (!shouldUpdateCanonicalDraft) {
+      return canonicalDraft;
+    }
+
+    const updatedDraft = {
+      ...canonicalDraft,
+      pluginId: data.pluginId,
+      title: nextTitle,
+      collaboratorUserIds: nextCollaboratorUserIds,
+      updatedAt: new Date().toISOString(),
+    };
+
+    await upsertGlobalRow({
+      key: 'pluginDraft',
+      id: updatedDraft.draftId,
+      row: {
+        ...updatedDraft,
+        id: updatedDraft.draftId,
+      },
+    });
+
+    return updatedDraft;
+  }
+  const latestExistingDraft = [...existingDrafts].sort((left, right) =>
+    (right.updatedAt ?? right.createdAt ?? '').localeCompare(
+      left.updatedAt ?? left.createdAt ?? '',
+    ),
+  )[0];
+
+  if (latestExistingDraft) {
+    const migratedDraft = await service.createDraft({
+      actorUserId: data.actorUserId,
+      draft: {
+        draftId: stableDraftId,
+        pluginId: data.pluginId,
+        title: latestExistingDraft.title || data.title,
+        collaboratorUserIds: latestExistingDraft.collaboratorUserIds,
+      },
+    });
+
+    await upsertGlobalRow({
+      key: 'pluginDraft',
+      id: migratedDraft.draftId,
+      row: {
+        ...migratedDraft,
+        id: migratedDraft.draftId,
+      },
+    });
+
+    const latestLegacyRevision = service
+      .listDraftRevisions(latestExistingDraft.draftId)
+      .sort((left, right) =>
+        (right.createdAt ?? right.revisionId).localeCompare(
+          left.createdAt ?? left.revisionId,
+        ),
+      )[0];
+
+    if (latestLegacyRevision) {
+      const migratedRevision = await service.createDraftRevision({
+        actorUserId: data.actorUserId,
+        draftId: migratedDraft.draftId,
+        revision: {
+          schemaDocs: latestLegacyRevision.schemaDocs,
+          workflows: latestLegacyRevision.workflows,
+          adminTabs: latestLegacyRevision.adminTabs,
+        },
+      });
+
+      await upsertGlobalRow({
+        key: 'pluginDraftRevision',
+        id: `${migratedRevision.draftId}@${migratedRevision.revisionId}`,
+        row: {
+          ...migratedRevision,
+          id: `${migratedRevision.draftId}@${migratedRevision.revisionId}`,
+        },
+      });
+    }
+
+    return migratedDraft;
+  }
+
   const draft = await service.createDraft({
     actorUserId: data.actorUserId,
     draft: {
+      draftId: stableDraftId,
       pluginId: data.pluginId,
       title: data.title,
       collaboratorUserIds: data.collaboratorUserIds,
