@@ -1068,6 +1068,7 @@ declare global {
      collaboratorUserIds: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
      status: import("zod").ZodDefault<import("zod").ZodEnum<["active", "archived"]>>;
      title: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
      createdAt: import("zod").ZodString;
      updatedAt: import("zod").ZodString;
     } & {
@@ -1097,6 +1098,7 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
      title?: string | undefined;
      projectId?: string | undefined;
      collaboratorUserIds?: string[] | undefined;
@@ -1114,6 +1116,7 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     description?: string | undefined;
      title?: string | undefined;
      projectId?: string | undefined;
      collaboratorUserIds?: string[] | undefined;

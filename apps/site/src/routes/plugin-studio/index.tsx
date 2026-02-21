@@ -23,6 +23,7 @@ import type {
   PluginProjectDoc,
   PluginProjectMemberDoc,
 } from '@/lib/plugins/types';
+import { PluginStudioGlobalCommand } from './-plugin-studio-global-command';
 import { countPluginsByProjectId } from './-plugin-studio-plugin-count';
 
 export const Route = createFileRoute('/plugin-studio/')({
@@ -70,8 +71,78 @@ function toStableSegment(value: string) {
   );
 }
 
+function toDisplayPluginTitle(input: string | undefined, pluginId: string) {
+  const fallback = pluginId.replace(/^plugin\./, '');
+  const normalized = input?.trim() || fallback;
+  const withoutSuffix = normalized.replace(
+    /(?:\s*\([^)]*\)\s*$)|(?:\s*\[[^\]]*]\s*$)/,
+    '',
+  );
+  return withoutSuffix.trim() || fallback;
+}
+
+function toDraftRecencyKey(draft: PluginDraftDoc) {
+  return `${draft.updatedAt ?? ''}:${draft.createdAt ?? ''}:${draft.draftId}`;
+}
+
 const PROJECT_LAYOUT_STORAGE_KEY = 'plugin-studio.projects.layout.v1';
+const PROJECT_TITLE_TRUNCATE_AT = 12;
 type ProjectLayout = 'grid' | 'list';
+
+function ProjectCardTitle({
+  projectName,
+  pluginCount,
+}: {
+  projectName: string;
+  pluginCount: number;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const shouldTruncate = projectName.length > PROJECT_TITLE_TRUNCATE_AT;
+  const displayName =
+    !isExpanded && shouldTruncate
+      ? `${projectName.slice(0, PROJECT_TITLE_TRUNCATE_AT).trimEnd()}`
+      : projectName;
+
+  return (
+    <div
+      className={
+        isExpanded
+          ? 'flex flex-wrap items-center gap-2'
+          : 'flex items-center gap-2'
+      }
+    >
+      <p
+        className={
+          isExpanded
+            ? 'break-words text-2xl font-medium tracking-tight'
+            : 'truncate text-2xl font-medium tracking-tight'
+        }
+      >
+        {displayName}
+      </p>
+      {shouldTruncate ? (
+        <Button
+          type="button"
+          variant={isExpanded ? 'ghost' : 'link'}
+          className={
+            isExpanded
+              ? 'h-6 px-2 text-xs text-primary hover:bg-primary/10 hover:text-primary'
+              : 'h-auto p-0 text-xs leading-none text-primary underline decoration-primary underline-offset-4'
+          }
+          onClick={(event) => {
+            event.stopPropagation();
+            setIsExpanded((current) => !current);
+          }}
+        >
+          {isExpanded ? 'Show less' : '...'}
+        </Button>
+      ) : null}
+      <span className="inline-flex rounded-full border border-border/80 px-2 py-0.5 text-xs text-muted-foreground">
+        {pluginCount} plugins
+      </span>
+    </div>
+  );
+}
 
 function PluginStudioProjectsRoute() {
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
@@ -81,9 +152,6 @@ function PluginStudioProjectsRoute() {
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
   const [layout, setLayout] = useState<ProjectLayout>('grid');
-  const [expandedProjectIds, setExpandedProjectIds] = useState<Set<string>>(
-    () => new Set(),
-  );
 
   const actorUserIdAliases = useMemo(
     () => buildActorUserIdAliases(user),
@@ -145,6 +213,33 @@ function PluginStudioProjectsRoute() {
       return searchSpace.includes(normalizedQuery);
     });
   }, [accessibleProjects, query]);
+  const accessibleProjectIdSet = useMemo(
+    () => new Set(accessibleProjects.map((project) => project.id)),
+    [accessibleProjects],
+  );
+  const organizationPluginOptions = useMemo(() => {
+    const latestByCompositeKey = new Map<string, PluginDraftDoc>();
+    for (const draft of drafts) {
+      if (!draft.projectId || !accessibleProjectIdSet.has(draft.projectId)) {
+        continue;
+      }
+      if (!draft.pluginId) continue;
+      const key = `${draft.projectId}::${draft.pluginId}`;
+      const existing = latestByCompositeKey.get(key);
+      if (!existing || toDraftRecencyKey(draft) > toDraftRecencyKey(existing)) {
+        latestByCompositeKey.set(key, draft);
+      }
+    }
+    return [...latestByCompositeKey.values()]
+      .map((draft) => ({
+        id: `${draft.projectId}::${draft.pluginId}`,
+        projectId: draft.projectId as string,
+        pluginId: draft.pluginId,
+        title: toDisplayPluginTitle(draft.title, draft.pluginId),
+        description: draft.description?.trim() || '',
+      }))
+      .sort((left, right) => left.title.localeCompare(right.title));
+  }, [accessibleProjectIdSet, drafts]);
 
   useEffect(() => {
     const persistedLayout = window.localStorage.getItem(
@@ -158,18 +253,6 @@ function PluginStudioProjectsRoute() {
   useEffect(() => {
     window.localStorage.setItem(PROJECT_LAYOUT_STORAGE_KEY, layout);
   }, [layout]);
-
-  const toggleProjectNameExpansion = (projectId: string) => {
-    setExpandedProjectIds((current) => {
-      const next = new Set(current);
-      if (next.has(projectId)) {
-        next.delete(projectId);
-      } else {
-        next.add(projectId);
-      }
-      return next;
-    });
-  };
 
   const handleCreateProject = async () => {
     const normalizedName = projectName.trim();
@@ -244,6 +327,29 @@ function PluginStudioProjectsRoute() {
             <div className="text-sm text-muted-foreground">/</div>
             <div className="text-sm font-medium">Projects</div>
           </div>
+          <PluginStudioGlobalCommand
+            projects={accessibleProjects}
+            plugins={organizationPluginOptions}
+            actions={[
+              {
+                id: 'new-project',
+                label: 'New project',
+                onSelect: () => setIsCreateOpen(true),
+              },
+            ]}
+            onSelectProject={(projectId) => {
+              void navigate({
+                to: '/plugin-studio/$projectId',
+                params: { projectId },
+              });
+            }}
+            onSelectPlugin={(projectId, pluginId) => {
+              void navigate({
+                to: '/plugin-studio/$projectId/$pluginId',
+                params: { projectId, pluginId },
+              });
+            }}
+          />
         </div>
       </header>
 
@@ -304,7 +410,6 @@ function PluginStudioProjectsRoute() {
           }
         >
           {filteredProjects.map((project) => {
-            const isExpanded = expandedProjectIds.has(project.id);
             const pluginCount = pluginCountsByProjectId.get(project.id) ?? 0;
 
             return (
@@ -334,38 +439,10 @@ function PluginStudioProjectsRoute() {
                     <Building2 className="size-4" />
                   </span>
                   <div className="min-w-0">
-                    <div
-                      className={
-                        isExpanded
-                          ? 'flex flex-wrap items-center gap-2'
-                          : 'flex items-center gap-2'
-                      }
-                    >
-                      <p
-                        className={
-                          isExpanded
-                            ? 'break-words text-2xl font-medium tracking-tight'
-                            : 'truncate text-2xl font-medium tracking-tight'
-                        }
-                      >
-                        {project.name}
-                      </p>
-                      <span className="inline-flex rounded-full border border-border/80 px-2 py-0.5 text-xs text-muted-foreground">
-                        {pluginCount} plugins
-                      </span>
-                    </div>
-                    {!isExpanded ? (
-                      <button
-                        type="button"
-                        className="mt-1 text-sm text-muted-foreground underline-offset-2 hover:underline"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          toggleProjectNameExpansion(project.id);
-                        }}
-                      >
-                        ...
-                      </button>
-                    ) : null}
+                    <ProjectCardTitle
+                      projectName={project.name}
+                      pluginCount={pluginCount}
+                    />
                   </div>
                 </div>
               </div>

@@ -304,7 +304,9 @@ export const pluginProjectSchema = z
   .object({
     id: z
       .string()
-      .describe('Deterministic project id: plugin-project::<slug-or-stable-id>'),
+      .describe(
+        'Deterministic project id: plugin-project::<slug-or-stable-id>',
+      ),
     slug: z
       .string()
       .describe('URL-friendly project slug scoped by owner')
@@ -379,6 +381,7 @@ export const pluginDraftSchema = z
     collaboratorUserIds: z.array(z.string()).optional(),
     status: z.enum(['active', 'archived']).default('active'),
     title: z.string().optional(),
+    description: z.string().optional(),
     createdAt: z.string().datetime({ offset: true }),
     updatedAt: z.string().datetime({ offset: true }),
   })

@@ -48,6 +48,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Textarea } from '@/components/ui/textarea';
 import type { PluginBuildDiagnostic } from '@/features/plugin-builder/domain/validation/diagnostics-contract';
 import { validateWorkflowDags } from '@/features/plugin-builder/domain/validation/workflow-dag-validator';
 import type {
@@ -115,7 +116,6 @@ import {
   BadgePlus,
   Pencil,
   Plus,
-  Sparkles,
   Trash2,
   Wand2,
   type LucideIcon
@@ -804,6 +804,11 @@ function titleToPluginId(value: string) {
     .replace(/[^a-z0-9]+/g, '.')
     .replace(/^\.+|\.+$/g, '');
   return slug.length > 0 ? `plugin.${slug}` : 'example.plugin';
+}
+
+function toDefaultPluginTitle(pluginId: string) {
+  const normalized = pluginId.replace(/^plugin\./, '').trim();
+  return normalized || 'Untitled plugin';
 }
 
 function bumpPatchVersion(version: string) {
@@ -2059,7 +2064,6 @@ function PluginStudioPresenter({
 }: PluginStudioPresenterProps) {
   const { fire: fireConfetti } = useConfetti();
   const params = Route.useParams();
-  const navigate = Route.useNavigate();
   const actorUserIdAliases = useMemo(
     () => buildActorUserIdAliases(user),
     [user?.pub, user?._?.soul],
@@ -2084,6 +2088,10 @@ function PluginStudioPresenter({
   const [description, setDescription] = useState<string | undefined>(
     'Operational plugin release.',
   );
+  const [editingMetadataField, setEditingMetadataField] = useState<
+    'title' | 'description' | null
+  >(null);
+  const [editingMetadataValue, setEditingMetadataValue] = useState('');
   const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string>();
   const [draggingSchemaId, setDraggingSchemaId] = useState<string | null>(null);
   const [renamingSchemaId, setRenamingSchemaId] = useState<string | null>(null);
@@ -2255,6 +2263,10 @@ function PluginStudioPresenter({
       }),
     [requestedPluginId, activeDraft?.pluginId],
   );
+  const defaultPluginTitle = useMemo(
+    () => toDefaultPluginTitle(pluginId),
+    [pluginId],
+  );
   const draftDocScopeKeys = useMemo(() => [draftId], [draftId]);
   const {
     data: schemaDocRows = [],
@@ -2405,22 +2417,6 @@ function PluginStudioPresenter({
         toAdminTabsFromDraftRoutes(activeRoutesTabsConfigRow?.routes),
       ),
     [activeRoutesTabsConfigRow],
-  );
-
-  const navigateToPluginWorkspace = useCallback(
-    (candidatePluginId: string) => {
-      const normalizedPluginId = candidatePluginId.trim();
-      if (!normalizedPluginId) return;
-      void navigate({
-        to: '/plugin-studio/$projectId/$pluginId',
-        params: {
-          projectId,
-          pluginId: normalizedPluginId,
-        },
-        replace: true,
-      });
-    },
-    [navigate, projectId],
   );
 
   useEffect(() => {
@@ -2708,6 +2704,33 @@ function PluginStudioPresenter({
   );
   const latestActiveDraftRevision = activeDraftRevisions[0] ?? null;
   const localDraftSnapshotRef = useRef<string | null>(null);
+
+  const beginMetadataEdit = useCallback(
+    (field: 'title' | 'description') => {
+      setEditingMetadataField(field);
+      setEditingMetadataValue(
+        field === 'title' ? (title?.trim() || defaultPluginTitle) : (description ?? ''),
+      );
+    },
+    [defaultPluginTitle, description, title],
+  );
+
+  const commitMetadataEdit = useCallback(() => {
+    if (!editingMetadataField) return;
+    const nextValue = editingMetadataValue.trim();
+    if (editingMetadataField === 'title') {
+      setTitle(nextValue || defaultPluginTitle);
+    } else {
+      setDescription(nextValue || '');
+    }
+    setEditingMetadataField(null);
+    setEditingMetadataValue('');
+  }, [defaultPluginTitle, editingMetadataField, editingMetadataValue]);
+
+  const stopMetadataEdit = useCallback(() => {
+    setEditingMetadataField(null);
+    setEditingMetadataValue('');
+  }, []);
 
   useEffect(() => {
     localDraftSnapshotRef.current = parsed
@@ -3070,7 +3093,8 @@ function PluginStudioPresenter({
         pluginId,
         ownerUserId: actorUserId,
         status: 'active',
-        title: draftTitle,
+        title: title?.trim() || draftTitle,
+        description: description?.trim() || undefined,
         createdAt: now,
         updatedAt: now,
       };
@@ -3104,7 +3128,7 @@ function PluginStudioPresenter({
         'save-draft-revision',
         draftId,
       ],
-      onMutate: (targetDraftId) => {
+      onMutate: (_targetDraftId) => {
       },
       mutationFn: async (targetDraftId: string) => {
         if (!parsed) {
@@ -3172,6 +3196,24 @@ function PluginStudioPresenter({
     if (!latestPersistedDraftSnapshot) return true;
     return currentDraftSnapshot !== latestPersistedDraftSnapshot;
   }, [activeDraft, currentDraftSnapshot, latestPersistedDraftSnapshot]);
+  const normalizedDraftDescription = activeDraft?.description?.trim() || '';
+  const normalizedEditorDescription = description?.trim() || '';
+  const normalizedDraftTitle = activeDraft?.title?.trim() || '';
+  const normalizedEditorTitle = title?.trim() || '';
+
+  useEffect(() => {
+    const nextTitle = activeDraft?.title?.trim() || defaultPluginTitle;
+    const nextDescription = activeDraft?.description?.trim() || '';
+    setTitle((current) => (current === nextTitle ? current : nextTitle));
+    setDescription((current) =>
+      (current ?? '') === nextDescription ? current : nextDescription,
+    );
+  }, [
+    activeDraft?.description,
+    activeDraft?.draftId,
+    activeDraft?.title,
+    defaultPluginTitle,
+  ]);
 
   useEffect(() => {
     if (!pluginId.trim()) {
@@ -3208,6 +3250,85 @@ function PluginStudioPresenter({
       lastRequestedDraftSnapshotRef.current = null;
     }
   }, [hasPendingDraftChanges]);
+
+  useEffect(() => {
+    if (!activeDraft) {
+      return;
+    }
+    if (activeDraft.pluginId !== pluginId) {
+      return;
+    }
+    if (!isActorIdentityReady) {
+      return;
+    }
+    if (normalizedDraftDescription === normalizedEditorDescription) {
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      void updateDraftMutation
+        .mutateAsync({
+          ...activeDraft,
+          description: normalizedEditorDescription || undefined,
+          updatedAt: new Date().toISOString(),
+        } as never)
+        .then(() => refetchDrafts())
+        .catch((error) => {
+          console.error(error);
+          toast.error('Saving draft description failed.');
+        });
+    }, 300);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    activeDraft,
+    pluginId,
+    isActorIdentityReady,
+    normalizedDraftDescription,
+    normalizedEditorDescription,
+    updateDraftMutation,
+    refetchDrafts,
+  ]);
+
+  useEffect(() => {
+    if (!activeDraft) {
+      return;
+    }
+    if (activeDraft.pluginId !== pluginId) {
+      return;
+    }
+    if (!isActorIdentityReady) {
+      return;
+    }
+    if (normalizedDraftTitle === normalizedEditorTitle) {
+      return;
+    }
+    const timeoutId = window.setTimeout(() => {
+      void updateDraftMutation
+        .mutateAsync({
+          ...activeDraft,
+          title: normalizedEditorTitle || defaultPluginTitle,
+          updatedAt: new Date().toISOString(),
+        } as never)
+        .then(() => refetchDrafts())
+        .catch((error) => {
+          console.error(error);
+          toast.error('Saving draft title failed.');
+        });
+    }, 300);
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    activeDraft,
+    defaultPluginTitle,
+    isActorIdentityReady,
+    normalizedDraftTitle,
+    normalizedEditorTitle,
+    pluginId,
+    refetchDrafts,
+    updateDraftMutation,
+  ]);
 
   useEffect(() => {
     if (!activeDraft) return;
@@ -3258,6 +3379,7 @@ function PluginStudioPresenter({
     pluginId,
     actorUserId,
     draftId,
+    description,
     parsed,
     isDraftHydrated,
     currentDraftSnapshot,
@@ -5317,7 +5439,6 @@ function PluginStudioPresenter({
       return;
     }
 
-    navigateToPluginWorkspace(template.pluginId);
     setTitle(template.docs.title);
     setDescription(template.docs.description);
     persistActionManifestDocs(template.actionManifest);
@@ -5410,21 +5531,87 @@ function PluginStudioPresenter({
           <div className="absolute -right-10 top-6 h-40 w-40 rounded-full bg-primary/20 blur-2xl" />
           <div className="absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-accent/30 blur-2xl" />
           <div className="relative flex flex-wrap items-start justify-between gap-4">
-            <div className="max-w-2xl space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border bg-background px-3 py-1 text-xs font-medium text-foreground">
-                <Sparkles className="size-3.5" />
-                Plugin Studio
+            <div className="w-full max-w-3xl">
+              <div className="group rounded-xl border border-border/70 bg-background/85 p-4">
+                <div className="space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    {editingMetadataField === 'title' ? (
+                      <Input
+                        value={editingMetadataValue}
+                        autoFocus
+                        placeholder="Plugin name"
+                        onChange={(event) => setEditingMetadataValue(event.target.value)}
+                        onBlur={commitMetadataEdit}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            commitMetadataEdit();
+                          }
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            stopMetadataEdit();
+                          }
+                        }}
+                        className="h-10 text-xl font-semibold md:text-2xl"
+                      />
+                    ) : (
+                      <p className="text-xl font-semibold tracking-tight md:text-2xl">
+                        {title?.trim() || defaultPluginTitle}
+                      </p>
+                    )}
+                    {editingMetadataField === 'title' ? null : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => beginMetadataEdit('title')}
+                        className="h-7 px-2 text-xs opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
+                      >
+                        Edit
+                        <Pencil className="ml-1 size-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex items-start justify-between gap-3">
+                    {editingMetadataField === 'description' ? (
+                      <Textarea
+                        value={editingMetadataValue}
+                        autoFocus
+                        placeholder="Add a description"
+                        onChange={(event) => setEditingMetadataValue(event.target.value)}
+                        onBlur={commitMetadataEdit}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            stopMetadataEdit();
+                          }
+                          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                            event.preventDefault();
+                            commitMetadataEdit();
+                          }
+                        }}
+                        className="min-h-[96px] resize-none"
+                      />
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        {description?.trim() || 'Add a description'}
+                      </p>
+                    )}
+                    {editingMetadataField === 'description' ? null : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => beginMetadataEdit('description')}
+                        className="h-7 px-2 text-xs opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
+                      >
+                        Edit
+                        <Pencil className="ml-1 size-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </div>
-              <h1 className="text-2xl font-semibold tracking-tight md:text-3xl">
-                Build Powerful Plugin Data Models.
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Use full metadata-powered schema and automation dialogs with
-                type safety and advanced customization.
-              </p>
-              <p className="text-xs font-medium text-muted-foreground">
-                Draft Workspace
-              </p>
             </div>
             <div className="flex items-center gap-3">
               <Button

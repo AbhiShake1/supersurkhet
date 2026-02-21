@@ -432,6 +432,7 @@ export type PluginDraftDoc = {
   collaboratorUserIds?: string[];
   status: 'active' | 'archived';
   title?: string;
+  description?: string;
   createdAt: string;
   updatedAt: string;
 };
