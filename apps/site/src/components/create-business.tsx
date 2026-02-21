@@ -97,6 +97,8 @@ export function CreateBusinessPageFlow() {
     },
   });
   const canUsePrimaryActions = form.formState.isValid && !isPending;
+  const selectedPluginReleaseIds = form.watch('selectedPluginReleaseIds') ?? [];
+  const hasSelectedPlugins = selectedPluginReleaseIds.length > 0;
 
   const handleNextStep1 = async () => {
     if (isLoading) {
@@ -124,6 +126,16 @@ export function CreateBusinessPageFlow() {
   };
 
   const onSubmit = async (values: BusinessCreationValues): Promise<void> => {
+    if ((values.selectedPluginReleaseIds ?? []).length === 0) {
+      form.setError('selectedPluginReleaseIds', {
+        type: 'manual',
+        message: 'Select at least one plugin before creating your business.',
+      });
+      toast.error('Select at least one plugin before creating your business.');
+      setStep(3);
+      return;
+    }
+
     const basePath = values.name.toLowerCase().replace(/\s+/g, '-');
     // Extract prepopulateData to avoid including it in the business creation
     const { prepopulateData, selectedPluginReleaseIds, ...businessData } =
@@ -364,12 +376,18 @@ export function CreateBusinessPageFlow() {
                   type="submit"
                   form="business-creation-form"
                   size="lg"
-                  disabled={!canUsePrimaryActions}
+                  disabled={!canUsePrimaryActions || !hasSelectedPlugins}
                   className="min-w-[176px] rounded-r-xl transition-all duration-200"
                 >
                   <Rocket className="mr-2 h-4.5 w-4.5" />
-                  {isPending ? 'Creating...' : 'Create Business'}
-                  {!isPending && <ArrowRight className="ml-2 h-4.5 w-4.5" />}
+                  {isPending
+                    ? 'Creating...'
+                    : hasSelectedPlugins
+                      ? 'Create Business'
+                      : 'Select at least one plugin to create business'}
+                  {!isPending && hasSelectedPlugins && (
+                    <ArrowRight className="ml-2 h-4.5 w-4.5" />
+                  )}
                 </Button>
               </ButtonGroup>
             )}

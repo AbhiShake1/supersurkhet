@@ -1631,7 +1631,8 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                 </p>
                 {selectedReleaseIds.length === 0 ? (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    No plugins selected. You can continue without plugins.
+                    No plugins selected. Pick at least one plugin to continue
+                    to business creation.
                   </p>
                 ) : (
                   <div className="mt-2 flex flex-wrap gap-2">
