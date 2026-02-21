@@ -1893,6 +1893,16 @@ declare global {
      path: string[];
      message: string;
     }>, "many">;
+     uiStateByUserId: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodObject<{
+     templatesTourSeenAt: import("zod").ZodOptional<import("zod").ZodString>;
+     sidebarSnapshotJson: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     templatesTourSeenAt?: string | undefined;
+     sidebarSnapshotJson?: string | undefined;
+    }, {
+     templatesTourSeenAt?: string | undefined;
+     sidebarSnapshotJson?: string | undefined;
+    }>>>;
      savedByUserId: import("zod").ZodString;
      savedAt: import("zod").ZodString;
     } & {
@@ -1937,6 +1947,10 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     uiStateByUserId?: Record<string, {
+     templatesTourSeenAt?: string | undefined;
+     sidebarSnapshotJson?: string | undefined;
+    }> | undefined;
     }, {
      id: string;
      pluginId: string;
@@ -1966,6 +1980,10 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
+     uiStateByUserId?: Record<string, {
+     templatesTourSeenAt?: string | undefined;
+     sidebarSnapshotJson?: string | undefined;
+    }> | undefined;
     }>;
      readonly title: "Plugin Routes Tabs Config";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;

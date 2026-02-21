@@ -88,6 +88,7 @@ import {
 import { api } from '@/lib/api';
 import { previewReleaseHashes } from '@/lib/plugins/release-hash-preview';
 import {
+  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
@@ -128,9 +129,7 @@ import {
   resolvePluginStudioPluginId,
 } from '../-plugin-studio-plugin-id';
 import {
-  buildPluginStudioSidebarSnapshotStorageKey,
-  pickLatestPluginStudioSidebarSnapshot,
-  PLUGIN_STUDIO_SIDEBAR_SNAPSHOT_VERSION,
+  parsePluginStudioSidebarSnapshot,
   shouldApplyPluginStudioSidebarSnapshot,
   type PluginStudioSidebarSnapshot,
 } from '../-plugin-studio-sidebar-snapshot';
@@ -2197,7 +2196,10 @@ function PluginStudioPresenter({
     refetch: refetchReleases,
   } = api.pluginRelease.useGet();
   const releases = releaseRows as PluginReleaseDoc[];
-  const marketplaceReleases = releases;
+  const marketplaceReleases = useMemo(
+    () => mergeMarketplaceReleasesWithSeed(releases),
+    [releases],
+  );
   const {
     data: draftRows = [],
     isLoading: isDraftLoading,
@@ -2387,6 +2389,13 @@ function PluginStudioPresenter({
         order: number;
         iconName?: string;
       }>;
+      uiStateByUserId?: Record<
+        string,
+        {
+          templatesTourSeenAt?: string;
+          sidebarSnapshotJson?: string;
+        }
+      >;
     }>;
     const candidates = rows.filter(
       (row) =>
@@ -2410,6 +2419,10 @@ function PluginStudioPresenter({
     draftId,
     routesTabsConfigRows,
   ]);
+  const activeUiStateForActor = useMemo(
+    () => activeRoutesTabsConfigRow?.uiStateByUserId?.[actorUserId],
+    [activeRoutesTabsConfigRow, actorUserId],
+  );
 
   const adminTabsText = useMemo(
     () =>
@@ -2742,14 +2755,6 @@ function PluginStudioPresenter({
       : null;
   }, [parsed]);
 
-  const sidebarSnapshotStorageKey = useMemo(() => {
-    return buildPluginStudioSidebarSnapshotStorageKey({
-      actorUserId,
-      pluginId,
-      draftId,
-    });
-  }, [actorUserId, draftId, pluginId]);
-
   useEffect(() => {
     if (isDraftRevisionLoading) {
       return;
@@ -2844,28 +2849,12 @@ function PluginStudioPresenter({
       new Set([...nextGroupOrder, ...groupsFromSchemas]),
     );
 
-    let sidebarSnapshot: PluginStudioSidebarSnapshot | null = null;
-    const resolvedPluginId = latestRevision.pluginId || pluginId;
-    if (typeof window !== 'undefined') {
-      sidebarSnapshot = pickLatestPluginStudioSidebarSnapshot({
-        raws: [
-          window.localStorage.getItem(
-            buildPluginStudioSidebarSnapshotStorageKey({
-              actorUserId,
-              pluginId: resolvedPluginId,
-              draftId,
-            }),
-          ),
-          window.localStorage.getItem(
-            buildPluginStudioSidebarSnapshotStorageKey({
-              actorUserId,
-              pluginId: resolvedPluginId,
-            }),
-          ),
-        ],
+    let sidebarSnapshot: PluginStudioSidebarSnapshot | null =
+      parsePluginStudioSidebarSnapshot({
+        raw: activeUiStateForActor?.sidebarSnapshotJson ?? null,
         defaultSystemTabs: DEFAULT_SYSTEM_TABS,
       });
-    }
+    const resolvedPluginId = latestRevision.pluginId || pluginId;
 
     if (sidebarSnapshot?.pluginId !== resolvedPluginId) {
       sidebarSnapshot = null;
@@ -2993,15 +2982,13 @@ function PluginStudioPresenter({
     );
   }, [
     latestActiveDraftRevision,
-    actorUserId,
     draftId,
     pluginId,
     isDraftRevisionLoading,
+    activeUiStateForActor,
   ]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (!sidebarSnapshotStorageKey) return;
     if (!parsed) return;
 
     if (sidebarSnapshotSeededDraftIdRef.current !== draftId) {
@@ -3026,16 +3013,16 @@ function PluginStudioPresenter({
       adminTabs: parsed.draftAdminTabs,
     });
     if (latestPersistedSnapshot === currentSnapshot) {
-      try {
-        window.localStorage.removeItem(sidebarSnapshotStorageKey);
-      } catch (_error) {
-        // Ignore storage failures.
+      if (activeUiStateForActor?.sidebarSnapshotJson) {
+        persistSidebarUiStateForActor({
+          sidebarSnapshotJson: '',
+        });
       }
       return;
     }
 
     const snapshot: PluginStudioSidebarSnapshot = {
-      version: PLUGIN_STUDIO_SIDEBAR_SNAPSHOT_VERSION,
+      version: 1,
       pluginId,
       draftId,
       updatedAt: new Date().toISOString(),
@@ -3055,17 +3042,16 @@ function PluginStudioPresenter({
       groupOrder,
       systemTabs,
     };
-
-    try {
-      window.localStorage.setItem(
-        sidebarSnapshotStorageKey,
-        JSON.stringify(snapshot),
-      );
-    } catch (_error) {
-      // Ignore storage quota and serialization failures.
+    const snapshotJson = JSON.stringify(snapshot);
+    if (activeUiStateForActor?.sidebarSnapshotJson === snapshotJson) {
+      return;
     }
+    persistSidebarUiStateForActor({
+      sidebarSnapshotJson: snapshotJson,
+    });
   }, [
     activeDraftRevisions,
+    activeUiStateForActor,
     customGroups,
     draftId,
     groupOrder,
@@ -3074,7 +3060,6 @@ function PluginStudioPresenter({
     schemaGroupById,
     schemaIconNameById,
     schemaOrder,
-    sidebarSnapshotStorageKey,
     systemTabs,
   ]);
 
@@ -3550,16 +3535,14 @@ function PluginStudioPresenter({
   const isInitialLoading = isReleaseLoading && releases.length === 0;
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    const storageKey = 'plugin-studio.templates-tour-seen.v1';
-    if (window.localStorage.getItem(storageKey) === '1') {
+    if (activeUiStateForActor?.templatesTourSeenAt) {
       return;
     }
     setIsTemplatesDialogOpen(true);
-    window.localStorage.setItem(storageKey, '1');
-  }, []);
+    persistSidebarUiStateForActor({
+      templatesTourSeenAt: new Date().toISOString(),
+    });
+  }, [activeUiStateForActor?.templatesTourSeenAt]);
 
   useEffect(() => {
     if (leftRuleFields.length === 0) {
@@ -4310,7 +4293,7 @@ function PluginStudioPresenter({
 
     for (const [schemaId, nextDoc] of nextBySchemaId) {
       writes.push(createSchemaDocMutation.mutateAsync({
-        id: schemaId,
+        id: `${draftId}:${schemaId}`,
         pluginId,
         version: draftId,
         schemaId,
@@ -4366,7 +4349,7 @@ function PluginStudioPresenter({
 
     for (const [workflowId, nextDoc] of nextByWorkflowId) {
       writes.push(createWorkflowDocMutation.mutateAsync({
-        id: workflowId,
+        id: `${draftId}:${workflowId}`,
         pluginId,
         version: draftId,
         workflowId,
@@ -4422,7 +4405,7 @@ function PluginStudioPresenter({
 
     for (const [actionId, nextDoc] of nextByActionId) {
       writes.push(createActionManifestDocMutation.mutateAsync({
-        id: actionId,
+        id: `${draftId}:${actionId}`,
         pluginId,
         version: draftId,
         actionId,
@@ -4557,6 +4540,7 @@ function PluginStudioPresenter({
       businessSlug: 'draft',
       routes: toDraftRoutesFromAdminTabs(nextAdminTabs),
       diagnostics: [],
+      uiStateByUserId: activeRoutesTabsConfigRow?.uiStateByUserId,
       savedByUserId: actorUserId,
       savedAt: new Date().toISOString(),
     };
@@ -4592,6 +4576,58 @@ function PluginStudioPresenter({
       await refetchRoutesTabsConfig();
     })().catch((error) =>
       reportPersistenceError('Sidebar tab persistence', error),
+    );
+  }
+
+  function persistSidebarUiStateForActor({
+    templatesTourSeenAt,
+    sidebarSnapshotJson,
+  }: {
+    templatesTourSeenAt?: string;
+    sidebarSnapshotJson?: string;
+  }) {
+    if (!parsed) return;
+    const rowId = canonicalRoutesTabsConfigId;
+    const currentStateByUserId = activeRoutesTabsConfigRow?.uiStateByUserId ?? {};
+    const currentActorState = currentStateByUserId[actorUserId] ?? {};
+    const nextActorState = {
+      ...currentActorState,
+      ...(templatesTourSeenAt !== undefined ? { templatesTourSeenAt } : {}),
+      ...(sidebarSnapshotJson !== undefined ? { sidebarSnapshotJson } : {}),
+    };
+    const nextStateByUserId = {
+      ...currentStateByUserId,
+      [actorUserId]: nextActorState,
+    };
+    const payload = {
+      id: rowId,
+      draftId: draftId,
+      revisionId: 'live',
+      pluginId,
+      businessSlug: 'draft',
+      routes: toDraftRoutesFromAdminTabs(parsed.draftAdminTabs),
+      diagnostics: [],
+      uiStateByUserId: nextStateByUserId,
+      savedByUserId: actorUserId,
+      savedAt: new Date().toISOString(),
+    };
+
+    void (async () => {
+      if (activeRoutesTabsConfigRow?.id === canonicalRoutesTabsConfigId) {
+        await updateRoutesTabsConfigMutation.mutateAsync(payload);
+      } else {
+        try {
+          await createRoutesTabsConfigMutation.mutateAsync(payload);
+        } catch (error) {
+          if (!isDuplicatePersistenceError(error)) {
+            throw error;
+          }
+          await updateRoutesTabsConfigMutation.mutateAsync(payload);
+        }
+      }
+      await refetchRoutesTabsConfig();
+    })().catch((error) =>
+      reportPersistenceError('Sidebar UI state persistence', error),
     );
   }
 
@@ -5419,7 +5455,10 @@ function PluginStudioPresenter({
     if (!parsedReleaseId) {
       const parts = releaseId.split('@');
       if (parts.length === 2) {
-        parsedReleaseId = { pluginId: parts[0], version: parts[1] };
+        parsedReleaseId = {
+          pluginId: parts[0]?.trim(),
+          version: parts[1]?.trim(),
+        };
       }
     }
 
@@ -5428,11 +5467,14 @@ function PluginStudioPresenter({
       return;
     }
 
-    const template = templates.find(
-      (release) =>
-        release.pluginId === parsedReleaseId.pluginId &&
-        release.version === parsedReleaseId.version,
-    );
+    const template = templates.find((release) => {
+      const candidatePluginId = String(release.pluginId ?? '').trim();
+      const candidateVersion = String(release.version ?? '').trim();
+      return (
+        candidatePluginId === parsedReleaseId.pluginId &&
+        candidateVersion === parsedReleaseId.version
+      );
+    });
 
     if (!template) {
       toast.error('Template was not found.');

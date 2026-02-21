@@ -22,6 +22,11 @@ const actionManifestDocSchema = z.object({
   runtime: z.enum(['sandbox-worker', 'core']).optional(),
 });
 
+const pluginStudioUserUiStateSchema = z.object({
+  templatesTourSeenAt: z.string().datetime({ offset: true }).optional(),
+  sidebarSnapshotJson: z.string().optional(),
+});
+
 const pluginSchemaFieldTypes = [
   ...AUTOFORM_FIELD_TYPES,
   'enum',
@@ -515,6 +520,9 @@ export const pluginRoutesTabsConfigSchema = z
     businessSlug: z.string(),
     routes: z.array(routesTabsMappedRouteSchema),
     diagnostics: z.array(routesTabsMapperDiagnosticSchema),
+    uiStateByUserId: z
+      .record(z.string(), pluginStudioUserUiStateSchema)
+      .optional(),
     savedByUserId: z.string(),
     savedAt: z.string().datetime({ offset: true }),
   })
