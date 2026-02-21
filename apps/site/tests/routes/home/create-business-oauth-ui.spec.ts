@@ -5,7 +5,7 @@ import SEA from "gun/sea.js";
 async function openBusinessOnboarding(page: Page) {
   const businessName = `OAuth UI E2E ${Date.now()}`;
   const welcomeHeading = page.getByRole("heading", {
-    name: /Welcome! Let's start with the basics./i,
+    name: /Start your business/i,
   });
   const loginPromptDescription = page.getByText("Please sign in to continue.", {
     exact: true,
@@ -62,7 +62,7 @@ async function openBusinessOnboarding(page: Page) {
   await expect(page).toHaveURL(/\/create-business$/);
 
   await page.getByLabel("Business Name").fill(businessName);
-  await page.getByRole("button", { name: /Continue to AI setup/i }).click();
+  await page.getByRole("button", { name: /^Continue$/i }).click();
 
   await expect(page.getByText("AI Business Onboarding")).toBeVisible();
 }

@@ -76,6 +76,7 @@ export const businessCreationSchema = businessSchema
     locationCoordinates: true,
   })
   .extend({
+    name: z.string().trim().min(1, 'Business name is required'),
     prepopulateData: z.record(z.string(), z.boolean()).optional(),
     selectedPluginReleaseIds: z.array(z.string()),
   });
@@ -393,7 +394,7 @@ export function BusinessCreationForm({
   return (
     <div className="space-y-8">
       {step === 1 && (
-        <div className="space-y-4">
+        <div className="space-y-6">
           <FormField
             control={form.control}
             name="name"
@@ -437,7 +438,17 @@ export function BusinessCreationForm({
       )}
 
       {step === 2 && (
-        <div className="space-y-6">
+        <div className="space-y-6 rounded-2xl border border-border/70 bg-background p-4 sm:p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Chapter 2 · Experience Design
+              </p>
+              <p className="mt-1 text-sm text-foreground">
+                Shape your workflow, plugins, and operating style.
+              </p>
+            </div>
+          </div>
           <BusinessOnboardingAssistantForm form={form} />
         </div>
       )}

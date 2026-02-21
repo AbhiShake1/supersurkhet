@@ -1,13 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Link } from '@tanstack/react-router';
-import { ArrowLeft, Sparkles } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bot,
+  ChevronLeft,
+  Compass,
+  Rocket,
+  SkipForward,
+  Sparkles,
+} from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useConfetti } from '@/components/confetti-provider';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
-import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { gun } from '@/lib/gun';
 import { getGunRef } from '@/lib/gun/utils';
@@ -15,7 +23,6 @@ import { getBusinessDataFieldFromSelectedReleases } from '@/lib/plugins/business
 import { parseReleaseId } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import type { businessSchema } from '@/lib/schema';
-import { cn } from '@/lib/utils';
 import { installPluginRelease } from '@/server-functions/plugins';
 import { useAuth } from './auth-provider';
 import {
@@ -24,24 +31,23 @@ import {
   businessCreationSchema,
 } from './business-creation-form';
 import { Button } from './ui/button';
+import { ButtonGroup } from './ui/button-group';
 import { Form } from './ui/form';
 
 const stepContent = {
   1: {
-    title: "Welcome! Let's start with the basics.",
-    description: 'Name your business and pin where it operates.',
-    label: 'Basics',
+    title: 'Start your business',
+    description:
+      'Set the essentials first. Name and location create the foundation.',
   },
   2: {
-    title: 'AI Setup Journey (optional)',
+    title: 'Shape your setup',
     description:
-      'Use chat to shape your setup plan, or skip directly to creation anytime.',
-    label: 'AI setup',
+      'Configure capabilities and intelligence before final creation.',
   },
   3: {
-    title: 'Business created',
-    description: 'You are ready to launch and manage your business.',
-    label: 'Launch',
+    title: 'Launch',
+    description: 'Your business is live. Start operating and iterate fast.',
   },
 };
 
@@ -63,6 +69,7 @@ export function CreateBusinessPageFlow() {
 
   const form = useForm<BusinessCreationValues>({
     resolver: zodResolver(businessCreationSchema),
+    mode: 'onChange',
     defaultValues: {
       name: '',
       features: {},
@@ -83,6 +90,7 @@ export function CreateBusinessPageFlow() {
       });
     },
   });
+  const canUsePrimaryActions = form.formState.isValid && !isPending;
 
   const handleNextStep1 = async () => {
     if (isLoading) {
@@ -217,8 +225,12 @@ export function CreateBusinessPageFlow() {
   }, [promptLogin, user]);
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,hsl(var(--primary)/0.25),transparent_45%),radial-gradient(circle_at_80%_0%,hsl(var(--accent)/0.2),transparent_35%)] px-4 py-8 sm:px-8 sm:py-10">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+    <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_10%,hsl(22_95%_58%/.12),transparent_40%),radial-gradient(circle_at_90%_0%,hsl(192_95%_56%/.12),transparent_35%),linear-gradient(145deg,hsl(224_21%_12%),hsl(236_24%_9%))] px-4 py-8 sm:px-8 sm:py-10">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-30 [background-image:linear-gradient(hsl(0_0%_100%/.06)_1px,transparent_1px),linear-gradient(90deg,hsl(0_0%_100%/.06)_1px,transparent_1px)] [background-size:32px_32px]"
+      />
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-6">
         <div className="flex items-center justify-between gap-4">
           <Button variant="ghost" asChild>
             <Link to="/" className="inline-flex items-center gap-2">
@@ -226,75 +238,37 @@ export function CreateBusinessPageFlow() {
               Back home
             </Link>
           </Button>
-          <Badge variant="secondary" className="px-3 py-1 text-xs">
+          <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs text-white/80">
             Create Business
-          </Badge>
+          </span>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
-          <aside className="space-y-4">
-            <div className="rounded-2xl border bg-card/70 p-4 backdrop-blur-sm">
-              <p className="font-semibold text-sm text-foreground">
-                Your journey
-              </p>
-              <p className="mt-1 text-muted-foreground text-xs">
-                A cleaner full-page flow with optional AI onboarding.
-              </p>
-              <div className="mt-4 space-y-2">
-                {([1, 2, 3] as const).map((currentStep) => {
-                  const isActive = step === currentStep;
-                  const isDone = step > currentStep;
-
-                  return (
-                    <div
-                      key={currentStep}
-                      className={cn(
-                        'flex items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors',
-                        isActive && 'border-primary/60 bg-primary/10',
-                        isDone && 'border-green-500/50 bg-green-500/10',
-                      )}
-                    >
-                      <span
-                        className={cn(
-                          'inline-flex h-6 w-6 items-center justify-center rounded-full border text-xs',
-                          isActive && 'border-primary text-primary',
-                          isDone && 'border-green-600 text-green-600',
-                        )}
-                      >
-                        {currentStep}
-                      </span>
-                      <span className="font-medium">
-                        {stepContent[currentStep].label}
-                      </span>
-                    </div>
-                  );
-                })}
+        <section className="rounded-3xl border border-white/20 bg-black/25 p-5 text-white shadow-xl backdrop-blur-xl sm:p-7">
+          <header className="mb-6 flex items-center justify-between border-b border-white/15 pb-4">
+            <div className="flex items-start gap-3">
+              <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-white/10">
+                {step === 1 && <Compass className="h-4 w-4 text-white/85" />}
+                {step === 2 && <Bot className="h-4 w-4 text-white/85" />}
+                {step === 3 && <Rocket className="h-4 w-4 text-white/85" />}
+              </span>
+              <div>
+                <p className="text-xs uppercase tracking-[0.16em] text-white/60">
+                  Business creation
+                </p>
+                <p className="mt-1 font-semibold text-xl tracking-tight">
+                  {currentContent.title}
+                </p>
+                <p className="mt-1 text-sm text-white/75">
+                  {currentContent.description}
+                </p>
               </div>
             </div>
-
-            <div className="rounded-2xl border bg-card/70 p-4 backdrop-blur-sm">
-              <p className="font-semibold text-sm">AI is optional</p>
-              <p className="mt-1 text-muted-foreground text-xs leading-relaxed">
-                You can use AI to shape your setup, or skip straight to creation
-                from step two.
-              </p>
-              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                <Sparkles className="h-3.5 w-3.5" />
-                Chat guidance and plugin suggestions are optional.
-              </div>
-            </div>
-          </aside>
-
-          <section className="rounded-2xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm sm:p-7">
-            <header className="mb-6 border-b pb-4">
-              <h1 className="font-semibold text-2xl tracking-tight">
-                {currentContent.title}
-              </h1>
-              <p className="mt-2 max-w-2xl text-muted-foreground text-sm">
-                {currentContent.description}
-              </p>
-            </header>
-
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs text-white/85">
+              <Sparkles className="h-3.5 w-3.5" />
+              Step {step} / 3
+            </span>
+          </header>
+          <div className="rounded-2xl border border-border/70 bg-background/95 p-4 text-foreground sm:p-5">
             <Form {...form}>
               {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
               <form
@@ -311,55 +285,66 @@ export function CreateBusinessPageFlow() {
               </form>
             </Form>
 
-            {step !== 3 && (
-              <footer className="mt-8 border-t pt-5">
-                {step === 1 && (
-                  <div className="flex items-center justify-end gap-3">
-                    <Button
-                      onClick={handleNextStep1}
-                      disabled={!form.watch('name')}
-                    >
-                      Continue to AI setup
-                    </Button>
-                  </div>
-                )}
-                {step === 2 && (
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <div className="text-muted-foreground text-xs">
-                      AI is optional. You can create right now with current
-                      inputs.
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => setStep(1)}
-                        disabled={isPending}
-                      >
-                        Back
-                      </Button>
-                      <Button
-                        type="submit"
-                        form="business-creation-form"
-                        disabled={isPending}
-                      >
-                        {isPending ? 'Creating...' : 'Create Business'}
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </footer>
-            )}
-          </section>
-        </div>
+            {step !== 3 && <div className="h-24 sm:h-28" />}
+          </div>
+        </section>
       </div>
+      {step !== 3 && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
+          <div className="pointer-events-auto w-full max-w-3xl">
+            {step === 1 && (
+              <Button
+                size="lg"
+                onClick={handleNextStep1}
+                disabled={!canUsePrimaryActions || isLoading}
+                className="h-12 w-full rounded-xl px-5 text-sm font-semibold shadow-lg transition-all duration-200 sm:h-13 sm:text-base"
+              >
+                <span className="inline-flex items-center gap-2">
+                  <Compass className="h-4 w-4" />
+                  Continue
+                </span>
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+            {step === 2 && (
+              <ButtonGroup className="w-full justify-center [&>button]:h-12 [&>button]:px-4 [&>button]:font-medium [&>button]:shadow-lg sm:[&>button]:h-13">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setStep(1)}
+                  disabled={isPending}
+                  className="min-w-[96px] rounded-l-xl transition-all duration-200"
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Back
+                </Button>
+                <Button
+                  type="submit"
+                  form="business-creation-form"
+                  variant="outline"
+                  size="lg"
+                  disabled={!canUsePrimaryActions}
+                  className="min-w-[116px] transition-all duration-200"
+                >
+                  <SkipForward className="mr-2 h-4 w-4" />
+                  {isPending ? 'Creating...' : 'Skip AI'}
+                </Button>
+                <Button
+                  type="submit"
+                  form="business-creation-form"
+                  size="lg"
+                  disabled={!canUsePrimaryActions}
+                  className="min-w-[152px] rounded-r-xl transition-all duration-200"
+                >
+                  <Rocket className="mr-2 h-4.5 w-4.5" />
+                  {isPending ? 'Creating...' : 'Create Business'}
+                  {!isPending && <ArrowRight className="ml-2 h-4.5 w-4.5" />}
+                </Button>
+              </ButtonGroup>
+            )}
+          </div>
+        </div>
+      )}
     </main>
-  );
-}
-
-export function CreateBusinessCallToAction() {
-  return (
-    <Button asChild>
-      <Link to="/create-business">Create Business</Link>
-    </Button>
   );
 }
