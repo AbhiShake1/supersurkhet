@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   ArrowRight,
   Bot,
+  Boxes,
   ChevronLeft,
   Compass,
   Rocket,
@@ -41,11 +42,16 @@ const stepContent = {
       'Set the essentials first. Name and location create the foundation.',
   },
   2: {
-    title: 'Shape your setup',
+    title: 'Connect AI',
     description:
-      'Configure capabilities and intelligence before final creation.',
+      'Configure AI provider authentication and collect business context.',
   },
   3: {
+    title: 'Choose plugins',
+    description:
+      'Use the plugin browser to review AI suggestions and finalize installs.',
+  },
+  4: {
     title: 'Launch',
     description: 'Your business is live. Start operating and iterate fast.',
   },
@@ -206,13 +212,13 @@ export function CreateBusinessPageFlow() {
     }
 
     setCreatedBusiness(created);
-    setStep(3);
+    setStep(4);
   };
 
   const currentContent = stepContent[step as keyof typeof stepContent];
 
   useEffect(() => {
-    if (step === 3) {
+    if (step === 4) {
       fireConfetti();
       fireConfetti();
     }
@@ -249,7 +255,8 @@ export function CreateBusinessPageFlow() {
               <span className="mt-0.5 inline-flex h-8 w-8 items-center justify-center rounded-full border border-white/25 bg-white/10">
                 {step === 1 && <Compass className="h-4 w-4 text-white/85" />}
                 {step === 2 && <Bot className="h-4 w-4 text-white/85" />}
-                {step === 3 && <Rocket className="h-4 w-4 text-white/85" />}
+                {step === 3 && <Boxes className="h-4 w-4 text-white/85" />}
+                {step === 4 && <Rocket className="h-4 w-4 text-white/85" />}
               </span>
               <div>
                 <p className="text-xs uppercase tracking-[0.16em] text-white/60">
@@ -265,7 +272,7 @@ export function CreateBusinessPageFlow() {
             </div>
             <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs text-white/85">
               <Sparkles className="h-3.5 w-3.5" />
-              Step {step} / 3
+              Step {step} / 4
             </span>
           </header>
           <div className="rounded-2xl border border-border/70 bg-background/95 p-4 text-foreground sm:p-5">
@@ -285,11 +292,11 @@ export function CreateBusinessPageFlow() {
               </form>
             </Form>
 
-            {step !== 3 && <div className="h-24 sm:h-28" />}
+            {step !== 4 && <div className="h-24 sm:h-28" />}
           </div>
         </section>
       </div>
-      {step !== 3 && (
+      {step !== 4 && (
         <div className="pointer-events-none fixed inset-x-0 bottom-4 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)]">
           <div className="pointer-events-auto w-full max-w-3xl">
             {step === 1 && (
@@ -319,22 +326,46 @@ export function CreateBusinessPageFlow() {
                   Back
                 </Button>
                 <Button
-                  type="submit"
-                  form="business-creation-form"
+                  type="button"
                   variant="outline"
                   size="lg"
-                  disabled={!canUsePrimaryActions}
+                  onClick={() => setStep(3)}
+                  disabled={isPending}
                   className="min-w-[116px] transition-all duration-200"
                 >
                   <SkipForward className="mr-2 h-4 w-4" />
-                  {isPending ? 'Creating...' : 'Skip AI'}
+                  Continue without AI
+                </Button>
+                <Button
+                  type="button"
+                  size="lg"
+                  onClick={() => setStep(3)}
+                  disabled={isPending}
+                  className="min-w-[152px] rounded-r-xl transition-all duration-200"
+                >
+                  <ArrowRight className="mr-2 h-4.5 w-4.5" />
+                  Review Plugins
+                </Button>
+              </ButtonGroup>
+            )}
+            {step === 3 && (
+              <ButtonGroup className="w-full justify-center [&>button]:h-12 [&>button]:px-4 [&>button]:font-medium [&>button]:shadow-lg sm:[&>button]:h-13">
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setStep(2)}
+                  disabled={isPending}
+                  className="min-w-[96px] rounded-l-xl transition-all duration-200"
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Back
                 </Button>
                 <Button
                   type="submit"
                   form="business-creation-form"
                   size="lg"
                   disabled={!canUsePrimaryActions}
-                  className="min-w-[152px] rounded-r-xl transition-all duration-200"
+                  className="min-w-[176px] rounded-r-xl transition-all duration-200"
                 >
                   <Rocket className="mr-2 h-4.5 w-4.5" />
                   {isPending ? 'Creating...' : 'Create Business'}

@@ -21,6 +21,8 @@ test("create a business for E2E", async ({ page }) => {
   await nextButton.click();
 
   await expect(page.getByText("AI Business Onboarding")).toBeVisible();
+  await page.getByRole("button", { name: /Review Plugins/i }).click();
+  await expect(page.getByText("Plugin Browser")).toBeVisible();
 
   await page.getByRole("button", { name: /Create Business/i }).click();
   await expect(page.getByText(/Business Created!/i)).toBeVisible();

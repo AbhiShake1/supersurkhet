@@ -1,14 +1,6 @@
 import { Link } from '@tanstack/react-router';
-import {
-  Check,
-  ChevronDown,
-  ChevronsUpDown,
-  ChevronUp,
-  LoaderCircle,
-  SendHorizontal,
-  Sparkles,
-} from 'lucide-react';
-import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -24,24 +16,12 @@ import {
   resolveProviderSupportedAuthModes,
 } from '@/lib/ai/business-onboarding-models';
 import { api } from '@/lib/api';
-import {
-  type AssistantQuickOptionSet,
-  deriveTodoProgress,
-  mergeSelectedReleaseIds,
-  type TodoItem,
-} from '@/lib/business-ai-assistant';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import { businessSchema } from '@/lib/schema';
 import { cn } from '@/lib/utils';
-import { getBusinessCreationAssistantTurn } from '@/server-functions/ai';
 import { MapField } from './ui/autoform/components/MapField';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from './ui/collapsible';
 import {
   Command,
   CommandEmpty,
@@ -59,7 +39,6 @@ import {
 } from './ui/form';
 import { Input } from './ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { Progress } from './ui/progress';
 import { ScrollArea } from './ui/scroll-area';
 import {
   Select,
@@ -91,39 +70,13 @@ interface BusinessCreationFormProps {
   isSubmitting: boolean;
 }
 
-interface AssistantMessage {
-  role: 'assistant' | 'user';
-  content: string;
-}
-
 interface StepTwoFormProps {
   form: UseFormReturn<BusinessCreationValues>;
 }
 
-const starterQuickOptions: AssistantQuickOptionSet = {
-  questionId: 'business-basics',
-  prompt: 'Pick a quick start, or type your own in the chip.',
-  options: ['I run a restaurant', 'I run a salon', 'I run a retail shop'],
-  otherOptionLabel: 'Type custom follow-up',
-};
-
-const starterTodoItems: TodoItem[] = [
-  {
-    id: 'business-kind',
-    title: 'Understand what business you are creating',
-    done: false,
-  },
-  {
-    id: 'business-operations',
-    title: 'Capture what the business does day-to-day',
-    done: false,
-  },
-  {
-    id: 'setup-plan',
-    title: 'Draft an optional setup plan for launch',
-    done: false,
-  },
-];
+interface StepThreeFormProps {
+  form: UseFormReturn<BusinessCreationValues>;
+}
 
 const providerLabelById: Partial<Record<string, string>> = {
   openai: 'OpenAI',
@@ -348,7 +301,7 @@ export function BusinessCreationForm({
   isSubmitting: _isSubmitting,
   createdBusiness,
 }: BusinessCreationFormProps) {
-  if (step === 3) {
+  if (step === 4) {
     return (
       <div className="text-center py-8">
         <h2 className="text-2xl font-bold">Business Created!</h2>
@@ -438,33 +391,35 @@ export function BusinessCreationForm({
       )}
 
       {step === 2 && (
+        <BusinessOnboardingAssistantForm form={form} />
+      )}
+
+      {step === 3 && (
         <div className="space-y-6 rounded-2xl border border-border/70 bg-background p-4 sm:p-5">
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                Chapter 2 · Experience Design
+                Chapter 3 · Plugin Browser
               </p>
               <p className="mt-1 text-sm text-foreground">
-                Shape your workflow, plugins, and operating style.
+                Browse and choose plugins before launch. AI suggestions are
+                pre-selected from Step 2.
               </p>
             </div>
           </div>
-          <BusinessOnboardingAssistantForm form={form} />
+          <BusinessPluginSelectionStep form={form} />
         </div>
       )}
     </div>
   );
 }
 
-function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
+function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const defaultModelOption = resolveAssistantModelOption(
     DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
   );
 
-  const [assistantInput, setAssistantInput] = useState('');
-  const [customQuickPrompt, setCustomQuickPrompt] = useState('');
-  const [todoExpanded, setTodoExpanded] = useState(false);
-  const [isThinking, setIsThinking] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [isProviderComboboxOpen, setIsProviderComboboxOpen] = useState(false);
   const [isModelComboboxOpen, setIsModelComboboxOpen] = useState(false);
   const [selectedAssistantProviderId, setSelectedAssistantProviderId] =
@@ -509,30 +464,6 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
     number | null
   >(null);
 
-  const [assistantMessages, setAssistantMessages] = useState<
-    AssistantMessage[]
-  >([
-    {
-      role: 'assistant',
-      content:
-        'What kind of business are you creating? Tell me what it does day-to-day so I can draft your launch setup.',
-    },
-  ]);
-  const [quickOptions, setQuickOptions] =
-    useState<AssistantQuickOptionSet>(starterQuickOptions);
-  const [assistantTodoItems, setAssistantTodoItems] =
-    useState<TodoItem[]>(starterTodoItems);
-
-  const { data: releaseRows = [] } = api.pluginRelease.useGet();
-  const releases = useMemo(
-    () => releaseRows as PluginReleaseDoc[],
-    [releaseRows],
-  );
-  const availableReleaseIds = useMemo(
-    () =>
-      releases.map((release) => toReleaseId(release.pluginId, release.version)),
-    [releases],
-  );
   const providerOptions = useMemo(
     () =>
       Object.keys(PROVIDER_SUPPORTED_AUTH_MODES)
@@ -635,8 +566,6 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
       cancelled = true;
     };
   }, [selectedAssistantProviderId]);
-
-  const todoProgress = deriveTodoProgress(assistantTodoItems);
 
   function buildProviderPayload() {
     const payload: {
@@ -1033,689 +962,490 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
   }
 
   return (
+    <div className="rounded-lg border bg-background/60 p-4 space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium">AI Integration</p>
+          <p className="text-xs text-muted-foreground">
+            Configure provider authentication here. Plugin browsing and AI
+            workflow setup happen in Step 3.
+          </p>
+        </div>
+        <Badge variant="secondary">{selectedModelOption.label}</Badge>
+      </div>
+
+      <div className="space-y-3">
+        <div className="space-y-1">
+          <FormLabel className="text-xs text-muted-foreground">
+            AI provider
+          </FormLabel>
+          <Popover
+            open={isProviderComboboxOpen}
+            onOpenChange={setIsProviderComboboxOpen}
+            modal
+          >
+            <PopoverTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                role="combobox"
+                aria-expanded={isProviderComboboxOpen}
+                className="w-full justify-between"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  {selectedProviderOption ? (
+                    <ProviderLogo
+                      providerId={selectedProviderOption.providerId}
+                      label={selectedProviderOption.label}
+                    />
+                  ) : null}
+                  <span className="truncate">
+                    {selectedProviderOption?.label || 'Choose provider'}
+                  </span>
+                </span>
+                <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="w-[var(--radix-popover-trigger-width)] p-0"
+            >
+              <Command>
+                <CommandInput placeholder="Search providers..." />
+                <CommandList>
+                  <CommandEmpty>No providers found.</CommandEmpty>
+                  <CommandGroup>
+                    {providerOptions.map((option) => (
+                      <CommandItem
+                        key={option.providerId}
+                        value={`${option.label} ${option.providerId}`}
+                        onSelect={() => {
+                          handleProviderChange(option.providerId);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            'mr-2 h-4 w-4',
+                            selectedAssistantProviderId === option.providerId
+                              ? 'opacity-100'
+                              : 'opacity-0',
+                          )}
+                        />
+                        <ProviderLogo
+                          providerId={option.providerId}
+                          label={option.label}
+                        />
+                        <span className="ml-2 truncate">{option.label}</span>
+                        <span className="ml-auto text-[10px] text-muted-foreground">
+                          {option.providerId}
+                        </span>
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+
+        <div className="space-y-1">
+          <FormLabel className="text-xs text-muted-foreground">AI model</FormLabel>
+          {providerModelOptions.length > 0 ? (
+            <Popover
+              open={isModelComboboxOpen}
+              onOpenChange={setIsModelComboboxOpen}
+              modal
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  type="button"
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={isModelComboboxOpen}
+                  className="w-full justify-between"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <ProviderLogo
+                      providerId={selectedAssistantProviderId}
+                      label={formatProviderLabel(selectedAssistantProviderId)}
+                    />
+                    <span className="truncate">
+                      {selectedModelOption.label || 'Choose model'}
+                    </span>
+                  </span>
+                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                align="start"
+                className="w-[var(--radix-popover-trigger-width)] p-0"
+              >
+                <Command>
+                  <CommandInput placeholder="Search models..." />
+                  <CommandList>
+                    <CommandEmpty>No models found.</CommandEmpty>
+                    <CommandGroup>
+                      {providerModelOptions.map((option) => (
+                        <CommandItem
+                          key={option.id}
+                          value={`${option.label} ${option.id} ${option.description ?? ''}`}
+                          onSelect={() => {
+                            setSelectedAssistantModelId(option.id);
+                            setAuthSessionToken('');
+                            setAuthSessionExpiresAt(null);
+                            setIsModelComboboxOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              selectedAssistantModelId === option.id
+                                ? 'opacity-100'
+                                : 'opacity-0',
+                            )}
+                          />
+                          <ProviderLogo
+                            providerId={selectedAssistantProviderId}
+                            label={formatProviderLabel(
+                              selectedAssistantProviderId,
+                            )}
+                          />
+                          <div className="ml-2 min-w-0">
+                            <div className="truncate text-sm">{option.label}</div>
+                            <div className="truncate text-[10px] text-muted-foreground">
+                              {option.id}
+                            </div>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          ) : (
+            <Input
+              placeholder="Model id (e.g., gpt-4o-mini)"
+              value={selectedAssistantModelId}
+              onChange={(event) => setSelectedAssistantModelId(event.target.value)}
+            />
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <FormLabel className="text-xs text-muted-foreground">Auth mode</FormLabel>
+          <Select
+            value={selectedAssistantAuthMode}
+            onValueChange={(value) => {
+              setSelectedAssistantAuthMode(value as AssistantAuthMode);
+              setProviderCredentialSavedAt(null);
+              setAuthSessionToken('');
+              setAuthSessionExpiresAt(null);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose auth mode" />
+            </SelectTrigger>
+            <SelectContent>
+              {supportedAuthModes.map((authMode) => (
+                <SelectItem key={authMode} value={authMode}>
+                  {authModeLabelById[authMode]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {selectedAssistantAuthMode === 'oauth-access-token' &&
+          selectedProviderOauthMethods.length > 0 && (
+            <div className="space-y-1">
+              <FormLabel className="text-xs text-muted-foreground">
+                OAuth method
+              </FormLabel>
+              <Select
+                value={resolvedProviderOauthMethodId ?? ''}
+                onValueChange={(value) => {
+                  setSelectedProviderOauthMethodId(value);
+                  setProviderCredentialSavedAt(null);
+                  setAuthSessionToken('');
+                  setAuthSessionExpiresAt(null);
+                }}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose OAuth method" />
+                </SelectTrigger>
+                <SelectContent>
+                  {selectedProviderOauthMethods.map((method) => (
+                    <SelectItem key={method.id} value={method.id}>
+                      {method.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+        {selectedAssistantAuthMode === 'api-key' && (
+          <div className="space-y-1">
+            <FormLabel className="text-xs text-muted-foreground">API key</FormLabel>
+            <Input
+              type="password"
+              placeholder="sk-..."
+              value={providerApiKey}
+              onChange={(event) => setProviderApiKey(event.target.value)}
+            />
+          </div>
+        )}
+
+        {selectedAssistantAuthMode === 'oauth-access-token' && (
+          <div className="space-y-1">
+            <FormLabel className="text-xs text-muted-foreground">
+              OAuth access token
+            </FormLabel>
+            <Input
+              type="password"
+              placeholder="Bearer token"
+              value={providerOauthAccessToken}
+              onChange={(event) => setProviderOauthAccessToken(event.target.value)}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="space-y-2">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="px-0 text-xs text-muted-foreground hover:text-foreground"
+          onClick={() => setShowAdvancedSettings((current) => !current)}
+        >
+          {showAdvancedSettings ? 'Hide advanced settings' : 'Show advanced settings'}
+        </Button>
+        {showAdvancedSettings && (
+          <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+            <div className="space-y-1">
+              <FormLabel className="text-xs text-muted-foreground">
+                Base URL (optional override)
+              </FormLabel>
+              <Input
+                placeholder="https://api.openai.com/v1"
+                value={providerBaseUrl}
+                onChange={(event) => setProviderBaseUrl(event.target.value)}
+              />
+            </div>
+
+            {selectedAssistantProviderId === 'bedrock' && (
+              <div className="space-y-1">
+                <FormLabel className="text-xs text-muted-foreground">
+                  AWS region
+                </FormLabel>
+                <Input
+                  placeholder="us-east-1"
+                  value={providerRegion}
+                  onChange={(event) => setProviderRegion(event.target.value)}
+                />
+              </div>
+            )}
+
+            {selectedAssistantProviderId === 'openai' && (
+              <>
+                <div className="space-y-1">
+                  <FormLabel className="text-xs text-muted-foreground">
+                    Organization (optional)
+                  </FormLabel>
+                  <Input
+                    placeholder="org_..."
+                    value={providerOrganization}
+                    onChange={(event) => setProviderOrganization(event.target.value)}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <FormLabel className="text-xs text-muted-foreground">
+                    Project (optional)
+                  </FormLabel>
+                  <Input
+                    placeholder="proj_..."
+                    value={providerProject}
+                    onChange={(event) => setProviderProject(event.target.value)}
+                  />
+                </div>
+              </>
+            )}
+
+            {selectedAssistantProviderId === 'google' && (
+              <div className="space-y-1">
+                <FormLabel className="text-xs text-muted-foreground">
+                  Google project (optional)
+                </FormLabel>
+                <Input
+                  placeholder="my-google-project-id"
+                  value={providerProject}
+                  onChange={(event) => setProviderProject(event.target.value)}
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={saveProviderCredential}
+          disabled={isSavingProviderCredential}
+        >
+          {isSavingProviderCredential ? 'Saving...' : 'Save credential'}
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={refreshStoredProviderCredential}
+          disabled={isRefreshingProviderCredential}
+        >
+          {isRefreshingProviderCredential
+            ? 'Refreshing...'
+            : 'Refresh credential status'}
+        </Button>
+        {canStartProviderOauth && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={startProviderOauth}
+            disabled={isStartingProviderOauth}
+          >
+            {isStartingProviderOauth
+              ? 'Opening OAuth...'
+              : selectedProviderOauthButtonLabel}
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={createAuthSession}
+          disabled={isCreatingAuthSession}
+        >
+          {isCreatingAuthSession ? 'Creating session...' : 'Create auth session'}
+        </Button>
+        {authSessionToken && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={revokeAuthSession}
+            disabled={isRevokingAuthSession}
+          >
+            {isRevokingAuthSession ? 'Revoking...' : 'Revoke auth session'}
+          </Button>
+        )}
+        {providerCredentialSavedAt && (
+          <Badge variant="outline" className="text-xs">
+            Credential saved
+          </Badge>
+        )}
+        {authSessionToken && (
+          <Badge variant="secondary" className="text-xs">
+            Session token active
+          </Badge>
+        )}
+      </div>
+
+      {authSessionToken && (
+        <p className="text-[11px] text-muted-foreground break-all">
+          Session token: {authSessionToken.slice(0, 18)}...
+          {authSessionToken.slice(-10)}
+          {authSessionExpiresAt
+            ? ` (expires at ${new Date(authSessionExpiresAt * 1000).toLocaleTimeString()})`
+            : ''}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
+  const { data: releaseRows = [] } = api.pluginRelease.useGet();
+  const [query, setQuery] = useState('');
+  const releases = useMemo(
+    () => releaseRows as PluginReleaseDoc[],
+    [releaseRows],
+  );
+
+  return (
     <FormField
       control={form.control}
       name="selectedPluginReleaseIds"
       render={({ field }) => {
         const selectedReleaseIds = field.value ?? [];
+        const selectedReleaseIdSet = new Set(selectedReleaseIds);
+        const normalizedQuery = query.trim().toLowerCase();
 
-        async function runAssistant(prompt: string) {
-          const trimmedPrompt = prompt.trim();
-          if (!trimmedPrompt || isThinking) return;
+        const filteredReleases = releases.filter((release) => {
+          if (!normalizedQuery) return true;
+          const releaseId = toReleaseId(release.pluginId, release.version);
+          const docs = release.docs as
+            | ({ title?: string; description?: string } & Record<
+                string,
+                unknown
+              >)
+            | undefined;
+          const searchText = [
+            releaseId,
+            release.pluginId,
+            release.version,
+            docs?.title,
+            docs?.description,
+          ]
+            .filter(
+              (value): value is string =>
+                typeof value === 'string' && value.trim().length > 0,
+            )
+            .join(' ')
+            .toLowerCase();
+          return searchText.includes(normalizedQuery);
+        });
 
-          const nextConversationHistory = [
-            ...assistantMessages,
-            { role: 'user' as const, content: trimmedPrompt },
-          ];
-
-          setAssistantMessages(nextConversationHistory);
-          setAssistantInput('');
-          setCustomQuickPrompt('');
-          setIsThinking(true);
-
-          try {
-            const response = await getBusinessCreationAssistantTurn({
-              data: {
-                userPrompt: trimmedPrompt,
-                model: selectedAssistantModelId,
-                provider: buildProviderPayload(),
-                authSessionToken: authSessionToken || undefined,
-                selectedReleaseIds,
-                availableReleaseIds,
-                conversationHistory: nextConversationHistory,
-              },
-            });
-
-            const mergedReleaseIds = mergeSelectedReleaseIds(
-              selectedReleaseIds,
-              response.suggestedReleaseIds,
-            );
-
-            field.onChange(mergedReleaseIds);
-            setQuickOptions(response.quickOptions);
-            setAssistantTodoItems(response.todoItems);
-            setAssistantMessages((current) => [
-              ...current,
-              { role: 'assistant', content: response.assistantMessage },
-            ]);
-
-            const addedCount =
-              mergedReleaseIds.length - selectedReleaseIds.length;
-            if (addedCount > 0) {
-              toast.success(
-                `AI updated your setup plan with ${addedCount} optional plugin${addedCount === 1 ? '' : 's'}.`,
-              );
-            }
-
-            if (response.scaffoldProposal) {
-              toast.message(
-                `Drafted scaffold idea: ${response.scaffoldProposal.title}`,
-              );
-            }
-          } catch {
-            toast.error('Assistant request failed. Please try again.');
-          } finally {
-            setIsThinking(false);
-          }
-        }
-
-        function handleMessageInputKeyDown(
-          event: KeyboardEvent<HTMLInputElement>,
-        ) {
-          if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-            event.preventDefault();
-            runAssistant(assistantInput);
-            return;
-          }
-
-          if (event.altKey && ['1', '2', '3'].includes(event.key)) {
-            event.preventDefault();
-            const optionIndex = Number(event.key) - 1;
-            const option = quickOptions.options[optionIndex];
-            if (option) runAssistant(option);
-            return;
-          }
-
-          if (event.key === 'Enter') {
-            event.preventDefault();
-            runAssistant(assistantInput);
-          }
-        }
+        const orderedReleases = [...filteredReleases].sort((a, b) => {
+          const aReleaseId = toReleaseId(a.pluginId, a.version);
+          const bReleaseId = toReleaseId(b.pluginId, b.version);
+          const aSelected = selectedReleaseIdSet.has(aReleaseId);
+          const bSelected = selectedReleaseIdSet.has(bReleaseId);
+          if (aSelected !== bSelected) return aSelected ? -1 : 1;
+          return aReleaseId.localeCompare(bReleaseId);
+        });
 
         return (
           <FormItem className="space-y-4">
-            <div className="rounded-lg border bg-background/60 p-4 space-y-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium">AI Business Onboarding</p>
-                  <p className="text-xs text-muted-foreground">
-                    Chat-first setup. Press Ctrl/Cmd+Enter to send and Alt+1/2/3
-                    for quick options.
-                  </p>
-                </div>
-                <Badge variant="secondary" className="gap-1">
-                  <Sparkles className="h-3 w-3" />
-                  {selectedModelOption.label}
-                </Badge>
-              </div>
-
-              <div className="grid gap-2">
-                <p className="text-xs text-muted-foreground">
-                  Choose provider auth and model. Credentials can be stored in
-                  an encrypted HttpOnly cookie, then reused without retyping.
-                </p>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-1">
-                    <FormLabel className="text-xs text-muted-foreground">
-                      AI provider
-                    </FormLabel>
-                    <Popover
-                      open={isProviderComboboxOpen}
-                      onOpenChange={setIsProviderComboboxOpen}
-                      modal
-                    >
-                      <PopoverTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={isProviderComboboxOpen}
-                          className="w-full justify-between"
-                        >
-                          <span className="flex min-w-0 items-center gap-2">
-                            {selectedProviderOption ? (
-                              <ProviderLogo
-                                providerId={selectedProviderOption.providerId}
-                                label={selectedProviderOption.label}
-                              />
-                            ) : null}
-                            <span className="truncate">
-                              {selectedProviderOption?.label ||
-                                'Choose provider'}
-                            </span>
-                          </span>
-                          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent
-                        align="start"
-                        className="w-[var(--radix-popover-trigger-width)] p-0"
-                      >
-                        <Command>
-                          <CommandInput placeholder="Search providers..." />
-                          <CommandList>
-                            <CommandEmpty>No providers found.</CommandEmpty>
-                            <CommandGroup>
-                              {providerOptions.map((option) => (
-                                <CommandItem
-                                  key={option.providerId}
-                                  value={`${option.label} ${option.providerId}`}
-                                  onSelect={() => {
-                                    handleProviderChange(option.providerId);
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      'mr-2 h-4 w-4',
-                                      selectedAssistantProviderId ===
-                                        option.providerId
-                                        ? 'opacity-100'
-                                        : 'opacity-0',
-                                    )}
-                                  />
-                                  <ProviderLogo
-                                    providerId={option.providerId}
-                                    label={option.label}
-                                  />
-                                  <span className="ml-2 truncate">
-                                    {option.label}
-                                  </span>
-                                  <span className="ml-auto text-[10px] text-muted-foreground">
-                                    {option.providerId}
-                                  </span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="space-y-1">
-                    <FormLabel className="text-xs text-muted-foreground">
-                      AI model
-                    </FormLabel>
-                    {providerModelOptions.length > 0 ? (
-                      <Popover
-                        open={isModelComboboxOpen}
-                        onOpenChange={setIsModelComboboxOpen}
-                        modal
-                      >
-                        <PopoverTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={isModelComboboxOpen}
-                            className="w-full justify-between"
-                          >
-                            <span className="flex min-w-0 items-center gap-2">
-                              <ProviderLogo
-                                providerId={selectedAssistantProviderId}
-                                label={formatProviderLabel(
-                                  selectedAssistantProviderId,
-                                )}
-                              />
-                              <span className="truncate">
-                                {selectedModelOption.label || 'Choose model'}
-                              </span>
-                            </span>
-                            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          align="start"
-                          className="w-[var(--radix-popover-trigger-width)] p-0"
-                        >
-                          <Command>
-                            <CommandInput placeholder="Search models..." />
-                            <CommandList>
-                              <CommandEmpty>No models found.</CommandEmpty>
-                              <CommandGroup>
-                                {providerModelOptions.map((option) => (
-                                  <CommandItem
-                                    key={option.id}
-                                    value={`${option.label} ${option.id} ${option.description ?? ''}`}
-                                    onSelect={() => {
-                                      setSelectedAssistantModelId(option.id);
-                                      setAuthSessionToken('');
-                                      setAuthSessionExpiresAt(null);
-                                      setIsModelComboboxOpen(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        'mr-2 h-4 w-4',
-                                        selectedAssistantModelId === option.id
-                                          ? 'opacity-100'
-                                          : 'opacity-0',
-                                      )}
-                                    />
-                                    <ProviderLogo
-                                      providerId={selectedAssistantProviderId}
-                                      label={formatProviderLabel(
-                                        selectedAssistantProviderId,
-                                      )}
-                                    />
-                                    <div className="ml-2 min-w-0">
-                                      <div className="truncate text-sm">
-                                        {option.label}
-                                      </div>
-                                      <div className="truncate text-[10px] text-muted-foreground">
-                                        {option.id}
-                                      </div>
-                                    </div>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    ) : (
-                      <Input
-                        placeholder="Model id (e.g., gpt-4o-mini)"
-                        value={selectedAssistantModelId}
-                        onChange={(event) =>
-                          setSelectedAssistantModelId(event.target.value)
-                        }
-                      />
-                    )}
-                  </div>
-
-                  <div className="space-y-1">
-                    <FormLabel className="text-xs text-muted-foreground">
-                      Auth mode
-                    </FormLabel>
-                    <Select
-                      value={selectedAssistantAuthMode}
-                      onValueChange={(value) => {
-                        setSelectedAssistantAuthMode(
-                          value as AssistantAuthMode,
-                        );
-                        setProviderCredentialSavedAt(null);
-                        setAuthSessionToken('');
-                        setAuthSessionExpiresAt(null);
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose auth mode" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {supportedAuthModes.map((authMode) => (
-                          <SelectItem key={authMode} value={authMode}>
-                            {authModeLabelById[authMode]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <FormLabel className="text-xs text-muted-foreground">
-                      Base URL (optional override)
-                    </FormLabel>
-                    <Input
-                      placeholder="https://api.openai.com/v1"
-                      value={providerBaseUrl}
-                      onChange={(event) =>
-                        setProviderBaseUrl(event.target.value)
-                      }
-                    />
-                  </div>
-
-                  {selectedAssistantAuthMode === 'oauth-access-token' &&
-                    selectedProviderOauthMethods.length > 0 && (
-                      <div className="space-y-1 md:col-span-2">
-                        <FormLabel className="text-xs text-muted-foreground">
-                          OAuth method
-                        </FormLabel>
-                        <Select
-                          value={resolvedProviderOauthMethodId ?? ''}
-                          onValueChange={(value) => {
-                            setSelectedProviderOauthMethodId(value);
-                            setProviderCredentialSavedAt(null);
-                            setAuthSessionToken('');
-                            setAuthSessionExpiresAt(null);
-                          }}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Choose OAuth method" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedProviderOauthMethods.map((method) => (
-                              <SelectItem key={method.id} value={method.id}>
-                                {method.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-
-                  {selectedAssistantAuthMode === 'api-key' && (
-                    <div className="space-y-1 md:col-span-2">
-                      <FormLabel className="text-xs text-muted-foreground">
-                        API key
-                      </FormLabel>
-                      <Input
-                        type="password"
-                        placeholder="sk-..."
-                        value={providerApiKey}
-                        onChange={(event) =>
-                          setProviderApiKey(event.target.value)
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {selectedAssistantAuthMode === 'oauth-access-token' && (
-                    <div className="space-y-1 md:col-span-2">
-                      <FormLabel className="text-xs text-muted-foreground">
-                        OAuth access token
-                      </FormLabel>
-                      <Input
-                        type="password"
-                        placeholder="Bearer token"
-                        value={providerOauthAccessToken}
-                        onChange={(event) =>
-                          setProviderOauthAccessToken(event.target.value)
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {selectedAssistantProviderId === 'bedrock' && (
-                    <div className="space-y-1">
-                      <FormLabel className="text-xs text-muted-foreground">
-                        AWS region
-                      </FormLabel>
-                      <Input
-                        placeholder="us-east-1"
-                        value={providerRegion}
-                        onChange={(event) =>
-                          setProviderRegion(event.target.value)
-                        }
-                      />
-                    </div>
-                  )}
-
-                  {selectedAssistantProviderId === 'openai' && (
-                    <>
-                      <div className="space-y-1">
-                        <FormLabel className="text-xs text-muted-foreground">
-                          Organization (optional)
-                        </FormLabel>
-                        <Input
-                          placeholder="org_..."
-                          value={providerOrganization}
-                          onChange={(event) =>
-                            setProviderOrganization(event.target.value)
-                          }
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <FormLabel className="text-xs text-muted-foreground">
-                          Project (optional)
-                        </FormLabel>
-                        <Input
-                          placeholder="proj_..."
-                          value={providerProject}
-                          onChange={(event) =>
-                            setProviderProject(event.target.value)
-                          }
-                        />
-                      </div>
-                    </>
-                  )}
-                  {selectedAssistantProviderId === 'google' && (
-                    <div className="space-y-1">
-                      <FormLabel className="text-xs text-muted-foreground">
-                        Google project (optional)
-                      </FormLabel>
-                      <Input
-                        placeholder="my-google-project-id"
-                        value={providerProject}
-                        onChange={(event) =>
-                          setProviderProject(event.target.value)
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={saveProviderCredential}
-                    disabled={isSavingProviderCredential}
-                  >
-                    {isSavingProviderCredential
-                      ? 'Saving...'
-                      : 'Save credential'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={refreshStoredProviderCredential}
-                    disabled={isRefreshingProviderCredential}
-                  >
-                    {isRefreshingProviderCredential
-                      ? 'Refreshing...'
-                      : 'Refresh credential status'}
-                  </Button>
-                  {canStartProviderOauth && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={startProviderOauth}
-                      disabled={isStartingProviderOauth}
-                    >
-                      {isStartingProviderOauth
-                        ? 'Opening OAuth...'
-                        : selectedProviderOauthButtonLabel}
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={createAuthSession}
-                    disabled={isCreatingAuthSession}
-                  >
-                    {isCreatingAuthSession
-                      ? 'Creating session...'
-                      : 'Create auth session'}
-                  </Button>
-                  {authSessionToken && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={revokeAuthSession}
-                      disabled={isRevokingAuthSession}
-                    >
-                      {isRevokingAuthSession
-                        ? 'Revoking...'
-                        : 'Revoke auth session'}
-                    </Button>
-                  )}
-                  {providerCredentialSavedAt && (
-                    <Badge variant="outline" className="text-xs">
-                      Credential saved
-                    </Badge>
-                  )}
-                  {authSessionToken && (
-                    <Badge variant="secondary" className="text-xs">
-                      Session token active
-                    </Badge>
-                  )}
-                </div>
-                {authSessionToken && (
-                  <p className="text-[11px] text-muted-foreground break-all">
-                    Session token: {authSessionToken.slice(0, 18)}...
-                    {authSessionToken.slice(-10)}
-                    {authSessionExpiresAt
-                      ? ` (expires at ${new Date(
-                          authSessionExpiresAt * 1000,
-                        ).toLocaleTimeString()})`
-                      : ''}
-                  </p>
-                )}
-              </div>
-
-              <Collapsible open={todoExpanded} onOpenChange={setTodoExpanded}>
-                <div className="rounded-md border bg-muted/30 p-3 space-y-2">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Assistant progress
-                      </p>
-                      <p className="text-sm font-medium truncate">
-                        {todoProgress === 100
-                          ? 'Ready to create business'
-                          : assistantTodoItems.find((item) => !item.done)
-                              ?.title}
-                      </p>
-                    </div>
-                    <CollapsibleTrigger asChild>
-                      <Button size="icon" variant="ghost" className="h-7 w-7">
-                        {todoExpanded ? (
-                          <ChevronUp className="h-4 w-4" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4" />
-                        )}
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
-                  <Progress value={todoProgress} className="h-2" />
-                  <CollapsibleContent className="space-y-2 pt-1">
-                    {assistantTodoItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center gap-2 text-xs text-muted-foreground"
-                      >
-                        <span
-                          className={cn(
-                            'inline-block h-2 w-2 rounded-full',
-                            item.done ? 'bg-green-500' : 'bg-amber-500',
-                          )}
-                        />
-                        {item.title}
-                      </div>
-                    ))}
-                  </CollapsibleContent>
-                </div>
-              </Collapsible>
-
+            <div className="space-y-4 rounded-lg border bg-background/60 p-4">
               <div className="space-y-2">
+                <p className="text-sm font-medium">Plugin Browser</p>
                 <p className="text-xs text-muted-foreground">
-                  {quickOptions.prompt}
+                  Search plugins by name, id, or version. Any items selected by
+                  the AI in Step 2 are already selected here.
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {quickOptions.options.map((option, index) => (
-                    <Button
-                      key={option}
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => runAssistant(option)}
-                    >
-                      <span className="text-[10px] text-muted-foreground mr-1">
-                        {index + 1}.
-                      </span>
-                      {option}
-                    </Button>
-                  ))}
-                  <div className="inline-flex h-8 items-center gap-1 rounded-full border bg-background px-2">
-                    <Input
-                      value={customQuickPrompt}
-                      onChange={(event) =>
-                        setCustomQuickPrompt(event.target.value)
-                      }
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          runAssistant(customQuickPrompt);
-                        }
-                      }}
-                      placeholder={quickOptions.otherOptionLabel}
-                      className="h-6 w-40 border-0 bg-transparent px-1 text-xs focus-visible:ring-0"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-6"
-                      onClick={() => runAssistant(customQuickPrompt)}
-                      disabled={
-                        customQuickPrompt.trim().length === 0 || isThinking
-                      }
-                    >
-                      <SendHorizontal className="size-3" />
-                    </Button>
-                  </div>
-                </div>
               </div>
 
-              <ScrollArea className="h-52 rounded-md border bg-muted/10 p-3">
-                <div className="space-y-2">
-                  {assistantMessages.slice(-12).map((message, index) => (
-                    <div
-                      key={`${message.role}-${index}`}
-                      className={cn(
-                        'flex',
-                        message.role === 'assistant'
-                          ? 'justify-start'
-                          : 'justify-end',
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          'max-w-[90%] rounded-2xl px-3 py-2 text-xs',
-                          message.role === 'assistant'
-                            ? 'bg-muted text-foreground'
-                            : 'bg-primary text-primary-foreground',
-                        )}
-                      >
-                        {message.content}
-                      </div>
-                    </div>
-                  ))}
-                  {isThinking && (
-                    <div className="flex justify-start">
-                      <div className="inline-flex items-center gap-2 rounded-2xl bg-muted px-3 py-2 text-xs text-muted-foreground">
-                        <LoaderCircle className="h-3 w-3 animate-spin" />
-                        Thinking...
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
+              <Input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search plugins by name, id, or version"
+              />
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Input
-                  value={assistantInput}
-                  onChange={(event) => setAssistantInput(event.target.value)}
-                  onKeyDown={handleMessageInputKeyDown}
-                  placeholder="Describe your business and what it does."
-                />
-                <Button
-                  type="button"
-                  className="gap-2"
-                  onClick={() => runAssistant(assistantInput)}
-                  disabled={isThinking || assistantInput.trim().length === 0}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Send
-                </Button>
-              </div>
-
-              <div className="rounded-md border bg-muted/20 p-3 space-y-2">
+              <div className="rounded-md border bg-muted/20 p-3">
                 <p className="text-xs font-medium text-foreground">
-                  AI-selected setup plan (optional)
+                  Selected for installation ({selectedReleaseIds.length})
                 </p>
                 {selectedReleaseIds.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
-                    The assistant will add optional plugins only when needed.
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    No plugins selected. You can continue without plugins.
                   </p>
                 ) : (
-                  <div className="flex flex-wrap gap-2">
+                  <div className="mt-2 flex flex-wrap gap-2">
                     {selectedReleaseIds.map((releaseId) => (
                       <Badge
                         key={releaseId}
@@ -1741,6 +1471,78 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
                   </div>
                 )}
               </div>
+
+              <ScrollArea className="h-[26rem] rounded-md border bg-muted/5 p-3">
+                <div className="space-y-2">
+                  {orderedReleases.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No plugins match your search.
+                    </p>
+                  ) : (
+                    orderedReleases.map((release) => {
+                      const releaseId = toReleaseId(
+                        release.pluginId,
+                        release.version,
+                      );
+                      const docs = release.docs as
+                        | ({ title?: string; description?: string } & Record<
+                            string,
+                            unknown
+                          >)
+                        | undefined;
+                      const title = docs?.title?.trim() || release.pluginId;
+                      const description =
+                        docs?.description?.trim() ||
+                        'No description provided for this release.';
+                      const isSelected = selectedReleaseIdSet.has(releaseId);
+
+                      return (
+                        <div
+                          key={releaseId}
+                          className={cn(
+                            'rounded-lg border p-3',
+                            isSelected
+                              ? 'border-primary/50 bg-primary/5'
+                              : 'border-border bg-background',
+                          )}
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-medium">
+                                {title}
+                              </p>
+                              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                {releaseId}
+                              </p>
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                {description}
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant={isSelected ? 'secondary' : 'outline'}
+                              onClick={() => {
+                                if (isSelected) {
+                                  field.onChange(
+                                    selectedReleaseIds.filter(
+                                      (current) => current !== releaseId,
+                                    ),
+                                  );
+                                  return;
+                                }
+                                field.onChange([...selectedReleaseIds, releaseId]);
+                              }}
+                            >
+                              {isSelected ? 'Selected' : 'Select plugin'}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </ScrollArea>
             </div>
             <FormMessage />
           </FormItem>

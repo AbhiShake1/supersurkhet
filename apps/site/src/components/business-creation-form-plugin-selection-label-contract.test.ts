@@ -8,15 +8,19 @@ const filePath = resolve(
 );
 
 describe('business creation plugin selection label contract', () => {
-  it('keeps step 2 assistant-first and removes required manual queue labels', () => {
+  it('keeps step 2 focused on ai auth and moves plugin browsing to step 3', () => {
     const source = readFileSync(filePath, 'utf8');
 
-    expect(source).toContain('AI-selected setup plan (optional)');
+    expect(source).toContain('BusinessOnboardingAssistantForm form={form}');
+    expect(source).toContain('Configure provider authentication here.');
+    expect(source).toContain('workflow setup happen in Step 3');
+    expect(source).toContain('Chapter 3 · Plugin Browser');
+    expect(source).toContain('pre-selected from Step 2');
+    expect(source).toContain('Browse and choose plugins before launch');
+    expect(source).not.toContain('Chapter 2 · AI Integration & Authentication');
+    expect(source).not.toContain('Connect your model provider, authenticate once');
     expect(source).not.toContain('Plugin stack (required)');
-    expect(source).not.toContain('Use recommended stack');
     expect(source).not.toContain('Add to queue');
     expect(source).not.toContain('Remove from queue');
-    expect(source).not.toContain('Installing plugin');
-    expect(source).not.toContain('Install plugin');
   });
 });

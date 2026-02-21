@@ -12,11 +12,13 @@ function getFormContent() {
 }
 
 describe('business creation plugin catalog data source', () => {
-  it('uses DB release rows for AI context and avoids manual catalog browsing UI', () => {
+  it('uses DB release rows and renders a plugin browser in step 3', () => {
     const content = getFormContent();
 
     expect(content).toContain('api.pluginRelease.useGet');
-    expect(content).toContain('availableReleaseIds');
+    expect(content).toContain('selectedReleaseIds');
+    expect(content).toContain('Browse and choose plugins before launch');
+    expect(content).toContain('Search plugins by name, id, or version');
     expect(content).not.toContain('buildPluginCatalog({');
     expect(content).not.toContain('filterBusinessOnboardingCatalog');
     expect(content).not.toContain('getRecommendedSeedReleaseIds');
