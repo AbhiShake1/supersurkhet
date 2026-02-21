@@ -42,6 +42,31 @@ export const BUSINESS_ONBOARDING_MODEL_OPTIONS: readonly BusinessOnboardingModel
       defaultAuthMode: 'api-key',
     },
     {
+      id: 'gpt-5.2-codex',
+      label: 'OpenCode Zen GPT 5.2 Codex',
+      provider: 'opencode',
+      defaultAuthMode: 'api-key',
+      description: 'Curated Codex route via OpenCode Zen.',
+    },
+    {
+      id: 'claude-sonnet-4-5',
+      label: 'OpenCode Zen Claude Sonnet 4.5',
+      provider: 'opencode',
+      defaultAuthMode: 'api-key',
+    },
+    {
+      id: 'gemini-3-pro',
+      label: 'OpenCode Zen Gemini 3 Pro',
+      provider: 'opencode',
+      defaultAuthMode: 'api-key',
+    },
+    {
+      id: 'qwen3-coder',
+      label: 'OpenCode Zen Qwen3 Coder 480B',
+      provider: 'opencode',
+      defaultAuthMode: 'api-key',
+    },
+    {
       id: 'llama-3.3-70b-versatile',
       label: 'Groq Llama 3.3 70B',
       provider: 'groq',
@@ -198,10 +223,12 @@ const MODELS_DEV_PROVIDER_IDS = [
   'zhipuai-coding-plan',
 ] as const;
 
-const providerSupportedAuthModesSeed: Record<string, readonly AssistantAuthMode[]> =
-  Object.fromEntries(
-    MODELS_DEV_PROVIDER_IDS.map((providerId) => [providerId, ['api-key']]),
-  );
+const providerSupportedAuthModesSeed: Record<
+  string,
+  readonly AssistantAuthMode[]
+> = Object.fromEntries(
+  MODELS_DEV_PROVIDER_IDS.map((providerId) => [providerId, ['api-key']]),
+);
 
 export const PROVIDER_SUPPORTED_AUTH_MODES: Record<
   string,
@@ -217,6 +244,7 @@ export const PROVIDER_SUPPORTED_AUTH_MODES: Record<
   requesty: ['api-key', 'oauth-access-token'],
   xai: ['api-key', 'oauth-access-token'],
   openrouter: ['api-key', 'oauth-access-token'],
+  opencode: ['api-key', 'oauth-access-token'],
   gitlab: ['api-key', 'oauth-access-token'],
   'github-copilot': ['api-key', 'oauth-access-token'],
   'amazon-bedrock': ['aws-credential-chain', 'api-key'],
@@ -238,8 +266,7 @@ export const PROVIDER_DEFAULT_BASE_URL: Record<string, string> = {
   berget: 'https://api.berget.ai/v1',
   chutes: 'https://llm.chutes.ai/v1',
   'cloudferro-sherlock': 'https://api-sherlock.cloudferro.com/openai/v1/',
-  'cloudflare-workers-ai':
-    'https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}/ai/v1',
+  'cloudflare-workers-ai': `https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID ?? ''}/ai/v1`,
   cortecs: 'https://api.cortecs.ai/v1',
   deepseek: 'https://api.deepseek.com/v1',
   evroc: 'https://models.think.evroc.com/v1',
@@ -318,8 +345,18 @@ export const PROVIDER_ENV_API_KEYS: Record<string, readonly string[]> = {
   aihubmix: ['AIHUBMIX_API_KEY'],
   alibaba: ['DASHSCOPE_API_KEY'],
   'alibaba-cn': ['DASHSCOPE_API_KEY'],
-  'amazon-bedrock': ['AWS_BEARER_TOKEN_BEDROCK', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION'],
-  bedrock: ['AWS_BEARER_TOKEN_BEDROCK', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY', 'AWS_REGION'],
+  'amazon-bedrock': [
+    'AWS_BEARER_TOKEN_BEDROCK',
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_REGION',
+  ],
+  bedrock: [
+    'AWS_BEARER_TOKEN_BEDROCK',
+    'AWS_ACCESS_KEY_ID',
+    'AWS_SECRET_ACCESS_KEY',
+    'AWS_REGION',
+  ],
   anthropic: ['ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN'],
   azure: ['AZURE_RESOURCE_NAME', 'AZURE_API_KEY'],
   'azure-cognitive-services': [

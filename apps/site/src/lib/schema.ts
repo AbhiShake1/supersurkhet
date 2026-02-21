@@ -21,6 +21,9 @@ import { dataMatrixActionSchema } from './datamatrix';
 import {
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
+  pluginProjectInviteSchema,
+  pluginProjectMemberSchema,
+  pluginProjectSchema,
   pluginActionCapabilityEnvelopeSchema,
   pluginActionManifestDocStorageSchema,
   pluginDraftRevisionSchema,
@@ -266,6 +269,24 @@ export const coreSchema = createSchema({
     schema: businessPluginInstallSchema,
     title: 'Business Plugin Installs',
     icon: Building,
+    group: 'Plugin Platform',
+  },
+  pluginProject: {
+    schema: pluginProjectSchema,
+    title: 'Plugin Projects',
+    icon: Folder,
+    group: 'Plugin Platform',
+  },
+  pluginProjectMember: {
+    schema: pluginProjectMemberSchema,
+    title: 'Plugin Project Members',
+    icon: Users,
+    group: 'Plugin Platform',
+  },
+  pluginProjectInvite: {
+    schema: pluginProjectInviteSchema,
+    title: 'Plugin Project Invites',
+    icon: Clock,
     group: 'Plugin Platform',
   },
   pluginDraft: {

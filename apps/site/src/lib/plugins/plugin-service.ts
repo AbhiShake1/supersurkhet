@@ -265,9 +265,34 @@ export function canonicalizeJson(value: unknown) {
   return JSON.stringify(normalizeJson(value));
 }
 
+function bytesToHex(bytes: Uint8Array) {
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+async function hashWithWebCrypto(input: string): Promise<string | null> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle || typeof TextEncoder === 'undefined') {
+    return null;
+  }
+  const encoded = new TextEncoder().encode(input);
+  const digest = await subtle.digest('SHA-256', encoded);
+  return bytesToHex(new Uint8Array(digest));
+}
+
 export async function hashCanonicalJsonValue(value: unknown) {
-  const { createHash } = await import('node:crypto');
-  return createHash('sha256').update(canonicalizeJson(value)).digest('hex');
+  const canonical = canonicalizeJson(value);
+  const webCryptoDigest = await hashWithWebCrypto(canonical);
+  if (webCryptoDigest) {
+    return webCryptoDigest;
+  }
+
+  const cryptoModule = await import('node:crypto');
+  if (typeof cryptoModule.createHash !== 'function') {
+    throw new Error('SHA-256 hashing is unavailable in this runtime');
+  }
+  return cryptoModule.createHash('sha256').update(canonical).digest('hex');
 }
 
 export const hashCanonicalJson = createServerFn({ method: 'POST' })

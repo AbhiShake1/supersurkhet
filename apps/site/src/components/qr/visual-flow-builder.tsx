@@ -3,6 +3,7 @@
 import {
   Background,
   BackgroundVariant,
+  type Edge,
   type EdgeTypes,
   type Node,
   type NodeProps,
@@ -25,26 +26,6 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import type React from 'react';
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
-
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CustomSelect } from '@/components/ui/custom-select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
-import { useWifiNetworks } from '@/hooks/use-wifi';
 import {
   ArrowRight,
   Bell,
@@ -73,23 +54,9 @@ import {
   Wifi,
   X,
 } from 'lucide-react';
-
-import {
-  Sortable,
-  SortableContent,
-  SortableItem,
-  SortableItemHandle,
-  SortableOverlay,
-} from '@/components/ui/sortable';
-
-import { CopyButton } from '@/components/ui/copy-button';
-import { DataMatrixCode } from '@/components/ui/datamatrix-code';
-import {
-  type DataMatrixAction,
-  dataMatrixActionSchema,
-} from '@/lib/datamatrix';
+import type React from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-
 import { AnimatedSvgEdge } from '@/components/animated-svg-edge';
 import {
   BaseNode,
@@ -110,6 +77,12 @@ import {
   type NodeStatus,
   NodeStatusIndicator,
 } from '@/components/node-status-indicator';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CopyButton } from '@/components/ui/copy-button';
+import { CustomSelect } from '@/components/ui/custom-select';
+import { DataMatrixCode } from '@/components/ui/datamatrix-code';
 import {
   Drawer,
   DrawerClose,
@@ -117,6 +90,25 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Sortable,
+  SortableContent,
+  SortableItem,
+  SortableItemHandle,
+  SortableOverlay,
+} from '@/components/ui/sortable';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
@@ -124,7 +116,18 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ZoomSlider } from '@/components/zoom-slider';
+import { useWifiNetworks } from '@/hooks/use-wifi';
 import { getLayoutedElements } from '@/lib/auto-layout-utils';
+import {
+  type DataMatrixAction,
+  dataMatrixActionSchema,
+} from '@/lib/datamatrix';
+import { ActionExecutor } from '@/lib/datamatrix/action-executor';
+import {
+  buildDataMatrixActionFromFlowGraph,
+  type FlowBuilderEdge,
+  type FlowBuilderNode,
+} from '@/lib/datamatrix/flow-action-builder';
 import { ScrollArea } from '../ui/scroll-area';
 
 // Define custom node types
@@ -1810,6 +1813,274 @@ const NodeSetupForm = ({
         </div>
       );
 
+    case 'input':
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Input Configuration</Label>
+            <div className="text-xs text-muted-foreground">
+              Define the input source and fallback defaults for this workflow.
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="inputKey">Input Key</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Input
+              id="inputKey"
+              value={(selectedNode.data.config?.inputKey as string) || ''}
+              onChange={(e) => handleConfigChange('inputKey', e.target.value)}
+              placeholder="e.g., qr_payload"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="inputSource">Input Source</Label>
+            <Select
+              value={(selectedNode.data.config?.source as string) || 'scan'}
+              onValueChange={(value) => handleConfigChange('source', value)}
+            >
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+              <SelectTrigger id="inputSource">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="scan">Scan Payload</SelectItem>
+                <SelectItem value="context">Session Context</SelectItem>
+                <SelectItem value="manual">Manual Entry</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="inputDefaultValue">Default Value</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Input
+              id="inputDefaultValue"
+              value={(selectedNode.data.config?.defaultValue as string) || ''}
+              onChange={(e) =>
+                handleConfigChange('defaultValue', e.target.value)
+              }
+              placeholder="Optional fallback value"
+            />
+          </div>
+        </div>
+      );
+
+    case 'output':
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Output Configuration</Label>
+            <div className="text-xs text-muted-foreground">
+              Choose where execution results should be sent.
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="outputTarget">Output Target</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Input
+              id="outputTarget"
+              value={(selectedNode.data.config?.target as string) || ''}
+              onChange={(e) => handleConfigChange('target', e.target.value)}
+              placeholder="e.g., admin_dashboard"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="outputFormat">Output Format</Label>
+            <Select
+              value={(selectedNode.data.config?.format as string) || 'json'}
+              onValueChange={(value) => handleConfigChange('format', value)}
+            >
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+              <SelectTrigger id="outputFormat">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="json">JSON</SelectItem>
+                <SelectItem value="text">Text</SelectItem>
+                <SelectItem value="url">URL</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      );
+
+    case 'process':
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Process Configuration</Label>
+            <div className="text-xs text-muted-foreground">
+              Describe the transformation this step should perform.
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="processOperation">Operation Name</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Input
+              id="processOperation"
+              value={(selectedNode.data.config?.operation as string) || ''}
+              onChange={(e) => handleConfigChange('operation', e.target.value)}
+              placeholder="e.g., enrich_payload"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="processInstructions">Instructions</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Textarea
+              id="processInstructions"
+              value={(selectedNode.data.config?.instructions as string) || ''}
+              onChange={(e) =>
+                handleConfigChange('instructions', e.target.value)
+              }
+              placeholder="Explain how this step transforms incoming data."
+              rows={3}
+            />
+          </div>
+        </div>
+      );
+
+    case 'predefined':
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Predefined Process Configuration</Label>
+            <div className="text-xs text-muted-foreground">
+              Select a reusable workflow block and pass parameters.
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="templateName">Template Name</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Input
+              id="templateName"
+              value={(selectedNode.data.config?.template as string) || ''}
+              onChange={(e) => handleConfigChange('template', e.target.value)}
+              placeholder="e.g., welcome_sequence_v1"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="templateParams">Template Params (JSON)</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Textarea
+              id="templateParams"
+              value={
+                (selectedNode.data.config?.paramsRaw as string) ||
+                JSON.stringify(selectedNode.data.config?.params || {}, null, 2)
+              }
+              onChange={(e) => handleConfigChange('paramsRaw', e.target.value)}
+              onBlur={(e) => {
+                try {
+                  const params = JSON.parse(e.target.value);
+                  handleConfigChange('params', params);
+                  handleConfigChange('paramsRaw', undefined);
+                  toast.success('Template params updated successfully');
+                } catch (_error) {
+                  toast.error('Invalid JSON in template params');
+                }
+              }}
+              placeholder='{"language":"en","segment":"new"}'
+              rows={3}
+              className="font-mono text-sm"
+            />
+          </div>
+        </div>
+      );
+
+    case 'document':
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Document Configuration</Label>
+            <div className="text-xs text-muted-foreground">
+              Configure generated documents and their delivery channel.
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="documentTitle">Document Title</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Input
+              id="documentTitle"
+              value={(selectedNode.data.config?.title as string) || ''}
+              onChange={(e) => handleConfigChange('title', e.target.value)}
+              placeholder="e.g., Session Summary"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="documentFormat">Format</Label>
+            <Select
+              value={(selectedNode.data.config?.format as string) || 'pdf'}
+              onValueChange={(value) => handleConfigChange('format', value)}
+            >
+              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+              <SelectTrigger id="documentFormat">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pdf">PDF</SelectItem>
+                <SelectItem value="html">HTML</SelectItem>
+                <SelectItem value="markdown">Markdown</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="documentChannel">Delivery Channel</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Input
+              id="documentChannel"
+              value={(selectedNode.data.config?.channel as string) || ''}
+              onChange={(e) => handleConfigChange('channel', e.target.value)}
+              placeholder="e.g., customer_email"
+            />
+          </div>
+        </div>
+      );
+
+    case 'custom':
+      return (
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Custom Node Configuration</Label>
+            <div className="text-xs text-muted-foreground">
+              Store custom metadata for advanced execution adapters.
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="customNodeType">Custom Type</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Input
+              id="customNodeType"
+              value={(selectedNode.data.config?.customType as string) || ''}
+              onChange={(e) => handleConfigChange('customType', e.target.value)}
+              placeholder="e.g., webhook_transformer"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="customPayload">Custom Payload (JSON)</Label>
+            {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+            <Textarea
+              id="customPayload"
+              value={
+                (selectedNode.data.config?.payloadRaw as string) ||
+                JSON.stringify(selectedNode.data.config?.payload || {}, null, 2)
+              }
+              onChange={(e) => handleConfigChange('payloadRaw', e.target.value)}
+              onBlur={(e) => {
+                try {
+                  const payload = JSON.parse(e.target.value);
+                  handleConfigChange('payload', payload);
+                  handleConfigChange('payloadRaw', undefined);
+                  toast.success('Custom payload updated successfully');
+                } catch (_error) {
+                  toast.error('Invalid JSON in custom payload');
+                }
+              }}
+              placeholder='{"key":"value"}'
+              rows={4}
+              className="font-mono text-sm"
+            />
+          </div>
+        </div>
+      );
+
     default:
       return (
         <div className="text-muted-foreground py-4 text-center">
@@ -1822,8 +2093,342 @@ const NodeSetupForm = ({
   }
 };
 
+export type RunnerStatusNode = {
+  id: string;
+  type: NodeType;
+  data: {
+    status?: NodeStatus;
+    [key: string]: unknown;
+  };
+};
+
+type RunnerSetNodes = (
+  updater: (nodes: RunnerStatusNode[]) => RunnerStatusNode[],
+) => void;
+
+export const ACTION_TO_NODE_TYPE: Record<DataMatrixAction['action'], NodeType> =
+  {
+    wifi_connect: 'wifiConnect',
+    profile_enrichment: 'profileEnrichment',
+    equipment_session: 'equipmentSession',
+    restaurant_ordering: 'restaurantOrdering',
+    product_interaction: 'productInteraction',
+    navigate: 'navigate',
+    form_request: 'profileEnrichment',
+    choice_selection: 'profileEnrichment',
+    notification: 'notification',
+    equipment_control: 'equipmentSession',
+  };
+
+export const getInvolvedNodeTypes = (
+  action: DataMatrixAction,
+): Set<NodeType> => {
+  const involvedTypes = new Set<NodeType>();
+  involvedTypes.add(ACTION_TO_NODE_TYPE[action.action]);
+
+  if (action.wifi) involvedTypes.add('wifiConnect');
+  if (action.navigation) involvedTypes.add('navigate');
+  if (action.post_connect?.notification) involvedTypes.add('notification');
+  if (action.checks?.length) involvedTypes.add('profileEnrichment');
+  if (action.equipment || action.session || action.actions) {
+    involvedTypes.add('equipmentSession');
+  }
+  if (action.restaurant) involvedTypes.add('restaurantOrdering');
+  if (action.product) involvedTypes.add('productInteraction');
+
+  return involvedTypes;
+};
+
+type ExecuteWorkflowWithStatusTransitionsArgs = {
+  action: DataMatrixAction;
+  nodes: readonly RunnerStatusNode[];
+  setNodes: RunnerSetNodes;
+  executeAction: (action: DataMatrixAction) => Promise<void>;
+};
+
+export async function executeWorkflowWithStatusTransitions({
+  action,
+  nodes,
+  setNodes,
+  executeAction,
+}: ExecuteWorkflowWithStatusTransitionsArgs): Promise<void> {
+  const involvedNodeTypes = getInvolvedNodeTypes(action);
+  const runnerNodeId = nodes.find((node) => node.type === 'runner')?.id;
+
+  const applyStatus = (status: NodeStatus) => {
+    setNodes((currentNodes) =>
+      currentNodes.map((node) => {
+        if (node.id === runnerNodeId || involvedNodeTypes.has(node.type)) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              status,
+            },
+          };
+        }
+
+        return node;
+      }),
+    );
+  };
+
+  applyStatus('loading');
+
+  try {
+    await executeAction(action);
+    applyStatus('success');
+  } catch (error) {
+    applyStatus('error');
+    throw error;
+  }
+}
+
+type ImportedFlowNode = {
+  type: NodeType;
+  config: Record<string, unknown>;
+};
+
+const FLOW_IMPORT_X_GAP = 280;
+const FLOW_IMPORT_START_X = 140;
+const FLOW_IMPORT_START_Y = 180;
+
+function getPrimaryNodeTypeForAction(
+  actionType: DataMatrixAction['action'],
+): NodeType {
+  switch (actionType) {
+    case 'wifi_connect':
+      return 'wifiConnect';
+    case 'profile_enrichment':
+    case 'form_request':
+    case 'choice_selection':
+      return 'profileEnrichment';
+    case 'equipment_session':
+    case 'equipment_control':
+      return 'equipmentSession';
+    case 'restaurant_ordering':
+      return 'restaurantOrdering';
+    case 'product_interaction':
+      return 'productInteraction';
+    case 'navigate':
+      return 'navigate';
+    case 'notification':
+      return 'notification';
+    default:
+      return 'custom';
+  }
+}
+
+function getConfigForNodeTypeFromAction(
+  action: DataMatrixAction,
+  nodeType: NodeType,
+): Record<string, unknown> {
+  const firstCheck = action.checks?.[0];
+  switch (nodeType) {
+    case 'wifiConnect':
+      return {
+        ssid: action.wifi?.ssid ?? '',
+        password: action.wifi?.password ?? '',
+        security: action.wifi?.security ?? 'WPA2',
+      };
+    case 'profileEnrichment':
+      return {
+        field: firstCheck?.field ?? '',
+        required: firstCheck?.required ?? true,
+        ifMissingType: firstCheck?.if_missing?.type ?? 'form_request',
+      };
+    case 'equipmentSession':
+      return {
+        equipmentId: action.equipment?.id ?? '',
+        equipmentType: action.equipment?.type ?? '',
+        duration: action.session?.duration ?? 30,
+        maxDuration:
+          action.session?.max_duration ?? action.session?.duration ?? 30,
+        extendable: action.session?.extendable ?? true,
+        location: action.equipment?.location ?? 'from_context',
+      };
+    case 'restaurantOrdering':
+      return {
+        restaurantId: action.restaurant?.id ?? '',
+        table: action.restaurant?.table ?? 'from_context',
+      };
+    case 'productInteraction':
+      return {
+        productId: action.product?.id ?? '',
+        sku: action.product?.sku ?? '',
+      };
+    case 'navigate': {
+      const url =
+        action.navigation?.url ??
+        (action.on_complete?.type === 'navigate'
+          ? action.on_complete.url
+          : '') ??
+        '';
+      return {
+        url,
+        params: action.navigation?.params ?? {},
+      };
+    }
+    case 'notification': {
+      const notificationTitle =
+        action.post_connect?.notification?.title ?? 'Notification';
+      const notificationMessage =
+        action.post_connect?.notification?.message ??
+        (action.on_complete?.type === 'notification'
+          ? action.on_complete.message
+          : undefined) ??
+        '';
+
+      return {
+        title: notificationTitle,
+        message: notificationMessage,
+      };
+    }
+    default:
+      return {};
+  }
+}
+
+function buildImportedNodeSequence(
+  action: DataMatrixAction,
+): ImportedFlowNode[] {
+  const sequence: ImportedFlowNode[] = [];
+  const seen = new Set<string>();
+
+  const add = (type: NodeType, config: Record<string, unknown>) => {
+    const key = `${type}:${JSON.stringify(config)}`;
+    if (seen.has(key)) {
+      return;
+    }
+
+    seen.add(key);
+    sequence.push({ type, config });
+  };
+
+  const primaryType = getPrimaryNodeTypeForAction(action.action);
+
+  if (action.wifi && primaryType !== 'wifiConnect') {
+    add('wifiConnect', getConfigForNodeTypeFromAction(action, 'wifiConnect'));
+  }
+
+  add(primaryType, getConfigForNodeTypeFromAction(action, primaryType));
+
+  if (action.checks?.length && primaryType !== 'profileEnrichment') {
+    add(
+      'profileEnrichment',
+      getConfigForNodeTypeFromAction(action, 'profileEnrichment'),
+    );
+  }
+
+  if (
+    (action.equipment || action.session || action.actions) &&
+    primaryType !== 'equipmentSession'
+  ) {
+    add(
+      'equipmentSession',
+      getConfigForNodeTypeFromAction(action, 'equipmentSession'),
+    );
+  }
+
+  if (action.restaurant && primaryType !== 'restaurantOrdering') {
+    add(
+      'restaurantOrdering',
+      getConfigForNodeTypeFromAction(action, 'restaurantOrdering'),
+    );
+  }
+
+  if (action.product && primaryType !== 'productInteraction') {
+    add(
+      'productInteraction',
+      getConfigForNodeTypeFromAction(action, 'productInteraction'),
+    );
+  }
+
+  if (
+    action.post_connect?.notification ||
+    (action.on_complete?.type === 'notification' && action.on_complete.message)
+  ) {
+    add('notification', getConfigForNodeTypeFromAction(action, 'notification'));
+  }
+
+  if (
+    action.navigation ||
+    (action.on_complete?.type === 'navigate' && action.on_complete.url)
+  ) {
+    add('navigate', getConfigForNodeTypeFromAction(action, 'navigate'));
+  }
+
+  add('runner', {
+    mode: 'sequential',
+    timeout: 30,
+    retries: 3,
+    continueOnError: false,
+  });
+
+  return sequence;
+}
+
+export function buildFlowGraphFromAction(
+  action: DataMatrixAction,
+  onAddNodeToEdge: (edgeId: string, nodeType: string) => void,
+): { nodes: CustomNode[]; edges: Edge[] } {
+  const sequence = buildImportedNodeSequence(action);
+  const nodes: CustomNode[] = sequence.map((item, index) => {
+    const { label, description } = getNodeLabelAndDescription(item.type);
+    return {
+      id: `imported-${item.type}-${index + 1}`,
+      type: item.type,
+      position: {
+        x: FLOW_IMPORT_START_X + index * FLOW_IMPORT_X_GAP,
+        y: FLOW_IMPORT_START_Y,
+      },
+      data: {
+        label,
+        description,
+        status: 'initial',
+        config: item.config,
+      },
+    };
+  });
+
+  const edges: Edge[] = [];
+  for (let index = 0; index < nodes.length - 1; index++) {
+    const sourceNode = nodes[index];
+    const targetNode = nodes[index + 1];
+    if (!sourceNode || !targetNode) {
+      continue;
+    }
+
+    const edgeId = `e-${sourceNode.id}-${targetNode.id}`;
+    edges.push({
+      id: edgeId,
+      source: sourceNode.id,
+      target: targetNode.id,
+      type: 'default',
+      data: {
+        onAddNode: onAddNodeToEdge,
+      },
+      markerEnd: {
+        type: 'arrow',
+        color: '#94a3b8',
+      },
+    });
+  }
+
+  return {
+    nodes,
+    edges,
+  };
+}
+
 // Preview panel component
-const PreviewPanel = ({ action }: { action: DataMatrixAction | null }) => {
+const PreviewPanel = ({
+  action,
+  error,
+}: {
+  action: DataMatrixAction | null;
+  error: string | null;
+}) => {
   return (
     <Card className="w-80 h-full flex flex-col">
       <CardHeader className="pb-2">
@@ -1848,9 +2453,15 @@ const PreviewPanel = ({ action }: { action: DataMatrixAction | null }) => {
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
               <Database className="h-12 w-12 mb-4 text-muted-foreground/50" />
-              <p className="text-center max-w-xs">
-                Add actions to see a preview of your DataMatrix
-              </p>
+              {error ? (
+                <p className="text-center max-w-xs text-red-500 dark:text-red-400">
+                  {error}
+                </p>
+              ) : (
+                <p className="text-center max-w-xs">
+                  Add actions to see a preview of your DataMatrix
+                </p>
+              )}
             </div>
           )}
         </div>
@@ -1980,6 +2591,7 @@ const FlowBuilder = () => {
     setNodes,
     setEdges,
     onAddNode,
+    onAddNodeToEdge,
     onConnect,
     setIsDraggingNode,
   } = useFlow();
@@ -1991,6 +2603,7 @@ const FlowBuilder = () => {
     null,
   );
   const [isPreviewValid, setIsPreviewValid] = useState(true);
+  const [previewError, setPreviewError] = useState<string | null>(null);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useReactFlow();
 
@@ -2127,51 +2740,37 @@ const FlowBuilder = () => {
     [setNodes],
   );
 
+  type PreviewBuildState = {
+    action: DataMatrixAction | null;
+    error: string | null;
+  };
+
   // Generate preview action from nodes and edges
-  const generatePreviewAction = useCallback(() => {
-    try {
-      // This is a simplified version - in a real implementation,
-      // we would traverse the graph to build the action
-      const action: Partial<DataMatrixAction> = {
-        version: '1.0',
-      };
-
-      // Find the first wifiConnect node and use its config
-      const wifiNode = nodes.find((node) => node.type === 'wifiConnect');
-      if (wifiNode?.data.config) {
-        action.action = 'wifi_connect';
-        action.wifi = {
-          ssid: (wifiNode.data.config.ssid as string) || '',
-          password: (wifiNode.data.config.password as string) || '',
-          security: (wifiNode.data.config.security as string) || 'WPA2',
-        };
-      }
-
-      // Find the first notification node and use its config for post_connect
-      const notificationNode = nodes.find(
-        (node) => node.type === 'notification',
-      );
-      if (notificationNode?.data.config) {
-        action.post_connect = {
-          notification: {
-            title: (notificationNode.data.config.title as string) || '',
-            message: (notificationNode.data.config.message as string) || '',
-          },
-        };
-      }
-
-      // Validate the action
-      const validatedAction = dataMatrixActionSchema.parse(action);
-      setPreviewAction(validatedAction);
-      setIsPreviewValid(true);
-      return validatedAction;
-    } catch (error) {
-      console.error('Validation error:', error);
+  const generatePreviewAction = useCallback((): PreviewBuildState => {
+    const buildResult = buildDataMatrixActionFromFlowGraph(
+      nodes as FlowBuilderNode[],
+      edges as FlowBuilderEdge[],
+    );
+    if (!buildResult.action) {
+      const errorMessage =
+        buildResult.errors[0] ?? 'Invalid action configuration';
+      setPreviewAction(null);
       setIsPreviewValid(false);
-      toast.error('Invalid action configuration');
-      return null;
+      setPreviewError(errorMessage);
+      return {
+        action: null,
+        error: errorMessage,
+      };
     }
-  }, [nodes]);
+
+    setPreviewAction(buildResult.action);
+    setIsPreviewValid(true);
+    setPreviewError(null);
+    return {
+      action: buildResult.action,
+      error: null,
+    };
+  }, [edges, nodes]);
 
   // Generate preview when nodes change
   useEffect(() => {
@@ -2179,14 +2778,15 @@ const FlowBuilder = () => {
       generatePreviewAction();
     } else {
       setPreviewAction(null);
+      setIsPreviewValid(true);
+      setPreviewError(null);
     }
   }, [nodes, generatePreviewAction]);
 
   // Export functionality to generate DataMatrixAction object
   const exportFlow = useCallback(() => {
-    const action = generatePreviewAction();
+    const { action, error } = generatePreviewAction();
     if (action && isPreviewValid) {
-      // In a real implementation, this would download the action as JSON
       const dataStr = JSON.stringify(action, null, 2);
       const dataUri = `data:application/json;charset=utf-8,${encodeURIComponent(dataStr)}`;
 
@@ -2199,9 +2799,9 @@ const FlowBuilder = () => {
 
       toast.success('Flow exported successfully');
     } else {
-      toast.error('Cannot export invalid flow');
+      toast.error(error ?? previewError ?? 'Cannot export invalid flow');
     }
-  }, [generatePreviewAction, isPreviewValid]);
+  }, [generatePreviewAction, isPreviewValid, previewError]);
 
   // Import functionality to load DataMatrixAction object
   const importFlow = useCallback(
@@ -2213,16 +2813,36 @@ const FlowBuilder = () => {
       reader.onload = (e) => {
         try {
           const content = e.target?.result as string;
-          const _parsed = JSON.parse(content);
-          // In a real implementation, this would parse the flow and set nodes/edges
-          toast.success('Flow imported successfully');
-        } catch (_error) {
-          toast.error('Failed to import flow');
+          const parsed = JSON.parse(content);
+          const action = dataMatrixActionSchema.parse(parsed);
+          const importedGraph = buildFlowGraphFromAction(
+            action,
+            onAddNodeToEdge,
+          );
+          setNodes(importedGraph.nodes);
+          setEdges(importedGraph.edges);
+          setSelectedNodeId(null);
+          setPreviewAction(action);
+          setIsPreviewValid(true);
+          setPreviewError(null);
+          toast.success(
+            `Flow imported successfully (${importedGraph.nodes.length} nodes)`,
+          );
+        } catch (error) {
+          console.error('Failed to import flow', error);
+          toast.error(
+            error instanceof Error
+              ? `Failed to import flow: ${error.message}`
+              : 'Failed to import flow',
+          );
         }
       };
       reader.readAsText(file);
+
+      // Allow importing the same file again.
+      event.target.value = '';
     },
-    [],
+    [onAddNodeToEdge, setEdges, setNodes],
   );
 
   // Auto-layout functionality
@@ -2237,52 +2857,43 @@ const FlowBuilder = () => {
 
   // Workflow runner functionality
   const [isRunning, setIsRunning] = useState(false);
-  const [_runnerStatus, setRunnerStatus] = useState<NodeStatus>('initial');
-
   const runWorkflow = useCallback(async () => {
-    setIsRunning(true);
-    setRunnerStatus('loading');
+    const { action, error } = generatePreviewAction();
+    if (!action) {
+      toast.error(
+        error ??
+          previewError ??
+          'Cannot run workflow: invalid action configuration',
+      );
+      return;
+    }
 
-    // Find the runner node if it exists
-    const runnerNode = nodes.find((node) => node.type === 'runner');
+    setIsRunning(true);
 
     try {
-      // Simulate workflow execution
-      // In a real implementation, this would execute the actual workflow
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Update runner node status if it exists
-      if (runnerNode) {
-        setNodes((nds) =>
-          nds.map((node) =>
-            node.id === runnerNode.id
-              ? { ...node, data: { ...node.data, status: 'success' } }
-              : node,
+      await executeWorkflowWithStatusTransitions({
+        action,
+        nodes: nodes as RunnerStatusNode[],
+        setNodes: (updater) =>
+          setNodes(
+            (currentNodes) =>
+              updater(currentNodes as RunnerStatusNode[]) as CustomNode[],
           ),
-        );
-      }
-
-      setRunnerStatus('success');
+        executeAction: async (nextAction) => {
+          const executor = new ActionExecutor(nextAction);
+          await executor.execute();
+        },
+      });
       toast.success('Workflow executed successfully');
     } catch (error) {
-      // Update runner node status if it exists
-      if (runnerNode) {
-        setNodes((nds) =>
-          nds.map((node) =>
-            node.id === runnerNode.id
-              ? { ...node, data: { ...node.data, status: 'error' } }
-              : node,
-          ),
-        );
-      }
-
-      setRunnerStatus('error');
-      toast.error('Failed to execute workflow');
+      const message =
+        error instanceof Error ? error.message : 'Unknown execution failure';
+      toast.error(`Failed to execute workflow: ${message}`);
       console.error('Workflow execution error:', error);
     } finally {
       setIsRunning(false);
     }
-  }, [nodes, setNodes]);
+  }, [generatePreviewAction, nodes, previewError, setNodes]);
 
   // Helper function to render node preview for drag overlay
   const renderNodePreview = (type: NodeType) => {
@@ -2533,6 +3144,7 @@ const FlowBuilder = () => {
                     <Button
                       variant="outline"
                       size="icon"
+                      aria-label="Run Workflow"
                       className="rounded-none border-0 border-b last:border-b-0"
                       onClick={runWorkflow}
                       disabled={isRunning}
@@ -2679,7 +3291,7 @@ const FlowBuilder = () => {
                 onUpdateNode={onUpdateNode}
               />
             ) : (
-              <PreviewPanel action={previewAction} />
+              <PreviewPanel action={previewAction} error={previewError} />
             )}
           </div>
         </DrawerContent>

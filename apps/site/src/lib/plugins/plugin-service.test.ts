@@ -4,6 +4,7 @@ import {
   DuplicateReleaseConflictError,
   createInMemoryPluginPlatformStore,
   createPluginPlatformService,
+  hashCanonicalJsonValue,
   toPluginRecordNamespacePath,
 } from '@/lib/plugins/plugin-service';
 
@@ -134,5 +135,21 @@ describe('plugin platform service', () => {
         rowId: 'row-1',
       }),
     ).toBe('business-1/acme.inventory/inventoryItem/row-1');
+  });
+
+  it('hashes canonical JSON deterministically across key order differences', async () => {
+    const firstHash = await hashCanonicalJsonValue({
+      b: 2,
+      a: 1,
+      nested: { z: true, y: false },
+    });
+    const secondHash = await hashCanonicalJsonValue({
+      nested: { y: false, z: true },
+      a: 1,
+      b: 2,
+    });
+
+    expect(firstHash).toBe(secondHash);
+    expect(firstHash).toMatch(/^[a-f0-9]{64}$/);
   });
 });

@@ -3,6 +3,7 @@ import type { PluginDraftDoc } from '@/lib/plugins/types';
 type PickActiveDraftArgs = {
   drafts: readonly PluginDraftDoc[];
   actorUserIdSet: ReadonlySet<string>;
+  projectId: string;
   pluginId: string;
   canonicalDraftId: string;
 };
@@ -14,6 +15,7 @@ function toDraftRecencyKey(draft: PluginDraftDoc) {
 export function pickActiveDraftForPlugin({
   drafts,
   actorUserIdSet,
+  projectId,
   pluginId,
   canonicalDraftId,
 }: PickActiveDraftArgs): PluginDraftDoc | null {
@@ -22,6 +24,7 @@ export function pickActiveDraftForPlugin({
 
   const eligibleDrafts = drafts.filter(
     (draft) =>
+      draft.projectId === projectId &&
       draft.pluginId === pluginId &&
       (matchesActorUserId(draft.ownerUserId) ||
         (draft.collaboratorUserIds ?? []).some((candidate) =>

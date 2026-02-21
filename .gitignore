@@ -21,3 +21,6 @@ gha-creds-*.json
 adaptedv1_plan.md
 adapted_plan.md
 zs-to-js.md
+/.playwright-cli
+/output/playwright
+/.tmp

@@ -300,10 +300,80 @@ export const businessPluginInstallSchema = z
   })
   .extend(table);
 
+export const pluginProjectSchema = z
+  .object({
+    id: z
+      .string()
+      .describe('Deterministic project id: plugin-project::<slug-or-stable-id>'),
+    slug: z
+      .string()
+      .describe('URL-friendly project slug scoped by owner')
+      .optional(),
+    name: z.string().describe('Human-readable project name'),
+    description: z.string().optional(),
+    gitIntegration: z
+      .object({
+        provider: z.literal('github'),
+        connectedAt: z.string().datetime({ offset: true }),
+        account: z.object({
+          id: z.string(),
+          login: z.string(),
+          avatarUrl: z.string().url().optional(),
+        }),
+        repositories: z.array(
+          z.object({
+            id: z.string(),
+            name: z.string(),
+            fullName: z.string(),
+            owner: z.string(),
+            defaultBranch: z.string(),
+            private: z.boolean(),
+            htmlUrl: z.string().url().optional(),
+            connectedAt: z.string().datetime({ offset: true }),
+            connectedByUserId: z.string(),
+          }),
+        ),
+      })
+      .optional(),
+    ownerUserId: z.string().describe('Project owner user id'),
+    visibility: z.enum(['private', 'internal']).default('private'),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const pluginProjectMemberSchema = z
+  .object({
+    id: z.string().describe('Deterministic member id: projectId::userId'),
+    projectId: z.string(),
+    userId: z.string(),
+    role: z.enum(['owner', 'admin', 'editor', 'viewer']).default('editor'),
+    invitedByUserId: z.string().optional(),
+    joinedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const pluginProjectInviteSchema = z
+  .object({
+    id: z.string().describe('Deterministic invite id'),
+    projectId: z.string(),
+    email: z.string().email(),
+    role: z.enum(['owner', 'admin', 'editor', 'viewer']).default('editor'),
+    status: z.enum(['pending', 'accepted', 'revoked']).default('pending'),
+    token: z.string(),
+    invitedByUserId: z.string(),
+    invitedAt: z.string().datetime({ offset: true }),
+    expiresAt: z.string().datetime({ offset: true }).optional(),
+    acceptedByUserId: z.string().optional(),
+    acceptedAt: z.string().datetime({ offset: true }).optional(),
+  })
+  .extend(table);
+
 export const pluginDraftSchema = z
   .object({
     id: z.string().describe('Draft id'),
     draftId: z.string(),
+    projectId: z.string().optional(),
     pluginId: z.string(),
     ownerUserId: z.string(),
     collaboratorUserIds: z.array(z.string()).optional(),

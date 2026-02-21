@@ -755,10 +755,314 @@ declare global {
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
+     readonly pluginProject: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     slug: import("zod").ZodOptional<import("zod").ZodString>;
+     name: import("zod").ZodString;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     gitIntegration: import("zod").ZodOptional<import("zod").ZodObject<{
+     provider: import("zod").ZodLiteral<"github">;
+     connectedAt: import("zod").ZodString;
+     account: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     login: import("zod").ZodString;
+     avatarUrl: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     login: string;
+     avatarUrl?: string | undefined;
+    }, {
+     id: string;
+     login: string;
+     avatarUrl?: string | undefined;
+    }>;
+     repositories: import("zod").ZodArray<import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     name: import("zod").ZodString;
+     fullName: import("zod").ZodString;
+     owner: import("zod").ZodString;
+     defaultBranch: import("zod").ZodString;
+     private: import("zod").ZodBoolean;
+     htmlUrl: import("zod").ZodOptional<import("zod").ZodString>;
+     connectedAt: import("zod").ZodString;
+     connectedByUserId: import("zod").ZodString;
+    }, "strip", import("zod").ZodTypeAny, {
+     name: string;
+     id: string;
+     owner: string;
+     connectedAt: string;
+     fullName: string;
+     defaultBranch: string;
+     private: boolean;
+     connectedByUserId: string;
+     htmlUrl?: string | undefined;
+    }, {
+     name: string;
+     id: string;
+     owner: string;
+     connectedAt: string;
+     fullName: string;
+     defaultBranch: string;
+     private: boolean;
+     connectedByUserId: string;
+     htmlUrl?: string | undefined;
+    }>, "many">;
+    }, "strip", import("zod").ZodTypeAny, {
+     provider: "github";
+     connectedAt: string;
+     account: {
+     id: string;
+     login: string;
+     avatarUrl?: string | undefined;
+    };
+     repositories: {
+     name: string;
+     id: string;
+     owner: string;
+     connectedAt: string;
+     fullName: string;
+     defaultBranch: string;
+     private: boolean;
+     connectedByUserId: string;
+     htmlUrl?: string | undefined;
+    }[];
+    }, {
+     provider: "github";
+     connectedAt: string;
+     account: {
+     id: string;
+     login: string;
+     avatarUrl?: string | undefined;
+    };
+     repositories: {
+     name: string;
+     id: string;
+     owner: string;
+     connectedAt: string;
+     fullName: string;
+     defaultBranch: string;
+     private: boolean;
+     connectedByUserId: string;
+     htmlUrl?: string | undefined;
+    }[];
+    }>>;
+     ownerUserId: import("zod").ZodString;
+     visibility: import("zod").ZodDefault<import("zod").ZodEnum<["private", "internal"]>>;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     name: string;
+     id: string;
+     visibility: "private" | "internal";
+     ownerUserId: string;
+     createdAt: string;
+     updatedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     description?: string | undefined;
+     slug?: string | undefined;
+     gitIntegration?: {
+     provider: "github";
+     connectedAt: string;
+     account: {
+     id: string;
+     login: string;
+     avatarUrl?: string | undefined;
+    };
+     repositories: {
+     name: string;
+     id: string;
+     owner: string;
+     connectedAt: string;
+     fullName: string;
+     defaultBranch: string;
+     private: boolean;
+     connectedByUserId: string;
+     htmlUrl?: string | undefined;
+    }[];
+    } | undefined;
+    }, {
+     name: string;
+     id: string;
+     ownerUserId: string;
+     createdAt: string;
+     updatedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     visibility?: "private" | "internal" | undefined;
+     description?: string | undefined;
+     slug?: string | undefined;
+     gitIntegration?: {
+     provider: "github";
+     connectedAt: string;
+     account: {
+     id: string;
+     login: string;
+     avatarUrl?: string | undefined;
+    };
+     repositories: {
+     name: string;
+     id: string;
+     owner: string;
+     connectedAt: string;
+     fullName: string;
+     defaultBranch: string;
+     private: boolean;
+     connectedByUserId: string;
+     htmlUrl?: string | undefined;
+    }[];
+    } | undefined;
+    }>;
+     readonly title: "Plugin Projects";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginProjectMember: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     projectId: import("zod").ZodString;
+     userId: import("zod").ZodString;
+     role: import("zod").ZodDefault<import("zod").ZodEnum<["owner", "admin", "editor", "viewer"]>>;
+     invitedByUserId: import("zod").ZodOptional<import("zod").ZodString>;
+     joinedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     role: "editor" | "admin" | "owner" | "viewer";
+     id: string;
+     userId: string;
+     joinedAt: string;
+     projectId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     invitedByUserId?: string | undefined;
+    }, {
+     id: string;
+     userId: string;
+     joinedAt: string;
+     projectId: string;
+     timestamp?: number | undefined;
+     role?: "editor" | "admin" | "owner" | "viewer" | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     invitedByUserId?: string | undefined;
+    }>;
+     readonly title: "Plugin Project Members";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginProjectInvite: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     projectId: import("zod").ZodString;
+     email: import("zod").ZodString;
+     role: import("zod").ZodDefault<import("zod").ZodEnum<["owner", "admin", "editor", "viewer"]>>;
+     status: import("zod").ZodDefault<import("zod").ZodEnum<["pending", "accepted", "revoked"]>>;
+     token: import("zod").ZodString;
+     invitedByUserId: import("zod").ZodString;
+     invitedAt: import("zod").ZodString;
+     expiresAt: import("zod").ZodOptional<import("zod").ZodString>;
+     acceptedByUserId: import("zod").ZodOptional<import("zod").ZodString>;
+     acceptedAt: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     email: string;
+     status: "pending" | "accepted" | "revoked";
+     role: "editor" | "admin" | "owner" | "viewer";
+     id: string;
+     invitedAt: string;
+     token: string;
+     projectId: string;
+     invitedByUserId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     expiresAt?: string | undefined;
+     acceptedByUserId?: string | undefined;
+     acceptedAt?: string | undefined;
+    }, {
+     email: string;
+     id: string;
+     invitedAt: string;
+     token: string;
+     projectId: string;
+     invitedByUserId: string;
+     status?: "pending" | "accepted" | "revoked" | undefined;
+     timestamp?: number | undefined;
+     role?: "editor" | "admin" | "owner" | "viewer" | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     expiresAt?: string | undefined;
+     acceptedByUserId?: string | undefined;
+     acceptedAt?: string | undefined;
+    }>;
+     readonly title: "Plugin Project Invites";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
      readonly pluginDraft: {
      readonly schema: import("zod").ZodObject<{
      id: import("zod").ZodString;
      draftId: import("zod").ZodString;
+     projectId: import("zod").ZodOptional<import("zod").ZodString>;
      pluginId: import("zod").ZodString;
      ownerUserId: import("zod").ZodString;
      collaboratorUserIds: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
@@ -783,10 +1087,10 @@ declare global {
      status: "active" | "archived";
      id: string;
      pluginId: string;
-     draftId: string;
      ownerUserId: string;
      createdAt: string;
      updatedAt: string;
+     draftId: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
@@ -794,14 +1098,15 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      title?: string | undefined;
+     projectId?: string | undefined;
      collaboratorUserIds?: string[] | undefined;
     }, {
      id: string;
      pluginId: string;
-     draftId: string;
      ownerUserId: string;
      createdAt: string;
      updatedAt: string;
+     draftId: string;
      status?: "active" | "archived" | undefined;
      timestamp?: number | undefined;
      created_by?: string | undefined;
@@ -810,6 +1115,7 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      title?: string | undefined;
+     projectId?: string | undefined;
      collaboratorUserIds?: string[] | undefined;
     }>;
      readonly title: "Plugin Drafts";
@@ -990,8 +1296,8 @@ declare global {
      pluginId: string;
      manifestHash: string;
      artifactHash: string;
-     draftId: string;
      createdAt: string;
+     draftId: string;
      revisionId: string;
      createdByUserId: string;
      timestamp?: number | undefined;
@@ -1043,8 +1349,8 @@ declare global {
      pluginId: string;
      manifestHash: string;
      artifactHash: string;
-     draftId: string;
      createdAt: string;
+     draftId: string;
      revisionId: string;
      createdByUserId: string;
      timestamp?: number | undefined;
@@ -1293,8 +1599,8 @@ declare global {
      status: "ready" | "blocking";
      id: string;
      pluginId: string;
-     draftId: string;
      createdAt: string;
+     draftId: string;
      revisionId: string;
      createdByUserId: string;
      environment: string;
@@ -1323,8 +1629,8 @@ declare global {
     }, {
      id: string;
      pluginId: string;
-     draftId: string;
      createdAt: string;
+     draftId: string;
      revisionId: string;
      createdByUserId: string;
      diagnostics: {

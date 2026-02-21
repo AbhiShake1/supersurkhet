@@ -368,8 +368,65 @@ export type BusinessPluginInstallDoc = {
   requestedCapabilities?: string[];
 };
 
+export type PluginProjectRole = 'owner' | 'admin' | 'editor' | 'viewer';
+
+export type PluginProjectDoc = {
+  id: string;
+  slug?: string;
+  name: string;
+  description?: string;
+  gitIntegration?: {
+    provider: 'github';
+    connectedAt: string;
+    account: {
+      id: string;
+      login: string;
+      avatarUrl?: string;
+    };
+    repositories: Array<{
+      id: string;
+      name: string;
+      fullName: string;
+      owner: string;
+      defaultBranch: string;
+      private: boolean;
+      htmlUrl?: string;
+      connectedAt: string;
+      connectedByUserId: string;
+    }>;
+  };
+  ownerUserId: string;
+  visibility: 'private' | 'internal';
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PluginProjectMemberDoc = {
+  id: string;
+  projectId: string;
+  userId: string;
+  role: PluginProjectRole;
+  invitedByUserId?: string;
+  joinedAt: string;
+};
+
+export type PluginProjectInviteDoc = {
+  id: string;
+  projectId: string;
+  email: string;
+  role: PluginProjectRole;
+  status: 'pending' | 'accepted' | 'revoked';
+  token: string;
+  invitedByUserId: string;
+  invitedAt: string;
+  expiresAt?: string;
+  acceptedByUserId?: string;
+  acceptedAt?: string;
+};
+
 export type PluginDraftDoc = {
   draftId: string;
+  projectId?: string;
   pluginId: string;
   ownerUserId: string;
   collaboratorUserIds?: string[];

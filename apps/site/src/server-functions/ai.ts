@@ -1,5 +1,5 @@
 import { createServerFn } from '@tanstack/react-start';
-import { getCookie } from '@tanstack/react-start/server';
+import { getCookie, setCookie } from '@tanstack/react-start/server';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 import {
@@ -16,7 +16,9 @@ import {
   AI_PROVIDER_STORE_COOKIE_NAME,
   decodeAiAuthSessionToken,
   decryptProviderCredentialStore,
+  encryptProviderCredentialStore,
 } from '@/lib/ai/provider-auth-store';
+import { refreshProviderCredentialIfNeeded } from '@/lib/ai/provider-oauth-refresh';
 import { buildAssistantFallbackResponse } from '@/lib/business-ai-assistant';
 
 const assistantResponseSchema = z.object({
@@ -105,7 +107,7 @@ export const getBusinessCreationAssistantTurn = createServerFn({
           )
         : null;
 
-    const normalizedProvider =
+    let normalizedProvider =
       !provider.apiKey && data.providerApiKey
         ? {
             ...(providerFromStore ?? provider),
@@ -113,7 +115,43 @@ export const getBusinessCreationAssistantTurn = createServerFn({
           }
         : (providerFromStore ?? provider);
 
+    const nowInSeconds = Math.floor(Date.now() / 1000);
+
     try {
+      const refreshedProvider = await refreshProviderCredentialIfNeeded(
+        normalizedProvider,
+        {
+          nowInSeconds,
+          model: normalizedProvider.model,
+        },
+      );
+      normalizedProvider = refreshedProvider.provider;
+
+      if (refreshedProvider.refreshed && storedCredential) {
+        providerStore[storedCredential.providerId] = {
+          ...storedCredential,
+          oauthAccessToken: normalizedProvider.oauthAccessToken,
+          oauthRefreshToken: normalizedProvider.oauthRefreshToken,
+          oauthExpiresAt: normalizedProvider.oauthExpiresAt,
+          chatGptAccountId: normalizedProvider.chatGptAccountId,
+          baseURL: normalizedProvider.baseURL ?? storedCredential.baseURL,
+          headers: normalizedProvider.headers ?? storedCredential.headers,
+          updatedAt: nowInSeconds,
+        };
+
+        setCookie(
+          AI_PROVIDER_STORE_COOKIE_NAME,
+          encryptProviderCredentialStore(providerStore),
+          {
+            maxAge: 60 * 60 * 24 * 30,
+            httpOnly: true,
+            sameSite: 'lax',
+            path: '/',
+            secure: process.env.NODE_ENV === 'production',
+          },
+        );
+      }
+
       const model = createAssistantLanguageModel(normalizedProvider);
       if (!model) return fallback;
 

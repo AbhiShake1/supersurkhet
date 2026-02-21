@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const pluginStudioRoutePath = resolve(
   process.cwd(),
-  'src/routes/plugin-studio.tsx',
+  'src/routes/plugin-studio/index.tsx',
 );
 
 function getRouteContent() {
@@ -18,11 +18,15 @@ describe('plugin-studio client boundary', () => {
     expect(content).not.toContain(`from '@/lib/plugins/plugin-service'`);
   });
 
-  it('uses a server function for release hash previews', () => {
+  it('uses a client hash utility for release hash previews', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('previewPluginReleaseHashes');
-    expect(content).toContain(`from '@/server-functions/plugins'`);
+    expect(content).toContain('previewReleaseHashes');
+    expect(content).toContain(`from '@/lib/plugins/release-hash-preview'`);
+    expect(content).not.toContain(`from '@/server-functions/plugins'`);
+    expect(content).not.toContain('publishPluginRelease');
+    expect(content).not.toContain('installPluginRelease');
+    expect(content).not.toContain('installPluginDraftRevision');
   });
 
   it('uses TanStack Query hooks for async server state', () => {
@@ -254,14 +258,32 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('Cross-Field Refinements');
   });
 
-  it('wires draft CRUD through app api schema tables and draft server functions', () => {
+  it('wires project and draft CRUD through client-side app api schema tables', () => {
     const content = getRouteContent();
 
+    expect(content).toContain('api.pluginProject.useGet');
+    expect(content).toContain('api.pluginProjectMember.useGet');
+    expect(content).toContain('api.pluginProjectInvite.useGet');
     expect(content).toContain('api.pluginDraft.useGet');
+    expect(content).toContain('api.pluginDraft.useCreate');
+    expect(content).toContain('api.pluginDraft.useUpdate');
     expect(content).toContain('api.pluginDraftRevision.useGet');
-    expect(content).toContain('createPluginDraft');
-    expect(content).toContain('createPluginDraftRevision');
+    expect(content).toContain('api.pluginDraftRevision.useCreate');
+    expect(content).not.toContain('createPluginDraft(');
+    expect(content).not.toContain('createPluginDraftRevision(');
     expect(content).toContain('save-draft-revision');
+  });
+
+  it('wires invite acceptance and member role management through client api tables', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('api.pluginProjectMember.useUpdate');
+    expect(content).toContain('api.pluginProjectMember.useDelete');
+    expect(content).toContain('api.pluginProjectInvite.useUpdate');
+    expect(content).toContain('api.pluginProjectInvite.useDelete');
+    expect(content).toContain('handleAcceptInvite');
+    expect(content).toContain('handleUpdateMemberRole');
+    expect(content).toContain('handleRemoveMember');
   });
 
   it('persists sidebar group/system metadata in draft revisions', () => {
@@ -272,6 +294,15 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('__plugin_studio_group__/');
     expect(content).toContain('__plugin_studio_system__/');
     expect(content).toContain('adminTabs: parsed.draftAdminTabs');
+    expect(content).toContain('persistDraftRevisionForRenamedSchemas');
+    expect(content).toContain('snapshot:');
+  });
+
+  it('guards against malformed admin tab rows before sentinel parsing', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain("typeof tab.schema === 'string'");
+    expect(content).toContain('if (!schemaId)');
   });
 
   it('waits for drafts to finish loading before auto-creating a new draft', () => {
@@ -289,33 +320,52 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('lastHydratedRevisionRecencyRef');
     expect(content).toContain('initialSnapshotByDraftRef');
     expect(content).toContain('activeDraftRevisions.length === 0');
-    expect(content).toContain('if (isDraftLoading)');
+    expect(content).toContain('if (isDraftLoading || isProjectLoading)');
     expect(content).toContain('localDraftSnapshot !== latestRevisionSnapshot');
     expect(content).toContain('toDraftSnapshotString');
     expect(content).toContain('lastRequestedDraftSnapshotRef');
-    expect(content).toContain('void saveDraftRevision(activeDraft.draftId);');
-  });
-
-  it('resolves the active draft from URL draftId and syncs search with real draft ids', () => {
-    const content = getRouteContent();
-
-    expect(content).toContain("readSearchParamString(search, 'pluginId')");
-    expect(content).toContain('delete next.draftId');
-    expect(content).not.toContain("readSearchParamString(search, 'draftId')");
-    expect(content).toContain('pluginId: nextPluginId');
-  });
-
-  it('keeps draft identity stable using a single per-user draft id', () => {
-    const content = getRouteContent();
-
-    expect(content).toContain('buildActorUserIdAliases');
-    expect(content).toContain('toDraftId');
     expect(content).toContain(
-      'drafts.find((candidate) => candidate.draftId === draftId)',
+      'void saveDraftRevision({ draftId: activeDraft.draftId });',
     );
-    expect(content).toContain('return `draft.${toStableDraftIdSuffix(actorUserId)}`;');
-    expect(content).not.toContain('toStableDraftIdSuffix(pluginId)');
-    expect(content).not.toContain('pickActiveDraftForPlugin');
+  });
+
+  it('uses path-param page flow for project and plugin state instead of search params', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('initialProjectId');
+    expect(content).toContain('initialPluginId');
+    expect(content).toContain('initialStudioView');
+    expect(content).toContain('setSelectedProjectId');
+    expect(content).toContain('setSelectedPluginId');
+    expect(content).toContain("to: '/plugin-studio/$projectId'");
+    expect(content).toContain("to: '/plugin-studio/$projectId/$pluginId'");
+    expect(content).not.toContain("readSearchParamString(search, 'projectId')");
+    expect(content).not.toContain("readSearchParamString(search, 'pluginId')");
+  });
+
+  it('validates plugin-studio search params with zod at the route boundary', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain(`from 'zod'`);
+    expect(content).toContain('const pluginStudioSearchSchema = z.object({');
+    expect(content).toContain('pluginId: optionalSearchStringSchema');
+    expect(content).toContain('draftId: optionalSearchStringSchema');
+    expect(content).toContain('sortBy: optionalSearchStringSchema');
+    expect(content).toContain("z.enum(['asc', 'desc']).optional()");
+    expect(content).toContain('validateSearch: pluginStudioSearchSchema');
+    expect(content).not.toContain('function readSearchParamString(');
+  });
+
+  it('keeps draft identity stable using project + plugin deterministic draft ids', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('toProjectScopedDraftId');
+    expect(content).toContain('pickActiveDraftForPlugin');
+    expect(content).toContain('projectId');
+    expect(content).toContain('pluginId');
+    expect(content).not.toContain(
+      'return `draft.${toStableDraftIdSuffix(actorUserId)}`;',
+    );
   });
 
   it('chooses latest template release using semantic version ordering', () => {
@@ -333,6 +383,19 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('WorkflowGraphEditor');
     expect(content).toContain('createPublishGateTabState');
     expect(content).not.toContain('Workspace Tab Integrations');
+  });
+
+  it('derives tab titles from schema docs with sidebar title fallback', () => {
+    const content = getRouteContent();
+
+    expect(content).toContain('schemaDoc.title ??');
+    expect(content).toContain('tabBySchema.get(schemaDoc.schemaId)?.title ??');
+    expect(content).toContain(
+      'title: schemaDoc.title || tab.title || schemaDoc.schemaId',
+    );
+    expect(content).not.toContain(
+      'title: tab.title || schemaDoc.title || schemaDoc.schemaId',
+    );
   });
 
   it('does not expose developer-centric metadata and internals in the no-code view', () => {

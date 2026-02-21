@@ -56,6 +56,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from './popover';
+import { commitSidebarRename } from './collapsible-sidebar-rename';
 import { ManageOrganization } from './organizations/manage-organization';
 
 function isLucideIcon(value: unknown): value is LucideIcon {
@@ -144,6 +145,8 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     name: string;
     itemCount: number;
   } | null>(null);
+  const tabRenameHandledByKeyRef = useRef(false);
+  const groupRenameHandledByKeyRef = useRef(false);
   const dragPreviewElementRef = useRef<HTMLElement | null>(null);
   const iconCatalog = useMemo(() => {
     const entries = Object.entries(
@@ -274,6 +277,27 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
         frequentUsage: next,
       });
       return next;
+    });
+  };
+
+  const commitTabRename = (previousTitle: string, nextTitle: string) => {
+    return commitSidebarRename({
+      entity: 'tab',
+      previousValue: previousTitle,
+      nextValue: nextTitle,
+      onRename: onRenameTab,
+    });
+  };
+
+  const commitGroupRename = (
+    previousGroupName: string,
+    nextGroupName: string,
+  ) => {
+    return commitSidebarRename({
+      entity: 'group',
+      previousValue: previousGroupName,
+      nextValue: nextGroupName,
+      onRename: onRenameGroup,
     });
   };
 
@@ -469,32 +493,34 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                   defaultValue={item.title}
                   className="h-8 text-xs"
                   onBlur={(event) => {
-                    const nextTitle = event.target.value.trim();
-                    if (nextTitle && onRenameTab) {
-                      onRenameTab(item.title, nextTitle);
+                    if (tabRenameHandledByKeyRef.current) {
+                      tabRenameHandledByKeyRef.current = false;
+                    } else {
+                      commitTabRename(item.title, event.currentTarget.value);
                     }
                     setEditingTabTitle(null);
                   }}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') {
-                      const nextTitle = (
-                        event.target as HTMLInputElement
-                      ).value.trim();
-                      if (nextTitle && onRenameTab) {
-                        onRenameTab(item.title, nextTitle);
-                      }
+                      event.preventDefault();
+                      tabRenameHandledByKeyRef.current = true;
+                      commitTabRename(item.title, event.currentTarget.value);
                       setEditingTabTitle(null);
                     }
                     if (event.key === 'Escape') {
+                      event.preventDefault();
+                      tabRenameHandledByKeyRef.current = true;
                       setEditingTabTitle(null);
                     }
                   }}
                 />
               ) : (
                 <div
-                  onDoubleClick={() =>
-                    editable && setEditingTabTitle(item.title)
-                  }
+                  onDoubleClick={() => {
+                    if (!editable) return;
+                    tabRenameHandledByKeyRef.current = false;
+                    setEditingTabTitle(item.title);
+                  }}
                 >
                   <Option
                     Icon={getTabIcon(item)}
@@ -642,23 +668,23 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     defaultValue={groupName}
                     className="h-8 text-xs"
                     onBlur={(event) => {
-                      const nextGroup = event.target.value.trim();
-                      if (nextGroup && onRenameGroup) {
-                        onRenameGroup(groupName, nextGroup);
+                      if (groupRenameHandledByKeyRef.current) {
+                        groupRenameHandledByKeyRef.current = false;
+                      } else {
+                        commitGroupRename(groupName, event.currentTarget.value);
                       }
                       setEditingGroupName(null);
                     }}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') {
-                        const nextGroup = (
-                          event.target as HTMLInputElement
-                        ).value.trim();
-                        if (nextGroup && onRenameGroup) {
-                          onRenameGroup(groupName, nextGroup);
-                        }
+                        event.preventDefault();
+                        groupRenameHandledByKeyRef.current = true;
+                        commitGroupRename(groupName, event.currentTarget.value);
                         setEditingGroupName(null);
                       }
                       if (event.key === 'Escape') {
+                        event.preventDefault();
+                        groupRenameHandledByKeyRef.current = true;
                         setEditingGroupName(null);
                       }
                     }}
@@ -712,9 +738,11 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     <button
                       type="button"
                       onClick={() => toggleGroup(groupName)}
-                      onDoubleClick={() =>
-                        editable && setEditingGroupName(groupName)
-                      }
+                      onDoubleClick={() => {
+                        if (!editable) return;
+                        groupRenameHandledByKeyRef.current = false;
+                        setEditingGroupName(groupName);
+                      }}
                       aria-expanded={isGroupOpen}
                       className={`${SECTION_TOGGLE_BUTTON_CLASS} flex-1`}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -780,32 +808,40 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                           defaultValue={item.title}
                           className="h-8 text-xs"
                           onBlur={(event) => {
-                            const nextTitle = event.target.value.trim();
-                            if (nextTitle && onRenameTab) {
-                              onRenameTab(item.title, nextTitle);
+                            if (tabRenameHandledByKeyRef.current) {
+                              tabRenameHandledByKeyRef.current = false;
+                            } else {
+                              commitTabRename(
+                                item.title,
+                                event.currentTarget.value,
+                              );
                             }
                             setEditingTabTitle(null);
                           }}
                           onKeyDown={(event) => {
                             if (event.key === 'Enter') {
-                              const nextTitle = (
-                                event.target as HTMLInputElement
-                              ).value.trim();
-                              if (nextTitle && onRenameTab) {
-                                onRenameTab(item.title, nextTitle);
-                              }
+                              event.preventDefault();
+                              tabRenameHandledByKeyRef.current = true;
+                              commitTabRename(
+                                item.title,
+                                event.currentTarget.value,
+                              );
                               setEditingTabTitle(null);
                             }
                             if (event.key === 'Escape') {
+                              event.preventDefault();
+                              tabRenameHandledByKeyRef.current = true;
                               setEditingTabTitle(null);
                             }
                           }}
                         />
                       ) : (
                         <div
-                          onDoubleClick={() =>
-                            editable && setEditingTabTitle(item.title)
-                          }
+                          onDoubleClick={() => {
+                            if (!editable) return;
+                            tabRenameHandledByKeyRef.current = false;
+                            setEditingTabTitle(item.title);
+                          }}
                         >
                           <Option
                             Icon={getTabIcon(item)}

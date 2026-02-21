@@ -1,7 +1,7 @@
 import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { create as ssrCreate } from '@/lib/gun/ssr/create';
-import { get as ssrGet } from '@/lib/gun/ssr/get';
+import { get as ssrGet, SSRGetTimeoutError } from '@/lib/gun/ssr/get';
 import { update as ssrUpdate } from '@/lib/gun/ssr/update';
 import {
   getRecommendedSeedReleaseIds,
@@ -580,9 +580,11 @@ export function parsePromotionReleaseInput<
 
 async function loadPublishedStore(businessId?: string) {
   const [releases, installs] = await Promise.all([
-    ssrGet('pluginRelease'),
+    readRowsWithTimeoutFallback(() => ssrGet('pluginRelease')),
     businessId
-      ? ssrGet('businessPluginInstall', businessId)
+      ? readRowsWithTimeoutFallback(() =>
+          ssrGet('businessPluginInstall', businessId),
+        )
       : Promise.resolve([]),
   ]);
 
@@ -592,12 +594,27 @@ async function loadPublishedStore(businessId?: string) {
   });
 }
 
+async function readRowsWithTimeoutFallback<T>(
+  reader: () => Promise<T[]>,
+): Promise<T[]> {
+  try {
+    return await reader();
+  } catch (error) {
+    if (error instanceof SSRGetTimeoutError) {
+      return [];
+    }
+    throw error;
+  }
+}
+
 async function loadDraftStore(businessId?: string) {
   const [drafts, revisions, installs] = await Promise.all([
-    ssrGet({ key: 'pluginDraft' }),
-    ssrGet({ key: 'pluginDraftRevision' }),
+    readRowsWithTimeoutFallback(() => ssrGet({ key: 'pluginDraft' })),
+    readRowsWithTimeoutFallback(() => ssrGet({ key: 'pluginDraftRevision' })),
     businessId
-      ? ssrGet({ key: 'businessPluginDraftInstall' }, businessId)
+      ? readRowsWithTimeoutFallback(() =>
+          ssrGet({ key: 'businessPluginDraftInstall' }, businessId),
+        )
       : Promise.resolve([]),
   ]);
   return createInMemoryPluginPlatformStore({
@@ -616,7 +633,9 @@ async function upsertGlobalRow({
   id: string;
   row: Record<string, unknown>;
 }) {
-  const rows = (await ssrGet({ key })) as Array<{
+  const rows = (await readRowsWithTimeoutFallback(() =>
+    ssrGet({ key }),
+  )) as Array<{
     id?: string;
     _?: { soul?: string };
   }>;
@@ -647,7 +666,9 @@ async function upsertScopedRow({
   id: string;
   row: Record<string, unknown>;
 }) {
-  const rows = (await ssrGet({ key }, scopeKey)) as Array<{
+  const rows = (await readRowsWithTimeoutFallback(() =>
+    ssrGet({ key }, scopeKey),
+  )) as Array<{
     id?: string;
     _?: { soul?: string };
   }>;

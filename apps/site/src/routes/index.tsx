@@ -10,11 +10,6 @@ const CongestedPricing = lazy(() => import('@/components/pricing'));
 const StatsSection = lazy(() => import('@/components/stats-4'));
 const TeamSection = lazy(() => import('@/components/team'));
 const WallOfLoveSection = lazy(() => import('@/components/testimonials'));
-const pluginBuilderEntrySearch = {
-  tab: 'overview',
-  pluginId: 'plugin.restaurant.admin',
-} as const;
-
 export const Route = createFileRoute('/')({
   component: Home,
 });
@@ -36,7 +31,7 @@ function Home() {
               </p>
             </div>
             <Button asChild size="lg" className="sm:min-w-52">
-              <Link to="/plugin-studio" search={pluginBuilderEntrySearch}>
+              <Link to="/plugin-studio">
                 Open Plugin Builder
               </Link>
             </Button>

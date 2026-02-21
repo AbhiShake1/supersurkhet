@@ -8,6 +8,10 @@ import type {
   FieldConfigIR,
   JsonValue,
   LifecycleHook,
+  PluginProjectDoc,
+  PluginProjectInviteDoc,
+  PluginProjectMemberDoc,
+  PluginProjectRole,
   PluginDraftDoc,
   PluginDraftRevisionDoc,
   PluginRecordDoc,
@@ -17,6 +21,7 @@ import type {
   SchemaFieldDoc,
   SchemaRuleDoc,
   WorkflowDoc,
+  WorkflowEdgeDoc,
   WorkflowNodeDoc,
 } from 'supersurkhet-sdk';
 
@@ -30,6 +35,10 @@ export type {
   FieldConfigIR,
   JsonValue,
   LifecycleHook,
+  PluginProjectDoc,
+  PluginProjectInviteDoc,
+  PluginProjectMemberDoc,
+  PluginProjectRole,
   PluginDraftDoc,
   PluginDraftRevisionDoc,
   PluginRecordDoc,
@@ -39,6 +48,7 @@ export type {
   SchemaFieldDoc,
   SchemaRuleDoc,
   WorkflowDoc,
+  WorkflowEdgeDoc,
   WorkflowNodeDoc,
 };
 

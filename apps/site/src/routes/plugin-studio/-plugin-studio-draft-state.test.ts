@@ -5,11 +5,15 @@ import {
   shouldTreatMissingActiveDraftAsTransient,
 } from './-plugin-studio-draft-state';
 
-function makeDraft(input: Partial<PluginDraftDoc> & Pick<PluginDraftDoc, 'draftId' | 'pluginId' | 'ownerUserId'>): PluginDraftDoc {
+function makeDraft(
+  input: Partial<PluginDraftDoc> &
+    Pick<PluginDraftDoc, 'draftId' | 'pluginId' | 'ownerUserId' | 'projectId'>,
+): PluginDraftDoc {
   return {
     id: input.id ?? input.draftId,
     draftId: input.draftId,
     pluginId: input.pluginId,
+    projectId: input.projectId,
     ownerUserId: input.ownerUserId,
     collaboratorUserIds: input.collaboratorUserIds ?? [],
     status: input.status ?? 'active',
@@ -20,16 +24,18 @@ function makeDraft(input: Partial<PluginDraftDoc> & Pick<PluginDraftDoc, 'draftI
 }
 
 describe('plugin studio draft state helpers', () => {
-  it('returns canonical draft when present', () => {
+  it('returns canonical draft when present in the same project', () => {
     const drafts = [
       makeDraft({
-        draftId: 'draft.plugin.sales.user_a',
+        draftId: 'draft.project_a.plugin.sales',
+        projectId: 'project_a',
         pluginId: 'plugin.sales',
         ownerUserId: 'user/a',
         updatedAt: '2026-02-19T09:00:00.000Z',
       }),
       makeDraft({
-        draftId: 'draft.plugin.sales.user_a_legacy',
+        draftId: 'draft.project_b.plugin.sales',
+        projectId: 'project_b',
         pluginId: 'plugin.sales',
         ownerUserId: 'user/a',
         updatedAt: '2026-02-19T11:00:00.000Z',
@@ -39,37 +45,48 @@ describe('plugin studio draft state helpers', () => {
     const active = pickActiveDraftForPlugin({
       drafts,
       actorUserIdSet: new Set(['user/a']),
+      projectId: 'project_a',
       pluginId: 'plugin.sales',
-      canonicalDraftId: 'draft.plugin.sales.user_a',
+      canonicalDraftId: 'draft.project_a.plugin.sales',
     });
 
-    expect(active?.draftId).toBe('draft.plugin.sales.user_a');
+    expect(active?.draftId).toBe('draft.project_a.plugin.sales');
   });
 
-  it('falls back to most recent eligible draft when canonical is missing', () => {
+  it('falls back to most recent eligible draft in the selected project when canonical is missing', () => {
     const drafts = [
       makeDraft({
-        draftId: 'draft.plugin.sales.user_a_older',
+        draftId: 'draft.project_a.plugin.sales.older',
+        projectId: 'project_a',
         pluginId: 'plugin.sales',
         ownerUserId: 'user/a',
         updatedAt: '2026-02-19T09:00:00.000Z',
       }),
       makeDraft({
-        draftId: 'draft.plugin.sales.user_a_newer',
+        draftId: 'draft.project_a.plugin.sales.newer',
+        projectId: 'project_a',
         pluginId: 'plugin.sales',
         ownerUserId: 'user/a',
         updatedAt: '2026-02-19T11:00:00.000Z',
+      }),
+      makeDraft({
+        draftId: 'draft.project_b.plugin.sales.newest',
+        projectId: 'project_b',
+        pluginId: 'plugin.sales',
+        ownerUserId: 'user/a',
+        updatedAt: '2026-02-19T12:00:00.000Z',
       }),
     ];
 
     const active = pickActiveDraftForPlugin({
       drafts,
       actorUserIdSet: new Set(['user/a']),
+      projectId: 'project_a',
       pluginId: 'plugin.sales',
-      canonicalDraftId: 'draft.plugin.sales.user_a',
+      canonicalDraftId: 'draft.project_a.plugin.sales',
     });
 
-    expect(active?.draftId).toBe('draft.plugin.sales.user_a_newer');
+    expect(active?.draftId).toBe('draft.project_a.plugin.sales.newer');
   });
 
   it('treats missing draft as transient when a draft was previously resolved', () => {

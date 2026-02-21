@@ -123,6 +123,7 @@ import {
 } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { z } from 'zod';
 import { throwOnFailedPersistenceWrites } from './-plugin-studio-persistence';
 import {
   resolvePluginStudioPluginId,
@@ -136,7 +137,28 @@ import {
   type PluginStudioSidebarSnapshot,
 } from './-plugin-studio-sidebar-snapshot';
 
-export const Route = createFileRoute('/plugin-studio')({
+const optionalSearchStringSchema = z.preprocess(
+  (value) => {
+    if (typeof value !== 'string') return undefined;
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : undefined;
+  },
+  z.string().optional(),
+);
+
+const pluginStudioSearchSchema = z.object({
+  pluginId: optionalSearchStringSchema,
+  draftId: optionalSearchStringSchema,
+  sortBy: optionalSearchStringSchema,
+  sortOrder: z
+    .preprocess(
+      (value) => (typeof value === 'string' ? value.trim().toLowerCase() : undefined),
+      z.enum(['asc', 'desc']).optional(),
+    ),
+});
+
+export const Route = createFileRoute('/plugin-studio/')({
+  validateSearch: pluginStudioSearchSchema,
   component: PluginStudioRoute,
 });
 
@@ -357,17 +379,6 @@ function buildActorUserIdAliases(user: {
   appendActorUserIdAliases(aliases, user?.pub);
   appendActorUserIdAliases(aliases, user?._?.soul);
   return [...aliases];
-}
-
-function readSearchParamString(
-  search: unknown,
-  key: string,
-): string | undefined {
-  if (!search || typeof search !== 'object') return undefined;
-  const value = (search as Record<string, unknown>)[key];
-  if (typeof value !== 'string') return undefined;
-  const normalized = value.trim();
-  return normalized.length > 0 ? normalized : undefined;
 }
 
 function toDraftHydrationKey({
@@ -2012,6 +2023,14 @@ type PluginStudioPresenterProps = {
   isAuthenticated: boolean;
 };
 
+export function PluginStudioPage(_props?: {
+  initialProjectId?: string;
+  initialPluginId?: string;
+  initialStudioView?: 'org' | 'workspace';
+}) {
+  return <PluginStudioRoute />;
+}
+
 function PluginStudioRoute() {
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
 
@@ -2048,10 +2067,7 @@ function PluginStudioPresenter({
   );
   const actorUserId = actorUserIdAliases[0] ?? 'anon';
   const isActorIdentityReady = !isAuthenticated || actorUserIdAliases.length > 0;
-  const requestedPluginId = useMemo(
-    () => readSearchParamString(search, 'pluginId'),
-    [search],
-  );
+  const requestedPluginId = search.pluginId;
   const draftId = useMemo(
     () => toDraftId({ actorUserId }),
     [actorUserId],
@@ -2341,16 +2357,13 @@ function PluginStudioPresenter({
     (candidatePluginId: string) => {
       const normalizedPluginId = candidatePluginId.trim();
       if (!normalizedPluginId) return;
-      const nextPluginId = normalizedPluginId;
-
       navigate({
-        search: (current: unknown) => {
-          const next = {
-            ...(current as Record<string, unknown>),
-            pluginId: nextPluginId,
-          } as Record<string, unknown>;
-          delete next.draftId;
-          return next;
+        search: (current) => {
+          const { draftId: _draftId, ...rest } = current;
+          return {
+            ...rest,
+            pluginId: normalizedPluginId,
+          };
         },
         replace: true,
       });
@@ -2598,13 +2611,10 @@ function PluginStudioPresenter({
         hasDerivedFieldValidationErrors(derivedField, fieldKeys),
     );
 
-    return (
-      pluginId.trim() &&
-      /^[a-z0-9][a-z0-9_.-]*[a-z0-9]$/.test(pluginId) &&
-      parsed &&
-      !hasInvalidFieldConfig &&
-      !hasInvalidDerivedFieldConfig
-    );
+    return (pluginId.trim() &&
+    /^[a-z0-9][a-z0-9_.-]*[a-z0-9]$/.test(pluginId) &&
+    parsed &&
+    !hasInvalidFieldConfig && !hasInvalidDerivedFieldConfig)
   }, [parsed, pluginId, schemaBuilder]);
   const isDraftSaveable = useMemo(
     () =>
@@ -2669,10 +2679,8 @@ function PluginStudioPresenter({
     if (isDraftLoading) {
       return;
     }
-    const searchPluginId = readSearchParamString(search, 'pluginId');
-    const searchRecord = (search ?? {}) as Record<string, unknown>;
-    const searchDraftId =
-      typeof searchRecord.draftId === 'string' ? searchRecord.draftId : undefined;
+    const searchPluginId = search.pluginId;
+    const searchDraftId = search.draftId;
     if (
       !shouldSyncPluginStudioSearch({
         pluginId,

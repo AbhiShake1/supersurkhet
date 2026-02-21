@@ -1,12 +1,14 @@
 import { Link } from '@tanstack/react-router';
 import {
+  Check,
   ChevronDown,
+  ChevronsUpDown,
   ChevronUp,
   LoaderCircle,
   SendHorizontal,
   Sparkles,
 } from 'lucide-react';
-import { type KeyboardEvent, useMemo, useState } from 'react';
+import { type KeyboardEvent, useEffect, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -19,6 +21,7 @@ import {
   resolveAssistantModelOption,
   resolveProviderDefaultAuthMode,
   resolveProviderDefaultBaseUrl,
+  resolveProviderSupportedAuthModes,
 } from '@/lib/ai/business-onboarding-models';
 import { api } from '@/lib/api';
 import {
@@ -40,6 +43,14 @@ import {
   CollapsibleTrigger,
 } from './ui/collapsible';
 import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from './ui/command';
+import {
   FormControl,
   FormField,
   FormItem,
@@ -47,6 +58,7 @@ import {
   FormMessage,
 } from './ui/form';
 import { Input } from './ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Progress } from './ui/progress';
 import { ScrollArea } from './ui/scroll-area';
 import {
@@ -112,14 +124,18 @@ const starterTodoItems: TodoItem[] = [
   },
 ];
 
-const providerLabelById: Record<BusinessOnboardingProviderId, string> = {
+const providerLabelById: Partial<Record<string, string>> = {
   openai: 'OpenAI',
   anthropic: 'Anthropic',
   google: 'Google Gemini',
+  'github-copilot': 'GitHub Copilot',
   bedrock: 'AWS Bedrock',
+  'amazon-bedrock': 'AWS Bedrock',
   openrouter: 'OpenRouter',
+  opencode: 'OpenCode Zen',
   groq: 'Groq',
   together: 'Together AI',
+  togetherai: 'Together AI',
   deepseek: 'DeepSeek',
   xai: 'xAI',
   mistral: 'Mistral',
@@ -129,12 +145,190 @@ const providerLabelById: Record<BusinessOnboardingProviderId, string> = {
   'custom-openai-compatible': 'Custom OpenAI-compatible',
 };
 
+const MODELS_DEV_PROVIDER_LOGO_BASE_URL = 'https://models.dev/logos/';
+const modelsDevProviderLogoOverrides: Record<string, string> = {
+  bedrock: 'amazon-bedrock',
+  together: 'togetherai',
+  ollama: 'ollama-cloud',
+  'custom-openai-compatible': 'openai',
+};
+
+function resolveModelsDevProviderLogoUrl(providerId: string): string {
+  const normalizedProviderId =
+    modelsDevProviderLogoOverrides[providerId] ?? providerId;
+  return `${MODELS_DEV_PROVIDER_LOGO_BASE_URL}${encodeURIComponent(
+    normalizedProviderId,
+  )}.svg`;
+}
+
+function ProviderLogo({
+  providerId,
+  label,
+  className,
+}: {
+  providerId: string;
+  label: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-border/60 bg-background',
+        className,
+      )}
+    >
+      <img
+        src={resolveModelsDevProviderLogoUrl(providerId)}
+        alt={`${label} logo`}
+        loading="lazy"
+        referrerPolicy="no-referrer"
+        className="h-3.5 w-3.5 object-contain dark:invert"
+        onError={(event) => {
+          event.currentTarget.style.display = 'none';
+        }}
+      />
+    </span>
+  );
+}
+
 const authModeLabelById: Record<AssistantAuthMode, string> = {
   'api-key': 'API key',
   'oauth-access-token': 'OAuth access token',
   'aws-credential-chain': 'AWS credential chain',
   none: 'No auth',
 };
+
+type ProviderOauthMethodOption = {
+  id: string;
+  label: string;
+  buttonLabel: string;
+};
+
+type ProviderAuthMethodApiItem = {
+  id?: string;
+  type?: 'api' | 'oauth';
+  label?: string;
+};
+
+const OPENAI_BROWSER_OAUTH_METHOD_ID = 'openai-chatgpt-pro-plus-browser';
+const OPENAI_HEADLESS_OAUTH_METHOD_ID = 'openai-chatgpt-pro-plus-headless';
+const GOOGLE_ANTIGRAVITY_OAUTH_METHOD_ID = 'google-antigravity-oauth';
+const OPENROUTER_ACCOUNT_OAUTH_METHOD_ID = 'openrouter-account-oauth';
+const GITHUB_COPILOT_DEVICE_OAUTH_METHOD_ID = 'github-copilot-device-oauth';
+
+const fallbackProviderOauthMethodsByProviderId: Partial<
+  Record<string, readonly ProviderOauthMethodOption[]>
+> = {
+  openai: [
+    {
+      id: OPENAI_BROWSER_OAUTH_METHOD_ID,
+      label: 'ChatGPT Plus/Pro (Browser OAuth)',
+      buttonLabel: 'Connect ChatGPT Plus/Pro',
+    },
+    {
+      id: OPENAI_HEADLESS_OAUTH_METHOD_ID,
+      label: 'ChatGPT Plus/Pro (Headless Device OAuth)',
+      buttonLabel: 'Connect ChatGPT Plus/Pro (Device)',
+    },
+  ],
+  google: [
+    {
+      id: GOOGLE_ANTIGRAVITY_OAUTH_METHOD_ID,
+      label: 'Google OAuth (Antigravity)',
+      buttonLabel: 'Connect Google (Antigravity)',
+    },
+  ],
+  openrouter: [
+    {
+      id: OPENROUTER_ACCOUNT_OAUTH_METHOD_ID,
+      label: 'OpenRouter account OAuth',
+      buttonLabel: 'Connect OpenRouter account',
+    },
+  ],
+  'github-copilot': [
+    {
+      id: GITHUB_COPILOT_DEVICE_OAUTH_METHOD_ID,
+      label: 'GitHub Copilot device OAuth',
+      buttonLabel: 'Connect GitHub Copilot',
+    },
+  ],
+};
+
+function resolveDefaultProviderOauthMethodId(
+  providerOauthMethods: readonly ProviderOauthMethodOption[],
+): string | undefined {
+  return providerOauthMethods[0]?.id;
+}
+
+function resolveProviderOauthMethods(
+  providerId: string,
+): readonly ProviderOauthMethodOption[] {
+  return fallbackProviderOauthMethodsByProviderId[providerId] ?? [];
+}
+
+function resolveProviderOauthButtonLabel(input: {
+  methods: readonly ProviderOauthMethodOption[];
+  methodId?: string;
+}): string {
+  const selectedMethod = input.methods.find(
+    (method) => method.id === input.methodId,
+  );
+  return selectedMethod?.buttonLabel ?? 'Connect OAuth provider';
+}
+
+function resolveProviderOauthButtonLabelForMethod(
+  method: ProviderAuthMethodApiItem,
+): string {
+  const id = method.id?.trim() ?? '';
+  if (id === OPENAI_BROWSER_OAUTH_METHOD_ID) return 'Connect ChatGPT Plus/Pro';
+  if (id === OPENAI_HEADLESS_OAUTH_METHOD_ID) {
+    return 'Connect ChatGPT Plus/Pro (Device)';
+  }
+  if (id === GOOGLE_ANTIGRAVITY_OAUTH_METHOD_ID) {
+    return 'Connect Google (Antigravity)';
+  }
+  if (id === OPENROUTER_ACCOUNT_OAUTH_METHOD_ID) {
+    return 'Connect OpenRouter account';
+  }
+  if (id === GITHUB_COPILOT_DEVICE_OAUTH_METHOD_ID) {
+    return 'Connect GitHub Copilot';
+  }
+
+  const label = method.label?.trim();
+  return label ? `Connect ${label}` : 'Connect OAuth provider';
+}
+
+function normalizeProviderOauthMethodOptions(
+  providerId: string,
+  methods: ProviderAuthMethodApiItem[],
+): ProviderOauthMethodOption[] {
+  const normalized: ProviderOauthMethodOption[] = [];
+  for (const method of methods) {
+    const id = method.id?.trim();
+    if (!id || method.type !== 'oauth' || id === 'oauth-access-token') {
+      continue;
+    }
+    normalized.push({
+      id,
+      label: method.label?.trim() || id,
+      buttonLabel: resolveProviderOauthButtonLabelForMethod(method),
+    });
+  }
+
+  return normalized.length > 0
+    ? normalized
+    : [...resolveProviderOauthMethods(providerId)];
+}
+
+function formatProviderLabel(providerId: string): string {
+  const fromMap = providerLabelById[providerId];
+  if (fromMap) return fromMap;
+  return providerId
+    .split('-')
+    .filter(Boolean)
+    .map((chunk) => `${chunk[0]?.toUpperCase() ?? ''}${chunk.slice(1)}`)
+    .join(' ');
+}
 
 function toReleaseId(pluginId: string, version: string) {
   return `${pluginId}@${version}`;
@@ -260,6 +454,8 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
   const [customQuickPrompt, setCustomQuickPrompt] = useState('');
   const [todoExpanded, setTodoExpanded] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [isProviderComboboxOpen, setIsProviderComboboxOpen] = useState(false);
+  const [isModelComboboxOpen, setIsModelComboboxOpen] = useState(false);
   const [selectedAssistantProviderId, setSelectedAssistantProviderId] =
     useState<BusinessOnboardingProviderId>(defaultModelOption.provider);
   const [selectedAssistantModelId, setSelectedAssistantModelId] = useState(
@@ -277,8 +473,21 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
   const [providerRegion, setProviderRegion] = useState('');
   const [providerOrganization, setProviderOrganization] = useState('');
   const [providerProject, setProviderProject] = useState('');
+  const [providerOauthMethods, setProviderOauthMethods] = useState<
+    readonly ProviderOauthMethodOption[]
+  >(() => resolveProviderOauthMethods(defaultModelOption.provider));
+  const [selectedProviderOauthMethodId, setSelectedProviderOauthMethodId] =
+    useState(
+      () =>
+        resolveDefaultProviderOauthMethodId(
+          resolveProviderOauthMethods(defaultModelOption.provider),
+        ) ?? '',
+    );
   const [isSavingProviderCredential, setIsSavingProviderCredential] =
     useState(false);
+  const [isRefreshingProviderCredential, setIsRefreshingProviderCredential] =
+    useState(false);
+  const [isStartingProviderOauth, setIsStartingProviderOauth] = useState(false);
   const [isCreatingAuthSession, setIsCreatingAuthSession] = useState(false);
   const [isRevokingAuthSession, setIsRevokingAuthSession] = useState(false);
   const [providerCredentialSavedAt, setProviderCredentialSavedAt] = useState<
@@ -315,15 +524,22 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
   );
   const providerOptions = useMemo(
     () =>
-      (
-        Object.keys(
-          PROVIDER_SUPPORTED_AUTH_MODES,
-        ) as BusinessOnboardingProviderId[]
-      ).map((providerId) => ({
-        providerId,
-        label: providerLabelById[providerId] ?? providerId,
-      })),
+      Object.keys(PROVIDER_SUPPORTED_AUTH_MODES)
+        .sort((a, b) =>
+          formatProviderLabel(a).localeCompare(formatProviderLabel(b)),
+        )
+        .map((providerId) => ({
+          providerId,
+          label: formatProviderLabel(providerId),
+        })),
     [],
+  );
+  const selectedProviderOption = useMemo(
+    () =>
+      providerOptions.find(
+        (option) => option.providerId === selectedAssistantProviderId,
+      ),
+    [providerOptions, selectedAssistantProviderId],
   );
   const providerModelOptions = useMemo(
     () =>
@@ -341,8 +557,73 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
       resolveAssistantModelOption(DEFAULT_BUSINESS_ONBOARDING_MODEL_ID),
     [providerModelOptions, selectedAssistantModelId],
   );
-  const supportedAuthModes =
-    PROVIDER_SUPPORTED_AUTH_MODES[selectedAssistantProviderId];
+  const supportedAuthModes = resolveProviderSupportedAuthModes(
+    selectedAssistantProviderId,
+  );
+  const selectedProviderOauthMethods = providerOauthMethods;
+  const resolvedProviderOauthMethodId = selectedProviderOauthMethods.some(
+    (method) => method.id === selectedProviderOauthMethodId,
+  )
+    ? selectedProviderOauthMethodId
+    : resolveDefaultProviderOauthMethodId(selectedProviderOauthMethods);
+  const selectedProviderOauthButtonLabel = resolveProviderOauthButtonLabel({
+    methods: selectedProviderOauthMethods,
+    methodId: resolvedProviderOauthMethodId,
+  });
+  const canStartProviderOauth =
+    selectedAssistantAuthMode === 'oauth-access-token' &&
+    Boolean(resolvedProviderOauthMethodId);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fallbackMethods = resolveProviderOauthMethods(
+      selectedAssistantProviderId,
+    );
+    setProviderOauthMethods(fallbackMethods);
+
+    async function loadProviderOauthMethods() {
+      try {
+        const response = await fetch(
+          `/v1/auth/providers/methods?providerId=${encodeURIComponent(
+            selectedAssistantProviderId,
+          )}`,
+          {
+            credentials: 'include',
+          },
+        );
+        if (!response.ok) return;
+        const payload = (await response.json()) as {
+          methods?: ProviderAuthMethodApiItem[];
+        };
+        if (cancelled) return;
+
+        const normalized = normalizeProviderOauthMethodOptions(
+          selectedAssistantProviderId,
+          payload.methods ?? [],
+        );
+        setProviderOauthMethods(normalized);
+        setSelectedProviderOauthMethodId((current) =>
+          normalized.some((method) => method.id === current)
+            ? current
+            : (resolveDefaultProviderOauthMethodId(normalized) ?? ''),
+        );
+      } catch {
+        if (cancelled) return;
+        setProviderOauthMethods(fallbackMethods);
+        setSelectedProviderOauthMethodId((current) =>
+          fallbackMethods.some((method) => method.id === current)
+            ? current
+            : (resolveDefaultProviderOauthMethodId(fallbackMethods) ?? ''),
+        );
+      }
+    }
+
+    void loadProviderOauthMethods();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedAssistantProviderId]);
 
   const todoProgress = deriveTodoProgress(assistantTodoItems);
 
@@ -460,11 +741,185 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
     }
   }
 
+  async function refreshStoredProviderCredential(): Promise<boolean> {
+    setIsRefreshingProviderCredential(true);
+    try {
+      const response = await fetch('/v1/auth/providers', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (!response.ok) return false;
+      const parsed = (await response.json()) as {
+        data?: Array<{
+          providerId?: string;
+          model?: string;
+          authMode?: AssistantAuthMode;
+          updatedAt?: number;
+        }>;
+      };
+      const match = parsed.data?.find(
+        (item) => item.providerId === selectedAssistantProviderId,
+      );
+      if (!match) {
+        setProviderCredentialSavedAt(null);
+        return false;
+      }
+      if (typeof match.updatedAt === 'number') {
+        setProviderCredentialSavedAt(match.updatedAt * 1000);
+      } else {
+        setProviderCredentialSavedAt(Date.now());
+      }
+      if (match.authMode) {
+        setSelectedAssistantAuthMode(match.authMode);
+      }
+      return true;
+    } catch {
+      return false;
+    } finally {
+      setIsRefreshingProviderCredential(false);
+    }
+  }
+
+  async function startProviderOauth() {
+    if (!resolvedProviderOauthMethodId) return;
+    const providerLabel = formatProviderLabel(selectedAssistantProviderId);
+    const trimmedProject = providerProject.trim();
+    const wait = (milliseconds: number) =>
+      new Promise<void>((resolve) => {
+        window.setTimeout(resolve, milliseconds);
+      });
+
+    setIsStartingProviderOauth(true);
+    try {
+      const response = await fetch('/v1/auth/providers/oauth/authorize', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          providerId: selectedAssistantProviderId,
+          methodId: resolvedProviderOauthMethodId,
+          model: selectedAssistantModelId,
+          projectId:
+            selectedAssistantProviderId === 'google' && trimmedProject
+              ? trimmedProject
+              : undefined,
+        }),
+      });
+      if (!response.ok) {
+        toast.error(await readErrorMessage(response));
+        return;
+      }
+      const parsed = (await response.json()) as {
+        authorizationUrl?: string;
+        method?: string;
+        verificationCode?: string;
+        pollingIntervalSeconds?: number;
+      };
+      if (!parsed.authorizationUrl) {
+        toast.error('OAuth authorization URL was not returned.');
+        return;
+      }
+
+      const responseMethodId = parsed.method ?? resolvedProviderOauthMethodId;
+      const isDevicePollingOauth =
+        responseMethodId === OPENAI_HEADLESS_OAUTH_METHOD_ID ||
+        responseMethodId === GITHUB_COPILOT_DEVICE_OAUTH_METHOD_ID;
+      const pollingIntervalSeconds = Number.isFinite(
+        parsed.pollingIntervalSeconds,
+      )
+        ? Math.max(1, Math.floor(parsed.pollingIntervalSeconds ?? 0))
+        : 5;
+
+      const popup = window.open(
+        parsed.authorizationUrl,
+        `${selectedAssistantProviderId}-oauth`,
+        'popup=yes,width=560,height=760',
+      );
+      if (!popup) {
+        window.location.assign(parsed.authorizationUrl);
+        return;
+      }
+
+      toast.success('Complete the OAuth login in the popup window.');
+
+      if (isDevicePollingOauth) {
+        if (parsed.verificationCode) {
+          toast.message(
+            `Verification code: ${parsed.verificationCode}. Enter it in the popup to continue.`,
+          );
+        }
+        const maxPollAttempts = 120;
+        for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
+          const callbackResponse = await fetch(
+            '/v1/auth/providers/oauth/callback',
+            {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'content-type': 'application/json',
+              },
+              body: JSON.stringify({}),
+            },
+          );
+
+          if (callbackResponse.status === 202) {
+            const retryAfterHeader =
+              callbackResponse.headers.get('Retry-After');
+            const retryAfterSeconds = Number.parseInt(
+              retryAfterHeader ?? '',
+              10,
+            );
+            const nextWaitSeconds = Number.isFinite(retryAfterSeconds)
+              ? Math.max(1, retryAfterSeconds)
+              : pollingIntervalSeconds;
+            await wait(nextWaitSeconds * 1000);
+            continue;
+          }
+
+          if (!callbackResponse.ok) {
+            toast.error(await readErrorMessage(callbackResponse));
+            return;
+          }
+
+          const refreshed = await refreshStoredProviderCredential();
+          if (refreshed) {
+            toast.success(`${providerLabel} OAuth credential connected.`);
+          } else {
+            toast.message(
+              'OAuth completed. Refresh credential status if it is not visible yet.',
+            );
+          }
+          return;
+        }
+
+        toast.error('Timed out waiting for device authorization to complete.');
+        return;
+      }
+
+      const poll = window.setInterval(async () => {
+        if (!popup.closed) return;
+        window.clearInterval(poll);
+        const refreshed = await refreshStoredProviderCredential();
+        if (refreshed) {
+          toast.success(`${providerLabel} OAuth credential connected.`);
+        }
+      }, 1000);
+    } catch {
+      toast.error(`Failed to start ${providerLabel} OAuth.`);
+    } finally {
+      setIsStartingProviderOauth(false);
+    }
+  }
+
   async function createAuthSession() {
+    const hasStoredCredential =
+      providerCredentialSavedAt || (await refreshStoredProviderCredential());
     const payload = buildProviderPayload();
     const hasInlineSecret = Boolean(payload.apiKey || payload.oauthAccessToken);
     const requestBody =
-      hasInlineSecret || !providerCredentialSavedAt
+      hasInlineSecret || !hasStoredCredential
         ? {
             provider: payload,
             ttlSeconds: 3600,
@@ -539,14 +994,21 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
   }
 
   function handleProviderChange(nextProviderIdValue: string) {
-    const nextProviderId = nextProviderIdValue as BusinessOnboardingProviderId;
+    const nextProviderId = nextProviderIdValue;
     const nextModelOptions = BUSINESS_ONBOARDING_MODEL_OPTIONS.filter(
       (option) => option.provider === nextProviderId,
     );
 
+    setIsProviderComboboxOpen(false);
+    setIsModelComboboxOpen(false);
     setSelectedAssistantProviderId(nextProviderId);
     setSelectedAssistantAuthMode(
       resolveProviderDefaultAuthMode(nextProviderId),
+    );
+    const fallbackOauthMethods = resolveProviderOauthMethods(nextProviderId);
+    setProviderOauthMethods(fallbackOauthMethods);
+    setSelectedProviderOauthMethodId(
+      resolveDefaultProviderOauthMethodId(fallbackOauthMethods) ?? '',
     );
     setProviderBaseUrl(resolveProviderDefaultBaseUrl(nextProviderId) ?? '');
     setProviderCredentialSavedAt(null);
@@ -676,24 +1138,77 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
                     <FormLabel className="text-xs text-muted-foreground">
                       AI provider
                     </FormLabel>
-                    <Select
-                      value={selectedAssistantProviderId}
-                      onValueChange={handleProviderChange}
+                    <Popover
+                      open={isProviderComboboxOpen}
+                      onOpenChange={setIsProviderComboboxOpen}
+                      modal
                     >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Choose provider" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {providerOptions.map((option) => (
-                          <SelectItem
-                            key={option.providerId}
-                            value={option.providerId}
-                          >
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={isProviderComboboxOpen}
+                          className="w-full justify-between"
+                        >
+                          <span className="flex min-w-0 items-center gap-2">
+                            {selectedProviderOption ? (
+                              <ProviderLogo
+                                providerId={selectedProviderOption.providerId}
+                                label={selectedProviderOption.label}
+                              />
+                            ) : null}
+                            <span className="truncate">
+                              {selectedProviderOption?.label ||
+                                'Choose provider'}
+                            </span>
+                          </span>
+                          <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        align="start"
+                        className="w-[var(--radix-popover-trigger-width)] p-0"
+                      >
+                        <Command>
+                          <CommandInput placeholder="Search providers..." />
+                          <CommandList>
+                            <CommandEmpty>No providers found.</CommandEmpty>
+                            <CommandGroup>
+                              {providerOptions.map((option) => (
+                                <CommandItem
+                                  key={option.providerId}
+                                  value={`${option.label} ${option.providerId}`}
+                                  onSelect={() => {
+                                    handleProviderChange(option.providerId);
+                                  }}
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      selectedAssistantProviderId ===
+                                        option.providerId
+                                        ? 'opacity-100'
+                                        : 'opacity-0',
+                                    )}
+                                  />
+                                  <ProviderLogo
+                                    providerId={option.providerId}
+                                    label={option.label}
+                                  />
+                                  <span className="ml-2 truncate">
+                                    {option.label}
+                                  </span>
+                                  <span className="ml-auto text-[10px] text-muted-foreground">
+                                    {option.providerId}
+                                  </span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="space-y-1">
@@ -701,25 +1216,82 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
                       AI model
                     </FormLabel>
                     {providerModelOptions.length > 0 ? (
-                      <Select
-                        value={selectedAssistantModelId}
-                        onValueChange={(value) => {
-                          setSelectedAssistantModelId(value);
-                          setAuthSessionToken('');
-                          setAuthSessionExpiresAt(null);
-                        }}
+                      <Popover
+                        open={isModelComboboxOpen}
+                        onOpenChange={setIsModelComboboxOpen}
+                        modal
                       >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Choose model" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {providerModelOptions.map((option) => (
-                            <SelectItem key={option.id} value={option.id}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <PopoverTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={isModelComboboxOpen}
+                            className="w-full justify-between"
+                          >
+                            <span className="flex min-w-0 items-center gap-2">
+                              <ProviderLogo
+                                providerId={selectedAssistantProviderId}
+                                label={formatProviderLabel(
+                                  selectedAssistantProviderId,
+                                )}
+                              />
+                              <span className="truncate">
+                                {selectedModelOption.label || 'Choose model'}
+                              </span>
+                            </span>
+                            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          align="start"
+                          className="w-[var(--radix-popover-trigger-width)] p-0"
+                        >
+                          <Command>
+                            <CommandInput placeholder="Search models..." />
+                            <CommandList>
+                              <CommandEmpty>No models found.</CommandEmpty>
+                              <CommandGroup>
+                                {providerModelOptions.map((option) => (
+                                  <CommandItem
+                                    key={option.id}
+                                    value={`${option.label} ${option.id} ${option.description ?? ''}`}
+                                    onSelect={() => {
+                                      setSelectedAssistantModelId(option.id);
+                                      setAuthSessionToken('');
+                                      setAuthSessionExpiresAt(null);
+                                      setIsModelComboboxOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        selectedAssistantModelId === option.id
+                                          ? 'opacity-100'
+                                          : 'opacity-0',
+                                      )}
+                                    />
+                                    <ProviderLogo
+                                      providerId={selectedAssistantProviderId}
+                                      label={formatProviderLabel(
+                                        selectedAssistantProviderId,
+                                      )}
+                                    />
+                                    <div className="ml-2 min-w-0">
+                                      <div className="truncate text-sm">
+                                        {option.label}
+                                      </div>
+                                      <div className="truncate text-[10px] text-muted-foreground">
+                                        {option.id}
+                                      </div>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     ) : (
                       <Input
                         placeholder="Model id (e.g., gpt-4o-mini)"
@@ -771,6 +1343,35 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
                       }
                     />
                   </div>
+
+                  {selectedAssistantAuthMode === 'oauth-access-token' &&
+                    selectedProviderOauthMethods.length > 0 && (
+                      <div className="space-y-1 md:col-span-2">
+                        <FormLabel className="text-xs text-muted-foreground">
+                          OAuth method
+                        </FormLabel>
+                        <Select
+                          value={resolvedProviderOauthMethodId ?? ''}
+                          onValueChange={(value) => {
+                            setSelectedProviderOauthMethodId(value);
+                            setProviderCredentialSavedAt(null);
+                            setAuthSessionToken('');
+                            setAuthSessionExpiresAt(null);
+                          }}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Choose OAuth method" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {selectedProviderOauthMethods.map((method) => (
+                              <SelectItem key={method.id} value={method.id}>
+                                {method.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
 
                   {selectedAssistantAuthMode === 'api-key' && (
                     <div className="space-y-1 md:col-span-2">
@@ -847,6 +1448,20 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
                       </div>
                     </>
                   )}
+                  {selectedAssistantProviderId === 'google' && (
+                    <div className="space-y-1">
+                      <FormLabel className="text-xs text-muted-foreground">
+                        Google project (optional)
+                      </FormLabel>
+                      <Input
+                        placeholder="my-google-project-id"
+                        value={providerProject}
+                        onChange={(event) =>
+                          setProviderProject(event.target.value)
+                        }
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -861,6 +1476,30 @@ function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
                       ? 'Saving...'
                       : 'Save credential'}
                   </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={refreshStoredProviderCredential}
+                    disabled={isRefreshingProviderCredential}
+                  >
+                    {isRefreshingProviderCredential
+                      ? 'Refreshing...'
+                      : 'Refresh credential status'}
+                  </Button>
+                  {canStartProviderOauth && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={startProviderOauth}
+                      disabled={isStartingProviderOauth}
+                    >
+                      {isStartingProviderOauth
+                        ? 'Opening OAuth...'
+                        : selectedProviderOauthButtonLabel}
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="outline"

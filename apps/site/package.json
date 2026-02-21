@@ -16,6 +16,11 @@
     "start": "node --import ./.output/server/instrument.server.mjs .output/server/index.mjs"
   },
   "dependencies": {
+    "@ai-sdk/amazon-bedrock": "^4.0.63",
+    "@ai-sdk/anthropic": "^3.0.46",
+    "@ai-sdk/google": "^3.0.30",
+    "@ai-sdk/openai": "^3.0.30",
+    "@ai-sdk/openai-compatible": "^2.0.30",
     "@ark-ui/react": "^5.30.0",
     "@autoform/core": "2.1.0",
     "@barcode-bakery/barcode-datamatrix": "^2.0.0",
