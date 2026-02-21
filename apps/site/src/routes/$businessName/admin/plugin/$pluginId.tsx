@@ -11,7 +11,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { AutoTable } from '@/components/auto-table';
@@ -74,6 +74,11 @@ function PluginDetailsPage() {
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
   const [savingReview, setSavingReview] = useState(false);
+  const reviewDraftSourceKeyRef = useRef<string>('');
+  const reviewDraftBaseRef = useRef<{ rating: number; comment: string }>({
+    rating: 0,
+    comment: '',
+  });
 
   const { data: businesses = [] } = api.business.useGet({
     keys: [businessName],
@@ -188,18 +193,36 @@ function PluginDetailsPage() {
     return (matchingTab ?? validTabs[0])?.schema?.trim() ?? null;
   }, [details, activePreviewTabKey]);
 
-  useEffect(() => {
-    if (!details?.userReview) {
-      setReviewRating(0);
-      setReviewComment('');
-      return;
-    }
+  const persistedReviewSourceKey =
+    details?.userReview?.id ??
+    `draft::${encodeURIComponent(decodedPluginId)}::${encodeURIComponent(actorUserId)}`;
+  const persistedReviewRating = details?.userReview
+    ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
+    : 0;
+  const persistedReviewComment = details?.userReview?.comment ?? '';
+  const isReviewDirty =
+    reviewRating !== reviewDraftBaseRef.current.rating ||
+    reviewComment !== reviewDraftBaseRef.current.comment;
 
-    setReviewRating(
-      Math.max(1, Math.min(5, Math.round(details.userReview.rating))),
-    );
-    setReviewComment(details.userReview.comment ?? '');
-  }, [details?.userReview]);
+  useEffect(() => {
+    const sourceChanged =
+      reviewDraftSourceKeyRef.current !== persistedReviewSourceKey;
+
+    if (!sourceChanged && isReviewDirty) return;
+
+    reviewDraftSourceKeyRef.current = persistedReviewSourceKey;
+    reviewDraftBaseRef.current = {
+      rating: persistedReviewRating,
+      comment: persistedReviewComment,
+    };
+    setReviewRating(persistedReviewRating);
+    setReviewComment(persistedReviewComment);
+  }, [
+    persistedReviewSourceKey,
+    persistedReviewRating,
+    persistedReviewComment,
+    isReviewDirty,
+  ]);
 
   if (!decoratedPlugin || !details) {
     return (
@@ -293,6 +316,7 @@ function PluginDetailsPage() {
 
     try {
       setSavingReview(true);
+      const normalizedComment = reviewComment.trim();
       await createReviewMutation.mutateAsync({
         id: reviewId,
         pluginId: pluginData.pluginId,
@@ -300,10 +324,15 @@ function PluginDetailsPage() {
         userId: actorUserId,
         userLabel: actorUserLabel,
         rating: reviewRating,
-        comment: reviewComment.trim(),
+        comment: normalizedComment,
         createdAt: details.userReview?.createdAt ?? now,
         updatedAt: now,
       });
+      reviewDraftBaseRef.current = {
+        rating: reviewRating,
+        comment: normalizedComment,
+      };
+      setReviewComment(normalizedComment);
       await refetchReviews();
       toast.success(details.userReview ? 'Review updated' : 'Review submitted');
     } catch (error) {
@@ -591,7 +620,9 @@ function PluginDetailsPage() {
                         size="sm"
                         onClick={saveReview}
                         loading={savingReview}
-                        disabled={savingReview || reviewRating <= 0}
+                        disabled={
+                          savingReview || reviewRating <= 0 || !isReviewDirty
+                        }
                       >
                         Save review
                       </Button>

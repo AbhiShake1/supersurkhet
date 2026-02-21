@@ -65,16 +65,13 @@ import {
   type DerivedFieldOperation,
   type SchemaBuilderDerivedField
 } from '@/features/plugin-builder/workspace/tabs/derived-fields';
-import {
-  type ExpressionRow
+import type {
+  ExpressionRow
 } from '@/features/plugin-builder/workspace/tabs/expression-row-builder';
 import {
   createFieldConfigPanelModel,
   serializeFieldConfigPanelDraft,
 } from '@/features/plugin-builder/workspace/tabs/field-config-panel';
-import {
-  createGuardedIrEditorState
-} from '@/features/plugin-builder/workspace/tabs/guarded-ir-editor';
 import {
   createPublishGateTabState
 } from '@/features/plugin-builder/workspace/tabs/publish-gate-tab';
@@ -128,10 +125,8 @@ import { throwOnFailedPersistenceWrites } from '../-plugin-studio-persistence';
 import {
   resolvePluginStudioPluginId,
 } from '../-plugin-studio-plugin-id';
-import {
-  parsePluginStudioSidebarSnapshot,
-  shouldApplyPluginStudioSidebarSnapshot,
-  type PluginStudioSidebarSnapshot,
+import type {
+  PluginStudioSidebarSnapshot,
 } from '../-plugin-studio-sidebar-snapshot';
 import { toProjectScopedDraftId } from '../-plugin-studio-project-draft-id';
 
@@ -2083,10 +2078,6 @@ function PluginStudioPresenter({
       }),
     [projectId, requestedPluginId],
   );
-  const [title, setTitle] = useState<string | undefined>('Example Plugin');
-  const [description, setDescription] = useState<string | undefined>(
-    'Operational plugin release.',
-  );
   const [editingMetadataField, setEditingMetadataField] = useState<
     'title' | 'description' | null
   >(null);
@@ -2163,11 +2154,6 @@ function PluginStudioPresenter({
   const [debouncedHashInput, setDebouncedHashInput] =
     useState<HashPreviewInput | null>(null);
   const hasAttemptedDraftCreationRef = useRef<Set<string>>(new Set());
-  const hydratedRevisionKeyRef = useRef<string | null>(null);
-  const lastHydratedRevisionRecencyRef = useRef<{
-    draftId: string;
-    recencyKey: string;
-  } | null>(null);
   const initialSnapshotByDraftRef = useRef<Record<string, string | null>>({});
   const sidebarSnapshotSeededDraftIdRef = useRef<string | null>(null);
   const lastRequestedDraftSnapshotRef = useRef<string | null>(null);
@@ -2175,11 +2161,6 @@ function PluginStudioPresenter({
   const lastPersistenceErrorAtRef = useRef<number>(0);
   const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(
     null,
-  );
-  const [guardedIrState, setGuardedIrState] = useState(() =>
-    createGuardedIrEditorState({
-      schemaDocs: [DEFAULT_SCHEMA_DOC],
-    }),
   );
   const [workspacePublishGateChecked, setWorkspacePublishGateChecked] =
     useState(false);
@@ -2269,6 +2250,8 @@ function PluginStudioPresenter({
     () => toDefaultPluginTitle(pluginId),
     [pluginId],
   );
+  const activeDraftTitle = activeDraft?.title?.trim() || defaultPluginTitle;
+  const activeDraftDescription = activeDraft?.description?.trim() || '';
   const draftDocScopeKeys = useMemo(() => [draftId], [draftId]);
   const {
     data: schemaDocRows = [],
@@ -2294,6 +2277,24 @@ function PluginStudioPresenter({
   } = api.pluginRoutesTabsConfig.useGet({
     keys: draftDocScopeKeys,
   });
+  const {
+    data: draftRevisionRows = [],
+    isLoading: isDraftRevisionLoading,
+    refetch: refetchDraftRevisions,
+  } = api.pluginDraftRevision.useGet({
+    keys: [draftId],
+  });
+  const draftRevisions = draftRevisionRows as PluginDraftRevisionDoc[];
+  const activeDraftRevisions = useMemo(
+    () =>
+      [...draftRevisions].sort((left, right) =>
+        toDraftRevisionRecencyKey(right).localeCompare(
+          toDraftRevisionRecencyKey(left),
+        ),
+      ),
+    [draftRevisions],
+  );
+  const latestActiveDraftRevision = activeDraftRevisions[0] ?? null;
   const createSchemaDocMutation = api.pluginSchemaDoc.useCreate({
     keys: draftDocScopeKeys,
   });
@@ -2343,8 +2344,14 @@ function PluginStudioPresenter({
     if (docs.length > 0) {
       return docs;
     }
+    const revisionDocs = (latestActiveDraftRevision?.schemaDocs ?? []).filter(
+      (doc): doc is SchemaDoc => Boolean(doc?.schemaId),
+    );
+    if (revisionDocs.length > 0) {
+      return revisionDocs;
+    }
     return [DEFAULT_SCHEMA_DOC];
-  }, [schemaDocRows]);
+  }, [schemaDocRows, latestActiveDraftRevision?.schemaDocs]);
 
   const workspaceWorkflows = useMemo(() => {
     const rows = workflowDocRows as Array<{
@@ -2358,18 +2365,30 @@ function PluginStudioPresenter({
     if (docs.length > 0) {
       return docs;
     }
+    const revisionDocs = (latestActiveDraftRevision?.workflows ?? []).filter(
+      (doc): doc is WorkflowDoc => Boolean(doc?.workflowId),
+    );
+    if (revisionDocs.length > 0) {
+      return revisionDocs;
+    }
     return [DEFAULT_WORKFLOW_DOC];
-  }, [workflowDocRows]);
+  }, [workflowDocRows, latestActiveDraftRevision?.workflows]);
 
   const workspaceActionManifest = useMemo(() => {
     const rows = actionManifestDocRows as Array<{
       actionId?: string;
       doc?: unknown;
     }>;
-    return rows
+    const docs = rows
       .map((row) => row.doc as ActionManifestDoc | undefined)
       .filter((doc): doc is ActionManifestDoc => Boolean(doc?.actionId));
-  }, [actionManifestDocRows]);
+    if (docs.length > 0) {
+      return docs;
+    }
+    return (latestActiveDraftRevision?.actionManifest ?? []).filter(
+      (doc): doc is ActionManifestDoc => Boolean(doc?.actionId),
+    );
+  }, [actionManifestDocRows, latestActiveDraftRevision?.actionManifest]);
 
   const canonicalRoutesTabsConfigId = draftId;
   const legacyRoutesTabsConfigId = useMemo(
@@ -2427,9 +2446,11 @@ function PluginStudioPresenter({
   const adminTabsText = useMemo(
     () =>
       canonicalStringify(
-        toAdminTabsFromDraftRoutes(activeRoutesTabsConfigRow?.routes),
+        activeRoutesTabsConfigRow
+          ? toAdminTabsFromDraftRoutes(activeRoutesTabsConfigRow.routes)
+          : (latestActiveDraftRevision?.adminTabs ?? DEFAULT_DRAFT_ADMIN_TABS),
       ),
-    [activeRoutesTabsConfigRow],
+    [activeRoutesTabsConfigRow, latestActiveDraftRevision?.adminTabs],
   );
 
   useEffect(() => {
@@ -2687,58 +2708,87 @@ function PluginStudioPresenter({
     [parsed, pluginId],
   );
 
-  const {
-    data: draftRevisionRows = [],
-    isLoading: isDraftRevisionLoading,
-    refetch: refetchDraftRevisions,
-  } = api.pluginDraftRevision.useGet({
-    keys: [draftId],
-  });
-  const draftRevisions = draftRevisionRows as PluginDraftRevisionDoc[];
-
-  const activeDraftRevisions = useMemo(
-    () =>
-      [...draftRevisions].sort((left, right) =>
-        toDraftRevisionRecencyKey(right).localeCompare(
-          toDraftRevisionRecencyKey(left),
-        ),
-      ),
-    [draftRevisions],
-  );
   const expectedHydratedDraftKey = useMemo(() => {
     if (isDraftRevisionLoading) return null;
     return toDraftHydrationKey({
       draftId,
-      revision: activeDraftRevisions[0] ?? null,
+      revision: latestActiveDraftRevision,
     });
-  }, [draftId, activeDraftRevisions, isDraftRevisionLoading]);
+  }, [draftId, latestActiveDraftRevision, isDraftRevisionLoading]);
   const isDraftHydrated = Boolean(
     expectedHydratedDraftKey && hydratedDraftKey === expectedHydratedDraftKey,
   );
-  const latestActiveDraftRevision = activeDraftRevisions[0] ?? null;
-  const localDraftSnapshotRef = useRef<string | null>(null);
 
   const beginMetadataEdit = useCallback(
     (field: 'title' | 'description') => {
       setEditingMetadataField(field);
       setEditingMetadataValue(
-        field === 'title' ? (title?.trim() || defaultPluginTitle) : (description ?? ''),
+        field === 'title' ? activeDraftTitle : activeDraftDescription,
       );
     },
-    [defaultPluginTitle, description, title],
+    [activeDraftDescription, activeDraftTitle],
+  );
+
+  const persistDraftMetadata = useCallback(
+    (nextMetadata: { title: string; description: string }) => {
+      if (!activeDraft) return;
+      if (activeDraft.pluginId !== pluginId) return;
+      if (!isActorIdentityReady) return;
+
+      const nextTitle = nextMetadata.title.trim() || defaultPluginTitle;
+      const nextDescription = nextMetadata.description.trim();
+      const currentTitle = activeDraft.title?.trim() || defaultPluginTitle;
+      const currentDescription = activeDraft.description?.trim() || '';
+
+      if (nextTitle === currentTitle && nextDescription === currentDescription) {
+        return;
+      }
+
+      void updateDraftMutation
+        .mutateAsync({
+          ...activeDraft,
+          title: nextTitle,
+          description: nextDescription || undefined,
+          updatedAt: new Date().toISOString(),
+        } as never)
+        .then(() => refetchDrafts())
+        .catch((error) => {
+          console.error(error);
+          toast.error('Saving draft metadata failed.');
+        });
+    },
+    [
+      activeDraft,
+      defaultPluginTitle,
+      isActorIdentityReady,
+      pluginId,
+      refetchDrafts,
+      updateDraftMutation,
+    ],
   );
 
   const commitMetadataEdit = useCallback(() => {
     if (!editingMetadataField) return;
-    const nextValue = editingMetadataValue.trim();
-    if (editingMetadataField === 'title') {
-      setTitle(nextValue || defaultPluginTitle);
-    } else {
-      setDescription(nextValue || '');
-    }
+    const nextValue = editingMetadataValue;
+    const nextTitle =
+      editingMetadataField === 'title' ? nextValue : activeDraftTitle;
+    const nextDescription =
+      editingMetadataField === 'description'
+        ? nextValue
+        : activeDraftDescription;
     setEditingMetadataField(null);
     setEditingMetadataValue('');
-  }, [defaultPluginTitle, editingMetadataField, editingMetadataValue]);
+    persistDraftMetadata({
+      title: nextTitle,
+      description: nextDescription,
+    });
+  }, [
+    activeDraftDescription,
+    activeDraftTitle,
+    editingMetadataField,
+    editingMetadataValue,
+    persistDraftMetadata,
+  ]);
 
   const stopMetadataEdit = useCallback(() => {
     setEditingMetadataField(null);
@@ -2746,247 +2796,11 @@ function PluginStudioPresenter({
   }, []);
 
   useEffect(() => {
-    localDraftSnapshotRef.current = parsed
-      ? toDraftSnapshotString({
-        schemaDocs: parsed.schemaDocs,
-        workflows: parsed.workflows,
-        adminTabs: parsed.draftAdminTabs,
-      })
-      : null;
-  }, [parsed]);
-
-  useEffect(() => {
-    if (isDraftRevisionLoading) {
-      return;
-    }
-    const latestRevision = latestActiveDraftRevision;
-    if (!latestRevision) {
-      const lastHydratedRevision = lastHydratedRevisionRecencyRef.current;
-      if (lastHydratedRevision && lastHydratedRevision.draftId === draftId) {
-        return;
-      }
-      const emptyHydrationKey = toDraftHydrationKey({
-        draftId,
-      });
-      hydratedRevisionKeyRef.current = emptyHydrationKey;
-      setHydratedDraftKey((current) =>
-        current === emptyHydrationKey ? current : emptyHydrationKey,
-      );
-      return;
-    }
-    const latestRevisionRecencyKey = toDraftRevisionRecencyKey(latestRevision);
-    const lastHydratedRevision = lastHydratedRevisionRecencyRef.current;
-    const latestRevisionSnapshot = toDraftSnapshotString({
-      schemaDocs: latestRevision.schemaDocs ?? [],
-      workflows: latestRevision.workflows ?? [],
-      adminTabs: latestRevision.adminTabs ?? [],
-    });
-    const localDraftSnapshot = localDraftSnapshotRef.current;
-    if (
-      localDraftSnapshot &&
-      localDraftSnapshot !== latestRevisionSnapshot &&
-      lastHydratedRevision &&
-      lastHydratedRevision.draftId === draftId
-    ) {
-      return;
-    }
-    if (
-      lastHydratedRevision &&
-      lastHydratedRevision.draftId === draftId &&
-      latestRevisionRecencyKey.localeCompare(lastHydratedRevision.recencyKey) <
-      0
-    ) {
-      return;
-    }
-
-    const hydrationKey = toDraftHydrationKey({
-      draftId,
-      revision: latestRevision,
-    });
-    if (hydratedRevisionKeyRef.current === hydrationKey) {
-      setHydratedDraftKey((current) =>
-        current === hydrationKey ? current : hydrationKey,
-      );
-      return;
-    }
-    hydratedRevisionKeyRef.current = hydrationKey;
-
-    let nextSchemaDocs = latestRevision.schemaDocs ?? [DEFAULT_SCHEMA_DOC];
-    const nextWorkflows = latestRevision.workflows ?? [DEFAULT_WORKFLOW_DOC];
-    const nextActiveSchema = nextSchemaDocs[0] ?? DEFAULT_SCHEMA_DOC;
-
-    let {
-      schemaTabs: hydratedSchemaTabs,
-      orderedGroups: hydratedGroups,
-      systemTabs: hydratedSystemTabs,
-    } = deserializeDraftAdminTabs(latestRevision.adminTabs);
-    const tabBySchema = new Map(
-      hydratedSchemaTabs.map((tab) => [tab.schema, tab]),
-    );
-    let nextSchemaOrder = nextSchemaDocs.map((schemaDoc) => schemaDoc.schemaId);
-    let nextSchemaGroupById = Object.fromEntries(
-      nextSchemaDocs.flatMap((schemaDoc) => {
-        const groupName = tabBySchema.get(schemaDoc.schemaId)?.group?.trim();
-        return groupName ? [[schemaDoc.schemaId, groupName]] : [];
-      }),
-    );
-    let nextSchemaIconNameById = Object.fromEntries(
-      nextSchemaDocs.flatMap((schemaDoc) => {
-        const iconName = tabBySchema.get(schemaDoc.schemaId)?.icon?.trim();
-        return iconName ? [[schemaDoc.schemaId, iconName]] : [];
-      }),
-    );
-    const groupsFromSchemas = Array.from(
-      new Set(
-        hydratedSchemaTabs
-          .map((tab) => tab.group?.trim())
-          .filter((groupName): groupName is string => Boolean(groupName)),
-      ),
-    );
-    let nextGroupOrder =
-      hydratedGroups.length > 0 ? hydratedGroups : groupsFromSchemas;
-    let nextCustomGroups = Array.from(
-      new Set([...nextGroupOrder, ...groupsFromSchemas]),
-    );
-
-    let sidebarSnapshot: PluginStudioSidebarSnapshot | null =
-      parsePluginStudioSidebarSnapshot({
-        raw: activeUiStateForActor?.sidebarSnapshotJson ?? null,
-        defaultSystemTabs: DEFAULT_SYSTEM_TABS,
-      });
-    const resolvedPluginId = latestRevision.pluginId || pluginId;
-
-    if (sidebarSnapshot?.pluginId !== resolvedPluginId) {
-      sidebarSnapshot = null;
-    }
-
-    if (
-      sidebarSnapshot &&
-      shouldApplyPluginStudioSidebarSnapshot({
-        snapshot: sidebarSnapshot,
-        draftId,
-        latestRevisionRecencyKey,
-      })
-    ) {
-      const schemaIdSet = new Set(nextSchemaOrder);
-      const snapshotSchemaOrder = sidebarSnapshot.schemaOrder.filter(
-        (schemaId) => schemaIdSet.has(schemaId),
-      );
-      const missingSchemaOrder = nextSchemaOrder.filter(
-        (schemaId) => !snapshotSchemaOrder.includes(schemaId),
-      );
-      nextSchemaOrder = [...snapshotSchemaOrder, ...missingSchemaOrder];
-
-      const snapshotSchemaTitleById = Object.fromEntries(
-        Object.entries(sidebarSnapshot.schemaTitleById).flatMap(
-          ([schemaId, titleValue]) => {
-            const normalizedTitle = titleValue.trim();
-            if (!schemaIdSet.has(schemaId) || !normalizedTitle) return [];
-            return [[schemaId, normalizedTitle]];
-          },
-        ),
-      );
-      const snapshotSchemaGroupById = Object.fromEntries(
-        Object.entries(sidebarSnapshot.schemaGroupById).flatMap(
-          ([schemaId, groupValue]) => {
-            const normalizedGroup = groupValue.trim();
-            if (!schemaIdSet.has(schemaId) || !normalizedGroup) return [];
-            return [[schemaId, normalizedGroup]];
-          },
-        ),
-      );
-      const snapshotSchemaIconNameById = Object.fromEntries(
-        Object.entries(sidebarSnapshot.schemaIconNameById).flatMap(
-          ([schemaId, iconValue]) => {
-            const normalizedIcon = iconValue.trim();
-            if (!schemaIdSet.has(schemaId) || !normalizedIcon) return [];
-            return [[schemaId, normalizedIcon]];
-          },
-        ),
-      );
-
-      nextSchemaDocs = nextSchemaDocs.map((schemaDoc) => {
-        const snapshotTitle = snapshotSchemaTitleById[schemaDoc.schemaId];
-        if (!snapshotTitle) return schemaDoc;
-        return {
-          ...schemaDoc,
-          title: snapshotTitle,
-        };
-      });
-      nextSchemaGroupById = snapshotSchemaGroupById;
-      nextSchemaIconNameById = snapshotSchemaIconNameById;
-
-      const snapshotCustomGroups = sidebarSnapshot.customGroups
-        .map((groupName) => groupName.trim())
-        .filter(Boolean);
-      const snapshotGroupOrder = sidebarSnapshot.groupOrder
-        .map((groupName) => groupName.trim())
-        .filter(Boolean);
-      const snapshotSchemaGroups = Object.values(snapshotSchemaGroupById).map(
-        (groupName) => groupName.trim(),
-      );
-      const snapshotSystemGroups = Object.values(sidebarSnapshot.systemTabs)
-        .map((tab) => tab.group?.trim())
-        .filter((groupName): groupName is string => Boolean(groupName));
-      const snapshotGroupPool = new Set<string>([
-        ...snapshotCustomGroups,
-        ...snapshotSchemaGroups,
-        ...snapshotSystemGroups,
-      ]);
-      nextGroupOrder = snapshotGroupOrder.filter((groupName) =>
-        snapshotGroupPool.has(groupName),
-      );
-      for (const groupName of snapshotGroupPool) {
-        if (!nextGroupOrder.includes(groupName)) {
-          nextGroupOrder.push(groupName);
-        }
-      }
-      nextCustomGroups = Array.from(
-        new Set([...snapshotCustomGroups, ...nextGroupOrder]),
-      );
-      hydratedSystemTabs = sidebarSnapshot.systemTabs;
-    }
-
-    persistSchemaDocs(nextSchemaDocs);
-    persistWorkflowDocs(nextWorkflows);
-    persistActionManifestDocs(latestRevision.actionManifest ?? []);
-    const schemaDocById = new Map(
-      nextSchemaDocs.map((schemaDoc) => [schemaDoc.schemaId, schemaDoc]),
-    );
-    persistSidebarAdminTabs(
-      serializeDraftAdminTabs({
-        schemaTabs: nextSchemaOrder.map((schemaId) => {
-          const schemaDoc = schemaDocById.get(schemaId);
-          return {
-            schema: schemaId,
-            title: schemaDoc?.title ?? schemaId,
-            group: nextSchemaGroupById[schemaId],
-            icon: nextSchemaIconNameById[schemaId],
-          } satisfies AdminTabDoc;
-        }),
-        orderedGroups: nextCustomGroups.length > 0 ? nextCustomGroups : nextGroupOrder,
-        systemTabs: hydratedSystemTabs,
-      }),
-    );
-    setActiveSchemaId(nextActiveSchema.schemaId);
-    setActiveWorkflowId(
-      nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
-    );
-    syncBuilderFromSchemaDoc(nextActiveSchema);
-    lastHydratedRevisionRecencyRef.current = {
-      draftId,
-      recencyKey: latestRevisionRecencyKey,
-    };
+    if (!expectedHydratedDraftKey) return;
     setHydratedDraftKey((current) =>
-      current === hydrationKey ? current : hydrationKey,
+      current === expectedHydratedDraftKey ? current : expectedHydratedDraftKey,
     );
-  }, [
-    latestActiveDraftRevision,
-    draftId,
-    pluginId,
-    isDraftRevisionLoading,
-    activeUiStateForActor,
-  ]);
+  }, [expectedHydratedDraftKey]);
 
   useEffect(() => {
     if (!parsed) return;
@@ -3078,8 +2892,8 @@ function PluginStudioPresenter({
         pluginId,
         ownerUserId: actorUserId,
         status: 'active',
-        title: title?.trim() || draftTitle,
-        description: description?.trim() || undefined,
+        title: activeDraftTitle || draftTitle,
+        description: activeDraftDescription || undefined,
         createdAt: now,
         updatedAt: now,
       };
@@ -3181,24 +2995,6 @@ function PluginStudioPresenter({
     if (!latestPersistedDraftSnapshot) return true;
     return currentDraftSnapshot !== latestPersistedDraftSnapshot;
   }, [activeDraft, currentDraftSnapshot, latestPersistedDraftSnapshot]);
-  const normalizedDraftDescription = activeDraft?.description?.trim() || '';
-  const normalizedEditorDescription = description?.trim() || '';
-  const normalizedDraftTitle = activeDraft?.title?.trim() || '';
-  const normalizedEditorTitle = title?.trim() || '';
-
-  useEffect(() => {
-    const nextTitle = activeDraft?.title?.trim() || defaultPluginTitle;
-    const nextDescription = activeDraft?.description?.trim() || '';
-    setTitle((current) => (current === nextTitle ? current : nextTitle));
-    setDescription((current) =>
-      (current ?? '') === nextDescription ? current : nextDescription,
-    );
-  }, [
-    activeDraft?.description,
-    activeDraft?.draftId,
-    activeDraft?.title,
-    defaultPluginTitle,
-  ]);
 
   useEffect(() => {
     if (!pluginId.trim()) {
@@ -3235,85 +3031,6 @@ function PluginStudioPresenter({
       lastRequestedDraftSnapshotRef.current = null;
     }
   }, [hasPendingDraftChanges]);
-
-  useEffect(() => {
-    if (!activeDraft) {
-      return;
-    }
-    if (activeDraft.pluginId !== pluginId) {
-      return;
-    }
-    if (!isActorIdentityReady) {
-      return;
-    }
-    if (normalizedDraftDescription === normalizedEditorDescription) {
-      return;
-    }
-    const timeoutId = window.setTimeout(() => {
-      void updateDraftMutation
-        .mutateAsync({
-          ...activeDraft,
-          description: normalizedEditorDescription || undefined,
-          updatedAt: new Date().toISOString(),
-        } as never)
-        .then(() => refetchDrafts())
-        .catch((error) => {
-          console.error(error);
-          toast.error('Saving draft description failed.');
-        });
-    }, 300);
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [
-    activeDraft,
-    pluginId,
-    isActorIdentityReady,
-    normalizedDraftDescription,
-    normalizedEditorDescription,
-    updateDraftMutation,
-    refetchDrafts,
-  ]);
-
-  useEffect(() => {
-    if (!activeDraft) {
-      return;
-    }
-    if (activeDraft.pluginId !== pluginId) {
-      return;
-    }
-    if (!isActorIdentityReady) {
-      return;
-    }
-    if (normalizedDraftTitle === normalizedEditorTitle) {
-      return;
-    }
-    const timeoutId = window.setTimeout(() => {
-      void updateDraftMutation
-        .mutateAsync({
-          ...activeDraft,
-          title: normalizedEditorTitle || defaultPluginTitle,
-          updatedAt: new Date().toISOString(),
-        } as never)
-        .then(() => refetchDrafts())
-        .catch((error) => {
-          console.error(error);
-          toast.error('Saving draft title failed.');
-        });
-    }, 300);
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [
-    activeDraft,
-    defaultPluginTitle,
-    isActorIdentityReady,
-    normalizedDraftTitle,
-    normalizedEditorTitle,
-    pluginId,
-    refetchDrafts,
-    updateDraftMutation,
-  ]);
 
   useEffect(() => {
     if (!activeDraft) return;
@@ -3364,7 +3081,6 @@ function PluginStudioPresenter({
     pluginId,
     actorUserId,
     draftId,
-    description,
     parsed,
     isDraftHydrated,
     currentDraftSnapshot,
@@ -3389,8 +3105,8 @@ function PluginStudioPresenter({
         pluginId,
         version: getNextVersion(marketplaceReleases, pluginId),
         docs: {
-          title,
-          description,
+          title: activeDraftTitle,
+          description: activeDraftDescription,
         },
         actionManifest: parsed.actionManifest,
         schemaDocs: parsed.schemaDocs,
@@ -3402,20 +3118,13 @@ function PluginStudioPresenter({
     return () => {
       clearTimeout(timeout);
     };
-  }, [description, marketplaceReleases, parsed, pluginId, title]);
-
-  useEffect(() => {
-    if (!parsed) return;
-    setGuardedIrState((current) => {
-      if (current.mode === 'ir') {
-        return current;
-      }
-      return createGuardedIrEditorState({
-        schemaDocs: parsed.schemaDocs,
-        initialMode: current.mode,
-      });
-    });
-  }, [parsed]);
+  }, [
+    activeDraftDescription,
+    activeDraftTitle,
+    marketplaceReleases,
+    parsed,
+    pluginId,
+  ]);
 
   const hashPreviewQuery = useQuery({
     queryKey: ['plugin-studio', 'release-hash-preview', debouncedHashInput],
@@ -3442,8 +3151,8 @@ function PluginStudioPresenter({
         pluginId,
         version,
         docs: {
-          title,
-          description,
+          title: activeDraftTitle,
+          description: activeDraftDescription,
         },
         actionManifest: parsed.actionManifest,
         schemaDocs: parsed.schemaDocs,
@@ -3459,8 +3168,8 @@ function PluginStudioPresenter({
         author: { userId: actorUserId },
         visibility: 'public',
         docs: {
-          title,
-          description,
+          title: activeDraftTitle,
+          description: activeDraftDescription,
         },
         actionManifest: parsed.actionManifest,
         schemaDocs: parsed.schemaDocs,
@@ -3958,7 +3667,6 @@ function PluginStudioPresenter({
       activeDraft?.title,
       activeDraftRevisions,
       pluginId,
-      title,
       workspaceCompileDiagnostics,
       workspacePublishGateChecked,
       workspacePublishGateDiagnostics,
@@ -5481,8 +5189,10 @@ function PluginStudioPresenter({
       return;
     }
 
-    setTitle(template.docs.title);
-    setDescription(template.docs.description);
+    persistDraftMetadata({
+      title: template.docs?.title ?? defaultPluginTitle,
+      description: template.docs?.description ?? '',
+    });
     persistActionManifestDocs(template.actionManifest);
     const nextSchemaDocs =
       template.schemaDocs && template.schemaDocs.length > 0
@@ -5597,7 +5307,7 @@ function PluginStudioPresenter({
                     />
                   ) : (
                     <p className="text-xl font-semibold tracking-tight md:text-2xl">
-                      {title?.trim() || defaultPluginTitle}
+                      {activeDraftTitle}
                     </p>
                   )}
                   {editingMetadataField === 'title' ? null : (
@@ -5635,7 +5345,7 @@ function PluginStudioPresenter({
                     />
                   ) : (
                     <p className="text-sm text-muted-foreground">
-                      {description?.trim() || 'Add a description'}
+                      {activeDraftDescription || 'Add a description'}
                     </p>
                   )}
                   {editingMetadataField === 'description' ? null : (
