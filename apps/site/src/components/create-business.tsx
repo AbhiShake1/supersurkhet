@@ -1,30 +1,21 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useMemo, useState } from 'react';
+import { Link } from '@tanstack/react-router';
+import { ArrowLeft, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import type { z } from 'zod';
 import { useConfetti } from '@/components/confetti-provider';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
-import {
-  Credenza,
-  CredenzaBody,
-  CredenzaContent,
-  CredenzaDescription,
-  CredenzaFooter,
-  CredenzaHeader,
-  type CredenzaProps,
-  CredenzaTitle,
-  CredenzaTrigger,
-} from '@/components/ui/credenza';
+import { Badge } from '@/components/ui/badge';
 import { api } from '@/lib/api';
 import { gun } from '@/lib/gun';
 import { getGunRef } from '@/lib/gun/utils';
 import { getBusinessDataFieldFromSelectedReleases } from '@/lib/plugins/business-onboarding-prepopulate';
-import {
-  parseReleaseId,
-} from '@/lib/plugins/marketplace-seed';
+import { parseReleaseId } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import type { businessSchema } from '@/lib/schema';
+import { cn } from '@/lib/utils';
 import { installPluginRelease } from '@/server-functions/plugins';
 import { useAuth } from './auth-provider';
 import {
@@ -34,30 +25,28 @@ import {
 } from './business-creation-form';
 import { Button } from './ui/button';
 import { Form } from './ui/form';
-import { ScrollArea } from './ui/scroll-area';
 
 const stepContent = {
   1: {
     title: "Welcome! Let's start with the basics.",
-    description: 'What is your business and what does it do?',
+    description: 'Name your business and pin where it operates.',
+    label: 'Basics',
   },
   2: {
-    title: 'AI Onboarding Setup.',
+    title: 'AI Setup Journey (optional)',
     description:
-      'Describe your business in chat and let AI draft your optional setup plan.',
+      'Use chat to shape your setup plan, or skip directly to creation anytime.',
+    label: 'AI setup',
   },
   3: {
-    title: 'Congratulations!',
-    description: 'Your business is ready to fly.',
+    title: 'Business created',
+    description: 'You are ready to launch and manage your business.',
+    label: 'Launch',
   },
 };
 
-export function CreateBusiness({
-  children,
-  ...props
-}: { children: React.ReactNode } & CredenzaProps) {
+export function CreateBusinessPageFlow() {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [createdBusiness, setCreatedBusiness] =
     useState<z.infer<typeof businessSchema>>();
@@ -66,6 +55,7 @@ export function CreateBusiness({
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const { fire: fireConfetti } = useConfetti();
   const { promptLogin } = useLoginPrompt();
+  const didPromptLogin = useRef(false);
   const releases = useMemo(
     () => releaseRows as PluginReleaseDoc[],
     [releaseRows],
@@ -211,89 +201,165 @@ export function CreateBusiness({
     setStep(3);
   };
 
-  const handleClose = () => {
-    setOpen(false);
-    // Reset form and step after a short delay to allow modal to close
-    form.reset();
-    setStep(1);
-    setCreatedBusiness(undefined);
-  };
-
   const currentContent = stepContent[step as keyof typeof stepContent];
 
   useEffect(() => {
     if (step === 3) {
       fireConfetti();
-      // Fire confetti from the right
       fireConfetti();
     }
   }, [step, fireConfetti]);
 
+  useEffect(() => {
+    if (didPromptLogin.current || user) return;
+    didPromptLogin.current = true;
+    void promptLogin();
+  }, [promptLogin, user]);
+
   return (
-    <Credenza
-      open={open}
-      onOpenChange={async (open) => {
-        if (open) {
-          await promptLogin();
-          setOpen(true);
-        } else handleClose();
-      }}
-    >
-      <CredenzaTrigger {...props}>{children}</CredenzaTrigger>
-      <CredenzaContent>
-        <CredenzaHeader>
-          <CredenzaTitle>{currentContent.title}</CredenzaTitle>
-          <CredenzaDescription>
-            {currentContent.description}
-          </CredenzaDescription>
-        </CredenzaHeader>
-        <CredenzaBody>
-          <ScrollArea className="h-[50vh]">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_20%_10%,hsl(var(--primary)/0.25),transparent_45%),radial-gradient(circle_at_80%_0%,hsl(var(--accent)/0.2),transparent_35%)] px-4 py-8 sm:px-8 sm:py-10">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-8">
+        <div className="flex items-center justify-between gap-4">
+          <Button variant="ghost" asChild>
+            <Link to="/" className="inline-flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Back home
+            </Link>
+          </Button>
+          <Badge variant="secondary" className="px-3 py-1 text-xs">
+            Create Business
+          </Badge>
+        </div>
+
+        <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+          <aside className="space-y-4">
+            <div className="rounded-2xl border bg-card/70 p-4 backdrop-blur-sm">
+              <p className="font-semibold text-sm text-foreground">
+                Your journey
+              </p>
+              <p className="mt-1 text-muted-foreground text-xs">
+                A cleaner full-page flow with optional AI onboarding.
+              </p>
+              <div className="mt-4 space-y-2">
+                {([1, 2, 3] as const).map((currentStep) => {
+                  const isActive = step === currentStep;
+                  const isDone = step > currentStep;
+
+                  return (
+                    <div
+                      key={currentStep}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg border px-3 py-2 text-sm transition-colors',
+                        isActive && 'border-primary/60 bg-primary/10',
+                        isDone && 'border-green-500/50 bg-green-500/10',
+                      )}
+                    >
+                      <span
+                        className={cn(
+                          'inline-flex h-6 w-6 items-center justify-center rounded-full border text-xs',
+                          isActive && 'border-primary text-primary',
+                          isDone && 'border-green-600 text-green-600',
+                        )}
+                      >
+                        {currentStep}
+                      </span>
+                      <span className="font-medium">
+                        {stepContent[currentStep].label}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-2xl border bg-card/70 p-4 backdrop-blur-sm">
+              <p className="font-semibold text-sm">AI is optional</p>
+              <p className="mt-1 text-muted-foreground text-xs leading-relaxed">
+                You can use AI to shape your setup, or skip straight to creation
+                from step two.
+              </p>
+              <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                <Sparkles className="h-3.5 w-3.5" />
+                Chat guidance and plugin suggestions are optional.
+              </div>
+            </div>
+          </aside>
+
+          <section className="rounded-2xl border bg-card/80 p-5 shadow-sm backdrop-blur-sm sm:p-7">
+            <header className="mb-6 border-b pb-4">
+              <h1 className="font-semibold text-2xl tracking-tight">
+                {currentContent.title}
+              </h1>
+              <p className="mt-2 max-w-2xl text-muted-foreground text-sm">
+                {currentContent.description}
+              </p>
+            </header>
+
             <Form {...form}>
               {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
               <form
                 id="business-creation-form"
                 onSubmit={form.handleSubmit(onSubmit)}
               >
-                <CredenzaBody>
-                  <BusinessCreationForm
-                    step={step}
-                    form={form}
-                    setStep={setStep}
-                    createdBusiness={createdBusiness}
-                    isSubmitting={isPending}
-                  />
-                </CredenzaBody>
+                <BusinessCreationForm
+                  step={step}
+                  form={form}
+                  setStep={setStep}
+                  createdBusiness={createdBusiness}
+                  isSubmitting={isPending}
+                />
               </form>
             </Form>
-          </ScrollArea>
-        </CredenzaBody>
-        <CredenzaFooter>
-          {step === 1 && (
-            <Button onClick={handleNextStep1} disabled={!form.watch('name')}>
-              Next
-            </Button>
-          )}
-          {step === 2 && (
-            <div className="flex justify-between w-full">
-              <Button
-                variant="outline"
-                onClick={() => setStep(1)}
-                disabled={isPending}
-              >
-                Back
-              </Button>
-              <Button
-                type="submit"
-                form="business-creation-form"
-                disabled={isPending}
-              >
-                {isPending ? 'Creating...' : 'Create Business'}
-              </Button>
-            </div>
-          )}
-        </CredenzaFooter>
-      </CredenzaContent>
-    </Credenza>
+
+            {step !== 3 && (
+              <footer className="mt-8 border-t pt-5">
+                {step === 1 && (
+                  <div className="flex items-center justify-end gap-3">
+                    <Button
+                      onClick={handleNextStep1}
+                      disabled={!form.watch('name')}
+                    >
+                      Continue to AI setup
+                    </Button>
+                  </div>
+                )}
+                {step === 2 && (
+                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
+                    <div className="text-muted-foreground text-xs">
+                      AI is optional. You can create right now with current
+                      inputs.
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setStep(1)}
+                        disabled={isPending}
+                      >
+                        Back
+                      </Button>
+                      <Button
+                        type="submit"
+                        form="business-creation-form"
+                        disabled={isPending}
+                      >
+                        {isPending ? 'Creating...' : 'Create Business'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </footer>
+            )}
+          </section>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export function CreateBusinessCallToAction() {
+  return (
+    <Button asChild>
+      <Link to="/create-business">Create Business</Link>
+    </Button>
   );
 }

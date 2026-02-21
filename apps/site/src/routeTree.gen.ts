@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as S3testRouteImport } from './routes/s3test'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as CreateBusinessRouteImport } from './routes/create-business'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as BusinessNameRouteImport } from './routes/$businessName'
@@ -55,6 +56,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateBusinessRoute = CreateBusinessRouteImport.update({
+  id: '/create-business',
+  path: '/create-business',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -217,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$businessName': typeof BusinessNameRouteWithChildren
   '/admin': typeof AdminRoute
+  '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
@@ -284,6 +292,7 @@ export interface FileRoutesById {
   '/$businessName': typeof BusinessNameRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
+  '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
@@ -319,6 +328,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$businessName'
     | '/admin'
+    | '/create-business'
     | '/mcp'
     | '/privacy'
     | '/s3test'
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/create-business'
     | '/mcp'
     | '/privacy'
     | '/s3test'
@@ -385,6 +396,7 @@ export interface FileRouteTypes {
     | '/$businessName'
     | '/_auth'
     | '/admin'
+    | '/create-business'
     | '/mcp'
     | '/privacy'
     | '/s3test'
@@ -420,6 +432,7 @@ export interface RootRouteChildren {
   BusinessNameRoute: typeof BusinessNameRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   AdminRoute: typeof AdminRoute
+  CreateBusinessRoute: typeof CreateBusinessRoute
   McpRoute: typeof McpRoute
   PrivacyRoute: typeof PrivacyRoute
   S3testRoute: typeof S3testRoute
@@ -459,6 +472,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create-business': {
+      id: '/create-business'
+      path: '/create-business'
+      fullPath: '/create-business'
+      preLoaderRoute: typeof CreateBusinessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -738,6 +758,7 @@ const rootRouteChildren: RootRouteChildren = {
   BusinessNameRoute: BusinessNameRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   AdminRoute: AdminRoute,
+  CreateBusinessRoute: CreateBusinessRoute,
   McpRoute: McpRoute,
   PrivacyRoute: PrivacyRoute,
   S3testRoute: S3testRoute,

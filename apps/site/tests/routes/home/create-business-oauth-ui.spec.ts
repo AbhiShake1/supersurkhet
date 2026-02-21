@@ -39,7 +39,13 @@ async function openBusinessOnboarding(page: Page) {
         "Authenticated bootstrap is missing: create-business flow opened login prompt instead of onboarding modal.",
       );
     }
-    if (await welcomeHeading.isVisible().catch(() => false)) {
+    if (
+      (await page
+        .waitForURL("**/create-business", { timeout: 2500 })
+        .then(() => true)
+        .catch(() => false)) &&
+      (await welcomeHeading.isVisible().catch(() => false))
+    ) {
       didOpenOnboarding = true;
       break;
     }
@@ -53,9 +59,10 @@ async function openBusinessOnboarding(page: Page) {
   }
 
   await expect(welcomeHeading).toBeVisible({ timeout: 10_000 });
+  await expect(page).toHaveURL(/\/create-business$/);
 
   await page.getByLabel("Business Name").fill(businessName);
-  await page.getByRole("button", { name: /^Next$/i }).click();
+  await page.getByRole("button", { name: /Continue to AI setup/i }).click();
 
   await expect(page.getByText("AI Business Onboarding")).toBeVisible();
 }
