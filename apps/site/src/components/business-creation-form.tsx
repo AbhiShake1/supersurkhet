@@ -1,11 +1,12 @@
 import { Link } from '@tanstack/react-router';
 import { Check, ChevronsUpDown } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import {
   type AssistantAuthMode,
+  type BusinessOnboardingModelOption,
   BUSINESS_ONBOARDING_MODEL_OPTIONS,
   type BusinessOnboardingProviderId,
   DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
@@ -107,9 +108,12 @@ const modelsDevProviderLogoOverrides: Record<string, string> = {
   'custom-openai-compatible': 'openai',
 };
 
+function resolveModelsDevProviderId(providerId: string): string {
+  return modelsDevProviderLogoOverrides[providerId] ?? providerId;
+}
+
 function resolveModelsDevProviderLogoUrl(providerId: string): string {
-  const normalizedProviderId =
-    modelsDevProviderLogoOverrides[providerId] ?? providerId;
+  const normalizedProviderId = resolveModelsDevProviderId(providerId);
   return `${MODELS_DEV_PROVIDER_LOGO_BASE_URL}${encodeURIComponent(
     normalizedProviderId,
   )}.svg`;
@@ -162,6 +166,18 @@ type ProviderAuthMethodApiItem = {
   id?: string;
   type?: 'api' | 'oauth';
   label?: string;
+};
+
+type ModelsDevModelRecord = {
+  id?: string;
+  name?: string;
+  family?: string;
+  release_date?: string;
+};
+
+type ModelsDevProviderRecord = {
+  id?: string;
+  models?: Record<string, ModelsDevModelRecord>;
 };
 
 const OPENAI_BROWSER_OAUTH_METHOD_ID = 'openai-chatgpt-pro-plus-browser';
@@ -463,6 +479,8 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [authSessionExpiresAt, setAuthSessionExpiresAt] = useState<
     number | null
   >(null);
+  const [modelsDevCatalogByProviderId, setModelsDevCatalogByProviderId] =
+    useState<Record<string, ModelsDevProviderRecord>>({});
 
   const providerOptions = useMemo(
     () =>
@@ -483,12 +501,38 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       ),
     [providerOptions, selectedAssistantProviderId],
   );
+  const resolveProviderModelOptions = useCallback(
+    (providerId: string): BusinessOnboardingModelOption[] => {
+      const modelsDevProviderId = resolveModelsDevProviderId(providerId);
+      const modelsRecord =
+        modelsDevCatalogByProviderId[modelsDevProviderId]?.models ?? {};
+      const modelsFromModelsDev = Object.values(modelsRecord)
+        .filter(
+          (model): model is ModelsDevModelRecord & { id: string } =>
+            typeof model.id === 'string' && model.id.trim().length > 0,
+        )
+        .map((model) => ({
+          id: model.id.trim(),
+          label: model.name?.trim() || model.id.trim(),
+          provider: providerId,
+          defaultAuthMode: resolveProviderDefaultAuthMode(providerId),
+          description: model.family?.trim(),
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+
+      if (modelsFromModelsDev.length > 0) {
+        return modelsFromModelsDev;
+      }
+
+      return BUSINESS_ONBOARDING_MODEL_OPTIONS.filter(
+        (option) => option.provider === providerId,
+      );
+    },
+    [modelsDevCatalogByProviderId],
+  );
   const providerModelOptions = useMemo(
-    () =>
-      BUSINESS_ONBOARDING_MODEL_OPTIONS.filter(
-        (option) => option.provider === selectedAssistantProviderId,
-      ),
-    [selectedAssistantProviderId],
+    () => resolveProviderModelOptions(selectedAssistantProviderId),
+    [selectedAssistantProviderId, resolveProviderModelOptions],
   );
   const selectedModelOption = useMemo(
     () =>
@@ -515,6 +559,31 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const canStartProviderOauth =
     selectedAssistantAuthMode === 'oauth-access-token' &&
     Boolean(resolvedProviderOauthMethodId);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadModelsDevCatalog() {
+      try {
+        const response = await fetch('https://models.dev/api.json');
+        if (!response.ok) return;
+        const payload = (await response.json()) as Record<
+          string,
+          ModelsDevProviderRecord
+        >;
+        if (cancelled) return;
+        setModelsDevCatalogByProviderId(payload);
+      } catch {
+        // Keep static fallback model options when models.dev is unavailable.
+      }
+    }
+
+    void loadModelsDevCatalog();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -935,9 +1004,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
 
   function handleProviderChange(nextProviderIdValue: string) {
     const nextProviderId = nextProviderIdValue;
-    const nextModelOptions = BUSINESS_ONBOARDING_MODEL_OPTIONS.filter(
-      (option) => option.provider === nextProviderId,
-    );
+    const nextModelOptions = resolveProviderModelOptions(nextProviderId);
 
     setIsProviderComboboxOpen(false);
     setIsModelComboboxOpen(false);

@@ -19,6 +19,7 @@ describe('business creation AI assistant contract', () => {
     expect(source).toContain('Create auth session');
     expect(source).toContain('Search providers...');
     expect(source).toContain('https://models.dev/logos/');
+    expect(source).toContain('https://models.dev/api.json');
     expect(source).toContain('workflow setup happen in Step 3');
     expect(source).not.toContain('getBusinessCreationAssistantTurn');
     expect(source).not.toContain('AI Business Onboarding');
