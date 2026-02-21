@@ -259,12 +259,11 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('Cross-Field Refinements');
   });
 
-  it('wires project and draft CRUD through client-side app api schema tables', () => {
+  it('wires project-scoped draft and release CRUD through client-side app api tables', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('api.pluginProject.useGet');
-    expect(content).toContain('api.pluginProjectMember.useGet');
-    expect(content).toContain('api.pluginProjectInvite.useGet');
+    expect(content).toContain('toProjectScopedDraftId');
+    expect(content).toContain('api.pluginRelease.useGet');
     expect(content).toContain('api.pluginDraft.useGet');
     expect(content).toContain('api.pluginDraft.useCreate');
     expect(content).toContain('api.pluginDraft.useUpdate');
@@ -275,16 +274,24 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('save-draft-revision');
   });
 
-  it('wires invite acceptance and member role management through client api tables', () => {
+  it('wires project install mutations and omits stale invite/member handlers', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('api.pluginProjectMember.useUpdate');
-    expect(content).toContain('api.pluginProjectMember.useDelete');
-    expect(content).toContain('api.pluginProjectInvite.useUpdate');
-    expect(content).toContain('api.pluginProjectInvite.useDelete');
-    expect(content).toContain('handleAcceptInvite');
-    expect(content).toContain('handleUpdateMemberRole');
-    expect(content).toContain('handleRemoveMember');
+    expect(content).toContain(
+      'createProjectInstallMutation = api.businessPluginInstall.useCreate',
+    );
+    expect(content).toContain(
+      'createProjectDraftInstallMutation = api.businessPluginDraftInstall.useCreate',
+    );
+    expect(content).toContain('updateProjectInstallMutation = api.businessPluginInstall.useUpdate');
+    expect(content).toContain(
+      'updateProjectDraftInstallMutation = api.businessPluginDraftInstall.useUpdate',
+    );
+    expect(content).not.toContain('api.pluginProjectMember.useGet');
+    expect(content).not.toContain('api.pluginProjectInvite.useGet');
+    expect(content).not.toContain('handleAcceptInvite');
+    expect(content).not.toContain('handleUpdateMemberRole');
+    expect(content).not.toContain('handleRemoveMember');
   });
 
   it('persists sidebar group/system metadata in draft revisions', () => {
@@ -295,15 +302,20 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('__plugin_studio_group__/');
     expect(content).toContain('__plugin_studio_system__/');
     expect(content).toContain('adminTabs: parsed.draftAdminTabs');
-    expect(content).toContain('persistDraftRevisionForRenamedSchemas');
+    expect(content).toContain('persistSidebarUiStateForActor');
+    expect(content).toContain('sidebarSnapshotJson');
+    expect(content).toContain('templatesTourSeenAt');
     expect(content).toContain('snapshot:');
   });
 
   it('guards against malformed admin tab rows before sentinel parsing', () => {
     const content = getRouteContent();
 
-    expect(content).toContain("typeof tab.schema === 'string'");
-    expect(content).toContain('if (!schemaId)');
+    expect(content).toContain('const tabs = adminTabs ?? [];');
+    expect(content).toContain('isGroupSentinelSchemaId(tab.schema)');
+    expect(content).toContain('const systemKey = parseSystemSentinelSchemaId(tab.schema);');
+    expect(content).toContain('if (systemKey)');
+    expect(content).toContain('schemaTabs.push(tab);');
   });
 
   it('waits for drafts to finish loading before auto-creating a new draft', () => {
@@ -318,28 +330,28 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('if (isDraftRevisionLoading)');
     expect(content).toContain('Draft auto-save failed:');
     expect(content).toContain('isMissingPluginDraftError');
-    expect(content).toContain('lastHydratedRevisionRecencyRef');
+    expect(content).toContain('expectedHydratedDraftKey');
+    expect(content).toContain('hydratedDraftKey');
     expect(content).toContain('initialSnapshotByDraftRef');
     expect(content).toContain('activeDraftRevisions.length === 0');
-    expect(content).toContain('if (isDraftLoading || isProjectLoading)');
-    expect(content).toContain('localDraftSnapshot !== latestRevisionSnapshot');
+    expect(content).toContain('if (isDraftLoading)');
+    expect(content).toContain('currentDraftSnapshot !== latestPersistedDraftSnapshot');
     expect(content).toContain('toDraftSnapshotString');
     expect(content).toContain('lastRequestedDraftSnapshotRef');
-    expect(content).toContain(
-      'void saveDraftRevision({ draftId: activeDraft.draftId });',
-    );
+    expect(content).toContain('void saveDraftRevision(activeDraft.draftId);');
   });
 
   it('uses path-param page flow for project and plugin state instead of search params', () => {
     const content = getRouteContent();
 
+    expect(content).toContain('const params = Route.useParams();');
+    expect(content).toContain('const projectId = params.projectId;');
+    expect(content).toContain('const requestedPluginId = params.pluginId;');
     expect(content).toContain('initialProjectId');
     expect(content).toContain('initialPluginId');
     expect(content).toContain('initialStudioView');
-    expect(content).toContain('setSelectedProjectId');
-    expect(content).toContain('setSelectedPluginId');
-    expect(content).toContain("to: '/plugin-studio/$projectId'");
-    expect(content).toContain("to: '/plugin-studio/$projectId/$pluginId'");
+    expect(content).toContain("createFileRoute('/plugin-studio/$projectId/$pluginId')");
+    expect(content).toContain('toProjectScopedDraftId');
     expect(content).not.toContain("readSearchParamString(search, 'projectId')");
     expect(content).not.toContain("readSearchParamString(search, 'pluginId')");
   });
@@ -361,12 +373,11 @@ describe('plugin-studio client boundary', () => {
     const content = getRouteContent();
 
     expect(content).toContain('toProjectScopedDraftId');
-    expect(content).toContain('pickActiveDraftForPlugin');
     expect(content).toContain('projectId');
-    expect(content).toContain('pluginId');
-    expect(content).not.toContain(
-      'return `draft.${toStableDraftIdSuffix(actorUserId)}`;',
-    );
+    expect(content).toContain('requestedPluginId');
+    expect(content).toContain('candidate.draftId === draftId');
+    expect(content).toContain('(candidate.projectId ?? projectId) === projectId');
+    expect(content).toContain('resolvePluginStudioPluginId');
   });
 
   it('chooses latest template release using semantic version ordering', () => {

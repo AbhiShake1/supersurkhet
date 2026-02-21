@@ -24,7 +24,8 @@ describe('plugin-studio route contract', () => {
     expect(content).toContain('Schema Editor');
     expect(content).toContain('Schema Fields');
     expect(content).toContain('Cross-Field Refinements');
-    expect(content).toContain('Build Powerful Plugin Data Models.');
+    expect(content).toContain('Starter Templates');
+    expect(content).toContain('Load template releases on demand');
     expect(content).toContain('isTemplatesDialogOpen');
     expect(content).not.toContain('No-Code Builder');
     expect(content).not.toContain('Studio Engine Modules');
@@ -33,12 +34,13 @@ describe('plugin-studio route contract', () => {
   it('supports project-scoped draft persistence and revision loading actions', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('Draft Workspace');
-    expect(content).toContain('Project');
+    expect(content).toContain('toProjectScopedDraftId');
     expect(content).toContain('api.pluginDraft.useCreate');
+    expect(content).toContain('api.pluginDraft.useUpdate');
+    expect(content).toContain('api.pluginDraftRevision.useGet');
     expect(content).toContain('api.pluginDraftRevision.useCreate');
-    expect(content).toContain('Save Draft Revision');
-    expect(content).toContain('Load Revision');
+    expect(content).toContain('save-draft-revision');
+    expect(content).toContain('Draft auto-save failed:');
   });
 
   it('uses client hash preview utility and persists publish/install via client api objects', () => {
@@ -46,6 +48,8 @@ describe('plugin-studio route contract', () => {
 
     expect(content).toContain('previewReleaseHashes');
     expect(content).toContain("from '@/lib/plugins/release-hash-preview'");
+    expect(content).toContain("from '@/lib/plugins/marketplace-seed'");
+    expect(content).toContain('mergeMarketplaceReleasesWithSeed');
     expect(content).not.toContain("from '@/server-functions/plugins'");
     expect(content).toContain('createPluginReleaseMutation');
     expect(content).toContain('api.businessPluginInstall.useCreate');
@@ -55,29 +59,29 @@ describe('plugin-studio route contract', () => {
     expect(content).not.toContain('publishPluginRelease');
     expect(content).not.toContain('installPluginRelease');
     expect(content).not.toContain('installPluginDraftRevision');
-    expect(content).not.toContain('mergeMarketplaceReleasesWithSeed');
     expect(content).not.toContain('ensureMarketplaceSeedReleases');
   });
 
-  it('uses app api tables for releases, projects, and draft data', () => {
+  it('uses app api tables for releases, installs, and draft data', () => {
     const content = getRouteContent();
 
     expect(content).toContain('api.pluginRelease.useGet');
-    expect(content).toContain('api.pluginProject.useGet');
-    expect(content).toContain('api.pluginProjectMember.useGet');
-    expect(content).toContain('api.pluginProjectInvite.useGet');
     expect(content).toContain('api.pluginDraft.useGet');
     expect(content).toContain('api.pluginDraftRevision.useGet');
+    expect(content).toContain('api.businessPluginInstall.useGet');
+    expect(content).toContain('api.businessPluginDraftInstall.useGet');
+    expect(content).not.toContain('api.pluginProjectMember.useGet');
+    expect(content).not.toContain('api.pluginProjectInvite.useGet');
   });
 
-  it('keeps organization collaboration actions while removing project workspace controls', () => {
+  it('removes stale project collaboration controls from plugin detail shell', () => {
     const content = getRouteContent();
 
-    expect(content).toContain('Accept invite');
-    expect(content).toContain('Invite member');
-    expect(content).toContain('Send invitation');
-    expect(content).toContain('View notifications');
-    expect(content).toContain('No notifications yet.');
+    expect(content).not.toContain('Accept invite');
+    expect(content).not.toContain('Invite member');
+    expect(content).not.toContain('Send invitation');
+    expect(content).not.toContain('View notifications');
+    expect(content).not.toContain('No notifications yet.');
     expect(content).not.toContain('Project Workspace');
     expect(content).not.toContain('Install Published Release');
     expect(content).not.toContain('Install Current Draft Revision');
@@ -148,18 +152,14 @@ describe('plugin-studio route contract', () => {
     expect(content).not.toContain('metadata={{');
   });
 
-  it('provides a shadcn command palette for global org, project, and plugin navigation', () => {
+  it('does not include stale command palette wiring in the current shell', () => {
     const content = getRouteContent();
 
-    expect(content).toContain(`from '@/components/ui/command'`);
-    expect(content).toContain('CommandDialog');
-    expect(content).toContain('CommandInput');
-    expect(content).toContain('CommandGroup heading="Organizations"');
-    expect(content).toContain('CommandGroup heading="Projects"');
-    expect(content).toContain('CommandGroup heading="Plugins"');
-    expect(content).toContain('Search organizations, projects, plugins...');
-    expect(content).toContain("event.key.toLowerCase() !== 'k'");
-    expect(content).toContain('⌘ K');
+    expect(content).not.toContain(`from '@/components/ui/command'`);
+    expect(content).not.toContain('CommandDialog');
+    expect(content).not.toContain('CommandInput');
+    expect(content).not.toContain('Search organizations, projects, plugins...');
+    expect(content).not.toContain('⌘ K');
   });
 
   it('does not render placeholder docs or feedback actions in organization views', () => {

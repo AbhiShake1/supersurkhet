@@ -93,30 +93,3 @@ store.subscribe((envelope) => {
 });
 store.upsert(mySchema, 'cli');
 ```
-
----
-
-## Autoform metadata helpers
-
-For `.superRefine(fieldConfig(...))` metadata and extendable field types, use:
-
-- `supersurkhet-autoform`
-
-```ts
-import { buildFieldConfig, defineAutoFormFieldTypes } from 'supersurkhet-autoform';
-
-const pluginFieldTypes = defineAutoFormFieldTypes([
-  'string',
-  'number',
-  'my-custom-picker',
-] as const);
-
-const fieldConfig = buildFieldConfig<(typeof pluginFieldTypes)[number]>();
-
-const configRefinement = fieldConfig({
-  fieldType: 'my-custom-picker',
-  label: 'Custom picker field',
-});
-
-// z.string().superRefine(configRefinement)
-```

@@ -1,6 +1,4 @@
 import { createHash } from 'node:crypto';
-import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
 import {
   compileVisualDerivationsToDeriveIr,
   type VisualDerivation,
@@ -94,28 +92,6 @@ export type PluginsV2CompileVerifyResult = {
   };
 };
 
-const inputSchema = z.object({
-  pluginId: z.string(),
-  version: z.string(),
-  docs: z
-    .object({
-      title: z.string().optional(),
-      description: z.string().optional(),
-    })
-    .optional(),
-  actionManifest: z.array(z.custom<ActionManifestDoc>()).default([]),
-  schemaDocs: z.array(z.custom<SchemaDoc>()).default([]),
-  workflows: z.array(z.custom<WorkflowDoc>()).default([]),
-  adminTabs: z.array(z.custom<AdminTabDoc>()).default([]),
-  capabilityEnvelope: z.array(z.string()).default([]),
-  runtimeTarget: z.enum(['sandbox-worker', 'core']).default('sandbox-worker'),
-  deniedActionIds: z.array(z.string()).optional(),
-});
-
-export const compileVerifyPluginsV2 = createServerFn({ method: 'POST' })
-  .inputValidator(inputSchema)
-  .handler(async ({ data }) => runPluginsV2CompileVerifyPipeline(data));
-
 export function runPluginsV2CompileVerifyPipeline(
   input: PluginsV2CompileVerifyInput,
 ): PluginsV2CompileVerifyResult {
@@ -188,9 +164,8 @@ export function runPluginsV2CompileVerifyPipeline(
           }),
         );
 
-        const derivationResult = compileVisualDerivationsToDeriveIr(
-          visualDerivations,
-        );
+        const derivationResult =
+          compileVisualDerivationsToDeriveIr(visualDerivations);
         derivationCompiledCount += derivationResult.derivations.length;
 
         for (const diagnostic of derivationResult.diagnostics) {

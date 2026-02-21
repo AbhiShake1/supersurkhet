@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveInvitationStatus } from './$businessName/admin/-invitation-state';
+import { resolveInvitationStatus } from '../$businessName/admin/-invitation-state';
 
 describe('invitation state resolver', () => {
   it('moves from loading to pending when invitation token exists', () => {

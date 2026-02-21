@@ -98,8 +98,6 @@ import type {
   ExpressionDoc,
   PluginDraftDoc,
   PluginDraftRevisionDoc,
-  PluginProjectInviteDoc,
-  PluginProjectMemberDoc,
   PluginReleaseDoc,
   SchemaDoc,
   SchemaFieldDoc,
@@ -2190,14 +2188,6 @@ function PluginStudioPresenter({
   const updateDraftMutation = api.pluginDraft.useUpdate();
   const createDraftRevisionMutation = api.pluginDraftRevision.useCreate();
   const createPluginReleaseMutation = api.pluginRelease.useCreate();
-  const { data: projectMemberRows = [], refetch: refetchProjectMembers } =
-    api.pluginProjectMember.useGet();
-  const { data: projectInviteRows = [], refetch: refetchProjectInvites } =
-    api.pluginProjectInvite.useGet();
-  const updateProjectMemberMutation = api.pluginProjectMember.useUpdate();
-  const deleteProjectMemberMutation = api.pluginProjectMember.useDelete();
-  const updateProjectInviteMutation = api.pluginProjectInvite.useUpdate();
-  const deleteProjectInviteMutation = api.pluginProjectInvite.useDelete();
   const { data: projectInstallRows = [], refetch: refetchProjectInstalls } =
     api.businessPluginInstall.useGet({
       keys: [projectId],
@@ -2219,8 +2209,6 @@ function PluginStudioPresenter({
     keys: [projectId],
   });
   const drafts = draftRows as PluginDraftDoc[];
-  const projectMembers = projectMemberRows as PluginProjectMemberDoc[];
-  const projectInvites = projectInviteRows as PluginProjectInviteDoc[];
   const projectInstalls = projectInstallRows as BusinessPluginInstallDoc[];
   const projectDraftInstalls =
     projectDraftInstallRows as BusinessPluginDraftInstallDoc[];

@@ -1,4 +1,3 @@
-import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { create as ssrCreate } from '@/lib/gun/ssr/create';
 import { remove as ssrRemove } from '@/lib/gun/ssr/delete';
@@ -739,7 +738,3 @@ export async function runPluginsV2SchemaCrud(input: PluginsV2SchemaCrudInput) {
       throw new Error('Unsupported schema CRUD operation');
   }
 }
-
-export const pluginsV2SchemaCrud = createServerFn({ method: 'POST' })
-  .inputValidator(pluginSchemaCrudInputSchema)
-  .handler(async ({ data }) => runPluginsV2SchemaCrud(data));

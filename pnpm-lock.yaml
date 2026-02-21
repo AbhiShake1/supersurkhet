@@ -763,16 +763,6 @@ importers:
         specifier: ~5.8.3
         version: 5.8.3
 
-  packages/supersurkhet-autoform: {}
-
-  packages/supersurkhet-cli: {}
-
-  packages/supersurkhet-plugin-restaurant-admin:
-    dependencies:
-      supersurkhet-sdk:
-        specifier: workspace:*
-        version: link:../supersurkhet-sdk
-
   packages/supersurkhet-sdk: {}
 
   packages/typescript-config: {}

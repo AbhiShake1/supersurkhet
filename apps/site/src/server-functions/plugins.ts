@@ -1,18 +1,14 @@
-import { createServerFn } from '@tanstack/react-start';
 import { z } from 'zod';
 import { create as ssrCreate } from '@/lib/gun/ssr/create';
-import { get as ssrGet, SSRGetTimeoutError } from '@/lib/gun/ssr/get';
+import { SSRGetTimeoutError, get as ssrGet } from '@/lib/gun/ssr/get';
 import { update as ssrUpdate } from '@/lib/gun/ssr/update';
 import {
-  getRecommendedSeedReleaseIds,
   MARKETPLACE_SEED_RELEASES,
-  parseReleaseId,
   toMarketplaceSeedReleaseDocs,
 } from '@/lib/plugins/marketplace-seed';
 import {
   createInMemoryPluginPlatformStore,
   createPluginPlatformService,
-  hashCanonicalJson,
   toReleaseId,
 } from '@/lib/plugins/plugin-service';
 import type {
@@ -326,18 +322,6 @@ const releasePublishInputSchema = z
   })
   .strict();
 
-const releaseHashPreviewInputSchema = z
-  .object({
-    pluginId: z.string(),
-    version: z.string(),
-    docs: pluginDocsInputSchema.optional(),
-    actionManifest: z.array(actionManifestInputSchema).default([]),
-    schemaDocs: z.array(schemaDocInputSchema).default([]),
-    workflows: z.array(workflowDocInputSchema).default([]),
-    adminTabs: z.array(adminTabInputSchema).default([]),
-  })
-  .strict();
-
 const releaseInstallInputSchema = z
   .object({
     actorUserId: z.string(),
@@ -355,30 +339,6 @@ const draftCreateInputSchema = z.object({
   pluginId: z.string(),
   title: z.string().optional(),
   collaboratorUserIds: z.array(z.string()).optional(),
-});
-
-const draftRevisionCreateInputSchema = z.object({
-  actorUserId: z.string(),
-  draftId: z.string(),
-  schemaDocs: z.array(z.custom<SchemaDoc>()).optional(),
-  workflows: z.array(z.custom<WorkflowDoc>()).optional(),
-  adminTabs: z.array(z.custom<AdminTabDoc>()).optional(),
-});
-
-const draftInstallInputSchema = z.object({
-  actorUserId: z.string(),
-  actorRole: z.enum(['owner', 'admin', 'staff']),
-  businessId: z.string(),
-  pluginId: z.string(),
-  draftId: z.string(),
-  revisionId: z.string(),
-  teamId: z.string(),
-});
-
-const bootstrapDefaultsInputSchema = z.object({
-  actorUserId: z.string(),
-  actorRole: z.enum(['owner', 'admin', 'staff']).default('owner'),
-  businessId: z.string(),
 });
 
 const ensureMarketplaceInputSchema = z.object({
@@ -428,9 +388,7 @@ function matchesUserIdAlias({
 
 export type PluginInputValidationEntrypoint =
   | 'publishPluginRelease'
-  | 'previewPluginReleaseHashes'
-  | 'installPluginRelease'
-  | 'rollbackPluginRelease';
+  | 'installPluginRelease';
 
 export type PluginInputValidationIssue = {
   code: z.ZodIssueCode;
@@ -549,21 +507,8 @@ export function parsePublishPluginReleaseInput(
   });
 }
 
-export function parsePreviewPluginReleaseHashesInput(
-  data: unknown,
-): PluginInputValidationResult<
-  z.infer<typeof releaseHashPreviewInputSchema>,
-  'previewPluginReleaseHashes'
-> {
-  return parseInputSchema({
-    schema: releaseHashPreviewInputSchema,
-    data,
-    entrypoint: 'previewPluginReleaseHashes',
-  });
-}
-
 export function parsePromotionReleaseInput<
-  TEntrypoint extends 'installPluginRelease' | 'rollbackPluginRelease',
+  TEntrypoint extends 'installPluginRelease',
 >(
   data: unknown,
   entrypoint: TEntrypoint,
@@ -694,74 +639,6 @@ async function upsertScopedRow({
   } as never);
 }
 
-export async function publishPluginRelease({ data }: { data: unknown }) {
-  const parsedInput = requireParsedInput({
-    schema: releasePublishInputSchema,
-    data,
-    entrypoint: 'publishPluginRelease',
-  });
-  const store = await loadPublishedStore();
-  const service = createPluginPlatformService({ store });
-
-  const release = await service.publishRelease({
-    actorUserId: parsedInput.actorUserId,
-    release: {
-      pluginId: parsedInput.pluginId,
-      version: parsedInput.version,
-      docs: parsedInput.docs,
-      actionManifest: parsedInput.actionManifest,
-      schemaDocs: parsedInput.schemaDocs,
-      workflows: parsedInput.workflows,
-      adminTabs: parsedInput.adminTabs,
-    },
-  });
-
-  await upsertGlobalRow({
-    key: 'pluginRelease',
-    id: release.id,
-    row: release,
-  });
-
-  return release;
-}
-// export const publishPluginRelease = createServerFn({ method: 'POST' })
-//   .inputValidator(releasePublishInputSchema)
-//   .handler(async ({ data }) => {
-//   });
-
-export const previewPluginReleaseHashes = createServerFn({ method: 'POST' })
-  .inputValidator(z.unknown())
-  .handler(async ({ data }) => {
-    const parsedInput = requireParsedInput({
-      schema: releaseHashPreviewInputSchema,
-      data,
-      entrypoint: 'previewPluginReleaseHashes',
-    });
-    const manifestHash = await hashCanonicalJson({
-      data: {
-        pluginId: parsedInput.pluginId,
-        version: parsedInput.version,
-        docs: parsedInput.docs,
-        actionManifest: parsedInput.actionManifest,
-        schemaDocs: parsedInput.schemaDocs,
-        workflows: parsedInput.workflows,
-        adminTabs: parsedInput.adminTabs,
-      },
-    });
-    const artifactHash = await hashCanonicalJson({
-      data: {
-        schemaDocs: parsedInput.schemaDocs,
-        workflows: parsedInput.workflows,
-        adminTabs: parsedInput.adminTabs,
-      },
-    });
-
-    return {
-      manifestHash,
-      artifactHash,
-    } as const;
-  });
-
 export async function installPluginRelease({ data }: { data: unknown }) {
   const parsedInput = requireParsedInput({
     schema: releaseInstallInputSchema,
@@ -808,62 +685,6 @@ export async function installPluginRelease({ data }: { data: unknown }) {
 
   return install;
 }
-
-// export const installPluginRelease = createServerFn({ method: 'POST' })
-//   .inputValidator(releaseInstallInputSchema)
-//   .handler(async ({ data }) => {
-//   });
-
-export async function rollbackPluginRelease({ data }: { data: unknown }) {
-  const parsedInput = requireParsedInput({
-    schema: releaseInstallInputSchema,
-    data,
-    entrypoint: 'rollbackPluginRelease',
-  });
-  const store = await loadPublishedStore(parsedInput.businessId);
-  const service = createPluginPlatformService({ store });
-
-  // Verify the release exists before attempting rollback
-  const releaseId = toReleaseId(parsedInput.pluginId, parsedInput.version);
-  const release = store.getRelease(releaseId);
-
-  if (!release) {
-    // Log available releases for debugging
-    console.error(`Release ${releaseId} not found in pluginRelease table.`);
-    console.error(
-      `Available releases:`,
-      store.listReleases().map((r) => r.id),
-    );
-    throw new Error(
-      `Release ${releaseId} not found in pluginRelease table. Available releases: ${store.listReleases().length}`,
-    );
-  }
-
-  const install = service.installPublishedRelease({
-    actorUserId: parsedInput.actorUserId,
-    actorRole: parsedInput.actorRole,
-    explicitOwnerAction: true, // Always true for rollbacks
-    install: {
-      businessId: parsedInput.businessId,
-      pluginId: parsedInput.pluginId,
-      version: parsedInput.version,
-      requestedCapabilities: parsedInput.requestedCapabilities,
-    },
-  });
-
-  await upsertScopedRow({
-    key: 'businessPluginInstall',
-    scopeKey: parsedInput.businessId,
-    id: install.id,
-    row: install,
-  });
-
-  return install;
-}
-// export const rollbackPluginRelease = createServerFn({ method: 'POST' })
-//   .inputValidator(releaseInstallInputSchema)
-//   .handler(async ({ data }) => {
-//   });
 
 export async function createPluginDraft({
   data,
@@ -1013,73 +834,6 @@ export async function createPluginDraft({
 //   .handler(async ({ data }) => {
 //   });
 
-export async function createPluginDraftRevision({
-  data,
-}: {
-  data: z.infer<typeof draftRevisionCreateInputSchema>;
-}) {
-  const store = await loadDraftStore();
-  const service = createPluginPlatformService({ store });
-  const revision = await service.createDraftRevision({
-    actorUserId: data.actorUserId,
-    draftId: data.draftId,
-    revision: {
-      schemaDocs: data.schemaDocs,
-      workflows: data.workflows,
-      adminTabs: data.adminTabs,
-    },
-  });
-
-  await upsertGlobalRow({
-    key: 'pluginDraftRevision',
-    id: `${revision.draftId}@${revision.revisionId}`,
-    row: {
-      ...revision,
-      id: `${revision.draftId}@${revision.revisionId}`,
-    },
-  });
-
-  return revision;
-}
-// export const createPluginDraftRevision = createServerFn({ method: 'POST' })
-//   .inputValidator(draftRevisionCreateInputSchema)
-//   .handler(async ({ data }) => {
-//   });
-
-export async function installPluginDraftRevision({
-  data,
-}: {
-  data: z.infer<typeof draftInstallInputSchema>;
-}) {
-  const store = await loadDraftStore(data.businessId);
-  const service = createPluginPlatformService({ store });
-
-  const install = service.installDraftRevision({
-    actorUserId: data.actorUserId,
-    actorRole: data.actorRole,
-    install: {
-      businessId: data.businessId,
-      pluginId: data.pluginId,
-      draftId: data.draftId,
-      revisionId: data.revisionId,
-      teamId: data.teamId,
-    },
-  });
-
-  await upsertScopedRow({
-    key: 'businessPluginDraftInstall',
-    scopeKey: data.businessId,
-    id: install.id,
-    row: install,
-  });
-
-  return install;
-}
-// export const installPluginDraftRevision = createServerFn({ method: 'POST' })
-//   .inputValidator(draftInstallInputSchema)
-//   .handler(async ({ data }) => {
-//   });
-
 export async function ensureMarketplaceSeedReleases({
   data,
 }: {
@@ -1152,69 +906,6 @@ export async function migrateMarketplaceSeedReleases({
     ...ensured,
   } as const;
 }
-
-export async function bootstrapDefaultPluginsForBusiness({
-  data,
-}: {
-  data: z.infer<typeof bootstrapDefaultsInputSchema>;
-}) {
-  const actorUserId = data.actorUserId ?? 'system-seed';
-  const recommendations = getRecommendedSeedReleaseIds();
-  const defaultReleaseId = recommendations[0];
-  if (!defaultReleaseId) {
-    return { installed: false, reason: 'missing-recommendation' } as const;
-  }
-
-  const parsed = parseReleaseId(defaultReleaseId);
-  if (!parsed) {
-    return { installed: false, reason: 'invalid-release-id' } as const;
-  }
-  const store = await loadPublishedStore(data.businessId);
-  const service = createPluginPlatformService({ store });
-  const releaseId = toReleaseId(parsed.pluginId, parsed.version);
-  const release = store.getRelease(releaseId);
-  if (!release) {
-    return {
-      installed: false,
-      reason: 'recommended-release-unavailable',
-      releaseId,
-    } as const;
-  }
-
-  const install = service.installPublishedRelease({
-    actorUserId,
-    actorRole: data.actorRole,
-    explicitOwnerAction: true,
-    install: {
-      businessId: data.businessId,
-      pluginId: parsed.pluginId,
-      version: parsed.version,
-      requestedCapabilities: release.actionManifest.flatMap(
-        (action) => action.capabilities ?? [],
-      ),
-    },
-  });
-
-  await upsertScopedRow({
-    key: 'businessPluginInstall',
-    scopeKey: data.businessId,
-    id: install.id,
-    row: install,
-  });
-
-  return {
-    installed: true,
-    releaseId: release.id,
-    installId: install.id,
-  } as const;
-}
-
-// export const bootstrapDefaultPluginsForBusiness = createServerFn({
-//   method: 'POST',
-// })
-//   .inputValidator(bootstrapDefaultsInputSchema)
-//   .handler(async ({ data }) => {
-//   });
 
 const releaseUninstallInputSchema = z.object({
   actorUserId: z.string(),

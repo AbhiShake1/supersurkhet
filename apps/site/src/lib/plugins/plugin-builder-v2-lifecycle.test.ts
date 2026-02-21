@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeFieldConflicts } from '@/features/plugin-builder/collab/conflict-normalizer';
 import { createPluginRuntimeRegistry } from '@/lib/plugins/runtime-registry';
 import type {
   BusinessPluginDraftInstallDoc,
@@ -132,41 +131,6 @@ describe('plugin builder v2 lifecycle verification suite', () => {
       adminTabs: [{ schema: 'inventoryItem', title: 'Inventory' }],
     };
 
-    const concurrentOperations = [
-      {
-        operationId: 'op-title-a',
-        actorId: 'owner-1',
-        logicalTimestamp: 100,
-        targetPath: 'docs',
-        patch: {
-          title: 'Inventory Draft (A)',
-        },
-      },
-      {
-        operationId: 'op-title-c',
-        actorId: 'editor-1',
-        logicalTimestamp: 101,
-        targetPath: 'docs',
-        patch: {
-          title: 'Inventory Draft (Merged)',
-          description: 'Merged by two-client realtime session',
-        },
-      },
-    ];
-
-    const mergedForward = normalizeFieldConflicts(
-      baseDraftSnapshot,
-      concurrentOperations,
-    );
-    const mergedReverse = normalizeFieldConflicts(
-      baseDraftSnapshot,
-      [...concurrentOperations].reverse(),
-    );
-
-    expect(mergedForward.state).toEqual(mergedReverse.state);
-    expect(mergedForward.fieldVersions).toEqual(mergedReverse.fieldVersions);
-    expect(mergedForward.state.docs.title).toBe('Inventory Draft (Merged)');
-
     const draftRevision = createDraftRevision({
       draftId: draft.draftId,
       pluginId: draft.pluginId,
@@ -201,7 +165,7 @@ describe('plugin builder v2 lifecycle verification suite', () => {
     const compileReview = runPluginsV2CompileVerifyPipeline({
       pluginId: draft.pluginId,
       version: '1.0.0',
-      docs: mergedForward.state.docs,
+      docs: baseDraftSnapshot.docs,
       actionManifest: [
         {
           actionId: 'inventory.audit',
@@ -234,7 +198,7 @@ describe('plugin builder v2 lifecycle verification suite', () => {
 
     const release = createRelease({
       pluginId: draft.pluginId,
-      docs: mergedForward.state.docs,
+      docs: baseDraftSnapshot.docs,
       actionManifest: [
         {
           actionId: 'inventory.audit',
