@@ -180,6 +180,8 @@ type ModelsDevProviderRecord = {
   models?: Record<string, ModelsDevModelRecord>;
 };
 
+type OauthFlowState = 'idle' | 'pending' | 'connected' | 'error';
+
 const OPENAI_BROWSER_OAUTH_METHOD_ID = 'openai-chatgpt-pro-plus-browser';
 const OPENAI_HEADLESS_OAUTH_METHOD_ID = 'openai-chatgpt-pro-plus-headless';
 const GOOGLE_ANTIGRAVITY_OAUTH_METHOD_ID = 'google-antigravity-oauth';
@@ -479,6 +481,10 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [authSessionExpiresAt, setAuthSessionExpiresAt] = useState<
     number | null
   >(null);
+  const [oauthFlowState, setOauthFlowState] = useState<OauthFlowState>('idle');
+  const [oauthFlowMessage, setOauthFlowMessage] = useState('');
+  const [oauthAuthorizationUrl, setOauthAuthorizationUrl] = useState('');
+  const [oauthVerificationCode, setOauthVerificationCode] = useState('');
   const [modelsDevCatalogByProviderId, setModelsDevCatalogByProviderId] =
     useState<Record<string, ModelsDevProviderRecord>>({});
 
@@ -742,6 +748,8 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       if (payload.authMode === 'oauth-access-token') {
         setProviderOauthAccessToken('');
       }
+      setOauthFlowState('connected');
+      setOauthFlowMessage('Credential saved for selected provider.');
       toast.success('Provider credentials saved for this signed-in session.');
     } catch {
       toast.error('Failed to save provider credentials.');
@@ -781,6 +789,8 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       if (match.authMode) {
         setSelectedAssistantAuthMode(match.authMode);
       }
+      setOauthFlowState('connected');
+      setOauthFlowMessage('Credential detected for selected provider.');
       return true;
     } catch {
       return false;
@@ -798,6 +808,10 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         window.setTimeout(resolve, milliseconds);
       });
 
+    setOauthFlowState('pending');
+    setOauthFlowMessage('Preparing secure authorization link...');
+    setOauthAuthorizationUrl('');
+    setOauthVerificationCode('');
     setIsStartingProviderOauth(true);
     try {
       const response = await fetch('/v1/auth/providers/oauth/authorize', {
@@ -827,9 +841,14 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         pollingIntervalSeconds?: number;
       };
       if (!parsed.authorizationUrl) {
+        setOauthFlowState('error');
+        setOauthFlowMessage('Authorization URL was not returned.');
         toast.error('OAuth authorization URL was not returned.');
         return;
       }
+
+      setOauthAuthorizationUrl(parsed.authorizationUrl);
+      setOauthFlowMessage('Open the authorization page to continue OAuth.');
 
       const responseMethodId = parsed.method ?? resolvedProviderOauthMethodId;
       const isDevicePollingOauth =
@@ -847,18 +866,28 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         'popup=yes,width=560,height=760',
       );
       if (!popup) {
-        window.location.assign(parsed.authorizationUrl);
+        setOauthFlowState('pending');
+        setOauthFlowMessage(
+          'Popup blocked. Use the secure OAuth link below to continue in a new tab.',
+        );
+        toast.message('Popup blocked. Open OAuth using the secure link.');
         return;
       }
 
+      setOauthFlowState('pending');
+      setOauthFlowMessage('Complete login in the popup. We will detect completion automatically.');
       toast.success('Complete the OAuth login in the popup window.');
 
       if (isDevicePollingOauth) {
         if (parsed.verificationCode) {
+          setOauthVerificationCode(parsed.verificationCode);
           toast.message(
             `Verification code: ${parsed.verificationCode}. Enter it in the popup to continue.`,
           );
         }
+        setOauthFlowMessage(
+          'Device flow started. Complete verification in popup; status will update automatically.',
+        );
         const maxPollAttempts = 120;
         for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
           const callbackResponse = await fetch(
@@ -883,19 +912,30 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
             const nextWaitSeconds = Number.isFinite(retryAfterSeconds)
               ? Math.max(1, retryAfterSeconds)
               : pollingIntervalSeconds;
+            setOauthFlowMessage(
+              `Waiting for authorization confirmation... checking again in ${nextWaitSeconds}s.`,
+            );
             await wait(nextWaitSeconds * 1000);
             continue;
           }
 
           if (!callbackResponse.ok) {
+            setOauthFlowState('error');
+            setOauthFlowMessage('OAuth callback failed. Retry authorization.');
             toast.error(await readErrorMessage(callbackResponse));
             return;
           }
 
           const refreshed = await refreshStoredProviderCredential();
           if (refreshed) {
+            setOauthFlowState('connected');
+            setOauthFlowMessage(`${providerLabel} OAuth credential connected.`);
             toast.success(`${providerLabel} OAuth credential connected.`);
           } else {
+            setOauthFlowState('pending');
+            setOauthFlowMessage(
+              'OAuth completed. Credential not visible yet; try Refresh credential status.',
+            );
             toast.message(
               'OAuth completed. Refresh credential status if it is not visible yet.',
             );
@@ -903,6 +943,10 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
           return;
         }
 
+        setOauthFlowState('error');
+        setOauthFlowMessage(
+          'Timed out waiting for device authorization. Restart OAuth to retry.',
+        );
         toast.error('Timed out waiting for device authorization to complete.');
         return;
       }
@@ -912,10 +956,19 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         window.clearInterval(poll);
         const refreshed = await refreshStoredProviderCredential();
         if (refreshed) {
+          setOauthFlowState('connected');
+          setOauthFlowMessage(`${providerLabel} OAuth credential connected.`);
           toast.success(`${providerLabel} OAuth credential connected.`);
+        } else {
+          setOauthFlowState('pending');
+          setOauthFlowMessage(
+            'Authorization window closed. If not connected yet, use Refresh credential status.',
+          );
         }
       }, 1000);
     } catch {
+      setOauthFlowState('error');
+      setOauthFlowMessage(`Failed to start ${providerLabel} OAuth.`);
       toast.error(`Failed to start ${providerLabel} OAuth.`);
     } finally {
       setIsStartingProviderOauth(false);
@@ -1021,6 +1074,10 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     setProviderCredentialSavedAt(null);
     setAuthSessionToken('');
     setAuthSessionExpiresAt(null);
+    setOauthFlowState('idle');
+    setOauthFlowMessage('');
+    setOauthAuthorizationUrl('');
+    setOauthVerificationCode('');
     setSelectedAssistantModelId((currentModel) =>
       nextModelOptions.some((option) => option.id === currentModel)
         ? currentModel
@@ -1041,7 +1098,9 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         <Badge variant="secondary">{selectedModelOption.label}</Badge>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <div className="space-y-4">
+          <div className="space-y-3">
         <div className="space-y-1">
           <FormLabel className="text-xs text-muted-foreground">
             AI provider
@@ -1208,6 +1267,10 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
               setProviderCredentialSavedAt(null);
               setAuthSessionToken('');
               setAuthSessionExpiresAt(null);
+              setOauthFlowState('idle');
+              setOauthFlowMessage('');
+              setOauthAuthorizationUrl('');
+              setOauthVerificationCode('');
             }}
           >
             <SelectTrigger className="w-full">
@@ -1236,6 +1299,10 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                   setProviderCredentialSavedAt(null);
                   setAuthSessionToken('');
                   setAuthSessionExpiresAt(null);
+                  setOauthFlowState('idle');
+                  setOauthFlowMessage('');
+                  setOauthAuthorizationUrl('');
+                  setOauthVerificationCode('');
                 }}
               >
                 <SelectTrigger className="w-full">
@@ -1422,15 +1489,70 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         )}
       </div>
 
-      {authSessionToken && (
-        <p className="text-[11px] text-muted-foreground break-all">
-          Session token: {authSessionToken.slice(0, 18)}...
-          {authSessionToken.slice(-10)}
-          {authSessionExpiresAt
-            ? ` (expires at ${new Date(authSessionExpiresAt * 1000).toLocaleTimeString()})`
-            : ''}
-        </p>
-      )}
+          {authSessionToken && (
+            <p className="text-[11px] text-muted-foreground break-all">
+              Session token: {authSessionToken.slice(0, 18)}...
+              {authSessionToken.slice(-10)}
+              {authSessionExpiresAt
+                ? ` (expires at ${new Date(authSessionExpiresAt * 1000).toLocaleTimeString()})`
+                : ''}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+          <p className="text-xs font-medium text-foreground">
+            OAuth Connection
+          </p>
+          <Badge
+            variant={oauthFlowState === 'connected' ? 'secondary' : 'outline'}
+            className={cn(
+              'w-fit',
+              oauthFlowState === 'error' ? 'border-red-500/50 text-red-600' : '',
+            )}
+          >
+            {oauthFlowState === 'connected'
+              ? 'Connected'
+              : oauthFlowState === 'error'
+                ? 'Action needed'
+                : oauthFlowState === 'pending'
+                  ? 'In progress'
+                  : 'Not started'}
+          </Badge>
+
+          <p className="text-xs text-muted-foreground">
+            {oauthFlowMessage ||
+              'Pick OAuth mode, choose method, and press the connect button.'}
+          </p>
+
+          {oauthVerificationCode && (
+            <div className="rounded border border-dashed bg-background p-2">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Verification code
+              </p>
+              <p className="mt-1 font-mono text-sm">{oauthVerificationCode}</p>
+            </div>
+          )}
+
+          {oauthAuthorizationUrl && (
+            <Button asChild size="sm" className="w-full">
+              <a
+                href={oauthAuthorizationUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Open Secure OAuth Page
+              </a>
+            </Button>
+          )}
+
+          <div className="space-y-1 text-[11px] text-muted-foreground">
+            <p>1. Start OAuth from the connect button.</p>
+            <p>2. Approve access in the opened page or popup.</p>
+            <p>3. We detect completion and save the credential.</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
