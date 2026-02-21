@@ -5532,84 +5532,82 @@ function PluginStudioPresenter({
           <div className="absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-accent/30 blur-2xl" />
           <div className="relative flex flex-wrap items-start justify-between gap-4">
             <div className="w-full max-w-3xl">
-              <div className="group rounded-xl border border-border/70 bg-background/85 p-4">
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    {editingMetadataField === 'title' ? (
-                      <Input
-                        value={editingMetadataValue}
-                        autoFocus
-                        placeholder="Plugin name"
-                        onChange={(event) => setEditingMetadataValue(event.target.value)}
-                        onBlur={commitMetadataEdit}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            event.preventDefault();
-                            commitMetadataEdit();
-                          }
-                          if (event.key === 'Escape') {
-                            event.preventDefault();
-                            stopMetadataEdit();
-                          }
-                        }}
-                        className="h-10 text-xl font-semibold md:text-2xl"
-                      />
-                    ) : (
-                      <p className="text-xl font-semibold tracking-tight md:text-2xl">
-                        {title?.trim() || defaultPluginTitle}
-                      </p>
-                    )}
-                    {editingMetadataField === 'title' ? null : (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => beginMetadataEdit('title')}
-                        className="h-7 px-2 text-xs opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
-                      >
-                        Edit
-                        <Pencil className="ml-1 size-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                  <div className="flex items-start justify-between gap-3">
-                    {editingMetadataField === 'description' ? (
-                      <Textarea
-                        value={editingMetadataValue}
-                        autoFocus
-                        placeholder="Add a description"
-                        onChange={(event) => setEditingMetadataValue(event.target.value)}
-                        onBlur={commitMetadataEdit}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Escape') {
-                            event.preventDefault();
-                            stopMetadataEdit();
-                          }
-                          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-                            event.preventDefault();
-                            commitMetadataEdit();
-                          }
-                        }}
-                        className="min-h-[96px] resize-none"
-                      />
-                    ) : (
-                      <p className="text-sm text-muted-foreground">
-                        {description?.trim() || 'Add a description'}
-                      </p>
-                    )}
-                    {editingMetadataField === 'description' ? null : (
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => beginMetadataEdit('description')}
-                        className="h-7 px-2 text-xs opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
-                      >
-                        Edit
-                        <Pencil className="ml-1 size-3.5" />
-                      </Button>
-                    )}
-                  </div>
+              <div className="space-y-2">
+                <div className="group flex items-start gap-2">
+                  {editingMetadataField === 'title' ? (
+                    <Input
+                      value={editingMetadataValue}
+                      autoFocus
+                      placeholder="Plugin name"
+                      onChange={(event) => setEditingMetadataValue(event.target.value)}
+                      onBlur={commitMetadataEdit}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          commitMetadataEdit();
+                        }
+                        if (event.key === 'Escape') {
+                          event.preventDefault();
+                          stopMetadataEdit();
+                        }
+                      }}
+                      className="h-10 text-xl font-semibold md:text-2xl"
+                    />
+                  ) : (
+                    <p className="text-xl font-semibold tracking-tight md:text-2xl">
+                      {title?.trim() || defaultPluginTitle}
+                    </p>
+                  )}
+                  {editingMetadataField === 'title' ? null : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => beginMetadataEdit('title')}
+                      className="size-7 p-0 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
+                      aria-label="Edit title"
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                  )}
+                </div>
+                <div className="group flex items-start gap-2">
+                  {editingMetadataField === 'description' ? (
+                    <Textarea
+                      value={editingMetadataValue}
+                      autoFocus
+                      placeholder="Add a description"
+                      onChange={(event) => setEditingMetadataValue(event.target.value)}
+                      onBlur={commitMetadataEdit}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') {
+                          event.preventDefault();
+                          stopMetadataEdit();
+                        }
+                        if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                          event.preventDefault();
+                          commitMetadataEdit();
+                        }
+                      }}
+                      className="min-h-[96px] resize-none"
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {description?.trim() || 'Add a description'}
+                    </p>
+                  )}
+                  {editingMetadataField === 'description' ? null : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => beginMetadataEdit('description')}
+                      className="size-7 p-0 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
+                      aria-label="Edit description"
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -5632,14 +5630,6 @@ function PluginStudioPresenter({
               >
                 {isPublishing ? 'Publishing...' : 'Publish Plugin'}
                 {!isPublishing && <ArrowRight className="ml-2 size-4" />}
-              </Button>
-            </div>
-            <div className="flex w-full items-center gap-2 md:justify-end">
-              <Button type="button" size="sm" variant="outline" disabled>
-                Save Draft Revision
-              </Button>
-              <Button type="button" size="sm" variant="ghost" disabled>
-                Load Revision
               </Button>
             </div>
           </div>
