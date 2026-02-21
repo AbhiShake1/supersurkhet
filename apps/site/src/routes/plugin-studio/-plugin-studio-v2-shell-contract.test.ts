@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const pluginStudioV2RoutePath = resolve(
   process.cwd(),
-  'src/routes/plugin-studio/index.tsx',
+  'src/routes/plugin-studio/$projectId/$pluginId.tsx',
 );
 
 function getRouteContent() {
@@ -15,7 +15,7 @@ describe('plugin-studio route contract', () => {
   it('registers the plugin-studio route', () => {
     const content = getRouteContent();
 
-    expect(content).toContain("createFileRoute('/plugin-studio/')");
+    expect(content).toContain("createFileRoute('/plugin-studio/$projectId/$pluginId')");
   });
 
   it('renders dialog-first schema tooling and template trigger flow', () => {

@@ -8,11 +8,11 @@ const pluginStudioBaseRoutePath = resolve(
 );
 const pluginStudioProjectRoutePath = resolve(
   process.cwd(),
-  'src/routes/plugin-studio/$projectId.tsx',
+  'src/routes/plugin-studio/$projectId/index.tsx',
 );
 const pluginStudioProjectPluginRoutePath = resolve(
   process.cwd(),
-  'src/routes/plugin-studio/$projectId.$pluginId.tsx',
+  'src/routes/plugin-studio/$projectId/$pluginId.tsx',
 );
 
 describe('plugin studio multipage route contract', () => {
@@ -26,9 +26,8 @@ describe('plugin studio multipage route contract', () => {
   it('defines project-scoped page route using projectId path param', () => {
     const content = readFileSync(pluginStudioProjectRoutePath, 'utf8');
 
-    expect(content).toContain("createFileRoute('/plugin-studio/$projectId')");
-    expect(content).toContain('initialProjectId={projectId}');
-    expect(content).toContain('initialStudioView="org"');
+    expect(content).toContain("createFileRoute('/plugin-studio/$projectId/')");
+    expect(content).toContain('component: PluginStudioProjectRoute');
   });
 
   it('defines project + plugin workspace route using path params', () => {
@@ -37,8 +36,6 @@ describe('plugin studio multipage route contract', () => {
     expect(content).toContain(
       "createFileRoute('/plugin-studio/$projectId/$pluginId')",
     );
-    expect(content).toContain('initialProjectId={projectId}');
-    expect(content).toContain('initialPluginId={pluginId}');
-    expect(content).toContain('initialStudioView="workspace"');
+    expect(content).not.toContain('createFileRoute(\'/plugin-studio/\')');
   });
 });

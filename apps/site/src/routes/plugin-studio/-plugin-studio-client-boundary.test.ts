@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 const pluginStudioRoutePath = resolve(
   process.cwd(),
-  'src/routes/plugin-studio/index.tsx',
+  'src/routes/plugin-studio/$projectId/$pluginId.tsx',
 );
 
 function getRouteContent() {
