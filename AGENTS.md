@@ -218,6 +218,8 @@ Prefer:
 - Never discard or revert unrelated user changes.
 - Do not amend commits unless requested.
 - Use non-interactive commands in automation contexts.
+- For non-breaking changes, after verification passes (lint/Biome, type checks, and relevant tests), stage only files changed for the task and create a commit.
+- Write meaningful commits with a clear subject and a concise body describing intent and scope.
 - Summarize changed files clearly in final report.
 
 ## 12) Prompting Protocol (for Any Model)

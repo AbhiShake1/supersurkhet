@@ -23,7 +23,6 @@ const actionManifestDocSchema = z.object({
 });
 
 const pluginStudioUserUiStateSchema = z.object({
-  templatesTourSeenAt: z.string().datetime({ offset: true }).optional(),
   sidebarSnapshotJson: z.string().optional(),
 });
 
