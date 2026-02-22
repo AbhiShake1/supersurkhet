@@ -71,14 +71,16 @@ function resolvePublisher(entry: PluginCatalogEntry): string {
 
 function compareRank(left: PluginMarketItem, right: PluginMarketItem): number {
   if (left.installs !== right.installs) return right.installs - left.installs;
-  const leftLabel =
-    typeof left.title === 'string' && left.title.length > 0
+  const leftLabel = String(
+    (typeof left.title === 'string' && left.title.trim().length > 0
       ? left.title
-      : left.pluginId;
-  const rightLabel =
-    typeof right.title === 'string' && right.title.length > 0
+      : left.pluginId) ?? '',
+  );
+  const rightLabel = String(
+    (typeof right.title === 'string' && right.title.trim().length > 0
       ? right.title
-      : right.pluginId;
+      : right.pluginId) ?? '',
+  );
   return leftLabel.localeCompare(rightLabel);
 }
 

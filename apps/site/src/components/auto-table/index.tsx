@@ -99,6 +99,7 @@ export type AutoTableProps<T extends SchemaKeys> = {
   enableRowSelection?: boolean;
   enableGlobalFiltering?: boolean;
   enablePagination?: boolean;
+  showViewOptions?: boolean;
   defaultPageSize?: number;
   extender?: (schema: NestedSchema<T>) => ZodObjectOrWrapped;
   previewOverrides?: PreviewOverrides<T>;
@@ -162,6 +163,7 @@ export function AutoTable<T extends SchemaKeys>({
   enableRowSelection = true,
   enableGlobalFiltering = true,
   enablePagination = true,
+  showViewOptions = true,
   defaultPageSize = 10,
   ...props
 }: AutoTableProps<T>) {
@@ -328,6 +330,7 @@ export function AutoTable<T extends SchemaKeys>({
       >
         <DataTableAdvancedToolbar
           table={table}
+          showViewOptions={showViewOptions}
           endSlot={
             props.editable && !props.readOnly && props.onAddColumn ? (
               <Button

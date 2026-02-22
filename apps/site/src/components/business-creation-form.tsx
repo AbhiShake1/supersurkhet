@@ -1822,7 +1822,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                     className="flex min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none"
                                   >
                                     <div className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-all group-hover:scale-105">
-                                      <PluginIcon plugin={plugin} compact />
+                                      <PluginIcon plugin={plugin} compact staticPreview />
                                       <div className="absolute right-0.5 top-0.5 rounded-full bg-primary p-0.5 shadow-sm">
                                         <Bot className="h-2 w-2 text-black" />
                                       </div>
@@ -1900,7 +1900,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                     className="flex flex-1 items-center gap-3 text-left focus-visible:outline-none"
                                   >
                                     <div className="size-13 shrink-0 overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all group-hover:shadow-md group-hover:scale-[1.02]">
-                                      <PluginIcon plugin={plugin} compact />
+                                      <PluginIcon plugin={plugin} compact staticPreview />
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <p className="truncate text-sm font-semibold text-foreground/90">{plugin.title}</p>
@@ -1955,7 +1955,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                           className="w-full h-full"
                                           onClick={() => setSelectedDetailsPluginId(plugin.pluginId)}
                                         >
-                                          <PluginIcon plugin={plugin} />
+                                          <PluginIcon plugin={plugin} staticPreview />
                                         </button>
                                         <button
                                           type="button"
@@ -1996,7 +1996,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                   className="w-full h-full"
                                   onClick={() => setSelectedDetailsPluginId(plugin.pluginId)}
                                 >
-                                  <PluginIcon plugin={plugin} />
+                                  <PluginIcon plugin={plugin} staticPreview />
                                 </button>
                                 <button
                                   type="button"

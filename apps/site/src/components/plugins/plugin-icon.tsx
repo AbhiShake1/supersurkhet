@@ -5,9 +5,11 @@ import type { PluginMarketItem } from '@/lib/plugins/admin-plugin-market';
 export function PluginIcon({
   plugin,
   compact = false,
+  staticPreview = false,
 }: {
   plugin: PluginMarketItem;
   compact?: boolean;
+  staticPreview?: boolean;
 }) {
   const iconSize = compact ? 'w-full h-full' : 'w-full h-full';
   const previewSchema = plugin.latestRelease.adminTabs?.[0]?.schema;
@@ -35,6 +37,25 @@ export function PluginIcon({
     );
   }
 
+  if (staticPreview) {
+    return (
+      <div
+        className={`${iconSize} pointer-events-none overflow-hidden rounded-[20%] border border-[#dadce0] bg-[#f8f9fa]`}
+      >
+        <div className="h-full w-full p-2">
+          <div className="space-y-1.5">
+            <div className="h-1.5 w-3/4 rounded bg-[#c7ccd1]" />
+            <div className="h-1.5 w-full rounded bg-[#d8dde1]" />
+            <div className="h-1.5 w-2/3 rounded bg-[#d8dde1]" />
+            <div className="pt-1">
+              <div className="h-4 w-full rounded bg-[#e6eaee]" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`${iconSize} pointer-events-none overflow-hidden rounded-[20%] border border-[#dadce0] bg-[#f8f9fa]`}
@@ -44,6 +65,7 @@ export function PluginIcon({
           schema={previewSchema as SchemaKeys}
           data={[]}
           readOnly
+          showViewOptions={false}
           enableAdvancedFiltering={false}
           enableAdvancedSorting={false}
           enableAggregations={false}

@@ -334,6 +334,26 @@ const releaseInstallInputSchema = z
   })
   .strict();
 
+const releaseInstallBatchInputSchema = z
+  .object({
+    actorUserId: z.string(),
+    actorRole: z.enum(['owner', 'admin', 'staff']),
+    businessId: z.string(),
+    explicitOwnerAction: z.boolean().optional(),
+    installs: z
+      .array(
+        z
+          .object({
+            pluginId: z.string(),
+            version: z.string(),
+            requestedCapabilities: z.array(z.string()).optional(),
+          })
+          .strict(),
+      )
+      .default([]),
+  })
+  .strict();
+
 const draftCreateInputSchema = z.object({
   actorUserId: z.string(),
   pluginId: z.string(),
@@ -708,6 +728,77 @@ export async function installPluginRelease({ data }: { data: unknown }) {
   });
 
   return install;
+}
+
+export async function syncBusinessPluginInstalls({ data }: { data: unknown }) {
+  const parsedInput = requireParsedInput({
+    schema: releaseInstallBatchInputSchema,
+    data,
+    entrypoint: 'installPluginRelease',
+  });
+
+  const store = await loadPublishedStore(parsedInput.businessId);
+  const service = createPluginPlatformService({ store });
+  const desiredInstalls = new Map<
+    string,
+    {
+      pluginId: string;
+      version: string;
+      requestedCapabilities?: string[];
+    }
+  >();
+
+  for (const install of parsedInput.installs) {
+    desiredInstalls.set(install.pluginId, install);
+  }
+
+  const installsToPersist: BusinessPluginInstallDoc[] = [];
+  for (const install of desiredInstalls.values()) {
+    const nextInstall = service.installPublishedRelease({
+      actorUserId: parsedInput.actorUserId,
+      actorRole: parsedInput.actorRole,
+      explicitOwnerAction: parsedInput.explicitOwnerAction ?? true,
+      install: {
+        businessId: parsedInput.businessId,
+        pluginId: install.pluginId,
+        version: install.version,
+        requestedCapabilities: install.requestedCapabilities,
+      },
+    });
+    installsToPersist.push(nextInstall);
+  }
+
+  if (installsToPersist.length > 0) {
+    await Promise.all(
+      installsToPersist.map((install) =>
+        upsertScopedRow({
+          key: 'businessPluginInstall',
+          scopeKey: parsedInput.businessId,
+          id: install.id,
+          row: install,
+        }),
+      ),
+    );
+  }
+
+  const existingInstalls = store.listPublishedInstalls(parsedInput.businessId);
+  const installsToRemove = existingInstalls.filter(
+    (install) => !desiredInstalls.has(install.pluginId),
+  );
+  if (installsToRemove.length > 0) {
+    const { remove } = await import('@/lib/gun/ssr/delete');
+    await Promise.all(
+      installsToRemove.map((install) =>
+        remove('businessPluginInstall', parsedInput.businessId)(install.id),
+      ),
+    );
+  }
+
+  return {
+    businessId: parsedInput.businessId,
+    installedCount: installsToPersist.length,
+    removedCount: installsToRemove.length,
+  };
 }
 
 export async function createPluginDraft({

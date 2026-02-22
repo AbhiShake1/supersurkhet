@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const filePath = resolve(process.cwd(), 'src/components/create-business.tsx');
 
 describe('create-business plugin installation flow', () => {
-  it('installs user-selected releases on create from DB release rows only', () => {
+  it('syncs user-selected releases on create from DB release rows only', () => {
     const source = readFileSync(filePath, 'utf8');
 
     expect(source).not.toContain('ensureMarketplaceSeedReleases');
@@ -13,6 +13,6 @@ describe('create-business plugin installation flow', () => {
     expect(source).toContain('releaseRows as PluginReleaseDoc[]');
     expect(source).not.toContain('mergeMarketplaceReleasesWithSeed');
     expect(source).toContain('selectedPluginReleaseIds');
-    expect(source).toContain('installPluginRelease');
+    expect(source).toContain('syncBusinessPluginInstalls');
   });
 });

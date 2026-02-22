@@ -11,7 +11,7 @@ import {
   SkipForward,
   Sparkles,
 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import type { z } from 'zod';
@@ -24,7 +24,7 @@ import { getBusinessDataFieldFromSelectedReleases } from '@/lib/plugins/business
 import { parseReleaseId } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import type { businessSchema } from '@/lib/schema';
-import { installPluginRelease } from '@/server-functions/plugins';
+import { syncBusinessPluginInstalls } from '@/server-functions/plugins';
 import { useAuth } from './auth-provider';
 import {
   BusinessCreationForm,
@@ -56,6 +56,32 @@ const stepContent = {
     description: 'Your business is live. Start operating and iterate fast.',
   },
 };
+
+const stepRail = [
+  { id: 1, label: 'Basics' },
+  { id: 2, label: 'AI Setup' },
+  { id: 3, label: 'Plugins' },
+  { id: 4, label: 'Launch' },
+] as const;
+
+function toBusinessSlug(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+}
+
+function toInstallTargets(selectedReleaseIds: string[]) {
+  const targets = new Map<string, { pluginId: string; version: string }>();
+  for (const releaseId of selectedReleaseIds) {
+    const parsed = parseReleaseId(releaseId);
+    if (!parsed) continue;
+    targets.set(parsed.pluginId, parsed);
+  }
+  return [...targets.values()];
+}
 
 export function CreateBusinessPageFlow() {
   const { user } = useAuth();
@@ -97,8 +123,15 @@ export function CreateBusinessPageFlow() {
     },
   });
   const canUsePrimaryActions = form.formState.isValid && !isPending;
+  const businessName = form.watch('name') ?? '';
+  const businessSlug = useMemo(
+    () => toBusinessSlug(businessName),
+    [businessName],
+  );
   const selectedPluginReleaseIds = form.watch('selectedPluginReleaseIds') ?? [];
   const hasSelectedPlugins = selectedPluginReleaseIds.length > 0;
+  const completionPercent = Math.round((step / 4) * 100);
+  const pluginSyncDebounceRef = useRef<number | null>(null);
 
   const handleNextStep1 = async () => {
     if (isLoading) {
@@ -111,7 +144,7 @@ export function CreateBusinessPageFlow() {
     if (!isValid) return;
 
     const businessName = form.getValues('name');
-    const basePath = businessName.toLowerCase().replace(/\s+/g, '-');
+    const basePath = toBusinessSlug(businessName);
 
     const isNameTaken = existingBusinesses.some((b) => b.basePath === basePath);
 
@@ -125,6 +158,42 @@ export function CreateBusinessPageFlow() {
     setStep(2);
   };
 
+  const syncSelectedPluginInstalls = useCallback(
+    async ({
+      selectedReleaseIds,
+      slug,
+      showErrorToast,
+    }: {
+      selectedReleaseIds: string[];
+      slug: string;
+      showErrorToast: boolean;
+    }) => {
+      if (!user || slug.length === 0) return null;
+
+      const installTargets = toInstallTargets(selectedReleaseIds);
+      try {
+        return await syncBusinessPluginInstalls({
+          data: {
+            actorUserId: user?._?.soul ?? 'anon',
+            actorRole: 'owner',
+            businessId: slug,
+            explicitOwnerAction: true,
+            installs: installTargets,
+          },
+        });
+      } catch (error) {
+        if (showErrorToast) {
+          toast.error(
+            'Failed to sync selected plugins. You can retry from Admin > Plugins.',
+          );
+        }
+        console.error('Failed to sync plugin installs:', error);
+        return null;
+      }
+    },
+    [user],
+  );
+
   const onSubmit = async (values: BusinessCreationValues): Promise<void> => {
     if ((values.selectedPluginReleaseIds ?? []).length === 0) {
       form.setError('selectedPluginReleaseIds', {
@@ -136,7 +205,7 @@ export function CreateBusinessPageFlow() {
       return;
     }
 
-    const basePath = values.name.toLowerCase().replace(/\s+/g, '-');
+    const basePath = toBusinessSlug(values.name);
     // Extract prepopulateData to avoid including it in the business creation
     const { prepopulateData, selectedPluginReleaseIds, ...businessData } =
       values;
@@ -183,48 +252,22 @@ export function CreateBusinessPageFlow() {
       },
     })) as unknown as z.infer<typeof businessSchema>;
 
-    const installTargets = selectedPluginReleaseIds
-      .map((releaseId) => parseReleaseId(releaseId))
-      .filter(
-        (release): release is { pluginId: string; version: string } =>
-          release !== null,
-      );
-
-    if (installTargets.length > 0) {
-      const installResults = await Promise.allSettled(
-        installTargets.map((target) =>
-          installPluginRelease({
-            data: {
-              actorUserId: user?._?.soul ?? 'anon',
-              actorRole: 'owner',
-              businessId: basePath,
-              pluginId: target.pluginId,
-              version: target.version,
-              explicitOwnerAction: true,
-            },
-          }),
-        ),
-      );
-
-      const successfulInstalls = installResults.filter(
-        (result) => result.status === 'fulfilled',
-      ).length;
-      const failedInstalls = installResults.length - successfulInstalls;
-
-      if (successfulInstalls > 0) {
-        toast.success(
-          `${successfulInstalls} plugin${successfulInstalls === 1 ? '' : 's'} installed.`,
-        );
-      }
-      if (failedInstalls > 0) {
-        toast.warning(
-          `Business created, but ${failedInstalls} plugin install${failedInstalls === 1 ? '' : 's'} failed. You can retry from Admin > Plugins.`,
-        );
-      }
-    }
-
     setCreatedBusiness(created);
     setStep(4);
+
+    void (async () => {
+      const syncResult = await syncSelectedPluginInstalls({
+        selectedReleaseIds: selectedPluginReleaseIds,
+        slug: basePath,
+        showErrorToast: true,
+      });
+      if (!syncResult) return;
+      if (syncResult.installedCount > 0) {
+        toast.success(
+          `${syncResult.installedCount} plugin${syncResult.installedCount === 1 ? '' : 's'} installed.`,
+        );
+      }
+    })();
   };
 
   const currentContent = stepContent[step as keyof typeof stepContent];
@@ -241,6 +284,33 @@ export function CreateBusinessPageFlow() {
     didPromptLogin.current = true;
     void promptLogin();
   }, [promptLogin, user]);
+
+  useEffect(() => {
+    if (step !== 3 || !user || businessSlug.length === 0) return;
+    if (pluginSyncDebounceRef.current) {
+      window.clearTimeout(pluginSyncDebounceRef.current);
+    }
+    pluginSyncDebounceRef.current = window.setTimeout(() => {
+      void syncSelectedPluginInstalls({
+        selectedReleaseIds: selectedPluginReleaseIds,
+        slug: businessSlug,
+        showErrorToast: false,
+      });
+    }, 350);
+
+    return () => {
+      if (pluginSyncDebounceRef.current) {
+        window.clearTimeout(pluginSyncDebounceRef.current);
+        pluginSyncDebounceRef.current = null;
+      }
+    };
+  }, [
+    step,
+    user,
+    businessSlug,
+    selectedPluginReleaseIds,
+    syncSelectedPluginInstalls,
+  ]);
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_10%_10%,hsl(22_95%_58%/.12),transparent_40%),radial-gradient(circle_at_90%_0%,hsl(192_95%_56%/.12),transparent_35%),linear-gradient(145deg,hsl(224_21%_12%),hsl(236_24%_9%))] px-4 py-8 sm:px-8 sm:py-10">
@@ -287,24 +357,75 @@ export function CreateBusinessPageFlow() {
               Step {step} / 4
             </span>
           </header>
-          <div className="rounded-2xl border border-border/70 bg-background/95 p-4 text-foreground sm:p-5">
-            <Form {...form}>
-              {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
-              <form
-                id="business-creation-form"
-                onSubmit={form.handleSubmit(onSubmit)}
-              >
-                <BusinessCreationForm
-                  step={step}
-                  form={form}
-                  setStep={setStep}
-                  createdBusiness={createdBusiness}
-                  isSubmitting={isPending}
-                />
-              </form>
-            </Form>
+          <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-gradient-to-br from-white/12 via-white/5 to-transparent p-[1px] shadow-[0_18px_54px_rgba(5,8,16,0.38)]">
+            <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-background/90 p-4 text-foreground backdrop-blur-xl sm:p-5">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -left-24 top-0 h-56 w-56 rounded-full bg-primary/20 blur-3xl"
+              />
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -right-20 bottom-[-4.5rem] h-52 w-52 rounded-full bg-cyan-400/20 blur-3xl"
+              />
 
-            {step !== 4 && <div className="h-24 sm:h-28" />}
+              <div className="relative mb-6 space-y-4 rounded-xl border border-white/10 bg-muted/45 p-4 sm:p-5">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <p className="font-medium uppercase tracking-[0.14em] text-foreground/70">
+                    Journey progress
+                  </p>
+                  <p className="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 font-semibold text-primary">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {completionPercent}% complete
+                  </p>
+                </div>
+                <div className="h-1.5 overflow-hidden rounded-full bg-foreground/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-primary via-cyan-400 to-emerald-400 transition-all duration-300"
+                    style={{ width: `${completionPercent}%` }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {stepRail.map((item) => {
+                    const isCompleted = step > item.id;
+                    const isCurrent = step === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={[
+                          'rounded-lg border px-2.5 py-2 text-xs transition-all duration-200',
+                          isCurrent
+                            ? 'border-primary/45 bg-primary/15 text-foreground shadow-sm'
+                            : isCompleted
+                              ? 'border-emerald-500/35 bg-emerald-500/10 text-foreground/90'
+                              : 'border-border/70 bg-background/65 text-muted-foreground',
+                        ].join(' ')}
+                      >
+                        <p className="font-semibold">0{item.id}</p>
+                        <p className="mt-0.5 truncate">{item.label}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <Form {...form}>
+                {/** biome-ignore lint/correctness/useUniqueElementIds: lint debt cleanup */}
+                <form
+                  id="business-creation-form"
+                  onSubmit={form.handleSubmit(onSubmit)}
+                >
+                  <BusinessCreationForm
+                    step={step}
+                    form={form}
+                    setStep={setStep}
+                    createdBusiness={createdBusiness}
+                    isSubmitting={isPending}
+                  />
+                </form>
+              </Form>
+
+              {step !== 4 && <div className="h-24 sm:h-28" />}
+            </div>
           </div>
         </section>
       </div>
