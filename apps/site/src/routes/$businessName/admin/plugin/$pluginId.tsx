@@ -233,13 +233,16 @@ function PluginDetailsPage() {
     const heroNode = heroSectionRef.current;
     if (!heroNode) return;
 
-    const observer = new IntersectionObserver(([entry]) => {
-      setIsHeroOutOfView(!entry.isIntersecting);
-    });
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsHeroOutOfView(!entry.isIntersecting);
+      },
+      { threshold: [0, 1] },
+    );
 
     observer.observe(heroNode);
     return () => observer.disconnect();
-  }, []);
+  }, [decoratedPlugin, details]);
 
   if (!decoratedPlugin || !details) {
     return (
@@ -623,7 +626,7 @@ function PluginDetailsPage() {
       </section>
 
       {isHeroOutOfView ? (
-        <div className="fixed inset-x-0 top-0 z-30 border-b border-white/15 bg-gradient-to-r from-[#070d14]/96 via-[#0a1320]/92 to-[#070d14]/96 shadow-[0_12px_30px_rgba(0,0,0,0.28)] backdrop-blur-sm">
+        <div className="fixed inset-x-0 top-0 z-[45] border-b border-white/15 bg-[#070a11]/95 shadow-[0_12px_30px_rgba(0,0,0,0.3)] backdrop-blur-md">
           <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3 px-4 py-3 sm:px-7 md:px-10 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex flex-wrap items-center gap-2.5">
               <Button
@@ -647,142 +650,252 @@ function PluginDetailsPage() {
         </div>
       ) : null}
 
-      <div className="mx-auto w-full max-w-[1280px] space-y-8 px-4 py-8 md:space-y-10 md:px-8 md:py-10">
-        <section className="grid gap-6 rounded-[30px] border border-[#d9e0eb] bg-white/95 p-4 shadow-[0_18px_48px_rgba(14,22,40,0.09)] backdrop-blur md:p-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-8">
-          <div className="space-y-8">
-            <section className="space-y-4 rounded-[24px] border border-[#e3e8f1] bg-[#f8fafd] p-4 md:p-5">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#5f6368]">
-                  Preview gallery
-                </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsPreviewOpen(true)}
-                  className="h-8 rounded-full px-3 text-xs text-[#2f5cbf] hover:bg-[#e9f0ff] hover:text-[#234a9b]"
-                >
-                  Open live preview
-                </Button>
+      <div className="mx-auto w-full max-w-[1240px] px-4 py-8 md:px-8">
+        <div className="flex flex-col gap-10 lg:flex-row lg:gap-16">
+          {/* Main Content (Left Column) */}
+          <div className="flex-1 space-y-12">
+            {/* Preview Gallery */}
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-medium text-[#202124]">Screenshots</h2>
               </div>
-              {details.previewScreenshots.length > 0 ? (
-                <div className="relative">
-                  <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[#f8fafd] to-transparent" />
-                  <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[#f8fafd] to-transparent" />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label="Scroll previews left"
-                    className="absolute left-0 top-1/2 z-20 hidden h-14 w-14 -translate-x-1/2 -translate-y-1/2 rounded-full border-[#d7dae0] bg-white text-[#5f6368] shadow-lg hover:bg-[#f6f8fb] lg:inline-flex"
-                    onClick={() => scrollPreviewStrip('left')}
-                  >
-                    <ChevronLeft className="size-6" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    aria-label="Scroll previews right"
-                    className="absolute right-0 top-1/2 z-20 hidden h-14 w-14 translate-x-1/2 -translate-y-1/2 rounded-full border-[#d7dae0] bg-white text-[#5f6368] shadow-lg hover:bg-[#f6f8fb] lg:inline-flex"
-                    onClick={() => scrollPreviewStrip('right')}
-                  >
-                    <ChevronRight className="size-6" />
-                  </Button>
-                  <div
-                    ref={previewStripRef}
-                    className="flex gap-4 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                  >
-                    {details.previewScreenshots.map((src, index) => (
-                      <button
-                        key={`${src}:${index.toString()}`}
-                        type="button"
-                        aria-label={`Open preview ${index + 1}`}
-                        onClick={() => setIsPreviewOpen(true)}
-                        className="group h-[340px] w-[192px] shrink-0 overflow-hidden rounded-[16px] border border-[#202124]/12 bg-[#090c12] shadow-[0_12px_26px_rgba(9,12,18,0.2)] md:h-[410px] md:w-[228px]"
-                      >
-                        <img
-                          src={src}
-                          alt={`${pluginData.title} preview ${index + 1}`}
-                          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-                        />
-                      </button>
-                    ))}
-                  </div>
+              <div className="relative group">
+                <div
+                  ref={previewStripRef}
+                  className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {details.previewScreenshots.map((src, index) => (
+                    <div
+                      key={`${src}:${index.toString()}`}
+                      className="h-[400px] w-[225px] shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-black"
+                    >
+                      <img
+                        src={src}
+                        alt={`${pluginData.title} preview ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ))}
+                  {details.previewScreenshots.length === 0 && (
+                    <div className="flex h-[200px] w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-gray-500">
+                      No screenshots available
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="rounded-[18px] border border-[#dadce0] bg-white p-4">
-                  <p className="text-sm text-[#5f6368]">
-                    No screenshots yet. Use the live preview tabs in the hero
-                    section above.
-                  </p>
-                  <div className="mt-3">
+                {details.previewScreenshots.length > 0 && (
+                  <>
                     <Button
                       variant="outline"
-                      size="sm"
-                      onClick={() => setIsPreviewOpen(true)}
-                      className="rounded-full"
+                      size="icon"
+                      className="absolute -left-5 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border-gray-200 bg-white shadow-md group-hover:flex"
+                      onClick={() => scrollPreviewStrip('left')}
                     >
-                      Open live preview <ExternalLink className="ml-2 size-3.5" />
+                      <ChevronLeft className="size-5" />
                     </Button>
-                  </div>
-                </div>
-              )}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute -right-5 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border-gray-200 bg-white shadow-md group-hover:flex"
+                      onClick={() => scrollPreviewStrip('right')}
+                    >
+                      <ChevronRight className="size-5" />
+                    </Button>
+                  </>
+                )}
+              </div>
             </section>
 
-            <section className="space-y-5 rounded-[24px] border border-[#e3e8f1] bg-white p-5 md:p-6">
-              <h2 className="flex items-center gap-2 text-[1.8rem] font-normal leading-none text-[#202124] md:text-[2.1rem]">
-                About this plugin
-                <ChevronRight className="mt-0.5 size-6 text-[#5f6368]" />
-              </h2>
-              <p className="text-sm font-normal uppercase tracking-[0.08em] text-[#5f6368] md:text-[0.95rem]">
-                {pluginData.title.toUpperCase()} —{' '}
-                {pluginData.category.toUpperCase()}
-              </p>
-              <p className="max-w-[900px] text-[1.05rem] leading-8 text-[#4f5358] md:text-[1.125rem]">
-                {pluginData.description?.trim() ||
-                  'No description has been added for this plugin yet.'}
-              </p>
-              <div className="space-y-2 pt-2">
-                <p className="text-lg font-normal text-[#202124] md:text-xl">
-                  Updated on
-                </p>
-                <p className="text-base text-[#5f6368]">{publishedDateLabel}</p>
+            {/* About Section */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-xl font-medium text-[#202124]">
+                  About this plugin
+                  <ChevronRight className="size-5 text-gray-400" />
+                </h2>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <span className="rounded-full border border-[#d8dbe0] bg-[#f7f9fc] px-4 py-1.5 text-[0.9rem] font-normal text-[#3c4043]">
-                  {pluginData.category}
-                </span>
-                <span className="rounded-full border border-[#d8dbe0] bg-[#f7f9fc] px-4 py-1.5 text-[0.9rem] font-normal text-[#3c4043]">
-                  v{pluginData.latestRelease.version}
-                </span>
-                <span className="rounded-full border border-[#d8dbe0] bg-[#f7f9fc] px-4 py-1.5 text-[0.9rem] font-normal text-[#3c4043]">
-                  {pluginData.latestRelease.visibility}
-                </span>
+              <div className="space-y-4">
+                <p className="text-[14px] leading-relaxed text-[#5f6368]">
+                  {pluginData.description?.trim() || 'No description provided.'}
+                </p>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <div className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-[#5f6368]">
+                    v{pluginData.latestRelease.version}
+                  </div>
+                  <div className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-[#5f6368]">
+                    {pluginData.category}
+                  </div>
+                  <div className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-[#5f6368]">
+                    Updated on {publishedDateLabel}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Ratings and Reviews Section */}
+            <section className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="flex items-center gap-2 text-xl font-medium text-[#202124]">
+                  Ratings and reviews
+                  <ChevronRight className="size-5 text-gray-400" />
+                </h2>
+                <div className="flex items-center gap-2 text-xs text-gray-500">
+                  Ratings and reviews are verified
+                  <CircleHelp className="size-3.5" />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-8 md:flex-row md:items-start md:gap-12">
+                <div className="flex flex-col items-center gap-2 md:items-start">
+                  <span className="text-6xl font-medium text-[#202124]">
+                    {details.reviewStats.averageRating.toFixed(1)}
+                  </span>
+                  <Stars
+                    rating={details.reviewStats.averageRating}
+                    tone="emerald"
+                    sizeClass="size-4"
+                  />
+                  <span className="text-xs text-[#5f6368]">
+                    {details.reviewStats.totalReviews.toLocaleString()} reviews
+                  </span>
+                </div>
+
+                <div className="flex-1 space-y-2">
+                  {breakdownRows.map((row) => {
+                    const width =
+                      totalBreakdownCount > 0
+                        ? (row.count / totalBreakdownCount) * 100
+                        : 0;
+                    return (
+                      <div key={row.stars} className="flex items-center gap-4 text-sm">
+                        <span className="w-1 text-right text-[#5f6368]">{row.stars}</span>
+                        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-100">
+                          <div
+                            className="h-full bg-[#01875f]"
+                            style={{ width: `${width}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Review Input */}
+              <div className="rounded-2xl border border-gray-200 p-6 transition-shadow hover:shadow-md">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-base font-medium text-[#202124]">Your review</h3>
+                  <Button
+                    size="sm"
+                    onClick={saveReview}
+                    loading={savingReview}
+                    disabled={savingReview || reviewRating <= 0 || !isReviewDirty}
+                    className="h-9 rounded-full bg-[#01875f] transition-all hover:bg-[#01704f] hover:shadow-sm disabled:opacity-50"
+                  >
+                    Save review
+                  </Button>
+                </div>
+                <div className="mb-4 flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      className="group relative p-1 transition-all hover:scale-125 focus:outline-none focus:ring-2 focus:ring-[#01875f]/20 rounded-lg"
+                      aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                    >
+                      <svg
+                        className={cn(
+                          'size-7 transition-all duration-200',
+                          star <= reviewRating
+                            ? 'fill-[#01875f] text-[#01875f] drop-shadow-sm'
+                            : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300'
+                        )}
+                        viewBox="0 0 24 24"
+                        stroke="none"
+                      >
+                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                      </svg>
+                    </button>
+                  ))}
+                  <span className="ml-3 text-sm font-medium text-gray-500 transition-colors">
+                    {reviewRating > 0 ? `${reviewRating}/5 stars` : 'Select rating'}
+                  </span>
+                </div>
+                <Textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  placeholder="Tell us what you think about this plugin..."
+                  className="min-h-[100px] resize-none border-gray-200 transition-colors focus-visible:ring-[#01875f] focus-visible:ring-2"
+                />
+              </div>
+
+              {/* Reviews List */}
+              <div className="space-y-8 divide-y divide-gray-100">
+                {reviewGroups.slice(0, 3).map((group, index) => (
+                  <article key={group.userId} className={cn("space-y-3", index > 0 && "pt-8")}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="size-8 overflow-hidden rounded-full bg-gray-100">
+                          <div className="flex size-full items-center justify-center bg-[#01875f] text-[10px] font-bold text-white">
+                            {group.userLabel.charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                        <span className="text-sm font-medium text-[#202124]">
+                          {group.userLabel}
+                        </span>
+                      </div>
+                      <Button variant="ghost" size="icon" className="size-8">
+                        <EllipsisVertical className="size-4 text-gray-500" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Stars rating={group.latestReview.rating} tone="emerald" sizeClass="size-3" />
+                      <span className="text-xs text-gray-500">
+                        {new Date(group.latestReview.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-[#5f6368] leading-relaxed">
+                      {group.latestReview.comment}
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <span className="text-[11px] text-gray-500">Was this helpful?</span>
+                      <Button variant="outline" size="sm" className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50">Yes</Button>
+                      <Button variant="outline" size="sm" className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50">No</Button>
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
           </div>
 
-          <aside className="space-y-8 lg:sticky lg:top-24">
-            <section className="space-y-2 rounded-[24px] border border-[#e3e8f1] bg-white p-5 md:p-6">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between gap-3 text-left text-[1.65rem] font-medium text-[#202124] transition-colors hover:text-[#0c7d5b] md:text-[1.85rem]"
-              >
-                App support
-                <ChevronDown className="size-6 text-[#5f6368]" />
+          {/* Sidebar (Right Column) */}
+          <aside className="w-full space-y-10 lg:w-[320px]">
+            {/* App Support */}
+            <section className="space-y-4">
+              <button className="flex w-full items-center justify-between border-b pb-4 text-left group">
+                <span className="text-lg font-medium text-[#202124] group-hover:text-[#01875f] transition-colors">App support</span>
+                <ChevronDown className="size-5 text-gray-400 group-hover:text-[#01875f] transition-colors" />
               </button>
-              <p className="text-[1rem] leading-relaxed text-[#5f6368] md:text-[1.0625rem]">
-                Contact {pluginData.publisher} for setup help and support.
-              </p>
+              <div className="space-y-3 pt-2">
+                <div className="flex items-center gap-3 text-sm text-[#5f6368]">
+                  <ExternalLink className="size-4 text-gray-400" />
+                  <span className="hover:text-[#01875f] cursor-pointer">Website</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-[#5f6368]">
+                  <CircleHelp className="size-4 text-gray-400" />
+                  <span className="hover:text-[#01875f] cursor-pointer">Support email</span>
+                </div>
+              </div>
             </section>
 
-            <section className="space-y-4 rounded-[24px] border border-[#e3e8f1] bg-white p-5 md:p-6">
-              <h3 className="flex items-center justify-between gap-3 text-[1.65rem] font-medium text-[#202124] md:text-[1.85rem]">
-                Similar plugins
-                <ChevronRight className="size-6 text-[#5f6368]" />
-              </h3>
-              <div className="space-y-3">
-                {similar.map((item) => (
+            {/* Similar Plugins */}
+            <section className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-[#202124]">Similar plugins</h3>
+                <ChevronRight className="size-5 text-gray-400" />
+              </div>
+              <div className="space-y-6">
+                {similar.slice(0, 5).map((item) => (
                   <Link
                     key={item.pluginId}
                     to="/$businessName/admin/plugin/$pluginId"
@@ -790,229 +903,37 @@ function PluginDetailsPage() {
                       businessName,
                       pluginId: encodeURIComponent(item.pluginId),
                     }}
-                    className="flex items-center gap-3 rounded-2xl border border-transparent p-2.5 transition hover:border-[#d9e0ee] hover:bg-[#eef3fa]"
+                    className="flex items-start gap-4"
                   >
-                    <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#dadce0] bg-[#ecf1f8]">
+                    <div className="size-14 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
                       {item.iconUrl ? (
                         <img
                           src={item.iconUrl}
-                          alt={`${item.title} icon`}
+                          alt={item.title}
                           className="size-full object-cover"
                         />
                       ) : (
-                        <span className="text-xl font-medium text-[#3358a0]">
-                          {item.title.slice(0, 1).toUpperCase()}
-                        </span>
+                        <div className="flex size-full items-center justify-center bg-gray-200 text-gray-400">
+                          {item.title.charAt(0).toUpperCase()}
+                        </div>
                       )}
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-[1.2rem] font-medium text-[#202124] md:text-[1.3rem]">
-                        {item.title}
-                      </p>
-                      <p className="truncate text-[1rem] text-[#4f5358] md:text-[1.05rem]">
-                        {item.publisher}
-                      </p>
-                      <p className="text-[1rem] text-[#5f6368] md:text-[1.05rem]">
-                        {item.averageRating && item.averageRating > 0
-                          ? `${item.averageRating.toFixed(1)}★`
-                          : 'Not rated'}
-                      </p>
+                      <h4 className="truncate text-sm font-medium text-[#202124]">{item.title}</h4>
+                      <p className="truncate text-xs text-gray-500">{item.publisher}</p>
+                      <div className="mt-1 flex items-center gap-1">
+                        <span className="text-xs text-gray-500">
+                          {item.averageRating ? item.averageRating.toFixed(1) : 'N/A'}
+                        </span>
+                        <Star className="size-3 fill-gray-400 text-gray-400" />
+                      </div>
                     </div>
                   </Link>
                 ))}
-                {similar.length === 0 ? (
-                  <p className="text-sm text-[#5f6368]">
-                    No similar category plugins found.
-                  </p>
-                ) : null}
               </div>
             </section>
           </aside>
-        </section>
-
-        <section className="space-y-6 rounded-[30px] border border-[#d9e0eb] bg-white p-5 shadow-[0_14px_34px_rgba(14,22,40,0.07)] md:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <h2 className="flex items-center gap-2 text-[1.375rem] font-medium text-[#202124]">
-              Ratings and reviews
-              <ChevronRight className="size-5 text-[#5f6368]" />
-            </h2>
-            <p className="flex items-center gap-2 text-sm text-[#5f6368]">
-              Ratings and reviews are verified
-              <CircleHelp className="size-4" />
-            </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-[220px_1fr]">
-            <div className="space-y-2">
-              <p className="text-[3.25rem] font-medium leading-none text-[#202124]">
-                {details.reviewStats.averageRating.toFixed(1)}
-              </p>
-              <Stars
-                rating={details.reviewStats.averageRating}
-                tone="emerald"
-                sizeClass="size-5"
-              />
-              <p className="text-sm text-[#5f6368]">
-                {details.reviewStats.totalReviews.toLocaleString()} reviews
-              </p>
-            </div>
-            <div className="space-y-2">
-              {breakdownRows.map((row) => {
-                const width =
-                  totalBreakdownCount > 0
-                    ? (row.count / totalBreakdownCount) * 100
-                    : 0;
-                const fillPercent = row.count > 0 ? Math.max(2, width) : 0;
-                return (
-                  <div
-                    key={`rating-breakdown-${row.stars.toString()}`}
-                    className="grid grid-cols-[20px_1fr] items-center gap-3"
-                  >
-                    <span className="text-sm text-[#5f6368]">{row.stars}</span>
-                    <div className="h-2.5 overflow-hidden rounded-full bg-[#e8eaed]">
-                      <div
-                        className="h-full rounded-full bg-[#01875f]"
-                        style={{ width: `${fillPercent.toFixed(2)}%` }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="rounded-[20px] border border-[#dadce0] bg-[#f9fbff] p-4 md:p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-base font-medium text-[#202124]">
-                Your review
-              </p>
-              <Button
-                size="sm"
-                onClick={saveReview}
-                loading={savingReview}
-                disabled={savingReview || reviewRating <= 0 || !isReviewDirty}
-                className="rounded-full px-4 text-sm"
-              >
-                Save review
-              </Button>
-            </div>
-            <div className="mt-3 flex items-center gap-1">
-              {Array.from({ length: 5 }).map((_, index) => {
-                const value = index + 1;
-                const active = value <= reviewRating;
-                return (
-                  <button
-                    key={`rating-star-${value.toString()}`}
-                    type="button"
-                    aria-label={`Rate ${value} star${value === 1 ? '' : 's'}`}
-                    className="rounded p-0.5 hover:bg-accent"
-                    onClick={() => setReviewRating(value)}
-                  >
-                    <Star
-                      className={cn(
-                        'size-6 transition-colors',
-                        active ? 'fill-primary text-primary' : 'text-[#c8cdd3]',
-                      )}
-                    />
-                  </button>
-                );
-              })}
-              <span className="ml-2 text-sm text-[#5f6368]">
-                {reviewRating > 0
-                  ? `${reviewRating.toString()}/5`
-                  : 'Select rating'}
-              </span>
-            </div>
-            <Textarea
-              className="mt-4 min-h-24 border-[#dadce0] bg-white text-sm text-[#202124]"
-              value={reviewComment}
-              onChange={(event) => setReviewComment(event.target.value)}
-              placeholder="Share details about your experience with this plugin."
-              maxLength={2000}
-            />
-            <p className="mt-2 text-xs text-[#5f6368]">
-              You can edit and resave your review any time.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            {reviewGroups.length === 0 ? (
-              <p className="text-sm text-[#5f6368]">
-                Be the first one to review this plugin.
-              </p>
-            ) : (
-              reviewGroups.map((group) => (
-                <article
-                  key={group.userId}
-                  className="rounded-[20px] border border-[#dadce0] bg-[#fbfcff] p-4"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-full bg-[#dfe7fb] text-sm font-semibold text-[#365dc6]">
-                        {(
-                          group.userLabel.trim().slice(0, 1) || '?'
-                        ).toUpperCase()}
-                      </div>
-                      <p className="text-sm font-medium text-[#202124]">
-                        {group.userLabel}
-                        {group.isCurrentUser ? ' (You)' : ''}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      aria-label="More review options"
-                      className="rounded-full p-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    >
-                      <EllipsisVertical className="size-4" />
-                    </button>
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <Stars
-                      rating={group.latestReview.rating}
-                      tone="emerald"
-                      sizeClass="size-4"
-                    />
-                    <span className="text-xs text-[#5f6368]">
-                      {new Date(
-                        group.latestReview.createdAt,
-                      ).toLocaleDateString(undefined, {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </span>
-                  </div>
-                  {group.latestReview.comment ? (
-                    <p className="mt-2 text-sm leading-6 text-[#3c4043]">
-                      {group.latestReview.comment}
-                    </p>
-                  ) : null}
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <span className="text-xs text-[#5f6368]">
-                      Did you find this helpful?
-                    </span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 rounded-full px-4 text-xs font-medium"
-                    >
-                      Yes
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 rounded-full px-4 text-xs font-medium"
-                    >
-                      No
-                    </Button>
-                  </div>
-                </article>
-              ))
-            )}
-          </div>
-        </section>
+        </div>
 
         <PluginPreviewDialog
           open={isPreviewOpen}
