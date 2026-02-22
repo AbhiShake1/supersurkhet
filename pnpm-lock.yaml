@@ -1868,7 +1868,7 @@ packages:
   '@esbuild-plugins/node-globals-polyfill@0.2.3':
     resolution: {integrity: sha512-r3MIryXDeXDOZh7ih1l/yE9ZLORCd5e8vWg02azWRGj5SPTuoh69A2AIyn0Z31V/kHBfZ4HgWJ+OK3GTTwLmnw==}
     peerDependencies:
-      esbuild: 0.17.19
+      esbuild: '*'
 
   '@esbuild-plugins/node-modules-polyfill@0.2.2':
     resolution: {integrity: sha512-LXV7QsWJxRuMYvKbiznh+U1ilIop3g2TeKRzUxOG5X3YITc8JyyTa90BmLwqqv0YnX4v32CSlG+vsziZp9dMvA==}

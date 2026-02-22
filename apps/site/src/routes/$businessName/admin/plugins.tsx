@@ -1,11 +1,14 @@
 import type { SchemaKeys } from '@gta/react-hooks';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { Bot, Download, Loader2, Play, Search, Sparkles } from 'lucide-react';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import { useAuth } from '@/components/auth-provider';
 import { AutoTable } from '@/components/auto-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { VercelV0Chat } from '@/components/ui/v0-ai-chat';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
@@ -18,6 +21,7 @@ import type {
   PluginReleaseDoc,
   PluginUserReviewDoc,
 } from '@/lib/plugins/types';
+import { installPluginRelease } from '@/server-functions/plugins';
 
 export const Route = createFileRoute('/$businessName/admin/plugins')({
   component: PluginsRouteComponent,
@@ -27,16 +31,28 @@ type ChartType = 'top-installed' | 'recently-updated';
 
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
+  const { user, anonymousUserId } = useAuth();
   const [query, setQuery] = useState('');
   const [chartType, setChartType] = useState<ChartType>('top-installed');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [isChatExpanded, setIsChatExpanded] = useState(false);
+  const [installingPluginIds, setInstallingPluginIds] = useState<string[]>([]);
+  const recommendedSectionRef = useRef<HTMLElement>(null);
 
   const { data: businesses = [], isLoading } = api.business.useGet({
     keys: [businessName],
     single: true,
   });
+  const isAiAuthenticated = true;
   const business = businesses[0];
   const businessId = business?.id ?? businessName;
+  const actorUserId = user?._?.soul ?? user?.pub ?? anonymousUserId ?? 'anon';
+  const actorRole =
+    business?.members?.[actorUserId]?.role === 'owner'
+      ? 'owner'
+      : user?.role === 'admin'
+        ? 'admin'
+        : 'staff';
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [businessId],
@@ -108,6 +124,71 @@ function PluginsRouteComponent() {
     chartType === 'recently-updated'
       ? marketplace.recentlyUpdated
       : marketplace.topInstalled;
+  const recommendedPlugins = marketplace.topInstalled.slice(0, 6);
+
+  const scrollToRecommendedSection = useCallback(() => {
+    const sectionNode = recommendedSectionRef.current;
+    if (!sectionNode) return;
+    const stickyHeader = document.querySelector<HTMLElement>(
+      '[data-plugins-sticky-header="true"]',
+    );
+    const stickyOffset = (stickyHeader?.offsetHeight ?? 72) + 12;
+    const sectionTop =
+      window.scrollY + sectionNode.getBoundingClientRect().top - stickyOffset;
+    window.scrollTo({
+      top: Math.max(0, sectionTop),
+      behavior: 'smooth',
+    });
+  }, []);
+
+  const scrollToRecommendedAfterExpand = useCallback(() => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(scrollToRecommendedSection);
+    });
+  }, [scrollToRecommendedSection]);
+
+  const handleOpenAiAssistant = useCallback(() => {
+    setIsChatExpanded(true);
+    scrollToRecommendedAfterExpand();
+  }, [scrollToRecommendedAfterExpand]);
+
+  const handleToggleAiAssistant = useCallback(() => {
+    setIsChatExpanded((current) => {
+      const next = !current;
+      if (next) {
+        scrollToRecommendedAfterExpand();
+      }
+      return next;
+    });
+  }, [scrollToRecommendedAfterExpand]);
+
+  const installSuggestedPlugin = useCallback(
+    async (plugin: PluginMarketItem) => {
+      if (installingPluginIds.includes(plugin.pluginId)) return;
+      setInstallingPluginIds((current) => [...current, plugin.pluginId]);
+      try {
+        await installPluginRelease({
+          data: {
+            actorUserId,
+            actorRole,
+            businessId,
+            pluginId: plugin.pluginId,
+            version: plugin.latestRelease.version,
+            explicitOwnerAction: true,
+          },
+        });
+        toast.success(`Installed ${plugin.title}`);
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to install plugin');
+      } finally {
+        setInstallingPluginIds((current) =>
+          current.filter((currentPluginId) => currentPluginId !== plugin.pluginId),
+        );
+      }
+    },
+    [actorRole, actorUserId, businessId, installingPluginIds],
+  );
 
   if (isLoading && !business) {
     return <PluginsPageSkeleton />;
@@ -116,7 +197,7 @@ function PluginsRouteComponent() {
   return (
     <div className="min-h-screen bg-white text-[#202124]">
       {/* Header Tabs */}
-      <div className="sticky top-0 z-50 border-b bg-white">
+      <div data-plugins-sticky-header="true" className="sticky top-0 z-50 border-b bg-white">
         <div className="mx-auto flex max-w-[1240px] items-center gap-6 px-6 py-3">
           <Button asChild variant="ghost" size="sm" className="rounded-full text-[#5f6368]">
             <Link to="/$businessName/admin" params={{ businessName }}>
@@ -170,6 +251,149 @@ function PluginsRouteComponent() {
 
         {selectedCategory === 'All' && !query.trim() ? (
           <div className="space-y-12">
+            {/* Recommended by AI Section */}
+            {isAiAuthenticated && (
+              <section
+                ref={recommendedSectionRef}
+                className="recommended-ai-shell scroll-mt-24 rounded-3xl border p-6 sm:p-8"
+              >
+                <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#ff8657]/45 bg-[#ff8657]/15 text-[#ff9a74]">
+                      <Sparkles className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold tracking-tight text-white/95">
+                        Recommended by AI
+                      </h2>
+                      <p className="mt-0.5 text-sm text-white/60">
+                        Based on your business profile, goals, and current marketplace trends.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 gap-2 rounded-full border border-[#ff8657]/45 bg-[#ff8657]/15 text-[#ff9a74] hover:bg-[#ff8657]/25 hover:text-[#ffb294]"
+                      onClick={handleToggleAiAssistant}
+                    >
+                      <Bot className="h-4 w-4" />
+                      {isChatExpanded ? 'Close AI Assistant' : 'Refine with AI'}
+                    </Button>
+                  </div>
+                </div>
+
+                {isChatExpanded ? (
+                  <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_minmax(0,0.92fr)]">
+                    <div className="h-[420px] sm:h-[450px]">
+                      <VercelV0Chat fitContainer />
+                    </div>
+
+                    <div className="recommended-ai-aside rounded-2xl border p-4 shadow-inner">
+                      <p className="mb-4 text-xs font-medium uppercase tracking-widest text-[#ff8d60]">
+                        Suggested plugins
+                      </p>
+                      {recommendedPlugins.length > 0 ? (
+                        <div className="ai-scroll max-h-[420px] overflow-y-auto pr-2 sm:max-h-[450px]">
+                          <div className="space-y-3">
+                            {recommendedPlugins.map((plugin) => (
+                              <div
+                                key={plugin.pluginId}
+                                className="group flex items-center gap-3 rounded-xl border border-transparent p-2 transition-all hover:border-[#ff8657]/30 hover:bg-white/[0.06]"
+                              >
+                                <Link
+                                  to="/$businessName/admin/plugin/$pluginId"
+                                  params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+                                  className="flex min-w-0 flex-1 items-center gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                                >
+                                  <div className="relative size-14 shrink-0 overflow-hidden rounded-[20%] border border-primary/20 bg-white shadow-sm transition-all group-hover:shadow-md">
+                                    <PluginIcon plugin={plugin} compact />
+                                    <div className="absolute right-1 top-1 rounded-full bg-primary p-0.5 shadow">
+                                      <Bot className="h-2.5 w-2.5 text-black" />
+                                    </div>
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className="truncate text-sm font-semibold tracking-wide text-white/90">{plugin.title}</p>
+                                      <span className="recommended-ai-try inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium">
+                                        <Play className="h-3 w-3" />
+                                        Try now
+                                      </span>
+                                    </div>
+                                    <p className="truncate text-xs text-white/65">{plugin.category}</p>
+                                    <p className="mt-1 truncate text-xs text-white/55">
+                                      {plugin.installs.toLocaleString()} installs
+                                    </p>
+                                  </div>
+                                </Link>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 shrink-0 rounded-full border border-[#ff8657]/45 bg-[#ff8657]/15 text-[#ff9a74] hover:bg-[#ff8657]/25 hover:text-[#ffb294] disabled:opacity-60"
+                                  onClick={() => void installSuggestedPlugin(plugin)}
+                                  disabled={
+                                    installingPluginIds.includes(plugin.pluginId) ||
+                                    (plugin.isInstalled && !plugin.isUpgradable)
+                                  }
+                                  aria-label={
+                                    plugin.isInstalled && !plugin.isUpgradable
+                                      ? `Installed ${plugin.title}`
+                                      : `Install ${plugin.title}`
+                                  }
+                                >
+                                  {installingPluginIds.includes(plugin.pluginId) ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Download className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-[#ff8657]/35 bg-white/[0.04] p-4 text-sm text-white/65">
+                          Recommendations are warming up. Use AI chat for tailored suggestions right now.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : recommendedPlugins.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {recommendedPlugins.map((plugin) => (
+                      <Link
+                        key={plugin.pluginId}
+                        to="/$businessName/admin/plugin/$pluginId"
+                        params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+                        className="group rounded-2xl border border-transparent p-2 transition-all hover:border-[#ff8657]/50 hover:bg-gradient-to-br hover:from-white/10 hover:to-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                      >
+                        <div className="relative aspect-square w-full overflow-hidden rounded-[24%] border border-primary/20 bg-white shadow-sm transition-all group-hover:-translate-y-1 group-hover:shadow-xl">
+                          <PluginIcon plugin={plugin} />
+                          <div className="absolute right-2 top-2 rounded-full bg-primary p-1 shadow-lg">
+                            <Bot className="h-3 w-3 text-black" />
+                          </div>
+                        </div>
+                        <div className="mt-3">
+                          <p className="truncate text-sm font-semibold tracking-wide text-white">{plugin.title}</p>
+                          <p className="truncate text-xs text-white/60">{plugin.category}</p>
+                          <p className="mt-1 truncate text-xs text-white/50">
+                            {plugin.installs.toLocaleString()} installs
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-primary/30 bg-background/80 p-6 text-sm text-muted-foreground">
+                    Recommendations are warming up. Use AI chat for tailored suggestions right now.
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* Top Charts Ranked List */}
             <section>
               <div className="mb-6 flex items-center justify-between">
@@ -286,6 +510,97 @@ function PluginsRouteComponent() {
         .hide-scrollbar {
           -ms-overflow-style: none;
           scrollbar-width: none;
+        }
+        .recommended-ai-shell {
+          position: relative;
+          overflow: hidden;
+          isolation: isolate;
+          border-color: rgba(248, 134, 87, 0.32);
+          background:
+            radial-gradient(
+              130% 110% at 4% 0%,
+              rgba(248, 134, 87, 0.28) 0%,
+              rgba(248, 134, 87, 0.06) 36%,
+              transparent 64%
+            ),
+            radial-gradient(
+              95% 120% at 95% 100%,
+              rgba(45, 196, 173, 0.23) 0%,
+              rgba(45, 196, 173, 0.06) 42%,
+              transparent 72%
+            ),
+            linear-gradient(
+              133deg,
+              rgba(20, 26, 48, 0.96) 0%,
+              rgba(14, 30, 58, 0.95) 46%,
+              rgba(13, 22, 46, 0.97) 100%
+            );
+          box-shadow:
+            0 30px 70px rgba(6, 11, 28, 0.36),
+            inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+        .recommended-ai-shell::before {
+          content: '';
+          position: absolute;
+          inset: auto -18% -45% 25%;
+          height: 80%;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(248, 134, 87, 0.2) 0%,
+            rgba(248, 134, 87, 0.04) 35%,
+            transparent 70%
+          );
+          pointer-events: none;
+          z-index: 0;
+        }
+        .recommended-ai-shell > * {
+          position: relative;
+          z-index: 1;
+        }
+        .recommended-ai-beta {
+          border-color: rgba(255, 164, 130, 0.58);
+          background: linear-gradient(
+            120deg,
+            rgba(248, 134, 87, 0.26) 0%,
+            rgba(248, 134, 87, 0.12) 100%
+          );
+          color: #ffb08e;
+        }
+        .recommended-ai-aside {
+          border-color: rgba(248, 134, 87, 0.3);
+          background:
+            linear-gradient(
+              160deg,
+              rgba(16, 25, 52, 0.8) 0%,
+              rgba(12, 21, 43, 0.86) 100%
+            ),
+            radial-gradient(
+              120% 100% at 100% 0%,
+              rgba(45, 196, 173, 0.13) 0%,
+              transparent 62%
+            );
+          box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+        }
+        .recommended-ai-try {
+          border-color: rgba(45, 196, 173, 0.45);
+          background: rgba(45, 196, 173, 0.12);
+          color: #7ef3df;
+        }
+        .ai-scroll {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(248, 134, 87, 0.7) transparent;
+        }
+        .ai-scroll::-webkit-scrollbar {
+          width: 8px;
+        }
+        .ai-scroll::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .ai-scroll::-webkit-scrollbar-thumb {
+          border-radius: 9999px;
+          background: linear-gradient(180deg, rgba(248, 134, 87, 0.85), rgba(45, 196, 173, 0.85));
+          border: 2px solid transparent;
+          background-clip: content-box;
         }
       `}</style>
     </div>

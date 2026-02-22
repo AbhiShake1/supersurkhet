@@ -1,5 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Bot } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -48,6 +48,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
+import { VercelV0Chat } from './ui/v0-ai-chat';
+
+
 
 export const businessCreationSchema = businessSchema
   .pick({
@@ -1609,131 +1612,188 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
         });
 
         return (
-          <FormItem className="space-y-4">
-            <div className="space-y-4 rounded-lg border bg-background/60 p-4">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Plugin Browser</p>
-                <p className="text-xs text-muted-foreground">
-                  Search plugins by name, id, or version. Any items selected by
-                  the AI in Step 2 are already selected here.
-                </p>
-              </div>
-
-              <Input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search plugins by name, id, or version"
-              />
-
-              <div className="rounded-md border bg-muted/20 p-3">
-                <p className="text-xs font-medium text-foreground">
-                  Selected for installation ({selectedReleaseIds.length})
-                </p>
-                {selectedReleaseIds.length === 0 ? (
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    No plugins selected. Pick at least one plugin to continue
-                    to business creation.
+          <FormItem className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Column 1: AI Chat Assistant */}
+              <div className="flex flex-col h-full">
+                <div className="mb-2">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-primary" />
+                    Assistant
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Explain your business needs to get personalized plugin recommendations.
                   </p>
-                ) : (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {selectedReleaseIds.map((releaseId) => (
-                      <Badge
-                        key={releaseId}
-                        variant="outline"
-                        className="gap-2 py-1"
-                      >
-                        {getReleaseIdTitle(releaseId)}
-                        <button
-                          type="button"
-                          className="rounded-sm px-1 text-muted-foreground hover:bg-muted"
-                          onClick={() =>
-                            field.onChange(
-                              selectedReleaseIds.filter(
-                                (current) => current !== releaseId,
-                              ),
-                            )
-                          }
-                        >
-                          x
-                        </button>
-                      </Badge>
-                    ))}
-                  </div>
-                )}
+                </div>
+                <div className="flex-1 min-h-[500px]">
+                  <VercelV0Chat />
+                </div>
               </div>
 
-              <ScrollArea className="h-[26rem] rounded-md border bg-muted/5 p-3">
+              {/* Column 2: Plugin Browser */}
+              <div className="space-y-4 rounded-lg border bg-background/60 p-4">
                 <div className="space-y-2">
-                  {orderedReleases.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">
-                      No plugins match your search.
+                  <p className="text-sm font-medium">Plugin Browser</p>
+                  <p className="text-xs text-muted-foreground">
+                    Search plugins by name, id, or version. Any items selected by
+                    the AI in Step 2 are already selected here.
+                  </p>
+                </div>
+
+                <Input
+                  value={query}
+                  onChange={(event) => setQuery(event.target.value)}
+                  placeholder="Search plugins by name, id, or version"
+                />
+
+                {/* Recommended by AI Section in Step 3 */}
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-semibold text-primary uppercase tracking-wider flex items-center gap-2">
+                      <Bot className="h-3 w-3" />
+                      Recommended for you
+                    </h4>
+                    <span className="text-[10px] text-muted-foreground italic">AI Choice</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {releases.slice(0, 2).map((release) => {
+                      const releaseId = toReleaseId(release.pluginId, release.version);
+                      const isSelected = selectedReleaseIdSet.has(releaseId);
+                      return (
+                        <Badge
+                          key={releaseId}
+                          variant={isSelected ? "default" : "outline"}
+                          className={cn(
+                            "cursor-pointer hover:bg-primary/20 transition-colors py-1",
+                            isSelected ? "bg-primary text-black" : "border-primary/30"
+                          )}
+                          onClick={() => {
+                            if (isSelected) {
+                              field.onChange(selectedReleaseIds.filter(id => id !== releaseId));
+                            } else {
+                              field.onChange([...selectedReleaseIds, releaseId]);
+                            }
+                          }}
+                        >
+                          {getReleaseIdTitle(releaseId)}
+                          {isSelected ? null : <Plus className="ml-1 h-3 w-3 inline" />}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-md border bg-muted/20 p-3">
+                  <p className="text-xs font-medium text-foreground">
+                    Selected for installation ({selectedReleaseIds.length})
+                  </p>
+                  {selectedReleaseIds.length === 0 ? (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      No plugins selected. Pick at least one plugin to continue
+                      to business creation.
                     </p>
                   ) : (
-                    orderedReleases.map((release) => {
-                      const releaseId = toReleaseId(
-                        release.pluginId,
-                        release.version,
-                      );
-                      const docs = release.docs as
-                        | ({ title?: string; description?: string } & Record<
-                            string,
-                            unknown
-                          >)
-                        | undefined;
-                      const title = docs?.title?.trim() || release.pluginId;
-                      const description =
-                        docs?.description?.trim() ||
-                        'No description provided for this release.';
-                      const isSelected = selectedReleaseIdSet.has(releaseId);
-
-                      return (
-                        <div
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {selectedReleaseIds.map((releaseId) => (
+                        <Badge
                           key={releaseId}
-                          className={cn(
-                            'rounded-lg border p-3',
-                            isSelected
-                              ? 'border-primary/50 bg-primary/5'
-                              : 'border-border bg-background',
-                          )}
+                          variant="outline"
+                          className="gap-2 py-1"
                         >
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium">
-                                {title}
-                              </p>
-                              <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                {releaseId}
-                              </p>
-                              <p className="mt-2 text-xs text-muted-foreground">
-                                {description}
-                              </p>
-                            </div>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant={isSelected ? 'secondary' : 'outline'}
-                              onClick={() => {
-                                if (isSelected) {
-                                  field.onChange(
-                                    selectedReleaseIds.filter(
-                                      (current) => current !== releaseId,
-                                    ),
-                                  );
-                                  return;
-                                }
-                                field.onChange([...selectedReleaseIds, releaseId]);
-                              }}
-                            >
-                              {isSelected ? 'Selected' : 'Select plugin'}
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })
+                          {getReleaseIdTitle(releaseId)}
+                          <button
+                            type="button"
+                            className="rounded-sm px-1 text-muted-foreground hover:bg-muted"
+                            onClick={() =>
+                              field.onChange(
+                                selectedReleaseIds.filter(
+                                  (current) => current !== releaseId,
+                                ),
+                              )
+                            }
+                          >
+                            x
+                          </button>
+                        </Badge>
+                      ))}
+                    </div>
                   )}
                 </div>
-              </ScrollArea>
+
+                <ScrollArea className="h-[22rem] rounded-md border bg-muted/5 p-3">
+                  <div className="space-y-2">
+                    {orderedReleases.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">
+                        No plugins match your search.
+                      </p>
+                    ) : (
+                      orderedReleases.map((release) => {
+                        const releaseId = toReleaseId(
+                          release.pluginId,
+                          release.version,
+                        );
+                        const docs = release.docs as
+                          | ({ title?: string; description?: string } & Record<
+                              string,
+                              unknown
+                            >)
+                          | undefined;
+                        const title = docs?.title?.trim() || release.pluginId;
+                        const description =
+                          docs?.description?.trim() ||
+                          'No description provided for this release.';
+                        const isSelected = selectedReleaseIdSet.has(releaseId);
+
+                        return (
+                          <div
+                            key={releaseId}
+                            className={cn(
+                              'rounded-lg border p-3',
+                              isSelected
+                                ? 'border-primary/50 bg-primary/5'
+                                : 'border-border bg-background',
+                            )}
+                          >
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium">
+                                  {title}
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                  {releaseId}
+                                </p>
+                                <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                                  {description}
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={isSelected ? 'secondary' : 'outline'}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    field.onChange(
+                                      selectedReleaseIds.filter(
+                                        (current) => current !== releaseId,
+                                      ),
+                                    );
+                                    return;
+                                  }
+                                  field.onChange([...selectedReleaseIds, releaseId]);
+                                }}
+                              >
+                                {isSelected ? 'Selected' : 'Select'}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
             </div>
+
             <FormMessage />
           </FormItem>
         );

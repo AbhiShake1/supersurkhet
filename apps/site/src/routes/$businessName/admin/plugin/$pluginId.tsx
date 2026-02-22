@@ -607,7 +607,7 @@ function PluginDetailsPage() {
                 className="h-9 rounded-full border-white/35 bg-white/[0.06] px-4 text-sm font-medium text-white hover:bg-white/[0.14]"
               >
                 <Play className="mr-2 size-3.5 fill-current" />
-                Trailer
+                Try Now
               </Button>
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-white/70">
                 Try live preview by tab
@@ -632,7 +632,7 @@ function PluginDetailsPage() {
                 className="h-9 rounded-full border-white/35 bg-white/[0.06] px-4 text-sm font-medium text-white hover:bg-white/[0.14]"
               >
                 <Play className="mr-2 size-3.5 fill-current" />
-                Trailer
+                Try Now
               </Button>
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-white/70">
                 Try live preview by tab
