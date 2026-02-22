@@ -1,17 +1,18 @@
+import hash from 'object-hash';
 import {
   createContext,
+  forwardRef,
   type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
-  forwardRef,
 } from 'react';
-import hash from 'object-hash';
 import { createPortal } from 'react-dom';
 
 const styleSelector = 'style, link[rel="stylesheet"]';
+const NOOP = () => {};
 
 const collectStyles = (doc: Document) => {
   const collected: HTMLElement[] = [];
@@ -357,8 +358,8 @@ const AutoFrame = forwardRef<HTMLIFrameElement, AutoFrameProps>(
       className,
       debug,
       id,
-      onReady = () => {},
-      onNotReady = () => {},
+      onReady = NOOP,
+      onNotReady = NOOP,
       style,
       pointerEventsEnabled = true,
       ...props
@@ -367,7 +368,7 @@ const AutoFrame = forwardRef<HTMLIFrameElement, AutoFrameProps>(
   ) => {
     const [loaded, setLoaded] = useState(false);
     const [ctx, setCtx] = useState<AutoFrameContext>({});
-    const [mountTarget, setMountTarget] = useState<HTMLElement | null>();
+    const [mountTarget, setMountTarget] = useState<HTMLElement | null>(null);
     const [stylesLoaded, setStylesLoaded] = useState(false);
 
     const handleLoad = useCallback(() => {
@@ -389,17 +390,34 @@ const AutoFrame = forwardRef<HTMLIFrameElement, AutoFrameProps>(
     );
 
     useEffect(() => {
+      if (!loaded) {
+        return;
+      }
+
       if (ref && 'current' in ref && ref.current) {
         const doc = ref.current.contentDocument;
         const win = ref.current.contentWindow;
+        const nextMountTarget =
+          ref.current.contentDocument?.getElementById('frame-root') ?? null;
 
-        setCtx({
-          document: doc || undefined,
-          window: win || undefined,
+        setCtx((prevCtx) => {
+          const nextCtx = {
+            document: doc || undefined,
+            window: win || undefined,
+          };
+          if (
+            prevCtx.document === nextCtx.document &&
+            prevCtx.window === nextCtx.window
+          ) {
+            return prevCtx;
+          }
+          return nextCtx;
         });
 
-        setMountTarget(
-          ref.current.contentDocument?.getElementById('frame-root'),
+        setMountTarget((prevMountTarget) =>
+          prevMountTarget === nextMountTarget
+            ? prevMountTarget
+            : nextMountTarget,
         );
 
         if (doc && win && stylesLoaded) {
@@ -409,7 +427,7 @@ const AutoFrame = forwardRef<HTMLIFrameElement, AutoFrameProps>(
         }
       }
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [ref, stylesLoaded, onNotReady, onReady]);
+    }, [loaded, ref, stylesLoaded, onNotReady, onReady]);
 
     return (
       <iframe

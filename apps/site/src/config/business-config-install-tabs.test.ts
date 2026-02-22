@@ -66,26 +66,12 @@ describe('business config install-driven tab resolver', () => {
     expect(tabs[0]?.title).toBe('Plugin Products');
   });
 
-  it('falls back to legacy retail adapter when no install tabs exist', () => {
+  it('returns empty tabs when no install tabs exist', () => {
     const tabs = resolveInstallDrivenTabs({
       businessId: 'business-1',
       businessSlug: 'shop-1',
       installs: [],
       releases: [],
-      allowLegacyFallback: true,
-    });
-
-    expect(tabs.length).toBeGreaterThan(0);
-    expect(tabs.map((tab) => tab.schema)).toContain('product');
-  });
-
-  it('does not use legacy fallback unless migration flag is enabled', () => {
-    const tabs = resolveInstallDrivenTabs({
-      businessId: 'business-1',
-      businessSlug: 'shop-1',
-      installs: [],
-      releases: [],
-      allowLegacyFallback: false,
     });
 
     expect(tabs).toEqual([]);

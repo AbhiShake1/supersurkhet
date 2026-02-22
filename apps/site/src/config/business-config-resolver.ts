@@ -1,5 +1,4 @@
 import type { SchemaKeys } from '@gta/react-hooks';
-import { getLegacyRetailTabs } from '@/lib/plugins/legacy-retail-adapter';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
@@ -46,13 +45,11 @@ export function resolveInstallDrivenTabs({
   businessSlug,
   installs,
   releases,
-  allowLegacyFallback = false,
 }: {
   businessId: string;
   businessSlug: string;
   installs: BusinessPluginInstallDoc[];
   releases: PluginReleaseDoc[];
-  allowLegacyFallback?: boolean;
 }): AnyAutoTableTab[] {
   const releaseByKey = new Map<string, PluginReleaseDoc>(
     releases.map((release) => [
@@ -79,23 +76,6 @@ export function resolveInstallDrivenTabs({
 
   if (installedTabs.length > 0) {
     return dedupeTabs(installedTabs);
-  }
-
-  if (allowLegacyFallback) {
-    return getLegacyRetailTabs(businessSlug).flatMap((tab) => {
-      if (!('schema' in tab)) return [];
-      return [
-        {
-          schema: tab.schema as SchemaKeys,
-          slug:
-            'slug' in tab && typeof tab.slug === 'string'
-              ? tab.slug
-              : businessSlug,
-          title: 'title' in tab ? tab.title : undefined,
-          group: 'group' in tab ? tab.group : undefined,
-        },
-      ];
-    });
   }
 
   return [];

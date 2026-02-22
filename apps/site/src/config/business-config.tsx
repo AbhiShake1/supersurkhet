@@ -27,28 +27,29 @@ export function useBusinessConfigState({
   slug,
   businessId,
 }: UseBusinessConfigInput): UseBusinessConfigState {
-  const allowLegacyFallback =
-    import.meta.env.VITE_PLUGIN_LEGACY_FALLBACK === 'true';
   const scopedBusinessId = businessId ?? slug;
-  const { data: installRows = [], isLoading: isInstallRowsLoading } =
-    api.businessPluginInstall.useGet({
+  const installRowsQuery = api.businessPluginInstall.useGet({
     keys: [scopedBusinessId],
   });
-  const { data: releaseRows = [], isLoading: isReleaseRowsLoading } =
-    api.pluginRelease.useGet();
+  const releaseRowsQuery = api.pluginRelease.useGet();
 
-  const installs = installRows as BusinessPluginInstallDoc[];
-  const releases = releaseRows as PluginReleaseDoc[];
+  const installs = (installRowsQuery.data ?? []) as BusinessPluginInstallDoc[];
+  const releases = (releaseRowsQuery.data ?? []) as PluginReleaseDoc[];
+  const tabs = resolveInstallDrivenTabs({
+    businessId: scopedBusinessId,
+    businessSlug: slug,
+    installs,
+    releases,
+  });
+  const isInitialLoadPending =
+    !installRowsQuery.isFetched || !releaseRowsQuery.isFetched;
+  const isEmptyConfigRefetching =
+    tabs.length === 0 &&
+    (installRowsQuery.isFetching || releaseRowsQuery.isFetching);
 
   return {
-    tabs: resolveInstallDrivenTabs({
-      businessId: scopedBusinessId,
-      businessSlug: slug,
-      installs,
-      releases,
-      allowLegacyFallback,
-    }),
-    isLoading: isInstallRowsLoading || isReleaseRowsLoading,
+    tabs,
+    isLoading: isInitialLoadPending || isEmptyConfigRefetching,
   };
 }
 
