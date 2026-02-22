@@ -1894,13 +1894,10 @@ declare global {
      message: string;
     }>, "many">;
      uiStateByUserId: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodObject<{
-     templatesTourSeenAt: import("zod").ZodOptional<import("zod").ZodString>;
      sidebarSnapshotJson: import("zod").ZodOptional<import("zod").ZodString>;
     }, "strip", import("zod").ZodTypeAny, {
-     templatesTourSeenAt?: string | undefined;
      sidebarSnapshotJson?: string | undefined;
     }, {
-     templatesTourSeenAt?: string | undefined;
      sidebarSnapshotJson?: string | undefined;
     }>>>;
      savedByUserId: import("zod").ZodString;
@@ -1948,7 +1945,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      uiStateByUserId?: Record<string, {
-     templatesTourSeenAt?: string | undefined;
      sidebarSnapshotJson?: string | undefined;
     }> | undefined;
     }, {
@@ -1981,7 +1977,6 @@ declare global {
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
      uiStateByUserId?: Record<string, {
-     templatesTourSeenAt?: string | undefined;
      sidebarSnapshotJson?: string | undefined;
     }> | undefined;
     }>;

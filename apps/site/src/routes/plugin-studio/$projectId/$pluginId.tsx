@@ -2399,7 +2399,6 @@ function PluginStudioPresenter({
       uiStateByUserId?: Record<
         string,
         {
-          templatesTourSeenAt?: string;
           sidebarSnapshotJson?: string;
         }
       >;
@@ -3230,16 +3229,6 @@ function PluginStudioPresenter({
     [availableRuleFields, compatibleRuleFieldsByLeftField],
   );
   const isInitialLoading = isReleaseLoading && releases.length === 0;
-
-  useEffect(() => {
-    if (activeUiStateForActor?.templatesTourSeenAt) {
-      return;
-    }
-    setIsTemplatesDialogOpen(true);
-    persistSidebarUiStateForActor({
-      templatesTourSeenAt: new Date().toISOString(),
-    });
-  }, [activeUiStateForActor?.templatesTourSeenAt]);
 
   useEffect(() => {
     if (leftRuleFields.length === 0) {
@@ -4276,10 +4265,8 @@ function PluginStudioPresenter({
   }
 
   function persistSidebarUiStateForActor({
-    templatesTourSeenAt,
     sidebarSnapshotJson,
   }: {
-    templatesTourSeenAt?: string;
     sidebarSnapshotJson?: string;
   }) {
     if (!parsed) return;
@@ -4288,7 +4275,6 @@ function PluginStudioPresenter({
     const currentActorState = currentStateByUserId[actorUserId] ?? {};
     const nextActorState = {
       ...currentActorState,
-      ...(templatesTourSeenAt !== undefined ? { templatesTourSeenAt } : {}),
       ...(sidebarSnapshotJson !== undefined ? { sidebarSnapshotJson } : {}),
     };
     const nextStateByUserId = {

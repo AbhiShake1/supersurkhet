@@ -304,7 +304,6 @@ describe('plugin-studio client boundary', () => {
     expect(content).toContain('adminTabs: parsed.draftAdminTabs');
     expect(content).toContain('persistSidebarUiStateForActor');
     expect(content).toContain('sidebarSnapshotJson');
-    expect(content).toContain('templatesTourSeenAt');
     expect(content).toContain('snapshot:');
   });
 
