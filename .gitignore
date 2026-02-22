@@ -24,3 +24,4 @@ zs-to-js.md
 /.playwright-cli
 /output/playwright
 /.tmp
+/output

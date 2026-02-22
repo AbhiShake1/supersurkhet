@@ -59,9 +59,21 @@ function getBaseSchema<
 }
 
 export function parseSchema(schema: ZodObjectOrWrapped): ParsedSchema {
-  const objectSchema =
-    schema instanceof z.ZodEffects ? schema.innerType() : schema;
+  // Unwrap ZodEffects, ZodOptional, ZodNullable, etc. until we get to the ZodObject
+  let objectSchema = schema;
+  while ('innerType' in objectSchema._def) {
+    objectSchema = objectSchema._def.innerType();
+  }
+  if (objectSchema instanceof z.ZodEffects) {
+    objectSchema = objectSchema.innerType();
+  }
+
   const shape = objectSchema.shape ?? objectSchema.element?.shape;
+
+  if (!shape) {
+    console.error('parseSchema: Could not extract shape from schema', schema);
+    return { fields: [] };
+  }
 
   const fields: ParsedField[] = Object.entries(shape).map(([key, field]) =>
     parseField(key, field as z.ZodTypeAny),

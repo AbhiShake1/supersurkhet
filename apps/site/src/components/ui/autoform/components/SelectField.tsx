@@ -27,15 +27,21 @@ const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
     );
 
     // Transform raw data into [value, label] format based on source config
+    // NOTE: This includes ALL products, even those with zero stock, 
+    // to ensure they can be selected during import operations
     const formattedOptions = data.map((item) => {
       const soul = item?._?.soul ?? '';
       let label = '';
 
       if ('displayKeys' in source) {
-        label =
-          source.displayKeys
-            .map((k: string) => item[k] || '')
-            .join(source.separator ?? ' - ') + (source.suffix ?? '');
+        // Handle display keys, ensuring that even zero values are displayed
+        label = source.displayKeys
+          .map((k: string) => {
+            const value = item[k];
+            // Convert undefined/null values to empty string, but keep zero values
+            return value === null || value === undefined ? '' : String(value);
+          })
+          .join(source.separator ?? ' - ') + (source.suffix ?? '');
       } else {
         label = item[source.displayKey] || '';
       }

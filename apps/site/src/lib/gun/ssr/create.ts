@@ -1,14 +1,39 @@
 import type { GunMessagePut } from 'gun';
 import { runLifecycleHookPipeline } from '@/lib/plugins/runtime-pipeline';
+import { omitUndefined } from '@/lib/utils/undefined-to-null';
 import type { NestedSchemaType, SchemaKeys } from '..';
 import { mergeOptionsWithDefaults } from '../options';
 import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
 import { encrypt } from '../utils/sea';
-import { omitUndefined } from '@/lib/utils/undefined-to-null';
-import {
-  resolveAfterNextTick,
-  resolveLifecycleBusinessId,
-} from './lifecycle';
+import { resolveAfterNextTick, resolveLifecycleBusinessId } from './lifecycle';
+
+export function omitEmptyObject<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .map(omitEmptyObject)
+      .filter((v) => !(isPlainObject(v) && Object.keys(v).length === 0)) as T;
+  }
+
+  if (isPlainObject(value)) {
+    const result: Record<string, unknown> = {};
+
+    for (const [k, v] of Object.entries(value)) {
+      const cleaned = omitEmptyObject(v);
+
+      if (!(isPlainObject(cleaned) && Object.keys(cleaned).length === 0)) {
+        result[k] = cleaned;
+      }
+    }
+
+    return result;
+  }
+
+  return value;
+}
+
+function isPlainObject(x: unknown): x is Record<string, unknown> {
+  return typeof x === 'object' && x !== null && !Array.isArray(x);
+}
 
 export function create<const T extends SchemaKeys>(
   key: T,
@@ -34,10 +59,11 @@ export function create<const T extends SchemaKeys>(
     }
 
     const _encrypted = await encrypt(value, schema);
-    const encrypted = omitUndefined(_encrypted)
+    const encrypted = omitEmptyObject(omitUndefined(_encrypted));
     return new Promise<GunMessagePut>((resolve, reject) => {
+      const id = encrypted?.id ?? `${keys}/${Date.now().toString()}`;
       getGunRef(keys)
-        .get(encrypted?.id ?? `${keys}/${Date.now().toString()}`)
+        .get(id)
         .put(encrypted, (ack) => {
           if ('err' in ack && !!ack.err) {
             reject(ack.err);

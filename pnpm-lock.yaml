@@ -572,7 +572,7 @@ importers:
         specifier: ^0.18.5
         version: 0.18.5
       zod:
-        specifier: ^3.24.3
+        specifier: 3.25.76
         version: 3.25.76
       zundo:
         specifier: ^2.3.0
