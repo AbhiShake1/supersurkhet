@@ -545,11 +545,35 @@ async function readRowsWithTimeoutFallback<T>(
   try {
     return await reader();
   } catch (error) {
-    if (error instanceof SSRGetTimeoutError) {
+    if (isSSRGetTimeoutError(error)) {
       return [];
     }
     throw error;
   }
+}
+
+function isSSRGetTimeoutError(error: unknown): boolean {
+  if (error instanceof SSRGetTimeoutError) return true;
+  if (typeof error === 'string') {
+    return error.includes('fetch timed out');
+  }
+  if (!error || typeof error !== 'object') return false;
+
+  const candidate = error as {
+    name?: unknown;
+    message?: unknown;
+    cause?: unknown;
+  };
+
+  if (candidate.name === 'SSRGetTimeoutError') return true;
+  if (
+    typeof candidate.message === 'string' &&
+    candidate.message.includes('fetch timed out')
+  ) {
+    return true;
+  }
+
+  return isSSRGetTimeoutError(candidate.cause);
 }
 
 async function loadDraftStore(businessId?: string) {

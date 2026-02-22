@@ -72,4 +72,23 @@ describe('createPluginDraft timeout fallback', () => {
       }),
     ).rejects.toThrow('boom');
   });
+
+  it('treats serialized timeout-like errors as empty reads', async () => {
+    ssrGetMock.mockRejectedValue({
+      name: 'SSRGetTimeoutError',
+      message:
+        'fetch timed out after 1500ms for "root/development/businessPluginInstall/uuu"',
+    });
+
+    const draft = await createPluginDraft({
+      data: {
+        actorUserId: 'owner',
+        pluginId: 'example.plugin',
+        title: 'Example Draft',
+      },
+    });
+
+    expect(draft.draftId).toBe('draft.owner');
+    expect(ssrCreateMock).toHaveBeenCalledWith('pluginDraft');
+  });
 });

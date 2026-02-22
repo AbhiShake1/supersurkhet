@@ -18,7 +18,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type React from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDialog } from '@/contexts/dialog-context';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useProfile } from '@/hooks/use-profile';
@@ -103,7 +103,7 @@ export interface CollapsibleSidebarProps {
   groups?: string[];
 }
 
-const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
+const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   businessName,
   slug,
   tabs,
@@ -123,7 +123,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   'use memo';
   const isMobile = useIsMobile();
   const [open, setOpen] = useState(!isMobile);
-  const [selected, setSelected] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [frequentUsage, setFrequentUsage] = useState<Record<string, number>>(
     {},
@@ -160,15 +159,6 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
   const { search } = useLocation();
   const currentTab =
     (search?.tab as string) ?? (tabs.length > 0 ? tabs[0].title : '');
-
-  // Set initial selected tab based on URL or first item
-  useEffect(() => {
-    if (currentTab) {
-      setSelected(currentTab);
-    } else if (tabs.length > 0) {
-      setSelected(tabs[0].title);
-    }
-  }, [currentTab, tabs]);
 
   useEffect(() => {
     let isCancelled = false;
@@ -239,9 +229,9 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     for (const key of Object.keys(groupedItems)) {
       if (key.trim()) next.add(key);
     }
-    const preferred = localGroupOrder.filter((groupName) =>
-      next.has(groupName),
-    );
+    const baselineOrder =
+      localGroupOrder.length > 0 ? localGroupOrder : (groups ?? []);
+    const preferred = baselineOrder.filter((groupName) => next.has(groupName));
     for (const groupName of groups ?? []) {
       if (next.has(groupName) && !preferred.includes(groupName)) {
         preferred.push(groupName);
@@ -253,122 +243,116 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     return [...preferred, ...remaining];
   }, [groupedItems, groups, localGroupOrder]);
 
-  useEffect(() => {
-    if (!groups?.length) return;
-    setLocalGroupOrder((current) => {
-      if (current.length === 0) return groups;
-      const missing = groups.filter(
-        (groupName) => !current.includes(groupName),
-      );
-      if (missing.length === 0) return current;
-      return [...current, ...missing];
-    });
-  }, [groups]);
-
-  const toggleGroup = (groupName: string) => {
-    setGroupOpenState((prev) => {
-      const next = { ...prev, [groupName]: !(prev[groupName] ?? true) };
-      saveSidebarPreferences(preferenceOwnerId, {
-        groupOpenState: next,
+  const toggleGroup = useCallback(
+    (groupName: string) => {
+      setGroupOpenState((prev) => {
+        const next = { ...prev, [groupName]: !(prev[groupName] ?? true) };
+        saveSidebarPreferences(preferenceOwnerId, {
+          groupOpenState: next,
+        });
+        return next;
       });
-      return next;
-    });
-  };
+    },
+    [preferenceOwnerId],
+  );
 
-  const incrementFrequentUsage = (title: string) => {
-    setFrequentUsage((prev) => {
-      const next = { ...prev, [title]: (prev[title] ?? 0) + 1 };
-      saveSidebarPreferences(preferenceOwnerId, {
-        frequentUsage: next,
+  const incrementFrequentUsage = useCallback(
+    (title: string) => {
+      setFrequentUsage((prev) => {
+        const next = { ...prev, [title]: (prev[title] ?? 0) + 1 };
+        saveSidebarPreferences(preferenceOwnerId, {
+          frequentUsage: next,
+        });
+        return next;
       });
-      return next;
-    });
-  };
+    },
+    [preferenceOwnerId],
+  );
 
-  const commitTabRename = (previousTitle: string, nextTitle: string) => {
-    return commitSidebarRename({
-      entity: 'tab',
-      previousValue: previousTitle,
-      nextValue: nextTitle,
-      onRename: onRenameTab,
-    });
-  };
+  const commitTabRename = useCallback(
+    (previousTitle: string, nextTitle: string) => {
+      return commitSidebarRename({
+        entity: 'tab',
+        previousValue: previousTitle,
+        nextValue: nextTitle,
+        onRename: onRenameTab,
+      });
+    },
+    [onRenameTab],
+  );
 
-  const commitGroupRename = (
-    previousGroupName: string,
-    nextGroupName: string,
-  ) => {
-    return commitSidebarRename({
-      entity: 'group',
-      previousValue: previousGroupName,
-      nextValue: nextGroupName,
-      onRename: onRenameGroup,
-    });
-  };
+  const commitGroupRename = useCallback(
+    (previousGroupName: string, nextGroupName: string) => {
+      return commitSidebarRename({
+        entity: 'group',
+        previousValue: previousGroupName,
+        nextValue: nextGroupName,
+        onRename: onRenameGroup,
+      });
+    },
+    [onRenameGroup],
+  );
 
-  const requestDeleteGroup = (groupName: string, itemCount: number) => {
-    if (!onDeleteGroup) return;
-    if (itemCount === 0) {
-      onDeleteGroup(groupName);
-      return;
-    }
-    setPendingGroupDelete({
-      name: groupName,
-      itemCount,
-    });
-  };
+  const requestDeleteGroup = useCallback(
+    (groupName: string, itemCount: number) => {
+      if (!onDeleteGroup) return;
+      if (itemCount === 0) {
+        onDeleteGroup(groupName);
+        return;
+      }
+      setPendingGroupDelete({
+        name: groupName,
+        itemCount,
+      });
+    },
+    [onDeleteGroup],
+  );
 
-  const clearDragPreviewElement = () => {
+  const clearDragPreviewElement = useCallback(() => {
     const previewElement = dragPreviewElementRef.current;
     if (previewElement?.parentNode) {
       previewElement.parentNode.removeChild(previewElement);
     }
     dragPreviewElementRef.current = null;
-  };
+  }, []);
 
-  const attachDragPreview = (
-    event: React.DragEvent<HTMLElement>,
-    sourceElement: HTMLElement | null,
-  ) => {
-    if (!sourceElement) return;
-    clearDragPreviewElement();
-
-    const previewElement = sourceElement.cloneNode(true) as HTMLElement;
-    const sourceRect = sourceElement.getBoundingClientRect();
-    previewElement.style.position = 'fixed';
-    previewElement.style.left = '-9999px';
-    previewElement.style.top = '-9999px';
-    previewElement.style.width = `${sourceRect.width}px`;
-    previewElement.style.maxWidth = `${sourceRect.width}px`;
-    previewElement.style.pointerEvents = 'none';
-    previewElement.style.opacity = '0.96';
-    previewElement.style.transform = 'scale(1.01)';
-    previewElement.style.boxShadow =
-      '0 24px 48px rgba(15, 23, 42, 0.22), 0 10px 20px rgba(15, 23, 42, 0.18)';
-    previewElement.style.borderRadius = '10px';
-    previewElement.style.zIndex = '9999';
-    document.body.appendChild(previewElement);
-    dragPreviewElementRef.current = previewElement;
-
-    const offsetX = Math.max(12, Math.min(40, sourceRect.width * 0.2));
-    const offsetY = Math.max(12, Math.min(28, sourceRect.height * 0.45));
-    try {
-      event.dataTransfer.setDragImage(previewElement, offsetX, offsetY);
-    } catch (_error) {
+  const attachDragPreview = useCallback(
+    (
+      event: React.DragEvent<HTMLElement>,
+      sourceElement: HTMLElement | null,
+    ) => {
+      if (!sourceElement) return;
       clearDragPreviewElement();
-    }
-  };
 
-  useEffect(
-    () => () => {
-      const previewElement = dragPreviewElementRef.current;
-      if (previewElement?.parentNode) {
-        previewElement.parentNode.removeChild(previewElement);
+      const previewElement = sourceElement.cloneNode(true) as HTMLElement;
+      const sourceRect = sourceElement.getBoundingClientRect();
+      previewElement.style.position = 'fixed';
+      previewElement.style.left = '-9999px';
+      previewElement.style.top = '-9999px';
+      previewElement.style.width = `${sourceRect.width}px`;
+      previewElement.style.maxWidth = `${sourceRect.width}px`;
+      previewElement.style.pointerEvents = 'none';
+      previewElement.style.opacity = '0.96';
+      previewElement.style.transform = 'scale(1.01)';
+      previewElement.style.boxShadow =
+        '0 24px 48px rgba(15, 23, 42, 0.22), 0 10px 20px rgba(15, 23, 42, 0.18)';
+      previewElement.style.borderRadius = '10px';
+      previewElement.style.zIndex = '9999';
+      document.body.appendChild(previewElement);
+      dragPreviewElementRef.current = previewElement;
+
+      const offsetX = Math.max(12, Math.min(40, sourceRect.width * 0.2));
+      const offsetY = Math.max(12, Math.min(28, sourceRect.height * 0.45));
+      try {
+        event.dataTransfer.setDragImage(previewElement, offsetX, offsetY);
+      } catch (_error) {
+        clearDragPreviewElement();
       }
-      dragPreviewElementRef.current = null;
     },
-    [],
+    [clearDragPreviewElement],
   );
+
+  useEffect(() => () => clearDragPreviewElement(), [clearDragPreviewElement]);
 
   return (
     <nav
@@ -432,8 +416,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     Icon={getTabIcon(item)}
                     title={item.title}
                     url={item.url}
-                    selected={selected}
-                    setSelected={setSelected}
+                    selected={currentTab}
                     open={open}
                     onActivate={incrementFrequentUsage}
                   />
@@ -531,8 +514,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                     iconCatalog={iconCatalog}
                     title={item.title}
                     url={item.url}
-                    selected={selected}
-                    setSelected={setSelected}
+                    selected={currentTab}
                     open={open}
                     editable={editable}
                     onRenameIcon={onRenameTabIcon}
@@ -852,8 +834,7 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
                             iconCatalog={iconCatalog}
                             title={item.title}
                             url={item.url}
-                            selected={selected}
-                            setSelected={setSelected}
+                            selected={currentTab}
                             open={open}
                             editable={editable}
                             onRenameIcon={onRenameTabIcon}
@@ -1012,34 +993,34 @@ const QuickAddPopover: React.FC<{
   );
 };
 
-const Option: React.FC<{
+type OptionProps = {
   Icon: LucideIcon;
   iconName?: string;
   iconCatalog?: Array<[string, LucideIcon]>;
   title: string;
   url: string;
   selected: string;
-  setSelected: (title: string) => void;
   open: boolean;
   editable?: boolean;
   onRenameIcon?: (title: string, iconName: string) => void;
   onOpenWorkflowEditor?: (tabTitle: string) => void;
   onRequestDeleteTable?: (tabTitle: string) => void;
   onActivate?: (title: string) => void;
-}> = ({
+};
+
+const Option = memo(function Option({
   Icon,
   iconName,
   iconCatalog = [],
   title,
   selected,
-  setSelected,
   open,
   editable = false,
   onRenameIcon,
   onOpenWorkflowEditor,
   onRequestDeleteTable,
   onActivate,
-}) => {
+}: OptionProps) {
   const isSelected = selected === title;
   const hasWorkflowAction = Boolean(onOpenWorkflowEditor);
   const hasDeleteAction = Boolean(onRequestDeleteTable);
@@ -1062,7 +1043,6 @@ const Option: React.FC<{
   }, [iconCatalog, iconSearch]);
 
   const handleClick = () => {
-    setSelected(title);
     onActivate?.(title);
   };
 
@@ -1182,7 +1162,26 @@ const Option: React.FC<{
       ) : null}
     </div>
   );
-};
+}, areOptionPropsEqual);
+
+function areOptionPropsEqual(prev: OptionProps, next: OptionProps) {
+  return (
+    prev.Icon === next.Icon &&
+    prev.iconName === next.iconName &&
+    prev.iconCatalog === next.iconCatalog &&
+    prev.title === next.title &&
+    prev.url === next.url &&
+    prev.selected === next.selected &&
+    prev.open === next.open &&
+    prev.editable === next.editable &&
+    prev.onRenameIcon === next.onRenameIcon &&
+    prev.onOpenWorkflowEditor === next.onOpenWorkflowEditor &&
+    prev.onRequestDeleteTable === next.onRequestDeleteTable &&
+    prev.onActivate === next.onActivate
+  );
+}
+
+Option.displayName = 'Option';
 
 const TitleSection: React.FC<{
   open: boolean;
@@ -1333,5 +1332,8 @@ const ToggleClose: React.FC<{
     </button>
   );
 };
+
+const CollapsibleSidebar = memo(CollapsibleSidebarInner);
+CollapsibleSidebar.displayName = 'CollapsibleSidebar';
 
 export default CollapsibleSidebar;

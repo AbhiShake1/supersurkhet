@@ -11,7 +11,14 @@ import {
   QrCodeIcon,
   Sigma,
 } from 'lucide-react';
-import { type ReactNode, useCallback, useMemo, useState } from 'react';
+import {
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { ZodEffects } from 'zod';
 import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
 import * as Kanban from '@/components/ui/kanban';
@@ -207,13 +214,18 @@ export function AutoAdmin({
   const [uncontrolledSystemTabs, setUncontrolledSystemTabs] =
     useState<AutoAdminSystemTabs>(DEFAULT_SYSTEM_TABS);
   const resolvedSystemTabs = systemTabs ?? uncontrolledSystemTabs;
+  const resolvedSystemTabsRef = useRef(resolvedSystemTabs);
+  useEffect(() => {
+    resolvedSystemTabsRef.current = resolvedSystemTabs;
+  }, [resolvedSystemTabs]);
   const dashboardTab = resolvedSystemTabs.dashboard;
   const qrTab = resolvedSystemTabs.qr;
   const websiteTab = resolvedSystemTabs.website;
 
   const updateSystemTab = useCallback(
     (key: AutoAdminSystemTabKey, patch: Partial<AutoAdminSystemTabState>) => {
-      const current = resolvedSystemTabs[key];
+      const currentTabs = resolvedSystemTabsRef.current;
+      const current = currentTabs[key];
       const next: AutoAdminSystemTabState = {
         title: (patch.title ?? current.title).trim() || current.title,
         group: (() => {
@@ -236,7 +248,7 @@ export function AutoAdmin({
       }
       onSystemTabChange?.(key, next);
     },
-    [onSystemTabChange, resolvedSystemTabs, systemTabs],
+    [onSystemTabChange, systemTabs],
   );
 
   const { data: allBusinesses = [] } = api.business.useGet({
@@ -303,7 +315,7 @@ export function AutoAdmin({
   const renameSystemTab = useCallback(
     (previousTabTitle: string, nextTabTitle: string): boolean => {
       const matchedEntry = (
-        Object.entries(resolvedSystemTabs) as Array<
+        Object.entries(resolvedSystemTabsRef.current) as Array<
           [AutoAdminSystemTabKey, AutoAdminSystemTabState]
         >
       ).find(([, value]) => value.title === previousTabTitle);
@@ -315,13 +327,13 @@ export function AutoAdmin({
       });
       return true;
     },
-    [resolvedSystemTabs, updateSystemTab],
+    [updateSystemTab],
   );
 
   const renameSystemTabIcon = useCallback(
     (tabTitle: string, iconName: string): boolean => {
       const matchedEntry = (
-        Object.entries(resolvedSystemTabs) as Array<
+        Object.entries(resolvedSystemTabsRef.current) as Array<
           [AutoAdminSystemTabKey, AutoAdminSystemTabState]
         >
       ).find(([, value]) => value.title === tabTitle);
@@ -333,13 +345,13 @@ export function AutoAdmin({
       });
       return true;
     },
-    [resolvedSystemTabs, updateSystemTab],
+    [updateSystemTab],
   );
 
   const moveSystemTabToGroup = useCallback(
     (tabTitle: string, groupName?: string): boolean => {
       const matchedEntry = (
-        Object.entries(resolvedSystemTabs) as Array<
+        Object.entries(resolvedSystemTabsRef.current) as Array<
           [AutoAdminSystemTabKey, AutoAdminSystemTabState]
         >
       ).find(([, value]) => value.title === tabTitle);
@@ -351,15 +363,15 @@ export function AutoAdmin({
       });
       return true;
     },
-    [resolvedSystemTabs, updateSystemTab],
+    [updateSystemTab],
   );
 
   const renameSystemGroup = useCallback(
     (previousGroupName: string, nextGroupName: string): boolean => {
       let changed = false;
-      for (const [key, value] of Object.entries(resolvedSystemTabs) as Array<
-        [AutoAdminSystemTabKey, AutoAdminSystemTabState]
-      >) {
+      for (const [key, value] of Object.entries(
+        resolvedSystemTabsRef.current,
+      ) as Array<[AutoAdminSystemTabKey, AutoAdminSystemTabState]>) {
         if (value.group !== previousGroupName) continue;
         updateSystemTab(key, {
           group: nextGroupName,
@@ -368,15 +380,15 @@ export function AutoAdmin({
       }
       return changed;
     },
-    [resolvedSystemTabs, updateSystemTab],
+    [updateSystemTab],
   );
 
   const deleteSystemGroup = useCallback(
     (groupName: string): boolean => {
       let changed = false;
-      for (const [key, value] of Object.entries(resolvedSystemTabs) as Array<
-        [AutoAdminSystemTabKey, AutoAdminSystemTabState]
-      >) {
+      for (const [key, value] of Object.entries(
+        resolvedSystemTabsRef.current,
+      ) as Array<[AutoAdminSystemTabKey, AutoAdminSystemTabState]>) {
         if (value.group !== groupName) continue;
         updateSystemTab(key, {
           group: undefined,
@@ -385,7 +397,7 @@ export function AutoAdmin({
       }
       return changed;
     },
-    [resolvedSystemTabs, updateSystemTab],
+    [updateSystemTab],
   );
 
   const tab = (search.tab as string) ?? tabsWithHome[0]?.title;

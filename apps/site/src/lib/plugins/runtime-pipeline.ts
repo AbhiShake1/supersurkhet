@@ -1,5 +1,4 @@
-import type { SchemaKeys } from '@gta/react-hooks';
-import { get as ssrGet } from '@/lib/gun/ssr/get';
+import { SSRGetTimeoutError, get as ssrGet } from '@/lib/gun/ssr/get';
 import { createPluginRuntimeRegistry } from '@/lib/plugins/runtime-registry';
 import type {
   BusinessPluginDraftInstallDoc,
@@ -34,10 +33,14 @@ export async function runLifecycleHookPipeline({
 
   const [installRows, releaseRows, draftInstallRows, draftRevisionRows] =
     await Promise.all([
-      ssrGet('businessPluginInstall', businessId),
-      ssrGet('pluginRelease'),
-      ssrGet('businessPluginDraftInstall', businessId),
-      ssrGet('pluginDraftRevision'),
+      readRowsWithTimeoutFallback(() =>
+        ssrGet('businessPluginInstall', businessId),
+      ),
+      readRowsWithTimeoutFallback(() => ssrGet('pluginRelease')),
+      readRowsWithTimeoutFallback(() =>
+        ssrGet('businessPluginDraftInstall', businessId),
+      ),
+      readRowsWithTimeoutFallback(() => ssrGet('pluginDraftRevision')),
     ]);
   const installs = installRows as BusinessPluginInstallDoc[];
   const releases = releaseRows as PluginReleaseDoc[];
@@ -59,4 +62,39 @@ export async function runLifecycleHookPipeline({
     payload,
     actionHandlers: runtimeActionHandlers,
   });
+}
+
+async function readRowsWithTimeoutFallback<T>(
+  reader: () => Promise<T[]>,
+): Promise<T[]> {
+  try {
+    return await reader();
+  } catch (error) {
+    if (isSSRGetTimeoutError(error)) {
+      return [];
+    }
+    throw error;
+  }
+}
+
+function isSSRGetTimeoutError(error: unknown): boolean {
+  if (error instanceof SSRGetTimeoutError) return true;
+  if (typeof error === 'string') return error.includes('fetch timed out');
+  if (!error || typeof error !== 'object') return false;
+
+  const candidate = error as {
+    name?: unknown;
+    message?: unknown;
+    cause?: unknown;
+  };
+
+  if (candidate.name === 'SSRGetTimeoutError') return true;
+  if (
+    typeof candidate.message === 'string' &&
+    candidate.message.includes('fetch timed out')
+  ) {
+    return true;
+  }
+
+  return isSSRGetTimeoutError(candidate.cause);
 }

@@ -155,6 +155,52 @@ describe('admin plugin market helpers', () => {
     ).toBe(0);
   });
 
+  it('falls back to plugin id ranking label when title is missing', () => {
+    const catalog = [
+      entry({
+        pluginId: 'acme.beta',
+        title: undefined,
+        latestRelease: {
+          id: 'acme.beta@1.0.0',
+          pluginId: 'acme.beta',
+          version: '1.0.0',
+          docs: undefined,
+          actionManifest: [{ actionId: 'beta.run', capabilities: [] }],
+          adminTabs: [],
+          manifestHash: 'm',
+          artifactHash: 'a',
+          author: { userId: 'u1' },
+          visibility: 'public',
+          publishedAt: '2026-02-15T00:00:00.000Z',
+        },
+      }),
+      entry({
+        pluginId: 'acme.alpha',
+        title: undefined,
+        latestRelease: {
+          id: 'acme.alpha@1.0.0',
+          pluginId: 'acme.alpha',
+          version: '1.0.0',
+          docs: undefined,
+          actionManifest: [{ actionId: 'alpha.run', capabilities: [] }],
+          adminTabs: [],
+          manifestHash: 'm',
+          artifactHash: 'a',
+          author: { userId: 'u1' },
+          visibility: 'public',
+          publishedAt: '2026-02-15T00:00:00.000Z',
+        },
+      }),
+    ] as PluginCatalogEntry[];
+
+    const groups = buildMarketplaceGroups(catalog);
+
+    expect(groups.topInstalled.map((item) => item.pluginId)).toEqual([
+      'acme.alpha',
+      'acme.beta',
+    ]);
+  });
+
   it('computes review aggregate with average and total count', () => {
     const reviews: PluginUserReview[] = [
       {

@@ -71,7 +71,15 @@ function resolvePublisher(entry: PluginCatalogEntry): string {
 
 function compareRank(left: PluginMarketItem, right: PluginMarketItem): number {
   if (left.installs !== right.installs) return right.installs - left.installs;
-  return left.title.localeCompare(right.title);
+  const leftLabel =
+    typeof left.title === 'string' && left.title.length > 0
+      ? left.title
+      : left.pluginId;
+  const rightLabel =
+    typeof right.title === 'string' && right.title.length > 0
+      ? right.title
+      : right.pluginId;
+  return leftLabel.localeCompare(rightLabel);
 }
 
 export function summarizeReviewStats(

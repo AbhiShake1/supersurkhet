@@ -407,6 +407,22 @@ function toDraftSnapshotString({
   });
 }
 
+function toComparableSidebarSnapshotJson(raw: string | null | undefined) {
+  const normalized = raw?.trim();
+  if (!normalized) return '';
+  try {
+    const parsed = JSON.parse(normalized);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return normalized;
+    }
+    const comparable = { ...(parsed as Record<string, unknown>) };
+    delete comparable.updatedAt;
+    return canonicalStringify(comparable);
+  } catch {
+    return normalized;
+  }
+}
+
 function computeOrderedGroupNames({
   customGroups,
   groupOrder,
@@ -467,23 +483,29 @@ function computeOrderedGroupNames({
   return preferred;
 }
 
-function isGroupSentinelSchemaId(schemaId: string): boolean {
-  return schemaId.startsWith(DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX);
+function isGroupSentinelSchemaId(schemaId: unknown): boolean {
+  return (
+    typeof schemaId === 'string' &&
+    schemaId.startsWith(DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX)
+  );
 }
 
 function toGroupSentinelSchemaId(index: number): string {
   return `${DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX}${index}`;
 }
 
-function isSystemSentinelSchemaId(schemaId: string): boolean {
-  return schemaId.startsWith(DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX);
+function isSystemSentinelSchemaId(schemaId: unknown): boolean {
+  return (
+    typeof schemaId === 'string' &&
+    schemaId.startsWith(DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX)
+  );
 }
 
 function toSystemSentinelSchemaId(key: SystemTabKey): string {
   return `${DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX}${key}`;
 }
 
-function parseSystemSentinelSchemaId(schemaId: string): SystemTabKey | null {
+function parseSystemSentinelSchemaId(schemaId: unknown): SystemTabKey | null {
   if (!isSystemSentinelSchemaId(schemaId)) return null;
   const key = schemaId.slice(DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX.length);
   if (key === 'dashboard' || key === 'qr' || key === 'website') {
@@ -533,6 +555,15 @@ function deserializeDraftAdminTabs(
   const systemTabs: SystemTabState = { ...DEFAULT_SYSTEM_TABS };
 
   for (const tab of tabs) {
+    if (
+      !tab ||
+      typeof tab !== 'object' ||
+      typeof tab.schema !== 'string' ||
+      tab.schema.trim().length === 0
+    ) {
+      continue;
+    }
+
     if (isGroupSentinelSchemaId(tab.schema)) {
       const groupName = tab.group?.trim();
       if (groupName && !orderedGroups.includes(groupName)) {
@@ -2167,6 +2198,10 @@ function PluginStudioPresenter({
   const hasAttemptedDraftCreationRef = useRef<Set<string>>(new Set());
   const initialSnapshotByDraftRef = useRef<Record<string, string | null>>({});
   const sidebarSnapshotSeededDraftIdRef = useRef<string | null>(null);
+  const sidebarSnapshotPersistTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
+  const lastSidebarSnapshotComparableRef = useRef<string | null>(null);
   const lastRequestedDraftSnapshotRef = useRef<string | null>(null);
   const lastAutosaveErrorAtRef = useRef<number>(0);
   const lastPersistenceErrorAtRef = useRef<number>(0);
@@ -2802,10 +2837,25 @@ function PluginStudioPresenter({
   }, [expectedHydratedDraftKey]);
 
   useEffect(() => {
+    const persistedComparable = toComparableSidebarSnapshotJson(
+      activeUiStateForActor?.sidebarSnapshotJson,
+    );
+    lastSidebarSnapshotComparableRef.current = persistedComparable;
+  }, [activeUiStateForActor?.sidebarSnapshotJson]);
+
+  useEffect(() => {
+    if (sidebarSnapshotPersistTimeoutRef.current !== null) {
+      clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
+      sidebarSnapshotPersistTimeoutRef.current = null;
+    }
     if (!parsed) return;
 
     if (sidebarSnapshotSeededDraftIdRef.current !== draftId) {
       sidebarSnapshotSeededDraftIdRef.current = draftId;
+      if (sidebarSnapshotPersistTimeoutRef.current !== null) {
+        clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
+        sidebarSnapshotPersistTimeoutRef.current = null;
+      }
       return;
     }
 
@@ -2827,18 +2877,24 @@ function PluginStudioPresenter({
     });
     if (latestPersistedSnapshot === currentSnapshot) {
       if (activeUiStateForActor?.sidebarSnapshotJson) {
-        persistSidebarUiStateForActor({
-          sidebarSnapshotJson: '',
-        });
+        lastSidebarSnapshotComparableRef.current = '';
+        if (sidebarSnapshotPersistTimeoutRef.current !== null) {
+          clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
+        }
+        sidebarSnapshotPersistTimeoutRef.current = setTimeout(() => {
+          sidebarSnapshotPersistTimeoutRef.current = null;
+          persistSidebarUiStateForActor({
+            sidebarSnapshotJson: '',
+          });
+        }, 250);
       }
       return;
     }
 
-    const snapshot: PluginStudioSidebarSnapshot = {
+    const snapshotCore = {
       version: 1,
       pluginId,
       draftId,
-      updatedAt: new Date().toISOString(),
       ...(latestRevisionRecencyKey
         ? { baseRevisionRecencyKey: latestRevisionRecencyKey }
         : {}),
@@ -2855,13 +2911,28 @@ function PluginStudioPresenter({
       groupOrder,
       systemTabs,
     };
-    const snapshotJson = JSON.stringify(snapshot);
-    if (activeUiStateForActor?.sidebarSnapshotJson === snapshotJson) {
+    const comparableSnapshotJson = canonicalStringify(snapshotCore);
+    if (
+      lastSidebarSnapshotComparableRef.current === comparableSnapshotJson ||
+      toComparableSidebarSnapshotJson(activeUiStateForActor?.sidebarSnapshotJson) ===
+      comparableSnapshotJson
+    ) {
       return;
     }
-    persistSidebarUiStateForActor({
-      sidebarSnapshotJson: snapshotJson,
-    });
+    lastSidebarSnapshotComparableRef.current = comparableSnapshotJson;
+    if (sidebarSnapshotPersistTimeoutRef.current !== null) {
+      clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
+    }
+    sidebarSnapshotPersistTimeoutRef.current = setTimeout(() => {
+      sidebarSnapshotPersistTimeoutRef.current = null;
+      const snapshot: PluginStudioSidebarSnapshot = {
+        ...snapshotCore,
+        updatedAt: new Date().toISOString(),
+      };
+      persistSidebarUiStateForActor({
+        sidebarSnapshotJson: JSON.stringify(snapshot),
+      });
+    }, 250);
   }, [
     activeDraftRevisions,
     activeUiStateForActor,
@@ -2875,6 +2946,16 @@ function PluginStudioPresenter({
     schemaOrder,
     systemTabs,
   ]);
+
+  useEffect(
+    () => () => {
+      if (sidebarSnapshotPersistTimeoutRef.current !== null) {
+        clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
+        sidebarSnapshotPersistTimeoutRef.current = null;
+      }
+    },
+    [],
+  );
 
   const { mutateAsync: createDraft, isPending: isCreatingDraft } = useMutation({
     mutationKey: ['plugin-studio', 'create-draft', draftId],
@@ -4317,7 +4398,6 @@ function PluginStudioPresenter({
           await updateRoutesTabsConfigMutation.mutateAsync(payload);
         }
       }
-      await refetchRoutesTabsConfig();
     })().catch((error) =>
       reportPersistenceError('Sidebar UI state persistence', error),
     );
