@@ -159,7 +159,7 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
                     </div>
                     <div>
                         <h2 className="text-sm font-semibold text-white">Business Assistant</h2>
-                        <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Powered by AI</p>
+                        <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Explain your business needs to get personalized plugin recommendations.(Powered by AI)</p>
                     </div>
                 </div>
             </div>

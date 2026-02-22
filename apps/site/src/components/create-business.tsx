@@ -315,7 +315,7 @@ export function CreateBusinessPageFlow() {
               <Button
                 size="lg"
                 onClick={handleNextStep1}
-                disabled={!canUsePrimaryActions || isLoading}
+                disabled={isPending || isLoading}
                 className="h-12 w-full rounded-xl px-5 text-sm font-semibold shadow-lg transition-all duration-200 sm:h-13 sm:text-base"
               >
                 <span className="inline-flex items-center gap-2">
