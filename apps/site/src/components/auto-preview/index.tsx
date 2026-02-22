@@ -14,6 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { useDrawer } from '@/contexts/dialog-context';
+import { resolveRuntimeSchema } from '@/lib/auto-runtime/schema-runtime';
 import { GUN_PREFIX, GUN_SEPARATOR, getGunRef } from '@/lib/gun/utils';
 import { AutoTable } from '../auto-table';
 import type { fieldConfig } from '../ui/autoform';
@@ -128,10 +129,21 @@ const RecordPreview: AutoPreviewComponent<object> = ({ value, schema }) => {
   if (!value) return null;
   if (!('#' in value)) return null;
   if (typeof value['#'] !== 'string') return null;
-  const isEffect = schema instanceof z.ZodEffects;
-  if (!isEffect) return null;
+  if (!(schema instanceof z.ZodEffects)) return null;
+
+  const recordValueSchema = schema.innerType()._def.valueType;
+  if (
+    !(recordValueSchema instanceof z.ZodObject) &&
+    !(recordValueSchema instanceof z.ZodEffects)
+  ) {
+    return null;
+  }
+
   const fullKey = value['#'];
-  const parsedSchema = schema.innerType()._def.valueType;
+  const { schemaObject: parsedSchema } = resolveRuntimeSchema({
+    runtimeSchema: recordValueSchema as ZodObjectOrWrapped,
+  });
+
   return (
     <Drawer>
       <DrawerTrigger asChild>
@@ -155,7 +167,16 @@ const ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const arraySchema: z.ZodArray<any> =
     schema instanceof z.ZodEffects ? schema.innerType() : schema;
-  const parsedSchema = arraySchema._def.type || arraySchema._def.innerType;
+  const itemSchema = arraySchema._def.type || arraySchema._def.innerType;
+  if (
+    !(itemSchema instanceof z.ZodObject) &&
+    !(itemSchema instanceof z.ZodEffects)
+  ) {
+    return null;
+  }
+  const { schemaObject: parsedSchema } = resolveRuntimeSchema({
+    runtimeSchema: itemSchema as ZodObjectOrWrapped,
+  });
   // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
   const { openDialog } = useDrawer();
 

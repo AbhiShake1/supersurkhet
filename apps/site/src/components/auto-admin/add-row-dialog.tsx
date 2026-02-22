@@ -1,7 +1,4 @@
 import {
-  getNestedZodShape,
-  getSchema,
-  type NestedSchema,
   type NestedSchemaType,
   type SchemaKeys,
   useCreate,
@@ -15,7 +12,6 @@ import {
   Sheet,
 } from 'lucide-react';
 import * as React from 'react';
-import { ZodEffects } from 'zod';
 import { useAuth } from '@/components/auth-provider';
 import { AutoForm } from '@/components/ui/autoform';
 import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
@@ -30,6 +26,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { api } from '@/lib/api';
+import { resolveRuntimeSchema } from '@/lib/auto-runtime/schema-runtime';
 import {
   parseCSVFile,
   parseExcelFile,
@@ -88,19 +85,14 @@ export function AddRowDialog<T extends SchemaKeys>({
     },
   });
 
-  const _schema = getNestedZodShape(schema, appSchema.schemaShape);
-  const schemaWithOverrides = getSchema(_schema);
-  const tableSchema = schemaWithOverrides as NestedSchema<T>;
-  function getFinalSchema() {
-    let schema: ZodObjectOrWrapped = schemaWithOverrides;
-    if (extender) {
-      schema = extender(tableSchema);
-    }
-    return schema;
-  }
-  const finalSchema = getFinalSchema();
-  const finalSchemaObject =
-    finalSchema instanceof ZodEffects ? finalSchema.innerType() : finalSchema;
+  const { schema: finalSchema, schemaObject: finalSchemaObject } =
+    resolveRuntimeSchema({
+      schemaKey: schema,
+      schemaShape: appSchema.schemaShape,
+      extender: extender as
+        | ((schema: ZodObjectOrWrapped) => ZodObjectOrWrapped)
+        | undefined,
+    });
   type SchemaRecord = Omit<NestedSchemaType<T>, '_'> & {
     id?: string | number;
   };

@@ -1,7 +1,5 @@
+import type { ParsedSchema } from '@autoform/core';
 import {
-  getNestedZodShape,
-  getSchema,
-  getShape,
   type NestedSchema,
   type NestedSchemaType,
   type SchemaKeys,
@@ -24,14 +22,11 @@ import {
   Text,
 } from 'lucide-react';
 import * as React from 'react';
-import { ZodEffects, z } from 'zod';
+import { z } from 'zod';
 import { AddRowDialog } from '@/components/auto-admin/add-row-dialog';
 import { DataTable } from '@/components/data-table';
 import { AutoFormWithoutLabel } from '@/components/ui/autoform';
-import {
-  parseSchema,
-  type ZodObjectOrWrapped,
-} from '@/components/ui/autoform/zod';
+import type { ZodObjectOrWrapped } from '@/components/ui/autoform/zod';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -44,10 +39,15 @@ import {
 import * as Editable from '@/components/ui/editable';
 import { useDataTable } from '@/hooks/use-data-table';
 import { api } from '@/lib/api';
+import {
+  collectDerivedFieldFns,
+  getFieldSchemaByKey,
+  isDerivedFieldKey,
+  resolveRuntimeSchema,
+} from '@/lib/auto-runtime/schema-runtime';
 import { applyFilters } from '@/lib/filter';
 import { appSchema } from '@/lib/schema';
 import { applySorting } from '@/lib/sort';
-import { getSchemaDerivations } from '@/lib/zod/with-derivations';
 import type { DataTableRowAction, FilterVariant } from '@/types/data-table';
 import { AutoPreview } from '../auto-preview';
 import { DataTableAdvancedToolbar } from '../data-table/data-table-advanced-toolbar';
@@ -57,10 +57,9 @@ import { DataTableSortList } from '../data-table/data-table-sort-list';
 import { DeleteRowDialog } from '../data-table/delete-row-dialog';
 import { EditRowDialog } from '../data-table/edit-row-dialog';
 import SkeletonTableOneWrapper from '../mvpblocks/skeleton-table-1';
-import type { DeriveFn, FieldConfigCustomData } from '../ui/autoform';
 import { BadgeMarquee } from '../ui/badge-marquee';
 import { AutoTableActionBar } from './auto-table-action-bar';
-import { applyDerivedValuesToRow, getDeriveFn } from './derive-row';
+import { applyDerivedValuesToRow } from './derive-row';
 import { getAutoTableInitialState } from './initial-state';
 
 type AggregationType =
@@ -168,50 +167,30 @@ export function AutoTable<T extends SchemaKeys>({
   ...props
 }: AutoTableProps<T>) {
   const schemaName = 'schema' in props ? props.schema : ('' as SchemaKeys);
-  const _schema = (() => {
-    if ('parsedSchema' in props) {
-      return props.parsedSchema;
-    }
+  const { schema, schemaObject, parsedSchema } = resolveRuntimeSchema({
+    schemaKey: 'schema' in props ? props.schema : undefined,
+    schemaShape: appSchema.schemaShape,
+    runtimeSchema: 'parsedSchema' in props ? props.parsedSchema : undefined,
+    extender: props.extender as
+      | ((schema: ZodObjectOrWrapped) => ZodObjectOrWrapped)
+      | undefined,
+  });
 
-    const zodShape = getNestedZodShape(schemaName, appSchema.schemaShape);
-
-    return getSchema(zodShape);
-  })();
-
-  function getFinalSchema() {
-    let schema: ZodObjectOrWrapped = _schema;
-    if (props.extender) {
-      schema = props.extender(schema);
-    }
-    return schema;
-  }
-
-  const schema = getFinalSchema();
-  const schemaObject =
-    schema instanceof ZodEffects ? schema.innerType() : schema;
-
-  const derivationSchemas = getSchemaDerivations(schemaObject);
   const derivedFieldKeys = React.useMemo(
-    () => new Set(Object.keys(derivationSchemas)),
-    [derivationSchemas],
+    () =>
+      new Set(
+        parsedSchema.fields
+          .filter((field) => isDerivedFieldKey(schemaObject, field.key))
+          .map((field) => field.key),
+      ),
+    [parsedSchema, schemaObject],
   );
   const deriveFns = React.useMemo(() => {
-    const parsedSchema = parseSchema(schemaObject);
-    const fnMap = new Map<string, DeriveFn>();
-
-    for (const field of parsedSchema.fields) {
-      if (!derivedFieldKeys.has(field.key)) continue;
-      const customData = field.fieldConfig?.customData as
-        | FieldConfigCustomData
-        | undefined;
-      const deriveFn = getDeriveFn(customData);
-      if (deriveFn) {
-        fnMap.set(field.key, deriveFn);
-      }
-    }
-
-    return fnMap;
-  }, [derivedFieldKeys, schemaObject]);
+    return collectDerivedFieldFns({
+      schema: schemaObject,
+      parsedSchema,
+    });
+  }, [schemaObject, parsedSchema]);
 
   const { data: __data = [], isLoading } = useGet(
     {
@@ -272,6 +251,7 @@ export function AutoTable<T extends SchemaKeys>({
 
   const columns = getAutoTableColumns({
     schema: schemaObject,
+    parsedSchema,
     setRowAction,
     derivedFieldKeys,
     previewOverrides: props.previewOverrides,
@@ -404,6 +384,7 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
     React.SetStateAction<DataTableRowAction<NestedSchemaType<T>> | null>
   >;
   schema: S;
+  parsedSchema: ParsedSchema;
   actions?: (
     ctx: CellContext<NestedSchemaType<T>, unknown>,
   ) => Promise<React.ReactNode>;
@@ -419,6 +400,7 @@ interface GetAutoTableColumnsProps<T extends SchemaKeys, S> {
 function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
   setRowAction,
   schema,
+  parsedSchema,
   derivedFieldKeys,
   previewOverrides,
   actions,
@@ -460,11 +442,11 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
 
   const usersById = new Map(users?.map((u) => [u._?.soul, u]));
 
-  const parsedSchema = parseSchema(getSchema(schema));
-
   for (const field of parsedSchema.fields) {
     const { key, description } = field;
-    const childSchema = z.object({ [key]: getShape(schema)?.[key] });
+    const fieldSchema = getFieldSchemaByKey(schema, key);
+    if (!fieldSchema) continue;
+    const childSchema = z.object({ [key]: fieldSchema });
     if (['_'].includes(key)) continue;
 
     const column: ColumnDef<NestedSchemaType<T>> = {
@@ -496,7 +478,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
               field={field}
               key={field.key}
               value={usersById?.get(value?.substring(1))?.name ?? '-'}
-              baseSchema={schema.shape[field.key]}
+              baseSchema={fieldSchema}
             />
           );
         }
@@ -507,7 +489,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
               field={field}
               key={field.key}
               value={previewOverrides?.[field.key]?.(value) ?? value}
-              baseSchema={schema.shape[field.key]}
+              baseSchema={fieldSchema}
             />
           );
         }
@@ -528,7 +510,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
                   field={field}
                   key={field.key}
                   value={previewOverrides?.[field.key]?.(value) ?? value}
-                  baseSchema={schema.shape[field.key]}
+                  baseSchema={fieldSchema}
                 />
               </Editable.Preview>
               <Editable.Input asChild>

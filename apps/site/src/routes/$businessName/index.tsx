@@ -4,14 +4,9 @@ import { BusinessProvider } from '@/contexts/business-context';
 import { api } from '@/lib/api';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Loader2, MapPin, Shield } from 'lucide-react';
-import { lazy } from 'react';
 import { BusinessAccessGate } from '@/components/permission-gate/business-access-gate';
 import { Button } from '@/components/ui/button';
 import { BusinessLocationMap } from '@/components/business-location-map';
-
-const _GenericClientPage = lazy(
-  () => import('@/components/pages/generic/generic-client-page'),
-);
 
 export const Route = createFileRoute('/$businessName/')({
   component: () => {
@@ -70,10 +65,10 @@ export const Route = createFileRoute('/$businessName/')({
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
                 <h1 className="text-3xl font-bold">{business.name}</h1>
-                {business.location && (
+                {business.locationCoordinates && (
                   <div className="flex items-center mt-2 text-muted-foreground">
                     <MapPin className="h-4 w-4 mr-1" />
-                    <span>{business.location}</span>
+                    <span>{business.locationCoordinates}</span>
                   </div>
                 )}
               </div>

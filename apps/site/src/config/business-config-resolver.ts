@@ -1,4 +1,8 @@
 import type { SchemaKeys } from '@gta/react-hooks';
+import {
+  dedupeAdminTabs,
+  resolveAdminTabInput,
+} from '@/lib/auto-runtime/tab-runtime';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
@@ -20,24 +24,15 @@ function mapReleaseTabsToAutoAdminTabs(
   businessSlug: string,
 ) {
   return (
-    release.adminTabs?.map((tab) => ({
-      schema: tab.schema as SchemaKeys,
-      slug: businessSlug,
-      title: tab.title,
-      group: tab.group,
-    })) ?? []
+    release.adminTabs?.map((tab) =>
+      resolveAdminTabInput({
+        schema: tab.schema as SchemaKeys,
+        slug: businessSlug,
+        title: tab.title,
+        group: tab.group,
+      }),
+    ) ?? []
   );
-}
-
-function dedupeTabs(tabs: AnyAutoTableTab[]) {
-  const map = new Map<string, AnyAutoTableTab>();
-  for (const tab of tabs) {
-    const key = `${tab.schema}:${tab.title ?? ''}:${tab.group ?? ''}`;
-    if (!map.has(key)) {
-      map.set(key, tab);
-    }
-  }
-  return [...map.values()];
 }
 
 export function resolveInstallDrivenTabs({
@@ -75,7 +70,9 @@ export function resolveInstallDrivenTabs({
     });
 
   if (installedTabs.length > 0) {
-    return dedupeTabs(installedTabs);
+    return dedupeAdminTabs(installedTabs, (tab) => {
+      return `${tab.schema}:${tab.title ?? ''}:${tab.group ?? ''}`;
+    });
   }
 
   return [];

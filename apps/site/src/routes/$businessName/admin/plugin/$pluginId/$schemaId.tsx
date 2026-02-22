@@ -3,7 +3,12 @@ import z from 'zod';
 import { AutoAdmin } from '@/components/auto-admin';
 import { NotFound } from '@/components/ui/not-found';
 import { api } from '@/lib/api';
+import {
+  normalizeAutoTableTab,
+  resolveAdminTabInput,
+} from '@/lib/auto-runtime/tab-runtime';
 import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
+import type { AdminTabDoc, SchemaDoc } from '@/lib/plugins/types';
 
 export const Route = createFileRoute(
   '/$businessName/admin/plugin/$pluginId/$schemaId',
@@ -57,22 +62,44 @@ function RuntimePluginSchemaRoute() {
     (entry) => entry.schema === decodedSchemaId,
   );
   const pluginSchemaNamespace = `${business.id}/${decodedPluginId}/${decodedSchemaId}`;
+  const tabInput = resolveRuntimePluginAdminTabInput({
+    tabSearchValue: tab,
+    pluginTab,
+    schemaDoc,
+    decodedSchemaId,
+    compiledSchema,
+    pluginSchemaNamespace,
+  });
 
-  return (
-    <AutoAdmin
-      tabs={[
-        {
-          title:
-            tab?.trim() ||
-            pluginTab?.title ||
-            schemaDoc.title ||
-            decodedSchemaId,
-          group: pluginTab?.group,
-          parsedSchema: compiledSchema,
-          slug: pluginSchemaNamespace,
-          treatSlugAsAbsolute: true,
-        },
-      ]}
-    />
-  );
+  return <AutoAdmin tabs={[tabInput]} />;
+}
+
+export function resolveRuntimePluginAdminTabInput({
+  tabSearchValue,
+  pluginTab,
+  schemaDoc,
+  decodedSchemaId,
+  compiledSchema,
+  pluginSchemaNamespace,
+}: {
+  tabSearchValue?: string;
+  pluginTab?: AdminTabDoc;
+  schemaDoc: SchemaDoc;
+  decodedSchemaId: string;
+  compiledSchema: ReturnType<typeof compileSchemaDoc>;
+  pluginSchemaNamespace: string;
+}) {
+  const resolvedTab = resolveAdminTabInput({
+    title:
+      tabSearchValue?.trim() ||
+      pluginTab?.title ||
+      schemaDoc.title ||
+      decodedSchemaId,
+    group: pluginTab?.group,
+    parsedSchema: compiledSchema,
+    slug: pluginSchemaNamespace,
+    treatSlugAsAbsolute: true,
+  });
+
+  return normalizeAutoTableTab(resolvedTab, pluginSchemaNamespace);
 }

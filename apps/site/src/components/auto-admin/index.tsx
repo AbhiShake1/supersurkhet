@@ -3,7 +3,6 @@ import { getNestedZodShape } from '@gta/react-hooks';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation } from '@tanstack/react-router';
 import _ from 'lodash';
-import * as LucideIcons from 'lucide-react';
 import {
   BarChart3,
   GripVertical,
@@ -24,6 +23,12 @@ import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
 import * as Kanban from '@/components/ui/kanban';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { api } from '@/lib/api';
+import {
+  dedupeAdminTabs,
+  normalizeAutoTableTab,
+  resolveAdminTabInput,
+  resolveIconByName,
+} from '@/lib/auto-runtime/tab-runtime';
 import { appSchema } from '@/lib/schema';
 import { cn, getSoulFromUnknown } from '@/lib/utils';
 import { AdminDashboard } from '../admin-dashboard';
@@ -135,72 +140,6 @@ function isRenderableAutoTableTab(tab: unknown): tab is AutoTableItem {
   return 'schema' in tab || 'parsedSchema' in tab;
 }
 
-function normalizeTableTab(
-  tab: AutoTableTab & AutoTableItem,
-  basePath: string,
-): AutoTableItem {
-  if ('data' in tab && tab.data !== undefined) {
-    return tab;
-  }
-
-  return {
-    ...tab,
-    slug: tab.slug ?? basePath,
-  };
-}
-
-function toTitleCase(schema: string | undefined) {
-  return schema
-    ?.replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/^./, (c) => c.toUpperCase());
-}
-
-function resolveLucideIconByName(
-  iconName: string | undefined,
-): LucideIcon | undefined {
-  if (!iconName) return undefined;
-  return (LucideIcons.icons as Record<string, LucideIcon | undefined>)[
-    iconName
-  ];
-}
-
-function resolveTabMetadata(tab: AutoAdminTabInput): PossibleTabConfig {
-  if (!('schema' in tab)) {
-    return {
-      ...tab,
-      title: normalizeTabTitle(tab.title),
-    };
-  }
-
-  const schemaMeta = appSchema[tab.schema];
-  return {
-    ...tab,
-    title: normalizeTabTitle(tab.title ?? schemaMeta?.title ?? toTitleCase(tab.schema)),
-    group: tab.group ?? schemaMeta?.group,
-    icon: 'icon' in tab && tab.icon ? tab.icon : schemaMeta?.icon,
-  };
-}
-
-function normalizeTabTitle(title: unknown): string {
-  if (typeof title !== 'string') {
-    return 'Untitled';
-  }
-  const normalized = title.trim();
-  return normalized || 'Untitled';
-}
-
-function dedupeTabsByTitle(tabs: PossibleTabConfig[]): PossibleTabConfig[] {
-  const seenTitles = new Set<string>();
-  return tabs.reduce<PossibleTabConfig[]>((acc, tab) => {
-    const title = normalizeTabTitle(tab.title);
-    const key = title;
-    if (seenTitles.has(key)) return acc;
-    seenTitles.add(key);
-    acc.push({ ...tab, title });
-    return acc;
-  }, []);
-}
-
 export function AutoAdmin({
   tabs,
   editable = false,
@@ -269,29 +208,29 @@ export function AutoAdmin({
 
   const tabsWithHome: PossibleTabConfig[] = useMemo(
     () =>
-      dedupeTabsByTitle([
-        {
+      dedupeAdminTabs<PossibleTabConfig>([
+        resolveAdminTabInput({
           title: dashboardTab.title,
           group: dashboardTab.group,
           iconName: dashboardTab.iconName,
-          icon: resolveLucideIconByName(dashboardTab.iconName) ?? BarChart3,
+          icon: resolveIconByName(dashboardTab.iconName) ?? BarChart3,
           children: business ? <AdminDashboard slug={basePath} /> : null,
-        },
-        ...tabs.map(resolveTabMetadata),
-        {
+        }),
+        ...tabs.map((tab) => resolveAdminTabInput(tab) as PossibleTabConfig),
+        resolveAdminTabInput({
           title: qrTab.title,
           group: qrTab.group,
           iconName: qrTab.iconName,
-          icon: resolveLucideIconByName(qrTab.iconName) ?? QrCodeIcon,
+          icon: resolveIconByName(qrTab.iconName) ?? QrCodeIcon,
           children: <QRCodePage slug={basePath} />,
-        },
-        {
+        }),
+        resolveAdminTabInput({
           title: websiteTab.title,
           group: websiteTab.group,
           iconName: websiteTab.iconName,
-          icon: resolveLucideIconByName(websiteTab.iconName) ?? Sigma,
+          icon: resolveIconByName(websiteTab.iconName) ?? Sigma,
           children: <CustomUiBuilderPage slug={basePath} />,
-        },
+        }),
       ]),
     [
       dashboardTab.group,
@@ -483,7 +422,7 @@ export function AutoAdmin({
   const currentTableItem = useMemo(
     () =>
       currentItem && isRenderableAutoTableTab(currentItem)
-        ? normalizeTableTab(currentItem, basePath)
+        ? normalizeAutoTableTab(currentItem, basePath)
         : null,
     [currentItem, basePath],
   );
