@@ -42,7 +42,6 @@ export const Route = createFileRoute('/$businessName/admin/')({
           <Loader2
             className="animate-spin size-8"
             aria-label="Loading..."
-            size="xl"
           />
         </div>
       );

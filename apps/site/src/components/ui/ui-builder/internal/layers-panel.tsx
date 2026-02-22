@@ -1,45 +1,43 @@
+import isDeepEqual from 'fast-deep-equal';
+import { type Id, useHeTree } from 'he-tree-react';
+import { Plus } from 'lucide-react';
 import React, {
   useCallback,
-  useLayoutEffect,
+  useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import isDeepEqual from 'fast-deep-equal';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import type { ComponentLayer } from '@/components/ui/ui-builder/types';
-import { cn } from '@/lib/utils';
-import {
-  findAllParentLayersRecursive,
-  hasLayerChildren,
-} from '@/lib/ui-builder/store/layer-utils';
-import { Plus } from 'lucide-react';
-import { useHeTree, type Id } from 'he-tree-react';
+import { buttonVariants } from '@/components/ui/button';
+import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
+import { DevProfiler } from '@/components/ui/ui-builder/internal/components/dev-profiler';
+import { DividerControl } from '@/components/ui/ui-builder/internal/components/divider-control';
 import {
   TreeRowNode,
   TreeRowPlaceholder,
 } from '@/components/ui/ui-builder/internal/components/tree-row-node';
-import { DevProfiler } from '@/components/ui/ui-builder/internal/components/dev-profiler';
-import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
-import { buttonVariants } from '@/components/ui/button';
-import { DividerControl } from '@/components/ui/ui-builder/internal/components/divider-control';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import {
+  findAllParentLayersRecursive,
+  hasLayerChildren,
+} from '@/lib/ui-builder/store/layer-utils';
+import { cn } from '@/lib/utils';
 
 interface LayersPanelProps {
   className?: string;
 }
 
 const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
-  const {
-    selectedPageId,
-    selectedLayerId,
-    findLayerById,
-    updateLayer,
-    selectLayer,
-    removeLayer,
-    duplicateLayer,
-  } = useLayerStore();
-
-  const pageLayer = findLayerById(selectedPageId);
+  const selectedPageId = useLayerStore((state) => state.selectedPageId);
+  const selectedLayerId = useLayerStore((state) => state.selectedLayerId);
+  const pageLayer = useLayerStore((state) =>
+    state.findLayerById(state.selectedPageId),
+  );
+  const updateLayer = useLayerStore((state) => state.updateLayer);
+  const selectLayer = useLayerStore((state) => state.selectLayer);
+  const removeLayer = useLayerStore((state) => state.removeLayer);
+  const duplicateLayer = useLayerStore((state) => state.duplicateLayer);
 
   const layers = useMemo(() => [pageLayer as ComponentLayer], [pageLayer]);
 
@@ -88,12 +86,12 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
     removeLayer,
     duplicateLayer,
   }) => {
-    const [openIdsArray, setOpenIdsArray] = useState<Id[]>([]);
+    const [userOpenIdsArray, setUserOpenIdsArray] = useState<Id[]>([]);
 
     const prevSelectedLayerId = useRef(selectedLayerId);
 
     const handleNodeToggle = useCallback((id: Id, open: boolean) => {
-      setOpenIdsArray((prev) => {
+      setUserOpenIdsArray((prev) => {
         if (open) {
           return prev.includes(id) ? prev : [...prev, id];
         } else {
@@ -157,6 +155,58 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
       return isDroppable;
     }, []);
 
+    const { processedLayers, originalLayerById } = useMemo(() => {
+      const layerMap = new Map<string, ComponentLayer>();
+
+      const processLayer = (layer: ComponentLayer): ComponentLayer => {
+        layerMap.set(layer.id, layer);
+
+        if (hasLayerChildren(layer)) {
+          let hasChildChanges = false;
+          const nextChildren = layer.children.map((child) => {
+            const nextChild = processLayer(child);
+            if (nextChild !== child) {
+              hasChildChanges = true;
+            }
+            return nextChild;
+          });
+
+          if (!hasChildChanges) {
+            return layer;
+          }
+
+          return { ...layer, children: nextChildren };
+        }
+
+        if (typeof layer.children === 'string' || !layer.children) {
+          return { ...layer, children: [] };
+        }
+
+        return layer;
+      };
+
+      return {
+        processedLayers: layers.map(processLayer),
+        originalLayerById: layerMap,
+      };
+    }, [layers]);
+
+    const selectedParentIds = useMemo<Id[]>(() => {
+      if (!selectedLayerId) {
+        return [];
+      }
+      return findAllParentLayersRecursive(layers, selectedLayerId).map(
+        (layer) => layer.id,
+      );
+    }, [layers, selectedLayerId]);
+
+    const openIdsArray = useMemo<Id[]>(() => {
+      if (selectedParentIds.length === 0) {
+        return userOpenIdsArray;
+      }
+      return Array.from(new Set([...userOpenIdsArray, ...selectedParentIds]));
+    }, [userOpenIdsArray, selectedParentIds]);
+
     const renderNode = useCallback(
       // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
       ({ stat, attrs, isPlaceholder }: any) => {
@@ -169,23 +219,7 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
           return <TreeRowPlaceholder key={stableKey} nodeAttributes={attrs} />;
         }
 
-        // Find the original layer data (not processed) to preserve text children info
-        const findOriginalLayer = (
-          layers: ComponentLayer[],
-          id: string,
-        ): ComponentLayer | null => {
-          for (const layer of layers) {
-            if (layer.id === id) return layer;
-            if (hasLayerChildren(layer)) {
-              const found = findOriginalLayer(layer.children, id);
-              if (found) return found;
-            }
-          }
-          return null;
-        };
-
-        const originalNode =
-          findOriginalLayer(layers, stat.node.id) || stat.node;
+        const originalNode = originalLayerById.get(stat.node.id) || stat.node;
 
         return (
           <TreeRowNode
@@ -197,7 +231,6 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
             draggable={stat.draggable}
             onToggle={handleNodeToggle}
             level={stat.level}
-            selectedLayerId={selectedLayerId}
             selectLayer={selectLayer}
             removeLayer={removeLayer}
             duplicateLayer={duplicateLayer}
@@ -207,37 +240,13 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
       },
       [
         handleNodeToggle,
-        selectedLayerId,
         selectLayer,
         removeLayer,
         duplicateLayer,
         updateLayer,
-        layers,
+        originalLayerById,
       ],
     );
-
-    // Preprocess layers to ensure all nodes appear in tree, even those with string children
-    const processedLayers = useMemo(() => {
-      const processLayer = (layer: ComponentLayer): ComponentLayer => {
-        const processed = { ...layer };
-
-        if (hasLayerChildren(layer)) {
-          // Recursively process array children
-          processed.children = layer.children.map(processLayer);
-        } else if (typeof layer.children === 'string') {
-          // Convert string children to empty array for tree traversal
-          // The actual text content is preserved in the original layer
-          processed.children = [];
-        } else if (!layer.children) {
-          // Ensure undefined/null children become empty arrays
-          processed.children = [];
-        }
-
-        return processed;
-      };
-
-      return layers.map(processLayer);
-    }, [layers]);
 
     const data = useMemo(() => {
       return {
@@ -262,34 +271,14 @@ export const LayersTree: React.FC<LayersTreeProps> = React.memo(
 
     const { renderTree, scrollToNode } = useHeTree<ComponentLayer>(data);
 
-    useLayoutEffect(() => {
-      if (selectedLayerId) {
-        const parentLayers = findAllParentLayersRecursive(
-          layers,
-          selectedLayerId,
-        );
-        const parentIds = parentLayers.map((layer) => layer.id);
-        setOpenIdsArray((prevOpenIds) => {
-          const newIds = [...prevOpenIds];
-          let hasChanges = false;
-
-          parentIds.forEach((id) => {
-            if (!newIds.includes(id)) {
-              newIds.push(id);
-              hasChanges = true;
-            }
-          });
-
-          return hasChanges ? newIds : prevOpenIds;
-        });
-      }
-    }, [selectedLayerId, layers]);
-
-    useLayoutEffect(() => {
+    useEffect(() => {
       if (prevSelectedLayerId.current !== selectedLayerId) {
         prevSelectedLayerId.current = selectedLayerId;
         if (selectedLayerId) {
-          scrollToNode(selectedLayerId);
+          const rafId = window.requestAnimationFrame(() => {
+            scrollToNode(selectedLayerId);
+          });
+          return () => window.cancelAnimationFrame(rafId);
         }
       }
     }, [scrollToNode, selectedLayerId]);

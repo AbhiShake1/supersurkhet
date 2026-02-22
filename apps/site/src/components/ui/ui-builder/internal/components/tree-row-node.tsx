@@ -1,8 +1,4 @@
-import type React from 'react';
-import { useCallback, useState, memo, useMemo } from 'react';
 import type { NodeAttrs } from 'he-tree-react';
-import isDeepEqual from 'fast-deep-equal';
-import { Button } from '@/components/ui/button';
 import {
   ChevronDown,
   ChevronRight,
@@ -10,9 +6,9 @@ import {
   MoreVertical,
   Plus,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { hasLayerChildren } from '@/lib/ui-builder/store/layer-utils';
-import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import type React from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,11 +17,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { AddComponentsPopover } from '@/components/ui/ui-builder/internal/components/add-component-popover';
 import { NameEdit } from '@/components/ui/ui-builder/internal/components/name-edit';
+import type { ComponentLayer } from '@/components/ui/ui-builder/types';
 import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { hasLayerChildren } from '@/lib/ui-builder/store/layer-utils';
 import {
   hasAnyChildrenField,
   hasChildrenFieldOfTypeString,
 } from '@/lib/ui-builder/store/schema-utils';
+import { cn } from '@/lib/utils';
 
 interface TreeRowNodeProps {
   node: ComponentLayer;
@@ -35,7 +35,6 @@ interface TreeRowNodeProps {
   draggable: boolean;
   onToggle: (id: number | string, open: boolean) => void;
   nodeAttributes: NodeAttrs;
-  selectedLayerId: string | null;
   selectLayer: (id: string) => void;
   removeLayer: (id: string) => void;
   duplicateLayer: (id: string) => void;
@@ -58,7 +57,6 @@ export const TreeRowNode: React.FC<TreeRowNodeProps> = memo(
     draggable,
     onToggle,
     nodeAttributes,
-    selectedLayerId,
     selectLayer,
     removeLayer,
     duplicateLayer,
@@ -69,6 +67,9 @@ export const TreeRowNode: React.FC<TreeRowNodeProps> = memo(
     const [isRenaming, setIsRenaming] = useState(false);
 
     const [popoverOrMenuOpen, setPopoverOrMenuOpen] = useState(false);
+    const isSelected = useLayerStore(
+      (state) => state.selectedLayerId === node.id,
+    );
 
     const allowPagesCreation = useEditorStore(
       (state) => state.allowPagesCreation,
@@ -121,7 +122,7 @@ export const TreeRowNode: React.FC<TreeRowNodeProps> = memo(
         !hasChildrenFieldOfTypeString(componentDef.schema);
 
       return canAddChildren;
-    }, [node, componentRegistry]);
+    }, [node.type, componentRegistry]);
 
     const { key, ...rest } = nodeAttributes;
 
@@ -166,9 +167,7 @@ export const TreeRowNode: React.FC<TreeRowNodeProps> = memo(
             size="sm"
             className={cn(
               'pl-0 gap-0',
-              node.id === selectedLayerId
-                ? 'text-primary'
-                : 'text-muted-foreground',
+              isSelected ? 'text-primary' : 'text-muted-foreground',
             )}
             onClick={handleSelect}
           >
@@ -234,22 +233,26 @@ export const TreeRowNode: React.FC<TreeRowNodeProps> = memo(
     );
   },
   (prevProps, nextProps) => {
-    // Custom equality check to prevent unnecessary re-renders
+    const getNodeChildCount = (node: ComponentLayer) =>
+      hasLayerChildren(node) ? node.children.length : 0;
 
-    // Check node identity and core properties
-    if (prevProps.node.id !== nextProps.node.id) return false;
-    if (!isDeepEqual(prevProps.node, nextProps.node)) return false;
+    // Most updates preserve object identity with structural sharing.
+    if (prevProps.node !== nextProps.node) {
+      if (prevProps.node.id !== nextProps.node.id) return false;
+      if (prevProps.node.name !== nextProps.node.name) return false;
+      if (prevProps.node.type !== nextProps.node.type) return false;
+      if (
+        getNodeChildCount(prevProps.node) !== getNodeChildCount(nextProps.node)
+      )
+        return false;
+    }
 
     // Check simple props
     if (prevProps.id !== nextProps.id) return false;
     if (prevProps.level !== nextProps.level) return false;
     if (prevProps.open !== nextProps.open) return false;
     if (prevProps.draggable !== nextProps.draggable) return false;
-    if (prevProps.selectedLayerId !== nextProps.selectedLayerId) return false;
-
-    // Check nodeAttributes - these often change reference but may have same values
-    if (!isDeepEqual(prevProps.nodeAttributes, nextProps.nodeAttributes))
-      return false;
+    if (prevProps.nodeAttributes !== nextProps.nodeAttributes) return false;
 
     // Function props should be stable if parent memoization is working correctly
     // If not, these will cause re-renders but that might be necessary
