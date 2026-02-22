@@ -1,10 +1,10 @@
-import type { SchemaKeys } from '@gta/react-hooks';
+
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Bot, Download, Loader2, Play, Search, Sparkles, X } from 'lucide-react';
+import { Bot, Download, Loader2, Play, Search, Sparkles } from 'lucide-react';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
-import { AutoTable } from '@/components/auto-table';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -13,9 +13,6 @@ import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
   buildMarketplaceGroups,
-  buildPluginDetailView,
-  groupPluginReviewsByUser,
-  pickSimilarPlugins,
   type PluginMarketItem,
   type PluginUserReview,
 } from '@/lib/plugins/admin-plugin-market';
@@ -26,11 +23,8 @@ import type {
 } from '@/lib/plugins/types';
 import {
   installPluginRelease,
-  uninstallPluginRelease,
 } from '@/server-functions/plugins';
 import { PluginIcon } from '@/components/plugins/plugin-icon';
-import { PluginDetailsView, type PluginDetailView } from '@/components/plugins/plugin-details-view';
-import { AnimatePresence, motion } from 'framer-motion';
 
 export const Route = createFileRoute('/$businessName/admin/plugins')({
   component: PluginsRouteComponent,
@@ -45,10 +39,6 @@ function PluginsRouteComponent() {
   const [chartType, setChartType] = useState<ChartType>('top-installed');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isChatExpanded, setIsChatExpanded] = useState(false);
-  const [selectedPluginId, setSelectedPluginId] = useState<string | null>(null);
-  const [installing, setInstalling] = useState(false);
-  const [uninstalling, setUninstalling] = useState(false);
-  const [savingReview, setSavingReview] = useState(false);
   const [installingPluginIds, setInstallingPluginIds] = useState<string[]>([]);
   const recommendedSectionRef = useRef<HTMLElement>(null);
 
@@ -72,8 +62,7 @@ function PluginsRouteComponent() {
   });
   const { data: allInstallRows = [] } = api.businessPluginInstall.useGet();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
-  const { data: reviewRowsRaw = [], refetch: refetchReviews } = api.pluginUserReview.useGet();
-  const createReviewMutation = api.pluginUserReview.useCreate();
+  const { data: reviewRowsRaw = [] } = api.pluginUserReview.useGet();
 
   const installs = installRows as BusinessPluginInstallDoc[];
   const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
@@ -201,117 +190,6 @@ function PluginsRouteComponent() {
     [actorRole, actorUserId, businessId],
   );
 
-  const selectedPlugin = useMemo(
-    () =>
-      selectedPluginId
-        ? visibleItems.find((p) => p.pluginId === selectedPluginId) ||
-          marketplace.all.find((p) => p.pluginId === selectedPluginId)
-        : null,
-    [selectedPluginId, visibleItems, marketplace.all],
-  );
-
-  const selectedPluginDetails = useMemo(
-    () =>
-      selectedPlugin
-        ? (buildPluginDetailView(selectedPlugin, {
-            reviews,
-            userId: actorUserId,
-          }) as unknown as PluginDetailView)
-        : null,
-    [selectedPlugin, reviews, actorUserId],
-  );
-
-  const selectedPluginReviewGroups = useMemo(
-    () =>
-      selectedPluginId
-        ? groupPluginReviewsByUser(selectedPluginId, reviews, actorUserId)
-        : [],
-    [selectedPluginId, reviews, actorUserId],
-  );
-
-  const selectedPluginSimilar = useMemo(
-    () =>
-      selectedPlugin
-        ? pickSimilarPlugins(selectedPlugin, marketplace.all, 6)
-        : [],
-    [selectedPlugin, marketplace.all],
-  );
-
-  const handleInstall = async () => {
-    if (!selectedPlugin) return;
-    try {
-      setInstalling(true);
-      await installPluginRelease({
-        data: {
-          actorUserId,
-          actorRole,
-          businessId,
-          pluginId: selectedPlugin.pluginId,
-          version: selectedPlugin.latestRelease.version,
-          explicitOwnerAction: true,
-        },
-      });
-      toast.success(`Installed ${selectedPlugin.title}`);
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to install plugin');
-    } finally {
-      setInstalling(false);
-    }
-  };
-
-  const handleUninstall = async () => {
-    if (!selectedPlugin) return;
-    try {
-      setUninstalling(true);
-      await uninstallPluginRelease({
-        data: {
-          actorUserId,
-          actorRole,
-          businessId,
-          pluginId: selectedPlugin.pluginId,
-        },
-      });
-      toast.success(`Uninstalled ${selectedPlugin.title}`);
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to uninstall plugin');
-    } finally {
-      setUninstalling(false);
-    }
-  };
-
-  const handleSaveReview = async (rating: number, comment: string) => {
-    if (!selectedPlugin) return;
-    const now = new Date().toISOString();
-    const reviewId = `${encodeURIComponent(selectedPlugin.pluginId)}::${encodeURIComponent(actorUserId)}`;
-
-    try {
-      setSavingReview(true);
-      await createReviewMutation.mutateAsync({
-        id: reviewId,
-        pluginId: selectedPlugin.pluginId,
-        businessId,
-        userId: actorUserId,
-        userLabel:
-          user?.name?.trim() || user?.email?.trim() || 'Anonymous user',
-        rating,
-        comment: comment.trim(),
-        createdAt: selectedPluginDetails?.userReview?.createdAt ?? now,
-        updatedAt: now,
-      });
-      await refetchReviews();
-      toast.success(
-        selectedPluginDetails?.userReview ? 'Review updated' : 'Review submitted',
-      );
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to save review');
-    } finally {
-      setSavingReview(false);
-    }
-  };
-
   if (isLoading && !business) {
     return <PluginsPageSkeleton />;
   }
@@ -426,8 +304,9 @@ function PluginsRouteComponent() {
                                 key={plugin.pluginId}
                                 className="group flex items-center gap-3 rounded-xl border border-transparent p-2 transition-all hover:border-[#ff8657]/30 hover:bg-white/[0.06]"
                               >
-                                <button
-                                  onClick={() => setSelectedPluginId(plugin.pluginId)}
+                                <Link
+                                  to="/$businessName/admin/plugin/$pluginId"
+                                  params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
                                   className="flex min-w-0 flex-1 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                                 >
                                   <div className="relative size-14 shrink-0 overflow-hidden rounded-[20%] border border-primary/20 bg-white shadow-sm transition-all group-hover:shadow-md">
@@ -449,7 +328,7 @@ function PluginsRouteComponent() {
                                       {plugin.installs.toLocaleString()} installs
                                     </p>
                                   </div>
-                                </button>
+                                </Link>
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -486,9 +365,10 @@ function PluginsRouteComponent() {
                 ) : recommendedPlugins.length > 0 ? (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {recommendedPlugins.map((plugin) => (
-                      <button
+                      <Link
                         key={plugin.pluginId}
-                        onClick={() => setSelectedPluginId(plugin.pluginId)}
+                        to="/$businessName/admin/plugin/$pluginId"
+                        params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
                         className="group rounded-2xl border border-transparent p-2 text-left transition-all hover:border-[#ff8657]/50 hover:bg-gradient-to-br hover:from-white/10 hover:to-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       >
                         <div className="relative aspect-square w-full overflow-hidden rounded-[24%] border border-primary/20 bg-white shadow-sm transition-all group-hover:-translate-y-1 group-hover:shadow-xl">
@@ -504,7 +384,7 @@ function PluginsRouteComponent() {
                             {plugin.installs.toLocaleString()} installs
                           </p>
                         </div>
-                      </button>
+                      </Link>
                     ))}
                   </div>
                 ) : (
@@ -537,9 +417,10 @@ function PluginsRouteComponent() {
               </div>
               <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2 lg:grid-cols-3">
                 {topCharts.slice(0, 9).map((plugin, index) => (
-                  <button
+                  <Link
                     key={plugin.pluginId}
-                    onClick={() => setSelectedPluginId(plugin.pluginId)}
+                    to="/$businessName/admin/plugin/$pluginId"
+                    params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
                     className="group flex items-center gap-4 py-1 text-left transition-opacity hover:opacity-80"
                   >
                     <span className="w-6 text-sm font-medium text-[#5f6368]">{index + 1}</span>
@@ -555,7 +436,7 @@ function PluginsRouteComponent() {
                         <span>{plugin.installs.toLocaleString()} installs</span>
                       </div>
                     </div>
-                  </button>
+                  </Link>
                 ))}
               </div>
             </section>
@@ -572,9 +453,10 @@ function PluginsRouteComponent() {
                    </div>
                    <div className="hide-scrollbar flex gap-6 overflow-x-auto pb-4">
                      {items.slice(0, 10).map((plugin) => (
-                       <button
+                       <Link
                          key={plugin.pluginId}
-                         onClick={() => setSelectedPluginId(plugin.pluginId)}
+                         to="/$businessName/admin/plugin/$pluginId"
+                         params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
                          className="w-40 shrink-0 space-y-3 group text-left"
                        >
                          <div className="aspect-square w-full overflow-hidden rounded-[20%] border border-[#dadce0] bg-white shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1">
@@ -588,7 +470,7 @@ function PluginsRouteComponent() {
                              <span>{plugin.installs.toLocaleString()} installs</span>
                            </div>
                          </div>
-                       </button>
+                       </Link>
                      ))}
                    </div>
                  </section>
@@ -599,9 +481,10 @@ function PluginsRouteComponent() {
           /* Grid View for Active Selection */
           <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             {visibleItems.map((plugin) => (
-              <button
+              <Link
                 key={plugin.pluginId}
-                onClick={() => setSelectedPluginId(plugin.pluginId)}
+                to="/$businessName/admin/plugin/$pluginId"
+                params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
                 className="group space-y-3 text-left"
               >
                 <div className="aspect-square w-full overflow-hidden rounded-[20%] border border-[#dadce0] bg-white shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1">
@@ -615,87 +498,13 @@ function PluginsRouteComponent() {
                     <span>{plugin.installs.toLocaleString()} installs</span>
                   </div>
                 </div>
-              </button>
+              </Link>
             ))}
           </div>
         )}
       </div>
 
-      <AnimatePresence>
-        {selectedPlugin && selectedPluginDetails && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex flex-col bg-background"
-          >
-            <div className="flex items-center justify-between border-b bg-background px-6 py-3">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full"
-                  onClick={() => setSelectedPluginId(null)}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-                <div className="flex items-center gap-3">
-                  <div className="size-8 overflow-hidden rounded-lg border">
-                    <PluginIcon plugin={selectedPlugin} compact />
-                  </div>
-                  <span className="font-medium text-foreground">
-                    {selectedPlugin.title}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {selectedPlugin.isInstalled ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full"
-                    onClick={handleUninstall}
-                    disabled={uninstalling}
-                  >
-                    {uninstalling ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    Uninstall
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    className="rounded-full bg-[#01875f] hover:bg-[#01875f]/90"
-                    onClick={handleInstall}
-                    disabled={installing}
-                  >
-                    {installing ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    Install
-                  </Button>
-                )}
-              </div>
-            </div>
-            <div className="flex-1 overflow-y-auto">
-              <PluginDetailsView
-                plugin={selectedPlugin}
-                details={selectedPluginDetails}
-                businessName={businessName}
-                onInstall={handleInstall}
-                onUninstall={handleUninstall}
-                onSaveReview={handleSaveReview}
-                onBack={() => setSelectedPluginId(null)}
-                similarPlugins={selectedPluginSimilar}
-                reviewGroups={selectedPluginReviewGroups}
-                isInstalling={installing}
-                isUninstalling={uninstalling}
-                isSavingReview={savingReview}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+
 
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
