@@ -5,10 +5,7 @@ import type { SchemaKeys, UpdaterParams } from '..';
 import { mergeOptionsWithDefaults } from '../options';
 import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
 import { encrypt } from '../utils/sea';
-import {
-  resolveAfterNextTick,
-  resolveLifecycleBusinessId,
-} from './lifecycle';
+import { resolveAfterNextTick, resolveLifecycleBusinessId } from './lifecycle';
 
 function omitMeta<T>(obj: T): T {
   if (!obj) return obj;
@@ -18,12 +15,40 @@ function omitMeta<T>(obj: T): T {
     if (_.isArray(value)) {
       result[key] = value.map(omitMeta);
     } else if (_.isPlainObject(value)) {
-      if (typeof value === "object" && Object.keys(value).length)
+      if (typeof value === 'object' && Object.keys(value).length)
         result[key] = omitMeta(value);
     } else {
       result[key] = value;
     }
   });
+}
+
+export function omitEmptyObject<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .map(omitEmptyObject)
+      .filter((v) => !(isPlainObject(v) && Object.keys(v).length === 0)) as T;
+  }
+
+  if (isPlainObject(value)) {
+    const result: Record<string, unknown> = {};
+
+    for (const [k, v] of Object.entries(value)) {
+      const cleaned = omitEmptyObject(v);
+
+      if (!(isPlainObject(cleaned) && Object.keys(cleaned).length === 0)) {
+        result[k] = cleaned;
+      }
+    }
+
+    return result;
+  }
+
+  return value;
+}
+
+function isPlainObject(x: unknown): x is Record<string, unknown> {
+  return typeof x === 'object' && x !== null && !Array.isArray(x);
 }
 
 export function update<const T extends SchemaKeys>(
@@ -52,7 +77,7 @@ export function update<const T extends SchemaKeys>(
     return new Promise<GunMessagePut>((resolve, reject) => {
       getGunRef(keys)
         .get(id)
-        .put(encrypted, (ack) => {
+        .put(omitEmptyObject(encrypted), (ack) => {
           if ('err' in ack && !!ack.err) {
             reject(ack.err);
           } else {
