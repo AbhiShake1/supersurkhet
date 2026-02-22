@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { Pencil, Plus, Search } from 'lucide-react';
+import { LayoutGrid, List, Pencil, Plus, Search } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   HoverablePopover,
@@ -26,6 +27,8 @@ import {
   groupPluginCardsByStatus,
   resolvePluginCardStatus,
 } from '../-plugin-studio-project-status-groups';
+
+type ProjectPluginLayout = 'grid' | 'list';
 
 export const Route = createFileRoute('/plugin-studio/$projectId/')({
   component: PluginStudioProjectRoute,
@@ -82,6 +85,10 @@ function toDraftRecencyKey(draft: PluginDraftDoc) {
   return `${draft.updatedAt ?? ''}:${draft.createdAt ?? ''}:${draft.draftId}`;
 }
 
+function buildProjectPluginLayoutStorageKey(projectId: string) {
+  return `plugin-studio.project.plugins.layout.v1.${projectId}`;
+}
+
 function PluginStudioProjectRoute() {
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { projectId } = Route.useParams();
@@ -92,6 +99,7 @@ function PluginStudioProjectRoute() {
     useState('');
   const [projectPluginsPopoverSearch, setProjectPluginsPopoverSearch] =
     useState('');
+  const [pluginLayout, setPluginLayout] = useState<ProjectPluginLayout>('grid');
   const [hoveredProjectId, setHoveredProjectId] = useState(projectId);
   const [editingField, setEditingField] = useState<{
     pluginId: string;
@@ -273,6 +281,21 @@ function PluginStudioProjectRoute() {
     const fallbackProjectId = accessibleProjects[0]?.id ?? projectId;
     setHoveredProjectId(fallbackProjectId);
   }, [accessibleProjectIdSet, accessibleProjects, hoveredProjectId, projectId]);
+
+  useEffect(() => {
+    const storageKey = buildProjectPluginLayoutStorageKey(projectId);
+    const persistedLayout = window.localStorage.getItem(
+      storageKey,
+    );
+    if (persistedLayout === 'grid' || persistedLayout === 'list') {
+      setPluginLayout(persistedLayout);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    const storageKey = buildProjectPluginLayoutStorageKey(projectId);
+    window.localStorage.setItem(storageKey, pluginLayout);
+  }, [pluginLayout, projectId]);
 
   const beginInlineEdit = (
     event: MouseEvent,
@@ -661,16 +684,38 @@ function PluginStudioProjectRoute() {
           </Button>
         </section>
 
-        <div className="mt-10 max-w-md">
-          <div className="flex h-11 items-center gap-2 rounded-md border border-border/70 bg-muted/20 px-3">
-            <Search className="size-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search for a plugin"
-              className="h-8 border-0 bg-transparent px-0 focus-visible:ring-0"
-            />
+        <div className="mt-10 flex items-center justify-between gap-4">
+          <div className="w-full max-w-md">
+            <div className="flex h-11 items-center gap-2 rounded-md border border-border/70 bg-muted/20 px-3">
+              <Search className="size-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search for a plugin"
+                className="h-8 border-0 bg-transparent px-0 focus-visible:ring-0"
+              />
+            </div>
           </div>
+          <ButtonGroup aria-label="Plugin layout">
+            <Button
+              type="button"
+              variant={pluginLayout === 'list' ? 'default' : 'outline'}
+              className="h-11 px-3"
+              onClick={() => setPluginLayout('list')}
+              aria-pressed={pluginLayout === 'list'}
+            >
+              <List className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant={pluginLayout === 'grid' ? 'default' : 'outline'}
+              className="h-11 px-3"
+              onClick={() => setPluginLayout('grid')}
+              aria-pressed={pluginLayout === 'grid'}
+            >
+              <LayoutGrid className="size-4" />
+            </Button>
+          </ButtonGroup>
         </div>
 
         {groupedPluginCards.length === 0 ? (
@@ -692,7 +737,11 @@ function PluginStudioProjectRoute() {
                 {group.description}
               </p>
             </div>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div
+              className={
+                pluginLayout === 'grid' ? 'grid gap-4 md:grid-cols-2' : 'grid gap-3'
+              }
+            >
               {group.items.map((card) => (
                 // biome-ignore lint/a11y/useSemanticElements: Card supports inline editing controls that cannot be nested inside button.
                 <div
