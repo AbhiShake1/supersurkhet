@@ -2,14 +2,16 @@ import { gun } from '@/lib/gun';
 
 const env = process.env.NODE_ENV;
 
-export const GUN_PREFIX = `root/${env}/`;
+export const GUN_SEPARATOR = '/';
+
+export const GUN_PREFIX = `root${GUN_SEPARATOR}${env}${GUN_SEPARATOR}`;
 
 export function mergeKeys<T extends string>(key: T, ...restKeys: string[]) {
-  const initialKeys = key?.length ? key.split('/') : [];
+  const initialKeys = key?.length ? key.split(GUN_SEPARATOR) : [];
   const nonNamespacedKey = initialKeys
     .concat(restKeys)
     .filter(Boolean)
-    .join('/');
+    .join(GUN_SEPARATOR);
   if (nonNamespacedKey.startsWith(GUN_PREFIX)) return nonNamespacedKey;
   return `${GUN_PREFIX}${nonNamespacedKey}`;
 }
@@ -22,7 +24,7 @@ export function trimKey(key: string) {
 
 export function getGunRef(key: string) {
   // const gunRef = gun.get(key);
-  const [head, ...tail] = key.split('/');
+  const [head, ...tail] = key.split(GUN_SEPARATOR);
   let gunRef = gun.get(head);
   for (const k of tail) {
     gunRef = gunRef.get(k);

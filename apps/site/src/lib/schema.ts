@@ -18,6 +18,25 @@ import {
 import { z } from 'zod';
 import { fieldConfig } from '@/components/ui/autoform';
 import { dataMatrixActionSchema } from './datamatrix';
+import {
+  businessPluginDraftInstallSchema,
+  businessPluginInstallSchema,
+  pluginProjectInviteSchema,
+  pluginProjectMemberSchema,
+  pluginProjectSchema,
+  pluginActionCapabilityEnvelopeSchema,
+  pluginActionManifestDocStorageSchema,
+  pluginDraftRevisionSchema,
+  pluginDraftSchema,
+  pluginPublishReviewSchema,
+  pluginRecordSchema,
+  pluginReleaseSchema,
+  pluginRoutesTabsConfigSchema,
+  pluginSchemaDocStorageSchema,
+  pluginUserReviewSchema,
+  pluginV2DiagnosticsSchema,
+  pluginWorkflowDocStorageSchema,
+} from './schema/plugins';
 import type {
   AppSchemaType,
   CreatedSchema,
@@ -126,25 +145,14 @@ export const businessInvitationSchema = z.object({
 
 export type BusinessInvitation = NonNullable<Business['invitations']>[string];
 
-export const businessTypeSchema = z
-  .enum(['retail'])
-  .describe('The primary category of the business');
-
-export type BusinessType = Business['businessType'];
-
 export const businessSchema = z
   .object({
     name: z.string().describe('Official name of the business'),
     id: z.string().describe('Unique ID for the business'),
-    location: z
-      .string()
-      .describe('Physical address or area of the business')
-      .optional(),
     basePath: z
       .string()
       .describe('Unique URL path for the business (e.g., /my-shop)')
       .optional(),
-    businessType: businessTypeSchema,
     features: z
       .record(z.string(), z.boolean())
       .optional()
@@ -259,6 +267,108 @@ export const coreSchema = createSchema({
     title: 'OTPs',
     icon: Lock,
     group: 'System Configuration',
+  },
+  pluginRelease: {
+    schema: pluginReleaseSchema,
+    title: 'Plugin Releases',
+    icon: Package,
+    group: 'Plugin Platform',
+  },
+  businessPluginInstall: {
+    schema: businessPluginInstallSchema,
+    title: 'Business Plugin Installs',
+    icon: Building,
+    group: 'Plugin Platform',
+  },
+  pluginProject: {
+    schema: pluginProjectSchema,
+    title: 'Plugin Projects',
+    icon: Folder,
+    group: 'Plugin Platform',
+  },
+  pluginProjectMember: {
+    schema: pluginProjectMemberSchema,
+    title: 'Plugin Project Members',
+    icon: Users,
+    group: 'Plugin Platform',
+  },
+  pluginProjectInvite: {
+    schema: pluginProjectInviteSchema,
+    title: 'Plugin Project Invites',
+    icon: Clock,
+    group: 'Plugin Platform',
+  },
+  pluginDraft: {
+    schema: pluginDraftSchema,
+    title: 'Plugin Drafts',
+    icon: Package,
+    group: 'Plugin Platform',
+  },
+  pluginDraftRevision: {
+    schema: pluginDraftRevisionSchema,
+    title: 'Plugin Draft Revisions',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  businessPluginDraftInstall: {
+    schema: businessPluginDraftInstallSchema,
+    title: 'Business Plugin Draft Installs',
+    icon: Building,
+    group: 'Plugin Platform',
+  },
+  pluginRecord: {
+    schema: pluginRecordSchema,
+    title: 'Plugin Runtime Records',
+    icon: Folder,
+    group: 'Plugin Platform',
+  },
+  pluginV2Diagnostics: {
+    schema: pluginV2DiagnosticsSchema,
+    title: 'Plugin V2 Diagnostics',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  pluginPublishReview: {
+    schema: pluginPublishReviewSchema,
+    title: 'Plugin Publish Reviews',
+    icon: Clock,
+    group: 'Plugin Platform',
+  },
+  pluginUserReview: {
+    schema: pluginUserReviewSchema,
+    title: 'Plugin User Reviews',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  pluginActionCapabilityEnvelope: {
+    schema: pluginActionCapabilityEnvelopeSchema,
+    title: 'Plugin Capability Envelopes',
+    icon: Lock,
+    group: 'Plugin Platform',
+  },
+  pluginRoutesTabsConfig: {
+    schema: pluginRoutesTabsConfigSchema,
+    title: 'Plugin Routes Tabs Config',
+    icon: MapIcon,
+    group: 'Plugin Platform',
+  },
+  pluginSchemaDoc: {
+    schema: pluginSchemaDocStorageSchema,
+    title: 'Plugin Schema Docs',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  pluginWorkflowDoc: {
+    schema: pluginWorkflowDocStorageSchema,
+    title: 'Plugin Workflow Docs',
+    icon: MapIcon,
+    group: 'Plugin Platform',
+  },
+  pluginActionManifestDoc: {
+    schema: pluginActionManifestDocStorageSchema,
+    title: 'Plugin Action Manifest Docs',
+    icon: List,
+    group: 'Plugin Platform',
   },
 });
 
@@ -453,7 +563,38 @@ declare global {
 export type User = InferredTable<'user'>;
 export type Business = InferredTable<'business'>;
 export type Order = InferredTable<'order'>;
+export type PluginRelease = InferredTable<'pluginRelease'>;
+export type BusinessPluginInstall = InferredTable<'businessPluginInstall'>;
+export type PluginDraft = InferredTable<'pluginDraft'>;
+export type PluginDraftRevision = InferredTable<'pluginDraftRevision'>;
+export type BusinessPluginDraftInstall =
+  InferredTable<'businessPluginDraftInstall'>;
+export type PluginRecord = InferredTable<'pluginRecord'>;
+export type PluginV2Diagnostics = InferredTable<'pluginV2Diagnostics'>;
+export type PluginPublishReview = InferredTable<'pluginPublishReview'>;
+export type PluginUserReview = InferredTable<'pluginUserReview'>;
+export type PluginActionCapabilityEnvelope =
+  InferredTable<'pluginActionCapabilityEnvelope'>;
+export type PluginRoutesTabsConfig = InferredTable<'pluginRoutesTabsConfig'>;
 // #endregion
+
+export {
+  businessPluginDraftInstallSchema,
+  businessPluginInstallSchema,
+  compilePluginSchemasFromDocs,
+  pluginActionCapabilityEnvelopeSchema,
+  pluginActionManifestDocStorageSchema,
+  pluginDraftRevisionSchema,
+  pluginDraftSchema,
+  pluginPublishReviewSchema,
+  pluginRecordSchema,
+  pluginReleaseSchema,
+  pluginRoutesTabsConfigSchema,
+  pluginSchemaDocStorageSchema,
+  pluginUserReviewSchema,
+  pluginV2DiagnosticsSchema,
+  pluginWorkflowDocStorageSchema,
+} from './schema/plugins';
 
 export function transformSchema<const TSchema extends BaseAppSchemaType>(
   schema: TSchema,

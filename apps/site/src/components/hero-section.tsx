@@ -1,10 +1,9 @@
+import { Link } from '@tanstack/react-router';
+import { ArrowRight } from 'lucide-react';
 import { HeroHeader } from '@/components/hero5-header';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Link } from '@tanstack/react-router';
-import { ArrowRight } from 'lucide-react';
 import { BrowseBusiness } from './browse-business';
-import { CreateBusiness } from './create-business';
 import { RainbowButton } from './magicui/rainbow-button';
 import { AnimatedGroup } from './ui/animated-group';
 import Earth from './ui/globe';
@@ -155,15 +154,15 @@ export default function HeroSection() {
                     key={1}
                     className="bg-foreground/10 rounded-[calc(var(--radius-xl)+0.125rem)] border p-0.5"
                   >
-                    <CreateBusiness asChild>
-                      <Button
-                        asChild
-                        size="lg"
-                        className="rounded-xl px-5 text-base"
-                      >
+                    <Button
+                      asChild
+                      size="lg"
+                      className="rounded-xl px-5 text-base"
+                    >
+                      <Link to="/create-business">
                         <span className="text-nowrap">Get Started Free</span>
-                      </Button>
-                    </CreateBusiness>
+                      </Link>
+                    </Button>
                   </div>
                   <Button
                     key={2}

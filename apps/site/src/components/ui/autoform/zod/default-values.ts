@@ -1,5 +1,5 @@
-import { z } from "zod";
-import type { ZodObjectOrWrapped } from "./types";
+import { z } from 'zod';
+import type { ZodObjectOrWrapped } from './types';
 
 export function getDefaultValueInZodStack(schema: z.ZodTypeAny): any {
   if (schema instanceof z.ZodDefault) {
@@ -14,7 +14,7 @@ export function getDefaultValueInZodStack(schema: z.ZodTypeAny): any {
 }
 
 export function getDefaultValues(
-  schema: ZodObjectOrWrapped
+  schema: ZodObjectOrWrapped,
 ): Record<string, any> {
   const objectSchema =
     schema instanceof z.ZodEffects ? schema.innerType() : schema;

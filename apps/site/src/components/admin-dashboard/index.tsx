@@ -1,25 +1,13 @@
+import { Activity, CreditCard, DollarSign, Users } from 'lucide-react';
 import {
+  DefaultRadialChart,
   GlowingLineChart,
   IncreaseSizePieChart,
-  DefaultRadialChart,
   StrokeMultipleRadarChart,
   ValueLineBarChart,
 } from '@/components/admin-dashboard/charts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, CreditCard, Users, Activity } from 'lucide-react';
-import { RetailReportsPage } from '../retail-reports-page';
-
-export function AdminDashboard({
-  slug,
-  businessType,
-}: {
-  slug: string;
-  businessType?: string;
-}) {
-  switch (businessType) {
-    case 'retail':
-      return <RetailReportsPage slug={slug} />;
-  }
+export function AdminDashboard({ slug: _slug }: { slug: string }) {
   return (
     <div className="space-y-6">
       <div>

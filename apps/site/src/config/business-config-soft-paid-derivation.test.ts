@@ -7,13 +7,11 @@ const businessConfigPath = resolve(
   'src/config/business-config.tsx',
 );
 
-describe('business-config soft paid derivation', () => {
-  it('keeps payment status derived from paidAmount and item totals', () => {
+describe('business-config plugin sources', () => {
+  it('loads install and release docs from plugin storage tables', () => {
     const content = readFileSync(businessConfigPath, 'utf8');
 
-    expect(content).toContain('function getPaidAmountFromFormValues(formValues:');
-    expect(content).toContain('const totalCost = getTotalCostFromItems(formValues.items ?? []);');
-    expect(content).toContain('const paidAmount = getPaidAmountFromFormValues(formValues);');
-    expect(content).toContain("withDerivation('paidAmount'");
+    expect(content).toContain('api.businessPluginInstall.useGet');
+    expect(content).toContain('api.pluginRelease.useGet');
   });
 });

@@ -1,14 +1,19 @@
 /// <reference types="node" />
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
 const isCI = !!process.env.CI;
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000";
+const oauthStubBaseURL =
+  process.env.PLAYWRIGHT_OAUTH_STUB_BASE_URL ?? "http://127.0.0.1:34567";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const authFile = path.join(__dirname, "tests/.auth/user.json");
 
 export default defineConfig({
   testDir: "./tests",
-  testMatch: "**/*.spec.ts",
+  testMatch: ["setup/**/*.setup.ts", "routes/**/*.spec.ts"],
   timeout: 60_000,
   expect: {
     timeout: 15_000,
@@ -31,6 +36,14 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: !isCI,
     cwd: __dirname,
+    env: {
+      ...process.env,
+      OPENAI_OAUTH_ISSUER: process.env.OPENAI_OAUTH_ISSUER ?? `${oauthStubBaseURL}/openai`,
+      OPENROUTER_OAUTH_BASE_URL:
+        process.env.OPENROUTER_OAUTH_BASE_URL ?? `${oauthStubBaseURL}/openrouter`,
+      GITHUB_COPILOT_OAUTH_BASE_URL:
+        process.env.GITHUB_COPILOT_OAUTH_BASE_URL ?? `${oauthStubBaseURL}/github`,
+    },
     timeout: 120_000,
   },
   projects: [
@@ -57,6 +70,16 @@ export default defineConfig({
         "routes/businessChat/**/*.spec.ts",
       ],
       dependencies: ["setup-business"],
+      use: { ...devices["Desktop Chrome"], storageState: undefined },
+    },
+    {
+      name: "api-auth",
+      testMatch: ["routes/api/**/*.spec.ts"],
+      use: { ...devices["Desktop Chrome"], storageState: undefined },
+    },
+    {
+      name: "ui-auth",
+      testMatch: ["routes/home/create-business-oauth-ui.spec.ts"],
       use: { ...devices["Desktop Chrome"], storageState: undefined },
     },
     {

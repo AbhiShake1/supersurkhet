@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router';
 import type React from 'react';
 import {
   Credenza,
@@ -7,13 +8,12 @@ import {
   CredenzaDescription,
   CredenzaFooter,
   CredenzaHeader,
+  type CredenzaProps,
   CredenzaTitle,
   CredenzaTrigger,
-  type CredenzaProps,
 } from '@/components/ui/credenza';
-import { Button } from './ui/button';
-import { CreateBusiness } from './create-business';
 import { BusinessList } from './business-list';
+import { Button } from './ui/button';
 
 export function BrowseBusiness({
   children,
@@ -34,9 +34,9 @@ export function BrowseBusiness({
           <BusinessList className="h-[40vh]" />
         </CredenzaBody>
         <CredenzaFooter>
-          <CreateBusiness asChild>
-            <Button className="w-full">Create Your Own Business</Button>
-          </CreateBusiness>
+          <Button asChild className="w-full">
+            <Link to="/create-business">Create Your Own Business</Link>
+          </Button>
           <CredenzaClose asChild>
             <Button variant="outline">Close</Button>
           </CredenzaClose>

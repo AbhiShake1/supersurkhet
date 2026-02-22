@@ -1,14 +1,13 @@
+import { pixelArt } from '@dicebear/collection';
+import { createAvatar } from '@dicebear/core';
+import { googleLogout } from '@react-oauth/google';
+import { useRouteContext } from '@tanstack/react-router';
+import type { IGunChain, ISEAPair } from 'gun/types';
 import type React from 'react';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { useRouteContext } from '@tanstack/react-router';
-import type { User } from '@/lib/schema';
-import { googleLogout } from '@react-oauth/google';
 import { v4 as uuid } from 'uuid';
-import { createAvatar } from '@dicebear/core';
-import { pixelArt } from '@dicebear/collection';
-import type { IGunChain, ISEAPair } from 'gun/types';
 import { getGunRef, mergeKeys } from '@/lib/gun/utils';
-import { UserLoading } from './ui/user-loading';
+import type { User } from '@/lib/schema';
 
 export type AuthUser = Partial<User> & {
   pub?: string;
@@ -93,7 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       .then((_authUser) => {
         setAuthUser(_authUser);
 
-        // If we have an authenticated user, use that
+        // If we have an authenticated user, only subscribe to that user record.
         if (_authUser) {
           ref = getGunRef(mergeKeys('user'))
             .get(_authUser.pub)
@@ -101,24 +100,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
               setUser({ ..._authUser, ...data });
               setIsLoading(false);
             });
-
-          // If no authenticated user but we have an anonymous user ID
-          if (anonymousUserId) {
-            ref = getGunRef(mergeKeys('user'))
-              .get(anonymousUserId)
-              .open((data) => {
-                setUser({
-                  pub: anonymousUserId,
-                  email: undefined,
-                  name: 'Anonymous User',
-                  avatar: createAvatar(pixelArt).toDataUri(),
-                  ...data,
-                });
-                setIsLoading(false);
-              });
-          } else {
-            setIsLoading(false);
-          }
         } else {
           // If no authenticated user but we have an anonymous user ID
           if (anonymousUserId) {
@@ -203,10 +184,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     auth.logout?.();
     setUser(undefined);
     googleLogout();
-  }
-
-  if (isLoading) {
-    return <UserLoading />;
   }
 
   return (

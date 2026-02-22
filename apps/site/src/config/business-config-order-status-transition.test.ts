@@ -12,10 +12,10 @@ function getContent() {
 }
 
 describe('business-config order status transition contracts', () => {
-  it('only runs order completion side effects when transitioning into done', () => {
+  it('contains no inline order transition side-effects', () => {
     const content = getContent();
 
-    expect(content).toContain("if (variables.orderStatus !== 'done') return;");
-    expect(content).toContain("if (currentOrder?.orderStatus === 'done') return;");
+    expect(content).not.toContain('orderStatus');
+    expect(content).not.toContain("=== 'done'");
   });
 });

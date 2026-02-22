@@ -1,5 +1,16 @@
 'use client';
 
+import { motion, useInView } from 'framer-motion';
+import {
+  ArrowRight,
+  CheckCircle,
+  Clock,
+  Mail,
+  MapPin,
+  Phone,
+  Star,
+} from 'lucide-react';
+import { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,17 +22,6 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  Star,
-  CheckCircle,
-  ArrowRight,
-} from 'lucide-react';
-import { useState, useRef } from 'react';
-import { motion, useInView } from 'framer-motion';
 
 interface Service {
   id: string;
@@ -49,14 +49,11 @@ interface FAQ {
 
 interface GenericClientPageProps {
   slug: string;
-  businessType: string;
 }
 
 export default function GenericClientPage({
   // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
   slug,
-  // biome-ignore lint/correctness/noUnusedFunctionParameters: lint debt cleanup
-  businessType,
 }: GenericClientPageProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

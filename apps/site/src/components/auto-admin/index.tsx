@@ -1,8 +1,9 @@
-import type { NestedSchemaType, SchemaKeys, UpdaterParams } from '@gta/react-hooks';
+import type { NestedSchemaType, SchemaKeys } from '@gta/react-hooks';
 import { getNestedZodShape } from '@gta/react-hooks';
-import { useQuery, type MutationFunctionContext } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useLocation } from '@tanstack/react-router';
 import _ from 'lodash';
+import * as LucideIcons from 'lucide-react';
 import {
   BarChart3,
   GripVertical,
@@ -10,7 +11,7 @@ import {
   QrCodeIcon,
   Sigma,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import { ZodEffects } from 'zod';
 import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
 import * as Kanban from '@/components/ui/kanban';
@@ -29,11 +30,61 @@ import { NotFound } from '../ui/not-found';
 import { Skeleton } from '../ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { CustomUiBuilderPage } from '../ui-builder';
-import type { GunMessagePut } from 'gun';
 
 export interface AutoAdminProps {
   tabs: AutoAdminTabInput[];
+  editable?: boolean;
+  onAddTable?: (targetGroupName?: string) => void;
+  onAddGroup?: (
+    groupName?: string,
+    options?: { relativeTo?: string; position?: 'above' | 'below' },
+  ) => void;
+  onReorderGroups?: (
+    fromGroupName: string,
+    toGroupName: string,
+    position?: 'above' | 'below',
+  ) => void;
+  onMoveTabToGroup?: (tabTitle: string, groupName?: string) => void;
+  onRenameGroup?: (previousGroupName: string, nextGroupName: string) => void;
+  onDeleteGroup?: (groupName: string) => void;
+  onRenameTab?: (previousTabTitle: string, nextTabTitle: string) => void;
+  onRenameTabIcon?: (tabTitle: string, iconName: string) => void;
+  onOpenWorkflowEditorForTab?: (tabTitle: string) => void;
+  onDeleteTableForTab?: (tabTitle: string) => void;
+  systemTabs?: AutoAdminSystemTabs;
+  onSystemTabChange?: (
+    key: AutoAdminSystemTabKey,
+    next: AutoAdminSystemTabState,
+  ) => void;
+  groups?: string[];
 }
+
+export type AutoAdminSystemTabKey = 'dashboard' | 'qr' | 'website';
+
+export type AutoAdminSystemTabState = {
+  title: string;
+  group?: string;
+  iconName?: string;
+};
+
+export type AutoAdminSystemTabs = Record<
+  AutoAdminSystemTabKey,
+  AutoAdminSystemTabState
+>;
+
+const DEFAULT_SYSTEM_TABS: AutoAdminSystemTabs = {
+  dashboard: {
+    title: 'Dashboard',
+  },
+  qr: {
+    title: 'QR Management',
+    group: 'System Configuration',
+  },
+  website: {
+    title: 'Website UI',
+    group: 'System Configuration',
+  },
+};
 
 export type PossibleTabConfig = {
   [K in SchemaKeys]: AutoTableTab<K>;
@@ -42,13 +93,14 @@ export type PossibleTabConfig = {
 export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
   group?: string;
   title: string;
+  iconName?: string;
 } & (
-    | {
+  | {
       children: ReactNode;
       icon?: LucideIcon;
     }
-    | AutoTableProps<K extends SchemaKeys ? K : never>
-  );
+  | AutoTableProps<K extends SchemaKeys ? K : never>
+);
 
 export type AutoAdminTabInput = {
   [K in SchemaKeys]: AutoTableTabInput<K>;
@@ -56,16 +108,18 @@ export type AutoAdminTabInput = {
 
 export type AutoTableTabInput<K extends SchemaKeys = SchemaKeys> =
   | {
-    title: string;
-    group?: string;
-    icon?: LucideIcon;
-    children: ReactNode;
-  }
+      title: string;
+      group?: string;
+      icon?: LucideIcon;
+      iconName?: string;
+      children: ReactNode;
+    }
   | (AutoTableProps<K extends SchemaKeys ? K : never> & {
-    title?: string;
-    group?: string;
-    icon?: LucideIcon;
-  });
+      title?: string;
+      group?: string;
+      icon?: LucideIcon;
+      iconName?: string;
+    });
 
 type AutoTableItem = AutoTableProps<SchemaKeys>;
 
@@ -88,10 +142,19 @@ function normalizeTableTab(
   };
 }
 
-function toTitleCase(schema: string) {
+function toTitleCase(schema: string | undefined) {
   return schema
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    ?.replace(/([a-z])([A-Z])/g, '$1 $2')
     .replace(/^./, (c) => c.toUpperCase());
+}
+
+function resolveLucideIconByName(
+  iconName: string | undefined,
+): LucideIcon | undefined {
+  if (!iconName) return undefined;
+  return (LucideIcons.icons as Record<string, LucideIcon | undefined>)[
+    iconName
+  ];
 }
 
 function resolveTabMetadata(tab: AutoAdminTabInput): PossibleTabConfig {
@@ -105,16 +168,76 @@ function resolveTabMetadata(tab: AutoAdminTabInput): PossibleTabConfig {
   const schemaMeta = appSchema[tab.schema];
   return {
     ...tab,
-    title: tab.title ?? schemaMeta.title ?? toTitleCase(tab.schema),
+    title: tab.title ?? schemaMeta?.title ?? toTitleCase(tab.schema),
     group: tab.group ?? schemaMeta.group,
-    icon: 'icon' in tab && tab.icon ? tab.icon : schemaMeta.icon,
+    icon: 'icon' in tab && tab.icon ? tab.icon : schemaMeta?.icon,
   };
 }
 
-export function AutoAdmin({ tabs }: AutoAdminProps) {
+function dedupeTabsByTitle(tabs: PossibleTabConfig[]): PossibleTabConfig[] {
+  const seenTitles = new Set<string>();
+  return tabs.filter((tab) => {
+    const key = tab.title.trim();
+    if (seenTitles.has(key)) return false;
+    seenTitles.add(key);
+    return true;
+  });
+}
+
+export function AutoAdmin({
+  tabs,
+  editable = false,
+  onAddTable,
+  onAddGroup,
+  onReorderGroups,
+  onMoveTabToGroup,
+  onRenameGroup,
+  onDeleteGroup,
+  onRenameTab,
+  onRenameTabIcon,
+  onOpenWorkflowEditorForTab,
+  onDeleteTableForTab,
+  systemTabs,
+  onSystemTabChange,
+  groups,
+}: AutoAdminProps) {
   'use memo';
   const { search, pathname: currentPathname } = useLocation();
   const [basePath] = currentPathname.split('/').filter((i) => !!i.length);
+  const [uncontrolledSystemTabs, setUncontrolledSystemTabs] =
+    useState<AutoAdminSystemTabs>(DEFAULT_SYSTEM_TABS);
+  const resolvedSystemTabs = systemTabs ?? uncontrolledSystemTabs;
+  const dashboardTab = resolvedSystemTabs.dashboard;
+  const qrTab = resolvedSystemTabs.qr;
+  const websiteTab = resolvedSystemTabs.website;
+
+  const updateSystemTab = (
+    key: AutoAdminSystemTabKey,
+    patch: Partial<AutoAdminSystemTabState>,
+  ) => {
+    const current = resolvedSystemTabs[key];
+    const next: AutoAdminSystemTabState = {
+      title: (patch.title ?? current.title).trim() || current.title,
+      group: (() => {
+        const value = patch.group ?? current.group;
+        const normalized = value?.trim();
+        return normalized ? normalized : undefined;
+      })(),
+      iconName: (() => {
+        const value = patch.iconName ?? current.iconName;
+        const normalized = value?.trim();
+        return normalized ? normalized : undefined;
+      })(),
+    };
+
+    if (!systemTabs) {
+      setUncontrolledSystemTabs((currentTabs) => ({
+        ...currentTabs,
+        [key]: next,
+      }));
+    }
+    onSystemTabChange?.(key, next);
+  };
 
   const { data: allBusinesses = [] } = api.business.useGet({
     keys: [basePath],
@@ -122,46 +245,159 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
   });
   const business = allBusinesses[0];
 
-  const tabsWithHome: PossibleTabConfig[] = [
+  const tabsWithHome: PossibleTabConfig[] = dedupeTabsByTitle([
     {
-      title: 'Dashboard',
-      icon: BarChart3,
-      children: (
-        <AdminDashboard slug={basePath} businessType={business.businessType} />
-      ),
+      title: dashboardTab.title,
+      group: dashboardTab.group,
+      iconName: dashboardTab.iconName,
+      icon: resolveLucideIconByName(dashboardTab.iconName) ?? BarChart3,
+      children: business ? <AdminDashboard slug={basePath} /> : null,
     },
     ...tabs.map(resolveTabMetadata),
     {
-      title: 'QR Management',
-      icon: QrCodeIcon,
+      title: qrTab.title,
+      group: qrTab.group,
+      iconName: qrTab.iconName,
+      icon: resolveLucideIconByName(qrTab.iconName) ?? QrCodeIcon,
       children: <QRCodePage slug={basePath} />,
-      group: 'System Configuration',
     },
     {
-      title: 'Website UI',
-      icon: Sigma,
+      title: websiteTab.title,
+      group: websiteTab.group,
+      iconName: websiteTab.iconName,
+      icon: resolveLucideIconByName(websiteTab.iconName) ?? Sigma,
       children: <CustomUiBuilderPage slug={basePath} />,
-      group: 'System Configuration',
     },
-  ];
+  ]);
 
-  // @ts-expect-error
+  const systemGroups = useMemo(
+    () =>
+      [dashboardTab.group, qrTab.group, websiteTab.group].filter(
+        (groupName): groupName is string => Boolean(groupName),
+      ),
+    [dashboardTab.group, qrTab.group, websiteTab.group],
+  );
+  const mergedGroups = useMemo(() => {
+    const next = new Set<string>(groups ?? []);
+    for (const groupName of systemGroups) next.add(groupName);
+    return [...next];
+  }, [groups, systemGroups]);
+
+  function renameSystemTab(
+    previousTabTitle: string,
+    nextTabTitle: string,
+  ): boolean {
+    const matchedEntry = (
+      Object.entries(resolvedSystemTabs) as Array<
+        [AutoAdminSystemTabKey, AutoAdminSystemTabState]
+      >
+    ).find(([, value]) => value.title === previousTabTitle);
+    if (!matchedEntry) {
+      return false;
+    }
+    updateSystemTab(matchedEntry[0], {
+      title: nextTabTitle,
+    });
+    return true;
+  }
+
+  function renameSystemTabIcon(tabTitle: string, iconName: string): boolean {
+    const matchedEntry = (
+      Object.entries(resolvedSystemTabs) as Array<
+        [AutoAdminSystemTabKey, AutoAdminSystemTabState]
+      >
+    ).find(([, value]) => value.title === tabTitle);
+    if (!matchedEntry) {
+      return false;
+    }
+    updateSystemTab(matchedEntry[0], {
+      iconName,
+    });
+    return true;
+  }
+
+  function moveSystemTabToGroup(tabTitle: string, groupName?: string): boolean {
+    const matchedEntry = (
+      Object.entries(resolvedSystemTabs) as Array<
+        [AutoAdminSystemTabKey, AutoAdminSystemTabState]
+      >
+    ).find(([, value]) => value.title === tabTitle);
+    if (!matchedEntry) {
+      return false;
+    }
+    updateSystemTab(matchedEntry[0], {
+      group: groupName,
+    });
+    return true;
+  }
+
+  function renameSystemGroup(
+    previousGroupName: string,
+    nextGroupName: string,
+  ): boolean {
+    let changed = false;
+    for (const [key, value] of Object.entries(resolvedSystemTabs) as Array<
+      [AutoAdminSystemTabKey, AutoAdminSystemTabState]
+    >) {
+      if (value.group !== previousGroupName) continue;
+      updateSystemTab(key, {
+        group: nextGroupName,
+      });
+      changed = true;
+    }
+    return changed;
+  }
+
+  function deleteSystemGroup(groupName: string): boolean {
+    let changed = false;
+    for (const [key, value] of Object.entries(resolvedSystemTabs) as Array<
+      [AutoAdminSystemTabKey, AutoAdminSystemTabState]
+    >) {
+      if (value.group !== groupName) continue;
+      updateSystemTab(key, {
+        group: undefined,
+      });
+      changed = true;
+    }
+    return changed;
+  }
+
   const tab = (search.tab as string) ?? tabsWithHome[0].title;
 
   const currentItem =
     tabsWithHome.find((t) => t.title === tab) ?? tabsWithHome?.[0];
 
-  function getComponents() {
+  function _canGetComponents() {
+    return !!currentItem;
+  }
+
+  const canGetComponents = _canGetComponents();
+
+  async function getComponents() {
+    if (!canGetComponents) return null;
     if (!!currentItem && 'schema' in currentItem) {
       const currentSchema = appSchema[currentItem.schema as SchemaKeys];
       if ('components' in currentSchema) {
-        return currentSchema.components() ?? [];
+        const components = await currentSchema.components();
+        const mappedNodes = components.map(async (c) => ({
+          ...c,
+          component: await c.component({ slug: currentItem.slug ?? basePath }),
+        }));
+        return Promise.all(mappedNodes);
       }
     }
-    return []
+    return null;
   }
 
-  const components = getComponents()
+  const { data: components } = useQuery({
+    enabled: canGetComponents,
+    queryFn: getComponents,
+    queryKey: [
+      'schema',
+      (!!currentItem && 'slug' in currentItem && currentItem.slug) ?? basePath,
+      !!currentItem && 'schema' in currentItem && currentItem.schema,
+    ],
+  });
 
   if (!currentItem) {
     return <NotFound />;
@@ -177,6 +413,33 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
         tabs={tabsWithHome}
         businessName={business?.name}
         slug={business?.basePath}
+        editable={editable}
+        onAddTable={onAddTable}
+        onAddGroup={onAddGroup}
+        onReorderGroups={onReorderGroups}
+        onMoveTabToGroup={(tabTitle, groupName) => {
+          const handled = moveSystemTabToGroup(tabTitle, groupName);
+          if (!handled) onMoveTabToGroup?.(tabTitle, groupName);
+        }}
+        onRenameGroup={(previousGroupName, nextGroupName) => {
+          renameSystemGroup(previousGroupName, nextGroupName);
+          onRenameGroup?.(previousGroupName, nextGroupName);
+        }}
+        onDeleteGroup={(groupName) => {
+          deleteSystemGroup(groupName);
+          onDeleteGroup?.(groupName);
+        }}
+        onRenameTab={(previousTabTitle, nextTabTitle) => {
+          const handled = renameSystemTab(previousTabTitle, nextTabTitle);
+          if (!handled) onRenameTab?.(previousTabTitle, nextTabTitle);
+        }}
+        onRenameTabIcon={(tabTitle, iconName) => {
+          const handled = renameSystemTabIcon(tabTitle, iconName);
+          if (!handled) onRenameTabIcon?.(tabTitle, iconName);
+        }}
+        onOpenWorkflowEditorForTab={onOpenWorkflowEditorForTab}
+        onDeleteTableForTab={onDeleteTableForTab}
+        groups={mergedGroups}
       />
       <SidebarInset className="min-w-0 flex flex-col">
         <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-12 sm:h-16 shrink-0 items-center gap-0.5 sm:gap-2 border-b transition-[width,height] ease-linear px-0.5 sm:px-4">
@@ -234,16 +497,14 @@ export function AutoAdmin({ tabs }: AutoAdminProps) {
                   </div>
                 </Card>
               </TabsContent>
-              {components.map(({ component: Component, name }) => (
+              {components.map(({ component, name }) => (
                 <TabsContent
                   value={name}
                   key={name}
                   className="flex-1 mt-1 sm:mt-4"
                 >
                   <Card className="border rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-0.5 sm:p-4">
-                      <Component slug={business.basePath} />
-                    </div>
+                    <div className="p-0.5 sm:p-4">{component}</div>
                   </Card>
                 </TabsContent>
               ))}
@@ -261,7 +522,6 @@ export type AutoKanbanProps<K extends SchemaKeys> = {
   cardBuilder: (data: NestedSchemaType<K>) => ReactNode;
   schema: K;
   isItemLocked?: (item: NestedSchemaType<K>) => boolean;
-  onUpdate?: (data: GunMessagePut, variables: UpdaterParams<K>, onMutateResult: unknown, context: MutationFunctionContext) => Promise<unknown> | unknown;
 };
 
 export function AutoKanban<K extends SchemaKeys>({
@@ -270,15 +530,11 @@ export function AutoKanban<K extends SchemaKeys>({
   groupKey,
   cardBuilder,
   isItemLocked,
-  onUpdate,
 }: AutoKanbanProps<K>) {
   const { data: orders = [], isLoading } = api[schemaName].useGet({
     keys: [slug],
   });
-  const { mutate: update } = api[schemaName].useUpdate({
-    keys: [slug],
-    onSuccess: onUpdate
-  });
+  const { mutate: update } = api[schemaName].useUpdate({ keys: [slug] });
   const columns = _.groupBy(orders, (o) => o[groupKey]);
   const schema = getNestedZodShape(schemaName, appSchema.schemaShape);
   const schemaObject =
@@ -288,7 +544,10 @@ export function AutoKanban<K extends SchemaKeys>({
     _def?: { innerType?: { Values?: Record<string, string> } };
   };
   const statuses = Object.keys(
-    groupField.Values ?? groupField._def?.innerType?.Values ?? groupField._def?.schema?._def?.innerType?.Values ?? {},
+    groupField.Values ??
+      groupField._def?.innerType?.Values ??
+      groupField._def?.schema?._def?.innerType?.Values ??
+      {},
   );
 
   return (
@@ -406,17 +665,17 @@ function KanbanColumn<K extends SchemaKeys>({
       <div className="flex flex-col gap-2 p-0.5">
         {context.loading
           ? Array.from({ length: 3 }).map((_, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-            <Skeleton key={i} className="w-full h-12" />
-          ))
+              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+              <Skeleton key={i} className="w-full h-12" />
+            ))
           : orders.map((order) => (
-            <KanbanCard
-              key={getSoulFromUnknown(order)}
-              order={order}
-              cardBuilder={cardBuilder}
-              asHandle={!(isItemLocked?.(order) ?? false)}
-            />
-          ))}
+              <KanbanCard
+                key={getSoulFromUnknown(order)}
+                order={order}
+                cardBuilder={cardBuilder}
+                asHandle={!(isItemLocked?.(order) ?? false)}
+              />
+            ))}
       </div>
     </Kanban.Column>
   );

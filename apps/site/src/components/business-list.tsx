@@ -1,9 +1,10 @@
+import { Link } from '@tanstack/react-router';
 import { Search, Shield, XCircle } from 'lucide-react';
-import { ScrollArea } from './ui/scroll-area';
 import { useState } from 'react';
-import { Input } from './ui/input';
-import { Button } from './ui/button';
+import { api } from '@/lib/api';
 import type { Business } from '@/lib/schema';
+import { BusinessAccessGate } from './permission-gate/business-access-gate';
+import { Button } from './ui/button';
 import {
   Card,
   CardContent,
@@ -11,11 +12,9 @@ import {
   CardHeader,
   CardTitle,
 } from './ui/card';
-import { Link } from '@tanstack/react-router';
-import { Badge } from './ui/badge'; // Import Badge
-import { api } from '@/lib/api';
+import { Input } from './ui/input';
+import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
-import { BusinessAccessGate } from './permission-gate/business-access-gate';
 
 export interface BusinessListProps
   extends React.ComponentPropsWithoutRef<typeof ScrollArea> {}
@@ -27,17 +26,13 @@ export function BusinessList(props: BusinessListProps) {
   const filteredBusinesses = allBusinesses.filter((business: Business) => {
     const lowerCaseSearchTerm = searchTerm?.toLowerCase();
     if (!lowerCaseSearchTerm?.length) return true;
-    return (
-      business.name?.toLowerCase().includes(lowerCaseSearchTerm) ||
-      business.businessType?.toLowerCase().includes(lowerCaseSearchTerm) ||
-      business.location?.toLowerCase().includes(lowerCaseSearchTerm)
-    );
+    return business.name?.toLowerCase().includes(lowerCaseSearchTerm);
   });
 
   return (
     <div className="space-y-6">
       <Input
-        placeholder="Search businesses by name, type, or location..."
+        placeholder="Search businesses by name..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
         className="pl-9"
@@ -75,17 +70,9 @@ export function BusinessList(props: BusinessListProps) {
                   >
                     <CardHeader className="pb-2">
                       <CardTitle>{business.name}</CardTitle>
-                      {business.location && (
-                        <CardDescription className="text-sm text-muted-foreground">
-                          {business.location}
-                        </CardDescription>
-                      )}
-                      <Badge
-                        variant="secondary"
-                        className="absolute top-3 right-3 capitalize text-xs px-2 py-1 rounded-full"
-                      >
-                        {business.businessType?.replace(/_/g, ' ')}
-                      </Badge>
+                      <CardDescription className="text-sm text-muted-foreground">
+                        {business.basePath}
+                      </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-grow flex flex-col gap-2 justify-end pt-0">
                       <Button asChild className="w-full">

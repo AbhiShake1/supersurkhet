@@ -1,42 +1,22 @@
+import MonacoEditor from '@monaco-editor/react';
 import { createFileRoute } from '@tanstack/react-router';
-import { z } from 'zod';
-import { useState, useRef, useCallback, useEffect } from 'react';
 import {
-  ResizablePanelGroup,
-  ResizablePanel,
-  ResizableHandle,
-} from '@/components/ui/resizable';
-import { Button } from '@/components/ui/button';
-import {
-  Smartphone,
-  Tablet,
-  Monitor,
-  Maximize,
-  X,
-  Search,
-  Terminal,
+  Code,
   Eye,
   EyeOff,
+  Maximize,
   MessageSquare,
   MessageSquareX,
-  Code,
+  Monitor,
+  Search,
+  Smartphone,
+  Tablet,
+  Terminal,
+  X,
 } from 'lucide-react';
-import { CopyPromptButton } from '@/components/ui/ui-builder/copy-prompt-button';
-import { zodToJsonSchema } from '@/lib/zod/zod-to-json-schema';
-import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
-import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
-import MonacoEditor from '@monaco-editor/react';
-import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { api } from '@/lib/api';
-import { Spinner } from '@/components/ui/spinner';
-import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
-import { useContextData } from '@/lib/ui-builder/context/context-data-store';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { z } from 'zod';
+import { useAuth } from '@/components/auth-provider';
 // import { useChat } from '@ai-sdk/react';
 // import {
 //   Conversation,
@@ -88,7 +68,27 @@ import { useContextData } from '@/lib/ui-builder/context/context-data-store';
 // import { createServerFn } from '@tanstack/react-start';
 // import { getBuilderChat } from '@/server-functions/ai';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
-import { useAuth } from '@/components/auth-provider';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
+import { Button } from '@/components/ui/button';
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable';
+import { Spinner } from '@/components/ui/spinner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { CopyPromptButton } from '@/components/ui/ui-builder/copy-prompt-button';
+import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
+import { api } from '@/lib/api';
+import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
+import { useContextData } from '@/lib/ui-builder/context/context-data-store';
+import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
+import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
+import { zodToJsonSchema } from '@/lib/zod/zod-to-json-schema';
 
 const componentRegistry = {
   ...primitiveComponentDefinitions,
@@ -227,7 +227,7 @@ function EditorComponent() {
       },
     );
 
-    return `You are an expert UI developer working with a UI builder system. Your task is to generate UI configurations in JSON format for the UI builder. Focus specifically on creating UI elements that serve the core business functions of the specified business type.
+    return `You are an expert UI developer working with a UI builder system. Your task is to generate UI configurations in JSON format for the UI builder. Focus specifically on creating UI elements that serve the core business functions.
 
 # System Overview
 - The UI builder creates interfaces using a JSON structure with nested components
@@ -235,9 +235,7 @@ function EditorComponent() {
 
 # Business Context:
 - Business Name: ${businessName}
-- Business Type: ${_business?.businessType || 'Not specified'}
 - Business Description: ${_business?.description || 'Not specified'}
-- Business Industry: ${_business?.businessType || 'Not specified'}
 - Business Slug: ${businessName}
 
 # Root Schema Definition:
@@ -290,14 +288,14 @@ ${JSON.stringify(componentSummaries, null, 2)}
 - Support both light and dark modes using Tailwind's dark: modifier (e.g., text-gray-800 dark:text-gray-200)
 
 # Business-Specific Guidelines:
-- Create UI components that are specifically focused on the business type: ${_business?.businessType || 'unspecified'}
+- Create UI components that are specifically focused on this business context
 - Align design with business description: ${_business?.description || 'unspecified'}
-- Design primarily for the core workflows of ${_business?.businessType || 'unspecified'} industry
-- Focus your UI design on the core business functions (e.g., if it's a restaurant, prioritize menu display, ordering, table booking)
-- Use appropriate colors and styling that align with the ${_business?.businessType || 'unspecified'} industry
+- Design primarily for the core workflows implied by the business context
+- Focus your UI design on the core business functions from the available schemas and workflows
+- Use appropriate colors and styling that align with the business description and brand feel
 - Prioritize mobile experience since this is a client-side mobile-first application
-- Design interfaces that are intuitive for mobile users of ${_business?.businessType || 'unspecified'} services
-- Consider common business workflows for ${_business?.businessType || 'unspecified'} industry
+- Design interfaces that are intuitive for mobile users of this business
+- Consider common business workflows relevant to this business
 - Ensure adequate spacing in layouts to create a clean, uncluttered appearance on mobile screens
 
 # Spacing & Layout Guidelines:
@@ -443,7 +441,6 @@ Provide the complete UI configuration in JSON format as your response. Do not in
   //     api: getBuilderChat.url,
   //     body: {
   //       businessName,
-  //       businessType: _business?.businessType || '',
   //       businessDescription: _business?.description || '',
   //     },
   //   }),
