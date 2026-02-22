@@ -10,6 +10,9 @@ import { nitro } from 'nitro/vite';
 import { zodTypegen } from './scripts/vite/zod-typegen';
 
 const config = defineConfig({
+	test: {
+		exclude: ["tests/**"],
+	},
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
