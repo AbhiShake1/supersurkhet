@@ -1,14 +1,14 @@
-import React from 'react';
-import { Input } from './input';
 import { Search } from 'lucide-react';
+import React from 'react';
 import { Button, type ButtonProps } from './button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
 } from './dialog';
+import { Input } from './input';
 
 interface BadgeMarqueeProps<T> {
   items: T[];
@@ -116,21 +116,24 @@ export function BadgeMarquee<T>({
             className={`flex gap-3 ${!isUserScrolling ? 'animate-marquee' : ''}`}
           >
             {/** biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup */}
-            {displayItems?.map((item: any, index: number) => (
-              <Button
-                key={`${getItemTitle(item)}-${index}`}
-                variant={variant}
-                className="whitespace-nowrap flex-shrink-0 flex gap-1 cursor-pointer"
-                onClick={() => handleItemClick(item)}
-              >
-                {/** biome-ignore lint/a11y/useAltText: lint debt cleanup */}
-                <img
-                  src={getItemImageUrl(item)}
-                  className="h-6 w-6 rounded-full"
-                />
-                {getItemTitle(item)}
-              </Button>
-            ))}
+            {displayItems?.map((item: any, index: number) => {
+              const imageUrl = getItemImageUrl(item);
+
+              return (
+                <Button
+                  key={`${getItemTitle(item)}-${index}`}
+                  variant={variant}
+                  className="whitespace-nowrap flex-shrink-0 flex gap-1 cursor-pointer"
+                  onClick={() => handleItemClick(item)}
+                >
+                  {imageUrl ? (
+                    // biome-ignore lint/a11y/useAltText: lint debt cleanup
+                    <img src={imageUrl} className="h-6 w-6 rounded-full" />
+                  ) : null}
+                  {getItemTitle(item)}
+                </Button>
+              );
+            })}
           </div>
         </div>
       </div>
