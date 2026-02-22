@@ -83,20 +83,32 @@ export function AutoFormWithoutLabel<F extends ZodObjectOrWrapped>({
   onSubmit,
   ...props
 }: AutoFormProps<F>) {
+  const defaultValues = React.useMemo(
+    () => props.defaultValues ?? props.values ?? {},
+    [props.defaultValues, props.values],
+  );
+  const schemaProvider = React.useMemo(() => new ZodProvider(schema), [schema]);
+  const mergedUiComponents = React.useMemo(
+    () => ({
+      ...ShadcnUIComponents,
+      FieldWrapper: FieldWrapperWithoutLabel,
+      ...uiComponents,
+    }),
+    [uiComponents],
+  );
+  const mergedFormComponents = React.useMemo(
+    () => ({ ...ShadcnAutoFormFieldComponents, ...formComponents }),
+    [formComponents],
+  );
+
   return (
-    <AutoFormDefaultValueProvider
-      defaultValues={props.defaultValues ?? props.values ?? {}}
-    >
+    <AutoFormDefaultValueProvider defaultValues={defaultValues}>
       <BaseAutoForm
         {...props}
         onSubmit={onSubmit}
-        schema={new ZodProvider(schema)}
-        uiComponents={{
-          ...ShadcnUIComponents,
-          FieldWrapper: FieldWrapperWithoutLabel,
-          ...uiComponents,
-        }}
-        formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
+        schema={schemaProvider}
+        uiComponents={mergedUiComponents}
+        formComponents={mergedFormComponents}
       >
         {props.children}
       </BaseAutoForm>
@@ -110,16 +122,31 @@ export function AutoForm<F extends ZodObjectOrWrapped>({
   schema,
   ...props
 }: AutoFormProps<F>) {
-  if (!schema) return null;
+  const defaultValues = React.useMemo(
+    () => props.defaultValues ?? props.values ?? {},
+    [props.defaultValues, props.values],
+  );
+  const schemaProvider = React.useMemo(
+    () => (schema ? new ZodProvider(schema) : null),
+    [schema],
+  );
+  const mergedUiComponents = React.useMemo(
+    () => ({ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }),
+    [uiComponents],
+  );
+  const mergedFormComponents = React.useMemo(
+    () => ({ ...ShadcnAutoFormFieldComponents, ...formComponents }),
+    [formComponents],
+  );
+  if (!schemaProvider) return null;
+
   return (
-    <AutoFormDefaultValueProvider
-      defaultValues={props.defaultValues ?? props.values ?? {}}
-    >
+    <AutoFormDefaultValueProvider defaultValues={defaultValues}>
       <BaseAutoForm
         {...props}
-        schema={new ZodProvider(schema)}
-        uiComponents={{ ...ShadcnUIComponents, FieldWrapper, ...uiComponents }}
-        formComponents={{ ...ShadcnAutoFormFieldComponents, ...formComponents }}
+        schema={schemaProvider}
+        uiComponents={mergedUiComponents}
+        formComponents={mergedFormComponents}
       />
     </AutoFormDefaultValueProvider>
   );

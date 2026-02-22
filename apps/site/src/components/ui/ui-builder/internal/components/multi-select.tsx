@@ -1,9 +1,10 @@
 'use client';
 
 import { Command as CommandPrimitive, useCommandState } from 'cmdk';
+import isDeepEqual from 'fast-deep-equal';
 import { X } from 'lucide-react';
 import * as React from 'react';
-import { forwardRef, useEffect, useMemo, useCallback } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo } from 'react';
 
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,8 +13,8 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
 import { useDebounce } from '@/hooks/use-debounce';
+import { cn } from '@/lib/utils';
 
 // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
 const EMPTY_ARRAY: any[] = [];
@@ -203,27 +204,59 @@ const MultipleSelector = React.forwardRef<
     const [isLoading, setIsLoading] = React.useState(false);
     const dropdownRef = React.useRef<HTMLDivElement>(null); // Added this
 
-    const [selected, setSelected] = React.useState<Option[]>(
-      value || EMPTY_ARRAY,
+    const isControlled = value !== undefined;
+    const [internalSelected, setInternalSelected] = React.useState<Option[]>(
+      value ?? EMPTY_ARRAY,
     );
-    const [options, setOptions] = React.useState<GroupOption>(
+    const selected = isControlled ? (value ?? EMPTY_ARRAY) : internalSelected;
+    const groupedDefaultOptions = useMemo(
+      () => transToGroupOption(arrayDefaultOptions, groupBy),
+      [arrayDefaultOptions, groupBy],
+    );
+    const groupedProvidedOptions = useMemo(
+      () => transToGroupOption(arrayOptions ?? EMPTY_ARRAY, groupBy),
+      [arrayOptions, groupBy],
+    );
+    const [dynamicOptions, setDynamicOptions] = React.useState<GroupOption>(
       transToGroupOption(arrayDefaultOptions, groupBy),
     );
     const [inputValue, setInputValue] = React.useState('');
     const debouncedSearchTerm = useDebounce(inputValue, delay || 500);
+    const options =
+      onSearch || onSearchSync
+        ? dynamicOptions
+        : arrayOptions
+          ? groupedProvidedOptions
+          : groupedDefaultOptions;
+
+    const setDynamicOptionsIfChanged = useCallback((next: GroupOption) => {
+      setDynamicOptions((previous) =>
+        isDeepEqual(previous, next) ? previous : next,
+      );
+    }, []);
+
+    const updateSelected = useCallback(
+      (nextSelected: Option[]) => {
+        if (!isControlled) {
+          setInternalSelected(nextSelected);
+        }
+        onChange?.(nextSelected);
+      },
+      [isControlled, onChange],
+    );
 
     const selectedValue = useMemo(() => {
       return {
         selectedValue: [...selected],
         input: inputRef.current as HTMLInputElement,
         focus: () => inputRef?.current?.focus(),
-        reset: () => setSelected([]),
+        reset: () => updateSelected([]),
       };
-    }, [selected]);
+    }, [selected, updateSelected]);
 
     React.useImperativeHandle(ref, () => selectedValue, [selectedValue]);
 
-    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+    const handleClickOutside = useCallback((event: MouseEvent | TouchEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node) &&
@@ -233,15 +266,14 @@ const MultipleSelector = React.forwardRef<
         setOpen(false);
         inputRef.current.blur();
       }
-    };
+    }, []);
 
     const handleUnselect = React.useCallback(
       (option: Option) => {
         const newOptions = selected.filter((s) => s.value !== option.value);
-        setSelected(newOptions);
-        onChange?.(newOptions);
+        updateSelected(newOptions);
       },
-      [onChange, selected],
+      [selected, updateSelected],
     );
 
     const handleKeyDown = React.useCallback(
@@ -279,84 +311,67 @@ const MultipleSelector = React.forwardRef<
         document.removeEventListener('mousedown', handleClickOutside);
         document.removeEventListener('touchend', handleClickOutside);
       };
-      // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
     }, [open, handleClickOutside]);
 
     useEffect(() => {
-      if (value) {
-        setSelected(value);
-      }
-    }, [value]);
-
-    useEffect(() => {
-      /** If `onSearch` is provided, do not trigger options updated. */
-      if (!arrayOptions || onSearch) {
+      if (!(onSearch || onSearchSync)) {
         return;
       }
-      const newOption = transToGroupOption(
-        arrayOptions || EMPTY_ARRAY,
-        groupBy,
-      );
-      if (JSON.stringify(newOption) !== JSON.stringify(options)) {
-        setOptions(newOption);
-      }
-    }, [arrayOptions, groupBy, onSearch, options]);
-
-    useEffect(() => {
-      /** sync search */
-
-      const doSearchSync = () => {
-        const res = onSearchSync?.(debouncedSearchTerm);
-        setOptions(transToGroupOption(res || [], groupBy));
-      };
-
-      const exec = async () => {
-        if (!onSearchSync || !open) return;
-
-        if (triggerSearchOnFocus) {
-          doSearchSync();
-        }
-
-        if (debouncedSearchTerm) {
-          doSearchSync();
-        }
-      };
-
-      void exec();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      setDynamicOptionsIfChanged(groupedDefaultOptions);
     }, [
-      debouncedSearchTerm,
-      groupBy,
-      open,
-      triggerSearchOnFocus,
+      groupedDefaultOptions,
+      onSearch,
       onSearchSync,
+      setDynamicOptionsIfChanged,
     ]);
 
     useEffect(() => {
-      /** async search */
+      let cancelled = false;
 
-      const doSearch = async () => {
-        setIsLoading(true);
-        const res = await onSearch?.(debouncedSearchTerm);
-        setOptions(transToGroupOption(res || [], groupBy));
+      if (!(onSearch || onSearchSync)) {
         setIsLoading(false);
+        return undefined;
+      }
+
+      const shouldSearch =
+        open && (triggerSearchOnFocus || debouncedSearchTerm.length > 0);
+
+      if (!shouldSearch) {
+        setIsLoading(false);
+        setDynamicOptionsIfChanged(groupedDefaultOptions);
+        return () => {
+          cancelled = true;
+        };
+      }
+
+      if (onSearch) {
+        const executeAsyncSearch = async () => {
+          setIsLoading(true);
+          const result = await onSearch(debouncedSearchTerm);
+          if (cancelled) return;
+          setDynamicOptionsIfChanged(transToGroupOption(result ?? [], groupBy));
+          setIsLoading(false);
+        };
+        void executeAsyncSearch();
+      } else if (onSearchSync) {
+        const result = onSearchSync(debouncedSearchTerm);
+        setDynamicOptionsIfChanged(transToGroupOption(result ?? [], groupBy));
+        setIsLoading(false);
+      }
+
+      return () => {
+        cancelled = true;
       };
-
-      const exec = async () => {
-        if (!onSearch || !open) return;
-
-        if (triggerSearchOnFocus) {
-          await doSearch();
-        }
-
-        if (debouncedSearchTerm) {
-          await doSearch();
-        }
-      };
-
-      void exec();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [debouncedSearchTerm, groupBy, open, triggerSearchOnFocus, onSearch]);
+    }, [
+      debouncedSearchTerm,
+      groupBy,
+      groupedDefaultOptions,
+      onSearch,
+      onSearchSync,
+      open,
+      setDynamicOptionsIfChanged,
+      triggerSearchOnFocus,
+    ]);
 
     const handleCommandKeyDown = useCallback(
       (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -391,10 +406,9 @@ const MultipleSelector = React.forwardRef<
         }
         setInputValue('');
         const newOptions = [...selected, { value, label: value }];
-        setSelected(newOptions);
-        onChange?.(newOptions);
+        updateSelected(newOptions);
       },
-      [maxSelected, onMaxSelected, selected, onChange],
+      [maxSelected, onMaxSelected, selected, updateSelected],
     );
 
     // biome-ignore lint/correctness/noNestedComponentDefinitions: lint debt cleanup
@@ -487,18 +501,14 @@ const MultipleSelector = React.forwardRef<
     const handlePrimitiveInputFocus = useCallback(
       (event: React.FocusEvent<HTMLInputElement, Element>) => {
         setOpen(true);
-        if (triggerSearchOnFocus) {
-          onSearch?.(debouncedSearchTerm);
-        }
         inputProps?.onFocus?.(event);
       },
-      [triggerSearchOnFocus, debouncedSearchTerm, inputProps, onSearch],
+      [inputProps],
     );
 
     const handleClearAllButtonClick = useCallback(() => {
-      setSelected(selected.filter((s) => s.fixed));
-      onChange?.(selected.filter((s) => s.fixed));
-    }, [selected, onChange]);
+      updateSelected(selected.filter((s) => s.fixed));
+    }, [selected, updateSelected]);
 
     const handleCommandListMouseLeave = useCallback(() => {
       setOnScrollbar(false);
@@ -528,10 +538,9 @@ const MultipleSelector = React.forwardRef<
         }
         setInputValue('');
         const newOptions = [...selected, option];
-        setSelected(newOptions);
-        onChange?.(newOptions);
+        updateSelected(newOptions);
       },
-      [maxSelected, onMaxSelected, selected, onChange],
+      [maxSelected, onMaxSelected, selected, updateSelected],
     );
 
     return (

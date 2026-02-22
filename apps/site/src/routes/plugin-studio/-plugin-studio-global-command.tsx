@@ -1,5 +1,5 @@
 import { Search } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -53,8 +53,10 @@ export function PluginStudioGlobalCommand({
   placeholder = 'Search projects and plugins...',
 }: PluginStudioGlobalCommandProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const projectNameById = new Map(
-    projects.map((project) => [project.id, project.name] as const),
+  const projectNameById = useMemo(
+    () =>
+      new Map(projects.map((project) => [project.id, project.name] as const)),
+    [projects],
   );
 
   useEffect(() => {

@@ -106,7 +106,15 @@ function PluginStudioProjectRoute() {
     useState('');
   const [projectPluginsPopoverSearch, setProjectPluginsPopoverSearch] =
     useState('');
-  const [pluginLayout, setPluginLayout] = useState<ProjectPluginLayout>('grid');
+  const [pluginLayout, setPluginLayout] = useState<ProjectPluginLayout>(() => {
+    if (typeof window === 'undefined') return 'grid';
+    const storageKey = buildProjectPluginLayoutStorageKey(projectId);
+    const persistedLayout = window.localStorage.getItem(storageKey);
+    if (persistedLayout === 'grid' || persistedLayout === 'list') {
+      return persistedLayout;
+    }
+    return 'grid';
+  });
   const [hoveredProjectId, setHoveredProjectId] = useState(projectId);
   const [editingField, setEditingField] = useState<{
     pluginId: string;
@@ -140,6 +148,32 @@ function PluginStudioProjectRoute() {
   const drafts = draftRows as PluginDraftDoc[];
   const installs = installRows as BusinessPluginInstallDoc[];
   const draftInstalls = draftInstallRows as BusinessPluginDraftInstallDoc[];
+  const installsByPluginId = useMemo(
+    () =>
+      new Map(
+        installs
+          .filter(
+            (entry): entry is BusinessPluginInstallDoc & { pluginId: string } =>
+              Boolean(entry.pluginId),
+          )
+          .map((entry) => [entry.pluginId, entry] as const),
+      ),
+    [installs],
+  );
+  const draftInstallsByPluginId = useMemo(
+    () =>
+      new Map(
+        draftInstalls
+          .filter(
+            (
+              entry,
+            ): entry is BusinessPluginDraftInstallDoc & { pluginId: string } =>
+              Boolean(entry.pluginId),
+          )
+          .map((entry) => [entry.pluginId, entry] as const),
+      ),
+    [draftInstalls],
+  );
 
   const project = useMemo(
     () => projects.find((entry) => entry.id === projectId) ?? null,
@@ -198,12 +232,8 @@ function PluginStudioProjectRoute() {
     const query = search.trim().toLowerCase();
     return [...pluginIds]
       .map((pluginId) => {
-        const publishedInstall = installs.find(
-          (entry) => entry.pluginId === pluginId,
-        );
-        const draftInstall = draftInstalls.find(
-          (entry) => entry.pluginId === pluginId,
-        );
+        const publishedInstall = installsByPluginId.get(pluginId);
+        const draftInstall = draftInstallsByPluginId.get(pluginId);
         const installStatus: 'active' | 'paused' | undefined =
           publishedInstall?.status === 'paused' ||
           draftInstall?.status === 'paused'
@@ -235,7 +265,15 @@ function PluginStudioProjectRoute() {
         );
       })
       .sort((left, right) => left.title.localeCompare(right.title));
-  }, [draftInstalls, drafts, installs, projectId, search]);
+  }, [
+    draftInstalls,
+    draftInstallsByPluginId,
+    drafts,
+    installs,
+    installsByPluginId,
+    projectId,
+    search,
+  ]);
 
   const groupedPluginCards = useMemo(
     () => groupPluginCardsByStatus(pluginCards),
@@ -288,16 +326,6 @@ function PluginStudioProjectRoute() {
     const fallbackProjectId = accessibleProjects[0]?.id ?? projectId;
     setHoveredProjectId(fallbackProjectId);
   }, [accessibleProjectIdSet, accessibleProjects, hoveredProjectId, projectId]);
-
-  useEffect(() => {
-    const storageKey = buildProjectPluginLayoutStorageKey(projectId);
-    const persistedLayout = window.localStorage.getItem(
-      storageKey,
-    );
-    if (persistedLayout === 'grid' || persistedLayout === 'list') {
-      setPluginLayout(persistedLayout);
-    }
-  }, [projectId]);
 
   useEffect(() => {
     const storageKey = buildProjectPluginLayoutStorageKey(projectId);
@@ -746,7 +774,9 @@ function PluginStudioProjectRoute() {
             </div>
             <div
               className={
-                pluginLayout === 'grid' ? 'grid gap-4 md:grid-cols-2' : 'grid gap-3'
+                pluginLayout === 'grid'
+                  ? 'grid gap-4 md:grid-cols-2'
+                  : 'grid gap-3'
               }
             >
               {group.items.map((card) => (

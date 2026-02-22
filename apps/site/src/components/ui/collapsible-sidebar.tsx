@@ -41,6 +41,7 @@ import {
   AlertDialogTitle,
 } from './alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { commitSidebarRename } from './collapsible-sidebar-rename';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,14 +51,13 @@ import {
   DropdownMenuTrigger,
 } from './dropdown-menu';
 import { Input } from './input';
+import { ManageOrganization } from './organizations/manage-organization';
 import {
   Popover,
   PopoverClose,
   PopoverContent,
   PopoverTrigger,
 } from './popover';
-import { commitSidebarRename } from './collapsible-sidebar-rename';
-import { ManageOrganization } from './organizations/manage-organization';
 
 function isLucideIcon(value: unknown): value is LucideIcon {
   return typeof value === 'function';
@@ -182,33 +182,38 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
     };
   }, [preferenceOwnerId]);
 
-  // Filter items based on search query
-  const filteredItems = searchQuery
-    ? tabs.filter((item) => {
-        try {
-          const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
-          return regex.test(item.title);
-        } catch (_e) {
-          // If the regex is invalid, fallback to simple string includes
-          return item.title.toLowerCase().includes(searchQuery.toLowerCase());
+  const { groupedItems, ungroupedItems } = useMemo(() => {
+    const nextFilteredItems = searchQuery
+      ? tabs.filter((item) => {
+          try {
+            const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
+            return regex.test(item.title);
+          } catch (_e) {
+            // If the regex is invalid, fallback to simple string includes
+            return item.title.toLowerCase().includes(searchQuery.toLowerCase());
+          }
+        })
+      : tabs;
+
+    const nextGroupedItems: { [key: string]: typeof tabs } = {};
+    const nextUngroupedItems: typeof tabs = [];
+
+    nextFilteredItems.forEach((item) => {
+      if (item.group) {
+        if (!nextGroupedItems[item.group]) {
+          nextGroupedItems[item.group] = [];
         }
-      })
-    : tabs;
-
-  // Group items by group property if available
-  const groupedItems: { [key: string]: typeof tabs } = {};
-  const ungroupedItems: typeof tabs = [];
-
-  filteredItems.forEach((item) => {
-    if (item.group) {
-      if (!groupedItems[item.group]) {
-        groupedItems[item.group] = [];
+        nextGroupedItems[item.group].push(item);
+      } else {
+        nextUngroupedItems.push(item);
       }
-      groupedItems[item.group].push(item);
-    } else {
-      ungroupedItems.push(item);
-    }
-  });
+    });
+
+    return {
+      groupedItems: nextGroupedItems,
+      ungroupedItems: nextUngroupedItems,
+    };
+  }, [searchQuery, tabs]);
 
   const frequentItems = useMemo(() => {
     const byTitle = new Map(tabs.map((item) => [item.title, item]));
@@ -382,15 +387,13 @@ const CollapsibleSidebar: React.FC<CollapsibleSidebarProps> = ({
 
         {/* Search bar */}
         {open && (
-          <>
-            <Input
-              placeholder="Filter items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="text-xs pl-8 my-2"
-              leadingIcon={<Search className="h-4 w-4 my-2" />}
-            />
-          </>
+          <Input
+            placeholder="Filter items..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="text-xs pl-8 my-2"
+            leadingIcon={<Search className="h-4 w-4 my-2" />}
+          />
         )}
       </div>
 
