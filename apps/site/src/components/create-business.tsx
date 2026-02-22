@@ -21,7 +21,10 @@ import { api } from '@/lib/api';
 import { gun } from '@/lib/gun';
 import { getGunRef } from '@/lib/gun/utils';
 import { getBusinessDataFieldFromSelectedReleases } from '@/lib/plugins/business-onboarding-prepopulate';
-import { parseReleaseId } from '@/lib/plugins/marketplace-seed';
+import {
+  mergeMarketplaceReleasesWithSeed,
+  parseReleaseId,
+} from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import type { businessSchema } from '@/lib/schema';
 import { syncBusinessPluginInstalls } from '@/server-functions/plugins';
@@ -95,7 +98,7 @@ export function CreateBusinessPageFlow() {
   const { promptLogin } = useLoginPrompt();
   const didPromptLogin = useRef(false);
   const releases = useMemo(
-    () => releaseRows as PluginReleaseDoc[],
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
   );
 

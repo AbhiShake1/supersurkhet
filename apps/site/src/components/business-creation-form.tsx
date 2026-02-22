@@ -1,9 +1,47 @@
-import type { ActionManifestDoc, AdminTabDoc, BusinessPluginDraftInstallDoc, BusinessPluginInstallDoc, DeriveIR, ExpressionDoc, FieldConfigIR, JsonValue, LifecycleHook, PluginProjectDoc, PluginProjectInviteDoc, PluginProjectMemberDoc, PluginProjectRole, PluginDraftDoc, PluginDraftRevisionDoc, PluginRecordDoc, PluginReleaseDoc, RefineIssueIR, SchemaDoc, SchemaFieldDoc, SchemaRuleDoc, WorkflowDoc, WorkflowEdgeDoc, WorkflowNodeDoc } from 'supersurkhet-sdk';
+import type {
+  ActionManifestDoc,
+  AdminTabDoc,
+  BusinessPluginDraftInstallDoc,
+  BusinessPluginInstallDoc,
+  DeriveIR,
+  ExpressionDoc,
+  FieldConfigIR,
+  JsonValue,
+  LifecycleHook,
+  PluginProjectDoc,
+  PluginProjectInviteDoc,
+  PluginProjectMemberDoc,
+  PluginProjectRole,
+  PluginDraftDoc,
+  PluginDraftRevisionDoc,
+  PluginRecordDoc,
+  PluginReleaseDoc,
+  RefineIssueIR,
+  SchemaDoc,
+  SchemaFieldDoc,
+  SchemaRuleDoc,
+  WorkflowDoc,
+  WorkflowEdgeDoc,
+  WorkflowNodeDoc,
+} from 'supersurkhet-sdk';
 import { Link } from '@tanstack/react-router';
-import { Check, ChevronsUpDown, Plus, Bot, Info, X, Search, Rocket, Sparkles } from 'lucide-react';
+import {
+  Check,
+  ChevronsUpDown,
+  Plus,
+  Bot,
+  Info,
+  X,
+  Search,
+  Rocket,
+  Sparkles,
+} from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { PluginDetailsView, type PluginDetailView } from '@/components/plugins/plugin-details-view';
+import {
+  PluginDetailsView,
+  type PluginDetailView,
+} from '@/components/plugins/plugin-details-view';
 
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
@@ -14,6 +52,7 @@ import {
   buildPluginDetailView,
   type PluginMarketItem,
 } from '@/lib/plugins/admin-plugin-market';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import { PluginIcon } from '@/components/plugins/plugin-icon';
 import {
   type AssistantAuthMode,
@@ -60,8 +99,6 @@ import {
   SelectValue,
 } from './ui/select';
 import { VercelV0Chat } from './ui/v0-ai-chat';
-
-
 
 export const businessCreationSchema = businessSchema
   .pick({
@@ -424,9 +461,7 @@ export function BusinessCreationForm({
         </div>
       )}
 
-      {step === 2 && (
-        <BusinessOnboardingAssistantForm form={form} />
-      )}
+      {step === 2 && <BusinessOnboardingAssistantForm form={form} />}
 
       {step === 3 && (
         <div className="space-y-6 rounded-2xl border border-border/70 bg-background p-4 sm:p-5">
@@ -891,7 +926,9 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       }
 
       setOauthFlowState('pending');
-      setOauthFlowMessage('Complete login in the popup. We will detect completion automatically.');
+      setOauthFlowMessage(
+        'Complete login in the popup. We will detect completion automatically.',
+      );
       toast.success('Complete the OAuth login in the popup window.');
 
       if (isDevicePollingOauth) {
@@ -1117,201 +1154,182 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div className="space-y-4">
           <div className="space-y-3">
-        <div className="space-y-1">
-          <FormLabel className="text-xs text-muted-foreground">
-            AI provider
-          </FormLabel>
-          <Popover
-            open={isProviderComboboxOpen}
-            onOpenChange={setIsProviderComboboxOpen}
-            modal
-          >
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                role="combobox"
-                aria-expanded={isProviderComboboxOpen}
-                className="w-full justify-between"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  {selectedProviderOption ? (
-                    <ProviderLogo
-                      providerId={selectedProviderOption.providerId}
-                      label={selectedProviderOption.label}
-                    />
-                  ) : null}
-                  <span className="truncate">
-                    {selectedProviderOption?.label || 'Choose provider'}
-                  </span>
-                </span>
-                <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="w-[var(--radix-popover-trigger-width)] p-0"
-            >
-              <Command>
-                <CommandInput placeholder="Search providers..." />
-                <CommandList>
-                  <CommandEmpty>No providers found.</CommandEmpty>
-                  <CommandGroup>
-                    {providerOptions.map((option) => (
-                      <CommandItem
-                        key={option.providerId}
-                        value={`${option.label} ${option.providerId}`}
-                        onSelect={() => {
-                          handleProviderChange(option.providerId);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            selectedAssistantProviderId === option.providerId
-                              ? 'opacity-100'
-                              : 'opacity-0',
-                          )}
-                        />
-                        <ProviderLogo
-                          providerId={option.providerId}
-                          label={option.label}
-                        />
-                        <span className="ml-2 truncate">{option.label}</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground">
-                          {option.providerId}
-                        </span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-
-        <div className="space-y-1">
-          <FormLabel className="text-xs text-muted-foreground">AI model</FormLabel>
-          {providerModelOptions.length > 0 ? (
-            <Popover
-              open={isModelComboboxOpen}
-              onOpenChange={setIsModelComboboxOpen}
-              modal
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={isModelComboboxOpen}
-                  className="w-full justify-between"
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <ProviderLogo
-                      providerId={selectedAssistantProviderId}
-                      label={formatProviderLabel(selectedAssistantProviderId)}
-                    />
-                    <span className="truncate">
-                      {selectedModelOption.label || 'Choose model'}
-                    </span>
-                  </span>
-                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-[var(--radix-popover-trigger-width)] p-0"
-              >
-                <Command>
-                  <CommandInput placeholder="Search models..." />
-                  <CommandList>
-                    <CommandEmpty>No models found.</CommandEmpty>
-                    <CommandGroup>
-                      {providerModelOptions.map((option) => (
-                        <CommandItem
-                          key={option.id}
-                          value={`${option.label} ${option.id} ${option.description ?? ''}`}
-                          onSelect={() => {
-                            setSelectedAssistantModelId(option.id);
-                            setAuthSessionToken('');
-                            setAuthSessionExpiresAt(null);
-                            setIsModelComboboxOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              'mr-2 h-4 w-4',
-                              selectedAssistantModelId === option.id
-                                ? 'opacity-100'
-                                : 'opacity-0',
-                            )}
-                          />
-                          <ProviderLogo
-                            providerId={selectedAssistantProviderId}
-                            label={formatProviderLabel(
-                              selectedAssistantProviderId,
-                            )}
-                          />
-                          <div className="ml-2 min-w-0">
-                            <div className="truncate text-sm">{option.label}</div>
-                            <div className="truncate text-[10px] text-muted-foreground">
-                              {option.id}
-                            </div>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          ) : (
-            <Input
-              placeholder="Model id (e.g., gpt-4o-mini)"
-              value={selectedAssistantModelId}
-              onChange={(event) => setSelectedAssistantModelId(event.target.value)}
-            />
-          )}
-        </div>
-
-        <div className="space-y-1">
-          <FormLabel className="text-xs text-muted-foreground">Auth mode</FormLabel>
-          <Select
-            value={selectedAssistantAuthMode}
-            onValueChange={(value) => {
-              setSelectedAssistantAuthMode(value as AssistantAuthMode);
-              setProviderCredentialSavedAt(null);
-              setAuthSessionToken('');
-              setAuthSessionExpiresAt(null);
-              setOauthFlowState('idle');
-              setOauthFlowMessage('');
-              setOauthAuthorizationUrl('');
-              setOauthVerificationCode('');
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose auth mode" />
-            </SelectTrigger>
-            <SelectContent>
-              {supportedAuthModes.map((authMode) => (
-                <SelectItem key={authMode} value={authMode}>
-                  {authModeLabelById[authMode]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {selectedAssistantAuthMode === 'oauth-access-token' &&
-          selectedProviderOauthMethods.length > 0 && (
             <div className="space-y-1">
               <FormLabel className="text-xs text-muted-foreground">
-                OAuth method
+                AI provider
+              </FormLabel>
+              <Popover
+                open={isProviderComboboxOpen}
+                onOpenChange={setIsProviderComboboxOpen}
+                modal
+              >
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={isProviderComboboxOpen}
+                    className="w-full justify-between"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      {selectedProviderOption ? (
+                        <ProviderLogo
+                          providerId={selectedProviderOption.providerId}
+                          label={selectedProviderOption.label}
+                        />
+                      ) : null}
+                      <span className="truncate">
+                        {selectedProviderOption?.label || 'Choose provider'}
+                      </span>
+                    </span>
+                    <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-[var(--radix-popover-trigger-width)] p-0"
+                >
+                  <Command>
+                    <CommandInput placeholder="Search providers..." />
+                    <CommandList>
+                      <CommandEmpty>No providers found.</CommandEmpty>
+                      <CommandGroup>
+                        {providerOptions.map((option) => (
+                          <CommandItem
+                            key={option.providerId}
+                            value={`${option.label} ${option.providerId}`}
+                            onSelect={() => {
+                              handleProviderChange(option.providerId);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                'mr-2 h-4 w-4',
+                                selectedAssistantProviderId ===
+                                  option.providerId
+                                  ? 'opacity-100'
+                                  : 'opacity-0',
+                              )}
+                            />
+                            <ProviderLogo
+                              providerId={option.providerId}
+                              label={option.label}
+                            />
+                            <span className="ml-2 truncate">
+                              {option.label}
+                            </span>
+                            <span className="ml-auto text-[10px] text-muted-foreground">
+                              {option.providerId}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-1">
+              <FormLabel className="text-xs text-muted-foreground">
+                AI model
+              </FormLabel>
+              {providerModelOptions.length > 0 ? (
+                <Popover
+                  open={isModelComboboxOpen}
+                  onOpenChange={setIsModelComboboxOpen}
+                  modal
+                >
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={isModelComboboxOpen}
+                      className="w-full justify-between"
+                    >
+                      <span className="flex min-w-0 items-center gap-2">
+                        <ProviderLogo
+                          providerId={selectedAssistantProviderId}
+                          label={formatProviderLabel(
+                            selectedAssistantProviderId,
+                          )}
+                        />
+                        <span className="truncate">
+                          {selectedModelOption.label || 'Choose model'}
+                        </span>
+                      </span>
+                      <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    className="w-[var(--radix-popover-trigger-width)] p-0"
+                  >
+                    <Command>
+                      <CommandInput placeholder="Search models..." />
+                      <CommandList>
+                        <CommandEmpty>No models found.</CommandEmpty>
+                        <CommandGroup>
+                          {providerModelOptions.map((option) => (
+                            <CommandItem
+                              key={option.id}
+                              value={`${option.label} ${option.id} ${option.description ?? ''}`}
+                              onSelect={() => {
+                                setSelectedAssistantModelId(option.id);
+                                setAuthSessionToken('');
+                                setAuthSessionExpiresAt(null);
+                                setIsModelComboboxOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  'mr-2 h-4 w-4',
+                                  selectedAssistantModelId === option.id
+                                    ? 'opacity-100'
+                                    : 'opacity-0',
+                                )}
+                              />
+                              <ProviderLogo
+                                providerId={selectedAssistantProviderId}
+                                label={formatProviderLabel(
+                                  selectedAssistantProviderId,
+                                )}
+                              />
+                              <div className="ml-2 min-w-0">
+                                <div className="truncate text-sm">
+                                  {option.label}
+                                </div>
+                                <div className="truncate text-[10px] text-muted-foreground">
+                                  {option.id}
+                                </div>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <Input
+                  placeholder="Model id (e.g., gpt-4o-mini)"
+                  value={selectedAssistantModelId}
+                  onChange={(event) =>
+                    setSelectedAssistantModelId(event.target.value)
+                  }
+                />
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <FormLabel className="text-xs text-muted-foreground">
+                Auth mode
               </FormLabel>
               <Select
-                value={resolvedProviderOauthMethodId ?? ''}
+                value={selectedAssistantAuthMode}
                 onValueChange={(value) => {
-                  setSelectedProviderOauthMethodId(value);
+                  setSelectedAssistantAuthMode(value as AssistantAuthMode);
                   setProviderCredentialSavedAt(null);
                   setAuthSessionToken('');
                   setAuthSessionExpiresAt(null);
@@ -1322,188 +1340,236 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                 }}
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose OAuth method" />
+                  <SelectValue placeholder="Choose auth mode" />
                 </SelectTrigger>
                 <SelectContent>
-                  {selectedProviderOauthMethods.map((method) => (
-                    <SelectItem key={method.id} value={method.id}>
-                      {method.label}
+                  {supportedAuthModes.map((authMode) => (
+                    <SelectItem key={authMode} value={authMode}>
+                      {authModeLabelById[authMode]}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-          )}
 
-        {selectedAssistantAuthMode === 'api-key' && (
-          <div className="space-y-1">
-            <FormLabel className="text-xs text-muted-foreground">API key</FormLabel>
-            <Input
-              type="password"
-              placeholder="sk-..."
-              value={providerApiKey}
-              onChange={(event) => setProviderApiKey(event.target.value)}
-            />
-          </div>
-        )}
+            {selectedAssistantAuthMode === 'oauth-access-token' &&
+              selectedProviderOauthMethods.length > 0 && (
+                <div className="space-y-1">
+                  <FormLabel className="text-xs text-muted-foreground">
+                    OAuth method
+                  </FormLabel>
+                  <Select
+                    value={resolvedProviderOauthMethodId ?? ''}
+                    onValueChange={(value) => {
+                      setSelectedProviderOauthMethodId(value);
+                      setProviderCredentialSavedAt(null);
+                      setAuthSessionToken('');
+                      setAuthSessionExpiresAt(null);
+                      setOauthFlowState('idle');
+                      setOauthFlowMessage('');
+                      setOauthAuthorizationUrl('');
+                      setOauthVerificationCode('');
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Choose OAuth method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {selectedProviderOauthMethods.map((method) => (
+                        <SelectItem key={method.id} value={method.id}>
+                          {method.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
 
-        {selectedAssistantAuthMode === 'oauth-access-token' && (
-          <div className="space-y-1">
-            <FormLabel className="text-xs text-muted-foreground">
-              OAuth access token
-            </FormLabel>
-            <Input
-              type="password"
-              placeholder="Bearer token"
-              value={providerOauthAccessToken}
-              onChange={(event) => setProviderOauthAccessToken(event.target.value)}
-            />
-          </div>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="px-0 text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => setShowAdvancedSettings((current) => !current)}
-        >
-          {showAdvancedSettings ? 'Hide advanced settings' : 'Show advanced settings'}
-        </Button>
-        {showAdvancedSettings && (
-          <div className="space-y-3 rounded-md border bg-muted/20 p-3">
-            <div className="space-y-1">
-              <FormLabel className="text-xs text-muted-foreground">
-                Base URL (optional override)
-              </FormLabel>
-              <Input
-                placeholder="https://api.openai.com/v1"
-                value={providerBaseUrl}
-                onChange={(event) => setProviderBaseUrl(event.target.value)}
-              />
-            </div>
-
-            {selectedAssistantProviderId === 'bedrock' && (
+            {selectedAssistantAuthMode === 'api-key' && (
               <div className="space-y-1">
                 <FormLabel className="text-xs text-muted-foreground">
-                  AWS region
+                  API key
                 </FormLabel>
                 <Input
-                  placeholder="us-east-1"
-                  value={providerRegion}
-                  onChange={(event) => setProviderRegion(event.target.value)}
+                  type="password"
+                  placeholder="sk-..."
+                  value={providerApiKey}
+                  onChange={(event) => setProviderApiKey(event.target.value)}
                 />
               </div>
             )}
 
-            {selectedAssistantProviderId === 'openai' && (
-              <>
-                <div className="space-y-1">
-                  <FormLabel className="text-xs text-muted-foreground">
-                    Organization (optional)
-                  </FormLabel>
-                  <Input
-                    placeholder="org_..."
-                    value={providerOrganization}
-                    onChange={(event) => setProviderOrganization(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <FormLabel className="text-xs text-muted-foreground">
-                    Project (optional)
-                  </FormLabel>
-                  <Input
-                    placeholder="proj_..."
-                    value={providerProject}
-                    onChange={(event) => setProviderProject(event.target.value)}
-                  />
-                </div>
-              </>
-            )}
-
-            {selectedAssistantProviderId === 'google' && (
+            {selectedAssistantAuthMode === 'oauth-access-token' && (
               <div className="space-y-1">
                 <FormLabel className="text-xs text-muted-foreground">
-                  Google project (optional)
+                  OAuth access token
                 </FormLabel>
                 <Input
-                  placeholder="my-google-project-id"
-                  value={providerProject}
-                  onChange={(event) => setProviderProject(event.target.value)}
+                  type="password"
+                  placeholder="Bearer token"
+                  value={providerOauthAccessToken}
+                  onChange={(event) =>
+                    setProviderOauthAccessToken(event.target.value)
+                  }
                 />
               </div>
             )}
           </div>
-        )}
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={saveProviderCredential}
-          disabled={isSavingProviderCredential}
-        >
-          {isSavingProviderCredential ? 'Saving...' : 'Save credential'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={refreshStoredProviderCredential}
-          disabled={isRefreshingProviderCredential}
-        >
-          {isRefreshingProviderCredential
-            ? 'Refreshing...'
-            : 'Refresh credential status'}
-        </Button>
-        {canStartProviderOauth && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={startProviderOauth}
-            disabled={isStartingProviderOauth}
-          >
-            {isStartingProviderOauth
-              ? 'Opening OAuth...'
-              : selectedProviderOauthButtonLabel}
-          </Button>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={createAuthSession}
-          disabled={isCreatingAuthSession}
-        >
-          {isCreatingAuthSession ? 'Creating session...' : 'Create auth session'}
-        </Button>
-        {authSessionToken && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={revokeAuthSession}
-            disabled={isRevokingAuthSession}
-          >
-            {isRevokingAuthSession ? 'Revoking...' : 'Revoke auth session'}
-          </Button>
-        )}
-        {providerCredentialSavedAt && (
-          <Badge variant="outline" className="text-xs">
-            Credential saved
-          </Badge>
-        )}
-        {authSessionToken && (
-          <Badge variant="secondary" className="text-xs">
-            Session token active
-          </Badge>
-        )}
-      </div>
+          <div className="space-y-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="px-0 text-xs text-muted-foreground hover:text-foreground"
+              onClick={() => setShowAdvancedSettings((current) => !current)}
+            >
+              {showAdvancedSettings
+                ? 'Hide advanced settings'
+                : 'Show advanced settings'}
+            </Button>
+            {showAdvancedSettings && (
+              <div className="space-y-3 rounded-md border bg-muted/20 p-3">
+                <div className="space-y-1">
+                  <FormLabel className="text-xs text-muted-foreground">
+                    Base URL (optional override)
+                  </FormLabel>
+                  <Input
+                    placeholder="https://api.openai.com/v1"
+                    value={providerBaseUrl}
+                    onChange={(event) => setProviderBaseUrl(event.target.value)}
+                  />
+                </div>
+
+                {selectedAssistantProviderId === 'bedrock' && (
+                  <div className="space-y-1">
+                    <FormLabel className="text-xs text-muted-foreground">
+                      AWS region
+                    </FormLabel>
+                    <Input
+                      placeholder="us-east-1"
+                      value={providerRegion}
+                      onChange={(event) =>
+                        setProviderRegion(event.target.value)
+                      }
+                    />
+                  </div>
+                )}
+
+                {selectedAssistantProviderId === 'openai' && (
+                  <>
+                    <div className="space-y-1">
+                      <FormLabel className="text-xs text-muted-foreground">
+                        Organization (optional)
+                      </FormLabel>
+                      <Input
+                        placeholder="org_..."
+                        value={providerOrganization}
+                        onChange={(event) =>
+                          setProviderOrganization(event.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <FormLabel className="text-xs text-muted-foreground">
+                        Project (optional)
+                      </FormLabel>
+                      <Input
+                        placeholder="proj_..."
+                        value={providerProject}
+                        onChange={(event) =>
+                          setProviderProject(event.target.value)
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                {selectedAssistantProviderId === 'google' && (
+                  <div className="space-y-1">
+                    <FormLabel className="text-xs text-muted-foreground">
+                      Google project (optional)
+                    </FormLabel>
+                    <Input
+                      placeholder="my-google-project-id"
+                      value={providerProject}
+                      onChange={(event) =>
+                        setProviderProject(event.target.value)
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={saveProviderCredential}
+              disabled={isSavingProviderCredential}
+            >
+              {isSavingProviderCredential ? 'Saving...' : 'Save credential'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={refreshStoredProviderCredential}
+              disabled={isRefreshingProviderCredential}
+            >
+              {isRefreshingProviderCredential
+                ? 'Refreshing...'
+                : 'Refresh credential status'}
+            </Button>
+            {canStartProviderOauth && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={startProviderOauth}
+                disabled={isStartingProviderOauth}
+              >
+                {isStartingProviderOauth
+                  ? 'Opening OAuth...'
+                  : selectedProviderOauthButtonLabel}
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={createAuthSession}
+              disabled={isCreatingAuthSession}
+            >
+              {isCreatingAuthSession
+                ? 'Creating session...'
+                : 'Create auth session'}
+            </Button>
+            {authSessionToken && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={revokeAuthSession}
+                disabled={isRevokingAuthSession}
+              >
+                {isRevokingAuthSession ? 'Revoking...' : 'Revoke auth session'}
+              </Button>
+            )}
+            {providerCredentialSavedAt && (
+              <Badge variant="outline" className="text-xs">
+                Credential saved
+              </Badge>
+            )}
+            {authSessionToken && (
+              <Badge variant="secondary" className="text-xs">
+                Session token active
+              </Badge>
+            )}
+          </div>
 
           {authSessionToken && (
             <p className="text-[11px] text-muted-foreground break-all">
@@ -1524,7 +1590,9 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
             variant={oauthFlowState === 'connected' ? 'secondary' : 'outline'}
             className={cn(
               'w-fit',
-              oauthFlowState === 'error' ? 'border-red-500/50 text-red-600' : '',
+              oauthFlowState === 'error'
+                ? 'border-red-500/50 text-red-600'
+                : '',
             )}
           >
             {oauthFlowState === 'connected'
@@ -1552,11 +1620,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
 
           {oauthAuthorizationUrl && (
             <Button asChild size="sm" className="w-full">
-              <a
-                href={oauthAuthorizationUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
+              <a href={oauthAuthorizationUrl} target="_blank" rel="noreferrer">
                 Open Secure OAuth Page
               </a>
             </Button>
@@ -1577,7 +1641,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const [query, setQuery] = useState('');
   const releases = useMemo(
-    () => releaseRows as PluginReleaseDoc[],
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
   );
 
@@ -1624,8 +1688,12 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
           return aReleaseId.localeCompare(bReleaseId);
         });
 
-        const [selectedDetailsPluginId, setSelectedDetailsPluginId] = useState<string | null>(null);
-        const [chartType, setChartType] = useState<'top-installed' | 'recently-updated'>('top-installed');
+        const [selectedDetailsPluginId, setSelectedDetailsPluginId] = useState<
+          string | null
+        >(null);
+        const [chartType, setChartType] = useState<
+          'top-installed' | 'recently-updated'
+        >('top-installed');
         const [selectedCategory, setSelectedCategory] = useState('All');
 
         const catalog = useMemo(() => {
@@ -1649,12 +1717,18 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
           return marketplace.all.filter((plugin) => {
             const matchesQuery =
               normalized.length === 0 ||
-              [plugin.title, plugin.description, plugin.pluginId, plugin.category]
+              [
+                plugin.title,
+                plugin.description,
+                plugin.pluginId,
+                plugin.category,
+              ]
                 .join(' ')
                 .toLowerCase()
                 .includes(normalized);
             const matchesCategory =
-              selectedCategory === 'All' || plugin.category === selectedCategory;
+              selectedCategory === 'All' ||
+              plugin.category === selectedCategory;
             return matchesQuery && matchesCategory;
           });
         }, [marketplace, query, selectedCategory]);
@@ -1665,14 +1739,26 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
             : marketplace.topInstalled;
         const recommendedPlugins = marketplace.topInstalled.slice(0, 6);
 
-        const selectedPlugin = useMemo(() => 
-          selectedDetailsPluginId ? marketplace.all.find(p => p.pluginId === selectedDetailsPluginId) : null
-        , [selectedDetailsPluginId, marketplace.all]);
+        const selectedPlugin = useMemo(
+          () =>
+            selectedDetailsPluginId
+              ? marketplace.all.find(
+                  (p) => p.pluginId === selectedDetailsPluginId,
+                )
+              : null,
+          [selectedDetailsPluginId, marketplace.all],
+        );
 
-        const selectedPluginDetails = useMemo(() => 
-          selectedPlugin ? (buildPluginDetailView(selectedPlugin, { reviews: [], userId: 'anon' }) as unknown as PluginDetailView) : null
-        , [selectedPlugin]);
-
+        const selectedPluginDetails = useMemo(
+          () =>
+            selectedPlugin
+              ? (buildPluginDetailView(selectedPlugin, {
+                  reviews: [],
+                  userId: 'anon',
+                }) as unknown as PluginDetailView)
+              : null,
+          [selectedPlugin],
+        );
 
         const handleToggleSelection = (releaseId: string) => {
           if (selectedReleaseIdSet.has(releaseId)) {
@@ -1710,14 +1796,20 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                       details={selectedPluginDetails!}
                       businessName="new-business"
                       onInstall={() => {
-                        const releaseId = toReleaseId(selectedPlugin!.pluginId, selectedPlugin!.latestRelease.version);
+                        const releaseId = toReleaseId(
+                          selectedPlugin!.pluginId,
+                          selectedPlugin!.latestRelease.version,
+                        );
                         if (!selectedReleaseIdSet.has(releaseId)) {
                           handleToggleSelection(releaseId);
                         }
                         setSelectedDetailsPluginId(null);
                       }}
                       onUninstall={() => {
-                        const releaseId = toReleaseId(selectedPlugin!.pluginId, selectedPlugin!.latestRelease.version);
+                        const releaseId = toReleaseId(
+                          selectedPlugin!.pluginId,
+                          selectedPlugin!.latestRelease.version,
+                        );
                         if (selectedReleaseIdSet.has(releaseId)) {
                           handleToggleSelection(releaseId);
                         }
@@ -1735,7 +1827,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
             </AnimatePresence>
             <div className="grid gap-6 lg:grid-cols-2">
               {/* Column 1: AI Chat Assistant */}
-              <div className="flex flex-col h-full">               
+              <div className="flex flex-col h-full">
                 <div className="flex-1 min-h-[500px]">
                   <VercelV0Chat />
                 </div>
@@ -1744,7 +1836,9 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
               {/* Column 2: Plugin Browser */}
               <div className="space-y-6 rounded-3xl border bg-background/40 p-5 sm:p-7 shadow-xl backdrop-blur-sm">
                 <div className="space-y-2">
-                  <h3 className="text-lg font-semibold tracking-tight">Plugin Browser</h3>
+                  <h3 className="text-lg font-semibold tracking-tight">
+                    Plugin Browser
+                  </h3>
                   <p className="text-xs text-muted-foreground leading-relaxed">
                     Browse and choose plugins before launch.
                   </p>
@@ -1759,7 +1853,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                     className="h-11 rounded-2xl border-primary/20 bg-background/50 pl-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 transition-all"
                   />
                   {query && (
-                    <button 
+                    <button
                       onClick={() => setQuery('')}
                       className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     >
@@ -1776,10 +1870,10 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                       type="button"
                       onClick={() => setSelectedCategory(category)}
                       className={cn(
-                        "rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200",
+                        'rounded-full px-4 py-1.5 text-xs font-medium transition-all duration-200',
                         selectedCategory === category
-                          ? "bg-primary text-black shadow-lg shadow-primary/20 scale-105"
-                          : "bg-muted/50 text-muted-foreground border border-border hover:bg-muted"
+                          ? 'bg-primary text-black shadow-lg shadow-primary/20 scale-105'
+                          : 'bg-muted/50 text-muted-foreground border border-border hover:bg-muted',
                       )}
                     >
                       {category}
@@ -1809,7 +1903,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                 </div>
                               </div>
                             </div>
-                            
+
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {recommendedPlugins.slice(0, 4).map((plugin) => (
                                 <div
@@ -1818,39 +1912,72 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                 >
                                   <button
                                     type="button"
-                                    onClick={() => setSelectedDetailsPluginId(plugin.pluginId)}
+                                    onClick={() =>
+                                      setSelectedDetailsPluginId(
+                                        plugin.pluginId,
+                                      )
+                                    }
                                     className="flex min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none"
                                   >
                                     <div className="relative size-12 shrink-0 overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-all group-hover:scale-105">
-                                      <PluginIcon plugin={plugin} compact staticPreview />
+                                      <PluginIcon
+                                        plugin={plugin}
+                                        compact
+                                        staticPreview
+                                      />
                                       <div className="absolute right-0.5 top-0.5 rounded-full bg-primary p-0.5 shadow-sm">
                                         <Bot className="h-2 w-2 text-black" />
                                       </div>
                                     </div>
                                     <div className="min-w-0">
-                                      <p className="truncate text-xs font-semibold text-foreground/90">{plugin.title}</p>
-                                      <p className="truncate text-[9px] text-muted-foreground/80">{plugin.category}</p>
+                                      <p className="truncate text-xs font-semibold text-foreground/90">
+                                        {plugin.title}
+                                      </p>
+                                      <p className="truncate text-[9px] text-muted-foreground/80">
+                                        {plugin.category}
+                                      </p>
                                     </div>
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => {
-                                      const releaseId = toReleaseId(plugin.pluginId, plugin.latestRelease.version);
-                                      const isSelected = selectedReleaseIdSet.has(releaseId);
+                                      const releaseId = toReleaseId(
+                                        plugin.pluginId,
+                                        plugin.latestRelease.version,
+                                      );
+                                      const isSelected =
+                                        selectedReleaseIdSet.has(releaseId);
                                       if (isSelected) {
-                                        field.onChange(selectedReleaseIds.filter(id => id !== releaseId));
+                                        field.onChange(
+                                          selectedReleaseIds.filter(
+                                            (id) => id !== releaseId,
+                                          ),
+                                        );
                                       } else {
-                                        field.onChange([...selectedReleaseIds, releaseId]);
+                                        field.onChange([
+                                          ...selectedReleaseIds,
+                                          releaseId,
+                                        ]);
                                       }
                                     }}
                                     className={cn(
-                                      "shrink-0 rounded-lg p-1.5 transition-all",
-                                      selectedReleaseIdSet.has(toReleaseId(plugin.pluginId, plugin.latestRelease.version))
-                                        ? "bg-primary/20 text-primary"
-                                        : "bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                                      'shrink-0 rounded-lg p-1.5 transition-all',
+                                      selectedReleaseIdSet.has(
+                                        toReleaseId(
+                                          plugin.pluginId,
+                                          plugin.latestRelease.version,
+                                        ),
+                                      )
+                                        ? 'bg-primary/20 text-primary'
+                                        : 'bg-muted/50 text-muted-foreground hover:bg-primary/10 hover:text-primary',
                                     )}
                                   >
-                                    {selectedReleaseIdSet.has(toReleaseId(plugin.pluginId, plugin.latestRelease.version)) ? (
+                                    {selectedReleaseIdSet.has(
+                                      toReleaseId(
+                                        plugin.pluginId,
+                                        plugin.latestRelease.version,
+                                      ),
+                                    ) ? (
                                       <Check className="h-3.5 w-3.5" />
                                     ) : (
                                       <Plus className="h-3.5 w-3.5" />
@@ -1865,62 +1992,97 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                         {/* Top Charts section in Onboarding */}
                         <section>
                           <div className="mb-4 flex items-center justify-between">
-                            <h4 className="text-base font-semibold tracking-tight">Top Charts</h4>
+                            <h4 className="text-base font-semibold tracking-tight">
+                              Top Charts
+                            </h4>
                             <div className="flex gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
-                              {(['top-installed', 'recently-updated'] as const).map((type) => (
+                              {(
+                                ['top-installed', 'recently-updated'] as const
+                              ).map((type) => (
                                 <button
                                   key={type}
                                   type="button"
                                   onClick={() => setChartType(type)}
                                   className={cn(
-                                    "rounded-full px-3 py-1 text-[10px] font-bold transition-all whitespace-nowrap",
+                                    'rounded-full px-3 py-1 text-[10px] font-bold transition-all whitespace-nowrap',
                                     chartType === type
-                                      ? "bg-background text-primary shadow-sm"
-                                      : "text-muted-foreground hover:text-foreground"
+                                      ? 'bg-background text-primary shadow-sm'
+                                      : 'text-muted-foreground hover:text-foreground',
                                   )}
                                 >
-                                  {type === 'top-installed' ? 'Top Free' : 'Recent'}
+                                  {type === 'top-installed'
+                                    ? 'Top Free'
+                                    : 'Recent'}
                                 </button>
                               ))}
                             </div>
                           </div>
                           <div className="space-y-4">
                             {topCharts.slice(0, 5).map((plugin, index) => {
-                               const releaseId = toReleaseId(plugin.pluginId, plugin.latestRelease.version);
-                               const isSelected = selectedReleaseIdSet.has(releaseId);
-                               return (
+                              const releaseId = toReleaseId(
+                                plugin.pluginId,
+                                plugin.latestRelease.version,
+                              );
+                              const isSelected =
+                                selectedReleaseIdSet.has(releaseId);
+                              return (
                                 <div
                                   key={plugin.pluginId}
                                   className="group flex items-center gap-3 py-1 transition-all"
                                 >
-                                  <span className="w-4 text-xs font-semibold text-muted-foreground/60">{index + 1}</span>
+                                  <span className="w-4 text-xs font-semibold text-muted-foreground/60">
+                                    {index + 1}
+                                  </span>
                                   <button
                                     type="button"
-                                    onClick={() => setSelectedDetailsPluginId(plugin.pluginId)}
+                                    onClick={() =>
+                                      setSelectedDetailsPluginId(
+                                        plugin.pluginId,
+                                      )
+                                    }
                                     className="flex flex-1 items-center gap-3 text-left focus-visible:outline-none"
                                   >
                                     <div className="size-13 shrink-0 overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all group-hover:shadow-md group-hover:scale-[1.02]">
-                                      <PluginIcon plugin={plugin} compact staticPreview />
+                                      <PluginIcon
+                                        plugin={plugin}
+                                        compact
+                                        staticPreview
+                                      />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                      <p className="truncate text-sm font-semibold text-foreground/90">{plugin.title}</p>
-                                      <p className="truncate text-[10px] text-muted-foreground">{plugin.category}</p>
+                                      <p className="truncate text-sm font-semibold text-foreground/90">
+                                        {plugin.title}
+                                      </p>
+                                      <p className="truncate text-[10px] text-muted-foreground">
+                                        {plugin.category}
+                                      </p>
                                       <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-0.5">
-                                        <span className="text-yellow-500/80">★ 4.8</span>
+                                        <span className="text-yellow-500/80">
+                                          ★ 4.8
+                                        </span>
                                         <span>•</span>
-                                        <span>{plugin.installs.toLocaleString()} installs</span>
+                                        <span>
+                                          {plugin.installs.toLocaleString()}{' '}
+                                          installs
+                                        </span>
                                       </div>
                                     </div>
                                   </button>
                                   <Button
                                     type="button"
                                     size="sm"
-                                    variant={isSelected ? "secondary" : "outline"}
+                                    variant={
+                                      isSelected ? 'secondary' : 'outline'
+                                    }
                                     className={cn(
-                                      "h-8 rounded-full text-[10px] font-bold px-4",
-                                      isSelected ? "bg-primary/20 text-primary border-primary/30" : "hover:border-primary/50 hover:bg-primary/5"
+                                      'h-8 rounded-full text-[10px] font-bold px-4',
+                                      isSelected
+                                        ? 'bg-primary/20 text-primary border-primary/30'
+                                        : 'hover:border-primary/50 hover:bg-primary/5',
                                     )}
-                                    onClick={() => handleToggleSelection(releaseId)}
+                                    onClick={() =>
+                                      handleToggleSelection(releaseId)
+                                    }
                                   >
                                     {isSelected ? 'SELECTED' : 'SELECT'}
                                   </Button>
@@ -1932,47 +2094,77 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
 
                         {/* Category specific sections */}
                         {marketplace.categories.slice(0, 3).map((category) => {
-                          const items = marketplace.all.filter((p) => p.category === category);
+                          const items = marketplace.all.filter(
+                            (p) => p.category === category,
+                          );
                           if (items.length === 0) return null;
                           return (
                             <section key={category}>
                               <div className="mb-4 flex items-center justify-between">
-                                <h4 className="text-base font-semibold tracking-tight">{category}</h4>
-                                <button type="button" className="text-[10px] font-bold text-primary hover:underline">BROWSE ALL</button>
+                                <h4 className="text-base font-semibold tracking-tight">
+                                  {category}
+                                </h4>
+                                <button
+                                  type="button"
+                                  className="text-[10px] font-bold text-primary hover:underline"
+                                >
+                                  BROWSE ALL
+                                </button>
                               </div>
                               <div className="hide-scrollbar flex gap-4 overflow-x-auto pb-4 -mx-1 px-1">
                                 {items.slice(0, 6).map((plugin) => {
-                                  const releaseId = toReleaseId(plugin.pluginId, plugin.latestRelease.version);
-                                  const isSelected = selectedReleaseIdSet.has(releaseId);
+                                  const releaseId = toReleaseId(
+                                    plugin.pluginId,
+                                    plugin.latestRelease.version,
+                                  );
+                                  const isSelected =
+                                    selectedReleaseIdSet.has(releaseId);
                                   return (
                                     <div
                                       key={plugin.pluginId}
                                       className="w-28 shrink-0 space-y-2 group"
                                     >
                                       <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1">
-                                        <button 
+                                        <button
                                           type="button"
                                           className="w-full h-full"
-                                          onClick={() => setSelectedDetailsPluginId(plugin.pluginId)}
+                                          onClick={() =>
+                                            setSelectedDetailsPluginId(
+                                              plugin.pluginId,
+                                            )
+                                          }
                                         >
-                                          <PluginIcon plugin={plugin} staticPreview />
+                                          <PluginIcon
+                                            plugin={plugin}
+                                            staticPreview
+                                          />
                                         </button>
                                         <button
                                           type="button"
-                                          onClick={() => handleToggleSelection(releaseId)}
+                                          onClick={() =>
+                                            handleToggleSelection(releaseId)
+                                          }
                                           className={cn(
-                                            "absolute bottom-2 right-2 size-7 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95",
-                                            isSelected 
-                                              ? "bg-primary text-black" 
-                                              : "bg-background/80 backdrop-blur-sm text-foreground hover:bg-primary hover:text-black border border-border"
+                                            'absolute bottom-2 right-2 size-7 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95',
+                                            isSelected
+                                              ? 'bg-primary text-black'
+                                              : 'bg-background/80 backdrop-blur-sm text-foreground hover:bg-primary hover:text-black border border-border',
                                           )}
                                         >
-                                          {isSelected ? <Check className="size-4" /> : <Plus className="size-4" />}
+                                          {isSelected ? (
+                                            <Check className="size-4" />
+                                          ) : (
+                                            <Plus className="size-4" />
+                                          )}
                                         </button>
                                       </div>
                                       <div className="space-y-0.5">
-                                        <p className="truncate text-xs font-semibold leading-tight">{plugin.title}</p>
-                                        <p className="truncate text-[10px] text-muted-foreground/80">{plugin.publisher}</p>
+                                        <p className="truncate text-xs font-semibold leading-tight">
+                                          {plugin.title}
+                                        </p>
+                                        <p className="truncate text-[10px] text-muted-foreground/80">
+                                          {plugin.publisher}
+                                        </p>
                                       </div>
                                     </div>
                                   );
@@ -1986,41 +2178,62 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                       /* Search Results Grid */
                       <div className="grid grid-cols-2 gap-x-4 gap-y-7 sm:grid-cols-3">
                         {visibleItems.map((plugin) => {
-                          const releaseId = toReleaseId(plugin.pluginId, plugin.latestRelease.version);
-                          const isSelected = selectedReleaseIdSet.has(releaseId);
+                          const releaseId = toReleaseId(
+                            plugin.pluginId,
+                            plugin.latestRelease.version,
+                          );
+                          const isSelected =
+                            selectedReleaseIdSet.has(releaseId);
                           return (
-                            <div key={plugin.pluginId} className="group space-y-2">
+                            <div
+                              key={plugin.pluginId}
+                              className="group space-y-2"
+                            >
                               <div className="relative aspect-square w-full overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1">
-                                <button 
+                                <button
                                   type="button"
                                   className="w-full h-full"
-                                  onClick={() => setSelectedDetailsPluginId(plugin.pluginId)}
+                                  onClick={() =>
+                                    setSelectedDetailsPluginId(plugin.pluginId)
+                                  }
                                 >
                                   <PluginIcon plugin={plugin} staticPreview />
                                 </button>
                                 <button
                                   type="button"
-                                  onClick={() => handleToggleSelection(releaseId)}
+                                  onClick={() =>
+                                    handleToggleSelection(releaseId)
+                                  }
                                   className={cn(
-                                    "absolute bottom-2 right-2 size-7 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95",
-                                    isSelected 
-                                      ? "bg-primary text-black" 
-                                      : "bg-background/80 backdrop-blur-sm text-foreground hover:bg-primary hover:text-black border border-border"
+                                    'absolute bottom-2 right-2 size-7 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95',
+                                    isSelected
+                                      ? 'bg-primary text-black'
+                                      : 'bg-background/80 backdrop-blur-sm text-foreground hover:bg-primary hover:text-black border border-border',
                                   )}
                                 >
-                                  {isSelected ? <Check className="size-4" /> : <Plus className="size-4" />}
+                                  {isSelected ? (
+                                    <Check className="size-4" />
+                                  ) : (
+                                    <Plus className="size-4" />
+                                  )}
                                 </button>
                               </div>
                               <div className="space-y-0.5 px-1">
-                                <p className="truncate text-xs font-semibold leading-tight">{plugin.title}</p>
-                                <p className="truncate text-[10px] text-muted-foreground/80">{plugin.publisher}</p>
+                                <p className="truncate text-xs font-semibold leading-tight">
+                                  {plugin.title}
+                                </p>
+                                <p className="truncate text-[10px] text-muted-foreground/80">
+                                  {plugin.publisher}
+                                </p>
                               </div>
                             </div>
                           );
                         })}
                         {visibleItems.length === 0 && (
                           <div className="col-span-full py-20 text-center">
-                            <p className="text-sm text-muted-foreground">No plugins found for your search.</p>
+                            <p className="text-sm text-muted-foreground">
+                              No plugins found for your search.
+                            </p>
                           </div>
                         )}
                       </div>
@@ -2029,18 +2242,25 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                 </ScrollArea>
 
                 {/* Selected for installation Summary Bar */}
-                <div className={cn(
-                  "rounded-2xl border p-4 transition-all",
-                  selectedReleaseIds.length > 0 
-                    ? "border-primary/30 bg-primary/5 ring-1 ring-primary/20" 
-                    : "border-dashed border-border bg-muted/10 opacity-70"
-                )}>
+                <div
+                  className={cn(
+                    'rounded-2xl border p-4 transition-all',
+                    selectedReleaseIds.length > 0
+                      ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/20'
+                      : 'border-dashed border-border bg-muted/10 opacity-70',
+                  )}
+                >
                   <div className="flex items-center justify-between mb-2">
                     <p className="text-xs font-bold uppercase tracking-wider text-foreground/80">
                       Installation Queue ({selectedReleaseIds.length})
                     </p>
                     {selectedReleaseIds.length > 0 && (
-                      <Badge variant="outline" className="text-[10px] font-bold border-primary text-primary px-2">READY</Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] font-bold border-primary text-primary px-2"
+                      >
+                        READY
+                      </Badge>
                     )}
                   </div>
                   {selectedReleaseIds.length === 0 ? (

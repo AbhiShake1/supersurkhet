@@ -22,6 +22,6 @@ describe('business creation plugin catalog data source', () => {
     expect(content).not.toContain('buildPluginCatalog({');
     expect(content).not.toContain('filterBusinessOnboardingCatalog');
     expect(content).not.toContain('getRecommendedSeedReleaseIds');
-    expect(content).not.toContain('mergeMarketplaceReleasesWithSeed');
+    expect(content).toContain('mergeMarketplaceReleasesWithSeed');
   });
 });

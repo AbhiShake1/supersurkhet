@@ -694,7 +694,22 @@ export async function installPluginRelease({ data }: { data: unknown }) {
 
   // Verify the release exists before attempting installation
   const releaseId = toReleaseId(parsedInput.pluginId, parsedInput.version);
-  const release = store.getRelease(releaseId);
+  let release = store.getRelease(releaseId);
+
+  if (!release) {
+    const seedRelease = toMarketplaceSeedReleaseDocs().find(
+      (candidate) => candidate.id === releaseId,
+    );
+    if (seedRelease) {
+      store.putRelease(seedRelease);
+      await upsertGlobalRow({
+        key: 'pluginRelease',
+        id: seedRelease.id,
+        row: seedRelease,
+      });
+      release = seedRelease;
+    }
+  }
 
   if (!release) {
     // Log available releases for debugging
@@ -750,6 +765,28 @@ export async function syncBusinessPluginInstalls({ data }: { data: unknown }) {
 
   for (const install of parsedInput.installs) {
     desiredInstalls.set(install.pluginId, install);
+  }
+
+  const missingReleaseIds = [...desiredInstalls.values()]
+    .map((install) => toReleaseId(install.pluginId, install.version))
+    .filter((releaseId) => !store.getRelease(releaseId));
+
+  if (missingReleaseIds.length > 0) {
+    const seedDocsById = new Map(
+      toMarketplaceSeedReleaseDocs().map((release) => [release.id, release]),
+    );
+    const hydrateableSeedReleases = missingReleaseIds
+      .map((releaseId) => seedDocsById.get(releaseId))
+      .filter((release): release is PluginReleaseDoc => Boolean(release));
+
+    for (const seedRelease of hydrateableSeedReleases) {
+      store.putRelease(seedRelease);
+      await upsertGlobalRow({
+        key: 'pluginRelease',
+        id: seedRelease.id,
+        row: seedRelease,
+      });
+    }
   }
 
   const installsToPersist: BusinessPluginInstallDoc[] = [];

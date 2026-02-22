@@ -10,8 +10,9 @@ describe('create-business plugin installation flow', () => {
 
     expect(source).not.toContain('ensureMarketplaceSeedReleases');
     expect(source).toContain('api.pluginRelease.useGet');
-    expect(source).toContain('releaseRows as PluginReleaseDoc[]');
-    expect(source).not.toContain('mergeMarketplaceReleasesWithSeed');
+    expect(source).toContain(
+      'mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[])',
+    );
     expect(source).toContain('selectedPluginReleaseIds');
     expect(source).toContain('syncBusinessPluginInstalls');
   });

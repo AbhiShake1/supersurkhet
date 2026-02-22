@@ -38,7 +38,7 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
   const resolveRef = useRef<((user: User | undefined) => void) | null>(null);
   const rejectRef = useRef<((error: Error) => void) | null>(null);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const isDismissibleRef = useRef(true);
   const showBackgroundContentRef = useRef(true);
   const setIsOpen = useCallback((open: boolean, { force = false } = {}) => {
@@ -55,6 +55,7 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
       dismissible?: boolean;
       showBackgroundContent?: boolean;
     } = {}) => {
+      if (isLoading) return Promise.resolve(undefined);
       if (isAuthenticated) return Promise.resolve(user);
       isDismissibleRef.current = dismissible;
       showBackgroundContentRef.current = showBackgroundContent;
@@ -65,7 +66,7 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
         rejectRef.current = reject;
       });
     },
-    [user, isAuthenticated, setIsOpen],
+    [user, isAuthenticated, setIsOpen, isLoading],
   );
 
   const handleAuthSuccess = useCallback(
@@ -145,7 +146,7 @@ export const useLoginPrompt = (): LoginPromptContextType => {
   if (!context) {
     console.error('useLoginPrompt must be used within a LoginPromptProvider');
     return {
-      closeLoginPrompt: () => {},
+      closeLoginPrompt: () => { },
       promptLogin: async () => {
         return undefined;
       },
