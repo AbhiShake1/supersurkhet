@@ -2759,7 +2759,6 @@ function PluginStudioPresenter({
     },
     [
       activeDraft,
-      defaultPluginTitle,
       isActorIdentityReady,
       pluginId,
       refetchDrafts,
@@ -3459,8 +3458,6 @@ function PluginStudioPresenter({
     parsed?.adminTabs,
     parsed?.schemaDocs,
     pluginId,
-    schemaBuilder.derivedFields,
-    schemaBuilder.fields,
   ]);
   const workspaceCompileDiagnostics = useMemo<CompileVerifyDiagnostic[]>(() => {
     const diagnostics: CompileVerifyDiagnostic[] = [];

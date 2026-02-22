@@ -151,7 +151,16 @@ function PluginStudioProjectsRoute() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
-  const [layout, setLayout] = useState<ProjectLayout>('grid');
+  const [layout, setLayout] = useState<ProjectLayout>(() => {
+    if (typeof window === 'undefined') return 'grid';
+    const persistedLayout = window.localStorage.getItem(
+      PROJECT_LAYOUT_STORAGE_KEY,
+    );
+    if (persistedLayout === 'grid' || persistedLayout === 'list') {
+      return persistedLayout;
+    }
+    return 'grid';
+  });
 
   const actorUserIdAliases = useMemo(
     () => buildActorUserIdAliases(user),
@@ -240,15 +249,6 @@ function PluginStudioProjectsRoute() {
       }))
       .sort((left, right) => left.title.localeCompare(right.title));
   }, [accessibleProjectIdSet, drafts]);
-
-  useEffect(() => {
-    const persistedLayout = window.localStorage.getItem(
-      PROJECT_LAYOUT_STORAGE_KEY,
-    );
-    if (persistedLayout === 'grid' || persistedLayout === 'list') {
-      setLayout(persistedLayout);
-    }
-  }, []);
 
   useEffect(() => {
     window.localStorage.setItem(PROJECT_LAYOUT_STORAGE_KEY, layout);

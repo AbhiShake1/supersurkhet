@@ -1,15 +1,15 @@
-import { useEffect } from 'react';
-import { useForm, FormProvider, type DefaultValues } from 'react-hook-form';
 import {
-  parseSchema,
   getDefaultValues,
-  removeEmptyValues,
-  type ParsedSchema,
   type ParsedField,
+  type ParsedSchema,
+  parseSchema,
+  removeEmptyValues,
 } from '@autoform/core';
-import type { AutoFormProps } from './types';
-import { AutoFormProvider } from './context';
+import { useCallback, useEffect, useMemo } from 'react';
+import { type DefaultValues, FormProvider, useForm } from 'react-hook-form';
 import { AutoFormField } from './AutoFormField';
+import { AutoFormProvider } from './context';
+import type { AutoFormProps } from './types';
 
 const FIELDS_TO_OMIT = ['_', 'created_by', 'timestamp'];
 
@@ -59,12 +59,20 @@ export function AutoForm<T extends Record<string, any>>({
   onFormInit = () => {},
   formProps = {},
 }: AutoFormProps<T>) {
-  const parsedSchema = omitDefaultFields(parseSchema(schema));
+  const parsedSchema = useMemo(
+    () => omitDefaultFields(parseSchema(schema)),
+    [schema],
+  );
+  const mergedDefaultValues = useMemo(
+    () =>
+      ({
+        ...(getDefaultValues(schema) as Partial<T>),
+        ...defaultValues,
+      }) as DefaultValues<T>,
+    [schema, defaultValues],
+  );
   const methods = useForm<T>({
-    defaultValues: {
-      ...(getDefaultValues(schema) as Partial<T>),
-      ...defaultValues,
-    } as DefaultValues<T>,
+    defaultValues: mergedDefaultValues,
     values: values as T,
   });
 
@@ -74,41 +82,43 @@ export function AutoForm<T extends Record<string, any>>({
     }
   }, [onFormInit, methods]);
 
-  const handleSubmit = async (dataRaw: T) => {
-    const data = removeEmptyValues(dataRaw);
-    const validationResult = schema.validateSchema(data as T);
-    console.log('validationResult', { validationResult, dataRaw, data });
-    if (validationResult.success) {
-      await onSubmit(validationResult.data, methods);
-    } else {
-      methods.clearErrors();
-      let isFocused: boolean = false;
-      validationResult.errors?.forEach((error) => {
-        const path = error.path.join('.');
-        methods.setError(
-          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-          path as any,
-          {
-            type: 'custom',
-            message: error.message,
-          },
-          { shouldFocus: !isFocused },
-        );
+  const handleSubmit = useCallback(
+    async (dataRaw: T) => {
+      const data = removeEmptyValues(dataRaw);
+      const validationResult = schema.validateSchema(data as T);
+      if (validationResult.success) {
+        await onSubmit(validationResult.data, methods);
+      } else {
+        methods.clearErrors();
+        let isFocused: boolean = false;
+        validationResult.errors?.forEach((error) => {
+          const path = error.path.join('.');
+          methods.setError(
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+            path as any,
+            {
+              type: 'custom',
+              message: error.message,
+            },
+            { shouldFocus: !isFocused },
+          );
 
-        isFocused = true;
+          isFocused = true;
 
-        // For some custom errors, zod adds the final element twice for some reason
-        const correctedPath = error.path?.slice?.(0, -1);
-        if (correctedPath?.length > 0) {
-          // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-          methods.setError(correctedPath.join('.') as any, {
-            type: 'custom',
-            message: error.message,
-          });
-        }
-      });
-    }
-  };
+          // For some custom errors, zod adds the final element twice for some reason
+          const correctedPath = error.path?.slice?.(0, -1);
+          if (correctedPath?.length > 0) {
+            // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
+            methods.setError(correctedPath.join('.') as any, {
+              type: 'custom',
+              message: error.message,
+            });
+          }
+        });
+      }
+    },
+    [methods, onSubmit, schema],
+  );
 
   return (
     <FormProvider {...methods}>
