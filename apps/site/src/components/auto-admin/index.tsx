@@ -168,27 +168,37 @@ function resolveTabMetadata(tab: AutoAdminTabInput): PossibleTabConfig {
   if (!('schema' in tab)) {
     return {
       ...tab,
-      title: tab.title ?? 'Untitled',
+      title: normalizeTabTitle(tab.title),
     };
   }
 
   const schemaMeta = appSchema[tab.schema];
   return {
     ...tab,
-    title: tab.title ?? schemaMeta?.title ?? toTitleCase(tab.schema),
+    title: normalizeTabTitle(tab.title ?? schemaMeta?.title ?? toTitleCase(tab.schema)),
     group: tab.group ?? schemaMeta?.group,
     icon: 'icon' in tab && tab.icon ? tab.icon : schemaMeta?.icon,
   };
 }
 
+function normalizeTabTitle(title: unknown): string {
+  if (typeof title !== 'string') {
+    return 'Untitled';
+  }
+  const normalized = title.trim();
+  return normalized || 'Untitled';
+}
+
 function dedupeTabsByTitle(tabs: PossibleTabConfig[]): PossibleTabConfig[] {
   const seenTitles = new Set<string>();
-  return tabs.filter((tab) => {
-    const key = tab.title.trim();
-    if (seenTitles.has(key)) return false;
+  return tabs.reduce<PossibleTabConfig[]>((acc, tab) => {
+    const title = normalizeTabTitle(tab.title);
+    const key = title;
+    if (seenTitles.has(key)) return acc;
     seenTitles.add(key);
-    return true;
-  });
+    acc.push({ ...tab, title });
+    return acc;
+  }, []);
 }
 
 export function AutoAdmin({

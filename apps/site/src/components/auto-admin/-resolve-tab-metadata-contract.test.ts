@@ -9,4 +9,9 @@ describe('auto-admin tab metadata resolver contract', () => {
     const content = fs.readFileSync(sourcePath, 'utf8');
     expect(content).toContain('group: tab.group ?? schemaMeta?.group,');
   });
+
+  it('normalizes tab titles before deduping to avoid runtime trim crashes', () => {
+    const content = fs.readFileSync(sourcePath, 'utf8');
+    expect(content).toContain('const title = normalizeTabTitle(tab.title);');
+  });
 });

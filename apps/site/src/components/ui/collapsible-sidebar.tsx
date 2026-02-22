@@ -9,8 +9,6 @@ import {
   CirclePlus,
   GripVertical,
   LogOut,
-  LucideBriefcaseBusiness,
-  Menu,
   PlugZapIcon,
   Search,
   Settings,
@@ -22,7 +20,6 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDialog } from '@/contexts/dialog-context';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useProfile } from '@/hooks/use-profile';
-import { appSchema } from '@/lib/schema';
 import {
   loadSidebarPreferences,
   saveSidebarPreferences,
@@ -41,6 +38,7 @@ import {
   AlertDialogTitle,
 } from './alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from './avatar';
+import { getTabIcon } from './collapsible-sidebar-icons';
 import { commitSidebarRename } from './collapsible-sidebar-rename';
 import {
   DropdownMenu,
@@ -58,20 +56,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from './popover';
-
-function isLucideIcon(value: unknown): value is LucideIcon {
-  return typeof value === 'function';
-}
-
-function getTabIcon(tab: PossibleTabConfig): LucideIcon {
-  if ('icon' in tab && tab.icon) return tab.icon;
-  if ('schema' in tab) {
-    const schemaIcon = appSchema[tab.schema].icon;
-    if (isLucideIcon(schemaIcon)) return schemaIcon;
-    return LucideBriefcaseBusiness;
-  }
-  return Menu;
-}
 
 const SECTION_TOGGLE_BUTTON_CLASS =
   'flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 active:bg-slate-200/60 dark:active:bg-slate-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset';
