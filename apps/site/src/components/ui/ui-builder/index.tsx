@@ -1,27 +1,34 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import LayersPanel from '@/components/ui/ui-builder/internal/layers-panel';
-import EditorPanel from '@/components/ui/ui-builder/internal/editor-panel';
-import PropsPanel from '@/components/ui/ui-builder/internal/props-panel';
-import { NavBar } from '@/components/ui/ui-builder/internal/components/nav';
+import isDeepEqual from 'fast-deep-equal';
 import { ThemeProvider } from 'next-themes';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import { Button } from '@/components/ui/button';
 import {
-  ResizablePanel,
   ResizableHandle,
+  ResizablePanel,
   ResizablePanelGroup,
 } from '@/components/ui/resizable';
-import { Button } from '@/components/ui/button';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import { useStore } from '@/hooks/use-store';
-import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { NavBar } from '@/components/ui/ui-builder/internal/components/nav';
+import { ConfigPanel } from '@/components/ui/ui-builder/internal/config-panel';
+import EditorPanel from '@/components/ui/ui-builder/internal/editor-panel';
+import LayersPanel from '@/components/ui/ui-builder/internal/layers-panel';
+import PropsPanel from '@/components/ui/ui-builder/internal/props-panel';
+import { TailwindThemePanel } from '@/components/ui/ui-builder/internal/tailwind-theme-panel';
 import type {
-  ComponentRegistry,
   ComponentLayer,
+  ComponentRegistry,
   LayerChangeHandler,
 } from '@/components/ui/ui-builder/types';
-import { TailwindThemePanel } from '@/components/ui/ui-builder/internal/tailwind-theme-panel';
-import { ConfigPanel } from '@/components/ui/ui-builder/internal/config-panel';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { useStore } from '@/hooks/use-store';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import { cn } from '@/lib/utils';
 
 /**
@@ -81,6 +88,7 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
 
   const [editorStoreInitialized, setEditorStoreInitialized] = useState(false);
   const [layerStoreInitialized, setLayerStoreInitialized] = useState(false);
+  const lastEmittedPagesRef = useRef<ComponentLayer[] | null>(null);
 
   const memoizedDefaultTabsContent = useMemo(
     () => defaultConfigTabsContent(),
@@ -144,6 +152,13 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   // Effect 3: Handle onChange callback when pages change
   useEffect(() => {
     if (onChange && layerStore?.pages && layerStoreInitialized) {
+      if (
+        lastEmittedPagesRef.current &&
+        isDeepEqual(lastEmittedPagesRef.current, layerStore.pages)
+      ) {
+        return;
+      }
+      lastEmittedPagesRef.current = layerStore.pages;
       onChange(layerStore.pages);
     }
   }, [layerStore?.pages, onChange, layerStoreInitialized]);

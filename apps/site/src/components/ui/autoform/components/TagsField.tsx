@@ -1,10 +1,10 @@
+import { X } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
-import { useState, useRef, useEffect } from 'react';
 
 export interface TagsFieldProps extends FieldWrapperProps {
   placeholder?: string;
@@ -24,15 +24,8 @@ export function TagsField({
   ...props
 }: TagsFieldProps) {
   const [inputValue, setInputValue] = useState('');
-  const [tags, setTags] = useState<string[]>(
-    Array.isArray(field.value) ? field.value : [],
-  );
+  const tags = Array.isArray(field.value) ? field.value : [];
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Update field value when tags change
-  useEffect(() => {
-    field.onChange(tags);
-  }, [tags, field]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(e.target.value);
@@ -55,13 +48,13 @@ export function TagsField({
       !tags.includes(trimmedValue) &&
       (!maxTags || tags.length < maxTags)
     ) {
-      setTags([...tags, trimmedValue]);
+      field.onChange([...tags, trimmedValue]);
       setInputValue('');
     }
   };
 
   const removeTag = (index: number) => {
-    setTags(tags.filter((_, i) => i !== index));
+    field.onChange(tags.filter((_, i) => i !== index));
   };
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -77,7 +70,7 @@ export function TagsField({
         ? maxTags - tags.length
         : Number.POSITIVE_INFINITY;
       const tagsToAdd = newTags.slice(0, availableSlots);
-      setTags([...tags, ...tagsToAdd]);
+      field.onChange([...tags, ...tagsToAdd]);
     }
   };
 

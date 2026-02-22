@@ -1,7 +1,5 @@
 import * as React from 'react';
 
-import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Dialog,
   DialogClose,
@@ -22,6 +20,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 interface BaseProps {
   children: React.ReactNode;
@@ -92,22 +92,28 @@ const CredenzaClose = ({ className, children, ...props }: CredenzaProps) => {
 const CredenzaContent = ({
   className,
   children,
+  hideClose,
   ...props
 }: CredenzaProps & { hideClose?: boolean }) => {
   const { isMobile } = useCredenzaContext();
-  const CredenzaContent = isMobile ? DrawerContent : DialogContent;
+  const mergedClassName = cn(
+    isMobile &&
+      'fixed inset-x-0 bottom-0 top-auto mt-auto rounded-t-xl border-t max-h-[90vh]',
+    className,
+  );
+
+  if (isMobile) {
+    return (
+      <DrawerContent className={mergedClassName} {...props}>
+        {children}
+      </DrawerContent>
+    );
+  }
 
   return (
-    <CredenzaContent
-      className={cn(
-        isMobile &&
-          'fixed inset-x-0 bottom-0 top-auto mt-auto rounded-t-xl border-t max-h-[90vh]',
-        className,
-      )}
-      {...props}
-    >
+    <DialogContent className={mergedClassName} hideClose={hideClose} {...props}>
       {children}
-    </CredenzaContent>
+    </DialogContent>
   );
 };
 

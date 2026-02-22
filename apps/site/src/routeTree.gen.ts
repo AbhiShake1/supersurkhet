@@ -12,18 +12,36 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as S3testRouteImport } from './routes/s3test'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as CreateBusinessRouteImport } from './routes/create-business'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as BusinessNameRouteImport } from './routes/$businessName'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PluginStudioIndexRouteImport } from './routes/plugin-studio/index'
 import { Route as AppsIndexRouteImport } from './routes/apps/index'
 import { Route as BusinessNameIndexRouteImport } from './routes/$businessName/index'
+import { Route as V1ModelsRouteImport } from './routes/v1/models'
+import { Route as ChatCompletionsRouteImport } from './routes/chat/completions'
 import { Route as BusinessChatRouteImport } from './routes/_business/chat'
 import { Route as AuthSettingsRouteImport } from './routes/_auth/settings'
 import { Route as AuthAuthRouteImport } from './routes/_auth/auth'
+import { Route as PluginStudioProjectIdIndexRouteImport } from './routes/plugin-studio/$projectId/index'
 import { Route as BusinessNameAdminIndexRouteImport } from './routes/$businessName/admin/index'
+import { Route as V1ChatCompletionsRouteImport } from './routes/v1/chat/completions'
+import { Route as V1AuthSessionsRouteImport } from './routes/v1/auth/sessions'
+import { Route as V1AuthProvidersRouteImport } from './routes/v1/auth/providers'
+import { Route as PluginStudioProjectIdPluginIdRouteImport } from './routes/plugin-studio/$projectId/$pluginId'
+import { Route as BusinessNameAdminPluginsRouteImport } from './routes/$businessName/admin/plugins'
 import { Route as BusinessNameAdminInvitationRouteImport } from './routes/$businessName/admin/invitation'
 import { Route as BusinessNameAdminEditorRouteImport } from './routes/$businessName/admin/editor'
+import { Route as V1IntegrationsGitRepositoriesRouteImport } from './routes/v1/integrations/git/repositories'
+import { Route as V1AuthProvidersMethodsRouteImport } from './routes/v1/auth/providers/methods'
+import { Route as BusinessNameAdminPluginPluginIdRouteImport } from './routes/$businessName/admin/plugin/$pluginId'
+import { Route as V1IntegrationsGitOauthStartRouteImport } from './routes/v1/integrations/git/oauth/start'
+import { Route as V1IntegrationsGitOauthCallbackRouteImport } from './routes/v1/integrations/git/oauth/callback'
+import { Route as V1AuthProvidersOauthCallbackRouteImport } from './routes/v1/auth/providers/oauth/callback'
+import { Route as V1AuthProvidersOauthAuthorizeRouteImport } from './routes/v1/auth/providers/oauth/authorize'
+import { Route as BusinessNameAdminPluginPluginIdSchemaIdRouteImport } from './routes/$businessName/admin/plugin/$pluginId/$schemaId'
 
 const S3testRoute = S3testRouteImport.update({
   id: '/s3test',
@@ -38,6 +56,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateBusinessRoute = CreateBusinessRouteImport.update({
+  id: '/create-business',
+  path: '/create-business',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -59,6 +82,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PluginStudioIndexRoute = PluginStudioIndexRouteImport.update({
+  id: '/plugin-studio/',
+  path: '/plugin-studio/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppsIndexRoute = AppsIndexRouteImport.update({
   id: '/apps/',
   path: '/apps/',
@@ -68,6 +96,16 @@ const BusinessNameIndexRoute = BusinessNameIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => BusinessNameRoute,
+} as any)
+const V1ModelsRoute = V1ModelsRouteImport.update({
+  id: '/v1/models',
+  path: '/v1/models',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChatCompletionsRoute = ChatCompletionsRouteImport.update({
+  id: '/chat/completions',
+  path: '/chat/completions',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const BusinessChatRoute = BusinessChatRouteImport.update({
   id: '/_business/chat',
@@ -84,11 +122,44 @@ const AuthAuthRoute = AuthAuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => AuthRoute,
 } as any)
+const PluginStudioProjectIdIndexRoute =
+  PluginStudioProjectIdIndexRouteImport.update({
+    id: '/plugin-studio/$projectId/',
+    path: '/plugin-studio/$projectId/',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const BusinessNameAdminIndexRoute = BusinessNameAdminIndexRouteImport.update({
   id: '/admin/',
   path: '/admin/',
   getParentRoute: () => BusinessNameRoute,
 } as any)
+const V1ChatCompletionsRoute = V1ChatCompletionsRouteImport.update({
+  id: '/v1/chat/completions',
+  path: '/v1/chat/completions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V1AuthSessionsRoute = V1AuthSessionsRouteImport.update({
+  id: '/v1/auth/sessions',
+  path: '/v1/auth/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V1AuthProvidersRoute = V1AuthProvidersRouteImport.update({
+  id: '/v1/auth/providers',
+  path: '/v1/auth/providers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PluginStudioProjectIdPluginIdRoute =
+  PluginStudioProjectIdPluginIdRouteImport.update({
+    id: '/plugin-studio/$projectId/$pluginId',
+    path: '/plugin-studio/$projectId/$pluginId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const BusinessNameAdminPluginsRoute =
+  BusinessNameAdminPluginsRouteImport.update({
+    id: '/admin/plugins',
+    path: '/admin/plugins',
+    getParentRoute: () => BusinessNameRoute,
+  } as any)
 const BusinessNameAdminInvitationRoute =
   BusinessNameAdminInvitationRouteImport.update({
     id: '/admin/invitation',
@@ -100,37 +171,120 @@ const BusinessNameAdminEditorRoute = BusinessNameAdminEditorRouteImport.update({
   path: '/admin/editor',
   getParentRoute: () => BusinessNameRoute,
 } as any)
+const V1IntegrationsGitRepositoriesRoute =
+  V1IntegrationsGitRepositoriesRouteImport.update({
+    id: '/v1/integrations/git/repositories',
+    path: '/v1/integrations/git/repositories',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const V1AuthProvidersMethodsRoute = V1AuthProvidersMethodsRouteImport.update({
+  id: '/methods',
+  path: '/methods',
+  getParentRoute: () => V1AuthProvidersRoute,
+} as any)
+const BusinessNameAdminPluginPluginIdRoute =
+  BusinessNameAdminPluginPluginIdRouteImport.update({
+    id: '/admin/plugin/$pluginId',
+    path: '/admin/plugin/$pluginId',
+    getParentRoute: () => BusinessNameRoute,
+  } as any)
+const V1IntegrationsGitOauthStartRoute =
+  V1IntegrationsGitOauthStartRouteImport.update({
+    id: '/v1/integrations/git/oauth/start',
+    path: '/v1/integrations/git/oauth/start',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const V1IntegrationsGitOauthCallbackRoute =
+  V1IntegrationsGitOauthCallbackRouteImport.update({
+    id: '/v1/integrations/git/oauth/callback',
+    path: '/v1/integrations/git/oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const V1AuthProvidersOauthCallbackRoute =
+  V1AuthProvidersOauthCallbackRouteImport.update({
+    id: '/oauth/callback',
+    path: '/oauth/callback',
+    getParentRoute: () => V1AuthProvidersRoute,
+  } as any)
+const V1AuthProvidersOauthAuthorizeRoute =
+  V1AuthProvidersOauthAuthorizeRouteImport.update({
+    id: '/oauth/authorize',
+    path: '/oauth/authorize',
+    getParentRoute: () => V1AuthProvidersRoute,
+  } as any)
+const BusinessNameAdminPluginPluginIdSchemaIdRoute =
+  BusinessNameAdminPluginPluginIdSchemaIdRouteImport.update({
+    id: '/$schemaId',
+    path: '/$schemaId',
+    getParentRoute: () => BusinessNameAdminPluginPluginIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$businessName': typeof BusinessNameRouteWithChildren
   '/admin': typeof AdminRoute
+  '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
+  '/chat/completions': typeof ChatCompletionsRoute
+  '/v1/models': typeof V1ModelsRoute
   '/$businessName/': typeof BusinessNameIndexRoute
   '/apps/': typeof AppsIndexRoute
+  '/plugin-studio/': typeof PluginStudioIndexRoute
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
+  '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
+  '/plugin-studio/$projectId/$pluginId': typeof PluginStudioProjectIdPluginIdRoute
+  '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
+  '/v1/auth/sessions': typeof V1AuthSessionsRoute
+  '/v1/chat/completions': typeof V1ChatCompletionsRoute
   '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
+  '/plugin-studio/$projectId/': typeof PluginStudioProjectIdIndexRoute
+  '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRouteWithChildren
+  '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
+  '/v1/integrations/git/repositories': typeof V1IntegrationsGitRepositoriesRoute
+  '/$businessName/admin/plugin/$pluginId/$schemaId': typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
+  '/v1/auth/providers/oauth/authorize': typeof V1AuthProvidersOauthAuthorizeRoute
+  '/v1/auth/providers/oauth/callback': typeof V1AuthProvidersOauthCallbackRoute
+  '/v1/integrations/git/oauth/callback': typeof V1IntegrationsGitOauthCallbackRoute
+  '/v1/integrations/git/oauth/start': typeof V1IntegrationsGitOauthStartRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
   '/auth': typeof AuthAuthRoute
   '/settings': typeof AuthSettingsRoute
   '/chat': typeof BusinessChatRoute
+  '/chat/completions': typeof ChatCompletionsRoute
+  '/v1/models': typeof V1ModelsRoute
   '/$businessName': typeof BusinessNameIndexRoute
   '/apps': typeof AppsIndexRoute
+  '/plugin-studio': typeof PluginStudioIndexRoute
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
+  '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
+  '/plugin-studio/$projectId/$pluginId': typeof PluginStudioProjectIdPluginIdRoute
+  '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
+  '/v1/auth/sessions': typeof V1AuthSessionsRoute
+  '/v1/chat/completions': typeof V1ChatCompletionsRoute
   '/$businessName/admin': typeof BusinessNameAdminIndexRoute
+  '/plugin-studio/$projectId': typeof PluginStudioProjectIdIndexRoute
+  '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRouteWithChildren
+  '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
+  '/v1/integrations/git/repositories': typeof V1IntegrationsGitRepositoriesRoute
+  '/$businessName/admin/plugin/$pluginId/$schemaId': typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
+  '/v1/auth/providers/oauth/authorize': typeof V1AuthProvidersOauthAuthorizeRoute
+  '/v1/auth/providers/oauth/callback': typeof V1AuthProvidersOauthCallbackRoute
+  '/v1/integrations/git/oauth/callback': typeof V1IntegrationsGitOauthCallbackRoute
+  '/v1/integrations/git/oauth/start': typeof V1IntegrationsGitOauthStartRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -138,17 +292,35 @@ export interface FileRoutesById {
   '/$businessName': typeof BusinessNameRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
   '/admin': typeof AdminRoute
+  '/create-business': typeof CreateBusinessRoute
   '/mcp': typeof McpRoute
   '/privacy': typeof PrivacyRoute
   '/s3test': typeof S3testRoute
   '/_auth/auth': typeof AuthAuthRoute
   '/_auth/settings': typeof AuthSettingsRoute
   '/_business/chat': typeof BusinessChatRoute
+  '/chat/completions': typeof ChatCompletionsRoute
+  '/v1/models': typeof V1ModelsRoute
   '/$businessName/': typeof BusinessNameIndexRoute
   '/apps/': typeof AppsIndexRoute
+  '/plugin-studio/': typeof PluginStudioIndexRoute
   '/$businessName/admin/editor': typeof BusinessNameAdminEditorRoute
   '/$businessName/admin/invitation': typeof BusinessNameAdminInvitationRoute
+  '/$businessName/admin/plugins': typeof BusinessNameAdminPluginsRoute
+  '/plugin-studio/$projectId/$pluginId': typeof PluginStudioProjectIdPluginIdRoute
+  '/v1/auth/providers': typeof V1AuthProvidersRouteWithChildren
+  '/v1/auth/sessions': typeof V1AuthSessionsRoute
+  '/v1/chat/completions': typeof V1ChatCompletionsRoute
   '/$businessName/admin/': typeof BusinessNameAdminIndexRoute
+  '/plugin-studio/$projectId/': typeof PluginStudioProjectIdIndexRoute
+  '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRouteWithChildren
+  '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
+  '/v1/integrations/git/repositories': typeof V1IntegrationsGitRepositoriesRoute
+  '/$businessName/admin/plugin/$pluginId/$schemaId': typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
+  '/v1/auth/providers/oauth/authorize': typeof V1AuthProvidersOauthAuthorizeRoute
+  '/v1/auth/providers/oauth/callback': typeof V1AuthProvidersOauthCallbackRoute
+  '/v1/integrations/git/oauth/callback': typeof V1IntegrationsGitOauthCallbackRoute
+  '/v1/integrations/git/oauth/start': typeof V1IntegrationsGitOauthStartRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -156,49 +328,103 @@ export interface FileRouteTypes {
     | '/'
     | '/$businessName'
     | '/admin'
+    | '/create-business'
     | '/mcp'
     | '/privacy'
     | '/s3test'
     | '/auth'
     | '/settings'
     | '/chat'
+    | '/chat/completions'
+    | '/v1/models'
     | '/$businessName/'
     | '/apps/'
+    | '/plugin-studio/'
     | '/$businessName/admin/editor'
     | '/$businessName/admin/invitation'
+    | '/$businessName/admin/plugins'
+    | '/plugin-studio/$projectId/$pluginId'
+    | '/v1/auth/providers'
+    | '/v1/auth/sessions'
+    | '/v1/chat/completions'
     | '/$businessName/admin/'
+    | '/plugin-studio/$projectId/'
+    | '/$businessName/admin/plugin/$pluginId'
+    | '/v1/auth/providers/methods'
+    | '/v1/integrations/git/repositories'
+    | '/$businessName/admin/plugin/$pluginId/$schemaId'
+    | '/v1/auth/providers/oauth/authorize'
+    | '/v1/auth/providers/oauth/callback'
+    | '/v1/integrations/git/oauth/callback'
+    | '/v1/integrations/git/oauth/start'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
+    | '/create-business'
     | '/mcp'
     | '/privacy'
     | '/s3test'
     | '/auth'
     | '/settings'
     | '/chat'
+    | '/chat/completions'
+    | '/v1/models'
     | '/$businessName'
     | '/apps'
+    | '/plugin-studio'
     | '/$businessName/admin/editor'
     | '/$businessName/admin/invitation'
+    | '/$businessName/admin/plugins'
+    | '/plugin-studio/$projectId/$pluginId'
+    | '/v1/auth/providers'
+    | '/v1/auth/sessions'
+    | '/v1/chat/completions'
     | '/$businessName/admin'
+    | '/plugin-studio/$projectId'
+    | '/$businessName/admin/plugin/$pluginId'
+    | '/v1/auth/providers/methods'
+    | '/v1/integrations/git/repositories'
+    | '/$businessName/admin/plugin/$pluginId/$schemaId'
+    | '/v1/auth/providers/oauth/authorize'
+    | '/v1/auth/providers/oauth/callback'
+    | '/v1/integrations/git/oauth/callback'
+    | '/v1/integrations/git/oauth/start'
   id:
     | '__root__'
     | '/'
     | '/$businessName'
     | '/_auth'
     | '/admin'
+    | '/create-business'
     | '/mcp'
     | '/privacy'
     | '/s3test'
     | '/_auth/auth'
     | '/_auth/settings'
     | '/_business/chat'
+    | '/chat/completions'
+    | '/v1/models'
     | '/$businessName/'
     | '/apps/'
+    | '/plugin-studio/'
     | '/$businessName/admin/editor'
     | '/$businessName/admin/invitation'
+    | '/$businessName/admin/plugins'
+    | '/plugin-studio/$projectId/$pluginId'
+    | '/v1/auth/providers'
+    | '/v1/auth/sessions'
+    | '/v1/chat/completions'
     | '/$businessName/admin/'
+    | '/plugin-studio/$projectId/'
+    | '/$businessName/admin/plugin/$pluginId'
+    | '/v1/auth/providers/methods'
+    | '/v1/integrations/git/repositories'
+    | '/$businessName/admin/plugin/$pluginId/$schemaId'
+    | '/v1/auth/providers/oauth/authorize'
+    | '/v1/auth/providers/oauth/callback'
+    | '/v1/integrations/git/oauth/callback'
+    | '/v1/integrations/git/oauth/start'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -206,11 +432,23 @@ export interface RootRouteChildren {
   BusinessNameRoute: typeof BusinessNameRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   AdminRoute: typeof AdminRoute
+  CreateBusinessRoute: typeof CreateBusinessRoute
   McpRoute: typeof McpRoute
   PrivacyRoute: typeof PrivacyRoute
   S3testRoute: typeof S3testRoute
   BusinessChatRoute: typeof BusinessChatRoute
+  ChatCompletionsRoute: typeof ChatCompletionsRoute
+  V1ModelsRoute: typeof V1ModelsRoute
   AppsIndexRoute: typeof AppsIndexRoute
+  PluginStudioIndexRoute: typeof PluginStudioIndexRoute
+  PluginStudioProjectIdPluginIdRoute: typeof PluginStudioProjectIdPluginIdRoute
+  V1AuthProvidersRoute: typeof V1AuthProvidersRouteWithChildren
+  V1AuthSessionsRoute: typeof V1AuthSessionsRoute
+  V1ChatCompletionsRoute: typeof V1ChatCompletionsRoute
+  PluginStudioProjectIdIndexRoute: typeof PluginStudioProjectIdIndexRoute
+  V1IntegrationsGitRepositoriesRoute: typeof V1IntegrationsGitRepositoriesRoute
+  V1IntegrationsGitOauthCallbackRoute: typeof V1IntegrationsGitOauthCallbackRoute
+  V1IntegrationsGitOauthStartRoute: typeof V1IntegrationsGitOauthStartRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -234,6 +472,13 @@ declare module '@tanstack/react-router' {
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create-business': {
+      id: '/create-business'
+      path: '/create-business'
+      fullPath: '/create-business'
+      preLoaderRoute: typeof CreateBusinessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -264,6 +509,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/plugin-studio/': {
+      id: '/plugin-studio/'
+      path: '/plugin-studio'
+      fullPath: '/plugin-studio/'
+      preLoaderRoute: typeof PluginStudioIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/apps/': {
       id: '/apps/'
       path: '/apps'
@@ -277,6 +529,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/$businessName/'
       preLoaderRoute: typeof BusinessNameIndexRouteImport
       parentRoute: typeof BusinessNameRoute
+    }
+    '/v1/models': {
+      id: '/v1/models'
+      path: '/v1/models'
+      fullPath: '/v1/models'
+      preLoaderRoute: typeof V1ModelsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/chat/completions': {
+      id: '/chat/completions'
+      path: '/chat/completions'
+      fullPath: '/chat/completions'
+      preLoaderRoute: typeof ChatCompletionsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_business/chat': {
       id: '/_business/chat'
@@ -299,11 +565,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthAuthRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/plugin-studio/$projectId/': {
+      id: '/plugin-studio/$projectId/'
+      path: '/plugin-studio/$projectId'
+      fullPath: '/plugin-studio/$projectId/'
+      preLoaderRoute: typeof PluginStudioProjectIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/$businessName/admin/': {
       id: '/$businessName/admin/'
       path: '/admin'
       fullPath: '/$businessName/admin/'
       preLoaderRoute: typeof BusinessNameAdminIndexRouteImport
+      parentRoute: typeof BusinessNameRoute
+    }
+    '/v1/chat/completions': {
+      id: '/v1/chat/completions'
+      path: '/v1/chat/completions'
+      fullPath: '/v1/chat/completions'
+      preLoaderRoute: typeof V1ChatCompletionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/auth/sessions': {
+      id: '/v1/auth/sessions'
+      path: '/v1/auth/sessions'
+      fullPath: '/v1/auth/sessions'
+      preLoaderRoute: typeof V1AuthSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/auth/providers': {
+      id: '/v1/auth/providers'
+      path: '/v1/auth/providers'
+      fullPath: '/v1/auth/providers'
+      preLoaderRoute: typeof V1AuthProvidersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/plugin-studio/$projectId/$pluginId': {
+      id: '/plugin-studio/$projectId/$pluginId'
+      path: '/plugin-studio/$projectId/$pluginId'
+      fullPath: '/plugin-studio/$projectId/$pluginId'
+      preLoaderRoute: typeof PluginStudioProjectIdPluginIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$businessName/admin/plugins': {
+      id: '/$businessName/admin/plugins'
+      path: '/admin/plugins'
+      fullPath: '/$businessName/admin/plugins'
+      preLoaderRoute: typeof BusinessNameAdminPluginsRouteImport
       parentRoute: typeof BusinessNameRoute
     }
     '/$businessName/admin/invitation': {
@@ -320,21 +628,97 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessNameAdminEditorRouteImport
       parentRoute: typeof BusinessNameRoute
     }
+    '/v1/integrations/git/repositories': {
+      id: '/v1/integrations/git/repositories'
+      path: '/v1/integrations/git/repositories'
+      fullPath: '/v1/integrations/git/repositories'
+      preLoaderRoute: typeof V1IntegrationsGitRepositoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/auth/providers/methods': {
+      id: '/v1/auth/providers/methods'
+      path: '/methods'
+      fullPath: '/v1/auth/providers/methods'
+      preLoaderRoute: typeof V1AuthProvidersMethodsRouteImport
+      parentRoute: typeof V1AuthProvidersRoute
+    }
+    '/$businessName/admin/plugin/$pluginId': {
+      id: '/$businessName/admin/plugin/$pluginId'
+      path: '/admin/plugin/$pluginId'
+      fullPath: '/$businessName/admin/plugin/$pluginId'
+      preLoaderRoute: typeof BusinessNameAdminPluginPluginIdRouteImport
+      parentRoute: typeof BusinessNameRoute
+    }
+    '/v1/integrations/git/oauth/start': {
+      id: '/v1/integrations/git/oauth/start'
+      path: '/v1/integrations/git/oauth/start'
+      fullPath: '/v1/integrations/git/oauth/start'
+      preLoaderRoute: typeof V1IntegrationsGitOauthStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/integrations/git/oauth/callback': {
+      id: '/v1/integrations/git/oauth/callback'
+      path: '/v1/integrations/git/oauth/callback'
+      fullPath: '/v1/integrations/git/oauth/callback'
+      preLoaderRoute: typeof V1IntegrationsGitOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v1/auth/providers/oauth/callback': {
+      id: '/v1/auth/providers/oauth/callback'
+      path: '/oauth/callback'
+      fullPath: '/v1/auth/providers/oauth/callback'
+      preLoaderRoute: typeof V1AuthProvidersOauthCallbackRouteImport
+      parentRoute: typeof V1AuthProvidersRoute
+    }
+    '/v1/auth/providers/oauth/authorize': {
+      id: '/v1/auth/providers/oauth/authorize'
+      path: '/oauth/authorize'
+      fullPath: '/v1/auth/providers/oauth/authorize'
+      preLoaderRoute: typeof V1AuthProvidersOauthAuthorizeRouteImport
+      parentRoute: typeof V1AuthProvidersRoute
+    }
+    '/$businessName/admin/plugin/$pluginId/$schemaId': {
+      id: '/$businessName/admin/plugin/$pluginId/$schemaId'
+      path: '/$schemaId'
+      fullPath: '/$businessName/admin/plugin/$pluginId/$schemaId'
+      preLoaderRoute: typeof BusinessNameAdminPluginPluginIdSchemaIdRouteImport
+      parentRoute: typeof BusinessNameAdminPluginPluginIdRoute
+    }
   }
 }
+
+interface BusinessNameAdminPluginPluginIdRouteChildren {
+  BusinessNameAdminPluginPluginIdSchemaIdRoute: typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
+}
+
+const BusinessNameAdminPluginPluginIdRouteChildren: BusinessNameAdminPluginPluginIdRouteChildren =
+  {
+    BusinessNameAdminPluginPluginIdSchemaIdRoute:
+      BusinessNameAdminPluginPluginIdSchemaIdRoute,
+  }
+
+const BusinessNameAdminPluginPluginIdRouteWithChildren =
+  BusinessNameAdminPluginPluginIdRoute._addFileChildren(
+    BusinessNameAdminPluginPluginIdRouteChildren,
+  )
 
 interface BusinessNameRouteChildren {
   BusinessNameIndexRoute: typeof BusinessNameIndexRoute
   BusinessNameAdminEditorRoute: typeof BusinessNameAdminEditorRoute
   BusinessNameAdminInvitationRoute: typeof BusinessNameAdminInvitationRoute
+  BusinessNameAdminPluginsRoute: typeof BusinessNameAdminPluginsRoute
   BusinessNameAdminIndexRoute: typeof BusinessNameAdminIndexRoute
+  BusinessNameAdminPluginPluginIdRoute: typeof BusinessNameAdminPluginPluginIdRouteWithChildren
 }
 
 const BusinessNameRouteChildren: BusinessNameRouteChildren = {
   BusinessNameIndexRoute: BusinessNameIndexRoute,
   BusinessNameAdminEditorRoute: BusinessNameAdminEditorRoute,
   BusinessNameAdminInvitationRoute: BusinessNameAdminInvitationRoute,
+  BusinessNameAdminPluginsRoute: BusinessNameAdminPluginsRoute,
   BusinessNameAdminIndexRoute: BusinessNameAdminIndexRoute,
+  BusinessNameAdminPluginPluginIdRoute:
+    BusinessNameAdminPluginPluginIdRouteWithChildren,
 }
 
 const BusinessNameRouteWithChildren = BusinessNameRoute._addFileChildren(
@@ -353,16 +737,44 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface V1AuthProvidersRouteChildren {
+  V1AuthProvidersMethodsRoute: typeof V1AuthProvidersMethodsRoute
+  V1AuthProvidersOauthAuthorizeRoute: typeof V1AuthProvidersOauthAuthorizeRoute
+  V1AuthProvidersOauthCallbackRoute: typeof V1AuthProvidersOauthCallbackRoute
+}
+
+const V1AuthProvidersRouteChildren: V1AuthProvidersRouteChildren = {
+  V1AuthProvidersMethodsRoute: V1AuthProvidersMethodsRoute,
+  V1AuthProvidersOauthAuthorizeRoute: V1AuthProvidersOauthAuthorizeRoute,
+  V1AuthProvidersOauthCallbackRoute: V1AuthProvidersOauthCallbackRoute,
+}
+
+const V1AuthProvidersRouteWithChildren = V1AuthProvidersRoute._addFileChildren(
+  V1AuthProvidersRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BusinessNameRoute: BusinessNameRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   AdminRoute: AdminRoute,
+  CreateBusinessRoute: CreateBusinessRoute,
   McpRoute: McpRoute,
   PrivacyRoute: PrivacyRoute,
   S3testRoute: S3testRoute,
   BusinessChatRoute: BusinessChatRoute,
+  ChatCompletionsRoute: ChatCompletionsRoute,
+  V1ModelsRoute: V1ModelsRoute,
   AppsIndexRoute: AppsIndexRoute,
+  PluginStudioIndexRoute: PluginStudioIndexRoute,
+  PluginStudioProjectIdPluginIdRoute: PluginStudioProjectIdPluginIdRoute,
+  V1AuthProvidersRoute: V1AuthProvidersRouteWithChildren,
+  V1AuthSessionsRoute: V1AuthSessionsRoute,
+  V1ChatCompletionsRoute: V1ChatCompletionsRoute,
+  PluginStudioProjectIdIndexRoute: PluginStudioProjectIdIndexRoute,
+  V1IntegrationsGitRepositoriesRoute: V1IntegrationsGitRepositoriesRoute,
+  V1IntegrationsGitOauthCallbackRoute: V1IntegrationsGitOauthCallbackRoute,
+  V1IntegrationsGitOauthStartRoute: V1IntegrationsGitOauthStartRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

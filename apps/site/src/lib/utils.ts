@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import type { LucideIcon } from 'lucide-react';
 import type { Business } from './schema';
 
 export function cn(...inputs: ClassValue[]) {
@@ -16,8 +15,8 @@ export function recordToList<R extends Record<string, any>>(record: R) {
   return Object.entries(record)
     .filter(([, v]) => typeof v !== 'string')
     .map(([soul, v]) => ({ ...v, _: { ...v._, soul } })) as Array<
-      R[string] & { _: { soul: string } }
-    >;
+    R[string] & { _: { soul: string } }
+  >;
 }
 
 export function soulToId(soul?: string | null) {
@@ -38,7 +37,7 @@ export function getSoulFromUnknown(value: unknown): string | undefined {
 }
 
 // Function to get app icon from business data
-// Returns base64 image if available, otherwise returns a default icon based on business type
+// Returns base64 image if available.
 export function getAppIcon(business: Business): string | null {
   if (business.icon) {
     const icon = business.icon.trim();
@@ -50,12 +49,5 @@ export function getAppIcon(business: Business): string | null {
   }
 
   // If no icon exists, return null and let the component use a fallback
-  return null;
-}
-
-// Function to get Lucide icon based on business type
-export function getBusinessTypeIcon(_businessType: string): LucideIcon | null {
-  // For now, return null - we can implement specific icons later
-  // This would map business types to specific Lucide icons
   return null;
 }

@@ -26,9 +26,10 @@ export const AutoFormField: React.FC<{
   const fullPath = path.join('.');
   const {
     field: effectiveField,
-    value: derivedValue,
+    value: _derivedValue,
     hasDerivedValue,
   } = useDerivedField({ field, path });
+  const derivedValue = _derivedValue ?? field.fieldConfig?.customData?.inputProps?.value;
   const error = getPathInObject(errors, path)?.message as string | undefined;
   const value = getValues(fullPath);
   const customData = effectiveField.fieldConfig?.customData as

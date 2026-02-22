@@ -2,7 +2,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { FieldWrapperProps } from './FieldWrapper';
-import { useState, useEffect } from 'react';
 
 export interface PhoneFieldProps extends FieldWrapperProps {
   placeholder?: string;
@@ -20,10 +19,6 @@ export function PhoneField({
   country = 'US',
   ...props
 }: PhoneFieldProps) {
-  const [displayValue, setDisplayValue] = useState(
-    field.value?.toString() || '',
-  );
-
   // Format phone number as user types
   const formatPhoneNumber = (value: string): string => {
     // Remove all non-digit characters
@@ -51,21 +46,12 @@ export function PhoneField({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     const formattedValue = formatPhoneNumber(rawValue);
-    setDisplayValue(formattedValue);
 
     // Extract just the digits for the actual value
     const digits = formattedValue.replace(/\D/g, '');
     field.onChange(digits);
   };
-
-  // Initialize with existing value
-  useEffect(() => {
-    if (field.value) {
-      const formatted = formatPhoneNumber(field.value.toString());
-      setDisplayValue(formatted);
-    }
-    // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
-  }, [field.value, formatPhoneNumber]);
+  const displayValue = formatPhoneNumber(field.value?.toString() ?? '');
 
   return (
     <div className={cn('space-y-2', className)}>

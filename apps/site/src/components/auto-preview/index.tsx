@@ -1,4 +1,5 @@
 import type { ParsedField } from '@autoform/core';
+import { useQuery } from '@tanstack/react-query';
 import {
   CheckCircle2,
   ExternalLink,
@@ -8,12 +9,13 @@ import {
 } from 'lucide-react';
 import type { FC, ReactNode } from 'react';
 import { z } from 'zod';
+import type { ZodObjectOrWrapped } from '@/components/ui/autoform/zod';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { useDrawer } from '@/contexts/dialog-context';
+import { GUN_PREFIX, GUN_SEPARATOR, getGunRef } from '@/lib/gun/utils';
 import { AutoTable } from '../auto-table';
-import type { ZodObjectOrWrapped } from '../ui/auto-form/utils';
 import type { fieldConfig } from '../ui/autoform';
 import { MapPreview } from '../ui/autoform/components/MapPreview';
 import { CredenzaBody } from '../ui/credenza';
@@ -35,9 +37,36 @@ export function AutoPreview<T>({
   value: T;
   baseSchema: ZodObjectOrWrapped;
 }): ReactNode {
+  const enabled =
+    !!value && typeof value === 'string' && !!value?.startsWith(GUN_PREFIX);
+  const { isLoading, data } = useQuery({
+    enabled,
+    queryKey: ['auto-preview', value],
+    queryFn: async () => {
+      const v = value as string;
+      const values = v.split(GUN_SEPARATOR);
+      const basePart = values.slice(0, -1).join(GUN_SEPARATOR);
+      const gunRef = getGunRef(basePart).get(v);
+      return (await gunRef.then()) ?? '-';
+    },
+  });
   const Comp =
     // @ts-expect-error
     autoPreviewComponents[field.type] ?? autoPreviewComponents.fallback;
+
+  if (enabled) {
+    function getDisplayValue() {
+      const displayKey = field.fieldConfig?.customData?.displayKey ?? '_.#';
+      const displayKeys = displayKey.split('.');
+      return displayKeys.reduce((acc, key) => acc?.[key], data);
+    }
+    return (
+      <Comp
+        value={isLoading ? 'loading...' : getDisplayValue()}
+        schema={schema}
+      />
+    );
+  }
 
   return <Comp value={value} schema={schema} />;
 }
@@ -124,28 +153,9 @@ const ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
   const fullKey = (value as any)?.['#'] as string;
   if (!fullKey) return null;
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
-  let arraySchema: z.ZodArray<any> =
+  const arraySchema: z.ZodArray<any> =
     schema instanceof z.ZodEffects ? schema.innerType() : schema;
-
-  // Handle ZodOptional, ZodNullable wrappers
-  if ('innerType' in arraySchema._def) {
-    arraySchema = arraySchema._def.innerType;
-  }
-
-  // For ZodArray, the element type is in _def.type (ZodType)
-  // We need to unwrap it through all layers (ZodEffects, ZodOptional, etc.)
-  let elementType = arraySchema._def.type;
-
-  // Unwrap ZodEffects
-  if (elementType instanceof z.ZodEffects) {
-    elementType = elementType.innerType();
-  }
-  // Unwrap ZodOptional/ZodNullable
-  if ('innerType' in elementType._def) {
-    elementType = elementType._def.innerType;
-  }
-
-  const parsedSchema = elementType;
+  const parsedSchema = arraySchema._def.type || arraySchema._def.innerType;
   // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
   const { openDialog } = useDrawer();
 
@@ -317,6 +327,7 @@ const autoPreviewComponents: Record<
   AutoPreviewComponent<any>
 > = {
   boolean: BooleanPreview,
+  className: StringPreview,
   date: DatePreview,
   datetime: DatePreview,
   image: ImagePreview,

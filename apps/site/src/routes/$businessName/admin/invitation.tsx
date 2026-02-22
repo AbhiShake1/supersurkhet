@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -13,6 +13,7 @@ import { api } from '@/lib/api';
 import { useConfetti } from '@/components/confetti-provider';
 import { useAuth } from '@/components/auth-provider';
 import z from 'zod';
+import { resolveInvitationStatus } from './-invitation-state';
 
 export const Route = createFileRoute('/$businessName/admin/invitation')({
   validateSearch: z.object({
@@ -37,6 +38,18 @@ function RouteComponent() {
   });
   const business = businesses?.[0];
   const invitation = business?.invitations?.[token];
+
+  useEffect(() => {
+    if (status === 'accepted' || status === 'rejected') {
+      return;
+    }
+    const resolved = resolveInvitationStatus({
+      hasBusiness: Boolean(business),
+      invitationExists: Boolean(invitation),
+      hasUser: Boolean(user),
+    });
+    setStatus(resolved);
+  }, [business, invitation, status, user]);
 
   const handleAccept = async () => {
     try {
@@ -69,9 +82,26 @@ function RouteComponent() {
     }
   };
 
-  const handleReject = () => {
-    // In a real implementation, you would update the invitation status to 'rejected'
-    setStatus('rejected');
+  const handleReject = async () => {
+    try {
+      if (!business) {
+        setStatus('error');
+        return;
+      }
+      await updateBusinessMutation.mutateAsync({
+        id: business.id,
+        invitations: {
+          [token]: {
+            ...(invitation ?? {}),
+            status: 'rejected',
+          },
+        },
+      });
+      setStatus('rejected');
+    } catch (error) {
+      console.error('Error rejecting invitation:', error);
+      setStatus('error');
+    }
   };
 
   const handleGoToAdmin = () => {

@@ -250,6 +250,69 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
     [setNodes, reactFlowInstance],
   );
 
+  const onAddNodeToEdge = useCallback(
+    (edgeId: string, nodeType: string) => {
+      // Get current edges from React Flow instance
+      const currentEdges = reactFlowInstance?.getEdges() || [];
+      const edge = currentEdges.find((e) => e.id === edgeId);
+      if (!edge) {
+        return;
+      }
+
+      // Get fixed label and description for the node type
+      const { label, description } = getNodeLabelAndDescription(
+        nodeType as NodeType,
+      );
+
+      // Create new node
+      const newNodeId = `${nodeType}-${Date.now()}`;
+      const newNode: CustomNode = {
+        id: newNodeId,
+        type: nodeType as NodeType,
+        position: { x: 0, y: 0 }, // Will be positioned by auto-layout
+        data: {
+          label,
+          description,
+          status: 'initial',
+          config: {},
+        },
+      };
+
+      // Create new edges
+      const newEdge1: Edge = {
+        id: `e-${edge.source}-${newNodeId}`,
+        source: edge.source,
+        target: newNodeId,
+        type: 'default',
+        data: { onAddNode: onAddNode },
+        markerEnd: {
+          type: 'arrow',
+          color: '#94a3b8',
+        },
+      };
+
+      const newEdge2: Edge = {
+        id: `e-${newNodeId}-${edge.target}`,
+        source: newNodeId,
+        target: edge.target,
+        type: 'default',
+        data: { onAddNode: onAddNode },
+        markerEnd: {
+          type: 'arrow',
+          color: '#94a3b8',
+        },
+      };
+
+      // Update state
+      setNodes((nds) => [...nds, newNode]);
+      setEdges((eds) => {
+        const updatedEdges = eds.filter((e) => e.id !== edgeId);
+        return [...updatedEdges, newEdge1, newEdge2];
+      });
+    },
+    [reactFlowInstance, setNodes, setEdges, onAddNode],
+  );
+
   const onAddNodeAtHandle = useCallback(
     (
       nodeId: string,
@@ -312,69 +375,6 @@ export function FlowProvider({ children }: { children: React.ReactNode }) {
     },
     // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
     [reactFlowInstance, setNodes, setEdges, onAddNode, onAddNodeToEdge],
-  );
-
-  const onAddNodeToEdge = useCallback(
-    (edgeId: string, nodeType: string) => {
-      // Get current edges from React Flow instance
-      const currentEdges = reactFlowInstance?.getEdges() || [];
-      const edge = currentEdges.find((e) => e.id === edgeId);
-      if (!edge) {
-        return;
-      }
-
-      // Get fixed label and description for the node type
-      const { label, description } = getNodeLabelAndDescription(
-        nodeType as NodeType,
-      );
-
-      // Create new node
-      const newNodeId = `${nodeType}-${Date.now()}`;
-      const newNode: CustomNode = {
-        id: newNodeId,
-        type: nodeType as NodeType,
-        position: { x: 0, y: 0 }, // Will be positioned by auto-layout
-        data: {
-          label,
-          description,
-          status: 'initial',
-          config: {},
-        },
-      };
-
-      // Create new edges
-      const newEdge1: Edge = {
-        id: `e-${edge.source}-${newNodeId}`,
-        source: edge.source,
-        target: newNodeId,
-        type: 'default',
-        data: { onAddNode: onAddNode },
-        markerEnd: {
-          type: 'arrow',
-          color: '#94a3b8',
-        },
-      };
-
-      const newEdge2: Edge = {
-        id: `e-${newNodeId}-${edge.target}`,
-        source: newNodeId,
-        target: edge.target,
-        type: 'default',
-        data: { onAddNode: onAddNode },
-        markerEnd: {
-          type: 'arrow',
-          color: '#94a3b8',
-        },
-      };
-
-      // Update state
-      setNodes((nds) => [...nds, newNode]);
-      setEdges((eds) => {
-        const updatedEdges = eds.filter((e) => e.id !== edgeId);
-        return [...updatedEdges, newEdge1, newEdge2];
-      });
-    },
-    [reactFlowInstance, setNodes, setEdges, onAddNode],
   );
 
   const onConnect = useCallback(

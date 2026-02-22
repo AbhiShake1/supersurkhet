@@ -1,24 +1,22 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-
-import { ChevronDown, ChevronRight } from 'lucide-react';
 import { generatePermissions } from '@/lib/permissions/generate-permissions';
 import type { AutoFormFieldProps } from '../react';
 
@@ -32,6 +30,8 @@ interface PermissionGroupProps {
   feature: string;
   actions: string[];
   value: PermissionMap;
+  expanded: boolean;
+  onToggleExpanded: (nextExpanded: boolean) => void;
   onChange: (permissions: PermissionMap) => void;
 }
 
@@ -43,10 +43,10 @@ function PermissionGroup({
   feature,
   actions,
   value,
+  expanded,
+  onToggleExpanded,
   onChange,
 }: PermissionGroupProps) {
-  const [expanded, setExpanded] = useState(true);
-
   const permissionKeys = useMemo(
     () => actions.map((action) => `${feature}:${action}`),
     [feature, actions],
@@ -81,7 +81,7 @@ function PermissionGroup({
         <button
           type="button"
           className="cursor-pointer"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => onToggleExpanded(!expanded)}
         >
           {expanded ? (
             <ChevronDown className="h-4 w-4" />
@@ -108,7 +108,7 @@ function PermissionGroup({
         <Label
           htmlFor={`feature-${feature}`}
           className="text-sm font-medium capitalize cursor-pointer"
-          onClick={() => setExpanded((v) => !v)}
+          onClick={() => onToggleExpanded(!expanded)}
         >
           {feature.replaceAll('_', ' ')}
         </Label>
@@ -168,14 +168,13 @@ export const PermissionsField: React.FC<PermissionsFieldProps> = ({
 }) => {
   const name = path.join('.');
   const tabs = field.fieldConfig?.customData?.tabs;
-
-  // Update local state when prop changes
-  const [localValue, setLocalValue] = useState(
-    () => _value || field.default || {},
+  const [openGroupsByFeature, setOpenGroupsByFeature] = useState<
+    Record<string, boolean>
+  >({});
+  const localValue = useMemo(
+    () => (_value || field.default || {}) as PermissionMap,
+    [_value, field.default],
   );
-  useEffect(() => {
-    setLocalValue(_value || field.default || {});
-  }, [_value, field.default]);
 
   const groupedPermissions = useMemo(
     () => generatePermissions(tabs || []),
@@ -203,12 +202,18 @@ export const PermissionsField: React.FC<PermissionsFieldProps> = ({
                 feature={feature}
                 actions={actions}
                 value={localValue}
+                expanded={openGroupsByFeature[feature] ?? true}
+                onToggleExpanded={(nextExpanded) => {
+                  setOpenGroupsByFeature((current) => ({
+                    ...current,
+                    [feature]: nextExpanded,
+                  }));
+                }}
                 onChange={(permissions) => {
                   const updatedPermissions = { ...localValue };
                   Object.keys(permissions).forEach((key) => {
                     updatedPermissions[key] = permissions[key];
                   });
-                  setLocalValue(updatedPermissions);
 
                   inputProps.onChange({
                     target: {

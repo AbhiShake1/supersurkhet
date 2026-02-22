@@ -48,8 +48,8 @@ export function ManageOrganization({ slug, tabs }: ManageOrganizationProps) {
   const business = businesses?.[0];
   const invitationCount = business?.invitations
     ? Object.values(business.invitations).filter(
-        (inv) => typeof inv === 'object' && !!inv.email,
-      ).length
+      (inv) => typeof inv === 'object' && !!inv?.email,
+    ).length
     : 0;
   const updateBusinessMutation = api.business.useUpdate();
 
@@ -558,6 +558,6 @@ function useOrgInvitations(slug: string) {
   const { data } = api.business.useGet({ keys: [slug], single: true });
   if (!data?.[0]?.invitations) return [];
   return Object.values(data?.[0]?.invitations).filter(
-    (inv) => typeof inv === 'object' && !!inv.email,
+    (inv) => typeof inv === 'object' && !!inv?.email,
   );
 }

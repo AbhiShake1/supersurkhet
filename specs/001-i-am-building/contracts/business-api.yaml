@@ -24,11 +24,6 @@ Based on `businessSchema` from `@/lib/schema.ts`:
   name: string (required, official business name),
   location: string (optional, physical address or area),
   basePath: string (optional, unique URL path like /my-shop),
-  businessType: enum (
-    "retail", "food", "service", "education", "healthcare", 
-    "logistics", "real_estate", "cooperative", "other", 
-    "hotel", "petrol_pump", "gym", "cinema", "financial_firm", "ride_sharing"
-  ),
   features: Record<string, boolean> (optional, map of enabled features),
   isActive: boolean (default: true, whether business is active),
   created_by?: string (user ID of creator),
@@ -60,7 +55,6 @@ Based on `businessSchema` from `@/lib/schema.ts`:
   name: string (required),
   location?: string,
   basePath?: string,
-  businessType: string (enum value),
   features?: Record<string, boolean>,
   isActive?: boolean
 }
@@ -78,7 +72,6 @@ const createBusinessMutation = api.business.useCreate({
 // To create a business
 createBusinessMutation.mutate({
   name: "My Restaurant",
-  businessType: "food",
   location: "Surkhet Valley"
 });
 ```
@@ -139,7 +132,6 @@ const { data: business, isLoading } = api.business.useGet({
   name?: string,
   location?: string,
   basePath?: string,
-  businessType?: string,
   features?: Record<string, boolean>,
   isActive?: boolean
 }

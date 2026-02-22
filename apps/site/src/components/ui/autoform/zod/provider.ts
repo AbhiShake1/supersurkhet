@@ -1,11 +1,16 @@
-import { z } from "zod";
-import type { SchemaProvider, ParsedSchema, SchemaValidation } from "@autoform/core";
-import { getDefaultValues } from "./default-values";
-import type { ZodObjectOrWrapped } from "./types";
-import { parseSchema } from "./validator";
+import type {
+  ParsedSchema,
+  SchemaProvider,
+  SchemaValidation,
+} from '@autoform/core';
+import { z } from 'zod';
+import { getDefaultValues } from './default-values';
+import type { ZodObjectOrWrapped } from './types';
+import { parseSchema } from './validator';
 
 export class ZodProvider<T extends ZodObjectOrWrapped>
-  implements SchemaProvider<z.infer<T>> {
+  implements SchemaProvider<z.infer<T>>
+{
   /**
    * Provider to use Zod schemas for AutoForm
    *
@@ -13,7 +18,7 @@ export class ZodProvider<T extends ZodObjectOrWrapped>
    */
   constructor(private schema: T) {
     if (!schema) {
-      throw new Error("ZodProvider: schema is required");
+      throw new Error('ZodProvider: schema is required');
     }
   }
 

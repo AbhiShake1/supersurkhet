@@ -141,6 +141,7 @@ Create a `.env.local` file with the following:
 VITE_SENTRY_DSN=your_sentry_dsn
 VITE_GOOGLE_OAUTH_CLIENT_ID=your_google_oauth_client_id
 VITE_GOOGLE_LOGIN_BACKDOOR=your_google_login_backdoor
+GOOGLE_GENERATIVE_AI_API_KEY=your_google_ai_studio_api_key
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret

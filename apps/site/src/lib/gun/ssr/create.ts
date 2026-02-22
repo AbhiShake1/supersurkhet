@@ -1,8 +1,11 @@
-import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
-import { encrypt } from '../utils/sea';
+import type { GunMessagePut } from 'gun';
+import { runLifecycleHookPipeline } from '@/lib/plugins/runtime-pipeline';
+import { omitUndefined } from '@/lib/utils/undefined-to-null';
 import type { NestedSchemaType, SchemaKeys } from '..';
 import { mergeOptionsWithDefaults } from '../options';
-import type { GunMessagePut } from 'gun';
+import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
+import { encrypt } from '../utils/sea';
+import { resolveAfterNextTick, resolveLifecycleBusinessId } from './lifecycle';
 
 export function omitEmptyObject<T>(value: T): T {
   if (Array.isArray(value)) {
@@ -12,7 +15,7 @@ export function omitEmptyObject<T>(value: T): T {
   }
 
   if (isPlainObject(value)) {
-    const result: any = {};
+    const result: Record<string, unknown> = {};
 
     for (const [k, v] of Object.entries(value)) {
       const cleaned = omitEmptyObject(v);
@@ -28,8 +31,8 @@ export function omitEmptyObject<T>(value: T): T {
   return value;
 }
 
-function isPlainObject(x: unknown): x is Record<string, any> {
-  return typeof x === "object" && x !== null && !Array.isArray(x);
+function isPlainObject(x: unknown): x is Record<string, unknown> {
+  return typeof x === 'object' && x !== null && !Array.isArray(x);
 }
 
 export function create<const T extends SchemaKeys>(
@@ -37,23 +40,46 @@ export function create<const T extends SchemaKeys>(
   ...restKeys: string[]
 ) {
   const options = mergeOptionsWithDefaults({});
+  if (!options.schema) {
+    throw new Error('Default schema not set for create runtime');
+  }
   const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
-  // biome-ignore lint/style/noNonNullAssertion: lint debt cleanup
-  const schema = getNestedZodShape(key, options.schema!);
+  const schema = getNestedZodShape(key, options.schema);
   return async (
     value: Omit<NestedSchemaType<T>, '_'> & { id?: string | number },
   ) => {
+    const businessId = resolveLifecycleBusinessId({ table: key, restKeys });
+    if (businessId) {
+      await runLifecycleHookPipeline({
+        businessId,
+        table: key,
+        hook: 'beforeCreate',
+        payload: value,
+      });
+    }
+
     const _encrypted = await encrypt(value, schema);
-    const encrypted = omitEmptyObject(_encrypted);
-    const id = encrypted?.id ?? `${keys}/${Date.now().toString()}`;
+    const encrypted = omitEmptyObject(omitUndefined(_encrypted));
     return new Promise<GunMessagePut>((resolve, reject) => {
+      const id = encrypted?.id ?? `${keys}/${Date.now().toString()}`;
       getGunRef(keys)
         .get(id)
         .put(encrypted, (ack) => {
           if ('err' in ack && !!ack.err) {
             reject(ack.err);
           } else {
-            resolve({ id, ...ack });
+            if (!businessId) {
+              void resolveAfterNextTick(ack).then(resolve);
+              return;
+            }
+            void runLifecycleHookPipeline({
+              businessId,
+              table: key,
+              hook: 'afterCreate',
+              payload: value,
+            })
+              .then(() => resolve(ack))
+              .catch(reject);
           }
         });
     });

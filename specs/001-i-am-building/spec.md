@@ -80,7 +80,7 @@ As a business owner (like Abhi the restaurant owner or Puspa the gym owner), I w
 - **FR-003**: System MUST support real-time data updates through the decentralized database
 - **FR-004**: System MUST generate admin panels and customer UIs dynamically from business schemas
 - **FR-005**: System MUST allow business owners to customize their UI layout, theme, and branding
-- **FR-006**: System MUST provide unified category pages (e.g., /*businessType*) showing all businesses of that type with their offerings and details
+- **FR-006**: System MUST provide unified discovery pages (e.g., `/category/:slug`) showing relevant businesses with their offerings and details
 - **FR-007**: System MUST support QR code/DMX scanning for all business interactions
 - **FR-008**: System MUST provide payment processing via Fonepay integration
 - **FR-009**: System MUST be mobile-first with responsive design that works optimally across all screen sizes (mobile, tablet, desktop)

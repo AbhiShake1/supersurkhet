@@ -1,6 +1,6 @@
-import { type RefinementEffect, z } from "zod";
-import type { FieldConfig } from "@autoform/core";
-import { ZOD_FIELD_CONFIG_SYMBOL } from "../utils";
+import type { FieldConfig } from '@autoform/core';
+import type { RefinementEffect, z } from 'zod';
+import { ZOD_FIELD_CONFIG_SYMBOL } from '../utils';
 
 export type SuperRefineFunction = () => unknown;
 
@@ -15,7 +15,7 @@ export function fieldConfig<
     FieldTypes,
     FieldWrapper,
     CustomData
-  >
+  >,
 ): SuperRefineFunction {
   const refinementFunction: SuperRefineFunction = () => {
     // Do nothing.
@@ -28,13 +28,13 @@ export function fieldConfig<
 }
 
 export function getFieldConfigInZodStack(
-  schema: z.ZodTypeAny
+  schema: z.ZodTypeAny,
 ): FieldConfig | undefined {
   const typedSchema = schema as unknown as z.ZodEffects<
     z.ZodNumber | z.ZodString
   >;
 
-  if (typedSchema._def.typeName === "ZodEffects") {
+  if (typedSchema._def.typeName === 'ZodEffects') {
     const effect = typedSchema._def.effect as RefinementEffect<any>;
     const refinementFunction = effect.refinement;
 
@@ -43,14 +43,14 @@ export function getFieldConfigInZodStack(
     }
   }
 
-  if ("innerType" in typedSchema._def) {
+  if ('innerType' in typedSchema._def) {
     return getFieldConfigInZodStack(
-      typedSchema._def.innerType as unknown as z.ZodAny
+      typedSchema._def.innerType as unknown as z.ZodAny,
     );
   }
-  if ("schema" in typedSchema._def) {
+  if ('schema' in typedSchema._def) {
     return getFieldConfigInZodStack(
-      (typedSchema._def as any).schema as z.ZodAny
+      (typedSchema._def as any).schema as z.ZodAny,
     );
   }
 

@@ -1,8 +1,8 @@
 'use client';
 
-import { Input } from '@/components/ui/input';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { Input } from '@/components/ui/input';
 
 interface MentionSuggestion {
   id: string;
@@ -79,6 +79,62 @@ export function MentionInput({
     }
     return flat;
   }, [contextData]);
+
+  // Fuzzy matching function
+  const fuzzyMatch = (str: string, query: string): boolean => {
+    let strIndex = 0;
+    let queryIndex = 0;
+
+    while (strIndex < str.length && queryIndex < query.length) {
+      if (str[strIndex] === query[queryIndex]) {
+        queryIndex++;
+      }
+      strIndex++;
+    }
+
+    return queryIndex === query.length;
+  };
+
+  // Fuzzy matching scoring function
+  const fuzzyMatchScore = (str: string, query: string): number => {
+    let score = 0;
+    let strIndex = 0;
+    let queryIndex = 0;
+    let lastMatchIndex = -1;
+
+    // Count matches and score based on how close the matches are
+    while (strIndex < str.length && queryIndex < query.length) {
+      if (str[strIndex] === query[queryIndex]) {
+        // Add points for matching
+        score += 1;
+
+        // Bonus for consecutive matches
+        if (lastMatchIndex === strIndex - 1) {
+          score += 2;
+        } else {
+          // Penalty for gaps between matches
+          score -= (strIndex - lastMatchIndex - 1) * 0.1;
+        }
+
+        lastMatchIndex = strIndex;
+        queryIndex++;
+      }
+      strIndex++;
+    }
+
+    // Bonus for matches at the beginning of words (after spaces, periods, etc.)
+    for (let i = 0; i < query.length; i++) {
+      const charIndexInStr = str.indexOf(query[i]);
+      if (
+        charIndexInStr === 0 ||
+        (charIndexInStr > 0 && /[\s._-]/.test(str[charIndexInStr - 1]))
+      ) {
+        score += 0.5;
+      }
+    }
+
+    return score;
+  };
 
   // Generate suggestions based on context data with fuzzy matching and ranking
   const generateSuggestions = useCallback(
@@ -171,66 +227,9 @@ export function MentionInput({
         })
         .slice(0, 10); // Return top 10 matches
     },
-    // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
     // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
     [contextData, flatContextData, fuzzyMatch, fuzzyMatchScore],
   );
-
-  // Fuzzy matching function
-  const fuzzyMatch = (str: string, query: string): boolean => {
-    let strIndex = 0;
-    let queryIndex = 0;
-
-    while (strIndex < str.length && queryIndex < query.length) {
-      if (str[strIndex] === query[queryIndex]) {
-        queryIndex++;
-      }
-      strIndex++;
-    }
-
-    return queryIndex === query.length;
-  };
-
-  // Fuzzy matching scoring function
-  const fuzzyMatchScore = (str: string, query: string): number => {
-    let score = 0;
-    let strIndex = 0;
-    let queryIndex = 0;
-    let lastMatchIndex = -1;
-
-    // Count matches and score based on how close the matches are
-    while (strIndex < str.length && queryIndex < query.length) {
-      if (str[strIndex] === query[queryIndex]) {
-        // Add points for matching
-        score += 1;
-
-        // Bonus for consecutive matches
-        if (lastMatchIndex === strIndex - 1) {
-          score += 2;
-        } else {
-          // Penalty for gaps between matches
-          score -= (strIndex - lastMatchIndex - 1) * 0.1;
-        }
-
-        lastMatchIndex = strIndex;
-        queryIndex++;
-      }
-      strIndex++;
-    }
-
-    // Bonus for matches at the beginning of words (after spaces, periods, etc.)
-    for (let i = 0; i < query.length; i++) {
-      const charIndexInStr = str.indexOf(query[i]);
-      if (
-        charIndexInStr === 0 ||
-        (charIndexInStr > 0 && /[\s._-]/.test(str[charIndexInStr - 1]))
-      ) {
-        score += 0.5;
-      }
-    }
-
-    return score;
-  };
 
   // Check if we should show suggestions based on input
   const checkForMentionTrigger = useCallback(
@@ -272,34 +271,6 @@ export function MentionInput({
     [checkForMentionTrigger, generateSuggestions, onChange],
   );
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (!showSuggestions) return;
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setActiveSuggestionIndex((prev) =>
-          prev < suggestions.length - 1 ? prev + 1 : 0,
-        );
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setActiveSuggestionIndex((prev) =>
-          prev > 0 ? prev - 1 : suggestions.length - 1,
-        );
-      } else if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
-        if (suggestions[activeSuggestionIndex]) {
-          insertMention(suggestions[activeSuggestionIndex]);
-        }
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        setShowSuggestions(false);
-      }
-    },
-    // biome-ignore lint/correctness/noInvalidUseBeforeDeclaration: lint debt cleanup
-    [showSuggestions, suggestions, activeSuggestionIndex, insertMention],
-  );
-
   const insertMention = useCallback(
     (suggestion: MentionSuggestion) => {
       if (!inputRef.current) return;
@@ -338,6 +309,33 @@ export function MentionInput({
       }
     },
     [inputValue, onChange],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (!showSuggestions) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveSuggestionIndex((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : 0,
+        );
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveSuggestionIndex((prev) =>
+          prev > 0 ? prev - 1 : suggestions.length - 1,
+        );
+      } else if (e.key === 'Enter' || e.key === 'Tab') {
+        e.preventDefault();
+        if (suggestions[activeSuggestionIndex]) {
+          insertMention(suggestions[activeSuggestionIndex]);
+        }
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        setShowSuggestions(false);
+      }
+    },
+    [showSuggestions, suggestions, activeSuggestionIndex, insertMention],
   );
 
   // Handle clicks outside to close suggestions

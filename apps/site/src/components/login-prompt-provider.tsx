@@ -1,12 +1,3 @@
-import { AuthForm } from '@/components/auth-form';
-import {
-  Credenza,
-  CredenzaContent,
-  CredenzaDescription,
-  CredenzaHeader,
-  CredenzaTitle,
-} from '@/components/ui/credenza';
-import type { User } from '@/lib/schema';
 import { DialogOverlay } from '@radix-ui/react-dialog';
 import type React from 'react';
 import {
@@ -16,6 +7,15 @@ import {
   useRef,
   useState,
 } from 'react';
+import { AuthForm } from '@/components/auth-form';
+import {
+  Credenza,
+  CredenzaContent,
+  CredenzaDescription,
+  CredenzaHeader,
+  CredenzaTitle,
+} from '@/components/ui/credenza';
+import type { User } from '@/lib/schema';
 import { useAuth } from './auth-provider';
 import { ScrollArea } from './ui/scroll-area';
 
@@ -35,10 +35,10 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [isOpen, _setIsOpen] = useState(false);
-  const resolveRef = useRef<(user: User) => void>(null);
-  const rejectRef = useRef<(error: Error) => void>(null);
+  const resolveRef = useRef<((user: User | undefined) => void) | null>(null);
+  const rejectRef = useRef<((error: Error) => void) | null>(null);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const isDismissibleRef = useRef(true);
   const showBackgroundContentRef = useRef(true);
   const setIsOpen = useCallback((open: boolean, { force = false } = {}) => {
@@ -55,23 +55,26 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
       dismissible?: boolean;
       showBackgroundContent?: boolean;
     } = {}) => {
+      if (isLoading) return Promise.resolve(undefined);
       if (isAuthenticated) return Promise.resolve(user);
       isDismissibleRef.current = dismissible;
       showBackgroundContentRef.current = showBackgroundContent;
       setIsOpen(true);
       setMode('login'); // Always start with login mode
-      return new Promise<User>((resolve, reject) => {
+      return new Promise<User | undefined>((resolve, reject) => {
         resolveRef.current = resolve;
         rejectRef.current = reject;
       });
     },
-    [user, isAuthenticated, setIsOpen],
+    [user, isAuthenticated, setIsOpen, isLoading],
   );
 
   const handleAuthSuccess = useCallback(
     (user: User) => {
-      setIsOpen(false);
       resolveRef.current?.(user);
+      resolveRef.current = null;
+      rejectRef.current = null;
+      setIsOpen(false);
     },
     [setIsOpen],
   );
@@ -79,14 +82,17 @@ export const LoginPromptProvider: React.FC<{ children: React.ReactNode }> = ({
   const handleAuthError = useCallback((error: Error) => {
     // setIsOpen(false);
     rejectRef.current?.(error);
+    resolveRef.current = null;
+    rejectRef.current = null;
   }, []);
 
   const handleOpenChange = useCallback(
     (open: boolean) => {
       setIsOpen(open);
       if (!open) {
-        // If the dialog is closed without successful login, reject the promise
-        rejectRef.current?.(new Error('Login process cancelled.'));
+        resolveRef.current?.(undefined);
+        resolveRef.current = null;
+        rejectRef.current = null;
       }
     },
     [setIsOpen],
@@ -140,7 +146,7 @@ export const useLoginPrompt = (): LoginPromptContextType => {
   if (!context) {
     console.error('useLoginPrompt must be used within a LoginPromptProvider');
     return {
-      closeLoginPrompt: () => {},
+      closeLoginPrompt: () => { },
       promptLogin: async () => {
         return undefined;
       },

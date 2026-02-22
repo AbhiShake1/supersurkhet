@@ -1,16 +1,16 @@
-import { Form } from '@/components/ui/form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import React from 'react';
 import {
   type DefaultValues,
   type FormState,
-  useForm,
   type UseFormReturn,
+  useForm,
 } from 'react-hook-form';
 import type { z } from 'zod';
 
 import { Button, type ButtonProps } from '@/components/ui/button';
+import { Form } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
-import { zodResolver } from '@hookform/resolvers/zod';
 
 import AutoFormObject from './fields/object';
 import type { Dependency, FieldConfig } from './types';
@@ -19,6 +19,8 @@ import {
   getObjectFormSchema,
   type ZodObjectOrWrapped,
 } from './utils';
+
+const PARSED_VALUES_CHANGE_DEBOUNCE_MS = 120;
 
 export function AutoFormSubmit({ children, ...props }: ButtonProps) {
   return (
@@ -69,6 +71,9 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
     defaultValues: defaultValues ?? undefined,
     values: valuesProp,
   });
+  const parseDebounceTimeoutRef = React.useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const parsedValues = formSchema.safeParse(values);
@@ -78,15 +83,35 @@ function AutoForm<SchemaType extends ZodObjectOrWrapped>({
   }
 
   React.useEffect(() => {
+    if (!onParsedValuesChange) {
+      const subscription = form.watch((values) => {
+        onValuesChangeProp?.(values, form);
+      });
+      return () => subscription.unsubscribe();
+    }
+
     const subscription = form.watch((values) => {
       onValuesChangeProp?.(values, form);
-      const parsedValues = formSchema.safeParse(values);
-      if (parsedValues.success) {
-        onParsedValuesChange?.(parsedValues.data, form);
+
+      if (parseDebounceTimeoutRef.current) {
+        clearTimeout(parseDebounceTimeoutRef.current);
       }
+
+      parseDebounceTimeoutRef.current = setTimeout(() => {
+        const parsedValues = formSchema.safeParse(values);
+        if (parsedValues.success) {
+          onParsedValuesChange(parsedValues.data, form);
+        }
+      }, PARSED_VALUES_CHANGE_DEBOUNCE_MS);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      if (parseDebounceTimeoutRef.current) {
+        clearTimeout(parseDebounceTimeoutRef.current);
+        parseDebounceTimeoutRef.current = null;
+      }
+      subscription.unsubscribe();
+    };
   }, [form, formSchema, onValuesChangeProp, onParsedValuesChange]);
 
   const renderChildren =

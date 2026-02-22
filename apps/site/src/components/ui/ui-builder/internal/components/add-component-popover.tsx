@@ -134,7 +134,7 @@ export function AddComponentsPopover({
       onOpenChange,
       onChange,
       fieldName,
-      componentRegistry[currentValue as keyof typeof componentRegistry],
+      componentRegistry,
     ],
   );
 
