@@ -1628,13 +1628,16 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
         const [chartType, setChartType] = useState<'top-installed' | 'recently-updated'>('top-installed');
         const [selectedCategory, setSelectedCategory] = useState('All');
 
-        const catalog = useMemo(() => buildPluginCatalog({
-          releases,
-          installs: [],
-          query,
-          filter: 'all',
-          sort: 'name',
-        }), [releases, query]);
+        const catalog = useMemo(() => {
+          const catalogInput = {
+            releases,
+            installs: [],
+            query,
+            filter: 'all' as const,
+            sort: 'name' as const,
+          };
+          return buildPluginCatalog(catalogInput);
+        }, [releases, query]);
 
         const marketplace = useMemo(
           () => buildMarketplaceGroups(catalog, { installs: [], reviews: [] }),
@@ -1752,7 +1755,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                   <Input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Search plugins"
+                    placeholder="Search plugins by name, id, or version"
                     className="h-11 rounded-2xl border-primary/20 bg-background/50 pl-10 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary focus-visible:ring-offset-0 transition-all"
                   />
                   {query && (
