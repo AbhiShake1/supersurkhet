@@ -61,6 +61,23 @@ const assistantTurnInputSchema = z.object({
       }),
     )
     .default([]),
+  onboardingStage: z
+    .enum([
+      'select_provider',
+      'select_model',
+      'select_auth_method',
+      'authenticate',
+      'auth_ready',
+      'business_intent',
+    ])
+    .optional(),
+  providerSelectionContext: z
+    .object({
+      providerId: z.string().optional(),
+      modelId: z.string().optional(),
+      authMode: z.string().optional(),
+    })
+    .optional(),
 });
 
 export const getBusinessCreationAssistantTurn = createServerFn({
@@ -172,6 +189,12 @@ export const getBusinessCreationAssistantTurn = createServerFn({
           'Return strict JSON only, matching the schema.',
           `Provider selected: ${normalizedProvider.providerId}`,
           `Model selected: ${normalizedProvider.model}`,
+          `Onboarding stage: ${data.onboardingStage ?? 'unspecified'}`,
+          `Provider selection context: ${
+            data.providerSelectionContext
+              ? JSON.stringify(data.providerSelectionContext)
+              : 'none'
+          }`,
           `Available release IDs (choose only from these): ${data.availableReleaseIds.join(', ') || 'none'}`,
           `Already selected release IDs: ${data.selectedReleaseIds.join(', ') || 'none'}`,
           `Conversation history:\n${contextHistory || 'none'}`,

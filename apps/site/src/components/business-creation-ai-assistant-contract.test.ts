@@ -8,22 +8,21 @@ const filePath = resolve(
 );
 
 describe('business creation AI assistant contract', () => {
-  it('renders ai auth onboarding in step 2 without inline plugin browser controls', () => {
+  it('wires step 2 to a staged conversational auth flow with reducer orchestration', () => {
     const source = readFileSync(filePath, 'utf8');
 
-    expect(source).toContain('AI Integration');
-    expect(source).toContain('selectedAssistantProviderId');
-    expect(source).toContain('selectedAssistantModelId');
-    expect(source).toContain('selectedAssistantAuthMode');
-    expect(source).toContain('Save credential');
-    expect(source).toContain('Create auth session');
-    expect(source).toContain('Search providers...');
-    expect(source).toContain('https://models.dev/logos/');
+    expect(source).toContain('BusinessOnboardingChat');
+    expect(source).toContain('businessOnboardingSessionReducer');
+    expect(source).toContain('createInitialBusinessOnboardingSession');
+    expect(source).toContain("type: 'select_provider'");
+    expect(source).toContain('onboardingStage');
+    expect(source).toContain('providerSelectionContext');
+    expect(source).toContain('VITE_BUSINESS_ONBOARDING_CHAT_AUTH_V1');
     expect(source).toContain('https://models.dev/api.json');
-    expect(source).toContain('workflow setup happen in Step 3');
-    expect(source).not.toContain('getBusinessCreationAssistantTurn');
-    expect(source).not.toContain('AI Business Onboarding');
-    expect(source).not.toContain('customQuickPrompt');
-    expect(source).not.toContain('Describe your business and what it does.');
+    expect(source).toContain('getBusinessCreationAssistantTurn');
+    expect(source).toContain('mergeSelectedReleaseIds');
+    expect(source).not.toContain(
+      'CommandInput placeholder="Search providers..."',
+    );
   });
 });

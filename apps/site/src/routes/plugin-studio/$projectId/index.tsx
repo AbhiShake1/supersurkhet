@@ -72,8 +72,15 @@ function toPluginIdSeed(project: PluginProjectDoc | null) {
 }
 
 function toDisplayPluginTitle(input: string | undefined, pluginId: string) {
-  const fallback = pluginId.replace(/^plugin\./, '');
-  const normalized = input?.trim() || fallback;
+  const fallback = 'no name provided';
+  const normalizedInput = input?.trim() ?? '';
+  const normalizedPluginId = pluginId.trim();
+  const normalizedPluginSlug = pluginId.replace(/^plugin\./, '').trim();
+  const normalized =
+    normalizedInput === normalizedPluginId ||
+    normalizedInput === normalizedPluginSlug
+      ? ''
+      : normalizedInput;
   const withoutSuffix = normalized.replace(
     /(?:\s*\([^)]*\)\s*$)|(?:\s*\[[^\]]*]\s*$)/,
     '',
@@ -333,7 +340,7 @@ function PluginStudioProjectRoute() {
     const nextValue = editingValue.trim();
     const nextTitle =
       editingField.field === 'title'
-        ? nextValue || targetCard.pluginId.replace(/^plugin\./, '')
+        ? nextValue || 'no name provided'
         : targetDraft.title;
     const nextDescription =
       editingField.field === 'description'

@@ -1,13 +1,19 @@
 import { Link } from '@tanstack/react-router';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import {
   type AssistantAuthMode,
-  type BusinessOnboardingModelOption,
   BUSINESS_ONBOARDING_MODEL_OPTIONS,
+  type BusinessOnboardingModelOption,
   type BusinessOnboardingProviderId,
   DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
   PROVIDER_SUPPORTED_AUTH_MODES,
@@ -17,20 +23,19 @@ import {
   resolveProviderSupportedAuthModes,
 } from '@/lib/ai/business-onboarding-models';
 import { api } from '@/lib/api';
+import { mergeSelectedReleaseIds } from '@/lib/business-ai-assistant';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import { businessSchema } from '@/lib/schema';
 import { cn } from '@/lib/utils';
+import { getBusinessCreationAssistantTurn } from '@/server-functions/ai';
+import { BusinessOnboardingChat } from './business-onboarding-chat';
+import {
+  businessOnboardingSessionReducer,
+  createInitialBusinessOnboardingSession,
+} from './business-onboarding-chat-state';
 import { MapField } from './ui/autoform/components/MapField';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from './ui/command';
 import {
   FormControl,
   FormField,
@@ -39,15 +44,7 @@ import {
   FormMessage,
 } from './ui/form';
 import { Input } from './ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { ScrollArea } from './ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from './ui/select';
 
 export const businessCreationSchema = businessSchema
   .pick({
@@ -100,7 +97,6 @@ const providerLabelById: Partial<Record<string, string>> = {
   'custom-openai-compatible': 'Custom OpenAI-compatible',
 };
 
-const MODELS_DEV_PROVIDER_LOGO_BASE_URL = 'https://models.dev/logos/';
 const modelsDevProviderLogoOverrides: Record<string, string> = {
   bedrock: 'amazon-bedrock',
   together: 'togetherai',
@@ -110,43 +106,6 @@ const modelsDevProviderLogoOverrides: Record<string, string> = {
 
 function resolveModelsDevProviderId(providerId: string): string {
   return modelsDevProviderLogoOverrides[providerId] ?? providerId;
-}
-
-function resolveModelsDevProviderLogoUrl(providerId: string): string {
-  const normalizedProviderId = resolveModelsDevProviderId(providerId);
-  return `${MODELS_DEV_PROVIDER_LOGO_BASE_URL}${encodeURIComponent(
-    normalizedProviderId,
-  )}.svg`;
-}
-
-function ProviderLogo({
-  providerId,
-  label,
-  className,
-}: {
-  providerId: string;
-  label: string;
-  className?: string;
-}) {
-  return (
-    <span
-      className={cn(
-        'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border border-border/60 bg-background',
-        className,
-      )}
-    >
-      <img
-        src={resolveModelsDevProviderLogoUrl(providerId)}
-        alt={`${label} logo`}
-        loading="lazy"
-        referrerPolicy="no-referrer"
-        className="h-3.5 w-3.5 object-contain dark:invert"
-        onError={(event) => {
-          event.currentTarget.style.display = 'none';
-        }}
-      />
-    </span>
-  );
 }
 
 const authModeLabelById: Record<AssistantAuthMode, string> = {
@@ -179,8 +138,6 @@ type ModelsDevProviderRecord = {
   id?: string;
   models?: Record<string, ModelsDevModelRecord>;
 };
-
-type OauthFlowState = 'idle' | 'pending' | 'connected' | 'error';
 
 const OPENAI_BROWSER_OAUTH_METHOD_ID = 'openai-chatgpt-pro-plus-browser';
 const OPENAI_HEADLESS_OAUTH_METHOD_ID = 'openai-chatgpt-pro-plus-headless';
@@ -408,9 +365,7 @@ export function BusinessCreationForm({
         </div>
       )}
 
-      {step === 2 && (
-        <BusinessOnboardingAssistantForm form={form} />
-      )}
+      {step === 2 && <BusinessOnboardingAssistantForm form={form} />}
 
       {step === 3 && (
         <div className="space-y-6 rounded-2xl border border-border/70 bg-background p-4 sm:p-5">
@@ -432,23 +387,26 @@ export function BusinessCreationForm({
   );
 }
 
-function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
+function BusinessOnboardingAssistantForm({ form }: StepTwoFormProps) {
   const defaultModelOption = resolveAssistantModelOption(
     DEFAULT_BUSINESS_ONBOARDING_MODEL_ID,
   );
 
-  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [isProviderComboboxOpen, setIsProviderComboboxOpen] = useState(false);
-  const [isModelComboboxOpen, setIsModelComboboxOpen] = useState(false);
-  const [selectedAssistantProviderId, setSelectedAssistantProviderId] =
-    useState<BusinessOnboardingProviderId>(defaultModelOption.provider);
-  const [selectedAssistantModelId, setSelectedAssistantModelId] = useState(
-    defaultModelOption.id,
+  const [session, dispatch] = useReducer(
+    businessOnboardingSessionReducer,
+    createInitialBusinessOnboardingSession({
+      selectedProviderId: defaultModelOption.provider,
+      selectedModelId: defaultModelOption.id,
+      selectedAuthMode: resolveProviderDefaultAuthMode(
+        defaultModelOption.provider,
+      ),
+      oauthMethodId:
+        resolveDefaultProviderOauthMethodId(
+          resolveProviderOauthMethods(defaultModelOption.provider),
+        ) ?? '',
+    }),
   );
-  const [selectedAssistantAuthMode, setSelectedAssistantAuthMode] =
-    useState<AssistantAuthMode>(() =>
-      resolveProviderDefaultAuthMode(defaultModelOption.provider),
-    );
+
   const [providerApiKey, setProviderApiKey] = useState('');
   const [providerOauthAccessToken, setProviderOauthAccessToken] = useState('');
   const [providerBaseUrl, setProviderBaseUrl] = useState(
@@ -457,16 +415,27 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [providerRegion, setProviderRegion] = useState('');
   const [providerOrganization, setProviderOrganization] = useState('');
   const [providerProject, setProviderProject] = useState('');
+  const [providerCredentialSavedAt, setProviderCredentialSavedAt] = useState<
+    number | null
+  >(null);
+  const [authSessionExpiresAt, setAuthSessionExpiresAt] = useState<
+    number | null
+  >(null);
   const [providerOauthMethods, setProviderOauthMethods] = useState<
     readonly ProviderOauthMethodOption[]
   >(() => resolveProviderOauthMethods(defaultModelOption.provider));
-  const [selectedProviderOauthMethodId, setSelectedProviderOauthMethodId] =
-    useState(
-      () =>
-        resolveDefaultProviderOauthMethodId(
-          resolveProviderOauthMethods(defaultModelOption.provider),
-        ) ?? '',
-    );
+  const [modelsDevCatalogByProviderId, setModelsDevCatalogByProviderId] =
+    useState<Record<string, ModelsDevProviderRecord>>({});
+  const [statusLines, setStatusLines] = useState<string[]>([]);
+  const [thread, setThread] = useState<
+    Array<{ id: string; role: 'assistant' | 'user'; content: string }>
+  >([]);
+  const [quickOptions, setQuickOptions] = useState<string[]>([
+    'Describe my daily workflow',
+    'List my top pain points',
+    'Focus on customer experience',
+  ]);
+  const [showAdvancedAuthDetails, setShowAdvancedAuthDetails] = useState(false);
   const [isSavingProviderCredential, setIsSavingProviderCredential] =
     useState(false);
   const [isRefreshingProviderCredential, setIsRefreshingProviderCredential] =
@@ -474,19 +443,48 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [isStartingProviderOauth, setIsStartingProviderOauth] = useState(false);
   const [isCreatingAuthSession, setIsCreatingAuthSession] = useState(false);
   const [isRevokingAuthSession, setIsRevokingAuthSession] = useState(false);
-  const [providerCredentialSavedAt, setProviderCredentialSavedAt] = useState<
-    number | null
-  >(null);
-  const [authSessionToken, setAuthSessionToken] = useState('');
-  const [authSessionExpiresAt, setAuthSessionExpiresAt] = useState<
-    number | null
-  >(null);
-  const [oauthFlowState, setOauthFlowState] = useState<OauthFlowState>('idle');
-  const [oauthFlowMessage, setOauthFlowMessage] = useState('');
-  const [oauthAuthorizationUrl, setOauthAuthorizationUrl] = useState('');
-  const [oauthVerificationCode, setOauthVerificationCode] = useState('');
-  const [modelsDevCatalogByProviderId, setModelsDevCatalogByProviderId] =
-    useState<Record<string, ModelsDevProviderRecord>>({});
+
+  const stagePromptRef = useRef<string>('');
+
+  const { data: releaseRows = [] } = api.pluginRelease.useGet();
+  const releases = useMemo(
+    () => releaseRows as PluginReleaseDoc[],
+    [releaseRows],
+  );
+  const availableReleaseIds = useMemo(
+    () =>
+      releases.map((release) => toReleaseId(release.pluginId, release.version)),
+    [releases],
+  );
+
+  const businessOnboardingChatAuthV1 =
+    import.meta.env.VITE_BUSINESS_ONBOARDING_CHAT_AUTH_V1 !== '0';
+
+  const appendStatusLine = useCallback((line: string) => {
+    setStatusLines((current) => [...current, line]);
+  }, []);
+
+  const appendAssistantMessage = useCallback((content: string) => {
+    setThread((current) => [
+      ...current,
+      {
+        id: `assistant-${current.length + 1}`,
+        role: 'assistant',
+        content,
+      },
+    ]);
+  }, []);
+
+  const appendUserMessage = useCallback((content: string) => {
+    setThread((current) => [
+      ...current,
+      {
+        id: `user-${current.length + 1}`,
+        role: 'user',
+        content,
+      },
+    ]);
+  }, []);
 
   const providerOptions = useMemo(
     () =>
@@ -497,16 +495,11 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         .map((providerId) => ({
           providerId,
           label: formatProviderLabel(providerId),
+          supportedAuthModes: resolveProviderSupportedAuthModes(providerId),
         })),
     [],
   );
-  const selectedProviderOption = useMemo(
-    () =>
-      providerOptions.find(
-        (option) => option.providerId === selectedAssistantProviderId,
-      ),
-    [providerOptions, selectedAssistantProviderId],
-  );
+
   const resolveProviderModelOptions = useCallback(
     (providerId: string): BusinessOnboardingModelOption[] => {
       const modelsDevProviderId = resolveModelsDevProviderId(providerId);
@@ -536,35 +529,74 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     },
     [modelsDevCatalogByProviderId],
   );
+
   const providerModelOptions = useMemo(
-    () => resolveProviderModelOptions(selectedAssistantProviderId),
-    [selectedAssistantProviderId, resolveProviderModelOptions],
+    () => resolveProviderModelOptions(session.selectedProviderId),
+    [resolveProviderModelOptions, session.selectedProviderId],
   );
-  const selectedModelOption = useMemo(
-    () =>
-      providerModelOptions.find(
-        (option) => option.id === selectedAssistantModelId,
-      ) ??
-      providerModelOptions[0] ??
-      resolveAssistantModelOption(DEFAULT_BUSINESS_ONBOARDING_MODEL_ID),
-    [providerModelOptions, selectedAssistantModelId],
-  );
+
+  const defaultModelIdForProvider = providerModelOptions[0]?.id;
+  const selectedModel =
+    providerModelOptions.find(
+      (model) => model.id === session.selectedModelId,
+    ) ?? providerModelOptions[0];
+
+  const modelOptions = useMemo(() => {
+    const preferredIds = new Set(
+      BUSINESS_ONBOARDING_MODEL_OPTIONS.filter(
+        (option) => option.provider === session.selectedProviderId,
+      ).map((option) => option.id),
+    );
+
+    return providerModelOptions.map((model) => ({
+      group:
+        model.id === defaultModelIdForProvider
+          ? ('default' as const)
+          : preferredIds.has(model.id)
+            ? ('preferred' as const)
+            : ('custom' as const),
+      id: model.id,
+      label: model.label,
+      description: model.description,
+      providerId: session.selectedProviderId,
+    }));
+  }, [
+    providerModelOptions,
+    session.selectedProviderId,
+    defaultModelIdForProvider,
+  ]);
+
+  const selectedProviderOption =
+    providerOptions.find(
+      (provider) => provider.providerId === session.selectedProviderId,
+    ) ?? providerOptions[0];
+
   const supportedAuthModes = resolveProviderSupportedAuthModes(
-    selectedAssistantProviderId,
+    session.selectedProviderId,
   );
+
+  const authModeOptions = supportedAuthModes.map((mode) => ({
+    id: mode,
+    label: authModeLabelById[mode],
+  }));
+
   const selectedProviderOauthMethods = providerOauthMethods;
   const resolvedProviderOauthMethodId = selectedProviderOauthMethods.some(
-    (method) => method.id === selectedProviderOauthMethodId,
+    (method) => method.id === session.oauthMethodId,
   )
-    ? selectedProviderOauthMethodId
+    ? session.oauthMethodId
     : resolveDefaultProviderOauthMethodId(selectedProviderOauthMethods);
+
   const selectedProviderOauthButtonLabel = resolveProviderOauthButtonLabel({
     methods: selectedProviderOauthMethods,
     methodId: resolvedProviderOauthMethodId,
   });
+
   const canStartProviderOauth =
-    selectedAssistantAuthMode === 'oauth-access-token' &&
+    session.selectedAuthMode === 'oauth-access-token' &&
     Boolean(resolvedProviderOauthMethodId);
+
+  const selectedAuthModeLabel = authModeLabelById[session.selectedAuthMode];
 
   useEffect(() => {
     let cancelled = false;
@@ -580,7 +612,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         if (cancelled) return;
         setModelsDevCatalogByProviderId(payload);
       } catch {
-        // Keep static fallback model options when models.dev is unavailable.
+        // keep static fallback model options when models.dev is unavailable
       }
     }
 
@@ -594,16 +626,14 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   useEffect(() => {
     let cancelled = false;
     const fallbackMethods = resolveProviderOauthMethods(
-      selectedAssistantProviderId,
+      session.selectedProviderId,
     );
     setProviderOauthMethods(fallbackMethods);
 
     async function loadProviderOauthMethods() {
       try {
         const response = await fetch(
-          `/v1/auth/providers/methods?providerId=${encodeURIComponent(
-            selectedAssistantProviderId,
-          )}`,
+          `/v1/auth/providers/methods?providerId=${encodeURIComponent(session.selectedProviderId)}`,
           {
             credentials: 'include',
           },
@@ -615,23 +645,26 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         if (cancelled) return;
 
         const normalized = normalizeProviderOauthMethodOptions(
-          selectedAssistantProviderId,
+          session.selectedProviderId,
           payload.methods ?? [],
         );
         setProviderOauthMethods(normalized);
-        setSelectedProviderOauthMethodId((current) =>
-          normalized.some((method) => method.id === current)
-            ? current
-            : (resolveDefaultProviderOauthMethodId(normalized) ?? ''),
-        );
+
+        const resolvedMethod =
+          normalized.find((method) => method.id === session.oauthMethodId)
+            ?.id ??
+          resolveDefaultProviderOauthMethodId(normalized) ??
+          '';
+        dispatch({
+          type: 'select_oauth_method',
+          oauthMethodId: resolvedMethod,
+        });
       } catch {
         if (cancelled) return;
         setProviderOauthMethods(fallbackMethods);
-        setSelectedProviderOauthMethodId((current) =>
-          fallbackMethods.some((method) => method.id === current)
-            ? current
-            : (resolveDefaultProviderOauthMethodId(fallbackMethods) ?? ''),
-        );
+        const fallbackId =
+          resolveDefaultProviderOauthMethodId(fallbackMethods) ?? '';
+        dispatch({ type: 'select_oauth_method', oauthMethodId: fallbackId });
       }
     }
 
@@ -640,7 +673,29 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     return () => {
       cancelled = true;
     };
-  }, [selectedAssistantProviderId]);
+  }, [session.selectedProviderId, session.oauthMethodId]);
+
+  useEffect(() => {
+    const prompt =
+      session.stage === 'select_provider'
+        ? "Let's choose your AI provider. Pick one option below."
+        : session.stage === 'select_model'
+          ? 'Now choose the model for this provider.'
+          : session.stage === 'select_auth_method'
+            ? 'Choose how this provider should authenticate.'
+            : session.stage === 'authenticate'
+              ? 'Connect or save credentials. OAuth opens in a new tab automatically.'
+              : session.stage === 'auth_ready'
+                ? 'Authentication looks ready. Continue to the intent chat when you are ready.'
+                : "Describe the business and I'll recommend plugins; you can still move to Step 3 anytime.";
+
+    if (stagePromptRef.current === `${session.stage}:${prompt}`) {
+      return;
+    }
+
+    appendAssistantMessage(prompt);
+    stagePromptRef.current = `${session.stage}:${prompt}`;
+  }, [appendAssistantMessage, session.stage]);
 
   function buildProviderPayload() {
     const payload: {
@@ -654,9 +709,9 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       organization?: string;
       project?: string;
     } = {
-      providerId: selectedAssistantProviderId,
-      model: selectedAssistantModelId,
-      authMode: selectedAssistantAuthMode,
+      providerId: session.selectedProviderId,
+      model: session.selectedModelId,
+      authMode: session.selectedAuthMode,
     };
 
     const trimmedBaseUrl = providerBaseUrl.trim();
@@ -665,13 +720,13 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     }
 
     const trimmedApiKey = providerApiKey.trim();
-    if (selectedAssistantAuthMode === 'api-key' && trimmedApiKey.length > 0) {
+    if (session.selectedAuthMode === 'api-key' && trimmedApiKey.length > 0) {
       payload.apiKey = trimmedApiKey;
     }
 
     const trimmedOauthAccessToken = providerOauthAccessToken.trim();
     if (
-      selectedAssistantAuthMode === 'oauth-access-token' &&
+      session.selectedAuthMode === 'oauth-access-token' &&
       trimmedOauthAccessToken.length > 0
     ) {
       payload.oauthAccessToken = trimmedOauthAccessToken;
@@ -708,56 +763,6 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     }
   }
 
-  async function saveProviderCredential() {
-    const payload = buildProviderPayload();
-
-    if (payload.authMode === 'api-key' && !payload.apiKey) {
-      toast.error('Enter an API key before saving.');
-      return;
-    }
-    if (
-      payload.authMode === 'oauth-access-token' &&
-      !payload.oauthAccessToken
-    ) {
-      toast.error('Enter an OAuth access token before saving.');
-      return;
-    }
-
-    setIsSavingProviderCredential(true);
-    try {
-      const response = await fetch('/v1/auth/providers', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        toast.error(await readErrorMessage(response));
-        return;
-      }
-
-      setProviderCredentialSavedAt(Date.now());
-      setAuthSessionToken('');
-      setAuthSessionExpiresAt(null);
-      if (payload.authMode === 'api-key') {
-        setProviderApiKey('');
-      }
-      if (payload.authMode === 'oauth-access-token') {
-        setProviderOauthAccessToken('');
-      }
-      setOauthFlowState('connected');
-      setOauthFlowMessage('Credential saved for selected provider.');
-      toast.success('Provider credentials saved for this signed-in session.');
-    } catch {
-      toast.error('Failed to save provider credentials.');
-    } finally {
-      setIsSavingProviderCredential(false);
-    }
-  }
-
   async function refreshStoredProviderCredential(): Promise<boolean> {
     setIsRefreshingProviderCredential(true);
     try {
@@ -775,22 +780,24 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         }>;
       };
       const match = parsed.data?.find(
-        (item) => item.providerId === selectedAssistantProviderId,
+        (item) => item.providerId === session.selectedProviderId,
       );
       if (!match) {
         setProviderCredentialSavedAt(null);
+        dispatch({
+          type: 'set_auth_error',
+          message: 'No saved credential found yet.',
+        });
         return false;
       }
-      if (typeof match.updatedAt === 'number') {
-        setProviderCredentialSavedAt(match.updatedAt * 1000);
-      } else {
-        setProviderCredentialSavedAt(Date.now());
-      }
-      if (match.authMode) {
-        setSelectedAssistantAuthMode(match.authMode);
-      }
-      setOauthFlowState('connected');
-      setOauthFlowMessage('Credential detected for selected provider.');
+      const validatedAt =
+        typeof match.updatedAt === 'number'
+          ? match.updatedAt * 1000
+          : Date.now();
+      setProviderCredentialSavedAt(validatedAt);
+      dispatch({ type: 'set_last_validated_at', at: validatedAt });
+      dispatch({ type: 'oauth_connected', at: validatedAt });
+      appendStatusLine('Credential detected for selected provider.');
       return true;
     } catch {
       return false;
@@ -799,183 +806,69 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     }
   }
 
-  async function startProviderOauth() {
-    if (!resolvedProviderOauthMethodId) return;
-    const providerLabel = formatProviderLabel(selectedAssistantProviderId);
-    const trimmedProject = providerProject.trim();
-    const wait = (milliseconds: number) =>
-      new Promise<void>((resolve) => {
-        window.setTimeout(resolve, milliseconds);
-      });
+  async function saveProviderCredential() {
+    const payload = buildProviderPayload();
 
-    setOauthFlowState('pending');
-    setOauthFlowMessage('Preparing secure authorization link...');
-    setOauthAuthorizationUrl('');
-    setOauthVerificationCode('');
-    setIsStartingProviderOauth(true);
+    if (payload.authMode === 'api-key' && !payload.apiKey) {
+      toast.error('Enter an API key before saving.');
+      return;
+    }
+
+    if (
+      payload.authMode === 'oauth-access-token' &&
+      !payload.oauthAccessToken &&
+      session.selectedAuthMode === 'oauth-access-token'
+    ) {
+      toast.error('Enter an OAuth access token before saving.');
+      return;
+    }
+
+    setIsSavingProviderCredential(true);
     try {
-      const response = await fetch('/v1/auth/providers/oauth/authorize', {
+      const response = await fetch('/v1/auth/providers', {
         method: 'POST',
         credentials: 'include',
         headers: {
           'content-type': 'application/json',
         },
-        body: JSON.stringify({
-          providerId: selectedAssistantProviderId,
-          methodId: resolvedProviderOauthMethodId,
-          model: selectedAssistantModelId,
-          projectId:
-            selectedAssistantProviderId === 'google' && trimmedProject
-              ? trimmedProject
-              : undefined,
-        }),
+        body: JSON.stringify(payload),
       });
+
       if (!response.ok) {
-        toast.error(await readErrorMessage(response));
-        return;
-      }
-      const parsed = (await response.json()) as {
-        authorizationUrl?: string;
-        method?: string;
-        verificationCode?: string;
-        pollingIntervalSeconds?: number;
-      };
-      if (!parsed.authorizationUrl) {
-        setOauthFlowState('error');
-        setOauthFlowMessage('Authorization URL was not returned.');
-        toast.error('OAuth authorization URL was not returned.');
+        const errorMessage = await readErrorMessage(response);
+        dispatch({ type: 'oauth_failed', message: errorMessage });
+        toast.error(errorMessage);
         return;
       }
 
-      setOauthAuthorizationUrl(parsed.authorizationUrl);
-      setOauthFlowMessage('Open the authorization page to continue OAuth.');
+      const now = Date.now();
+      setProviderCredentialSavedAt(now);
+      dispatch({ type: 'oauth_connected', at: now });
+      dispatch({ type: 'clear_auth_session' });
+      dispatch({ type: 'set_auth_error', message: '' });
+      setAuthSessionExpiresAt(null);
+      appendStatusLine('Credential saved for selected provider.');
 
-      const responseMethodId = parsed.method ?? resolvedProviderOauthMethodId;
-      const isDevicePollingOauth =
-        responseMethodId === OPENAI_HEADLESS_OAUTH_METHOD_ID ||
-        responseMethodId === GITHUB_COPILOT_DEVICE_OAUTH_METHOD_ID;
-      const pollingIntervalSeconds = Number.isFinite(
-        parsed.pollingIntervalSeconds,
-      )
-        ? Math.max(1, Math.floor(parsed.pollingIntervalSeconds ?? 0))
-        : 5;
-
-      const popup = window.open(
-        parsed.authorizationUrl,
-        `${selectedAssistantProviderId}-oauth`,
-        'popup=yes,width=560,height=760',
-      );
-      if (!popup) {
-        setOauthFlowState('pending');
-        setOauthFlowMessage(
-          'Popup blocked. Use the secure OAuth link below to continue in a new tab.',
-        );
-        toast.message('Popup blocked. Open OAuth using the secure link.');
-        return;
+      if (payload.authMode === 'api-key') {
+        setProviderApiKey('');
+      }
+      if (payload.authMode === 'oauth-access-token') {
+        setProviderOauthAccessToken('');
       }
 
-      setOauthFlowState('pending');
-      setOauthFlowMessage('Complete login in the popup. We will detect completion automatically.');
-      toast.success('Complete the OAuth login in the popup window.');
-
-      if (isDevicePollingOauth) {
-        if (parsed.verificationCode) {
-          setOauthVerificationCode(parsed.verificationCode);
-          toast.message(
-            `Verification code: ${parsed.verificationCode}. Enter it in the popup to continue.`,
-          );
-        }
-        setOauthFlowMessage(
-          'Device flow started. Complete verification in popup; status will update automatically.',
-        );
-        const maxPollAttempts = 120;
-        for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
-          const callbackResponse = await fetch(
-            '/v1/auth/providers/oauth/callback',
-            {
-              method: 'POST',
-              credentials: 'include',
-              headers: {
-                'content-type': 'application/json',
-              },
-              body: JSON.stringify({}),
-            },
-          );
-
-          if (callbackResponse.status === 202) {
-            const retryAfterHeader =
-              callbackResponse.headers.get('Retry-After');
-            const retryAfterSeconds = Number.parseInt(
-              retryAfterHeader ?? '',
-              10,
-            );
-            const nextWaitSeconds = Number.isFinite(retryAfterSeconds)
-              ? Math.max(1, retryAfterSeconds)
-              : pollingIntervalSeconds;
-            setOauthFlowMessage(
-              `Waiting for authorization confirmation... checking again in ${nextWaitSeconds}s.`,
-            );
-            await wait(nextWaitSeconds * 1000);
-            continue;
-          }
-
-          if (!callbackResponse.ok) {
-            setOauthFlowState('error');
-            setOauthFlowMessage('OAuth callback failed. Retry authorization.');
-            toast.error(await readErrorMessage(callbackResponse));
-            return;
-          }
-
-          const refreshed = await refreshStoredProviderCredential();
-          if (refreshed) {
-            setOauthFlowState('connected');
-            setOauthFlowMessage(`${providerLabel} OAuth credential connected.`);
-            toast.success(`${providerLabel} OAuth credential connected.`);
-          } else {
-            setOauthFlowState('pending');
-            setOauthFlowMessage(
-              'OAuth completed. Credential not visible yet; try Refresh credential status.',
-            );
-            toast.message(
-              'OAuth completed. Refresh credential status if it is not visible yet.',
-            );
-          }
-          return;
-        }
-
-        setOauthFlowState('error');
-        setOauthFlowMessage(
-          'Timed out waiting for device authorization. Restart OAuth to retry.',
-        );
-        toast.error('Timed out waiting for device authorization to complete.');
-        return;
-      }
-
-      const poll = window.setInterval(async () => {
-        if (!popup.closed) return;
-        window.clearInterval(poll);
-        const refreshed = await refreshStoredProviderCredential();
-        if (refreshed) {
-          setOauthFlowState('connected');
-          setOauthFlowMessage(`${providerLabel} OAuth credential connected.`);
-          toast.success(`${providerLabel} OAuth credential connected.`);
-        } else {
-          setOauthFlowState('pending');
-          setOauthFlowMessage(
-            'Authorization window closed. If not connected yet, use Refresh credential status.',
-          );
-        }
-      }, 1000);
+      toast.success('Provider credentials saved for this signed-in session.');
     } catch {
-      setOauthFlowState('error');
-      setOauthFlowMessage(`Failed to start ${providerLabel} OAuth.`);
-      toast.error(`Failed to start ${providerLabel} OAuth.`);
+      dispatch({
+        type: 'oauth_failed',
+        message: 'Failed to save provider credentials.',
+      });
+      toast.error('Failed to save provider credentials.');
     } finally {
-      setIsStartingProviderOauth(false);
+      setIsSavingProviderCredential(false);
     }
   }
 
-  async function createAuthSession() {
+  async function createAuthSession(): Promise<string | null> {
     const hasStoredCredential =
       providerCredentialSavedAt || (await refreshStoredProviderCredential());
     const payload = buildProviderPayload();
@@ -1005,7 +898,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
 
       if (!response.ok) {
         toast.error(await readErrorMessage(response));
-        return;
+        return null;
       }
 
       const parsed = (await response.json()) as {
@@ -1014,21 +907,23 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       };
       if (!parsed.sessionToken) {
         toast.error('Session token was not returned.');
-        return;
+        return null;
       }
 
-      setAuthSessionToken(parsed.sessionToken);
+      dispatch({ type: 'set_auth_session_token', token: parsed.sessionToken });
       setAuthSessionExpiresAt(parsed.expiresAt ?? null);
-      toast.success('Auth session created for OpenAPI-compatible calls.');
+      appendStatusLine('Auth session token created.');
+      return parsed.sessionToken;
     } catch {
       toast.error('Failed to create auth session.');
+      return null;
     } finally {
       setIsCreatingAuthSession(false);
     }
   }
 
   async function revokeAuthSession() {
-    if (!authSessionToken) return;
+    if (!session.authSessionToken) return;
 
     setIsRevokingAuthSession(true);
     try {
@@ -1036,7 +931,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         method: 'DELETE',
         credentials: 'include',
         headers: {
-          authorization: `Bearer ${authSessionToken}`,
+          authorization: `Bearer ${session.authSessionToken}`,
         },
       });
 
@@ -1045,8 +940,9 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         return;
       }
 
-      setAuthSessionToken('');
+      dispatch({ type: 'clear_auth_session' });
       setAuthSessionExpiresAt(null);
+      appendStatusLine('Auth session revoked.');
       toast.success('Auth session revoked.');
     } catch {
       toast.error('Failed to revoke auth session.');
@@ -1055,508 +951,515 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     }
   }
 
-  function handleProviderChange(nextProviderIdValue: string) {
-    const nextProviderId = nextProviderIdValue;
-    const nextModelOptions = resolveProviderModelOptions(nextProviderId);
+  async function startProviderOauth() {
+    if (!resolvedProviderOauthMethodId) return;
+    const providerLabel = formatProviderLabel(session.selectedProviderId);
+    const trimmedProject = providerProject.trim();
+    const wait = (milliseconds: number) =>
+      new Promise<void>((resolve) => {
+        window.setTimeout(resolve, milliseconds);
+      });
 
-    setIsProviderComboboxOpen(false);
-    setIsModelComboboxOpen(false);
-    setSelectedAssistantProviderId(nextProviderId);
-    setSelectedAssistantAuthMode(
-      resolveProviderDefaultAuthMode(nextProviderId),
-    );
-    const fallbackOauthMethods = resolveProviderOauthMethods(nextProviderId);
-    setProviderOauthMethods(fallbackOauthMethods);
-    setSelectedProviderOauthMethodId(
-      resolveDefaultProviderOauthMethodId(fallbackOauthMethods) ?? '',
-    );
-    setProviderBaseUrl(resolveProviderDefaultBaseUrl(nextProviderId) ?? '');
-    setProviderCredentialSavedAt(null);
-    setAuthSessionToken('');
-    setAuthSessionExpiresAt(null);
-    setOauthFlowState('idle');
-    setOauthFlowMessage('');
-    setOauthAuthorizationUrl('');
-    setOauthVerificationCode('');
-    setSelectedAssistantModelId((currentModel) =>
-      nextModelOptions.some((option) => option.id === currentModel)
-        ? currentModel
-        : (nextModelOptions[0]?.id ?? currentModel),
+    dispatch({
+      type: 'oauth_started',
+      authorizationUrl: '',
+      verificationCode: '',
+    });
+    appendStatusLine('Preparing secure authorization link...');
+    setIsStartingProviderOauth(true);
+    try {
+      const response = await fetch('/v1/auth/providers/oauth/authorize', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          providerId: session.selectedProviderId,
+          methodId: resolvedProviderOauthMethodId,
+          model: session.selectedModelId,
+          projectId:
+            session.selectedProviderId === 'google' && trimmedProject
+              ? trimmedProject
+              : undefined,
+        }),
+      });
+      if (!response.ok) {
+        const errorMessage = await readErrorMessage(response);
+        dispatch({ type: 'oauth_failed', message: errorMessage });
+        toast.error(errorMessage);
+        return;
+      }
+      const parsed = (await response.json()) as {
+        authorizationUrl?: string;
+        method?: string;
+        verificationCode?: string;
+        pollingIntervalSeconds?: number;
+      };
+      if (!parsed.authorizationUrl) {
+        dispatch({
+          type: 'oauth_failed',
+          message: 'Authorization URL was not returned.',
+        });
+        toast.error('OAuth authorization URL was not returned.');
+        return;
+      }
+
+      dispatch({
+        type: 'oauth_started',
+        authorizationUrl: parsed.authorizationUrl,
+        verificationCode: parsed.verificationCode,
+      });
+      appendStatusLine('OAuth link opened in a new tab.');
+
+      const opened = window.open(
+        parsed.authorizationUrl,
+        '_blank',
+        'noopener,noreferrer',
+      );
+      if (!opened) {
+        const blockedMessage =
+          'Popup/new-tab blocked. Use the fallback secure OAuth link in chat.';
+        dispatch({ type: 'set_auth_error', message: blockedMessage });
+        appendStatusLine(blockedMessage);
+        toast.message('Popup blocked. Open OAuth using the secure link.');
+        return;
+      }
+
+      const responseMethodId = parsed.method ?? resolvedProviderOauthMethodId;
+      const isDevicePollingOauth =
+        responseMethodId === OPENAI_HEADLESS_OAUTH_METHOD_ID ||
+        responseMethodId === GITHUB_COPILOT_DEVICE_OAUTH_METHOD_ID;
+      const pollingIntervalSeconds = Number.isFinite(
+        parsed.pollingIntervalSeconds,
+      )
+        ? Math.max(1, Math.floor(parsed.pollingIntervalSeconds ?? 0))
+        : 5;
+
+      if (isDevicePollingOauth) {
+        const maxPollAttempts = 120;
+        for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
+          const callbackResponse = await fetch(
+            '/v1/auth/providers/oauth/callback',
+            {
+              method: 'POST',
+              credentials: 'include',
+              headers: {
+                'content-type': 'application/json',
+              },
+              body: JSON.stringify({}),
+            },
+          );
+
+          if (callbackResponse.status === 202) {
+            const retryAfterHeader =
+              callbackResponse.headers.get('Retry-After');
+            const retryAfterSeconds = Number.parseInt(
+              retryAfterHeader ?? '',
+              10,
+            );
+            const nextWaitSeconds = Number.isFinite(retryAfterSeconds)
+              ? Math.max(1, retryAfterSeconds)
+              : pollingIntervalSeconds;
+            appendStatusLine(
+              `Waiting for authorization confirmation... checking again in ${nextWaitSeconds}s.`,
+            );
+            await wait(nextWaitSeconds * 1000);
+            continue;
+          }
+
+          if (!callbackResponse.ok) {
+            const errorMessage = await readErrorMessage(callbackResponse);
+            dispatch({ type: 'oauth_failed', message: errorMessage });
+            appendStatusLine('OAuth callback failed.');
+            toast.error(errorMessage);
+            return;
+          }
+
+          const refreshed = await refreshStoredProviderCredential();
+          if (refreshed) {
+            const now = Date.now();
+            dispatch({ type: 'oauth_connected', at: now });
+            dispatch({ type: 'set_stage', stage: 'auth_ready' });
+            appendStatusLine(`${providerLabel} OAuth credential connected.`);
+            toast.success(`${providerLabel} OAuth credential connected.`);
+          } else {
+            appendStatusLine(
+              'OAuth completed. Credential not visible yet; refresh status.',
+            );
+          }
+          return;
+        }
+
+        dispatch({
+          type: 'oauth_failed',
+          message:
+            'Timed out waiting for device authorization. Restart OAuth to retry.',
+        });
+        toast.error('Timed out waiting for device authorization to complete.');
+        return;
+      }
+
+      appendStatusLine('Waiting for OAuth callback completion...');
+
+      const maxPollAttempts = 45;
+      for (let attempt = 0; attempt < maxPollAttempts; attempt += 1) {
+        const refreshed = await refreshStoredProviderCredential();
+        if (refreshed) {
+          const now = Date.now();
+          dispatch({ type: 'oauth_connected', at: now });
+          dispatch({ type: 'set_stage', stage: 'auth_ready' });
+          appendStatusLine(`${providerLabel} OAuth credential connected.`);
+          toast.success(`${providerLabel} OAuth credential connected.`);
+          return;
+        }
+        await wait(2000);
+      }
+
+      appendStatusLine(
+        'OAuth started. Refresh credential status if still pending.',
+      );
+    } catch {
+      dispatch({
+        type: 'oauth_failed',
+        message: `Failed to start ${providerLabel} OAuth.`,
+      });
+      toast.error(`Failed to start ${providerLabel} OAuth.`);
+    } finally {
+      setIsStartingProviderOauth(false);
+    }
+  }
+
+  const handleSelectProvider = useCallback(
+    (providerId: string) => {
+      const nextModels = resolveProviderModelOptions(providerId);
+      const nextModelId =
+        nextModels.find((model) => model.id === session.selectedModelId)?.id ??
+        nextModels[0]?.id ??
+        session.selectedModelId;
+      const fallbackOauthMethods = resolveProviderOauthMethods(providerId);
+      const defaultOauthMethodId =
+        resolveDefaultProviderOauthMethodId(fallbackOauthMethods) ?? '';
+
+      dispatch({
+        type: 'select_provider',
+        providerId,
+        defaultAuthMode: resolveProviderDefaultAuthMode(providerId),
+        modelId: nextModelId,
+        oauthMethodId: defaultOauthMethodId,
+      });
+
+      setProviderOauthMethods(fallbackOauthMethods);
+      setProviderBaseUrl(resolveProviderDefaultBaseUrl(providerId) ?? '');
+      setProviderCredentialSavedAt(null);
+      setProviderApiKey('');
+      setProviderOauthAccessToken('');
+      setProviderRegion('');
+      setProviderOrganization('');
+      setProviderProject('');
+      setAuthSessionExpiresAt(null);
+      appendUserMessage(`Provider: ${formatProviderLabel(providerId)}`);
+      appendStatusLine(
+        `Provider selected: ${formatProviderLabel(providerId)}.`,
+      );
+    },
+    [
+      appendStatusLine,
+      appendUserMessage,
+      resolveProviderModelOptions,
+      session.selectedModelId,
+    ],
+  );
+
+  const handleSelectModel = useCallback(
+    (modelId: string) => {
+      dispatch({ type: 'select_model', modelId });
+      appendUserMessage(`Model: ${modelId}`);
+      appendStatusLine(`Model selected: ${modelId}.`);
+    },
+    [appendStatusLine, appendUserMessage],
+  );
+
+  const handleSelectAuthMode = useCallback(
+    (authMode: AssistantAuthMode) => {
+      dispatch({ type: 'select_auth_mode', authMode });
+      dispatch({ type: 'reset_oauth_state' });
+      appendUserMessage(`Auth method: ${authModeLabelById[authMode]}`);
+      appendStatusLine(`Auth method selected: ${authModeLabelById[authMode]}.`);
+    },
+    [appendStatusLine, appendUserMessage],
+  );
+
+  const handleSelectOauthMethod = useCallback(
+    (oauthMethodId: string) => {
+      dispatch({ type: 'select_oauth_method', oauthMethodId });
+      const methodLabel =
+        selectedProviderOauthMethods.find(
+          (method) => method.id === oauthMethodId,
+        )?.label ?? oauthMethodId;
+      appendUserMessage(`OAuth method: ${methodLabel}`);
+      appendStatusLine(`OAuth method selected: ${methodLabel}.`);
+    },
+    [appendStatusLine, appendUserMessage, selectedProviderOauthMethods],
+  );
+
+  async function goToBusinessIntent() {
+    if (session.stage !== 'auth_ready' && session.stage !== 'authenticate') {
+      return;
+    }
+
+    if (!session.authSessionToken && providerCredentialSavedAt) {
+      await createAuthSession();
+    }
+
+    dispatch({ type: 'set_stage', stage: 'business_intent' });
+    appendAssistantMessage(
+      'Tell me how this business operates day-to-day. I will recommend plugins and preselect matches for Step 3.',
     );
   }
 
-  return (
-    <div className="rounded-lg border bg-background/60 p-4 space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-medium">AI Integration</p>
-          <p className="text-xs text-muted-foreground">
-            Configure provider authentication here. Plugin browsing and AI
-            workflow setup happen in Step 3.
-          </p>
-        </div>
-        <Badge variant="secondary">{selectedModelOption.label}</Badge>
-      </div>
+  async function handleBusinessIntentSubmit(prompt: string) {
+    const trimmed = prompt.trim();
+    if (!trimmed) return;
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div className="space-y-4">
-          <div className="space-y-3">
-        <div className="space-y-1">
-          <FormLabel className="text-xs text-muted-foreground">
-            AI provider
-          </FormLabel>
-          <Popover
-            open={isProviderComboboxOpen}
-            onOpenChange={setIsProviderComboboxOpen}
-            modal
-          >
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                role="combobox"
-                aria-expanded={isProviderComboboxOpen}
-                className="w-full justify-between"
-              >
-                <span className="flex min-w-0 items-center gap-2">
-                  {selectedProviderOption ? (
-                    <ProviderLogo
-                      providerId={selectedProviderOption.providerId}
-                      label={selectedProviderOption.label}
-                    />
-                  ) : null}
-                  <span className="truncate">
-                    {selectedProviderOption?.label || 'Choose provider'}
-                  </span>
-                </span>
-                <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent
-              align="start"
-              className="w-[var(--radix-popover-trigger-width)] p-0"
-            >
-              <Command>
-                <CommandInput placeholder="Search providers..." />
-                <CommandList>
-                  <CommandEmpty>No providers found.</CommandEmpty>
-                  <CommandGroup>
-                    {providerOptions.map((option) => (
-                      <CommandItem
-                        key={option.providerId}
-                        value={`${option.label} ${option.providerId}`}
-                        onSelect={() => {
-                          handleProviderChange(option.providerId);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            'mr-2 h-4 w-4',
-                            selectedAssistantProviderId === option.providerId
-                              ? 'opacity-100'
-                              : 'opacity-0',
-                          )}
-                        />
-                        <ProviderLogo
-                          providerId={option.providerId}
-                          label={option.label}
-                        />
-                        <span className="ml-2 truncate">{option.label}</span>
-                        <span className="ml-auto text-[10px] text-muted-foreground">
-                          {option.providerId}
-                        </span>
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
+    if (thread.at(-1)?.role !== 'user' || thread.at(-1)?.content !== trimmed) {
+      appendUserMessage(trimmed);
+    }
 
-        <div className="space-y-1">
-          <FormLabel className="text-xs text-muted-foreground">AI model</FormLabel>
-          {providerModelOptions.length > 0 ? (
-            <Popover
-              open={isModelComboboxOpen}
-              onOpenChange={setIsModelComboboxOpen}
-              modal
-            >
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={isModelComboboxOpen}
-                  className="w-full justify-between"
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <ProviderLogo
-                      providerId={selectedAssistantProviderId}
-                      label={formatProviderLabel(selectedAssistantProviderId)}
-                    />
-                    <span className="truncate">
-                      {selectedModelOption.label || 'Choose model'}
-                    </span>
-                  </span>
-                  <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                align="start"
-                className="w-[var(--radix-popover-trigger-width)] p-0"
-              >
-                <Command>
-                  <CommandInput placeholder="Search models..." />
-                  <CommandList>
-                    <CommandEmpty>No models found.</CommandEmpty>
-                    <CommandGroup>
-                      {providerModelOptions.map((option) => (
-                        <CommandItem
-                          key={option.id}
-                          value={`${option.label} ${option.id} ${option.description ?? ''}`}
-                          onSelect={() => {
-                            setSelectedAssistantModelId(option.id);
-                            setAuthSessionToken('');
-                            setAuthSessionExpiresAt(null);
-                            setIsModelComboboxOpen(false);
-                          }}
-                        >
-                          <Check
-                            className={cn(
-                              'mr-2 h-4 w-4',
-                              selectedAssistantModelId === option.id
-                                ? 'opacity-100'
-                                : 'opacity-0',
-                            )}
-                          />
-                          <ProviderLogo
-                            providerId={selectedAssistantProviderId}
-                            label={formatProviderLabel(
-                              selectedAssistantProviderId,
-                            )}
-                          />
-                          <div className="ml-2 min-w-0">
-                            <div className="truncate text-sm">{option.label}</div>
-                            <div className="truncate text-[10px] text-muted-foreground">
-                              {option.id}
-                            </div>
-                          </div>
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
-          ) : (
-            <Input
-              placeholder="Model id (e.g., gpt-4o-mini)"
-              value={selectedAssistantModelId}
-              onChange={(event) => setSelectedAssistantModelId(event.target.value)}
-            />
-          )}
-        </div>
+    try {
+      const selectedReleaseIds =
+        form.getValues('selectedPluginReleaseIds') ?? [];
+      const response = await getBusinessCreationAssistantTurn({
+        data: {
+          userPrompt: trimmed,
+          model: session.selectedModelId,
+          provider: buildProviderPayload(),
+          authSessionToken: session.authSessionToken || undefined,
+          selectedReleaseIds,
+          availableReleaseIds,
+          onboardingStage: session.stage,
+          providerSelectionContext: {
+            providerId: session.selectedProviderId,
+            modelId: session.selectedModelId,
+            authMode: session.selectedAuthMode,
+          },
+          conversationHistory: thread.slice(-8).map((message) => ({
+            role: message.role,
+            content: message.content,
+          })),
+        },
+      });
 
-        <div className="space-y-1">
-          <FormLabel className="text-xs text-muted-foreground">Auth mode</FormLabel>
-          <Select
-            value={selectedAssistantAuthMode}
-            onValueChange={(value) => {
-              setSelectedAssistantAuthMode(value as AssistantAuthMode);
-              setProviderCredentialSavedAt(null);
-              setAuthSessionToken('');
-              setAuthSessionExpiresAt(null);
-              setOauthFlowState('idle');
-              setOauthFlowMessage('');
-              setOauthAuthorizationUrl('');
-              setOauthVerificationCode('');
-            }}
-          >
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Choose auth mode" />
-            </SelectTrigger>
-            <SelectContent>
-              {supportedAuthModes.map((authMode) => (
-                <SelectItem key={authMode} value={authMode}>
-                  {authModeLabelById[authMode]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      appendAssistantMessage(response.assistantMessage);
+      setQuickOptions([...response.quickOptions.options]);
 
-        {selectedAssistantAuthMode === 'oauth-access-token' &&
-          selectedProviderOauthMethods.length > 0 && (
-            <div className="space-y-1">
-              <FormLabel className="text-xs text-muted-foreground">
-                OAuth method
-              </FormLabel>
-              <Select
-                value={resolvedProviderOauthMethodId ?? ''}
-                onValueChange={(value) => {
-                  setSelectedProviderOauthMethodId(value);
-                  setProviderCredentialSavedAt(null);
-                  setAuthSessionToken('');
-                  setAuthSessionExpiresAt(null);
-                  setOauthFlowState('idle');
-                  setOauthFlowMessage('');
-                  setOauthAuthorizationUrl('');
-                  setOauthVerificationCode('');
-                }}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Choose OAuth method" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedProviderOauthMethods.map((method) => (
-                    <SelectItem key={method.id} value={method.id}>
-                      {method.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+      if (response.suggestedReleaseIds.length > 0) {
+        const mergedSelection = mergeSelectedReleaseIds(
+          selectedReleaseIds,
+          response.suggestedReleaseIds,
+        );
+        form.setValue('selectedPluginReleaseIds', mergedSelection, {
+          shouldValidate: true,
+          shouldDirty: true,
+          shouldTouch: true,
+        });
+        appendStatusLine(
+          `Preselected ${response.suggestedReleaseIds.length} plugin recommendation(s) for Step 3.`,
+        );
+      }
+    } catch {
+      appendAssistantMessage(
+        'I could not fetch a recommendation right now, but you can continue to Step 3 and pick plugins manually.',
+      );
+    }
+  }
 
-        {selectedAssistantAuthMode === 'api-key' && (
-          <div className="space-y-1">
-            <FormLabel className="text-xs text-muted-foreground">API key</FormLabel>
+  function handleQuickOption(value: string) {
+    appendUserMessage(value);
+    void handleBusinessIntentSubmit(value);
+  }
+
+  const manualAuthPanel = (
+    <div className="space-y-2 rounded-md border bg-background p-2">
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2 text-xs"
+        onClick={() => setShowAdvancedAuthDetails((current) => !current)}
+      >
+        {showAdvancedAuthDetails
+          ? 'Hide advanced auth details'
+          : 'Advanced auth details'}
+      </Button>
+
+      {showAdvancedAuthDetails && (
+        <div className="space-y-2">
+          {session.selectedAuthMode === 'api-key' && (
             <Input
               type="password"
-              placeholder="sk-..."
+              placeholder="API key"
               value={providerApiKey}
               onChange={(event) => setProviderApiKey(event.target.value)}
             />
-          </div>
-        )}
+          )}
 
-        {selectedAssistantAuthMode === 'oauth-access-token' && (
-          <div className="space-y-1">
-            <FormLabel className="text-xs text-muted-foreground">
-              OAuth access token
-            </FormLabel>
+          {session.selectedAuthMode === 'oauth-access-token' && (
             <Input
               type="password"
-              placeholder="Bearer token"
+              placeholder="OAuth access token (optional manual fallback)"
               value={providerOauthAccessToken}
-              onChange={(event) => setProviderOauthAccessToken(event.target.value)}
+              onChange={(event) =>
+                setProviderOauthAccessToken(event.target.value)
+              }
             />
-          </div>
-        )}
-      </div>
+          )}
 
-      <div className="space-y-2">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="px-0 text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => setShowAdvancedSettings((current) => !current)}
-        >
-          {showAdvancedSettings ? 'Hide advanced settings' : 'Show advanced settings'}
-        </Button>
-        {showAdvancedSettings && (
-          <div className="space-y-3 rounded-md border bg-muted/20 p-3">
-            <div className="space-y-1">
-              <FormLabel className="text-xs text-muted-foreground">
-                Base URL (optional override)
-              </FormLabel>
+          {session.selectedAuthMode === 'aws-credential-chain' && (
+            <Input
+              placeholder="AWS region (optional)"
+              value={providerRegion}
+              onChange={(event) => setProviderRegion(event.target.value)}
+            />
+          )}
+
+          <Input
+            placeholder="Base URL (optional override)"
+            value={providerBaseUrl}
+            onChange={(event) => setProviderBaseUrl(event.target.value)}
+          />
+
+          {session.selectedProviderId === 'openai' && (
+            <>
               <Input
-                placeholder="https://api.openai.com/v1"
-                value={providerBaseUrl}
-                onChange={(event) => setProviderBaseUrl(event.target.value)}
+                placeholder="Organization (optional)"
+                value={providerOrganization}
+                onChange={(event) =>
+                  setProviderOrganization(event.target.value)
+                }
               />
-            </div>
+              <Input
+                placeholder="Project (optional)"
+                value={providerProject}
+                onChange={(event) => setProviderProject(event.target.value)}
+              />
+            </>
+          )}
 
-            {selectedAssistantProviderId === 'bedrock' && (
-              <div className="space-y-1">
-                <FormLabel className="text-xs text-muted-foreground">
-                  AWS region
-                </FormLabel>
-                <Input
-                  placeholder="us-east-1"
-                  value={providerRegion}
-                  onChange={(event) => setProviderRegion(event.target.value)}
-                />
-              </div>
-            )}
+          {session.selectedProviderId === 'google' && (
+            <Input
+              placeholder="Google project (optional)"
+              value={providerProject}
+              onChange={(event) => setProviderProject(event.target.value)}
+            />
+          )}
 
-            {selectedAssistantProviderId === 'openai' && (
-              <>
-                <div className="space-y-1">
-                  <FormLabel className="text-xs text-muted-foreground">
-                    Organization (optional)
-                  </FormLabel>
-                  <Input
-                    placeholder="org_..."
-                    value={providerOrganization}
-                    onChange={(event) => setProviderOrganization(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <FormLabel className="text-xs text-muted-foreground">
-                    Project (optional)
-                  </FormLabel>
-                  <Input
-                    placeholder="proj_..."
-                    value={providerProject}
-                    onChange={(event) => setProviderProject(event.target.value)}
-                  />
-                </div>
-              </>
-            )}
-
-            {selectedAssistantProviderId === 'google' && (
-              <div className="space-y-1">
-                <FormLabel className="text-xs text-muted-foreground">
-                  Google project (optional)
-                </FormLabel>
-                <Input
-                  placeholder="my-google-project-id"
-                  value={providerProject}
-                  onChange={(event) => setProviderProject(event.target.value)}
-                />
-              </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={saveProviderCredential}
+              disabled={isSavingProviderCredential}
+            >
+              {isSavingProviderCredential ? 'Saving...' : 'Save credential'}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                void createAuthSession();
+              }}
+              disabled={isCreatingAuthSession}
+            >
+              {isCreatingAuthSession
+                ? 'Creating session...'
+                : 'Create auth session'}
+            </Button>
+            {session.authSessionToken && (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={revokeAuthSession}
+                disabled={isRevokingAuthSession}
+              >
+                {isRevokingAuthSession ? 'Revoking...' : 'Revoke auth session'}
+              </Button>
             )}
           </div>
-        )}
-      </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={saveProviderCredential}
-          disabled={isSavingProviderCredential}
-        >
-          {isSavingProviderCredential ? 'Saving...' : 'Save credential'}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={refreshStoredProviderCredential}
-          disabled={isRefreshingProviderCredential}
-        >
-          {isRefreshingProviderCredential
-            ? 'Refreshing...'
-            : 'Refresh credential status'}
-        </Button>
-        {canStartProviderOauth && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={startProviderOauth}
-            disabled={isStartingProviderOauth}
-          >
-            {isStartingProviderOauth
-              ? 'Opening OAuth...'
-              : selectedProviderOauthButtonLabel}
-          </Button>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={createAuthSession}
-          disabled={isCreatingAuthSession}
-        >
-          {isCreatingAuthSession ? 'Creating session...' : 'Create auth session'}
-        </Button>
-        {authSessionToken && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={revokeAuthSession}
-            disabled={isRevokingAuthSession}
-          >
-            {isRevokingAuthSession ? 'Revoking...' : 'Revoke auth session'}
-          </Button>
-        )}
-        {providerCredentialSavedAt && (
-          <Badge variant="outline" className="text-xs">
-            Credential saved
-          </Badge>
-        )}
-        {authSessionToken && (
-          <Badge variant="secondary" className="text-xs">
-            Session token active
-          </Badge>
-        )}
-      </div>
-
-          {authSessionToken && (
+          {session.authSessionToken && (
             <p className="text-[11px] text-muted-foreground break-all">
-              Session token: {authSessionToken.slice(0, 18)}...
-              {authSessionToken.slice(-10)}
+              Session token: {session.authSessionToken.slice(0, 18)}...
+              {session.authSessionToken.slice(-10)}
               {authSessionExpiresAt
                 ? ` (expires at ${new Date(authSessionExpiresAt * 1000).toLocaleTimeString()})`
                 : ''}
             </p>
           )}
         </div>
-
-        <div className="space-y-3 rounded-md border bg-muted/20 p-3">
-          <p className="text-xs font-medium text-foreground">
-            OAuth Connection
-          </p>
-          <Badge
-            variant={oauthFlowState === 'connected' ? 'secondary' : 'outline'}
-            className={cn(
-              'w-fit',
-              oauthFlowState === 'error' ? 'border-red-500/50 text-red-600' : '',
-            )}
-          >
-            {oauthFlowState === 'connected'
-              ? 'Connected'
-              : oauthFlowState === 'error'
-                ? 'Action needed'
-                : oauthFlowState === 'pending'
-                  ? 'In progress'
-                  : 'Not started'}
-          </Badge>
-
-          <p className="text-xs text-muted-foreground">
-            {oauthFlowMessage ||
-              'Pick OAuth mode, choose method, and press the connect button.'}
-          </p>
-
-          {oauthVerificationCode && (
-            <div className="rounded border border-dashed bg-background p-2">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                Verification code
-              </p>
-              <p className="mt-1 font-mono text-sm">{oauthVerificationCode}</p>
-            </div>
-          )}
-
-          {oauthAuthorizationUrl && (
-            <Button asChild size="sm" className="w-full">
-              <a
-                href={oauthAuthorizationUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                Open Secure OAuth Page
-              </a>
-            </Button>
-          )}
-
-          <div className="space-y-1 text-[11px] text-muted-foreground">
-            <p>1. Start OAuth from the connect button.</p>
-            <p>2. Approve access in the opened page or popup.</p>
-            <p>3. We detect completion and save the credential.</p>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
-}
 
+  if (!businessOnboardingChatAuthV1) {
+    return (
+      <div className="rounded-lg border bg-background/60 p-4 space-y-3">
+        <p className="text-sm font-medium">AI Integration</p>
+        <p className="text-xs text-muted-foreground">
+          Legacy Step 2 is active. Set `VITE_BUSINESS_ONBOARDING_CHAT_AUTH_V1=1`
+          to enable conversational auth picker flow.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <BusinessOnboardingChat
+      stage={session.stage}
+      thread={thread}
+      statusLines={statusLines}
+      selectedProviderLabel={
+        selectedProviderOption?.label ?? 'Unknown provider'
+      }
+      selectedModelLabel={selectedModel?.label ?? session.selectedModelId}
+      selectedAuthModeLabel={selectedAuthModeLabel}
+      oauthState={session.oauthState}
+      authError={session.authError}
+      oauthAuthorizationUrl={session.oauthAuthorizationUrl}
+      manualAuthPanel={manualAuthPanel}
+      providerOptions={providerOptions}
+      modelOptions={modelOptions}
+      authModeOptions={authModeOptions}
+      oauthMethods={selectedProviderOauthMethods}
+      selectedProviderId={session.selectedProviderId}
+      selectedModelId={session.selectedModelId}
+      selectedAuthMode={session.selectedAuthMode}
+      selectedOauthMethodId={resolvedProviderOauthMethodId ?? ''}
+      isStartingOauth={isStartingProviderOauth}
+      canStartOauth={canStartProviderOauth}
+      oauthConnectLabel={selectedProviderOauthButtonLabel}
+      hasProviderCredential={Boolean(providerCredentialSavedAt)}
+      hasAuthError={Boolean(session.authError)}
+      onSelectProvider={handleSelectProvider}
+      onSelectModel={handleSelectModel}
+      onSelectAuthMode={handleSelectAuthMode}
+      onSelectOauthMethod={handleSelectOauthMethod}
+      onStartOauth={startProviderOauth}
+      onContinueToIntent={goToBusinessIntent}
+      onRefreshCredentialStatus={refreshStoredProviderCredential}
+      onSaveManualCredential={saveProviderCredential}
+      isSavingManualCredential={isSavingProviderCredential}
+      isRefreshingCredential={isRefreshingProviderCredential}
+      quickOptions={quickOptions}
+      onPickQuickOption={handleQuickOption}
+      onSubmitBusinessIntent={(value) => {
+        void handleBusinessIntentSubmit(value);
+      }}
+    />
+  );
+}
 function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const [query, setQuery] = useState('');
@@ -1631,8 +1534,8 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                 </p>
                 {selectedReleaseIds.length === 0 ? (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    No plugins selected. Pick at least one plugin to continue
-                    to business creation.
+                    No plugins selected. Pick at least one plugin to continue to
+                    business creation.
                   </p>
                 ) : (
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -1721,7 +1624,10 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                                   );
                                   return;
                                 }
-                                field.onChange([...selectedReleaseIds, releaseId]);
+                                field.onChange([
+                                  ...selectedReleaseIds,
+                                  releaseId,
+                                ]);
                               }}
                             >
                               {isSelected ? 'Selected' : 'Select plugin'}

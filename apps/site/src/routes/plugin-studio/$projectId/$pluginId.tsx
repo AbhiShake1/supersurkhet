@@ -798,9 +798,22 @@ function titleToPluginId(value: string) {
   return slug.length > 0 ? `plugin.${slug}` : 'example.plugin';
 }
 
-function toDefaultPluginTitle(pluginId: string) {
-  const normalized = pluginId.replace(/^plugin\./, '').trim();
-  return normalized || 'Untitled plugin';
+function toDefaultPluginTitle(_pluginId: string) {
+  return 'no name provided';
+}
+
+function toDisplayPluginTitle(input: string | undefined, pluginId: string) {
+  const normalizedInput = input?.trim() ?? '';
+  const normalizedPluginId = pluginId.trim();
+  const normalizedPluginSlug = pluginId.replace(/^plugin\./, '').trim();
+  if (!normalizedInput) return 'no name provided';
+  if (
+    normalizedInput === normalizedPluginId ||
+    normalizedInput === normalizedPluginSlug
+  ) {
+    return 'no name provided';
+  }
+  return normalizedInput;
 }
 
 function bumpPatchVersion(version: string) {
@@ -2238,7 +2251,7 @@ function PluginStudioPresenter({
     () => toDefaultPluginTitle(pluginId),
     [pluginId],
   );
-  const activeDraftTitle = activeDraft?.title?.trim() || defaultPluginTitle;
+  const activeDraftTitle = toDisplayPluginTitle(activeDraft?.title, pluginId);
   const activeDraftDescription = activeDraft?.description?.trim() || '';
   const draftDocScopeKeys = useMemo(() => [draftId], [draftId]);
   const {
@@ -2722,9 +2735,9 @@ function PluginStudioPresenter({
       if (activeDraft.pluginId !== pluginId) return;
       if (!isActorIdentityReady) return;
 
-      const nextTitle = nextMetadata.title.trim() || defaultPluginTitle;
+      const nextTitle = toDisplayPluginTitle(nextMetadata.title, pluginId);
       const nextDescription = nextMetadata.description.trim();
-      const currentTitle = activeDraft.title?.trim() || defaultPluginTitle;
+      const currentTitle = toDisplayPluginTitle(activeDraft.title, pluginId);
       const currentDescription = activeDraft.description?.trim() || '';
 
       if (nextTitle === currentTitle && nextDescription === currentDescription) {
