@@ -22,4 +22,11 @@ describe('admin empty state plugin onboarding contract', () => {
     expect(source).toContain('releaseRows as PluginReleaseDoc[]');
     expect(source).not.toContain('mergeMarketplaceReleasesWithSeed');
   });
+
+  it('shows a loading indicator while plugin-driven tab config resolves', () => {
+    const source = readFileSync(routePath, 'utf8');
+
+    expect(source).toContain('if (isConfigLoading)');
+    expect(source).toContain('Loading installed plugins...');
+  });
 });

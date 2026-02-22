@@ -176,7 +176,7 @@ function resolveTabMetadata(tab: AutoAdminTabInput): PossibleTabConfig {
   return {
     ...tab,
     title: tab.title ?? schemaMeta?.title ?? toTitleCase(tab.schema),
-    group: tab.group ?? schemaMeta.group,
+    group: tab.group ?? schemaMeta?.group,
     icon: 'icon' in tab && tab.icon ? tab.icon : schemaMeta?.icon,
   };
 }

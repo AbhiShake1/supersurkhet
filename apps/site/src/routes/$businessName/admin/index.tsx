@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { NotFound } from '@/components/ui/not-found';
-import { useBusinessConfig } from '@/config/business-config';
+import { useBusinessConfigState } from '@/config/business-config';
 import { BusinessProvider } from '@/contexts/business-context';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
@@ -77,10 +77,20 @@ function Child({
   businessId: string;
   actorUserId: string;
 }) {
-  const config = useBusinessConfig({
+  const { tabs: config, isLoading: isConfigLoading } = useBusinessConfigState({
     slug: businessName,
     businessId,
   });
+  if (isConfigLoading) {
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <Loader2
+          className="size-8 animate-spin text-muted-foreground"
+          aria-label="Loading installed plugins..."
+        />
+      </div>
+    );
+  }
   if (!config?.length)
     return (
       <div className="mx-auto w-full max-w-7xl p-4 md:p-6">

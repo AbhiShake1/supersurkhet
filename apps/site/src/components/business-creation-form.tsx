@@ -1759,6 +1759,15 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
               : null,
           [selectedPlugin],
         );
+        const selectedPluginSimilar = useMemo(
+          () =>
+            selectedPlugin
+              ? marketplace.topInstalled.filter(
+                  (candidate) => candidate.pluginId !== selectedPlugin.pluginId,
+                )
+              : [],
+          [selectedPlugin, marketplace.topInstalled],
+        );
 
         const handleToggleSelection = (releaseId: string) => {
           if (selectedReleaseIdSet.has(releaseId)) {
@@ -1795,7 +1804,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                       plugin={selectedPlugin!}
                       details={selectedPluginDetails!}
                       businessName="new-business"
-                      onInstall={() => {
+                      onInstall={async () => {
                         const releaseId = toReleaseId(
                           selectedPlugin!.pluginId,
                           selectedPlugin!.latestRelease.version,
@@ -1805,7 +1814,7 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                         }
                         setSelectedDetailsPluginId(null);
                       }}
-                      onUninstall={() => {
+                      onUninstall={async () => {
                         const releaseId = toReleaseId(
                           selectedPlugin!.pluginId,
                           selectedPlugin!.latestRelease.version,
@@ -1817,6 +1826,8 @@ function BusinessPluginSelectionStep({ form }: StepThreeFormProps) {
                       }}
                       onSaveReview={async () => {}}
                       onBack={() => setSelectedDetailsPluginId(null)}
+                      similarPlugins={selectedPluginSimilar}
+                      reviewGroups={[]}
                       isInstalling={false}
                       isUninstalling={false}
                       isSavingReview={false}
