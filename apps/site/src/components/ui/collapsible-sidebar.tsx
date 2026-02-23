@@ -161,14 +161,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   const { groupedItems, ungroupedItems } = useMemo(() => {
     const nextFilteredItems = searchQuery
       ? tabs.filter((item) => {
-          try {
-            const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
-            return regex.test(item.title);
-          } catch (_e) {
-            // If the regex is invalid, fallback to simple string includes
-            return item.title.toLowerCase().includes(searchQuery.toLowerCase());
-          }
-        })
+        try {
+          const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
+          return regex.test(item.title);
+        } catch (_e) {
+          // If the regex is invalid, fallback to simple string includes
+          return item.title.toLowerCase().includes(searchQuery.toLowerCase());
+        }
+      })
       : tabs;
 
     const nextGroupedItems: { [key: string]: typeof tabs } = {};
@@ -373,9 +373,8 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
 
   return (
     <nav
-      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${
-        open ? 'w-52 sm:w-72' : 'w-12 sm:w-16'
-      } border-slate-200/80 dark:border-slate-800 bg-card/95 p-1.5 sm:p-2 shadow-sm z-50 flex flex-col`}
+      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? 'w-52 sm:w-72' : 'w-12 sm:w-16'
+        } border-slate-200/80 dark:border-slate-800 bg-card/95 p-1.5 sm:p-2 shadow-sm z-50 flex flex-col`}
     >
       {/* User profile section at the top */}
       <div className="flex-shrink-0">
@@ -531,15 +530,15 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   onRenameIcon={onRenameTabIcon}
                   onOpenWorkflowEditor={
                     editable &&
-                    onOpenWorkflowEditorForTab &&
-                    ('schema' in item || 'parsedSchema' in item)
+                      onOpenWorkflowEditorForTab &&
+                      ('schema' in item || 'parsedSchema' in item)
                       ? onOpenWorkflowEditorForTab
                       : undefined
                   }
                   onRequestDeleteTable={
                     editable &&
-                    onDeleteTableForTab &&
-                    ('schema' in item || 'parsedSchema' in item)
+                      onDeleteTableForTab &&
+                      ('schema' in item || 'parsedSchema' in item)
                       ? onDeleteTableForTab
                       : undefined
                   }
@@ -571,328 +570,327 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   mass: 0.72,
                 }}
                 data-sidebar-group-card="true"
-                className={`relative mt-1 rounded-lg border p-1 transition-all duration-150 ${
-                  isGroupPreviewActive && isDraggedGroup
+                className={`relative mt-1 rounded-lg border p-1 transition-all duration-150 ${isGroupPreviewActive && isDraggedGroup
                     ? 'border-primary/55 bg-primary/10 opacity-75 shadow-sm backdrop-blur-[1px]'
                     : isGroupPreviewActive && isDropTarget
                       ? 'border-primary/70 bg-primary/12 ring-1 ring-primary/20'
                       : isDropTarget
                         ? 'border-primary/60 bg-primary/5'
                         : 'border-slate-200/80 dark:border-slate-800'
-                }`}
+                  }`}
                 onDragOver={(event) => {
-                if (!editable || (!onMoveTabToGroup && !onReorderGroups))
-                  return;
-                event.preventDefault();
-                const droppedGroup =
-                  event.dataTransfer.getData('text/group-name') ||
-                  draggedGroupName;
-                if (!droppedGroup) {
-                  if (groupDropIndicator) setGroupDropIndicator(null);
-                  return;
-                }
-                const draggedIndex = groupNamesToRender.indexOf(droppedGroup);
-                const targetIndex = groupNamesToRender.indexOf(groupName);
-                const position: 'above' | 'below' =
-                  draggedIndex >= 0 &&
-                  targetIndex >= 0 &&
-                  draggedIndex < targetIndex
-                    ? 'below'
-                    : 'above';
-                setGroupDropIndicator((current) => {
-                  if (
-                    current?.groupName === groupName &&
-                    current.position === position
-                  ) {
-                    return current;
+                  if (!editable || (!onMoveTabToGroup && !onReorderGroups))
+                    return;
+                  event.preventDefault();
+                  const droppedGroup =
+                    event.dataTransfer.getData('text/group-name') ||
+                    draggedGroupName;
+                  if (!droppedGroup) {
+                    if (groupDropIndicator) setGroupDropIndicator(null);
+                    return;
                   }
-                  return { groupName, position };
-                });
-              }}
-                onDragLeave={(event) => {
-                if (groupDropIndicator?.groupName !== groupName) return;
-                const nextTarget = event.relatedTarget as Node | null;
-                if (!event.currentTarget.contains(nextTarget)) {
-                  setGroupDropIndicator(null);
-                }
-              }}
-                onDrop={(event) => {
-                event.preventDefault();
-                if (!editable) return;
-                const droppedGroup =
-                  event.dataTransfer.getData('text/group-name') ||
-                  draggedGroupName;
-                if (droppedGroup) {
-                  setLocalGroupOrder((current) => {
-                    const baseline =
-                      current.length > 0 ? [...current] : groupNamesToRender;
-                    if (!baseline.includes(droppedGroup))
-                      baseline.push(droppedGroup);
-                    if (!baseline.includes(groupName)) baseline.push(groupName);
-                    const fromIndex = baseline.indexOf(droppedGroup);
-                    const toIndex = baseline.indexOf(groupName);
-                    if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+                  const draggedIndex = groupNamesToRender.indexOf(droppedGroup);
+                  const targetIndex = groupNamesToRender.indexOf(groupName);
+                  const position: 'above' | 'below' =
+                    draggedIndex >= 0 &&
+                      targetIndex >= 0 &&
+                      draggedIndex < targetIndex
+                      ? 'below'
+                      : 'above';
+                  setGroupDropIndicator((current) => {
+                    if (
+                      current?.groupName === groupName &&
+                      current.position === position
+                    ) {
                       return current;
                     }
-                    const next = baseline.filter(
-                      (name) => name !== droppedGroup,
-                    );
-                    const targetIndex = next.indexOf(groupName);
-                    if (targetIndex < 0) return current;
+                    return { groupName, position };
+                  });
+                }}
+                onDragLeave={(event) => {
+                  if (groupDropIndicator?.groupName !== groupName) return;
+                  const nextTarget = event.relatedTarget as Node | null;
+                  if (!event.currentTarget.contains(nextTarget)) {
+                    setGroupDropIndicator(null);
+                  }
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (!editable) return;
+                  const droppedGroup =
+                    event.dataTransfer.getData('text/group-name') ||
+                    draggedGroupName;
+                  if (droppedGroup) {
+                    setLocalGroupOrder((current) => {
+                      const baseline =
+                        current.length > 0 ? [...current] : groupNamesToRender;
+                      if (!baseline.includes(droppedGroup))
+                        baseline.push(droppedGroup);
+                      if (!baseline.includes(groupName)) baseline.push(groupName);
+                      const fromIndex = baseline.indexOf(droppedGroup);
+                      const toIndex = baseline.indexOf(groupName);
+                      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+                        return current;
+                      }
+                      const next = baseline.filter(
+                        (name) => name !== droppedGroup,
+                      );
+                      const targetIndex = next.indexOf(groupName);
+                      if (targetIndex < 0) return current;
+                      const preferredPosition =
+                        groupDropIndicator?.groupName === groupName
+                          ? groupDropIndicator.position
+                          : 'below';
+                      const insertAt =
+                        preferredPosition === 'above'
+                          ? targetIndex
+                          : targetIndex + 1;
+                      next.splice(insertAt, 0, droppedGroup);
+                      return next;
+                    });
                     const preferredPosition =
                       groupDropIndicator?.groupName === groupName
                         ? groupDropIndicator.position
                         : 'below';
-                    const insertAt =
-                      preferredPosition === 'above'
-                        ? targetIndex
-                        : targetIndex + 1;
-                    next.splice(insertAt, 0, droppedGroup);
-                    return next;
-                  });
-                  const preferredPosition =
-                    groupDropIndicator?.groupName === groupName
-                      ? groupDropIndicator.position
-                      : 'below';
-                  onReorderGroups?.(droppedGroup, groupName, preferredPosition);
-                  setDraggedGroupName(null);
+                    onReorderGroups?.(droppedGroup, groupName, preferredPosition);
+                    setDraggedGroupName(null);
+                    setGroupDropIndicator(null);
+                    return;
+                  }
+                  if (!onMoveTabToGroup) return;
+                  const dropped =
+                    event.dataTransfer.getData('text/tab-title') ||
+                    draggedTabTitle;
+                  if (!dropped) return;
+                  onMoveTabToGroup(dropped, groupName);
+                  setDraggedTabTitle(null);
                   setGroupDropIndicator(null);
-                  return;
-                }
-                if (!onMoveTabToGroup) return;
-                const dropped =
-                  event.dataTransfer.getData('text/tab-title') ||
-                  draggedTabTitle;
-                if (!dropped) return;
-                onMoveTabToGroup(dropped, groupName);
-                setDraggedTabTitle(null);
-                setGroupDropIndicator(null);
                 }}
               >
                 {open ? (
                   editingGroupName === groupName ? (
                     <Input
-                    autoFocus
-                    defaultValue={groupName}
-                    className="h-8 text-xs"
-                    onBlur={(event) => {
-                      if (groupRenameHandledByKeyRef.current) {
-                        groupRenameHandledByKeyRef.current = false;
-                      } else {
-                        commitGroupRename(groupName, event.currentTarget.value);
-                      }
-                      setEditingGroupName(null);
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        event.preventDefault();
-                        groupRenameHandledByKeyRef.current = true;
-                        commitGroupRename(groupName, event.currentTarget.value);
+                      autoFocus
+                      defaultValue={groupName}
+                      className="h-8 text-xs"
+                      onBlur={(event) => {
+                        if (groupRenameHandledByKeyRef.current) {
+                          groupRenameHandledByKeyRef.current = false;
+                        } else {
+                          commitGroupRename(groupName, event.currentTarget.value);
+                        }
                         setEditingGroupName(null);
-                      }
-                      if (event.key === 'Escape') {
-                        event.preventDefault();
-                        groupRenameHandledByKeyRef.current = true;
-                        setEditingGroupName(null);
-                      }
-                    }}
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.preventDefault();
+                          groupRenameHandledByKeyRef.current = true;
+                          commitGroupRename(groupName, event.currentTarget.value);
+                          setEditingGroupName(null);
+                        }
+                        if (event.key === 'Escape') {
+                          event.preventDefault();
+                          groupRenameHandledByKeyRef.current = true;
+                          setEditingGroupName(null);
+                        }
+                      }}
                     />
                   ) : (
                     <div className="group/group-header flex items-center gap-1">
-                    {editable && onReorderGroups ? (
+                      {editable && onReorderGroups ? (
+                        <button
+                          type="button"
+                          draggable
+                          className="rounded p-1 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                          }}
+                          onDoubleClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                          }}
+                          onDragStart={(event) => {
+                            setDraggedGroupName(groupName);
+                            setGroupDropIndicator(null);
+                            const groupCard = (
+                              event.currentTarget as HTMLElement
+                            ).closest(
+                              '[data-sidebar-group-card="true"]',
+                            ) as HTMLElement | null;
+                            attachDragPreview(
+                              event,
+                              groupCard ?? event.currentTarget,
+                            );
+                            try {
+                              event.dataTransfer.setData(
+                                'text/group-name',
+                                groupName,
+                              );
+                            } catch (_error) {
+                              // noop
+                            }
+                          }}
+                          onDragEnd={() => {
+                            setDraggedGroupName(null);
+                            setGroupDropIndicator(null);
+                            clearDragPreviewElement();
+                          }}
+                          aria-label={`Drag group ${groupName}`}
+                        >
+                          <GripVertical className="h-4 w-4" />
+                        </button>
+                      ) : null}
                       <button
                         type="button"
-                        draggable
-                        className="rounded p-1 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                        }}
-                        onDoubleClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                        }}
+                        onClick={() => toggleGroup(groupName)}
+                        aria-expanded={isGroupOpen}
+                        className={`${SECTION_TOGGLE_BUTTON_CLASS} flex-1`}
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                      >
+                        <span>{groupName}</span>
+                      </button>
+                      {editable && onRenameGroup ? (
+                        <button
+                          type="button"
+                          className="rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            beginGroupRename(groupName);
+                          }}
+                          aria-label={`Rename group ${groupName}`}
+                          title={`Rename group ${groupName}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                      ) : null}
+                      <GroupActionsPopover
+                        editable={editable}
+                        groupName={groupName}
+                        itemCount={items.length}
+                        onRequestDeleteGroup={requestDeleteGroup}
+                        onDeleteGroup={onDeleteGroup}
+                        onAddGroup={onAddGroup}
+                        onAddTable={onAddTable}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(groupName)}
+                        aria-expanded={isGroupOpen}
+                        aria-label={
+                          isGroupOpen
+                            ? `Collapse group ${groupName}`
+                            : `Expand group ${groupName}`
+                        }
+                        className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        style={{ WebkitTapHighlightColor: 'transparent' }}
+                      >
+                        {isGroupOpen ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </button>
+                    </div>
+                  )
+                ) : null}
+                {(isGroupOpen || !open) && (
+                  <div className="space-y-1 p-1">
+                    {items.map((item, index) => (
+                      <div
+                        key={`${groupName}-${
+                          // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
+                          index
+                          }`}
+                        draggable={editable}
                         onDragStart={(event) => {
-                          setDraggedGroupName(groupName);
-                          setGroupDropIndicator(null);
-                          const groupCard = (
-                            event.currentTarget as HTMLElement
-                          ).closest(
-                            '[data-sidebar-group-card="true"]',
-                          ) as HTMLElement | null;
-                          attachDragPreview(
-                            event,
-                            groupCard ?? event.currentTarget,
-                          );
+                          if (!editable) return;
+                          setDraggedTabTitle(item.title);
+                          attachDragPreview(event, event.currentTarget);
                           try {
                             event.dataTransfer.setData(
-                              'text/group-name',
-                              groupName,
+                              'text/tab-title',
+                              item.title,
                             );
                           } catch (_error) {
                             // noop
                           }
                         }}
                         onDragEnd={() => {
-                          setDraggedGroupName(null);
-                          setGroupDropIndicator(null);
+                          setDraggedTabTitle(null);
                           clearDragPreviewElement();
                         }}
-                        aria-label={`Drag group ${groupName}`}
                       >
-                        <GripVertical className="h-4 w-4" />
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={() => toggleGroup(groupName)}
-                      aria-expanded={isGroupOpen}
-                      className={`${SECTION_TOGGLE_BUTTON_CLASS} flex-1`}
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      <span>{groupName}</span>
-                    </button>
-                    {editable && onRenameGroup ? (
-                      <button
-                        type="button"
-                        className="rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          beginGroupRename(groupName);
-                        }}
-                        aria-label={`Rename group ${groupName}`}
-                        title={`Rename group ${groupName}`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                    ) : null}
-                    <GroupActionsPopover
-                      editable={editable}
-                      groupName={groupName}
-                      itemCount={items.length}
-                      onRequestDeleteGroup={requestDeleteGroup}
-                      onDeleteGroup={onDeleteGroup}
-                      onAddGroup={onAddGroup}
-                      onAddTable={onAddTable}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => toggleGroup(groupName)}
-                      aria-expanded={isGroupOpen}
-                      aria-label={
-                        isGroupOpen
-                          ? `Collapse group ${groupName}`
-                          : `Expand group ${groupName}`
-                      }
-                      className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                      style={{ WebkitTapHighlightColor: 'transparent' }}
-                    >
-                      {isGroupOpen ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                    </div>
-                  )
-                ) : null}
-                {(isGroupOpen || !open) && (
-                  <div className="space-y-1 p-1">
-                  {items.map((item, index) => (
-                    <div
-                      key={`${groupName}-${
-                        // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-                        index
-                      }`}
-                      draggable={editable}
-                      onDragStart={(event) => {
-                        if (!editable) return;
-                        setDraggedTabTitle(item.title);
-                        attachDragPreview(event, event.currentTarget);
-                        try {
-                          event.dataTransfer.setData(
-                            'text/tab-title',
-                            item.title,
-                          );
-                        } catch (_error) {
-                          // noop
-                        }
-                      }}
-                      onDragEnd={() => {
-                        setDraggedTabTitle(null);
-                        clearDragPreviewElement();
-                      }}
-                    >
-                      {editingTabTitle === item.title ? (
-                        <Input
-                          autoFocus
-                          defaultValue={item.title}
-                          className="h-8 text-xs"
-                          onBlur={(event) => {
-                            if (tabRenameHandledByKeyRef.current) {
-                              tabRenameHandledByKeyRef.current = false;
-                            } else {
-                              commitTabRename(
-                                item.title,
-                                event.currentTarget.value,
-                              );
-                            }
-                            setEditingTabTitle(null);
-                          }}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault();
-                              tabRenameHandledByKeyRef.current = true;
-                              commitTabRename(
-                                item.title,
-                                event.currentTarget.value,
-                              );
+                        {editingTabTitle === item.title ? (
+                          <Input
+                            autoFocus
+                            defaultValue={item.title}
+                            className="h-8 text-xs"
+                            onBlur={(event) => {
+                              if (tabRenameHandledByKeyRef.current) {
+                                tabRenameHandledByKeyRef.current = false;
+                              } else {
+                                commitTabRename(
+                                  item.title,
+                                  event.currentTarget.value,
+                                );
+                              }
                               setEditingTabTitle(null);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter') {
+                                event.preventDefault();
+                                tabRenameHandledByKeyRef.current = true;
+                                commitTabRename(
+                                  item.title,
+                                  event.currentTarget.value,
+                                );
+                                setEditingTabTitle(null);
+                              }
+                              if (event.key === 'Escape') {
+                                event.preventDefault();
+                                tabRenameHandledByKeyRef.current = true;
+                                setEditingTabTitle(null);
+                              }
+                            }}
+                          />
+                        ) : (
+                          <Option
+                            Icon={getTabIcon(item)}
+                            iconName={item.iconName}
+                            iconCatalog={iconCatalog}
+                            title={item.title}
+                            url={item.url}
+                            selected={currentTab}
+                            open={open}
+                            editable={editable}
+                            onBeginRename={editable ? beginTabRename : undefined}
+                            onRenameIcon={onRenameTabIcon}
+                            onOpenWorkflowEditor={
+                              editable &&
+                                onOpenWorkflowEditorForTab &&
+                                ('schema' in item || 'parsedSchema' in item)
+                                ? onOpenWorkflowEditorForTab
+                                : undefined
                             }
-                            if (event.key === 'Escape') {
-                              event.preventDefault();
-                              tabRenameHandledByKeyRef.current = true;
-                              setEditingTabTitle(null);
+                            onRequestDeleteTable={
+                              editable &&
+                                onDeleteTableForTab &&
+                                ('schema' in item || 'parsedSchema' in item)
+                                ? onDeleteTableForTab
+                                : undefined
                             }
-                          }}
-                        />
-                      ) : (
-                        <Option
-                          Icon={getTabIcon(item)}
-                          iconName={item.iconName}
-                          iconCatalog={iconCatalog}
-                          title={item.title}
-                          url={item.url}
-                          selected={currentTab}
-                          open={open}
-                          editable={editable}
-                          onBeginRename={editable ? beginTabRename : undefined}
-                          onRenameIcon={onRenameTabIcon}
-                          onOpenWorkflowEditor={
-                            editable &&
-                            onOpenWorkflowEditorForTab &&
-                            ('schema' in item || 'parsedSchema' in item)
-                              ? onOpenWorkflowEditorForTab
-                              : undefined
-                          }
-                          onRequestDeleteTable={
-                            editable &&
-                            onDeleteTableForTab &&
-                            ('schema' in item || 'parsedSchema' in item)
-                              ? onDeleteTableForTab
-                              : undefined
-                          }
-                          onActivate={incrementFrequentUsage}
-                        />
-                      )}
-                    </div>
-                  ))}
-                  {items.length === 0 ? (
-                    <div className="rounded border border-dashed border-slate-300 px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                      Empty group
-                    </div>
-                  ) : null}
+                            onActivate={incrementFrequentUsage}
+                          />
+                        )}
+                      </div>
+                    ))}
+                    {items.length === 0 ? (
+                      <div className="rounded border border-dashed border-slate-300 px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                        Empty group
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </motion.div>
@@ -1084,11 +1082,10 @@ const Option = memo(function Option({
           ...(current as Record<string, unknown>),
           tab: title,
         })}
-        className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${
-          isSelected
+        className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${isSelected
             ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
             : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
-        } ${actionPaddingClass}`}
+          } ${actionPaddingClass}`}
       >
         <div className="grid h-full w-10 sm:w-12 place-content-center">
           <Popover open={isIconPickerOpen} onOpenChange={setIsIconPickerOpen}>
@@ -1124,11 +1121,10 @@ const Option = memo(function Option({
                       <button
                         key={`${title}-${name}`}
                         type="button"
-                        className={`flex items-center gap-2 rounded border px-2 py-1 text-left text-xs hover:bg-muted ${
-                          iconName === name
+                        className={`flex items-center gap-2 rounded border px-2 py-1 text-left text-xs hover:bg-muted ${iconName === name
                             ? 'border-primary bg-primary/10'
                             : ''
-                        }`}
+                          }`}
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
@@ -1150,9 +1146,8 @@ const Option = memo(function Option({
         {open && (
           <span className="flex min-w-0 items-center gap-1">
             <span
-              className={`truncate text-sm font-medium transition-opacity duration-200 ${
-                open ? 'opacity-100' : 'opacity-0'
-              }`}
+              className={`truncate text-sm font-medium transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'
+                }`}
             >
               {title}
             </span>
@@ -1378,100 +1373,100 @@ const GroupActionsPopover: React.FC<{
   onAddTable,
   onAddGroup,
 }) => {
-  if (!editable || (!onDeleteGroup && !onAddTable && !onAddGroup)) return null;
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-          aria-label={`Actions for ${groupName}`}
-          title={`Actions for ${groupName}`}
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-44 p-1">
-        <div className="space-y-1">
-          {onAddTable ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                onClick={() => {
-                  onAddTable(groupName);
-                }}
-              >
-                Add Table
-              </button>
-            </PopoverClose>
-          ) : null}
-          {onAddGroup ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                onClick={() => {
-                  onAddGroup();
-                }}
-              >
-                Add Group
-              </button>
-            </PopoverClose>
-          ) : null}
-          {onAddGroup ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                onClick={() => {
-                  onAddGroup(undefined, {
-                    relativeTo: groupName,
-                    position: 'above',
-                  });
-                }}
-              >
-                Add Group Above
-              </button>
-            </PopoverClose>
-          ) : null}
-          {onAddGroup ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                onClick={() => {
-                  onAddGroup(undefined, {
-                    relativeTo: groupName,
-                    position: 'below',
-                  });
-                }}
-              >
-                Add Group Below
-              </button>
-            </PopoverClose>
-          ) : null}
-          {onDeleteGroup ? (
-            <>
-              <div className="my-1 h-px bg-border" />
+    if (!editable || (!onDeleteGroup && !onAddTable && !onAddGroup)) return null;
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            aria-label={`Actions for ${groupName}`}
+            title={`Actions for ${groupName}`}
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-44 p-1">
+          <div className="space-y-1">
+            {onAddTable ? (
               <PopoverClose asChild>
                 <button
                   type="button"
-                  className="w-full rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
+                  className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
                   onClick={() => {
-                    onRequestDeleteGroup(groupName, itemCount);
+                    onAddTable(groupName);
                   }}
                 >
-                  Delete Group
+                  Add Table
                 </button>
               </PopoverClose>
-            </>
-          ) : null}
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
-};
+            ) : null}
+            {onAddGroup ? (
+              <PopoverClose asChild>
+                <button
+                  type="button"
+                  className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                  onClick={() => {
+                    onAddGroup();
+                  }}
+                >
+                  Add Group
+                </button>
+              </PopoverClose>
+            ) : null}
+            {onAddGroup ? (
+              <PopoverClose asChild>
+                <button
+                  type="button"
+                  className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                  onClick={() => {
+                    onAddGroup(undefined, {
+                      relativeTo: groupName,
+                      position: 'above',
+                    });
+                  }}
+                >
+                  Add Group Above
+                </button>
+              </PopoverClose>
+            ) : null}
+            {onAddGroup ? (
+              <PopoverClose asChild>
+                <button
+                  type="button"
+                  className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                  onClick={() => {
+                    onAddGroup(undefined, {
+                      relativeTo: groupName,
+                      position: 'below',
+                    });
+                  }}
+                >
+                  Add Group Below
+                </button>
+              </PopoverClose>
+            ) : null}
+            {onDeleteGroup ? (
+              <>
+                <div className="my-1 h-px bg-border" />
+                <PopoverClose asChild>
+                  <button
+                    type="button"
+                    className="w-full rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
+                    onClick={() => {
+                      onRequestDeleteGroup(groupName, itemCount);
+                    }}
+                  >
+                    Delete Group
+                  </button>
+                </PopoverClose>
+              </>
+            ) : null}
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
+  };
 
 const ToggleClose: React.FC<{
   open: boolean;
@@ -1486,16 +1481,14 @@ const ToggleClose: React.FC<{
       <div className="flex items-center p-1 sm:p-3">
         <div className="grid size-6 sm:size-10 place-content-center">
           <ChevronsRight
-            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${
-              open ? 'rotate-180' : ''
-            }`}
+            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${open ? 'rotate-180' : ''
+              }`}
           />
         </div>
         {open && (
           <span
-            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${
-              open ? 'opacity-100' : 'opacity-0'
-            }`}
+            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'
+              }`}
           >
             Hide
           </span>
