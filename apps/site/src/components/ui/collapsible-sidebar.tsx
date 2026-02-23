@@ -716,11 +716,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                       style={{ WebkitTapHighlightColor: 'transparent' }}
                     >
                       <span>{groupName}</span>
-                      {isGroupOpen ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
                     </button>
                     {editable && onRenameGroup ? (
                       <button
@@ -746,6 +741,24 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                       onAddGroup={onAddGroup}
                       onAddTable={onAddTable}
                     />
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(groupName)}
+                      aria-expanded={isGroupOpen}
+                      aria-label={
+                        isGroupOpen
+                          ? `Collapse group ${groupName}`
+                          : `Expand group ${groupName}`
+                      }
+                      className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                      style={{ WebkitTapHighlightColor: 'transparent' }}
+                    >
+                      {isGroupOpen ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </button>
                   </div>
                 )
               ) : null}
