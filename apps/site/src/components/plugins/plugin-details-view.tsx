@@ -12,9 +12,14 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
-import { type ReactNode, type SVGProps, useEffect, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import {
+  type ReactNode,
+  type SVGProps,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,13 +31,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
-import { cn } from '@/lib/utils';
-import type { 
-  PluginMarketItem, 
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import type {
+  PluginMarketItem,
   PluginUserReview,
-  PluginUserReviewGroup
+  PluginUserReviewGroup,
 } from '@/lib/plugins/admin-plugin-market';
+import { cn } from '@/lib/utils';
 
 export interface PluginDetailView {
   plugin: PluginMarketItem;
@@ -95,14 +101,16 @@ export function PluginDetailsView({
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details.userReview?.comment ?? '';
-  
+
   const isReviewDirty =
     reviewRating !== reviewDraftBaseRef.current.rating ||
     reviewComment !== reviewDraftBaseRef.current.comment;
 
   useEffect(() => {
-    const persistedReviewSourceKey = details.userReview?.id ?? `draft::${plugin.pluginId}`;
-    const sourceChanged = reviewDraftSourceKeyRef.current !== persistedReviewSourceKey;
+    const persistedReviewSourceKey =
+      details.userReview?.id ?? `draft::${plugin.pluginId}`;
+    const sourceChanged =
+      reviewDraftSourceKeyRef.current !== persistedReviewSourceKey;
 
     if (!sourceChanged && isReviewDirty) return;
 
@@ -113,7 +121,13 @@ export function PluginDetailsView({
     };
     setReviewRating(persistedReviewRating);
     setReviewComment(persistedReviewComment);
-  }, [plugin.pluginId, details.userReview, persistedReviewRating, persistedReviewComment, isReviewDirty]);
+  }, [
+    plugin.pluginId,
+    details.userReview,
+    persistedReviewRating,
+    persistedReviewComment,
+    isReviewDirty,
+  ]);
 
   useEffect(() => {
     const heroNode = heroSectionRef.current;
@@ -130,7 +144,10 @@ export function PluginDetailsView({
     return () => observer.disconnect();
   }, []);
 
-  const ratingLabel = (plugin.averageRating ?? 0) > 0 ? (plugin.averageRating ?? 0).toFixed(1) : 'N/A';
+  const ratingLabel =
+    (plugin.averageRating ?? 0) > 0
+      ? (plugin.averageRating ?? 0).toFixed(1)
+      : 'N/A';
   const compactInstallCount = new Intl.NumberFormat(undefined, {
     notation: 'compact',
     compactDisplay: 'short',
@@ -224,7 +241,10 @@ export function PluginDetailsView({
         <div className="absolute inset-0 shadow-[inset_0_0_240px_rgba(0,0,0,0.45)]" />
 
         <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[1440px] flex-col px-4 pb-24 pt-24 sm:px-7 md:px-10 md:pb-28 md:pt-28">
-          <div className="max-w-[560px] ml-[8%] space-y-7 pb-3 md:pb-7" style={{ marginTop: '80px' }}>
+          <div
+            className="max-w-[560px] ml-[8%] space-y-7 pb-3 md:pb-7"
+            style={{ marginTop: '80px' }}
+          >
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
               <div className="size-[104px] shrink-0 overflow-hidden rounded-[20px] border border-white/20 bg-black/35 backdrop-blur-sm">
                 {plugin.iconUrl ? (
@@ -287,7 +307,11 @@ export function PluginDetailsView({
                 <Sparkles
                   className={cn('mr-2 size-4', isInstalling && 'animate-spin')}
                 />
-                {plugin.isInstalled ? (plugin.isUpgradable ? 'Update' : 'Installed') : 'Install'}
+                {plugin.isInstalled
+                  ? plugin.isUpgradable
+                    ? 'Update'
+                    : 'Installed'
+                  : 'Install'}
               </Button>
 
               <Button
@@ -329,8 +353,8 @@ export function PluginDetailsView({
                         Uninstall this plugin?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        This removes {plugin.title} from this business
-                        admin. You can install it again later.
+                        This removes {plugin.title} from this business admin.
+                        You can install it again later.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -349,7 +373,6 @@ export function PluginDetailsView({
               This plugin is available for your business
             </p>
           </div>
-
         </div>
         <div className="absolute inset-x-0 bottom-0 z-20 border-t border-white/15 bg-gradient-to-r from-[#070d14]/92 via-[#0a1320]/84 to-[#070d14]/92 backdrop-blur-sm">
           <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3 px-4 py-3 sm:px-7 md:px-10 lg:flex-row lg:items-center lg:justify-between">
@@ -407,25 +430,29 @@ export function PluginDetailsView({
             {/* Preview Gallery */}
             <section className="space-y-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-medium text-[#202124]">Screenshots</h2>
+                <h2 className="text-xl font-medium text-[#202124]">
+                  Screenshots
+                </h2>
               </div>
               <div className="relative group">
                 <div
                   ref={previewStripRef}
                   className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 >
-                  {details.previewScreenshots.map((src: string, index: number) => (
-                    <div
-                      key={`${src}:${index.toString()}`}
-                      className="h-[400px] w-[225px] shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-black"
-                    >
-                      <img
-                        src={src}
-                        alt={`${plugin.title} preview ${index + 1}`}
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                  ))}
+                  {details.previewScreenshots.map(
+                    (src: string, index: number) => (
+                      <div
+                        key={`${src}:${index.toString()}`}
+                        className="h-[400px] w-[225px] shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-black"
+                      >
+                        <img
+                          src={src}
+                          alt={`${plugin.title} preview ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ),
+                  )}
                   {details.previewScreenshots.length === 0 && (
                     <div className="flex h-[200px] w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-gray-500 text-sm">
                       No screenshots available
@@ -516,8 +543,13 @@ export function PluginDetailsView({
                         ? (row.count / totalBreakdownCount) * 100
                         : 0;
                     return (
-                      <div key={row.stars} className="flex items-center gap-4 text-sm">
-                        <span className="w-1 text-right text-[#5f6368]">{row.stars}</span>
+                      <div
+                        key={row.stars}
+                        className="flex items-center gap-4 text-sm"
+                      >
+                        <span className="w-1 text-right text-[#5f6368]">
+                          {row.stars}
+                        </span>
                         <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-100">
                           <div
                             className="h-full bg-[#01875f]"
@@ -533,12 +565,16 @@ export function PluginDetailsView({
               {/* Review Input */}
               <div className="rounded-2xl border border-gray-200 p-6 transition-shadow hover:shadow-md">
                 <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-base font-medium text-[#202124]">Your review</h3>
+                  <h3 className="text-base font-medium text-[#202124]">
+                    Your review
+                  </h3>
                   <Button
                     size="sm"
                     onClick={() => onSaveReview(reviewRating, reviewComment)}
                     loading={isSavingReview}
-                    disabled={isSavingReview || reviewRating <= 0 || !isReviewDirty}
+                    disabled={
+                      isSavingReview || reviewRating <= 0 || !isReviewDirty
+                    }
                     className="h-9 rounded-full bg-[#01875f] transition-all hover:bg-[#01704f] hover:shadow-sm disabled:opacity-50"
                   >
                     Save review
@@ -560,7 +596,7 @@ export function PluginDetailsView({
                           'size-7 transition-all duration-200',
                           star <= reviewRating
                             ? 'fill-[#01875f] text-[#01875f] drop-shadow-sm'
-                            : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300'
+                            : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300',
                         )}
                         viewBox="0 0 24 24"
                         stroke="none"
@@ -570,7 +606,9 @@ export function PluginDetailsView({
                     </button>
                   ))}
                   <span className="ml-3 text-sm font-medium text-gray-500 transition-colors">
-                    {reviewRating > 0 ? `${reviewRating}/5 stars` : 'Select rating'}
+                    {reviewRating > 0
+                      ? `${reviewRating}/5 stars`
+                      : 'Select rating'}
                   </span>
                 </div>
                 <Textarea
@@ -584,7 +622,10 @@ export function PluginDetailsView({
               {/* Reviews List */}
               <div className="space-y-8 divide-y divide-gray-100">
                 {reviewGroups.slice(0, 3).map((group, index) => (
-                  <article key={group.userId} className={cn("space-y-3", index > 0 && "pt-8")}>
+                  <article
+                    key={group.userId}
+                    className={cn('space-y-3', index > 0 && 'pt-8')}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="size-8 overflow-hidden rounded-full bg-gray-100">
@@ -601,18 +642,38 @@ export function PluginDetailsView({
                       </Button>
                     </div>
                     <div className="flex items-center gap-3">
-                      <Stars rating={group.latestReview.rating} tone="emerald" sizeClass="size-3" />
+                      <Stars
+                        rating={group.latestReview.rating}
+                        tone="emerald"
+                        sizeClass="size-3"
+                      />
                       <span className="text-xs text-gray-500">
-                        {new Date(group.latestReview.createdAt).toLocaleDateString()}
+                        {new Date(
+                          group.latestReview.createdAt,
+                        ).toLocaleDateString()}
                       </span>
                     </div>
                     <p className="text-sm text-[#5f6368] leading-relaxed">
                       {group.latestReview.comment}
                     </p>
                     <div className="flex items-center gap-4">
-                      <span className="text-[11px] text-gray-500">Was this helpful?</span>
-                      <Button variant="outline" size="sm" className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50">Yes</Button>
-                      <Button variant="outline" size="sm" className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50">No</Button>
+                      <span className="text-[11px] text-gray-500">
+                        Was this helpful?
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50"
+                      >
+                        Yes
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50"
+                      >
+                        No
+                      </Button>
                     </div>
                   </article>
                 ))}
@@ -624,18 +685,27 @@ export function PluginDetailsView({
           <aside className="w-full space-y-10 lg:w-[320px]">
             {/* App Support */}
             <section className="space-y-4">
-              <button type="button" className="flex w-full items-center justify-between border-b pb-4 text-left group">
-                <span className="text-lg font-medium text-[#202124] group-hover:text-[#01875f] transition-colors">App support</span>
+              <button
+                type="button"
+                className="flex w-full items-center justify-between border-b pb-4 text-left group"
+              >
+                <span className="text-lg font-medium text-[#202124] group-hover:text-[#01875f] transition-colors">
+                  App support
+                </span>
                 <ChevronDown className="size-5 text-gray-400 group-hover:text-[#01875f] transition-colors" />
               </button>
               <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-3 text-sm text-[#5f6368]">
                   <ExternalLink className="size-4 text-gray-400" />
-                  <span className="hover:text-[#01875f] cursor-pointer">Website</span>
+                  <span className="hover:text-[#01875f] cursor-pointer">
+                    Website
+                  </span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-[#5f6368]">
                   <CircleHelp className="size-4 text-gray-400" />
-                  <span className="hover:text-[#01875f] cursor-pointer">Support email</span>
+                  <span className="hover:text-[#01875f] cursor-pointer">
+                    Support email
+                  </span>
                 </div>
               </div>
             </section>
@@ -643,13 +713,16 @@ export function PluginDetailsView({
             {/* Similar Plugins */}
             <section className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium text-[#202124]">Similar plugins</h3>
+                <h3 className="text-lg font-medium text-[#202124]">
+                  Similar plugins
+                </h3>
                 <ChevronRight className="size-5 text-gray-400" />
               </div>
               <div className="space-y-6">
                 {similarPlugins.slice(0, 5).map((item) => {
                   const displayTitle =
-                    typeof item.title === 'string' && item.title.trim().length > 0
+                    typeof item.title === 'string' &&
+                    item.title.trim().length > 0
                       ? item.title
                       : item.pluginId || 'Plugin';
                   const displayInitial = displayTitle.charAt(0).toUpperCase();
@@ -673,11 +746,17 @@ export function PluginDetailsView({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h4 className="truncate text-sm font-medium text-[#202124]">{displayTitle}</h4>
-                        <p className="truncate text-xs text-gray-500">{item.publisher}</p>
+                        <h4 className="truncate text-sm font-medium text-[#202124]">
+                          {displayTitle}
+                        </h4>
+                        <p className="truncate text-xs text-gray-500">
+                          {item.publisher}
+                        </p>
                         <div className="mt-1 flex items-center gap-1">
                           <span className="text-xs text-gray-500">
-                            {item.averageRating ? item.averageRating.toFixed(1) : 'N/A'}
+                            {item.averageRating
+                              ? item.averageRating.toFixed(1)
+                              : 'N/A'}
                           </span>
                           <Star className="size-3 fill-gray-400 text-gray-400" />
                         </div>
