@@ -1,5 +1,12 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { LayoutGrid, List, Pencil, Plus, Search } from 'lucide-react';
+import {
+  GripVertical,
+  LayoutGrid,
+  List,
+  Pencil,
+  Plus,
+  Search,
+} from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
@@ -13,6 +20,12 @@ import {
   HoverablePopoverTrigger,
 } from '@/components/ui/hoverable-popover';
 import { Input } from '@/components/ui/input';
+import {
+  Sortable,
+  SortableContent,
+  SortableItem,
+  SortableItemHandle,
+} from '@/components/ui/sortable';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import type {
@@ -97,6 +110,29 @@ function buildProjectPluginLayoutStorageKey(projectId: string) {
   return `plugin-studio.project.plugins.layout.v1.${projectId}`;
 }
 
+function buildProjectPluginOrderStorageKey(projectId: string) {
+  return `plugin-studio.project.plugins.order.v1.${projectId}`;
+}
+
+function parseStoredPluginOrder(value: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((entry): entry is string => typeof entry === 'string');
+  } catch {
+    return [];
+  }
+}
+
+function arraysEqual(left: readonly string[], right: readonly string[]) {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return false;
+  }
+  return true;
+}
+
 function PluginStudioProjectRoute() {
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const { projectId } = Route.useParams();
@@ -115,6 +151,11 @@ function PluginStudioProjectRoute() {
       return persistedLayout;
     }
     return 'grid';
+  });
+  const [pluginOrder, setPluginOrder] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    const storageKey = buildProjectPluginOrderStorageKey(projectId);
+    return parseStoredPluginOrder(window.localStorage.getItem(storageKey));
   });
   const [hoveredProjectId, setHoveredProjectId] = useState(projectId);
   const [editingField, setEditingField] = useState<{
@@ -207,7 +248,7 @@ function PluginStudioProjectRoute() {
     [accessibleProjects],
   );
 
-  const pluginCards = useMemo(() => {
+  const allPluginCardsUnordered = useMemo(() => {
     const pluginIds = new Set<string>();
     const latestDraftByPluginId = new Map<string, PluginDraftDoc>();
 
@@ -230,7 +271,6 @@ function PluginStudioProjectRoute() {
       if (draftInstall.pluginId) pluginIds.add(draftInstall.pluginId);
     }
 
-    const query = search.trim().toLowerCase();
     return [...pluginIds]
       .map((pluginId) => {
         const publishedInstall = installsByPluginId.get(pluginId);
@@ -258,13 +298,6 @@ function PluginStudioProjectRoute() {
           description,
         };
       })
-      .filter((card) => {
-        if (!query) return true;
-        return (
-          card.pluginId.toLowerCase().includes(query) ||
-          card.title.toLowerCase().includes(query)
-        );
-      })
       .sort((left, right) => left.title.localeCompare(right.title));
   }, [
     draftInstalls,
@@ -273,16 +306,40 @@ function PluginStudioProjectRoute() {
     installs,
     installsByPluginId,
     projectId,
-    search,
   ]);
+  const orderedPluginCards = useMemo(() => {
+    const orderIndexByPluginId = new Map(
+      pluginOrder.map((pluginId, index) => [pluginId, index] as const),
+    );
+    return [...allPluginCardsUnordered].sort((left, right) => {
+      const leftIndex = orderIndexByPluginId.get(left.pluginId);
+      const rightIndex = orderIndexByPluginId.get(right.pluginId);
+      if (leftIndex !== undefined && rightIndex !== undefined) {
+        return leftIndex - rightIndex;
+      }
+      if (leftIndex !== undefined) return -1;
+      if (rightIndex !== undefined) return 1;
+      return left.title.localeCompare(right.title);
+    });
+  }, [allPluginCardsUnordered, pluginOrder]);
+  const pluginCards = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return orderedPluginCards;
+    return orderedPluginCards.filter((card) => {
+      return (
+        card.pluginId.toLowerCase().includes(query) ||
+        card.title.toLowerCase().includes(query)
+      );
+    });
+  }, [orderedPluginCards, search]);
 
   const groupedPluginCards = useMemo(
     () => groupPluginCardsByStatus(pluginCards),
     [pluginCards],
   );
   const pluginIds = useMemo(
-    () => pluginCards.map((card) => card.pluginId),
-    [pluginCards],
+    () => allPluginCardsUnordered.map((card) => card.pluginId),
+    [allPluginCardsUnordered],
   );
   const getNewPluginId = () =>
     resolveNewPluginId({
@@ -341,6 +398,29 @@ function PluginStudioProjectRoute() {
     const storageKey = buildProjectPluginLayoutStorageKey(projectId);
     window.localStorage.setItem(storageKey, pluginLayout);
   }, [pluginLayout, projectId]);
+  useEffect(() => {
+    const storageKey = buildProjectPluginOrderStorageKey(projectId);
+    setPluginOrder(
+      parseStoredPluginOrder(window.localStorage.getItem(storageKey)),
+    );
+  }, [projectId]);
+  useEffect(() => {
+    const currentPluginIds = allPluginCardsUnordered.map(
+      (card) => card.pluginId,
+    );
+    setPluginOrder((current) => {
+      const currentSet = new Set(currentPluginIds);
+      const next = [
+        ...current.filter((pluginId) => currentSet.has(pluginId)),
+        ...currentPluginIds.filter((pluginId) => !current.includes(pluginId)),
+      ];
+      return arraysEqual(current, next) ? current : next;
+    });
+  }, [allPluginCardsUnordered]);
+  useEffect(() => {
+    const storageKey = buildProjectPluginOrderStorageKey(projectId);
+    window.localStorage.setItem(storageKey, JSON.stringify(pluginOrder));
+  }, [pluginOrder, projectId]);
 
   const beginInlineEdit = (
     event: MouseEvent,
@@ -358,7 +438,7 @@ function PluginStudioProjectRoute() {
 
   const handleSaveInlineEdit = async () => {
     if (!editingField) return;
-    const targetCard = pluginCards.find(
+    const targetCard = orderedPluginCards.find(
       (candidate) => candidate.pluginId === editingField.pluginId,
     );
     if (!targetCard?.draftId) {
@@ -400,6 +480,34 @@ function PluginStudioProjectRoute() {
       setEditingValue('');
     }
   };
+  const reorderGroup = (
+    status: string,
+    reorderedGroupPluginIds: readonly string[],
+  ) => {
+    if (search.trim()) return;
+    setPluginOrder((currentOrder) => {
+      const fullOrder = [
+        ...currentOrder.filter((pluginId) =>
+          allPluginCardsUnordered.some((card) => card.pluginId === pluginId),
+        ),
+        ...allPluginCardsUnordered
+          .map((card) => card.pluginId)
+          .filter((pluginId) => !currentOrder.includes(pluginId)),
+      ];
+      const groupPluginIds = orderedPluginCards
+        .filter((card) => card.status === status)
+        .map((card) => card.pluginId);
+      if (!groupPluginIds.length) return fullOrder;
+      let groupIndex = 0;
+      const nextOrder = fullOrder.map((pluginId) => {
+        if (!groupPluginIds.includes(pluginId)) return pluginId;
+        const nextPluginId = reorderedGroupPluginIds[groupIndex] ?? pluginId;
+        groupIndex += 1;
+        return nextPluginId;
+      });
+      return arraysEqual(fullOrder, nextOrder) ? fullOrder : nextOrder;
+    });
+  };
 
   const stopInlineEdit = () => {
     setEditingField(null);
@@ -434,13 +542,14 @@ function PluginStudioProjectRoute() {
   }, [hoveredPluginsPopoverSearch, hoveredProjectPlugins]);
   const filteredProjectPluginsPopoverCards = useMemo(() => {
     const query = projectPluginsPopoverSearch.trim().toLowerCase();
-    if (!query) return pluginCards;
-    return pluginCards.filter((card) =>
+    if (!query) return orderedPluginCards;
+    return orderedPluginCards.filter((card) =>
       `${card.title} ${card.pluginId} ${card.status} ${card.description ?? ''}`
         .toLowerCase()
         .includes(query),
     );
-  }, [pluginCards, projectPluginsPopoverSearch]);
+  }, [orderedPluginCards, projectPluginsPopoverSearch]);
+  const isReorderDisabled = search.trim().length > 0;
 
   if (isAuthLoading)
     return <div className="p-8 text-muted-foreground">Loading...</div>;
@@ -782,134 +891,166 @@ function PluginStudioProjectRoute() {
                 {group.description}
               </p>
             </div>
-            <div
-              className={
-                pluginLayout === 'grid'
-                  ? 'grid gap-4 md:grid-cols-2'
-                  : 'grid gap-3'
-              }
+            <Sortable
+              value={group.items}
+              getItemValue={(card) => card.id}
+              orientation={pluginLayout === 'grid' ? 'mixed' : 'vertical'}
+              onValueChange={(items) => {
+                reorderGroup(
+                  group.status,
+                  items.map((item) => item.pluginId),
+                );
+              }}
             >
-              {group.items.map((card) => (
-                // biome-ignore lint/a11y/useSemanticElements: Card supports inline editing controls that cannot be nested inside button.
+              <SortableContent asChild>
                 <div
-                  key={card.id}
-                  onClick={() => {
-                    if (editingField?.pluginId === card.pluginId) return;
-                    void navigate({
-                      to: '/plugin-studio/$projectId/$pluginId',
-                      params: { projectId, pluginId: card.pluginId },
-                    });
-                  }}
-                  onKeyDown={(event) => {
-                    if (editingField?.pluginId === card.pluginId) return;
-                    if (event.key !== 'Enter' && event.key !== ' ') return;
-                    event.preventDefault();
-                    void navigate({
-                      to: '/plugin-studio/$projectId/$pluginId',
-                      params: { projectId, pluginId: card.pluginId },
-                    });
-                  }}
-                  role="button"
-                  tabIndex={0}
-                  className="rounded-xl border border-border/70 bg-card/70 p-6 text-left transition hover:border-border"
+                  className={
+                    pluginLayout === 'grid'
+                      ? 'grid gap-4 md:grid-cols-2'
+                      : 'grid gap-3'
+                  }
                 >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      {editingField?.pluginId === card.pluginId &&
-                      editingField.field === 'title' ? (
-                        <Input
-                          value={editingValue}
-                          autoFocus
-                          placeholder="Plugin name"
-                          onChange={(event) =>
-                            setEditingValue(event.target.value)
-                          }
-                          onClick={(event) => event.stopPropagation()}
-                          onBlur={() => void handleSaveInlineEdit()}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Enter') {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              void handleSaveInlineEdit();
-                            }
-                            if (event.key === 'Escape') {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              stopInlineEdit();
-                            }
-                          }}
-                          className="h-10 text-xl font-semibold"
-                        />
-                      ) : (
-                        <div className="group/title flex items-center gap-2">
-                          <p className="text-3xl font-semibold tracking-tight">
-                            {card.title}
-                          </p>
-                          <button
-                            type="button"
-                            aria-label={`Edit ${card.title} title`}
-                            onClick={(event) =>
-                              beginInlineEdit(event, card, 'title')
-                            }
-                            className="text-muted-foreground opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 group-hover/title:opacity-100 group-focus-within/title:opacity-100 hover:text-foreground"
+                  {group.items.map((card) => (
+                    <SortableItem
+                      key={card.id}
+                      value={card.id}
+                      asChild
+                      disabled={isReorderDisabled}
+                    >
+                      {/* biome-ignore lint/a11y/useSemanticElements: Card supports inline editing controls that cannot be nested inside button. */}
+                      <div
+                        onClick={() => {
+                          if (editingField?.pluginId === card.pluginId) return;
+                          void navigate({
+                            to: '/plugin-studio/$projectId/$pluginId',
+                            params: { projectId, pluginId: card.pluginId },
+                          });
+                        }}
+                        onKeyDown={(event) => {
+                          if (editingField?.pluginId === card.pluginId) return;
+                          if (event.key !== 'Enter' && event.key !== ' ')
+                            return;
+                          event.preventDefault();
+                          void navigate({
+                            to: '/plugin-studio/$projectId/$pluginId',
+                            params: { projectId, pluginId: card.pluginId },
+                          });
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        className="rounded-xl border border-border/70 bg-card/70 p-6 text-left transition hover:border-border"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            {editingField?.pluginId === card.pluginId &&
+                            editingField.field === 'title' ? (
+                              <Input
+                                value={editingValue}
+                                autoFocus
+                                placeholder="Plugin name"
+                                onChange={(event) =>
+                                  setEditingValue(event.target.value)
+                                }
+                                onClick={(event) => event.stopPropagation()}
+                                onBlur={() => void handleSaveInlineEdit()}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    void handleSaveInlineEdit();
+                                  }
+                                  if (event.key === 'Escape') {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    stopInlineEdit();
+                                  }
+                                }}
+                                className="h-10 text-xl font-semibold"
+                              />
+                            ) : (
+                              <div className="group/title flex items-center gap-2">
+                                <p className="text-3xl font-semibold tracking-tight">
+                                  {card.title}
+                                </p>
+                                <button
+                                  type="button"
+                                  aria-label={`Edit ${card.title} title`}
+                                  onClick={(event) =>
+                                    beginInlineEdit(event, card, 'title')
+                                  }
+                                  className="text-muted-foreground opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 group-hover/title:opacity-100 group-focus-within/title:opacity-100 hover:text-foreground"
+                                >
+                                  <Pencil className="size-4" />
+                                </button>
+                              </div>
+                            )}
+                            {editingField?.pluginId === card.pluginId &&
+                            editingField.field === 'description' ? (
+                              <Textarea
+                                value={editingValue}
+                                autoFocus
+                                onChange={(event) =>
+                                  setEditingValue(event.target.value)
+                                }
+                                onClick={(event) => event.stopPropagation()}
+                                onBlur={() => void handleSaveInlineEdit()}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Escape') {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    stopInlineEdit();
+                                  }
+                                  if (
+                                    event.key === 'Enter' &&
+                                    !event.shiftKey
+                                  ) {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    void handleSaveInlineEdit();
+                                  }
+                                }}
+                                className="mt-2 min-h-[96px] resize-none"
+                              />
+                            ) : null}
+                            {editingField?.pluginId === card.pluginId &&
+                            editingField.field === 'description' ? null : (
+                              <div className="group/description mt-2 flex items-start gap-2">
+                                <p className="text-sm text-muted-foreground">
+                                  {card.description || 'No description yet'}
+                                </p>
+                                <button
+                                  type="button"
+                                  aria-label={`Edit ${card.title} description`}
+                                  onClick={(event) =>
+                                    beginInlineEdit(event, card, 'description')
+                                  }
+                                  className="mt-0.5 text-muted-foreground opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 group-hover/description:opacity-100 group-focus-within/description:opacity-100 hover:text-foreground"
+                                >
+                                  <Pencil className="size-3.5" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          <SortableItemHandle
+                            aria-label={`Reorder ${card.title}`}
+                            disabled={isReorderDisabled}
+                            onClick={(event) => event.stopPropagation()}
+                            className="mt-1 inline-flex size-8 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition hover:text-foreground"
                           >
-                            <Pencil className="size-4" />
-                          </button>
+                            <GripVertical className="size-4" />
+                          </SortableItemHandle>
                         </div>
-                      )}
-                      {editingField?.pluginId === card.pluginId &&
-                      editingField.field === 'description' ? (
-                        <Textarea
-                          value={editingValue}
-                          autoFocus
-                          onChange={(event) =>
-                            setEditingValue(event.target.value)
-                          }
-                          onClick={(event) => event.stopPropagation()}
-                          onBlur={() => void handleSaveInlineEdit()}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Escape') {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              stopInlineEdit();
-                            }
-                            if (event.key === 'Enter' && !event.shiftKey) {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              void handleSaveInlineEdit();
-                            }
-                          }}
-                          className="mt-2 min-h-[96px] resize-none"
-                        />
-                      ) : null}
-                      {editingField?.pluginId === card.pluginId &&
-                      editingField.field === 'description' ? null : (
-                        <div className="group/description mt-2 flex items-start gap-2">
-                          <p className="text-sm text-muted-foreground">
-                            {card.description || 'No description yet'}
-                          </p>
-                          <button
-                            type="button"
-                            aria-label={`Edit ${card.title} description`}
-                            onClick={(event) =>
-                              beginInlineEdit(event, card, 'description')
-                            }
-                            className="mt-0.5 text-muted-foreground opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 group-hover/description:opacity-100 group-focus-within/description:opacity-100 hover:text-foreground"
-                          >
-                            <Pencil className="size-3.5" />
-                          </button>
+                        <div className="mt-7">
+                          <span className="rounded-full border border-border/80 px-2 py-0.5 text-xs uppercase tracking-wide text-muted-foreground">
+                            {card.status}
+                          </span>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mt-7">
-                    <span className="rounded-full border border-border/80 px-2 py-0.5 text-xs uppercase tracking-wide text-muted-foreground">
-                      {card.status}
-                    </span>
-                  </div>
+                      </div>
+                    </SortableItem>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContent>
+            </Sortable>
           </section>
         ))}
       </main>

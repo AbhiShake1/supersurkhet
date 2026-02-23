@@ -1,5 +1,12 @@
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
-import { Building2, LayoutGrid, List, Plus, Search } from 'lucide-react';
+import {
+  Building2,
+  GripVertical,
+  LayoutGrid,
+  List,
+  Plus,
+  Search,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
@@ -17,6 +24,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Sortable,
+  SortableContent,
+  SortableItem,
+  SortableItemHandle,
+} from '@/components/ui/sortable';
 import { api } from '@/lib/api';
 import type {
   PluginDraftDoc,
@@ -86,8 +99,17 @@ function toDraftRecencyKey(draft: PluginDraftDoc) {
 }
 
 const PROJECT_LAYOUT_STORAGE_KEY = 'plugin-studio.projects.layout.v1';
+const PROJECT_ORDER_STORAGE_KEY = 'plugin-studio.projects.order.v1';
 const PROJECT_TITLE_TRUNCATE_AT = 12;
 type ProjectLayout = 'grid' | 'list';
+
+function areStringArraysEqual(left: string[], right: string[]) {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return false;
+  }
+  return true;
+}
 
 function ProjectCardTitle({
   projectName,
@@ -161,6 +183,21 @@ function PluginStudioProjectsRoute() {
     }
     return 'grid';
   });
+  const [projectOrder, setProjectOrder] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const persistedOrder = JSON.parse(
+        window.localStorage.getItem(PROJECT_ORDER_STORAGE_KEY) ?? '[]',
+      );
+      if (!Array.isArray(persistedOrder)) return [];
+      return persistedOrder.filter(
+        (value): value is string =>
+          typeof value === 'string' && value.trim().length > 0,
+      );
+    } catch {
+      return [];
+    }
+  });
 
   const actorUserIdAliases = useMemo(
     () => buildActorUserIdAliases(user),
@@ -206,10 +243,46 @@ function PluginStudioProjectsRoute() {
     );
   }, [actorUserIdSet, members, projects]);
 
+  useEffect(() => {
+    const accessibleProjectIds = accessibleProjects.map(
+      (project) => project.id,
+    );
+    const accessibleProjectIdSet = new Set(accessibleProjectIds);
+    setProjectOrder((current) => {
+      const retained = current.filter((projectId) =>
+        accessibleProjectIdSet.has(projectId),
+      );
+      const retainedSet = new Set(retained);
+      const merged = [
+        ...retained,
+        ...accessibleProjectIds.filter(
+          (projectId) => !retainedSet.has(projectId),
+        ),
+      ];
+      return areStringArraysEqual(current, merged) ? current : merged;
+    });
+  }, [accessibleProjects]);
+
+  const orderedAccessibleProjects = useMemo(() => {
+    const projectById = new Map(
+      accessibleProjects.map((project) => [project.id, project] as const),
+    );
+    const orderedIds = projectOrder.filter((projectId) =>
+      projectById.has(projectId),
+    );
+    const orderedIdSet = new Set(orderedIds);
+    const missingIds = accessibleProjects
+      .map((project) => project.id)
+      .filter((projectId) => !orderedIdSet.has(projectId));
+    return [...orderedIds, ...missingIds]
+      .map((projectId) => projectById.get(projectId))
+      .filter((project): project is PluginProjectDoc => Boolean(project));
+  }, [accessibleProjects, projectOrder]);
+
   const filteredProjects = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return accessibleProjects;
-    return accessibleProjects.filter((project) => {
+    if (!normalizedQuery) return orderedAccessibleProjects;
+    return orderedAccessibleProjects.filter((project) => {
       const searchSpace = [
         project.name,
         project.slug,
@@ -221,7 +294,7 @@ function PluginStudioProjectsRoute() {
         .toLowerCase();
       return searchSpace.includes(normalizedQuery);
     });
-  }, [accessibleProjects, query]);
+  }, [orderedAccessibleProjects, query]);
   const accessibleProjectIdSet = useMemo(
     () => new Set(accessibleProjects.map((project) => project.id)),
     [accessibleProjects],
@@ -253,6 +326,45 @@ function PluginStudioProjectsRoute() {
   useEffect(() => {
     window.localStorage.setItem(PROJECT_LAYOUT_STORAGE_KEY, layout);
   }, [layout]);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      PROJECT_ORDER_STORAGE_KEY,
+      JSON.stringify(projectOrder),
+    );
+  }, [projectOrder]);
+
+  const handleProjectOrderChange = (
+    nextVisibleProjects: PluginProjectDoc[],
+  ) => {
+    const reorderedVisibleIds = nextVisibleProjects.map(
+      (project) => project.id,
+    );
+    const reorderedVisibleIdSet = new Set(reorderedVisibleIds);
+
+    setProjectOrder((current) => {
+      const nextOrder: string[] = [];
+      let reorderedIndex = 0;
+
+      for (const projectId of current) {
+        if (reorderedVisibleIdSet.has(projectId)) {
+          nextOrder.push(reorderedVisibleIds[reorderedIndex] ?? projectId);
+          reorderedIndex += 1;
+          continue;
+        }
+        nextOrder.push(projectId);
+      }
+
+      const nextOrderSet = new Set(nextOrder);
+      for (const projectId of reorderedVisibleIds) {
+        if (nextOrderSet.has(projectId)) continue;
+        nextOrder.push(projectId);
+        nextOrderSet.add(projectId);
+      }
+
+      return areStringArraysEqual(current, nextOrder) ? current : nextOrder;
+    });
+  };
 
   const handleCreateProject = async () => {
     const normalizedName = projectName.trim();
@@ -402,53 +514,69 @@ function PluginStudioProjectsRoute() {
           </ButtonGroup>
         </div>
 
-        <div
-          className={
-            layout === 'grid'
-              ? 'mt-6 grid gap-4 md:grid-cols-2'
-              : 'mt-6 grid grid-cols-1 gap-3'
-          }
+        <Sortable
+          value={filteredProjects}
+          onValueChange={handleProjectOrderChange}
+          getItemValue={(project) => project.id}
+          orientation={layout === 'grid' ? 'mixed' : 'vertical'}
         >
-          {filteredProjects.map((project) => {
-            const pluginCount = pluginCountsByProjectId.get(project.id) ?? 0;
+          <SortableContent
+            className={
+              layout === 'grid'
+                ? 'mt-6 grid gap-4 md:grid-cols-2'
+                : 'mt-6 grid grid-cols-1 gap-3'
+            }
+          >
+            {filteredProjects.map((project) => {
+              const pluginCount = pluginCountsByProjectId.get(project.id) ?? 0;
 
-            return (
-              // biome-ignore lint/a11y/useSemanticElements: Card has nested "view more" control; button wrapper would be invalid HTML.
-              <div
-                key={project.id}
-                onClick={() =>
-                  void navigate({
-                    to: '/plugin-studio/$projectId',
-                    params: { projectId: project.id },
-                  })
-                }
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter' && event.key !== ' ') return;
-                  event.preventDefault();
-                  void navigate({
-                    to: '/plugin-studio/$projectId',
-                    params: { projectId: project.id },
-                  });
-                }}
-                role="button"
-                tabIndex={0}
-                className="rounded-xl border border-border/70 bg-card/70 px-6 py-5 text-left transition hover:border-border"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-muted/20 text-muted-foreground">
-                    <Building2 className="size-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <ProjectCardTitle
-                      projectName={project.name}
-                      pluginCount={pluginCount}
-                    />
+              return (
+                <SortableItem key={project.id} value={project.id} asChild>
+                  {/* biome-ignore lint/a11y/useSemanticElements: Card has nested controls; button wrapper would be invalid HTML. */}
+                  <div
+                    onClick={() =>
+                      void navigate({
+                        to: '/plugin-studio/$projectId',
+                        params: { projectId: project.id },
+                      })
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter' && event.key !== ' ') return;
+                      event.preventDefault();
+                      void navigate({
+                        to: '/plugin-studio/$projectId',
+                        params: { projectId: project.id },
+                      });
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    className="rounded-xl border border-border/70 bg-card/70 px-6 py-5 text-left transition hover:border-border"
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-muted/20 text-muted-foreground">
+                        <Building2 className="size-4" />
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <ProjectCardTitle
+                          projectName={project.name}
+                          pluginCount={pluginCount}
+                        />
+                      </div>
+                      <SortableItemHandle
+                        aria-label={`Reorder ${project.name}`}
+                        className="rounded-md border border-border/70 bg-background/90 p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                        onClick={(event) => event.stopPropagation()}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        <GripVertical className="size-4" />
+                      </SortableItemHandle>
+                    </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                </SortableItem>
+              );
+            })}
+          </SortableContent>
+        </Sortable>
       </main>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
