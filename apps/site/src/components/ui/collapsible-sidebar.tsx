@@ -63,7 +63,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from './popover';
-import { Sortable, SortableContent, SortableItem } from './sortable';
+import {
+  Sortable,
+  SortableContent,
+  SortableItem,
+  SortableItemHandle,
+} from './sortable';
 
 const SECTION_TOGGLE_BUTTON_CLASS =
   'flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 active:bg-slate-200/60 dark:active:bg-slate-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset';
@@ -418,9 +423,9 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
           >
             <SortableContent asChild>
               <div className="space-y-1">
-                {ungroupedItems.map((item, index) => (
+                {ungroupedItems.map((item) => (
                   <SortableItem
-                    key={item.title || index}
+                    key={item.title}
                     value={item.title}
                     asHandle
                     asChild
@@ -527,12 +532,12 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   <SortableItem
                     key={groupName}
                     value={groupName}
-                    asHandle
+                    asHandle={!open}
                     asChild
                   >
                     <div
                       data-sidebar-group-card="true"
-                      className="relative mt-1 rounded-lg border border-slate-200/80 p-1 transition-all duration-150 dark:border-slate-800"
+                      className="relative mt-1 rounded-lg border border-slate-200/80 p-1 dark:border-slate-800"
                     >
                       {open ? (
                         editingGroupName === groupName ? (
@@ -570,6 +575,18 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                           />
                         ) : (
                           <div className="group/group-header flex items-center gap-1">
+                            {editable && onReorderGroups ? (
+                              <SortableItemHandle asChild>
+                                <button
+                                  type="button"
+                                  className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                  aria-label={`Reorder group ${groupName}`}
+                                  title={`Reorder group ${groupName}`}
+                                >
+                                  <ChevronsUpDown className="h-4 w-4" />
+                                </button>
+                              </SortableItemHandle>
+                            ) : null}
                             <button
                               type="button"
                               onClick={() => toggleGroup(groupName)}
@@ -687,9 +704,9 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         >
                           <SortableContent asChild>
                             <div className="space-y-1 p-1">
-                              {items.map((item, index) => (
+                              {items.map((item) => (
                                 <SortableItem
-                                  key={`${groupName}-${item.title}-${index}`}
+                                  key={`${groupName}-${item.title}`}
                                   value={item.title}
                                   asHandle
                                   asChild
