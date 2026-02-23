@@ -7,6 +7,7 @@ import {
   ChevronsUpDown,
   ChevronUp,
   EyeOff,
+  GripVertical,
   Pencil,
   Trash2,
   X,
@@ -21,6 +22,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { SortableItemHandle } from '@/components/ui/sortable';
 import { cn } from '@/lib/utils';
 
 interface DataTableColumnHeaderProps<TData, TValue>
@@ -30,6 +32,7 @@ interface DataTableColumnHeaderProps<TData, TValue>
   onEditColumn?: () => void;
   onDeleteColumn?: () => void;
   onMoveColumn?: (sourceColumnKey: string, targetColumnKey: string) => void;
+  showReorderHandle?: boolean;
 }
 
 export function DataTableColumnHeader<TData, TValue>({
@@ -39,6 +42,7 @@ export function DataTableColumnHeader<TData, TValue>({
   onEditColumn,
   onDeleteColumn,
   onMoveColumn,
+  showReorderHandle = false,
   ...props
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (
@@ -64,6 +68,17 @@ export function DataTableColumnHeader<TData, TValue>({
   if (onMoveColumn) {
     return (
       <div className={cn('flex min-w-0 items-center gap-1', className)}>
+        {showReorderHandle ? (
+          <SortableItemHandle asChild>
+            <button
+              type="button"
+              className="inline-flex h-8 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+              aria-label={`Reorder column ${String(column.id ?? title)}`}
+            >
+              <GripVertical className="size-4" />
+            </button>
+          </SortableItemHandle>
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger
             className="-ml-0.5 flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-accent focus:outline-none focus:ring-1 focus:ring-ring data-[state=open]:bg-accent [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground"

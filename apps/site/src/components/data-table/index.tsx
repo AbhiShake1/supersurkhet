@@ -121,7 +121,6 @@ export function DataTable<TData>({
                           <SortableItem
                             key={header.id}
                             value={String(header.column.id)}
-                            asHandle
                             asChild
                           >
                             {content}

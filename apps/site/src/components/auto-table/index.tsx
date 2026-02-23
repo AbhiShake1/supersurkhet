@@ -586,6 +586,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
             onDeleteColumn ? () => onDeleteColumn(key) : undefined
           }
           onMoveColumn={onReorderColumns}
+          showReorderHandle={Boolean(onReorderColumns)}
         />
       ),
       cell: ({ cell, table, row }) => {
