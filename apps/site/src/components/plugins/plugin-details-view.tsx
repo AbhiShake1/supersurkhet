@@ -1,4 +1,6 @@
 import {
+  ArrowBigDown,
+  ArrowBigUp,
   BookmarkPlus,
   ChevronLeft,
   ChevronRight,
@@ -19,6 +21,8 @@ import {
   useRef,
   useState,
 } from 'react';
+import { toast } from 'sonner';
+import { useAuth } from '@/components/auth-provider';
 import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
 import {
   AlertDialog,
@@ -91,6 +95,7 @@ export function PluginDetailsView({
   const [reviewComment, setReviewComment] = useState('');
   const [isHeroOutOfView, setIsHeroOutOfView] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [showOtherReviews, setShowOtherReviews] = useState(false);
   const previewStripRef = useRef<HTMLDivElement | null>(null);
   const heroSectionRef = useRef<HTMLElement | null>(null);
   const reviewDraftSourceKeyRef = useRef<string>('');
@@ -168,6 +173,23 @@ export function PluginDetailsView({
     (sum, row) => sum + row.count,
     0,
   );
+  const myReviews = reviewGroups
+    .filter((group) => group.isCurrentUser)
+    .flatMap((group) =>
+      group.reviews.map((review) => ({
+        review,
+        userLabel: group.userLabel,
+      })),
+    );
+  const otherReviews = reviewGroups
+    .filter((group) => !group.isCurrentUser)
+    .flatMap((group) =>
+      group.reviews.map((review) => ({
+        review,
+        userLabel: group.userLabel,
+      })),
+    );
+  const visibleOtherReviews = otherReviews.slice(0, 10);
 
   const heroMediaSrc = details.previewScreenshots[0] ?? plugin.iconUrl ?? null;
 
@@ -623,62 +645,81 @@ export function PluginDetailsView({
 
               {/* Reviews List */}
               <div className="space-y-8 divide-y divide-gray-100">
-                {reviewGroups.slice(0, 3).map((group, index) => (
-                  <article
-                    key={group.userId}
-                    className={cn('space-y-3', index > 0 && 'pt-8')}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="size-8 overflow-hidden rounded-full bg-gray-100">
-                          <div className="flex size-full items-center justify-center bg-[#01875f] text-[10px] font-bold text-white">
-                            {group.userLabel.charAt(0).toUpperCase()}
-                          </div>
+                {reviewGroups.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-gray-500">
+                    No reviews yet. Be the first to review!
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-6">
+                    {/* My Reviews Section */}
+                    {myReviews.length > 0 && (
+                      <div className="space-y-6">
+                        <h4 className="border-b border-gray-100 pb-2 text-sm font-semibold text-gray-700">
+                          My Reviews
+                        </h4>
+                        <div className="space-y-6">
+                          {myReviews.map(({ review, userLabel }) => (
+                            <ReviewItem
+                              key={review.id}
+                              review={review}
+                              userLabel={userLabel}
+                            />
+                          ))}
                         </div>
-                        <span className="text-sm font-medium text-[#202124]">
-                          {group.userLabel}
-                        </span>
                       </div>
-                      <Button variant="ghost" size="icon" className="size-8">
-                        <EllipsisVertical className="size-4 text-gray-500" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Stars
-                        rating={group.latestReview.rating}
-                        tone="emerald"
-                        sizeClass="size-3"
-                      />
-                      <span className="text-xs text-gray-500">
-                        {new Date(
-                          group.latestReview.createdAt,
-                        ).toLocaleDateString()}
-                      </span>
-                    </div>
-                    <p className="text-sm text-[#5f6368] leading-relaxed">
-                      {group.latestReview.comment}
-                    </p>
-                    <div className="flex items-center gap-4">
-                      <span className="text-[11px] text-gray-500">
-                        Was this helpful?
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50"
-                      >
-                        Yes
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50"
-                      >
-                        No
-                      </Button>
-                    </div>
-                  </article>
-                ))}
+                    )}
+
+                    {/* Other Reviews Section */}
+                    {otherReviews.length > 0 && (
+                      <div className="space-y-6 border-t border-gray-100 pt-4">
+                        {!showOtherReviews ? (
+                          <div className="flex justify-center pt-2">
+                            <Button
+                              variant="ghost"
+                              className="rounded-full text-sm font-medium text-[#01875f] transition-colors hover:bg-emerald-50 hover:text-[#01875f]"
+                              onClick={() => setShowOtherReviews(true)}
+                            >
+                              Expand {otherReviews.length} review
+                              {otherReviews.length === 1 ? '' : 's'} from others
+                              <ChevronDown className="ml-2 size-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="space-y-6 animate-in fade-in duration-300">
+                            <h4 className="border-b border-gray-100 pb-2 text-sm font-semibold text-gray-700">
+                              Community Reviews
+                            </h4>
+                            <div className="space-y-8 divide-y divide-gray-100">
+                              {visibleOtherReviews.map(
+                                ({ review, userLabel }, index) => (
+                                  <div
+                                    key={review.id}
+                                    className={cn(index > 0 && 'pt-8')}
+                                  >
+                                    <ReviewItem
+                                      review={review}
+                                      userLabel={userLabel}
+                                    />
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                            <div className="flex justify-center pt-4">
+                              <Button
+                                variant="ghost"
+                                className="rounded-full text-sm font-medium text-[#01875f] transition-colors hover:bg-emerald-50 hover:text-[#01875f]"
+                                onClick={() => setShowOtherReviews(false)}
+                              >
+                                Show Less
+                                <ChevronDown className="ml-2 size-4 rotate-180" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -848,5 +889,290 @@ function ChevronDown(props: SVGProps<SVGSVGElement>) {
     >
       <path d="m6 9 6 6 6-6" />
     </svg>
+  );
+}
+
+// Local type for UI mock replies
+type Reply = {
+  id: string;
+  authorName: string;
+  comment: string;
+  createdAt: string;
+  replies: Reply[];
+};
+
+// Global mock state for replies per review ID
+// In a real app, this would come from the API/DB.
+const MOCK_REPLIES: Record<string, Reply[]> = {};
+
+function ReplyItem({
+  reply,
+  onReply,
+  depth = 0,
+}: {
+  reply: Reply;
+  onReply: (parentId: string, text: string) => void;
+  depth?: number;
+}) {
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyText, setReplyText] = useState('');
+
+  const handleSubmit = () => {
+    if (!replyText.trim()) return;
+    onReply(reply.id, replyText);
+    setIsReplying(false);
+    setReplyText('');
+  };
+
+  return (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2">
+        <span className="text-xs font-medium text-[#202124]">
+          {reply.authorName}
+        </span>
+        <span className="text-[10px] text-gray-500">
+          {new Date(reply.createdAt).toLocaleDateString()}
+        </span>
+      </div>
+      <p className="text-sm text-[#5f6368] border-l-2 border-emerald-500/20 pl-3 py-0.5 bg-emerald-50/30 rounded-r-[4px] rounded-br-[4px]">
+        {reply.comment}
+      </p>
+
+      {/* Maximum nesting depth of 4 to prevent UI overflow */}
+      {depth < 4 && (
+        <div className="flex justify-start">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 mt-1 text-[10px] text-[#01875f] hover:bg-emerald-50"
+            onClick={() => setIsReplying(!isReplying)}
+          >
+            Reply
+          </Button>
+        </div>
+      )}
+
+      {isReplying && (
+        <div className="mt-2 mb-3 space-y-2 rounded-lg bg-gray-50 p-3">
+          <Textarea
+            placeholder="Write a reply..."
+            value={replyText}
+            onChange={(e) => setReplyText(e.target.value)}
+            className="min-h-[50px] text-xs resize-none bg-white"
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 text-xs px-2"
+              onClick={() => setIsReplying(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={!replyText.trim()}
+              className="h-6 text-xs px-2 bg-[#01875f] hover:bg-[#01875f]/90 text-white"
+            >
+              Submit
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {reply.replies && reply.replies.length > 0 && (
+        <div className="mt-2 space-y-3 pl-4 border-l-2 border-gray-100">
+          {reply.replies.map((childReply) => (
+            <ReplyItem
+              key={childReply.id}
+              reply={childReply}
+              onReply={onReply}
+              depth={depth + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReviewItem({
+  review,
+  userLabel,
+}: {
+  review: PluginUserReview;
+  userLabel: string;
+}) {
+  const { user } = useAuth();
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyText, setReplyText] = useState('');
+
+  // Force re-render when adding mock replies
+  const [replies, setReplies] = useState<Reply[]>(
+    MOCK_REPLIES[review.id] || [],
+  );
+
+  const recursivelyAddReply = (
+    replyList: Reply[],
+    parentId: string,
+    newReply: Reply,
+  ): Reply[] => {
+    return replyList.map((rep) => {
+      if (rep.id === parentId) {
+        return { ...rep, replies: [...(rep.replies || []), newReply] };
+      }
+      if (rep.replies && rep.replies.length > 0) {
+        return {
+          ...rep,
+          replies: recursivelyAddReply(rep.replies, parentId, newReply),
+        };
+      }
+      return rep;
+    });
+  };
+
+  const handleReviewReplySubmit = () => {
+    if (!replyText.trim()) return;
+    const newReply: Reply = {
+      id: Date.now().toString(),
+      authorName: user?.name || 'Current User',
+      comment: replyText.trim(),
+      createdAt: new Date().toISOString(),
+      replies: [],
+    };
+
+    const updatedReplies = [...(MOCK_REPLIES[review.id] || []), newReply];
+    MOCK_REPLIES[review.id] = updatedReplies;
+    setReplies(updatedReplies);
+    setReplyText('');
+    setIsReplying(false);
+    toast.success('Reply submitted');
+  };
+
+  const handleNestedReplySubmit = (parentId: string, text: string) => {
+    const newReply: Reply = {
+      id: Date.now().toString(),
+      authorName: user?.name || 'Current User',
+      comment: text.trim(),
+      createdAt: new Date().toISOString(),
+      replies: [],
+    };
+
+    const currentReplies = MOCK_REPLIES[review.id] || [];
+    const updatedReplies = recursivelyAddReply(
+      currentReplies,
+      parentId,
+      newReply,
+    );
+
+    MOCK_REPLIES[review.id] = updatedReplies;
+    setReplies(updatedReplies);
+    toast.success('Reply submitted');
+  };
+
+  return (
+    <article className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="size-8 overflow-hidden rounded-full bg-gray-100">
+            <div className="flex size-full items-center justify-center bg-[#01875f] text-[10px] font-bold text-white">
+              {userLabel.charAt(0).toUpperCase()}
+            </div>
+          </div>
+          <span className="text-sm font-medium text-[#202124]">
+            {userLabel}
+          </span>
+        </div>
+        <Button variant="ghost" size="icon" className="size-8">
+          <EllipsisVertical className="size-4 text-gray-500" />
+        </Button>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <Stars rating={review.rating} tone="emerald" sizeClass="size-3" />
+          <span className="text-xs text-gray-500">
+            {new Date(review.createdAt).toLocaleDateString()}
+          </span>
+        </div>
+
+        <p className="text-sm text-[#5f6368] leading-relaxed">
+          {review.comment}
+        </p>
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 rounded-md transition-colors hover:bg-orange-50 hover:text-orange-500 text-gray-400"
+            title="Upvote"
+          >
+            <ArrowBigUp className="size-[18px]" />
+            <span className="sr-only">Upvote</span>
+          </Button>
+          <span className="text-xs font-medium text-gray-600 px-1">24</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-7 rounded-md transition-colors hover:bg-[#7193ff]/10 hover:text-[#7193ff] text-gray-400"
+            title="Downvote"
+          >
+            <ArrowBigDown className="size-[18px]" />
+            <span className="sr-only">Downvote</span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 px-3 ml-2 text-[12px] font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-800 rounded-full transition-colors"
+            onClick={() => setIsReplying(!isReplying)}
+          >
+            Reply
+          </Button>
+        </div>
+
+        {/* Top-level Reply Area */}
+        {isReplying && (
+          <div className="mt-2 space-y-2 rounded-lg bg-gray-50 p-3">
+            <Textarea
+              placeholder="Write a reply..."
+              value={replyText}
+              onChange={(e) => setReplyText(e.target.value)}
+              className="min-h-[60px] text-sm resize-none bg-white"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsReplying(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                onClick={handleReviewReplySubmit}
+                disabled={!replyText.trim()}
+                className="bg-[#01875f] hover:bg-[#01875f]/90 text-white"
+              >
+                Submit
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Threaded Replies */}
+        {replies.length > 0 && (
+          <div className="mt-4 space-y-3 pl-4 border-l-2 border-gray-100">
+            {replies.map((reply) => (
+              <ReplyItem
+                key={reply.id}
+                reply={reply}
+                onReply={handleNestedReplySubmit}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </article>
   );
 }
