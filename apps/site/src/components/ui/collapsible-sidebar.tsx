@@ -80,6 +80,20 @@ function toReorderPosition(
   return activeIndex > overIndex ? 'above' : 'below';
 }
 
+function getTabSortableValue(item: PossibleTabConfig): string {
+  const explicitTabId =
+    'tabId' in item &&
+    typeof item.tabId === 'string' &&
+    item.tabId.trim().length > 0
+      ? item.tabId.trim()
+      : null;
+  if (explicitTabId) return `tab:${explicitTabId}`;
+  if ('schema' in item && typeof item.schema === 'string') {
+    return `schema:${item.schema}`;
+  }
+  return `title:${item.title}`;
+}
+
 type GroupAddOptions = {
   relativeTo?: string;
   position?: 'above' | 'below';
@@ -405,12 +419,18 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
           ) : null}
           <Sortable
             value={ungroupedItems}
-            getItemValue={(item) => item.title}
+            getItemValue={getTabSortableValue}
             orientation="vertical"
             onMove={({ active, over, activeIndex, overIndex }) => {
               if (!editable || !onReorderTabs || !over) return;
-              const sourceTabTitle = String(active.id);
-              const targetTabTitle = String(over.id);
+              const sourceTab = ungroupedItems.find(
+                (item) => getTabSortableValue(item) === String(active.id),
+              );
+              const targetTab = ungroupedItems.find(
+                (item) => getTabSortableValue(item) === String(over.id),
+              );
+              const sourceTabTitle = sourceTab?.title?.trim();
+              const targetTabTitle = targetTab?.title?.trim();
               if (!sourceTabTitle || !targetTabTitle) return;
               if (sourceTabTitle === targetTabTitle) return;
               if (activeIndex === overIndex) return;
@@ -426,7 +446,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                 {ungroupedItems.map((item) => (
                   <SortableItem
                     key={item.title}
-                    value={item.title}
+                    value={getTabSortableValue(item)}
                     asHandle
                     asChild
                   >
@@ -681,7 +701,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                       {(isGroupOpen || !open) && (
                         <Sortable
                           value={items}
-                          getItemValue={(item) => item.title}
+                          getItemValue={getTabSortableValue}
                           orientation="vertical"
                           onMove={({
                             active,
@@ -690,8 +710,16 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                             overIndex,
                           }) => {
                             if (!editable || !onReorderTabs || !over) return;
-                            const sourceTabTitle = String(active.id);
-                            const targetTabTitle = String(over.id);
+                            const sourceTab = items.find(
+                              (item) =>
+                                getTabSortableValue(item) === String(active.id),
+                            );
+                            const targetTab = items.find(
+                              (item) =>
+                                getTabSortableValue(item) === String(over.id),
+                            );
+                            const sourceTabTitle = sourceTab?.title?.trim();
+                            const targetTabTitle = targetTab?.title?.trim();
                             if (!sourceTabTitle || !targetTabTitle) return;
                             if (sourceTabTitle === targetTabTitle) return;
                             if (activeIndex === overIndex) return;
@@ -707,7 +735,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                               {items.map((item) => (
                                 <SortableItem
                                   key={`${groupName}-${item.title}`}
-                                  value={item.title}
+                                  value={getTabSortableValue(item)}
                                   asHandle
                                   asChild
                                 >

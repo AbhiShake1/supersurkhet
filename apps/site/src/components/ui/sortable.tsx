@@ -77,7 +77,7 @@ interface SortableRootContextValue<T> {
   strategy: SortableContextProps['strategy'];
   activeId: UniqueIdentifier | null;
   setActiveId: (id: UniqueIdentifier | null) => void;
-  suppressClickForId: UniqueIdentifier | null;
+  suppressClick: boolean;
   getItemValue: (item: T) => UniqueIdentifier;
   flatCursor: boolean;
 }
@@ -129,8 +129,7 @@ function Sortable<T>(props: SortableProps<T>) {
   } = props;
   const id = React.useId();
   const [activeId, setActiveId] = React.useState<UniqueIdentifier | null>(null);
-  const [suppressClickForId, setSuppressClickForId] =
-    React.useState<UniqueIdentifier | null>(null);
+  const [suppressClick, setSuppressClick] = React.useState(false);
   const [optimisticItems, setOptimisticItems] = React.useState<
     UniqueIdentifier[] | null
   >(null);
@@ -187,12 +186,12 @@ function Sortable<T>(props: SortableProps<T>) {
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over?.id) {
-      setSuppressClickForId(active.id);
+      setSuppressClick(true);
       if (suppressClickResetTimeoutRef.current !== null) {
         globalThis.clearTimeout(suppressClickResetTimeoutRef.current);
       }
       suppressClickResetTimeoutRef.current = globalThis.setTimeout(() => {
-        setSuppressClickForId(null);
+        setSuppressClick(false);
         suppressClickResetTimeoutRef.current = null;
       }, 180);
 
@@ -311,7 +310,7 @@ function Sortable<T>(props: SortableProps<T>) {
       strategy: strategy ?? config.strategy,
       activeId,
       setActiveId,
-      suppressClickForId,
+      suppressClick,
       getItemValue,
       flatCursor,
     }),
@@ -324,7 +323,7 @@ function Sortable<T>(props: SortableProps<T>) {
       config.modifiers,
       config.strategy,
       activeId,
-      suppressClickForId,
+      suppressClick,
       // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
       getItemValue,
       flatCursor,
@@ -496,7 +495,7 @@ const SortableItem = React.forwardRef<HTMLDivElement, SortableItemProps>(
           data-dragging={isDragging ? '' : undefined}
           onClickCapture={composeEventHandlers(onClickCapture, (event) => {
             if (!asHandle) return;
-            if (context.suppressClickForId !== value) return;
+            if (!context.suppressClick) return;
             event.preventDefault();
             event.stopPropagation();
           })}
