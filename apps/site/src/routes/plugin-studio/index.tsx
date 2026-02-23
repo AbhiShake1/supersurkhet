@@ -6,11 +6,23 @@ import {
   List,
   Plus,
   Search,
+  Trash2,
 } from 'lucide-react';
+import type { MouseEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { Logo } from '@/components/logo';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -173,6 +185,13 @@ function PluginStudioProjectsRoute() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [projectName, setProjectName] = useState('');
   const [projectDescription, setProjectDescription] = useState('');
+  const [pendingProjectDelete, setPendingProjectDelete] = useState<{
+    projectId: string;
+    projectName: string;
+    projectDraftIds: string[];
+    projectMemberIds: string[];
+  } | null>(null);
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
   const [layout, setLayout] = useState<ProjectLayout>(() => {
     if (typeof window === 'undefined') return 'grid';
     const persistedLayout = window.localStorage.getItem(
@@ -213,7 +232,11 @@ function PluginStudioProjectsRoute() {
     api.pluginProject.useGet();
   const { data: memberRows = [], refetch: refetchMembers } =
     api.pluginProjectMember.useGet();
-  const { data: draftRows = [] } = api.pluginDraft.useGet();
+  const { data: draftRows = [], refetch: refetchDrafts } =
+    api.pluginDraft.useGet();
+  const deleteProjectMutation = api.pluginProject.useDelete();
+  const deleteProjectMemberMutation = api.pluginProjectMember.useDelete();
+  const deleteDraftMutation = api.pluginDraft.useDelete();
   const createProjectMutation = api.pluginProject.useCreate();
   const createProjectMemberMutation = api.pluginProjectMember.useCreate();
 
@@ -408,6 +431,77 @@ function PluginStudioProjectsRoute() {
     }
   };
 
+  const requestDeleteProject = (
+    event: MouseEvent,
+    project: PluginProjectDoc,
+  ) => {
+    event.stopPropagation();
+    if (!actorUserIdSet.has(project.ownerUserId)) {
+      toast.error('Only the project owner can delete this project.');
+      return;
+    }
+    const projectDraftIds = drafts
+      .filter((draft) => (draft.projectId ?? '') === project.id)
+      .map((draft) => draft.draftId)
+      .filter((draftId): draftId is string => Boolean(draftId));
+    const projectMemberIds = members
+      .filter((member) => member.projectId === project.id)
+      .map((member) => member.id)
+      .filter((memberId): memberId is string => Boolean(memberId));
+
+    setDeleteConfirmationInput('');
+    setPendingProjectDelete({
+      projectId: project.id,
+      projectName: project.name,
+      projectDraftIds,
+      projectMemberIds,
+    });
+  };
+
+  const closeDeleteDialog = () => {
+    setPendingProjectDelete(null);
+    setDeleteConfirmationInput('');
+  };
+
+  const isDeleteConfirmationValid =
+    pendingProjectDelete !== null &&
+    deleteConfirmationInput.trim() === pendingProjectDelete.projectName;
+
+  const confirmDeleteProject = async () => {
+    if (!pendingProjectDelete) return;
+
+    try {
+      if (pendingProjectDelete.projectDraftIds.length > 0) {
+        await Promise.all(
+          pendingProjectDelete.projectDraftIds.map((draftId) =>
+            deleteDraftMutation.mutateAsync(draftId as never),
+          ),
+        );
+      }
+      if (pendingProjectDelete.projectMemberIds.length > 0) {
+        await Promise.all(
+          pendingProjectDelete.projectMemberIds.map((memberId) =>
+            deleteProjectMemberMutation.mutateAsync(memberId as never),
+          ),
+        );
+      }
+      await deleteProjectMutation.mutateAsync(
+        pendingProjectDelete.projectId as never,
+      );
+      setProjectOrder((current) =>
+        current.filter(
+          (projectId) => projectId !== pendingProjectDelete.projectId,
+        ),
+      );
+      await Promise.all([refetchDrafts(), refetchMembers(), refetchProjects()]);
+      toast.success(`Deleted ${pendingProjectDelete.projectName}.`);
+      closeDeleteDialog();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to delete project.');
+    }
+  };
+
   if (isAuthLoading)
     return <div className="p-8 text-muted-foreground">Loading...</div>;
 
@@ -550,7 +644,7 @@ function PluginStudioProjectsRoute() {
                     }}
                     role="button"
                     tabIndex={0}
-                    className="rounded-xl border border-border/70 bg-card/70 px-6 py-5 text-left transition hover:border-border"
+                    className="group/card rounded-xl border border-border/70 bg-card/70 px-6 py-5 text-left transition hover:border-border"
                   >
                     <div className="flex items-start gap-3">
                       <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-muted/20 text-muted-foreground">
@@ -562,14 +656,28 @@ function PluginStudioProjectsRoute() {
                           pluginCount={pluginCount}
                         />
                       </div>
-                      <SortableItemHandle
-                        aria-label={`Reorder ${project.name}`}
-                        className="rounded-md border border-border/70 bg-background/90 p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                        onClick={(event) => event.stopPropagation()}
-                        onKeyDown={(event) => event.stopPropagation()}
-                      >
-                        <GripVertical className="size-4" />
-                      </SortableItemHandle>
+                      <div className="flex items-center gap-2 opacity-0 transition group-hover/card:opacity-100 group-focus-within/card:opacity-100">
+                        {actorUserIdSet.has(project.ownerUserId) ? (
+                          <button
+                            type="button"
+                            aria-label={`Delete ${project.name}`}
+                            onClick={(event) =>
+                              requestDeleteProject(event, project)
+                            }
+                            className="inline-flex size-8 items-center justify-center rounded-md border border-border/70 bg-background/90 p-1.5 text-muted-foreground transition hover:border-destructive/60 hover:text-destructive"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        ) : null}
+                        <SortableItemHandle
+                          aria-label={`Reorder ${project.name}`}
+                          className="rounded-md border border-border/70 bg-background/90 p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                          onClick={(event) => event.stopPropagation()}
+                          onKeyDown={(event) => event.stopPropagation()}
+                        >
+                          <GripVertical className="size-4" />
+                        </SortableItemHandle>
+                      </div>
                     </div>
                   </div>
                 </SortableItem>
@@ -578,6 +686,51 @@ function PluginStudioProjectsRoute() {
           </SortableContent>
         </Sortable>
       </main>
+
+      <AlertDialog
+        open={pendingProjectDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) closeDeleteDialog();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete project?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingProjectDelete
+                ? `This permanently deletes "${pendingProjectDelete.projectName}" and all drafts in this project. To confirm, type the project name below.`
+                : 'Delete this project and all project drafts.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={deleteConfirmationInput}
+            onChange={(event) => setDeleteConfirmationInput(event.target.value)}
+            placeholder={pendingProjectDelete?.projectName ?? 'Project name'}
+            aria-label="Type project name to confirm delete"
+            autoFocus
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={closeDeleteDialog}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmDeleteProject();
+              }}
+              disabled={
+                !isDeleteConfirmationValid ||
+                deleteProjectMutation.isPending ||
+                deleteProjectMemberMutation.isPending ||
+                deleteDraftMutation.isPending
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete project
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
         <DialogContent className="sm:max-w-[780px]">
