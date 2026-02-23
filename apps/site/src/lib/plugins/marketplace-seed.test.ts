@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import {
   getRecommendedSeedReleaseIds,
   MARKETPLACE_SEED_RELEASES,
@@ -26,6 +27,8 @@ describe('marketplace seed catalog', () => {
 
     expect(parseReleaseId('broken-release-id')).toBeNull();
     expect(parseReleaseId('@1.0.0')).toBeNull();
+    expect(parseReleaseId(undefined)).toBeNull();
+    expect(parseReleaseId(null)).toBeNull();
   });
 
   it('returns non-empty recommended starter stack', () => {
@@ -147,5 +150,24 @@ describe('marketplace seed catalog', () => {
 
     expect(financeRows).toHaveLength(1);
     expect(financeRows[0]?.docs?.title).toBe('Finance Ops Live B');
+  });
+
+  it('does not crash when a live row has an undefined release id', () => {
+    const malformedLiveRow = {
+      id: undefined,
+      pluginId: 'malformed.plugin',
+      version: '1.0.0',
+      manifestHash: 'malformed-manifest',
+      artifactHash: 'malformed-artifact',
+      author: { userId: 'live-user' },
+      visibility: 'public' as const,
+      docs: { title: 'Malformed Release', description: 'Missing id field' },
+      actionManifest: [],
+      publishedAt: '2026-01-03T00:00:00.000Z',
+    };
+
+    expect(() =>
+      mergeMarketplaceReleasesWithSeed([malformedLiveRow as PluginReleaseDoc]),
+    ).not.toThrow();
   });
 });

@@ -174,7 +174,11 @@ const DEFAULT_RECOMMENDED_RELEASE_IDS = [
   'supersurkhet.plugin.customer-loyalty@1.0.0',
 ];
 
-export function parseReleaseId(releaseId: string) {
+export function parseReleaseId(releaseId: string | null | undefined) {
+  if (typeof releaseId !== 'string') {
+    return null;
+  }
+
   const splitAt = releaseId.lastIndexOf('@');
   if (splitAt <= 0 || splitAt === releaseId.length - 1) {
     return null;
@@ -336,12 +340,21 @@ export function mergeMarketplaceReleasesWithSeed(
       return `${pluginId}@${version}`;
     }
 
-    const parsed = parseReleaseId(release.id);
+    const releaseId = typeof release.id === 'string' ? release.id.trim() : '';
+    const parsed = parseReleaseId(releaseId);
     if (parsed) {
       return `${parsed.pluginId}@${parsed.version}`;
     }
 
-    return release.id;
+    if (releaseId) {
+      return releaseId;
+    }
+
+    if (pluginId || version) {
+      return `${pluginId || '__unknown_plugin__'}@${version || '__unknown_version__'}`;
+    }
+
+    return '__unknown_release__';
   };
 
   const seedByCanonicalKey = new Map<string, PluginReleaseDoc>();
