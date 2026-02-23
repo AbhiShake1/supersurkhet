@@ -2137,11 +2137,7 @@ function PluginStudioPresenter({
   });
 
   const workspaceSchemaDocs = useMemo(() => {
-    const rows = schemaDocRows as Array<{
-      id?: string;
-      schemaId?: string;
-      doc?: unknown;
-    }>;
+    const rows = schemaDocRows;
     const docsBySchemaId = new Map<string, { doc: SchemaDoc; score: number }>();
     for (const row of rows) {
       const doc = row.doc as SchemaDoc | undefined;

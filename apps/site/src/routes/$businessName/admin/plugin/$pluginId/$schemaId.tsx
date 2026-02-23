@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import z from 'zod';
 import { useAuth } from '@/components/auth-provider';
-import { AutoAdmin } from '@/components/auto-admin';
+import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
 import { NotFound } from '@/components/ui/not-found';
 import { api } from '@/lib/api';
 import {
@@ -108,7 +108,7 @@ export function resolveRuntimePluginAdminTabInput({
   decodedSchemaId: string;
   compiledSchema: ReturnType<typeof compileSchemaDoc>;
   pluginSchemaNamespace: string;
-}) {
+}): AutoAdminTabInput {
   const resolvedTab = resolveAdminTabInput({
     title:
       tabSearchValue?.trim() ||
@@ -116,10 +116,10 @@ export function resolveRuntimePluginAdminTabInput({
       schemaDoc.title ||
       decodedSchemaId,
     group: pluginTab?.group,
-    parsedSchema: compiledSchema,
+    parsedSchema: compiledSchema as z.ZodObject<any>,
     slug: pluginSchemaNamespace,
     treatSlugAsAbsolute: true,
-  });
+  } satisfies AutoAdminTabInput);
 
   return normalizeAutoTableTab(resolvedTab, pluginSchemaNamespace);
 }
