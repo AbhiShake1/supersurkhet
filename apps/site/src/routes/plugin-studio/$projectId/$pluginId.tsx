@@ -5348,8 +5348,8 @@ function PluginStudioPresenter({
   if (isInitialLoading) return <PluginStudioSkeleton />;
 
   return (
-    <div className="w-full py-6">
-      <div className="mx-auto w-full max-w-7xl px-4 space-y-6">
+    <div className="w-full py-4">
+      <div className="mx-auto w-full max-w-7xl px-4 space-y-4">
         <div>
           <Button
             type="button"
@@ -5366,10 +5366,10 @@ function PluginStudioPresenter({
             Back to plugins
           </Button>
         </div>
-        <section className="p-6 md:p-8">
+        <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/10 via-background to-accent/15 p-5 md:p-7">
           <div className="relative flex flex-wrap items-start justify-between gap-4">
             <div className="w-full max-w-3xl">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="group flex items-start gap-2">
                   {editingMetadataField === 'title' ? (
                     <Input
@@ -5388,10 +5388,10 @@ function PluginStudioPresenter({
                           stopMetadataEdit();
                         }
                       }}
-                      className="h-10 text-xl font-semibold md:text-2xl"
+                      className="h-12 text-3xl font-bold tracking-[-0.02em] md:h-14 md:text-5xl"
                     />
                   ) : (
-                    <p className="text-xl font-semibold tracking-tight md:text-2xl">
+                    <p className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-3xl font-bold leading-[1.05] tracking-[-0.03em] text-transparent text-balance md:text-5xl">
                       {activeDraftTitle}
                     </p>
                   )}
@@ -5401,7 +5401,7 @@ function PluginStudioPresenter({
                       size="sm"
                       variant="ghost"
                       onClick={() => beginMetadataEdit('title')}
-                      className="size-7 p-0 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
+                      className="size-8 rounded-full border border-border/60 bg-background/75 p-0 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 group-focus-within:opacity-100"
                       aria-label="Edit title"
                     >
                       <Pencil className="size-3.5" />
@@ -5426,10 +5426,10 @@ function PluginStudioPresenter({
                           commitMetadataEdit();
                         }
                       }}
-                      className="min-h-[96px] resize-none"
+                      className="min-h-[108px] resize-none text-base leading-relaxed"
                     />
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="max-w-2xl text-base leading-relaxed text-balance text-muted-foreground/90 md:text-lg">
                       {activeDraftDescription || 'Add a description'}
                     </p>
                   )}
@@ -5439,7 +5439,7 @@ function PluginStudioPresenter({
                       size="sm"
                       variant="ghost"
                       onClick={() => beginMetadataEdit('description')}
-                      className="size-7 p-0 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
+                      className="size-8 rounded-full border border-border/60 bg-background/75 p-0 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 group-focus-within:opacity-100"
                       aria-label="Edit description"
                     >
                       <Pencil className="size-3.5" />
