@@ -49,6 +49,11 @@ import {
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { PluginBuildDiagnostic } from '@/features/plugin-builder/domain/validation/diagnostics-contract';
 import { validateWorkflowDags } from '@/features/plugin-builder/domain/validation/workflow-dag-validator';
 import type {
@@ -109,7 +114,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import * as LucideIcons from 'lucide-react';
 import {
   ArrowLeft,
-  ArrowRight,
+  CloudUpload,
   BadgePlus,
   Pencil,
   Plus,
@@ -5445,37 +5450,58 @@ function PluginStudioPresenter({
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsTemplatesDialogOpen(true)}
-              >
-                <Wand2 className="mr-2 size-4" />
-                Templates
-              </Button>
-              <Button
-                size="lg"
-                disabled={!isValidInputs || isPublishing}
-                onClick={() => {
-                  if (!isValidInputs) return;
-                  void publishRelease();
-                }}
-              >
-                {isPublishing ? 'Publishing...' : 'Publish Plugin'}
-                {!isPublishing && <ArrowRight className="ml-2 size-4" />}
-              </Button>
-            </div>
           </div>
         </section>
 
         <Card className="border-border/70 bg-card/90">
-          <CardHeader>
-            <CardTitle className="text-base">Sidebar Builder</CardTitle>
-            <CardDescription>
-              Design tables, columns, and workflows inline while the admin UI
-              renders from the same schema docs in real time.
-            </CardDescription>
+          <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base">Sidebar Builder</CardTitle>
+              <CardDescription>
+                Design tables, columns, and workflows inline while the admin UI
+                renders from the same schema docs in real time.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/80 p-1.5 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/65">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setIsTemplatesDialogOpen(true)}
+                    className="size-9 rounded-md hover:bg-accent/70"
+                    aria-label="Open starter templates"
+                  >
+                    <Wand2 className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Starter Templates</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="default"
+                      disabled={!isValidInputs || isPublishing}
+                      onClick={() => {
+                        if (!isValidInputs) return;
+                        void publishRelease();
+                      }}
+                      className="size-9 rounded-md shadow-sm"
+                      aria-label={isPublishing ? 'Publishing plugin' : 'Publish plugin'}
+                    >
+                      <CloudUpload className={isPublishing ? 'size-4 animate-pulse' : 'size-4'} />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isPublishing ? 'Publishing...' : 'Publish Plugin'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </CardHeader>
           <CardContent className="grid gap-4">
             {parsed === null ? (
