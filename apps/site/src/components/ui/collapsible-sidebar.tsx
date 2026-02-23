@@ -12,7 +12,6 @@ import {
   ChevronsUpDown,
   CirclePlus,
   Combine,
-  GripVertical,
   LogOut,
   MoreHorizontal,
   Pencil,
@@ -25,7 +24,15 @@ import {
   Workflow,
 } from 'lucide-react';
 import type React from 'react';
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useDialog } from '@/contexts/dialog-context';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useProfile } from '@/hooks/use-profile';
@@ -65,9 +72,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from './popover';
+import { Sortable, SortableContent, SortableItem } from './sortable';
 
 const SECTION_TOGGLE_BUTTON_CLASS =
   'flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 active:bg-slate-200/60 dark:active:bg-slate-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset';
+
+function toReorderPosition(
+  activeIndex: number,
+  overIndex: number,
+): 'above' | 'below' {
+  return activeIndex > overIndex ? 'above' : 'below';
+}
 
 type GroupAddOptions = {
   relativeTo?: string;
@@ -110,7 +125,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   onAddGroup,
   onReorderGroups,
   onReorderTabs,
-  onMoveTabToGroup,
   onRenameGroup,
   onDeleteGroup,
   onRenameTab,
@@ -130,16 +144,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     {},
   );
   const [isFrequentOpen, setIsFrequentOpen] = useState(true);
-  const [draggedTabTitle, setDraggedTabTitle] = useState<string | null>(null);
-  const [draggedGroupName, setDraggedGroupName] = useState<string | null>(null);
-  const [groupDropIndicator, setGroupDropIndicator] = useState<{
-    groupName: string;
-    position: 'above' | 'below';
-  } | null>(null);
-  const [tabDropIndicator, setTabDropIndicator] = useState<{
-    tabTitle: string;
-    position: 'above' | 'below';
-  } | null>(null);
   const [editingGroupName, setEditingGroupName] = useState<string | null>(null);
   const [editingTabTitle, setEditingTabTitle] = useState<string | null>(null);
   const [pendingGroupDelete, setPendingGroupDelete] = useState<{
@@ -148,13 +152,13 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   } | null>(null);
   const tabRenameHandledByKeyRef = useRef(false);
   const groupRenameHandledByKeyRef = useRef(false);
-  const dragPreviewElementRef = useRef<HTMLElement | null>(null);
   const iconCatalog = useMemo(() => {
     const entries = Object.entries(
       LucideIcons.icons as Record<string, LucideIcon>,
     );
     return entries.sort(([left], [right]) => left.localeCompare(right));
   }, []);
+  const sidebarGroupPreviewId = useId();
   const { user, anonymousUserId } = useAuth();
   const preferenceOwnerId = user?.pub ?? anonymousUserId ?? null;
 
@@ -177,14 +181,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   const { groupedItems, ungroupedItems } = useMemo(() => {
     const nextFilteredItems = searchQuery
       ? tabs.filter((item) => {
-        try {
-          const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
-          return regex.test(item.title);
-        } catch (_e) {
-          // If the regex is invalid, fallback to simple string includes
-          return item.title.toLowerCase().includes(searchQuery.toLowerCase());
-        }
-      })
+          try {
+            const regex = new RegExp(searchQuery, 'i'); // case-insensitive search
+            return regex.test(item.title);
+          } catch (_e) {
+            // If the regex is invalid, fallback to simple string includes
+            return item.title.toLowerCase().includes(searchQuery.toLowerCase());
+          }
+        })
       : tabs;
 
     const nextGroupedItems: { [key: string]: typeof tabs } = {};
@@ -321,86 +325,11 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     [onDeleteGroup],
   );
 
-  const clearDragPreviewElement = useCallback(() => {
-    const previewElement = dragPreviewElementRef.current;
-    if (previewElement?.parentNode) {
-      previewElement.parentNode.removeChild(previewElement);
-    }
-    dragPreviewElementRef.current = null;
-  }, []);
-
-  const attachDragPreview = useCallback(
-    (
-      event: React.DragEvent<HTMLElement>,
-      sourceElement: HTMLElement | null,
-    ) => {
-      if (!sourceElement) return;
-      clearDragPreviewElement();
-
-      const previewElement = sourceElement.cloneNode(true) as HTMLElement;
-      const sourceRect = sourceElement.getBoundingClientRect();
-      previewElement.style.position = 'fixed';
-      previewElement.style.left = '-9999px';
-      previewElement.style.top = '-9999px';
-      previewElement.style.width = `${sourceRect.width}px`;
-      previewElement.style.maxWidth = `${sourceRect.width}px`;
-      previewElement.style.pointerEvents = 'none';
-      previewElement.style.opacity = '0.96';
-      previewElement.style.transform = 'scale(1.01)';
-      previewElement.style.boxShadow =
-        '0 24px 48px rgba(15, 23, 42, 0.22), 0 10px 20px rgba(15, 23, 42, 0.18)';
-      previewElement.style.borderRadius = '10px';
-      previewElement.style.zIndex = '9999';
-      document.body.appendChild(previewElement);
-      dragPreviewElementRef.current = previewElement;
-
-      const offsetX = Math.max(12, Math.min(40, sourceRect.width * 0.2));
-      const offsetY = Math.max(12, Math.min(28, sourceRect.height * 0.45));
-      try {
-        event.dataTransfer.setDragImage(previewElement, offsetX, offsetY);
-      } catch (_error) {
-        clearDragPreviewElement();
-      }
-    },
-    [clearDragPreviewElement],
-  );
-
-  useEffect(() => () => clearDragPreviewElement(), [clearDragPreviewElement]);
-
-  const getDropPositionFromPointer = useCallback(
-    (event: React.DragEvent<HTMLElement>): 'above' | 'below' => {
-      const rect = event.currentTarget.getBoundingClientRect();
-      return event.clientY < rect.top + rect.height / 2 ? 'above' : 'below';
-    },
-    [],
-  );
-
-  const readDraggedTabTitle = useCallback(
-    (event: React.DragEvent<HTMLElement>) => {
-      const direct = event.dataTransfer.getData('text/tab-title');
-      if (direct) return direct;
-      const plain = event.dataTransfer.getData('text/plain');
-      if (plain.startsWith('tab:')) return plain.slice(4);
-      return draggedTabTitle;
-    },
-    [draggedTabTitle],
-  );
-
-  const readDraggedGroupName = useCallback(
-    (event: React.DragEvent<HTMLElement>) => {
-      const direct = event.dataTransfer.getData('text/group-name');
-      if (direct) return direct;
-      const plain = event.dataTransfer.getData('text/plain');
-      if (plain.startsWith('group:')) return plain.slice(6);
-      return draggedGroupName;
-    },
-    [draggedGroupName],
-  );
-
   return (
     <nav
-      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? 'w-52 sm:w-72' : 'w-12 sm:w-16'
-        } border-slate-200/80 dark:border-slate-800 bg-card/95 p-1.5 sm:p-2 shadow-sm z-50 flex flex-col`}
+      className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${
+        open ? 'w-52 sm:w-72' : 'w-12 sm:w-16'
+      } border-slate-200/80 dark:border-slate-800 bg-card/95 p-1.5 sm:p-2 shadow-sm z-50 flex flex-col`}
     >
       {/* User profile section at the top */}
       <div className="flex-shrink-0">
@@ -468,23 +397,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
           </div>
         )}
 
-        <div
-          className="space-y-1"
-          onDragOver={(event) => {
-            if (!editable || !onMoveTabToGroup) return;
-            event.preventDefault();
-          }}
-          onDrop={(event) => {
-            event.preventDefault();
-            if (!editable || !onMoveTabToGroup) return;
-            const dropped = readDraggedTabTitle(event);
-            if (!dropped) return;
-            onMoveTabToGroup(dropped, undefined);
-            setDraggedTabTitle(null);
-            setTabDropIndicator(null);
-            setGroupDropIndicator(null);
-          }}
-        >
+        <div className="space-y-1">
           {editable ? (
             <div className="flex items-center justify-between rounded-md border border-dashed border-slate-300 px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:text-slate-400">
               <span>Drop here to ungroup</span>
@@ -495,585 +408,401 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
               />
             </div>
           ) : null}
-          {ungroupedItems.map((item, index) => (
-            <div
-              // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-              key={index}
-              draggable={editable}
-              onDragStart={(event) => {
-                if (!editable) return;
-                setDraggedTabTitle(item.title);
-                attachDragPreview(event, event.currentTarget);
-                try {
-                  event.dataTransfer.setData('text/tab-title', item.title);
-                  event.dataTransfer.setData('text/plain', `tab:${item.title}`);
-                } catch (_error) {
-                  // noop
-                }
-              }}
-              onDragEnd={() => {
-                setDraggedTabTitle(null);
-                setTabDropIndicator(null);
-                clearDragPreviewElement();
-              }}
-              onDragOver={(event) => {
-                if (!editable || !onReorderTabs) return;
-                const dropped = readDraggedTabTitle(event);
-                if (!dropped || dropped === item.title) {
-                  if (tabDropIndicator?.tabTitle === item.title) {
-                    setTabDropIndicator(null);
-                  }
-                  return;
-                }
-                event.preventDefault();
-                event.stopPropagation();
-                const position = getDropPositionFromPointer(
-                  event as React.DragEvent<HTMLElement>,
-                );
-                setTabDropIndicator((current) => {
-                  if (
-                    current?.tabTitle === item.title &&
-                    current.position === position
-                  ) {
-                    return current;
-                  }
-                  return { tabTitle: item.title, position };
-                });
-              }}
-              onDragLeave={(event) => {
-                if (tabDropIndicator?.tabTitle !== item.title) return;
-                const rect = event.currentTarget.getBoundingClientRect();
-                const isStillWithinTarget =
-                  event.clientX >= rect.left &&
-                  event.clientX <= rect.right &&
-                  event.clientY >= rect.top &&
-                  event.clientY <= rect.bottom;
-                if (!isStillWithinTarget) {
-                  setTabDropIndicator(null);
-                }
-              }}
-              onDrop={(event) => {
-                if (!editable || !onReorderTabs) return;
-                const dropped = readDraggedTabTitle(event);
-                if (!dropped || dropped === item.title) return;
-                event.preventDefault();
-                event.stopPropagation();
-                const position =
-                  tabDropIndicator?.tabTitle === item.title
-                    ? tabDropIndicator.position
-                    : getDropPositionFromPointer(
-                      event as React.DragEvent<HTMLElement>,
-                    );
-                onReorderTabs(dropped, item.title, position);
-                setDraggedTabTitle(null);
-                setTabDropIndicator(null);
-                setGroupDropIndicator(null);
-              }}
-              className={`${tabDropIndicator?.tabTitle === item.title
-                ? tabDropIndicator.position === 'above'
-                  ? 'ring-2 ring-primary/35 ring-inset border-t-2 border-primary'
-                  : 'ring-2 ring-primary/35 ring-inset border-b-2 border-primary'
-                : ''
-                } rounded-md`}
-            >
-              {editingTabTitle === item.title ? (
-                <Input
-                  autoFocus
-                  defaultValue={item.title}
-                  className="h-8 text-xs"
-                  onBlur={(event) => {
-                    if (tabRenameHandledByKeyRef.current) {
-                      tabRenameHandledByKeyRef.current = false;
-                    } else {
-                      commitTabRename(item.title, event.currentTarget.value);
-                    }
-                    setEditingTabTitle(null);
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      event.preventDefault();
-                      tabRenameHandledByKeyRef.current = true;
-                      commitTabRename(item.title, event.currentTarget.value);
-                      setEditingTabTitle(null);
-                    }
-                    if (event.key === 'Escape') {
-                      event.preventDefault();
-                      tabRenameHandledByKeyRef.current = true;
-                      setEditingTabTitle(null);
-                    }
-                  }}
-                />
-              ) : (
-                <Option
-                  Icon={getTabIcon(item)}
-                  iconName={item.iconName}
-                  iconCatalog={iconCatalog}
-                  title={item.title}
-                  url={item.url}
-                  selected={currentTab}
-                  open={open}
-                  editable={editable}
-                  onBeginRename={editable ? beginTabRename : undefined}
-                  onRenameIcon={onRenameTabIcon}
-                  onOpenWorkflowEditor={
-                    editable &&
-                      onOpenWorkflowEditorForTab &&
-                      ('schema' in item || 'parsedSchema' in item)
-                      ? onOpenWorkflowEditorForTab
-                      : undefined
-                  }
-                  onRequestDeleteTable={
-                    editable &&
-                      onDeleteTableForTab &&
-                      ('schema' in item || 'parsedSchema' in item)
-                      ? onDeleteTableForTab
-                      : undefined
-                  }
-                  onActivate={incrementFrequentUsage}
-                />
-              )}
-            </div>
-          ))}
+          <Sortable
+            value={ungroupedItems}
+            getItemValue={(item) => item.title}
+            orientation="vertical"
+            onMove={({ active, over, activeIndex, overIndex }) => {
+              if (!editable || !onReorderTabs || !over) return;
+              const sourceTabTitle = String(active.id);
+              const targetTabTitle = String(over.id);
+              if (!sourceTabTitle || !targetTabTitle) return;
+              if (sourceTabTitle === targetTabTitle) return;
+              if (activeIndex === overIndex) return;
+              onReorderTabs(
+                sourceTabTitle,
+                targetTabTitle,
+                toReorderPosition(activeIndex, overIndex),
+              );
+            }}
+          >
+            <SortableContent asChild>
+              <div className="space-y-1">
+                {ungroupedItems.map((item, index) => (
+                  <SortableItem
+                    key={item.title || index}
+                    value={item.title}
+                    asHandle
+                    asChild
+                  >
+                    <div className="rounded-md">
+                      {editingTabTitle === item.title ? (
+                        <Input
+                          autoFocus
+                          defaultValue={item.title}
+                          className="h-8 text-xs"
+                          onBlur={(event) => {
+                            if (tabRenameHandledByKeyRef.current) {
+                              tabRenameHandledByKeyRef.current = false;
+                            } else {
+                              commitTabRename(
+                                item.title,
+                                event.currentTarget.value,
+                              );
+                            }
+                            setEditingTabTitle(null);
+                          }}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Enter') {
+                              event.preventDefault();
+                              tabRenameHandledByKeyRef.current = true;
+                              commitTabRename(
+                                item.title,
+                                event.currentTarget.value,
+                              );
+                              setEditingTabTitle(null);
+                            }
+                            if (event.key === 'Escape') {
+                              event.preventDefault();
+                              tabRenameHandledByKeyRef.current = true;
+                              setEditingTabTitle(null);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <Option
+                          Icon={getTabIcon(item)}
+                          iconName={item.iconName}
+                          iconCatalog={iconCatalog}
+                          title={item.title}
+                          url={item.url}
+                          selected={currentTab}
+                          open={open}
+                          editable={editable}
+                          onBeginRename={editable ? beginTabRename : undefined}
+                          onRenameIcon={onRenameTabIcon}
+                          onOpenWorkflowEditor={
+                            editable &&
+                            onOpenWorkflowEditorForTab &&
+                            ('schema' in item || 'parsedSchema' in item)
+                              ? onOpenWorkflowEditorForTab
+                              : undefined
+                          }
+                          onRequestDeleteTable={
+                            editable &&
+                            onDeleteTableForTab &&
+                            ('schema' in item || 'parsedSchema' in item)
+                              ? onDeleteTableForTab
+                              : undefined
+                          }
+                          onActivate={incrementFrequentUsage}
+                        />
+                      )}
+                    </div>
+                  </SortableItem>
+                ))}
+              </div>
+            </SortableContent>
+          </Sortable>
         </div>
 
         {/* Grouped navigation items */}
-        <LayoutGroup id="sidebar-group-preview">
-          {previewGroupOrder.map((groupName, groupIndex) => {
-            const items = groupedItems[groupName] ?? [];
-            const isGroupOpen = groupOpenState[groupName] ?? true;
-            const isDropTarget = groupDropIndicator?.groupName === groupName;
-            const isDraggedGroup = draggedGroupName === groupName;
-            const isGroupPreviewActive = Boolean(
-              draggedGroupName && groupDropIndicator,
+        <Sortable
+          value={previewGroupOrder}
+          getItemValue={(groupName) => groupName}
+          orientation="vertical"
+          onMove={({ active, over, activeIndex, overIndex }) => {
+            if (!editable || !onReorderGroups || !over) return;
+            const fromGroupName = String(active.id);
+            const toGroupName = String(over.id);
+            if (!fromGroupName || !toGroupName) return;
+            if (fromGroupName === toGroupName) return;
+            if (activeIndex === overIndex) return;
+            onReorderGroups(
+              fromGroupName,
+              toGroupName,
+              toReorderPosition(activeIndex, overIndex),
             );
-            const canMoveGroupUp = groupIndex > 0;
-            const canMoveGroupDown = groupIndex < previewGroupOrder.length - 1;
-            return (
-              <motion.div
-                key={groupName}
-                layout={!isDraggedGroup}
-                transition={{
-                  type: 'spring',
-                  stiffness: 520,
-                  damping: 38,
-                  mass: 0.72,
-                }}
-                data-sidebar-group-card="true"
-                className={`relative mt-1 rounded-lg border p-1 transition-all duration-150 ${isGroupPreviewActive && isDraggedGroup
-                  ? 'border-primary/55 bg-primary/10 opacity-75 shadow-sm backdrop-blur-[1px]'
-                  : isGroupPreviewActive && isDropTarget
-                    ? 'border-primary/70 bg-primary/12 ring-1 ring-primary/20'
-                    : isDropTarget
-                      ? 'border-primary/60 bg-primary/5'
-                      : 'border-slate-200/80 dark:border-slate-800'
-                  }`}
-                onDragOver={(event) => {
-                  if (!editable || (!onMoveTabToGroup && !onReorderGroups))
-                    return;
-                  event.preventDefault();
-                  const droppedGroup =
-                    readDraggedGroupName(event);
-                  if (!droppedGroup) {
-                    if (groupDropIndicator) setGroupDropIndicator(null);
-                    return;
-                  }
-                  if (droppedGroup === groupName) {
-                    if (groupDropIndicator) setGroupDropIndicator(null);
-                    return;
-                  }
-                  const draggedIndex = groupNamesToRender.indexOf(droppedGroup);
-                  const targetIndex = groupNamesToRender.indexOf(groupName);
-                  if (draggedIndex < 0 || targetIndex < 0) {
-                    if (groupDropIndicator) setGroupDropIndicator(null);
-                    return;
-                  }
-                  const position: 'above' | 'below' =
-                    draggedIndex < targetIndex ? 'below' : 'above';
-                  setGroupDropIndicator((current) => {
-                    if (
-                      current?.groupName === groupName &&
-                      current.position === position
-                    ) {
-                      return current;
-                    }
-                    return { groupName, position };
-                  });
-                }}
-                onDragLeave={(event) => {
-                  if (groupDropIndicator?.groupName !== groupName) return;
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  const isStillWithinTarget =
-                    event.clientX >= rect.left &&
-                    event.clientX <= rect.right &&
-                    event.clientY >= rect.top &&
-                    event.clientY <= rect.bottom;
-                  if (!isStillWithinTarget) {
-                    setGroupDropIndicator(null);
-                  }
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  if (!editable) return;
-                  const droppedGroup =
-                    readDraggedGroupName(event);
-                  if (droppedGroup) {
-                    const fallbackPosition: 'above' | 'below' = (() => {
-                      const draggedIndex = groupNamesToRender.indexOf(droppedGroup);
-                      const targetIndex = groupNamesToRender.indexOf(groupName);
-                      if (draggedIndex >= 0 && targetIndex >= 0) {
-                        return draggedIndex < targetIndex ? 'below' : 'above';
-                      }
-                      return 'below';
-                    })();
-                    const preferredPosition =
-                      groupDropIndicator?.groupName === groupName
-                        ? groupDropIndicator.position
-                        : fallbackPosition;
-                    onReorderGroups?.(droppedGroup, groupName, preferredPosition);
-                    setDraggedGroupName(null);
-                    setTabDropIndicator(null);
-                    setGroupDropIndicator(null);
-                    return;
-                  }
-                  if (!onMoveTabToGroup) return;
-                  const dropped =
-                    readDraggedTabTitle(event);
-                  if (!dropped) return;
-                  onMoveTabToGroup(dropped, groupName);
-                  setDraggedTabTitle(null);
-                  setTabDropIndicator(null);
-                  setGroupDropIndicator(null);
-                }}
-              >
-                {open ? (
-                  editingGroupName === groupName ? (
-                    <Input
-                      autoFocus
-                      defaultValue={groupName}
-                      className="h-8 text-xs"
-                      onBlur={(event) => {
-                        if (groupRenameHandledByKeyRef.current) {
-                          groupRenameHandledByKeyRef.current = false;
-                        } else {
-                          commitGroupRename(groupName, event.currentTarget.value);
-                        }
-                        setEditingGroupName(null);
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          groupRenameHandledByKeyRef.current = true;
-                          commitGroupRename(groupName, event.currentTarget.value);
-                          setEditingGroupName(null);
-                        }
-                        if (event.key === 'Escape') {
-                          event.preventDefault();
-                          groupRenameHandledByKeyRef.current = true;
-                          setEditingGroupName(null);
-                        }
-                      }}
-                    />
-                  ) : (
-                    <div className="group/group-header flex items-center gap-1">
-                      {editable && onReorderGroups ? (
-                        <button
-                          type="button"
-                          draggable
-                          className="rounded p-1 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                          }}
-                          onDoubleClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                          }}
-                          onDragStart={(event) => {
-                            setDraggedGroupName(groupName);
-                            setTabDropIndicator(null);
-                            setGroupDropIndicator(null);
-                            const groupCard = (
-                              event.currentTarget as HTMLElement
-                            ).closest(
-                              '[data-sidebar-group-card="true"]',
-                            ) as HTMLElement | null;
-                            attachDragPreview(
-                              event,
-                              groupCard ?? event.currentTarget,
-                            );
-                            try {
-                              event.dataTransfer.setData(
-                                'text/group-name',
-                                groupName,
-                              );
-                              event.dataTransfer.setData(
-                                'text/plain',
-                                `group:${groupName}`,
-                              );
-                            } catch (_error) {
-                              // noop
-                            }
-                          }}
-                          onDragEnd={() => {
-                            setDraggedGroupName(null);
-                            setTabDropIndicator(null);
-                            setGroupDropIndicator(null);
-                            clearDragPreviewElement();
-                          }}
-                          aria-label={`Drag group ${groupName}`}
-                        >
-                          <GripVertical className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup(groupName)}
-                        aria-expanded={isGroupOpen}
-                        className={`${SECTION_TOGGLE_BUTTON_CLASS} flex-1`}
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
+          }}
+        >
+          <SortableContent asChild>
+            <div>
+              <LayoutGroup id={sidebarGroupPreviewId}>
+                {previewGroupOrder.map((groupName, groupIndex) => {
+                  const items = groupedItems[groupName] ?? [];
+                  const isGroupOpen = groupOpenState[groupName] ?? true;
+                  const canMoveGroupUp = groupIndex > 0;
+                  const canMoveGroupDown =
+                    groupIndex < previewGroupOrder.length - 1;
+                  return (
+                    <SortableItem
+                      key={groupName}
+                      value={groupName}
+                      asHandle
+                      asChild
+                    >
+                      <motion.div
+                        layout
+                        transition={{
+                          type: 'spring',
+                          stiffness: 520,
+                          damping: 38,
+                          mass: 0.72,
+                        }}
+                        data-sidebar-group-card="true"
+                        className="relative mt-1 rounded-lg border border-slate-200/80 p-1 transition-all duration-150 dark:border-slate-800"
                       >
-                        <span>{groupName}</span>
-                      </button>
-                      {editable && onRenameGroup ? (
-                        <button
-                          type="button"
-                          className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                          onClick={(event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            beginGroupRename(groupName);
-                          }}
-                          aria-label={`Rename group ${groupName}`}
-                          title={`Rename group ${groupName}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </button>
-                      ) : null}
-                      <GroupActionsPopover
-                        editable={editable}
-                        groupName={groupName}
-                        itemCount={items.length}
-                        canMoveUp={canMoveGroupUp}
-                        canMoveDown={canMoveGroupDown}
-                        onBeginRenameGroup={
-                          onRenameGroup ? beginGroupRename : undefined
-                        }
-                        onMoveGroupUp={
-                          canMoveGroupUp && onReorderGroups
-                            ? () => {
-                              const previousGroupName =
-                                previewGroupOrder[groupIndex - 1];
-                              if (!previousGroupName) return;
-                              onReorderGroups(
-                                groupName,
-                                previousGroupName,
-                                'above',
+                        {open ? (
+                          editingGroupName === groupName ? (
+                            <Input
+                              autoFocus
+                              defaultValue={groupName}
+                              className="h-8 text-xs"
+                              onBlur={(event) => {
+                                if (groupRenameHandledByKeyRef.current) {
+                                  groupRenameHandledByKeyRef.current = false;
+                                } else {
+                                  commitGroupRename(
+                                    groupName,
+                                    event.currentTarget.value,
+                                  );
+                                }
+                                setEditingGroupName(null);
+                              }}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault();
+                                  groupRenameHandledByKeyRef.current = true;
+                                  commitGroupRename(
+                                    groupName,
+                                    event.currentTarget.value,
+                                  );
+                                  setEditingGroupName(null);
+                                }
+                                if (event.key === 'Escape') {
+                                  event.preventDefault();
+                                  groupRenameHandledByKeyRef.current = true;
+                                  setEditingGroupName(null);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="group/group-header flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => toggleGroup(groupName)}
+                                aria-expanded={isGroupOpen}
+                                className={`${SECTION_TOGGLE_BUTTON_CLASS} flex-1`}
+                                style={{
+                                  WebkitTapHighlightColor: 'transparent',
+                                }}
+                              >
+                                <span>{groupName}</span>
+                              </button>
+                              {editable && onRenameGroup ? (
+                                <button
+                                  type="button"
+                                  className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    beginGroupRename(groupName);
+                                  }}
+                                  aria-label={`Rename group ${groupName}`}
+                                  title={`Rename group ${groupName}`}
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </button>
+                              ) : null}
+                              <GroupActionsPopover
+                                editable={editable}
+                                groupName={groupName}
+                                itemCount={items.length}
+                                canMoveUp={canMoveGroupUp}
+                                canMoveDown={canMoveGroupDown}
+                                onBeginRenameGroup={
+                                  onRenameGroup ? beginGroupRename : undefined
+                                }
+                                onMoveGroupUp={
+                                  canMoveGroupUp && onReorderGroups
+                                    ? () => {
+                                        const previousGroupName =
+                                          previewGroupOrder[groupIndex - 1];
+                                        if (!previousGroupName) return;
+                                        onReorderGroups(
+                                          groupName,
+                                          previousGroupName,
+                                          'above',
+                                        );
+                                      }
+                                    : undefined
+                                }
+                                onMoveGroupDown={
+                                  canMoveGroupDown && onReorderGroups
+                                    ? () => {
+                                        const nextGroupName =
+                                          previewGroupOrder[groupIndex + 1];
+                                        if (!nextGroupName) return;
+                                        onReorderGroups(
+                                          groupName,
+                                          nextGroupName,
+                                          'below',
+                                        );
+                                      }
+                                    : undefined
+                                }
+                                onRequestDeleteGroup={requestDeleteGroup}
+                                onDeleteGroup={onDeleteGroup}
+                                onAddGroup={onAddGroup}
+                                onAddTable={onAddTable}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => toggleGroup(groupName)}
+                                aria-expanded={isGroupOpen}
+                                aria-label={
+                                  isGroupOpen
+                                    ? `Collapse group ${groupName}`
+                                    : `Expand group ${groupName}`
+                                }
+                                className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                style={{
+                                  WebkitTapHighlightColor: 'transparent',
+                                }}
+                              >
+                                {isGroupOpen ? (
+                                  <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
+                          )
+                        ) : null}
+                        {(isGroupOpen || !open) && (
+                          <Sortable
+                            value={items}
+                            getItemValue={(item) => item.title}
+                            orientation="vertical"
+                            onMove={({
+                              active,
+                              over,
+                              activeIndex,
+                              overIndex,
+                            }) => {
+                              if (!editable || !onReorderTabs || !over) return;
+                              const sourceTabTitle = String(active.id);
+                              const targetTabTitle = String(over.id);
+                              if (!sourceTabTitle || !targetTabTitle) return;
+                              if (sourceTabTitle === targetTabTitle) return;
+                              if (activeIndex === overIndex) return;
+                              onReorderTabs(
+                                sourceTabTitle,
+                                targetTabTitle,
+                                toReorderPosition(activeIndex, overIndex),
                               );
-                            }
-                            : undefined
-                        }
-                        onMoveGroupDown={
-                          canMoveGroupDown && onReorderGroups
-                            ? () => {
-                              const nextGroupName =
-                                previewGroupOrder[groupIndex + 1];
-                              if (!nextGroupName) return;
-                              onReorderGroups(groupName, nextGroupName, 'below');
-                            }
-                            : undefined
-                        }
-                        onRequestDeleteGroup={requestDeleteGroup}
-                        onDeleteGroup={onDeleteGroup}
-                        onAddGroup={onAddGroup}
-                        onAddTable={onAddTable}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => toggleGroup(groupName)}
-                        aria-expanded={isGroupOpen}
-                        aria-label={
-                          isGroupOpen
-                            ? `Collapse group ${groupName}`
-                            : `Expand group ${groupName}`
-                        }
-                        className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                        style={{ WebkitTapHighlightColor: 'transparent' }}
-                      >
-                        {isGroupOpen ? (
-                          <ChevronDown className="h-4 w-4" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4" />
-                        )}
-                      </button>
-                    </div>
-                  )
-                ) : null}
-                {(isGroupOpen || !open) && (
-                  <div className="space-y-1 p-1">
-                    {items.map((item, index) => (
-                      <div
-                        key={`${groupName}-${
-                          // biome-ignore lint/suspicious/noArrayIndexKey: lint debt cleanup
-                          index
-                          }`}
-                        draggable={editable}
-                        onDragStart={(event) => {
-                          if (!editable) return;
-                          setDraggedTabTitle(item.title);
-                          attachDragPreview(event, event.currentTarget);
-                          try {
-                            event.dataTransfer.setData(
-                              'text/tab-title',
-                              item.title,
-                            );
-                            event.dataTransfer.setData(
-                              'text/plain',
-                              `tab:${item.title}`,
-                            );
-                          } catch (_error) {
-                            // noop
-                          }
-                        }}
-                        onDragEnd={() => {
-                          setDraggedTabTitle(null);
-                          setTabDropIndicator(null);
-                          clearDragPreviewElement();
-                        }}
-                        onDragOver={(event) => {
-                          if (!editable || !onReorderTabs) return;
-                          const dropped = readDraggedTabTitle(event);
-                          if (!dropped || dropped === item.title) {
-                            if (tabDropIndicator?.tabTitle === item.title) {
-                              setTabDropIndicator(null);
-                            }
-                            return;
-                          }
-                          event.preventDefault();
-                          event.stopPropagation();
-                          const position = getDropPositionFromPointer(
-                            event as React.DragEvent<HTMLElement>,
-                          );
-                          setTabDropIndicator((current) => {
-                            if (
-                              current?.tabTitle === item.title &&
-                              current.position === position
-                            ) {
-                              return current;
-                            }
-                            return { tabTitle: item.title, position };
-                          });
-                        }}
-                        onDragLeave={(event) => {
-                          if (tabDropIndicator?.tabTitle !== item.title) return;
-                          const rect = event.currentTarget.getBoundingClientRect();
-                          const isStillWithinTarget =
-                            event.clientX >= rect.left &&
-                            event.clientX <= rect.right &&
-                            event.clientY >= rect.top &&
-                            event.clientY <= rect.bottom;
-                          if (!isStillWithinTarget) {
-                            setTabDropIndicator(null);
-                          }
-                        }}
-                        onDrop={(event) => {
-                          if (!editable || !onReorderTabs) return;
-                          const dropped = readDraggedTabTitle(event);
-                          if (!dropped || dropped === item.title) return;
-                          event.preventDefault();
-                          event.stopPropagation();
-                          const position =
-                            tabDropIndicator?.tabTitle === item.title
-                              ? tabDropIndicator.position
-                              : getDropPositionFromPointer(
-                                event as React.DragEvent<HTMLElement>,
-                              );
-                          onReorderTabs(dropped, item.title, position);
-                          setDraggedTabTitle(null);
-                          setTabDropIndicator(null);
-                          setGroupDropIndicator(null);
-                        }}
-                        className={`${tabDropIndicator?.tabTitle === item.title
-                          ? tabDropIndicator.position === 'above'
-                            ? 'ring-2 ring-primary/35 ring-inset border-t-2 border-primary'
-                            : 'ring-2 ring-primary/35 ring-inset border-b-2 border-primary'
-                          : ''
-                          } rounded-md`}
-                      >
-                        {editingTabTitle === item.title ? (
-                          <Input
-                            autoFocus
-                            defaultValue={item.title}
-                            className="h-8 text-xs"
-                            onBlur={(event) => {
-                              if (tabRenameHandledByKeyRef.current) {
-                                tabRenameHandledByKeyRef.current = false;
-                              } else {
-                                commitTabRename(
-                                  item.title,
-                                  event.currentTarget.value,
-                                );
-                              }
-                              setEditingTabTitle(null);
                             }}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault();
-                                tabRenameHandledByKeyRef.current = true;
-                                commitTabRename(
-                                  item.title,
-                                  event.currentTarget.value,
-                                );
-                                setEditingTabTitle(null);
-                              }
-                              if (event.key === 'Escape') {
-                                event.preventDefault();
-                                tabRenameHandledByKeyRef.current = true;
-                                setEditingTabTitle(null);
-                              }
-                            }}
-                          />
-                        ) : (
-                          <Option
-                            Icon={getTabIcon(item)}
-                            iconName={item.iconName}
-                            iconCatalog={iconCatalog}
-                            title={item.title}
-                            url={item.url}
-                            selected={currentTab}
-                            open={open}
-                            editable={editable}
-                            onBeginRename={editable ? beginTabRename : undefined}
-                            onRenameIcon={onRenameTabIcon}
-                            onOpenWorkflowEditor={
-                              editable &&
-                                onOpenWorkflowEditorForTab &&
-                                ('schema' in item || 'parsedSchema' in item)
-                                ? onOpenWorkflowEditorForTab
-                                : undefined
-                            }
-                            onRequestDeleteTable={
-                              editable &&
-                                onDeleteTableForTab &&
-                                ('schema' in item || 'parsedSchema' in item)
-                                ? onDeleteTableForTab
-                                : undefined
-                            }
-                            onActivate={incrementFrequentUsage}
-                          />
+                          >
+                            <SortableContent asChild>
+                              <div className="space-y-1 p-1">
+                                {items.map((item, index) => (
+                                  <SortableItem
+                                    key={`${groupName}-${item.title}-${index}`}
+                                    value={item.title}
+                                    asHandle
+                                    asChild
+                                  >
+                                    <div className="rounded-md">
+                                      {editingTabTitle === item.title ? (
+                                        <Input
+                                          autoFocus
+                                          defaultValue={item.title}
+                                          className="h-8 text-xs"
+                                          onBlur={(event) => {
+                                            if (
+                                              tabRenameHandledByKeyRef.current
+                                            ) {
+                                              tabRenameHandledByKeyRef.current = false;
+                                            } else {
+                                              commitTabRename(
+                                                item.title,
+                                                event.currentTarget.value,
+                                              );
+                                            }
+                                            setEditingTabTitle(null);
+                                          }}
+                                          onKeyDown={(event) => {
+                                            if (event.key === 'Enter') {
+                                              event.preventDefault();
+                                              tabRenameHandledByKeyRef.current = true;
+                                              commitTabRename(
+                                                item.title,
+                                                event.currentTarget.value,
+                                              );
+                                              setEditingTabTitle(null);
+                                            }
+                                            if (event.key === 'Escape') {
+                                              event.preventDefault();
+                                              tabRenameHandledByKeyRef.current = true;
+                                              setEditingTabTitle(null);
+                                            }
+                                          }}
+                                        />
+                                      ) : (
+                                        <Option
+                                          Icon={getTabIcon(item)}
+                                          iconName={item.iconName}
+                                          iconCatalog={iconCatalog}
+                                          title={item.title}
+                                          url={item.url}
+                                          selected={currentTab}
+                                          open={open}
+                                          editable={editable}
+                                          onBeginRename={
+                                            editable
+                                              ? beginTabRename
+                                              : undefined
+                                          }
+                                          onRenameIcon={onRenameTabIcon}
+                                          onOpenWorkflowEditor={
+                                            editable &&
+                                            onOpenWorkflowEditorForTab &&
+                                            ('schema' in item ||
+                                              'parsedSchema' in item)
+                                              ? onOpenWorkflowEditorForTab
+                                              : undefined
+                                          }
+                                          onRequestDeleteTable={
+                                            editable &&
+                                            onDeleteTableForTab &&
+                                            ('schema' in item ||
+                                              'parsedSchema' in item)
+                                              ? onDeleteTableForTab
+                                              : undefined
+                                          }
+                                          onActivate={incrementFrequentUsage}
+                                        />
+                                      )}
+                                    </div>
+                                  </SortableItem>
+                                ))}
+                                {items.length === 0 ? (
+                                  <div className="rounded border border-dashed border-slate-300 px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                    Empty group
+                                  </div>
+                                ) : null}
+                              </div>
+                            </SortableContent>
+                          </Sortable>
                         )}
-                      </div>
-                    ))}
-                    {items.length === 0 ? (
-                      <div className="rounded border border-dashed border-slate-300 px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                        Empty group
-                      </div>
-                    ) : null}
-                  </div>
-                )}
-              </motion.div>
-            );
-          })}
-        </LayoutGroup>
+                      </motion.div>
+                    </SortableItem>
+                  );
+                })}
+              </LayoutGroup>
+            </div>
+          </SortableContent>
+        </Sortable>
       </div>
 
       {/* Toggle button at the bottom */}
@@ -1263,10 +992,11 @@ const Option = memo(function Option({
           ...(current as Record<string, unknown>),
           tab: title,
         })}
-        className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${isSelected
-          ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
-          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
-          } ${actionPaddingClass}`}
+        className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${
+          isSelected
+            ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
+            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+        } ${actionPaddingClass}`}
       >
         <div className="grid h-full w-10 sm:w-12 place-content-center">
           <Popover open={isIconPickerOpen} onOpenChange={setIsIconPickerOpen}>
@@ -1282,10 +1012,11 @@ const Option = memo(function Option({
                 }}
               >
                 <Icon
-                  className={`h-4 w-4 transition-opacity ${editable && onRenameIcon
-                    ? 'opacity-100 group-hover/icon-trigger:opacity-0 group-focus-visible/icon-trigger:opacity-0'
-                    : ''
-                    }`}
+                  className={`h-4 w-4 transition-opacity ${
+                    editable && onRenameIcon
+                      ? 'opacity-100 group-hover/icon-trigger:opacity-0 group-focus-visible/icon-trigger:opacity-0'
+                      : ''
+                  }`}
                 />
                 {editable && onRenameIcon ? (
                   <ChevronsUpDown className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity group-hover/icon-trigger:opacity-100 group-focus-visible/icon-trigger:opacity-100" />
@@ -1309,10 +1040,11 @@ const Option = memo(function Option({
                       <button
                         key={`${title}-${name}`}
                         type="button"
-                        className={`flex items-center gap-2 rounded border px-2 py-1 text-left text-xs hover:bg-muted ${iconName === name
-                          ? 'border-primary bg-primary/10'
-                          : ''
-                          }`}
+                        className={`flex items-center gap-2 rounded border px-2 py-1 text-left text-xs hover:bg-muted ${
+                          iconName === name
+                            ? 'border-primary bg-primary/10'
+                            : ''
+                        }`}
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
@@ -1334,8 +1066,9 @@ const Option = memo(function Option({
         {open && (
           <span className="flex min-w-0 items-center gap-1">
             <span
-              className={`truncate text-sm font-medium transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'
-                }`}
+              className={`truncate text-sm font-medium transition-opacity duration-200 ${
+                open ? 'opacity-100' : 'opacity-0'
+              }`}
             >
               {title}
             </span>
@@ -1573,159 +1306,159 @@ const GroupActionsPopover: React.FC<{
   onAddTable,
   onAddGroup,
 }) => {
-    if (
-      !editable ||
-      (!onDeleteGroup &&
-        !onAddTable &&
-        !onAddGroup &&
-        !onBeginRenameGroup &&
-        !onMoveGroupUp &&
-        !onMoveGroupDown)
-    ) {
-      return null;
-    }
-    return (
-      <Popover>
-        <PopoverTrigger asChild>
-          <button
-            type="button"
-            className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-            aria-label={`Actions for ${groupName}`}
-            title={`Actions for ${groupName}`}
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent align="end" className="w-44 p-1">
-          <div className="space-y-1">
-            {onBeginRenameGroup ? (
+  if (
+    !editable ||
+    (!onDeleteGroup &&
+      !onAddTable &&
+      !onAddGroup &&
+      !onBeginRenameGroup &&
+      !onMoveGroupUp &&
+      !onMoveGroupDown)
+  ) {
+    return null;
+  }
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          aria-label={`Actions for ${groupName}`}
+          title={`Actions for ${groupName}`}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-44 p-1">
+        <div className="space-y-1">
+          {onBeginRenameGroup ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onBeginRenameGroup(groupName);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                Rename Group
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onMoveGroupUp ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => {
+                  onMoveGroupUp();
+                }}
+                disabled={!canMoveUp}
+              >
+                <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                Move Group Up
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onMoveGroupDown ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => {
+                  onMoveGroupDown();
+                }}
+                disabled={!canMoveDown}
+              >
+                <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                Move Group Down
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onAddTable ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddTable(groupName);
+                }}
+              >
+                <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
+                Add Table
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onAddGroup ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddGroup();
+                }}
+              >
+                <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
+                Add Group
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onAddGroup ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddGroup(undefined, {
+                    relativeTo: groupName,
+                    position: 'above',
+                  });
+                }}
+              >
+                <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                Add Group Above
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onAddGroup ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddGroup(undefined, {
+                    relativeTo: groupName,
+                    position: 'below',
+                  });
+                }}
+              >
+                <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                Add Group Below
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onDeleteGroup ? (
+            <>
+              <div className="my-1 h-px bg-border" />
               <PopoverClose asChild>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
                   onClick={() => {
-                    onBeginRenameGroup(groupName);
+                    onRequestDeleteGroup(groupName, itemCount);
                   }}
                 >
-                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
-                  Rename Group
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete Group
                 </button>
               </PopoverClose>
-            ) : null}
-            {onMoveGroupUp ? (
-              <PopoverClose asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => {
-                    onMoveGroupUp();
-                  }}
-                  disabled={!canMoveUp}
-                >
-                  <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
-                  Move Group Up
-                </button>
-              </PopoverClose>
-            ) : null}
-            {onMoveGroupDown ? (
-              <PopoverClose asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-                  onClick={() => {
-                    onMoveGroupDown();
-                  }}
-                  disabled={!canMoveDown}
-                >
-                  <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
-                  Move Group Down
-                </button>
-              </PopoverClose>
-            ) : null}
-            {onAddTable ? (
-              <PopoverClose asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                  onClick={() => {
-                    onAddTable(groupName);
-                  }}
-                >
-                  <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
-                  Add Table
-                </button>
-              </PopoverClose>
-            ) : null}
-            {onAddGroup ? (
-              <PopoverClose asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                  onClick={() => {
-                    onAddGroup();
-                  }}
-                >
-                  <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
-                  Add Group
-                </button>
-              </PopoverClose>
-            ) : null}
-            {onAddGroup ? (
-              <PopoverClose asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                  onClick={() => {
-                    onAddGroup(undefined, {
-                      relativeTo: groupName,
-                      position: 'above',
-                    });
-                  }}
-                >
-                  <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
-                  Add Group Above
-                </button>
-              </PopoverClose>
-            ) : null}
-            {onAddGroup ? (
-              <PopoverClose asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                  onClick={() => {
-                    onAddGroup(undefined, {
-                      relativeTo: groupName,
-                      position: 'below',
-                    });
-                  }}
-                >
-                  <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
-                  Add Group Below
-                </button>
-              </PopoverClose>
-            ) : null}
-            {onDeleteGroup ? (
-              <>
-                <div className="my-1 h-px bg-border" />
-                <PopoverClose asChild>
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
-                    onClick={() => {
-                      onRequestDeleteGroup(groupName, itemCount);
-                    }}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Delete Group
-                  </button>
-                </PopoverClose>
-              </>
-            ) : null}
-          </div>
-        </PopoverContent>
-      </Popover>
-    );
-  };
+            </>
+          ) : null}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+};
 
 const ToggleClose: React.FC<{
   open: boolean;
@@ -1740,14 +1473,16 @@ const ToggleClose: React.FC<{
       <div className="flex items-center p-1 sm:p-3">
         <div className="grid size-6 sm:size-10 place-content-center">
           <ChevronsRight
-            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${open ? 'rotate-180' : ''
-              }`}
+            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${
+              open ? 'rotate-180' : ''
+            }`}
           />
         </div>
         {open && (
           <span
-            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${open ? 'opacity-100' : 'opacity-0'
-              }`}
+            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${
+              open ? 'opacity-100' : 'opacity-0'
+            }`}
           >
             Hide
           </span>

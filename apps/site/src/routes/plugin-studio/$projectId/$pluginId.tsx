@@ -107,6 +107,7 @@ import {
   resolvePluginStudioPluginId,
 } from '../-plugin-studio-plugin-id';
 import { toProjectScopedDraftId } from '../-plugin-studio-project-draft-id';
+import { parseStoredSchemaDoc } from '../-plugin-studio-schema-doc';
 
 const optionalSearchStringSchema = z.preprocess(
   (value) => {
@@ -216,22 +217,6 @@ function canonicalStringify(input: unknown) {
 
 function stringifySchemaDocForStorage(schemaDoc: SchemaDoc) {
   return canonicalStringify(schemaDoc);
-}
-
-function parseStoredSchemaDoc(doc: unknown): SchemaDoc | undefined {
-  if (typeof doc === 'string') {
-    try {
-      const parsed = JSON.parse(doc) as SchemaDoc;
-      return parsed?.schemaId ? parsed : undefined;
-    } catch {
-      return undefined;
-    }
-  }
-  if (doc && typeof doc === 'object') {
-    const parsed = doc as SchemaDoc;
-    return parsed?.schemaId ? parsed : undefined;
-  }
-  return undefined;
 }
 
 function toErrorMessage(error: unknown) {
@@ -2309,9 +2294,9 @@ function PluginStudioPresenter({
     if (docs.length > 0) {
       return docs;
     }
-    const revisionDocs = (latestActiveDraftRevision?.schemaDocs ?? []).filter(
-      (doc): doc is SchemaDoc => Boolean(doc?.schemaId),
-    );
+    const revisionDocs = (latestActiveDraftRevision?.schemaDocs ?? [])
+      .map((doc) => parseStoredSchemaDoc(doc))
+      .filter((doc): doc is SchemaDoc => Boolean(doc?.schemaId));
     if (revisionDocs.length > 0) {
       return revisionDocs;
     }

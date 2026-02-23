@@ -347,6 +347,13 @@ export function AutoTable<T extends SchemaKeys>({
     onReorderColumns:
       props.editable && !props.readOnly ? props.onReorderColumns : undefined,
   });
+  const reorderableColumnIds = React.useMemo(
+    () =>
+      parsedSchema.fields
+        .map((field) => field.key)
+        .filter((key) => key !== '_'),
+    [parsedSchema.fields],
+  );
 
   // @ts-expect-error
   const perPage = search.perPage ?? 10;
@@ -400,6 +407,10 @@ export function AutoTable<T extends SchemaKeys>({
       )}
       <DataTable
         table={table}
+        onReorderColumns={
+          props.editable && !props.readOnly ? props.onReorderColumns : undefined
+        }
+        reorderableColumnIds={reorderableColumnIds}
         actionBar={
           <AutoTableActionBar
             table={table}

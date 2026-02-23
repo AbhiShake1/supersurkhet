@@ -1,16 +1,17 @@
 'use client';
 
+import type { Renderable } from '@autoform/core';
 import type { Column } from '@tanstack/react-table';
 import {
   ChevronDown,
-  ChevronUp,
   ChevronsUpDown,
+  ChevronUp,
   EyeOff,
-  GripVertical,
   Pencil,
   Trash2,
   X,
 } from 'lucide-react';
+import type * as React from 'react';
 
 import {
   DropdownMenu,
@@ -21,7 +22,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import type { Renderable } from '@autoform/core';
 
 interface DataTableColumnHeaderProps<TData, TValue>
   extends Omit<React.ComponentProps<typeof DropdownMenuTrigger>, 'title'> {
@@ -31,9 +31,6 @@ interface DataTableColumnHeaderProps<TData, TValue>
   onDeleteColumn?: () => void;
   onMoveColumn?: (sourceColumnKey: string, targetColumnKey: string) => void;
 }
-
-const COLUMN_DRAG_DATA_KEY = 'application/x.supersurkhet.column-key';
-let activeDragColumnKey: string | null = null;
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
@@ -54,73 +51,19 @@ export function DataTableColumnHeader<TData, TValue>({
     return <div className={cn(className)}>{title}</div>;
   }
 
-  function handleDragStart(event: React.DragEvent<HTMLButtonElement>) {
-    if (!onMoveColumn) return;
-    const currentColumnKey = String(column.id ?? '').trim();
-    if (!currentColumnKey) return;
-    activeDragColumnKey = currentColumnKey;
-    event.dataTransfer.effectAllowed = 'move';
-    event.dataTransfer.setData(COLUMN_DRAG_DATA_KEY, currentColumnKey);
-    event.dataTransfer.setData('text/plain', currentColumnKey);
-  }
-
-  function handleDragEnd() {
-    activeDragColumnKey = null;
-  }
-
-  function handleDragOver(event: React.DragEvent<HTMLButtonElement>) {
-    if (!onMoveColumn) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }
-
-  function handleDrop(event: React.DragEvent<HTMLButtonElement>) {
-    if (!onMoveColumn) return;
-    event.preventDefault();
-    const sourceColumnKey = (
-      event.dataTransfer.getData(COLUMN_DRAG_DATA_KEY) ||
-      event.dataTransfer.getData('text/plain') ||
-      activeDragColumnKey ||
-      ''
-    ).trim();
-    const targetColumnKey = String(column.id ?? '').trim();
-    if (
-      !sourceColumnKey ||
-      !targetColumnKey ||
-      sourceColumnKey === targetColumnKey
-    ) {
-      activeDragColumnKey = null;
-      return;
-    }
-    onMoveColumn(sourceColumnKey, targetColumnKey);
-    activeDragColumnKey = null;
-  }
-
-  const sortIcon = column.getCanSort() ?
-      column.getIsSorted() === 'desc' ? (
-        <ChevronDown className="size-4" />
-      ) : column.getIsSorted() === 'asc' ? (
-        <ChevronUp className="size-4" />
-      ) : (
-        <ChevronsUpDown className="size-4" />
-      )
-    : null;
+  const sortIcon = column.getCanSort() ? (
+    column.getIsSorted() === 'desc' ? (
+      <ChevronDown className="size-4" />
+    ) : column.getIsSorted() === 'asc' ? (
+      <ChevronUp className="size-4" />
+    ) : (
+      <ChevronsUpDown className="size-4" />
+    )
+  ) : null;
 
   if (onMoveColumn) {
     return (
       <div className={cn('flex min-w-0 items-center gap-1', className)}>
-        <button
-          type="button"
-          className="inline-flex h-8 w-7 cursor-grab items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground active:cursor-grabbing"
-          draggable
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragOver={handleDragOver}
-          onDrop={handleDrop}
-          aria-label={`Drag column ${String(column.id ?? title)}`}
-        >
-          <GripVertical className="size-4" />
-        </button>
         <DropdownMenu>
           <DropdownMenuTrigger
             className="-ml-0.5 flex h-8 min-w-0 items-center gap-1.5 rounded-md px-2 py-1.5 hover:bg-accent focus:outline-none focus:ring-1 focus:ring-ring data-[state=open]:bg-accent [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:text-muted-foreground"
