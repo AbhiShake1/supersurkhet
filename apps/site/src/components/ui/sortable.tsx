@@ -1,19 +1,19 @@
 import {
   type Announcements,
+  closestCenter,
+  closestCorners,
   DndContext,
   type DndContextProps,
   type DragEndEvent,
-  DragOverlay,
   type DraggableSyntheticListeners,
+  DragOverlay,
   type DropAnimation,
+  defaultDropAnimationSideEffects,
   KeyboardSensor,
   MouseSensor,
   type ScreenReaderInstructions,
   TouchSensor,
   type UniqueIdentifier,
-  closestCenter,
-  closestCorners,
-  defaultDropAnimationSideEffects,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -23,10 +23,10 @@ import {
   restrictToVerticalAxis,
 } from '@dnd-kit/modifiers';
 import {
-  SortableContext,
-  type SortableContextProps,
   arrayMove,
   horizontalListSortingStrategy,
+  SortableContext,
+  type SortableContextProps,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -34,10 +34,9 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
-
+import * as ReactDOM from 'react-dom';
 import { composeEventHandlers, useComposedRefs } from '@/lib/composition';
 import { cn } from '@/lib/utils';
-import * as ReactDOM from 'react-dom';
 
 const orientationConfig = {
   vertical: {
@@ -78,6 +77,7 @@ interface SortableRootContextValue<T> {
   strategy: SortableContextProps['strategy'];
   activeId: UniqueIdentifier | null;
   setActiveId: (id: UniqueIdentifier | null) => void;
+  suppressClickForId: UniqueIdentifier | null;
   getItemValue: (item: T) => UniqueIdentifier;
   flatCursor: boolean;
 }
@@ -129,6 +129,11 @@ function Sortable<T>(props: SortableProps<T>) {
   } = props;
   const id = React.useId();
   const [activeId, setActiveId] = React.useState<UniqueIdentifier | null>(null);
+  const [suppressClickForId, setSuppressClickForId] =
+    React.useState<UniqueIdentifier | null>(null);
+  const suppressClickResetTimeoutRef = React.useRef<ReturnType<
+    typeof globalThis.setTimeout
+  > | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -168,6 +173,15 @@ function Sortable<T>(props: SortableProps<T>) {
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over?.id) {
+      setSuppressClickForId(active.id);
+      if (suppressClickResetTimeoutRef.current !== null) {
+        globalThis.clearTimeout(suppressClickResetTimeoutRef.current);
+      }
+      suppressClickResetTimeoutRef.current = globalThis.setTimeout(() => {
+        setSuppressClickForId(null);
+        suppressClickResetTimeoutRef.current = null;
+      }, 180);
+
       const activeIndex = value.findIndex(
         (item) => getItemValue(item) === active.id,
       );
@@ -183,6 +197,14 @@ function Sortable<T>(props: SortableProps<T>) {
     }
     setActiveId(null);
   };
+
+  React.useEffect(() => {
+    return () => {
+      if (suppressClickResetTimeoutRef.current !== null) {
+        globalThis.clearTimeout(suppressClickResetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const announcements: Announcements = React.useMemo(
     () => ({
@@ -246,6 +268,7 @@ function Sortable<T>(props: SortableProps<T>) {
       strategy: strategy ?? config.strategy,
       activeId,
       setActiveId,
+      suppressClickForId,
       getItemValue,
       flatCursor,
     }),
@@ -257,6 +280,7 @@ function Sortable<T>(props: SortableProps<T>) {
       config.modifiers,
       config.strategy,
       activeId,
+      suppressClickForId,
       // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
       getItemValue,
       flatCursor,
@@ -363,6 +387,7 @@ const SortableItem = React.forwardRef<HTMLDivElement, SortableItemProps>(
       asChild,
       disabled,
       className,
+      onClickCapture,
       ...itemProps
     } = props;
     const inSortableContent = React.useContext(SortableContentContext);
@@ -421,6 +446,12 @@ const SortableItem = React.forwardRef<HTMLDivElement, SortableItemProps>(
         <ItemPrimitive
           id={id}
           data-dragging={isDragging ? '' : undefined}
+          onClickCapture={composeEventHandlers(onClickCapture, (event) => {
+            if (!asHandle) return;
+            if (context.suppressClickForId !== value) return;
+            event.preventDefault();
+            event.stopPropagation();
+          })}
           {...itemProps}
           {...(asHandle ? attributes : {})}
           {...(asHandle ? listeners : {})}
