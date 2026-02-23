@@ -253,12 +253,6 @@ const routesTabsMappedRouteSchema = z.object({
   iconName: z.string().optional(),
 });
 
-const routesTabsMapperDiagnosticSchema = z.object({
-  code: z.enum(['duplicate-route', 'invalid-icon']),
-  message: z.string(),
-  path: z.array(z.string()),
-});
-
 export const pluginReleaseSchema = z
   .object({
     id: z
@@ -518,7 +512,6 @@ export const pluginRoutesTabsConfigSchema = z
     pluginId: z.string(),
     businessSlug: z.string(),
     routes: z.array(routesTabsMappedRouteSchema),
-    diagnostics: z.array(routesTabsMapperDiagnosticSchema),
     uiStateByUserId: z
       .record(z.string(), pluginStudioUserUiStateSchema)
       .optional(),

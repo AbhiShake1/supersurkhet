@@ -1880,19 +1880,6 @@ declare global {
      group?: string | undefined;
      iconName?: string | undefined;
     }>, "many">;
-     diagnostics: import("zod").ZodArray<import("zod").ZodObject<{
-     code: import("zod").ZodEnum<["duplicate-route", "invalid-icon"]>;
-     message: import("zod").ZodString;
-     path: import("zod").ZodArray<import("zod").ZodString, "many">;
-    }, "strip", import("zod").ZodTypeAny, {
-     code: "duplicate-route" | "invalid-icon";
-     path: string[];
-     message: string;
-    }, {
-     code: "duplicate-route" | "invalid-icon";
-     path: string[];
-     message: string;
-    }>, "many">;
      uiStateByUserId: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodObject<{
      sidebarSnapshotJson: import("zod").ZodOptional<import("zod").ZodString>;
     }, "strip", import("zod").ZodTypeAny, {
@@ -1920,11 +1907,6 @@ declare global {
      pluginId: string;
      draftId: string;
      revisionId: string;
-     diagnostics: {
-     code: "duplicate-route" | "invalid-icon";
-     path: string[];
-     message: string;
-    }[];
      businessSlug: string;
      routes: {
      schema: string;
@@ -1952,11 +1934,6 @@ declare global {
      pluginId: string;
      draftId: string;
      revisionId: string;
-     diagnostics: {
-     code: "duplicate-route" | "invalid-icon";
-     path: string[];
-     message: string;
-    }[];
      businessSlug: string;
      routes: {
      schema: string;

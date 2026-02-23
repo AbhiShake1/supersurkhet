@@ -1,4 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router';
+import { LayoutGroup, motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import {
@@ -227,6 +228,27 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     );
     return [...preferred, ...remaining];
   }, [groupedItems, groups, localGroupOrder]);
+
+  const previewGroupOrder = useMemo(() => {
+    if (!draggedGroupName || !groupDropIndicator) return groupNamesToRender;
+    const { groupName: targetGroupName, position } = groupDropIndicator;
+    if (draggedGroupName === targetGroupName) return groupNamesToRender;
+
+    const baseline = [...groupNamesToRender];
+    if (
+      !baseline.includes(draggedGroupName) ||
+      !baseline.includes(targetGroupName)
+    ) {
+      return groupNamesToRender;
+    }
+
+    const next = baseline.filter((name) => name !== draggedGroupName);
+    const targetIndex = next.indexOf(targetGroupName);
+    if (targetIndex < 0) return groupNamesToRender;
+    const insertAt = position === 'above' ? targetIndex : targetIndex + 1;
+    next.splice(insertAt, 0, draggedGroupName);
+    return next;
+  }, [draggedGroupName, groupDropIndicator, groupNamesToRender]);
 
   const toggleGroup = useCallback(
     (groupName: string) => {
@@ -529,20 +551,36 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
         </div>
 
         {/* Grouped navigation items */}
-        {groupNamesToRender.map((groupName) => {
-          const items = groupedItems[groupName] ?? [];
-          const isGroupOpen = groupOpenState[groupName] ?? true;
-          const isDropTarget = groupDropIndicator?.groupName === groupName;
-          return (
-            <div
-              key={groupName}
-              data-sidebar-group-card="true"
-              className={`relative mt-1 rounded-lg border p-1 ${
-                isDropTarget
-                  ? 'border-primary/60 bg-primary/5'
-                  : 'border-slate-200/80 dark:border-slate-800'
-              }`}
-              onDragOver={(event) => {
+        <LayoutGroup id="sidebar-group-preview">
+          {previewGroupOrder.map((groupName) => {
+            const items = groupedItems[groupName] ?? [];
+            const isGroupOpen = groupOpenState[groupName] ?? true;
+            const isDropTarget = groupDropIndicator?.groupName === groupName;
+            const isDraggedGroup = draggedGroupName === groupName;
+            const isGroupPreviewActive = Boolean(
+              draggedGroupName && groupDropIndicator,
+            );
+            return (
+              <motion.div
+                key={groupName}
+                layout={!isDraggedGroup}
+                transition={{
+                  type: 'spring',
+                  stiffness: 520,
+                  damping: 38,
+                  mass: 0.72,
+                }}
+                data-sidebar-group-card="true"
+                className={`relative mt-1 rounded-lg border p-1 transition-all duration-150 ${
+                  isGroupPreviewActive && isDraggedGroup
+                    ? 'border-primary/55 bg-primary/10 opacity-75 shadow-sm backdrop-blur-[1px]'
+                    : isGroupPreviewActive && isDropTarget
+                      ? 'border-primary/70 bg-primary/12 ring-1 ring-primary/20'
+                      : isDropTarget
+                        ? 'border-primary/60 bg-primary/5'
+                        : 'border-slate-200/80 dark:border-slate-800'
+                }`}
+                onDragOver={(event) => {
                 if (!editable || (!onMoveTabToGroup && !onReorderGroups))
                   return;
                 event.preventDefault();
@@ -553,11 +591,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   if (groupDropIndicator) setGroupDropIndicator(null);
                   return;
                 }
-                const bounds = event.currentTarget.getBoundingClientRect();
+                const draggedIndex = groupNamesToRender.indexOf(droppedGroup);
+                const targetIndex = groupNamesToRender.indexOf(groupName);
                 const position: 'above' | 'below' =
-                  event.clientY - bounds.top < bounds.height / 2
-                    ? 'above'
-                    : 'below';
+                  draggedIndex >= 0 &&
+                  targetIndex >= 0 &&
+                  draggedIndex < targetIndex
+                    ? 'below'
+                    : 'above';
                 setGroupDropIndicator((current) => {
                   if (
                     current?.groupName === groupName &&
@@ -568,14 +609,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   return { groupName, position };
                 });
               }}
-              onDragLeave={(event) => {
+                onDragLeave={(event) => {
                 if (groupDropIndicator?.groupName !== groupName) return;
                 const nextTarget = event.relatedTarget as Node | null;
                 if (!event.currentTarget.contains(nextTarget)) {
                   setGroupDropIndicator(null);
                 }
               }}
-              onDrop={(event) => {
+                onDrop={(event) => {
                 event.preventDefault();
                 if (!editable) return;
                 const droppedGroup =
@@ -626,17 +667,11 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                 onMoveTabToGroup(dropped, groupName);
                 setDraggedTabTitle(null);
                 setGroupDropIndicator(null);
-              }}
-            >
-              {isDropTarget && groupDropIndicator?.position === 'above' ? (
-                <div className="pointer-events-none absolute -top-[1px] left-1 right-1 h-[2px] rounded bg-primary" />
-              ) : null}
-              {isDropTarget && groupDropIndicator?.position === 'below' ? (
-                <div className="pointer-events-none absolute -bottom-[1px] left-1 right-1 h-[2px] rounded bg-primary" />
-              ) : null}
-              {open ? (
-                editingGroupName === groupName ? (
-                  <Input
+                }}
+              >
+                {open ? (
+                  editingGroupName === groupName ? (
+                    <Input
                     autoFocus
                     defaultValue={groupName}
                     className="h-8 text-xs"
@@ -661,9 +696,9 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         setEditingGroupName(null);
                       }
                     }}
-                  />
-                ) : (
-                  <div className="group/group-header flex items-center gap-1">
+                    />
+                  ) : (
+                    <div className="group/group-header flex items-center gap-1">
                     {editable && onReorderGroups ? (
                       <button
                         type="button"
@@ -759,11 +794,11 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         <ChevronRight className="h-4 w-4" />
                       )}
                     </button>
-                  </div>
-                )
-              ) : null}
-              {(isGroupOpen || !open) && (
-                <div className="space-y-1 p-1">
+                    </div>
+                  )
+                ) : null}
+                {(isGroupOpen || !open) && (
+                  <div className="space-y-1 p-1">
                   {items.map((item, index) => (
                     <div
                       key={`${groupName}-${
@@ -858,11 +893,12 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                       Empty group
                     </div>
                   ) : null}
-                </div>
-              )}
-            </div>
-          );
-        })}
+                  </div>
+                )}
+              </motion.div>
+            );
+          })}
+        </LayoutGroup>
       </div>
 
       {/* Toggle button at the bottom */}

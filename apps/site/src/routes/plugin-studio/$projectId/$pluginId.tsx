@@ -2036,7 +2036,7 @@ function PluginStudioPresenter({
     isLoading: isReleaseLoading,
     refetch: refetchReleases,
   } = api.pluginRelease.useGet();
-  const releases = releaseRows as PluginReleaseDoc[];
+  const releases = useMemo(() => releaseRows as PluginReleaseDoc[], [releaseRows]);
   const marketplaceReleases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(releases),
     [releases],
@@ -3757,7 +3757,6 @@ function PluginStudioPresenter({
       pluginId,
       businessSlug: 'draft',
       routes: toDraftRoutesFromAdminTabs(nextAdminTabs),
-      diagnostics: [],
       uiStateByUserId: activeRoutesTabsConfigRow?.uiStateByUserId,
       savedByUserId: actorUserId,
       savedAt: new Date().toISOString(),
@@ -3821,7 +3820,6 @@ function PluginStudioPresenter({
       pluginId,
       businessSlug: 'draft',
       routes: toDraftRoutesFromAdminTabs(parsed.draftAdminTabs),
-      diagnostics: [],
       uiStateByUserId: nextStateByUserId,
       savedByUserId: actorUserId,
       savedAt: new Date().toISOString(),
