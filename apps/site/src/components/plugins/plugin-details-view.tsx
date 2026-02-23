@@ -12,7 +12,7 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type SVGProps, useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -128,7 +128,7 @@ export function PluginDetailsView({
 
     observer.observe(heroNode);
     return () => observer.disconnect();
-  }, [plugin, details]);
+  }, []);
 
   const ratingLabel = (plugin.averageRating ?? 0) > 0 ? (plugin.averageRating ?? 0).toFixed(1) : 'N/A';
   const compactInstallCount = new Intl.NumberFormat(undefined, {
@@ -554,6 +554,8 @@ export function PluginDetailsView({
                       aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                     >
                       <svg
+                        aria-hidden="true"
+                        focusable="false"
                         className={cn(
                           'size-7 transition-all duration-200',
                           star <= reviewRating
@@ -622,7 +624,7 @@ export function PluginDetailsView({
           <aside className="w-full space-y-10 lg:w-[320px]">
             {/* App Support */}
             <section className="space-y-4">
-              <button className="flex w-full items-center justify-between border-b pb-4 text-left group">
+              <button type="button" className="flex w-full items-center justify-between border-b pb-4 text-left group">
                 <span className="text-lg font-medium text-[#202124] group-hover:text-[#01875f] transition-colors">App support</span>
                 <ChevronDown className="size-5 text-gray-400 group-hover:text-[#01875f] transition-colors" />
               </button>
@@ -645,36 +647,44 @@ export function PluginDetailsView({
                 <ChevronRight className="size-5 text-gray-400" />
               </div>
               <div className="space-y-6">
-                {similarPlugins.slice(0, 5).map((item) => (
-                  <div
-                    key={item.pluginId}
-                    className="flex items-start gap-4 cursor-pointer"
-                  >
-                    <div className="size-14 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
-                      {item.iconUrl ? (
-                        <img
-                          src={item.iconUrl}
-                          alt={item.title}
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex size-full items-center justify-center bg-gray-200 text-gray-400">
-                          {item.title.charAt(0).toUpperCase()}
+                {similarPlugins.slice(0, 5).map((item) => {
+                  const displayTitle =
+                    typeof item.title === 'string' && item.title.trim().length > 0
+                      ? item.title
+                      : item.pluginId || 'Plugin';
+                  const displayInitial = displayTitle.charAt(0).toUpperCase();
+
+                  return (
+                    <div
+                      key={item.pluginId}
+                      className="flex items-start gap-4 cursor-pointer"
+                    >
+                      <div className="size-14 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+                        {item.iconUrl ? (
+                          <img
+                            src={item.iconUrl}
+                            alt={displayTitle}
+                            className="size-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex size-full items-center justify-center bg-gray-200 text-gray-400">
+                            {displayInitial}
+                          </div>
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="truncate text-sm font-medium text-[#202124]">{displayTitle}</h4>
+                        <p className="truncate text-xs text-gray-500">{item.publisher}</p>
+                        <div className="mt-1 flex items-center gap-1">
+                          <span className="text-xs text-gray-500">
+                            {item.averageRating ? item.averageRating.toFixed(1) : 'N/A'}
+                          </span>
+                          <Star className="size-3 fill-gray-400 text-gray-400" />
                         </div>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <h4 className="truncate text-sm font-medium text-[#202124]">{item.title}</h4>
-                      <p className="truncate text-xs text-gray-500">{item.publisher}</p>
-                      <div className="mt-1 flex items-center gap-1">
-                        <span className="text-xs text-gray-500">
-                          {item.averageRating ? item.averageRating.toFixed(1) : 'N/A'}
-                        </span>
-                        <Star className="size-3 fill-gray-400 text-gray-400" />
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
           </aside>
@@ -738,9 +748,11 @@ function Stars({
   );
 }
 
-function ChevronDown(props: any) {
+function ChevronDown(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
+      aria-hidden="true"
+      focusable="false"
       {...props}
       xmlns="http://www.w3.org/2000/svg"
       width="24"
