@@ -45,6 +45,7 @@ import { CustomUiBuilderPage } from '../ui-builder';
 
 export interface AutoAdminProps {
   tabs: AutoAdminTabInput[];
+  tabOrder?: readonly string[];
   includeSystemTabs?: boolean;
   editable?: boolean;
   onAddTable?: (targetGroupName?: string) => void;
@@ -109,6 +110,7 @@ export type PossibleTabConfig = {
 }[SchemaKeys];
 
 export type AutoTableTab<K extends SchemaKeys = SchemaKeys> = {
+  tabId?: string;
   group?: string;
   title: string;
   iconName?: string;
@@ -126,6 +128,7 @@ export type AutoAdminTabInput = {
 
 export type AutoTableTabInput<K extends SchemaKeys = SchemaKeys> =
   | {
+      tabId?: string;
       title: string;
       group?: string;
       icon?: LucideIcon;
@@ -133,6 +136,7 @@ export type AutoTableTabInput<K extends SchemaKeys = SchemaKeys> =
       children: ReactNode;
     }
   | (AutoTableProps<K extends SchemaKeys ? K : never> & {
+      tabId?: string;
       title?: string;
       group?: string;
       icon?: LucideIcon;
@@ -148,6 +152,7 @@ function isRenderableAutoTableTab(tab: unknown): tab is AutoTableItem {
 
 export function AutoAdmin({
   tabs,
+  tabOrder,
   includeSystemTabs = true,
   editable = false,
   onAddTable,
@@ -221,32 +226,110 @@ export function AutoAdmin({
     if (!includeSystemTabs) {
       return dedupeAdminTabs<PossibleTabConfig>(runtimeTabs);
     }
+    const dashboardTabConfig = resolveAdminTabInput({
+      tabId: 'dashboard',
+      title: dashboardTab.title,
+      group: dashboardTab.group,
+      iconName: dashboardTab.iconName,
+      icon: resolveIconByName(dashboardTab.iconName) ?? BarChart3,
+      children: business ? <AdminDashboard slug={basePath} /> : null,
+    }) as PossibleTabConfig;
+    const qrTabConfig = resolveAdminTabInput({
+      tabId: 'qr',
+      title: qrTab.title,
+      group: qrTab.group,
+      iconName: qrTab.iconName,
+      icon: resolveIconByName(qrTab.iconName) ?? QrCodeIcon,
+      children: <QRCodePage slug={basePath} />,
+    }) as PossibleTabConfig;
+    const websiteTabConfig = resolveAdminTabInput({
+      tabId: 'website',
+      title: websiteTab.title,
+      group: websiteTab.group,
+      iconName: websiteTab.iconName,
+      icon: resolveIconByName(websiteTab.iconName) ?? Sigma,
+      children: <CustomUiBuilderPage slug={basePath} />,
+    }) as PossibleTabConfig;
 
-    return dedupeAdminTabs<PossibleTabConfig>([
-      resolveAdminTabInput({
-        title: dashboardTab.title,
-        group: dashboardTab.group,
-        iconName: dashboardTab.iconName,
-        icon: resolveIconByName(dashboardTab.iconName) ?? BarChart3,
-        children: business ? <AdminDashboard slug={basePath} /> : null,
-      }),
+    const systemTabsByToken: Record<string, PossibleTabConfig> = {
+      'system:dashboard': dashboardTabConfig,
+      'system:qr': qrTabConfig,
+      'system:website': websiteTabConfig,
+    };
+    const runtimeTabsByToken = new Map<string, PossibleTabConfig>();
+    for (const tab of runtimeTabs) {
+      const runtimeTabId =
+        ('tabId' in tab &&
+          typeof tab.tabId === 'string' &&
+          tab.tabId.trim().length > 0
+          ? tab.tabId.trim()
+          : ('schema' in tab && typeof tab.schema === 'string'
+            ? tab.schema
+            : tab.title));
+      runtimeTabsByToken.set(`schema:${runtimeTabId}`, tab);
+    }
+
+    const orderedTabs: PossibleTabConfig[] = [];
+    const usedRuntimeTokens = new Set<string>();
+    const usedSystemTokens = new Set<string>();
+    for (const token of tabOrder ?? []) {
+      const normalized = token.trim();
+      const systemTab = systemTabsByToken[normalized];
+      if (systemTab && !usedSystemTokens.has(normalized)) {
+        orderedTabs.push(systemTab);
+        usedSystemTokens.add(normalized);
+        continue;
+      }
+      const runtimeTab = runtimeTabsByToken.get(normalized);
+      if (runtimeTab && !usedRuntimeTokens.has(normalized)) {
+        orderedTabs.push(runtimeTab);
+        usedRuntimeTokens.add(normalized);
+      }
+    }
+
+    const defaultOrder: PossibleTabConfig[] = [
+      dashboardTabConfig,
       ...runtimeTabs,
-      resolveAdminTabInput({
-        title: qrTab.title,
-        group: qrTab.group,
-        iconName: qrTab.iconName,
-        icon: resolveIconByName(qrTab.iconName) ?? QrCodeIcon,
-        children: <QRCodePage slug={basePath} />,
-      }),
-      resolveAdminTabInput({
-        title: websiteTab.title,
-        group: websiteTab.group,
-        iconName: websiteTab.iconName,
-        icon: resolveIconByName(websiteTab.iconName) ?? Sigma,
-        children: <CustomUiBuilderPage slug={basePath} />,
-      }),
-    ]);
+      qrTabConfig,
+      websiteTabConfig,
+    ];
+    for (const candidate of defaultOrder) {
+      const token =
+        candidate === dashboardTabConfig
+          ? 'system:dashboard'
+          : candidate === qrTabConfig
+            ? 'system:qr'
+            : candidate === websiteTabConfig
+              ? 'system:website'
+              : (() => {
+                const runtimeTabId =
+                  ('tabId' in candidate &&
+                    typeof candidate.tabId === 'string' &&
+                    candidate.tabId.trim().length > 0
+                    ? candidate.tabId.trim()
+                    : ('schema' in candidate && typeof candidate.schema === 'string'
+                      ? candidate.schema
+                      : candidate.title));
+                return `schema:${runtimeTabId}`;
+              })();
+      if (
+        token.startsWith('system:')
+          ? usedSystemTokens.has(token)
+          : usedRuntimeTokens.has(token)
+      ) {
+        continue;
+      }
+      orderedTabs.push(candidate);
+      if (token.startsWith('system:')) {
+        usedSystemTokens.add(token);
+      } else {
+        usedRuntimeTokens.add(token);
+      }
+    }
+
+    return dedupeAdminTabs<PossibleTabConfig>(orderedTabs);
   }, [
+    tabOrder,
     includeSystemTabs,
     dashboardTab.group,
     dashboardTab.iconName,

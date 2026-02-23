@@ -195,6 +195,7 @@ const DEFAULT_SYSTEM_TABS: SystemTabState = {
     group: 'System Configuration',
   },
 };
+const DEFAULT_SYSTEM_TAB_ORDER: SystemTabKey[] = ['dashboard', 'qr', 'website'];
 
 const DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_group__/';
 const DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_system__/';
@@ -466,14 +467,94 @@ function parseSystemSentinelSchemaId(schemaId: unknown): SystemTabKey | null {
   return null;
 }
 
+function toSchemaTabOrderToken(schemaId: string) {
+  return `schema:${schemaId}`;
+}
+
+function toSystemTabOrderToken(key: SystemTabKey) {
+  return `system:${key}`;
+}
+
+function parseSystemTabOrderToken(token: string): SystemTabKey | null {
+  const normalized = token.trim();
+  if (!normalized.startsWith('system:')) return null;
+  const key = normalized.slice('system:'.length);
+  if (key === 'dashboard' || key === 'qr' || key === 'website') return key;
+  return null;
+}
+
+function parseSchemaTabOrderToken(token: string): string | null {
+  const normalized = token.trim();
+  if (normalized.startsWith('schema:')) {
+    const value = normalized.slice('schema:'.length).trim();
+    return value || null;
+  }
+  if (normalized.startsWith('system:')) return null;
+  return normalized || null;
+}
+
+function computeOrderedTabTokens({
+  tabOrder,
+  schemaOrder,
+}: {
+  tabOrder: readonly string[];
+  schemaOrder: readonly string[];
+}): string[] {
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  const validSchemaTokens = new Set(
+    schemaOrder.map((schemaId) => toSchemaTabOrderToken(schemaId)),
+  );
+  const validSystemTokens = new Set(
+    DEFAULT_SYSTEM_TAB_ORDER.map((key) => toSystemTabOrderToken(key)),
+  );
+
+  for (const token of tabOrder) {
+    const systemKey = parseSystemTabOrderToken(token);
+    if (systemKey) {
+      const normalizedToken = toSystemTabOrderToken(systemKey);
+      if (!seen.has(normalizedToken) && validSystemTokens.has(normalizedToken)) {
+        normalized.push(normalizedToken);
+        seen.add(normalizedToken);
+      }
+      continue;
+    }
+    const schemaId = parseSchemaTabOrderToken(token);
+    if (!schemaId) continue;
+    const normalizedToken = toSchemaTabOrderToken(schemaId);
+    if (!seen.has(normalizedToken) && validSchemaTokens.has(normalizedToken)) {
+      normalized.push(normalizedToken);
+      seen.add(normalizedToken);
+    }
+  }
+
+  for (const schemaId of schemaOrder) {
+    const token = toSchemaTabOrderToken(schemaId);
+    if (!seen.has(token)) {
+      normalized.push(token);
+      seen.add(token);
+    }
+  }
+  for (const key of DEFAULT_SYSTEM_TAB_ORDER) {
+    const token = toSystemTabOrderToken(key);
+    if (!seen.has(token)) {
+      normalized.push(token);
+      seen.add(token);
+    }
+  }
+  return normalized;
+}
+
 function serializeDraftAdminTabs({
   schemaTabs,
   orderedGroups,
   systemTabs,
+  tabOrder = [],
 }: {
   schemaTabs: readonly AdminTabDoc[];
   orderedGroups: readonly string[];
   systemTabs: SystemTabState;
+  tabOrder?: readonly string[];
 }): AdminTabDoc[] {
   const groupSentinels: AdminTabDoc[] = orderedGroups.map(
     (groupName, index) => ({
@@ -481,17 +562,59 @@ function serializeDraftAdminTabs({
       group: groupName,
     }),
   );
-  const systemSentinels: AdminTabDoc[] = (
-    Object.entries(systemTabs) as Array<
-      [SystemTabKey, SystemTabState[SystemTabKey]]
-    >
-  ).map(([key, value]) => ({
-    schema: toSystemSentinelSchemaId(key),
-    title: value.title,
-    group: value.group,
-    icon: value.iconName,
-  }));
-  return [...groupSentinels, ...schemaTabs, ...systemSentinels];
+  const schemaById = new Map(schemaTabs.map((tab) => [tab.schema, tab]));
+  const systemSentinelByKey = new Map<SystemTabKey, AdminTabDoc>(
+    (
+      Object.entries(systemTabs) as Array<
+        [SystemTabKey, SystemTabState[SystemTabKey]]
+      >
+    ).map(([key, value]) => [
+      key,
+      {
+        schema: toSystemSentinelSchemaId(key),
+        title: value.title,
+        group: value.group,
+        icon: value.iconName,
+      },
+    ]),
+  );
+  const orderedTabs: AdminTabDoc[] = [];
+  const usedSchemaIds = new Set<string>();
+  const usedSystemKeys = new Set<SystemTabKey>();
+
+  for (const token of tabOrder) {
+    const systemKey = parseSystemTabOrderToken(token);
+    if (systemKey) {
+      const sentinel = systemSentinelByKey.get(systemKey);
+      if (sentinel && !usedSystemKeys.has(systemKey)) {
+        orderedTabs.push(sentinel);
+        usedSystemKeys.add(systemKey);
+      }
+      continue;
+    }
+    const schemaId = parseSchemaTabOrderToken(token);
+    if (!schemaId) continue;
+    const schemaTab = schemaById.get(schemaId);
+    if (schemaTab && !usedSchemaIds.has(schemaId)) {
+      orderedTabs.push(schemaTab);
+      usedSchemaIds.add(schemaId);
+    }
+  }
+
+  for (const schemaTab of schemaTabs) {
+    if (usedSchemaIds.has(schemaTab.schema)) continue;
+    orderedTabs.push(schemaTab);
+    usedSchemaIds.add(schemaTab.schema);
+  }
+  for (const key of DEFAULT_SYSTEM_TAB_ORDER) {
+    if (usedSystemKeys.has(key)) continue;
+    const sentinel = systemSentinelByKey.get(key);
+    if (!sentinel) continue;
+    orderedTabs.push(sentinel);
+    usedSystemKeys.add(key);
+  }
+
+  return [...groupSentinels, ...orderedTabs];
 }
 
 function deserializeDraftAdminTabs(
@@ -500,11 +623,13 @@ function deserializeDraftAdminTabs(
   schemaTabs: AdminTabDoc[];
   orderedGroups: string[];
   systemTabs: SystemTabState;
+  tabOrder: string[];
 } {
   const tabs = adminTabs ?? [];
   const schemaTabs: AdminTabDoc[] = [];
   const orderedGroups: string[] = [];
   const systemTabs: SystemTabState = { ...DEFAULT_SYSTEM_TABS };
+  const tabOrder: string[] = [];
 
   for (const tab of tabs) {
     if (
@@ -534,10 +659,14 @@ function deserializeDraftAdminTabs(
         group: normalizedGroup || undefined,
         iconName: normalizedIcon || undefined,
       };
+      const token = toSystemTabOrderToken(systemKey);
+      if (!tabOrder.includes(token)) tabOrder.push(token);
       continue;
     }
 
     schemaTabs.push(tab);
+    const schemaToken = toSchemaTabOrderToken(tab.schema);
+    if (!tabOrder.includes(schemaToken)) tabOrder.push(schemaToken);
   }
 
   if (orderedGroups.length === 0) {
@@ -552,6 +681,10 @@ function deserializeDraftAdminTabs(
     schemaTabs,
     orderedGroups,
     systemTabs,
+    tabOrder: computeOrderedTabTokens({
+      tabOrder,
+      schemaOrder: schemaTabs.map((tab) => tab.schema),
+    }),
   };
 }
 
@@ -2293,6 +2426,7 @@ function PluginStudioPresenter({
         schemaTabs: storedSchemaTabs,
         orderedGroups: storedGroupOrder,
         systemTabs,
+        tabOrder: storedTabOrder,
       } = deserializeDraftAdminTabs(parsedDraftAdminTabs);
       const schemaIdSet = new Set(schemaDocs.map((schemaDoc) => schemaDoc.schemaId));
       const storedSchemaOrder = storedSchemaTabs
@@ -2332,6 +2466,10 @@ function PluginStudioPresenter({
         schemaOrder,
         systemTabs,
       });
+      const tabOrder = computeOrderedTabTokens({
+        tabOrder: storedTabOrder,
+        schemaOrder,
+      });
       const adminTabs: AdminTabDoc[] = schemaOrder.map((schemaId) => ({
         schema: schemaId,
         title: schemaTitleById[schemaId],
@@ -2342,6 +2480,7 @@ function PluginStudioPresenter({
         schemaTabs: adminTabs,
         orderedGroups,
         systemTabs,
+        tabOrder,
       });
       return {
         schemaDocs,
@@ -2354,6 +2493,7 @@ function PluginStudioPresenter({
         customGroups: orderedGroups,
         groupOrder: orderedGroups,
         systemTabs,
+        tabOrder,
         adminTabs,
         draftAdminTabs,
       };
@@ -2369,6 +2509,7 @@ function PluginStudioPresenter({
   ]);
   const groupOrder = parsed?.groupOrder ?? [];
   const systemTabs = parsed?.systemTabs ?? DEFAULT_SYSTEM_TABS;
+  const tabOrder = parsed?.tabOrder ?? [];
 
   const availableSchemaDocs = parsed?.schemaDocs ?? [];
   const availableWorkflows = parsed?.workflows ?? [];
@@ -3044,6 +3185,7 @@ function PluginStudioPresenter({
       try {
         return [
           {
+            tabId: schemaDoc.schemaId,
             title: schemaDoc.title || tab.title || schemaDoc.schemaId,
             group: tab.group,
             iconName: tab.icon,
@@ -3697,6 +3839,7 @@ function PluginStudioPresenter({
       schemaTabs: AdminTabDoc[];
       orderedGroups: string[];
       systemTabs: SystemTabState;
+      tabOrder: string[];
     }) => void,
   ) {
     let currentTabs: AdminTabDoc[] = [];
@@ -3743,12 +3886,18 @@ function PluginStudioPresenter({
       schemaOrder,
       systemTabs: state.systemTabs,
     });
+    const tabOrder = computeOrderedTabTokens({
+      tabOrder: state.tabOrder,
+      schemaOrder,
+    });
+    state.tabOrder = tabOrder;
 
     persistSidebarAdminTabs(
       serializeDraftAdminTabs({
         schemaTabs: appendedSchemaTabs,
         orderedGroups,
         systemTabs: state.systemTabs,
+        tabOrder,
       }),
     );
   }
@@ -4193,6 +4342,16 @@ function PluginStudioPresenter({
     );
   }
 
+  function resolveSystemTabKeyForTabTitle(tabTitle: string): SystemTabKey | undefined {
+    const normalized = tabTitle.trim().toLowerCase();
+    if (!normalized) return undefined;
+    const entries = Object.entries(systemTabs) as Array<
+      [SystemTabKey, SystemTabState[SystemTabKey]]
+    >;
+    const matched = entries.find(([, value]) => value.title.trim().toLowerCase() === normalized);
+    return matched?.[0];
+  }
+
   function getNextWorkflowId() {
     let counter = availableWorkflows.length + 1;
     while (true) {
@@ -4302,27 +4461,76 @@ function PluginStudioPresenter({
     toTabTitle: string,
     position: 'above' | 'below' = 'below',
   ) {
-    const fromSchemaId = resolveSchemaIdForTabTitle(fromTabTitle);
-    const toSchemaId = resolveSchemaIdForTabTitle(toTabTitle);
-    if (!fromSchemaId || !toSchemaId || fromSchemaId === toSchemaId) return;
+    const fromSystemKey = resolveSystemTabKeyForTabTitle(fromTabTitle);
+    const toSystemKey = resolveSystemTabKeyForTabTitle(toTabTitle);
+    const fromSchemaId = fromSystemKey
+      ? undefined
+      : resolveSchemaIdForTabTitle(fromTabTitle);
+    const toSchemaId = toSystemKey
+      ? undefined
+      : resolveSchemaIdForTabTitle(toTabTitle);
+    const fromToken = fromSystemKey
+      ? toSystemTabOrderToken(fromSystemKey)
+      : fromSchemaId
+        ? toSchemaTabOrderToken(fromSchemaId)
+        : null;
+    const toToken = toSystemKey
+      ? toSystemTabOrderToken(toSystemKey)
+      : toSchemaId
+        ? toSchemaTabOrderToken(toSchemaId)
+        : null;
+    if (!fromToken || !toToken || fromToken === toToken) return;
 
     updateSidebarAdminTabs((state) => {
-      const current = [...state.schemaTabs];
-      const fromIndex = current.findIndex((tab) => tab.schema === fromSchemaId);
-      const toIndex = current.findIndex((tab) => tab.schema === toSchemaId);
+      const current = computeOrderedTabTokens({
+        tabOrder: state.tabOrder,
+        schemaOrder: state.schemaTabs.map((tab) => tab.schema),
+      });
+      const fromIndex = current.indexOf(fromToken);
+      const toIndex = current.indexOf(toToken);
       if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
 
-      const [movedTab] = current.splice(fromIndex, 1);
-      if (!movedTab) return;
-      const targetIndex = current.findIndex((tab) => tab.schema === toSchemaId);
+      const [movedToken] = current.splice(fromIndex, 1);
+      if (!movedToken) return;
+      const targetIndex = current.indexOf(toToken);
       if (targetIndex < 0) return;
       const insertAt = position === 'above' ? targetIndex : targetIndex + 1;
-      const targetGroup = current[targetIndex]?.group?.trim() || undefined;
-      current.splice(insertAt, 0, {
-        ...movedTab,
-        group: targetGroup,
-      });
-      state.schemaTabs = current;
+      current.splice(insertAt, 0, movedToken);
+      state.tabOrder = current;
+
+      const targetGroup = (() => {
+        if (toSystemKey) {
+          return state.systemTabs[toSystemKey].group?.trim() || undefined;
+        }
+        if (toSchemaId) {
+          return (
+            state.schemaTabs.find((tab) => tab.schema === toSchemaId)?.group?.trim() ||
+            undefined
+          );
+        }
+        return undefined;
+      })();
+
+      if (fromSystemKey) {
+        state.systemTabs = {
+          ...state.systemTabs,
+          [fromSystemKey]: {
+            ...state.systemTabs[fromSystemKey],
+            group: targetGroup,
+          },
+        };
+        return;
+      }
+      if (fromSchemaId) {
+        state.schemaTabs = state.schemaTabs.map((tab) =>
+          tab.schema === fromSchemaId
+            ? {
+              ...tab,
+              group: targetGroup,
+            }
+            : tab,
+        );
+      }
     });
   }
 
@@ -4740,6 +4948,7 @@ function PluginStudioPresenter({
             ) : (
               <AutoAdmin
                 tabs={livePreviewTabs}
+                tabOrder={tabOrder}
                 editable
                 onAddTable={handleAddSchema}
                 onAddGroup={handleAddGroup}
