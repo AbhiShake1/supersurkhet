@@ -110,4 +110,42 @@ describe('marketplace seed catalog', () => {
     expect(restaurantRelease?.schemaDocs?.length).toBeGreaterThan(0);
     expect(restaurantRelease?.workflows?.length).toBeGreaterThan(0);
   });
+
+  it('dedupes by pluginId@version even when live rows have different ids', () => {
+    const duplicateA = {
+      id: 'supersurkhet.plugin.finance-ops@1.0.0',
+      pluginId: 'supersurkhet.plugin.finance-ops',
+      version: '1.0.0',
+      manifestHash: 'live-finance-manifest-a',
+      artifactHash: 'live-finance-artifact-a',
+      author: { userId: 'live-user-a' },
+      visibility: 'public' as const,
+      docs: { title: 'Finance Ops Live A', description: 'First row' },
+      actionManifest: [],
+      publishedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    const duplicateB = {
+      id: 'finance-ops-custom-row-id',
+      pluginId: 'supersurkhet.plugin.finance-ops',
+      version: '1.0.0',
+      manifestHash: 'live-finance-manifest-b',
+      artifactHash: 'live-finance-artifact-b',
+      author: { userId: 'live-user-b' },
+      visibility: 'public' as const,
+      docs: { title: 'Finance Ops Live B', description: 'Second row wins' },
+      actionManifest: [],
+      publishedAt: '2026-01-02T00:00:00.000Z',
+    };
+
+    const merged = mergeMarketplaceReleasesWithSeed([duplicateA, duplicateB]);
+    const financeRows = merged.filter(
+      (release) =>
+        release.pluginId === 'supersurkhet.plugin.finance-ops' &&
+        release.version === '1.0.0',
+    );
+
+    expect(financeRows).toHaveLength(1);
+    expect(financeRows[0]?.docs?.title).toBe('Finance Ops Live B');
+  });
 });

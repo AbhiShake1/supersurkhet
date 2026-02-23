@@ -3,6 +3,7 @@ import { create as ssrCreate } from '@/lib/gun/ssr/create';
 import { remove as ssrRemove } from '@/lib/gun/ssr/delete';
 import { get as ssrGet } from '@/lib/gun/ssr/get';
 import { update as ssrUpdate } from '@/lib/gun/ssr/update';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import { toPluginRecordNamespacePath } from '@/lib/plugins/plugin-service';
 import {
   createPluginRuntimeRegistry,
@@ -642,7 +643,7 @@ async function loadRuntimeRegistry(
   );
 
   return createPluginRuntimeRegistry({
-    releases: releases as PluginReleaseDoc[],
+    releases: mergeMarketplaceReleasesWithSeed(releases as PluginReleaseDoc[]),
     installs: installs as BusinessPluginInstallDoc[],
     draftRevisions: draftRevisions as PluginDraftRevisionDoc[],
     draftInstalls: draftInstalls as BusinessPluginDraftInstallDoc[],

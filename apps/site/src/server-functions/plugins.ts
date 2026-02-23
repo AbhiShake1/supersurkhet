@@ -4,6 +4,7 @@ import { SSRGetTimeoutError, get as ssrGet } from '@/lib/gun/ssr/get';
 import { update as ssrUpdate } from '@/lib/gun/ssr/update';
 import {
   MARKETPLACE_SEED_RELEASES,
+  mergeMarketplaceReleasesWithSeed,
   toMarketplaceSeedReleaseDocs,
 } from '@/lib/plugins/marketplace-seed';
 import {
@@ -554,7 +555,7 @@ async function loadPublishedStore(businessId?: string) {
   ]);
 
   return createInMemoryPluginPlatformStore({
-    releases: releases as PluginReleaseDoc[],
+    releases: mergeMarketplaceReleasesWithSeed(releases as PluginReleaseDoc[]),
     publishedInstalls: installs as BusinessPluginInstallDoc[],
   });
 }

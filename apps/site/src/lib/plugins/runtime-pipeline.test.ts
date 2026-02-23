@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SSRGetTimeoutError } from '@/lib/gun/ssr/get';
+import { toMarketplaceSeedReleaseDocs } from '@/lib/plugins/marketplace-seed';
 
 const { ssrGetMock, createRegistryMock, executeLifecycleHookMock } = vi.hoisted(
   () => ({
@@ -59,7 +60,7 @@ describe('runtime pipeline timeout fallback', () => {
 
     expect(createRegistryMock).toHaveBeenCalledWith({
       installs: [],
-      releases: [],
+      releases: toMarketplaceSeedReleaseDocs(),
       draftInstalls: [],
       draftRevisions: [],
     });

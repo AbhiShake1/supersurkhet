@@ -15,7 +15,10 @@ import { BusinessProvider } from '@/contexts/business-context';
 import { api } from '@/lib/api';
 import { hasBusinessAccess } from '@/lib/business-access';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
-import { parseReleaseId } from '@/lib/plugins/marketplace-seed';
+import {
+  mergeMarketplaceReleasesWithSeed,
+  parseReleaseId,
+} from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 import { installPluginRelease } from '@/server-functions/plugins';
 
@@ -134,7 +137,7 @@ function PluginOnboarding({
   );
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const releases = useMemo(
-    () => releaseRows as PluginReleaseDoc[],
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
   );
 

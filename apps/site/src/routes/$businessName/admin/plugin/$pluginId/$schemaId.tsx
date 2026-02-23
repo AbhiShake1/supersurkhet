@@ -9,8 +9,13 @@ import {
   resolveAdminTabInput,
 } from '@/lib/auto-runtime/tab-runtime';
 import { hasBusinessAccess } from '@/lib/business-access';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
-import type { AdminTabDoc, SchemaDoc } from '@/lib/plugins/types';
+import type {
+  AdminTabDoc,
+  PluginReleaseDoc,
+  SchemaDoc,
+} from '@/lib/plugins/types';
 
 export const Route = createFileRoute(
   '/$businessName/admin/plugin/$pluginId/$schemaId',
@@ -47,6 +52,9 @@ function RuntimePluginSchemaRoute() {
     keys: [business?.id ?? businessName],
   });
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
+  const releases = mergeMarketplaceReleasesWithSeed(
+    releaseRows as PluginReleaseDoc[],
+  );
 
   if (!business?.id) return <NotFound />;
   if (!hasBusinessAccess(business, user)) return <NotFound />;
@@ -55,7 +63,7 @@ function RuntimePluginSchemaRoute() {
     (install) => install.pluginId === decodedPluginId,
   );
   const installedRelease = installedPlugin
-    ? releaseRows.find(
+    ? releases.find(
         (release) =>
           release.id === `${decodedPluginId}@${installedPlugin.version}`,
       )

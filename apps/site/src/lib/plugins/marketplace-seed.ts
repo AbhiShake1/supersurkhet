@@ -329,18 +329,35 @@ export function toMarketplaceSeedReleaseDocs(): PluginReleaseDoc[] {
 export function mergeMarketplaceReleasesWithSeed(
   releases: PluginReleaseDoc[],
 ): PluginReleaseDoc[] {
-  const seedById = new Map<string, PluginReleaseDoc>();
-  const mergedById = new Map<string, PluginReleaseDoc>();
+  const toCanonicalReleaseKey = (release: PluginReleaseDoc): string => {
+    const pluginId = release.pluginId?.trim();
+    const version = release.version?.trim();
+    if (pluginId && version) {
+      return `${pluginId}@${version}`;
+    }
+
+    const parsed = parseReleaseId(release.id);
+    if (parsed) {
+      return `${parsed.pluginId}@${parsed.version}`;
+    }
+
+    return release.id;
+  };
+
+  const seedByCanonicalKey = new Map<string, PluginReleaseDoc>();
+  const mergedByCanonicalKey = new Map<string, PluginReleaseDoc>();
 
   for (const release of toMarketplaceSeedReleaseDocs()) {
-    seedById.set(release.id, release);
-    mergedById.set(release.id, release);
+    const canonicalKey = toCanonicalReleaseKey(release);
+    seedByCanonicalKey.set(canonicalKey, release);
+    mergedByCanonicalKey.set(canonicalKey, release);
   }
 
-  // Live rows should always win over static fallbacks for the same release id.
+  // Live rows should always win over static fallbacks for the same plugin@version.
   for (const release of releases) {
-    const seed = seedById.get(release.id);
-    mergedById.set(release.id, {
+    const canonicalKey = toCanonicalReleaseKey(release);
+    const seed = seedByCanonicalKey.get(canonicalKey);
+    mergedByCanonicalKey.set(canonicalKey, {
       ...seed,
       ...release,
       schemaDocs: release.schemaDocs?.length
@@ -355,5 +372,5 @@ export function mergeMarketplaceReleasesWithSeed(
     });
   }
 
-  return [...mergedById.values()];
+  return [...mergedByCanonicalKey.values()];
 }

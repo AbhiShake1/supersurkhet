@@ -19,6 +19,7 @@ import {
   type PluginUserReview,
   pickSimilarPlugins,
 } from '@/lib/plugins/admin-plugin-market';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
@@ -103,7 +104,10 @@ function PluginDetailsPage() {
 
   const installs = installRows as BusinessPluginInstallDoc[];
   const allInstalls = installs;
-  const releases = releaseRows as PluginReleaseDoc[];
+  const releases = useMemo(
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    [releaseRows],
+  );
 
   const reviews = useMemo(
     () =>
