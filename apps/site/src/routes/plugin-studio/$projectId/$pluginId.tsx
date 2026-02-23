@@ -5366,9 +5366,7 @@ function PluginStudioPresenter({
             Back to plugins
           </Button>
         </div>
-        <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-background via-muted/30 to-background p-6 md:p-8">
-          <div className="absolute -right-10 top-6 h-40 w-40 rounded-full bg-primary/20 blur-2xl" />
-          <div className="absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-accent/30 blur-2xl" />
+        <section className="p-6 md:p-8">
           <div className="relative flex flex-wrap items-start justify-between gap-4">
             <div className="w-full max-w-3xl">
               <div className="space-y-2">
