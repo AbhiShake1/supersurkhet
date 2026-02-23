@@ -131,7 +131,13 @@ function Sortable<T>(props: SortableProps<T>) {
   const [activeId, setActiveId] = React.useState<UniqueIdentifier | null>(null);
   const [suppressClickForId, setSuppressClickForId] =
     React.useState<UniqueIdentifier | null>(null);
+  const [optimisticItems, setOptimisticItems] = React.useState<
+    UniqueIdentifier[] | null
+  >(null);
   const suppressClickResetTimeoutRef = React.useRef<ReturnType<
+    typeof globalThis.setTimeout
+  > | null>(null);
+  const optimisticResetTimeoutRef = React.useRef<ReturnType<
     typeof globalThis.setTimeout
   > | null>(null);
 
@@ -170,6 +176,14 @@ function Sortable<T>(props: SortableProps<T>) {
     // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [value, getItemValue]);
 
+  const clearOptimisticItems = React.useCallback(() => {
+    setOptimisticItems(null);
+    if (optimisticResetTimeoutRef.current !== null) {
+      globalThis.clearTimeout(optimisticResetTimeoutRef.current);
+      optimisticResetTimeoutRef.current = null;
+    }
+  }, []);
+
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over?.id) {
@@ -188,20 +202,49 @@ function Sortable<T>(props: SortableProps<T>) {
       const overIndex = value.findIndex(
         (item) => getItemValue(item) === over.id,
       );
+      const nextItems = arrayMove(items, activeIndex, overIndex);
 
       if (onMove) {
+        setOptimisticItems(nextItems);
+        if (optimisticResetTimeoutRef.current !== null) {
+          globalThis.clearTimeout(optimisticResetTimeoutRef.current);
+        }
+        optimisticResetTimeoutRef.current = globalThis.setTimeout(() => {
+          setOptimisticItems(null);
+          optimisticResetTimeoutRef.current = null;
+        }, 1000);
         onMove({ ...event, activeIndex, overIndex });
       } else {
+        clearOptimisticItems();
         onValueChange?.(arrayMove(value, activeIndex, overIndex));
       }
+    } else {
+      clearOptimisticItems();
     }
     setActiveId(null);
   };
 
   React.useEffect(() => {
+    if (!optimisticItems) return;
+    if (optimisticItems.length !== items.length) {
+      clearOptimisticItems();
+      return;
+    }
+    const hasSameOrder = optimisticItems.every(
+      (item, index) => item === items[index],
+    );
+    if (hasSameOrder) {
+      clearOptimisticItems();
+    }
+  }, [optimisticItems, items, clearOptimisticItems]);
+
+  React.useEffect(() => {
     return () => {
       if (suppressClickResetTimeoutRef.current !== null) {
         globalThis.clearTimeout(suppressClickResetTimeoutRef.current);
+      }
+      if (optimisticResetTimeoutRef.current !== null) {
+        globalThis.clearTimeout(optimisticResetTimeoutRef.current);
       }
     };
   }, []);
@@ -263,7 +306,7 @@ function Sortable<T>(props: SortableProps<T>) {
   const contextValue = React.useMemo(
     () => ({
       id,
-      items,
+      items: optimisticItems ?? items,
       modifiers: modifiers ?? config.modifiers,
       strategy: strategy ?? config.strategy,
       activeId,
@@ -275,6 +318,7 @@ function Sortable<T>(props: SortableProps<T>) {
     [
       id,
       items,
+      optimisticItems,
       modifiers,
       strategy,
       config.modifiers,
@@ -299,12 +343,16 @@ function Sortable<T>(props: SortableProps<T>) {
         id={id}
         onDragStart={composeEventHandlers(
           sortableProps.onDragStart,
-          ({ active }) => setActiveId(active.id),
+          ({ active }) => {
+            clearOptimisticItems();
+            setActiveId(active.id);
+          },
         )}
         onDragEnd={composeEventHandlers(sortableProps.onDragEnd, onDragEnd)}
-        onDragCancel={composeEventHandlers(sortableProps.onDragCancel, () =>
-          setActiveId(null),
-        )}
+        onDragCancel={composeEventHandlers(sortableProps.onDragCancel, () => {
+          clearOptimisticItems();
+          setActiveId(null);
+        })}
         accessibility={{
           announcements,
           screenReaderInstructions,
