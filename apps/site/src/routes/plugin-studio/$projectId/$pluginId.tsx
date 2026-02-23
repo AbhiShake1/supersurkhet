@@ -67,6 +67,7 @@ import {
   WorkflowGraphEditor,
 } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
 import { api } from '@/lib/api';
+import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
 import { previewReleaseHashes } from '@/lib/plugins/release-hash-preview';
 import {
   mergeMarketplaceReleasesWithSeed,
@@ -2801,8 +2802,12 @@ function PluginStudioPresenter({
         const revisionId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
         const snapshotString = canonicalStringify(revisionPayload);
         const digest = snapshotString.length.toString(36);
+        const draftRevisionRowId = toDraftRevisionRowId({
+          draftId: targetDraftId,
+          revisionId,
+        });
         return createDraftRevisionMutation.mutateAsync({
-          id: `${targetDraftId}@${revisionId}`,
+          id: draftRevisionRowId,
           revisionId,
           draftId: targetDraftId,
           pluginId,

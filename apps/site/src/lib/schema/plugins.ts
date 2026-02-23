@@ -385,7 +385,7 @@ export const pluginDraftRevisionSchema = z
   .object({
     id: z
       .string()
-      .describe('Deterministic draft revision id: draftId@revisionId'),
+      .describe('Deterministic draft revision row id derived from draftId+revisionId'),
     revisionId: z.string(),
     draftId: z.string(),
     pluginId: z.string(),

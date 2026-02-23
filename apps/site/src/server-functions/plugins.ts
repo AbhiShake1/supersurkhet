@@ -7,6 +7,7 @@ import {
   mergeMarketplaceReleasesWithSeed,
   toMarketplaceSeedReleaseDocs,
 } from '@/lib/plugins/marketplace-seed';
+import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
 import {
   createInMemoryPluginPlatformStore,
   createPluginPlatformService,
@@ -950,10 +951,16 @@ export async function createPluginDraft({
 
       await upsertGlobalRow({
         key: 'pluginDraftRevision',
-        id: `${migratedRevision.draftId}@${migratedRevision.revisionId}`,
+        id: toDraftRevisionRowId({
+          draftId: migratedRevision.draftId,
+          revisionId: migratedRevision.revisionId,
+        }),
         row: {
           ...migratedRevision,
-          id: `${migratedRevision.draftId}@${migratedRevision.revisionId}`,
+          id: toDraftRevisionRowId({
+            draftId: migratedRevision.draftId,
+            revisionId: migratedRevision.revisionId,
+          }),
         },
       });
     }
