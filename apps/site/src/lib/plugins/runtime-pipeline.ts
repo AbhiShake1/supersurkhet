@@ -23,12 +23,20 @@ export async function runLifecycleHookPipeline({
   table,
   hook,
   payload,
+  envelope,
 }: {
   businessId?: string;
   teamId?: string;
   table: string;
   hook: LifecycleHook;
   payload: unknown;
+  envelope?: {
+    requestId?: string;
+    rowId?: string;
+    before?: unknown;
+    after?: unknown;
+    patch?: unknown;
+  };
 }) {
   if (!businessId) return;
 
@@ -63,6 +71,7 @@ export async function runLifecycleHookPipeline({
     table,
     hook,
     payload,
+    envelope,
     actionHandlers: runtimeActionHandlers,
   });
 }

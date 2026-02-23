@@ -46,6 +46,10 @@ export function validateWorkflowActionCapabilities({
 
   for (const workflow of workflows) {
     for (const node of workflow.nodes) {
+      const nodeKind = node.kind ?? node.type ?? 'action';
+      if (nodeKind !== 'action' || !node.actionId) {
+        continue;
+      }
       const path = actionPath(workflow.workflowId, node.nodeId);
       const action = actionManifestById.get(node.actionId);
 

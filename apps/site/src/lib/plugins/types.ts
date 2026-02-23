@@ -1,9 +1,11 @@
 import type {
   ActionManifestDoc,
   AdminTabDoc,
+  ActionDefinitionV3,
   BusinessPluginDraftInstallDoc,
   BusinessPluginInstallDoc,
   DeriveIR,
+  ExecutionContextV3,
   ExpressionDoc,
   FieldConfigIR,
   JsonValue,
@@ -20,6 +22,10 @@ import type {
   SchemaDoc,
   SchemaFieldDoc,
   SchemaRuleDoc,
+  PluginWorkflowDeadLetter,
+  PluginWorkflowEventLog,
+  PluginWorkflowJob,
+  PluginWorkflowJobAttempt,
   WorkflowDoc,
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
@@ -28,9 +34,11 @@ import type {
 export type {
   ActionManifestDoc,
   AdminTabDoc,
+  ActionDefinitionV3,
   BusinessPluginDraftInstallDoc,
   BusinessPluginInstallDoc,
   DeriveIR,
+  ExecutionContextV3,
   ExpressionDoc,
   FieldConfigIR,
   JsonValue,
@@ -47,6 +55,10 @@ export type {
   SchemaDoc,
   SchemaFieldDoc,
   SchemaRuleDoc,
+  PluginWorkflowDeadLetter,
+  PluginWorkflowEventLog,
+  PluginWorkflowJob,
+  PluginWorkflowJobAttempt,
   WorkflowDoc,
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
@@ -78,10 +90,13 @@ export type RuntimeActionHandler = (
 export type RuntimeActionHandlers = Record<string, RuntimeActionHandler>;
 
 export type PluginExecutionContext = {
-  businessId: string;
-  table: string;
-  hook: LifecycleHook;
-  payload: unknown;
+  businessId?: string;
+  table?: string;
+  hook?: LifecycleHook;
+  payload?: unknown;
+  event?: ExecutionContextV3['event'];
+  record?: ExecutionContextV3['record'];
+  workflow?: ExecutionContextV3['workflow'];
   capabilities?: readonly string[];
   timeoutMs?: number;
 };
@@ -91,7 +106,14 @@ export type ExecuteLifecycleHookInput = {
   teamId?: string;
   table: string;
   hook: LifecycleHook;
-  payload: unknown;
+  payload?: unknown;
+  envelope?: {
+    requestId?: string;
+    rowId?: string;
+    before?: unknown;
+    after?: unknown;
+    patch?: unknown;
+  };
   actionHandlers: RuntimeActionHandlers;
   draftInstalls?: BusinessPluginDraftInstallDoc[];
 };

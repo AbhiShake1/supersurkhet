@@ -22,6 +22,21 @@ const actionManifestDocSchema = z.object({
   runtime: z.enum(['sandbox-worker', 'core']).optional(),
 });
 
+const actionDefinitionV3Schema = z.object({
+  actionId: z.string(),
+  runtime: z.enum(['sandbox-worker', 'core']),
+  capabilities: z.array(z.string()).optional(),
+  inputSchema: jsonValueSchema.optional(),
+  outputSchema: jsonValueSchema.optional(),
+  handlerRef: z.string().min(1),
+  security: z.object({
+    networkPolicy: z.enum(['deny-all', 'allow-listed']).optional(),
+    secretRefs: z.array(z.string()).optional(),
+    maxCpuMs: z.number().int().positive().optional(),
+    maxMemoryMb: z.number().int().positive().optional(),
+  }),
+});
+
 const pluginSchemaFieldTypes = [
   ...AUTOFORM_FIELD_TYPES,
   'enum',
@@ -61,6 +76,11 @@ const expressionOpSchema = z.enum([
   'concat',
   'sum',
   'if',
+  'changed',
+  'was',
+  'now',
+  'exists',
+  'match',
 ]);
 
 const expressionDocSchema: z.ZodType<unknown> = z.lazy(() =>
@@ -170,8 +190,9 @@ const pluginSchemaDocSchema = z.object({
 
 const workflowNodeDocSchema = z.object({
   nodeId: z.string(),
-  type: z.literal('action'),
-  actionId: z.string(),
+  type: z.literal('action').optional(),
+  kind: z.enum(['action', 'branch', 'delay', 'humanGate']).optional(),
+  actionId: z.string().optional(),
   input: z
     .union([
       jsonValueSchema,
@@ -181,20 +202,40 @@ const workflowNodeDocSchema = z.object({
     ])
     .optional(),
   runIf: expressionDocSchema.optional(),
+  retryPolicy: z
+    .object({
+      maxAttempts: z.number().int().min(1),
+      backoffMs: z.number().int().min(0).optional(),
+    })
+    .optional(),
+  timeoutMs: z.number().int().positive().optional(),
+  idempotencyKeyExpr: expressionDocSchema.optional(),
+  delayMs: z.number().int().min(0).optional(),
 });
 
+const lifecycleHookSchema = z.enum([
+  'beforeCreate',
+  'afterCreate',
+  'beforeUpdate',
+  'afterUpdate',
+  'beforeDelete',
+  'afterDelete',
+]);
+
 const workflowDocSchema = z.object({
+  pluginContractVersion: z.literal('3').optional(),
   workflowId: z.string(),
   title: z.string().optional(),
   table: z.string(),
-  hook: z.enum([
-    'beforeCreate',
-    'afterCreate',
-    'beforeUpdate',
-    'afterUpdate',
-    'beforeDelete',
-    'afterDelete',
-  ]),
+  hook: lifecycleHookSchema,
+  trigger: z
+    .object({
+      table: z.string(),
+      event: lifecycleHookSchema,
+      filters: expressionDocSchema.optional(),
+      fieldChange: z.record(z.string(), expressionDocSchema).optional(),
+    })
+    .optional(),
   nodes: z.array(workflowNodeDocSchema),
   edges: z.array(
     z.object({
@@ -202,6 +243,7 @@ const workflowDocSchema = z.object({
       to: z.string(),
       condition: expressionDocSchema.optional(),
       conditionToken: z.string().optional(),
+      on: z.enum(['success', 'failure', 'always']).optional(),
     }),
   ),
 });
@@ -537,6 +579,81 @@ export const pluginActionManifestDocStorageSchema = z
     version: z.string(),
     actionId: z.string(),
     doc: jsonValueSchema.describe('Canonical serializable action manifest doc'),
+  })
+  .extend(table);
+
+export const pluginActionDefinitionV3Schema = z
+  .object({
+    pluginId: z.string(),
+    version: z.string(),
+    actionId: z.string(),
+    doc: actionDefinitionV3Schema,
+  })
+  .extend(table);
+
+export const pluginWorkflowJobSchema = z
+  .object({
+    id: z.string(),
+    businessId: z.string(),
+    pluginId: z.string(),
+    workflowId: z.string(),
+    table: z.string(),
+    hook: lifecycleHookSchema,
+    status: z.enum([
+      'queued',
+      'leased',
+      'running',
+      'completed',
+      'failed',
+      'dead-lettered',
+      'cancelled',
+    ]),
+    idempotencyKey: z.string(),
+    fingerprint: z.string(),
+    payload: jsonValueSchema,
+    attempts: z.number().int().min(0),
+    nextRunAt: z.string().datetime({ offset: true }),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const pluginWorkflowJobAttemptSchema = z
+  .object({
+    id: z.string(),
+    jobId: z.string(),
+    attempt: z.number().int().min(1),
+    status: z.enum(['running', 'completed', 'failed', 'timed_out', 'cancelled']),
+    leasedAt: z.string().datetime({ offset: true }),
+    finishedAt: z.string().datetime({ offset: true }).optional(),
+    errorCode: z.string().optional(),
+    errorMessage: z.string().optional(),
+  })
+  .extend(table);
+
+export const pluginWorkflowEventLogSchema = z
+  .object({
+    id: z.string(),
+    jobId: z.string(),
+    workflowId: z.string(),
+    nodeId: z.string().optional(),
+    level: z.enum(['info', 'warn', 'error']),
+    eventType: z.string(),
+    message: z.string(),
+    data: jsonValueSchema.optional(),
+    createdAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const pluginWorkflowDeadLetterSchema = z
+  .object({
+    id: z.string(),
+    jobId: z.string(),
+    workflowId: z.string(),
+    reasonCode: z.string(),
+    reasonMessage: z.string(),
+    payload: jsonValueSchema,
+    failedAt: z.string().datetime({ offset: true }),
   })
   .extend(table);
 

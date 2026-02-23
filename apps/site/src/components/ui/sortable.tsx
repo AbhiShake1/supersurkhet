@@ -322,6 +322,10 @@ function Sortable<T>(props: SortableProps<T>) {
     [orientation],
   );
 
+  const accessibilityContainer = React.useMemo(() => {
+    return accessibility?.container ?? globalThis.document?.body;
+  }, [accessibility?.container]);
+
   const contextValue = React.useMemo(
     () => ({
       id,
@@ -372,6 +376,7 @@ function Sortable<T>(props: SortableProps<T>) {
           setActiveId(null);
         })}
         accessibility={{
+          container: accessibilityContainer,
           announcements,
           screenReaderInstructions,
           ...accessibility,

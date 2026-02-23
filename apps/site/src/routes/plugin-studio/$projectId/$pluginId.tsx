@@ -66,9 +66,10 @@ import {
 import {
   WorkflowGraphEditor,
 } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
+import { PluginStudioV3Tabs } from '@/features/plugin-builder/workspace/tabs/plugin-studio-v3-tabs';
 import { api } from '@/lib/api';
 import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
-import { previewReleaseHashes } from '@/lib/plugins/release-hash-preview';
+import { evaluateV3PublishGates } from '@/lib/plugins/v3-gates';
 import {
   mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
@@ -103,6 +104,7 @@ import {
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { publishPluginRelease } from '@/server-functions/plugins';
 import { throwOnFailedPersistenceWrites } from '../-plugin-studio-persistence';
 import {
   resolvePluginStudioPluginId,
@@ -2167,7 +2169,6 @@ function PluginStudioPresenter({
   const createDraftMutation = api.pluginDraft.useCreate();
   const updateDraftMutation = api.pluginDraft.useUpdate();
   const createDraftRevisionMutation = api.pluginDraftRevision.useCreate();
-  const createPluginReleaseMutation = api.pluginRelease.useCreate();
   const activeDraft = useMemo(() => {
     const candidate = (draftRows as PluginDraftDoc[])[0] ?? null;
     if (!candidate) return null;
@@ -2274,6 +2275,8 @@ function PluginStudioPresenter({
   const deleteRoutesTabsConfigMutation = api.pluginRoutesTabsConfig.useDelete({
     keys: draftDocScopeKeys,
   });
+  const { data: workflowJobs = [] } = api.pluginWorkflowJob.useGet();
+  const { data: workflowEventLogs = [] } = api.pluginWorkflowEventLog.useGet();
 
   const workspaceSchemaDocs = useMemo(() => {
     const rows = schemaDocRows;
@@ -2964,38 +2967,22 @@ function PluginStudioPresenter({
         throw new Error('Invalid plugin payload');
       }
       const version = getNextVersion(marketplaceReleases, pluginId);
-      const hashPreview = await previewReleaseHashes({
-        pluginId,
-        version,
-        docs: {
-          title: activeDraftTitle,
-          description: activeDraftDescription,
+      await publishPluginRelease({
+        data: {
+          actorUserId,
+          pluginId,
+          version,
+          docs: {
+            title: activeDraftTitle,
+            description: activeDraftDescription,
+          },
+          actionManifest: parsed.actionManifest,
+          schemaDocs: parsed.schemaDocs,
+          workflows: parsed.workflows,
+          adminTabs: parsed.adminTabs,
         },
-        actionManifest: parsed.actionManifest,
-        schemaDocs: parsed.schemaDocs,
-        workflows: parsed.workflows,
-        adminTabs: parsed.adminTabs,
       });
-      const release: PluginReleaseDoc = {
-        id: `${pluginId}@${version}`,
-        pluginId,
-        version,
-        manifestHash: hashPreview.manifestHash,
-        artifactHash: hashPreview.artifactHash,
-        author: { userId: actorUserId },
-        visibility: 'public',
-        docs: {
-          title: activeDraftTitle,
-          description: activeDraftDescription,
-        },
-        actionManifest: parsed.actionManifest,
-        schemaDocs: parsed.schemaDocs,
-        workflows: parsed.workflows,
-        adminTabs: parsed.adminTabs,
-        publishedAt: new Date().toISOString(),
-      };
-      await createPluginReleaseMutation.mutateAsync(release as never);
-      return release;
+      return { pluginId, version };
     },
     onSuccess: async () => {
       await refetchReleases();
@@ -3059,6 +3046,14 @@ function PluginStudioPresenter({
     [availableRuleFields, compatibleRuleFieldsByLeftField],
   );
   const isInitialLoading = isReleaseLoading && releases.length === 0;
+  const v3PublishGateDiagnostics = useMemo(() => {
+    if (!parsed) return [];
+    return evaluateV3PublishGates({
+      actionManifest: parsed.actionManifest ?? [],
+      schemaDocs: parsed.schemaDocs ?? [],
+      workflows: parsed.workflows ?? [],
+    });
+  }, [parsed]);
 
   useEffect(() => {
     if (leftRuleFields.length === 0) {
@@ -4977,6 +4972,14 @@ function PluginStudioPresenter({
             )}
           </CardContent>
         </Card>
+        <PluginStudioV3Tabs
+          schemaDocs={parsed?.schemaDocs ?? []}
+          workflows={parsed?.workflows ?? []}
+          actionManifest={parsed?.actionManifest ?? []}
+          diagnostics={v3PublishGateDiagnostics}
+          jobCount={workflowJobs.length}
+          eventLogCount={workflowEventLogs.length}
+        />
 
         <Sheet
           open={isAddColumnSheetOpen}

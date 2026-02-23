@@ -28,6 +28,42 @@ describe('workflow dag validator', () => {
     expect(result.diagnostics).toEqual([]);
   });
 
+  it('requires condition on branching edges', () => {
+    const workflow: WorkflowDoc = {
+      workflowId: 'wf-branch',
+      table: 'product',
+      hook: 'beforeCreate',
+      nodes: [
+        { nodeId: 'n1', kind: 'branch' },
+        { nodeId: 'n2', type: 'action', actionId: 'core.a' },
+        { nodeId: 'n3', type: 'action', actionId: 'core.b' },
+      ],
+      edges: [
+        { from: 'n1', to: 'n2' },
+        {
+          from: 'n1',
+          to: 'n3',
+          condition: {
+            kind: 'op',
+            op: 'eq',
+            args: [true, true],
+          },
+        },
+      ],
+    };
+
+    const result = validateWorkflowDag(workflow);
+
+    expect(result.isValid).toBe(false);
+    expect(result.diagnostics).toEqual([
+      {
+        code: 'missing-branch-condition',
+        message: 'Branching edge from "n1" requires a condition',
+        path: ['workflows', 'wf-branch', 'edges', '0', 'condition'],
+      },
+    ]);
+  });
+
   it('reports deterministic diagnostics for cycles and missing terminal reachability', () => {
     const workflow: WorkflowDoc = {
       workflowId: 'wf-cycle',

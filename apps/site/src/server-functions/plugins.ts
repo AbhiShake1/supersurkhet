@@ -7,6 +7,11 @@ import {
   mergeMarketplaceReleasesWithSeed,
   toMarketplaceSeedReleaseDocs,
 } from '@/lib/plugins/marketplace-seed';
+import {
+  evaluateV3InstallGates,
+  evaluateV3PublishGates,
+  hasBlockingV3Gates,
+} from '@/lib/plugins/v3-gates';
 import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
 import {
   createInMemoryPluginPlatformStore,
@@ -30,6 +35,7 @@ import type {
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
 } from '@/lib/plugins/types';
+import { runPluginsV2CompileVerifyPipeline } from './plugins-v2-compile-verify';
 
 const jsonPrimitiveSchema = z.union([
   z.string(),
@@ -90,6 +96,11 @@ const expressionDocSchema: z.ZodType<ExpressionDoc> = z.lazy(() =>
           'concat',
           'sum',
           'if',
+          'changed',
+          'was',
+          'now',
+          'exists',
+          'match',
         ]),
         args: z.array(expressionDocSchema),
       })
@@ -252,10 +263,20 @@ const workflowNodeInputSchema = z.union([
 const workflowNodeDocInputSchema: z.ZodType<WorkflowNodeDoc> = z
   .object({
     nodeId: z.string(),
-    type: z.literal('action'),
-    actionId: z.string(),
+    type: z.literal('action').optional(),
+    kind: z.enum(['action', 'branch', 'delay', 'humanGate']).optional(),
+    actionId: z.string().optional(),
     input: workflowNodeInputSchema.optional(),
     runIf: expressionDocSchema.optional(),
+    retryPolicy: z
+      .object({
+        maxAttempts: z.number().int().min(1),
+        backoffMs: z.number().int().min(0).optional(),
+      })
+      .optional(),
+    timeoutMs: z.number().int().positive().optional(),
+    idempotencyKeyExpr: expressionDocSchema.optional(),
+    delayMs: z.number().int().min(0).optional(),
   })
   .strict();
 
@@ -265,11 +286,13 @@ const workflowEdgeDocInputSchema: z.ZodType<WorkflowEdgeDoc> = z
     to: z.string(),
     condition: expressionDocSchema.optional(),
     conditionToken: z.string().optional(),
+    on: z.enum(['success', 'failure', 'always']).optional(),
   })
   .strict();
 
 const workflowDocInputSchema: z.ZodType<WorkflowDoc> = z
   .object({
+    pluginContractVersion: z.literal('3').optional(),
     workflowId: z.string(),
     title: z.string().optional(),
     table: z.string(),
@@ -281,6 +304,21 @@ const workflowDocInputSchema: z.ZodType<WorkflowDoc> = z
       'beforeDelete',
       'afterDelete',
     ]),
+    trigger: z
+      .object({
+        table: z.string(),
+        event: z.enum([
+          'beforeCreate',
+          'afterCreate',
+          'beforeUpdate',
+          'afterUpdate',
+          'beforeDelete',
+          'afterDelete',
+        ]),
+        filters: expressionDocSchema.optional(),
+        fieldChange: z.record(z.string(), expressionDocSchema).optional(),
+      })
+      .optional(),
     nodes: z.array(workflowNodeDocInputSchema),
     edges: z.array(workflowEdgeDocInputSchema),
   })
@@ -447,6 +485,16 @@ export class PluginInputValidationError extends Error {
   }
 }
 
+export class PluginV3GateError extends Error {
+  readonly diagnostics: ReturnType<typeof evaluateV3PublishGates>;
+
+  constructor(message: string, diagnostics: ReturnType<typeof evaluateV3PublishGates>) {
+    super(message);
+    this.name = 'PluginV3GateError';
+    this.diagnostics = diagnostics;
+  }
+}
+
 function formatValidationPath(path: (string | number)[]) {
   if (path.length === 0) {
     return '';
@@ -543,6 +591,82 @@ export function parsePromotionReleaseInput<
     data,
     entrypoint,
   });
+}
+
+export async function publishPluginRelease({ data }: { data: unknown }) {
+  const parsedInput = requireParsedInput({
+    schema: releasePublishInputSchema,
+    data,
+    entrypoint: 'publishPluginRelease',
+  });
+
+  const gateDiagnostics = evaluateV3PublishGates({
+    actionManifest: parsedInput.actionManifest ?? [],
+    schemaDocs: parsedInput.schemaDocs ?? [],
+    workflows: parsedInput.workflows ?? [],
+  });
+
+  const compileVerify = runPluginsV2CompileVerifyPipeline({
+    pluginId: parsedInput.pluginId,
+    version: parsedInput.version,
+    docs: parsedInput.docs,
+    actionManifest: parsedInput.actionManifest ?? [],
+    schemaDocs: parsedInput.schemaDocs ?? [],
+    workflows: parsedInput.workflows ?? [],
+    adminTabs: parsedInput.adminTabs ?? [],
+    capabilityEnvelope: [
+      ...new Set(
+        (parsedInput.actionManifest ?? []).flatMap(
+          (entry) => entry.capabilities ?? [],
+        ),
+      ),
+    ],
+    runtimeTarget: 'sandbox-worker',
+  });
+
+  if (hasBlockingV3Gates(gateDiagnostics) || compileVerify.parity.diagnostics.blocking) {
+    const blockingCompileDiagnostics = compileVerify.diagnostics.all
+      .filter((diagnostic) => diagnostic.severity === 'error')
+      .map((diagnostic) => ({
+        code: diagnostic.code,
+        severity: 'error' as const,
+        message: diagnostic.message,
+        path: diagnostic.path,
+      }));
+    throw new PluginV3GateError(
+      'Publish blocked by V3 gate diagnostics',
+      [...gateDiagnostics, ...blockingCompileDiagnostics],
+    );
+  }
+
+  const store = await loadPublishedStore();
+  const service = createPluginPlatformService({ store });
+  const release = await service.publishRelease({
+    actorUserId: parsedInput.actorUserId,
+    release: {
+      pluginId: parsedInput.pluginId,
+      version: parsedInput.version,
+      docs: parsedInput.docs,
+      actionManifest: parsedInput.actionManifest ?? [],
+      schemaDocs: parsedInput.schemaDocs,
+      workflows: parsedInput.workflows,
+      adminTabs: parsedInput.adminTabs,
+    },
+  });
+
+  await upsertGlobalRow({
+    key: 'pluginRelease',
+    id: release.id,
+    row: release,
+  });
+
+  return {
+    release,
+    diagnostics: {
+      compile: compileVerify.diagnostics,
+      v3: gateDiagnostics,
+    },
+  };
 }
 
 async function loadPublishedStore(businessId?: string) {
@@ -725,6 +849,19 @@ export async function installPluginRelease({ data }: { data: unknown }) {
     );
   }
 
+  const installGateDiagnostics = evaluateV3InstallGates({
+    actionManifest: release.actionManifest ?? [],
+    schemaDocs: release.schemaDocs ?? [],
+    workflows: release.workflows ?? [],
+    requestedCapabilities: parsedInput.requestedCapabilities ?? [],
+  });
+  if (hasBlockingV3Gates(installGateDiagnostics)) {
+    throw new PluginV3GateError(
+      `Install blocked for ${releaseId}; release does not satisfy V3 gates`,
+      installGateDiagnostics,
+    );
+  }
+
   const install = service.installPublishedRelease({
     actorUserId: parsedInput.actorUserId,
     actorRole: parsedInput.actorRole,
@@ -793,6 +930,22 @@ export async function syncBusinessPluginInstalls({ data }: { data: unknown }) {
 
   const installsToPersist: BusinessPluginInstallDoc[] = [];
   for (const install of desiredInstalls.values()) {
+    const release = store.getRelease(toReleaseId(install.pluginId, install.version));
+    if (!release) {
+      throw new MissingReleaseError(toReleaseId(install.pluginId, install.version));
+    }
+    const installGateDiagnostics = evaluateV3InstallGates({
+      actionManifest: release.actionManifest ?? [],
+      schemaDocs: release.schemaDocs ?? [],
+      workflows: release.workflows ?? [],
+      requestedCapabilities: install.requestedCapabilities ?? [],
+    });
+    if (hasBlockingV3Gates(installGateDiagnostics)) {
+      throw new PluginV3GateError(
+        `Install blocked for ${release.id}; release does not satisfy V3 gates`,
+        installGateDiagnostics,
+      );
+    }
     const nextInstall = service.installPublishedRelease({
       actorUserId: parsedInput.actorUserId,
       actorRole: parsedInput.actorRole,

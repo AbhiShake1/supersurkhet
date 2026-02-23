@@ -1,12 +1,13 @@
+import { File, FileText, Image as ImageIcon, Upload, X } from 'lucide-react';
+import type { ChangeEvent, ComponentProps } from 'react';
+import { useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { Upload, X, FileText, Image as ImageIcon, File } from 'lucide-react';
-import type { FieldWrapperProps } from './FieldWrapper';
-import { useState, useRef } from 'react';
+import type { AutoFormFieldProps } from '../react';
 
-export interface FileUploadFieldProps extends FieldWrapperProps {
+export interface FileUploadFieldProps extends AutoFormFieldProps {
   placeholder?: string;
   className?: string;
   accept?: string;
@@ -16,20 +17,28 @@ export interface FileUploadFieldProps extends FieldWrapperProps {
 export function FileUploadField({
   field,
   label,
-  description,
   error,
+  id,
+  inputProps,
   className,
   placeholder = 'Choose file...',
   accept,
   multiple = false,
-  ...props
 }: FileUploadFieldProps) {
+  const {
+    key: inputKey,
+    error: _inputError,
+    ...inputElementProps
+  } = (inputProps ?? {}) as Record<string, unknown>;
   const [fileName, setFileName] = useState<string | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [fileType, setFileType] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (typeof inputElementProps.onChange === 'function') {
+      inputElementProps.onChange(e);
+    }
     const file = e.target.files?.[0];
     if (file) {
       setFileName(file.name);
@@ -45,13 +54,10 @@ export function FileUploadField({
       } else {
         setFilePreview(null);
       }
-
-      field.onChange(file);
     } else {
       setFileName(null);
       setFilePreview(null);
       setFileType(null);
-      field.onChange(null);
     }
   };
 
@@ -62,7 +68,6 @@ export function FileUploadField({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-    field.onChange(null);
   };
 
   const getFileIcon = () => {
@@ -79,7 +84,7 @@ export function FileUploadField({
     <div className={cn('space-y-2', className)}>
       {label && (
         <Label
-          htmlFor={field.name}
+          htmlFor={id}
           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
           {label}
@@ -98,14 +103,15 @@ export function FileUploadField({
           onClick={() => fileInputRef.current?.click()}
         >
           <Input
+            key={inputKey as string | number | undefined}
             ref={fileInputRef}
-            id={field.name}
+            id={id}
             type="file"
             className="hidden"
             accept={accept}
             multiple={multiple}
+            {...(inputElementProps as ComponentProps<'input'>)}
             onChange={handleFileChange}
-            {...props}
           />
 
           <div className="flex flex-col items-center text-center">
@@ -152,8 +158,10 @@ export function FileUploadField({
         )}
       </div>
 
-      {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
+      {field.fieldConfig?.description && (
+        <p className="text-sm text-muted-foreground">
+          {field.fieldConfig.description}
+        </p>
       )}
       {error && (
         <p className="text-sm font-medium text-destructive">{error.message}</p>

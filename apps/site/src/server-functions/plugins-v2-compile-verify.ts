@@ -1,4 +1,3 @@
-import { createHash } from 'node:crypto';
 import {
   compileVisualDerivationsToDeriveIr,
   type VisualDerivation,
@@ -489,7 +488,51 @@ function collectSchemaCompileViolations(
 }
 
 function sha256(input: string) {
-  return createHash('sha256').update(input).digest('hex');
+  // Browser-safe deterministic hash (non-cryptographic) that produces
+  // a stable 64-char lowercase hex fingerprint for compile previews.
+  const seedA = fnv1a32(input, 0x811c9dc5);
+  const seedB = fnv1a32(input, 0x9e3779b9);
+  const seedC = fnv1a32(input, 0x85ebca6b);
+  const seedD = fnv1a32(input, 0xc2b2ae35);
+
+  // Expand to 256 bits by chaining mixed rounds from the 4 seeds.
+  const parts: number[] = [];
+  let a = seedA;
+  let b = seedB;
+  let c = seedC;
+  let d = seedD;
+  for (let index = 0; index < 8; index += 1) {
+    a = mix32(a ^ rotateLeft32(b, 5) ^ (index * 0x9e3779b9));
+    b = mix32(b ^ rotateLeft32(c, 7) ^ (index * 0x85ebca6b));
+    c = mix32(c ^ rotateLeft32(d, 11) ^ (index * 0xc2b2ae35));
+    d = mix32(d ^ rotateLeft32(a, 13) ^ (index * 0x27d4eb2f));
+    parts.push((a ^ b ^ c ^ d) >>> 0);
+  }
+
+  return parts.map((value) => value.toString(16).padStart(8, '0')).join('');
+}
+
+function fnv1a32(input: string, seed: number) {
+  let hash = seed >>> 0;
+  for (let index = 0; index < input.length; index += 1) {
+    hash ^= input.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193) >>> 0;
+  }
+  return hash >>> 0;
+}
+
+function rotateLeft32(value: number, shift: number) {
+  return ((value << shift) | (value >>> (32 - shift))) >>> 0;
+}
+
+function mix32(value: number) {
+  let mixed = value >>> 0;
+  mixed ^= mixed >>> 16;
+  mixed = Math.imul(mixed, 0x7feb352d) >>> 0;
+  mixed ^= mixed >>> 15;
+  mixed = Math.imul(mixed, 0x846ca68b) >>> 0;
+  mixed ^= mixed >>> 16;
+  return mixed >>> 0;
 }
 
 function getErrorMessage(error: unknown) {
