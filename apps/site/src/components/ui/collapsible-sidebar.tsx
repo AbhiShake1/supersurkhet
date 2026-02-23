@@ -3,11 +3,15 @@ import { LayoutGroup, motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import * as LucideIcons from 'lucide-react';
 import {
+  ArrowDownToLine,
+  ArrowUpToLine,
+  Boxes,
   ChevronDown,
   ChevronRight,
   ChevronsRight,
   ChevronsUpDown,
   CirclePlus,
+  Combine,
   GripVertical,
   LogOut,
   MoreHorizontal,
@@ -16,6 +20,9 @@ import {
   Search,
   Settings,
   Star,
+  Table2,
+  Trash2,
+  Workflow,
 } from 'lucide-react';
 import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -571,12 +578,12 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                 }}
                 data-sidebar-group-card="true"
                 className={`relative mt-1 rounded-lg border p-1 transition-all duration-150 ${isGroupPreviewActive && isDraggedGroup
-                    ? 'border-primary/55 bg-primary/10 opacity-75 shadow-sm backdrop-blur-[1px]'
-                    : isGroupPreviewActive && isDropTarget
-                      ? 'border-primary/70 bg-primary/12 ring-1 ring-primary/20'
-                      : isDropTarget
-                        ? 'border-primary/60 bg-primary/5'
-                        : 'border-slate-200/80 dark:border-slate-800'
+                  ? 'border-primary/55 bg-primary/10 opacity-75 shadow-sm backdrop-blur-[1px]'
+                  : isGroupPreviewActive && isDropTarget
+                    ? 'border-primary/70 bg-primary/12 ring-1 ring-primary/20'
+                    : isDropTarget
+                      ? 'border-primary/60 bg-primary/5'
+                      : 'border-slate-200/80 dark:border-slate-800'
                   }`}
                 onDragOver={(event) => {
                   if (!editable || (!onMoveTabToGroup && !onReorderGroups))
@@ -962,11 +969,12 @@ const QuickAddPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
                 onClick={() => {
                   onAddTable(targetGroupName);
                 }}
               >
+                <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
                 Add Table
               </button>
             </PopoverClose>
@@ -975,11 +983,12 @@ const QuickAddPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
                 onClick={() => {
                   onAddGroup();
                 }}
               >
+                <Combine className="h-3.5 w-3.5 text-muted-foreground" />
                 Add Group
               </button>
             </PopoverClose>
@@ -988,7 +997,7 @@ const QuickAddPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
                 onClick={() => {
                   onAddGroup(undefined, {
                     relativeTo: targetGroupName,
@@ -996,6 +1005,7 @@ const QuickAddPopover: React.FC<{
                   });
                 }}
               >
+                <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
                 Add Group Above
               </button>
             </PopoverClose>
@@ -1004,7 +1014,7 @@ const QuickAddPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
                 onClick={() => {
                   onAddGroup(undefined, {
                     relativeTo: targetGroupName,
@@ -1012,6 +1022,7 @@ const QuickAddPopover: React.FC<{
                   });
                 }}
               >
+                <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
                 Add Group Below
               </button>
             </PopoverClose>
@@ -1083,8 +1094,8 @@ const Option = memo(function Option({
           tab: title,
         })}
         className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${isSelected
-            ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
-            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+          ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
+          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
           } ${actionPaddingClass}`}
       >
         <div className="grid h-full w-10 sm:w-12 place-content-center">
@@ -1122,8 +1133,8 @@ const Option = memo(function Option({
                         key={`${title}-${name}`}
                         type="button"
                         className={`flex items-center gap-2 rounded border px-2 py-1 text-left text-xs hover:bg-muted ${iconName === name
-                            ? 'border-primary bg-primary/10'
-                            : ''
+                          ? 'border-primary bg-primary/10'
+                          : ''
                           }`}
                         onClick={(event) => {
                           event.preventDefault();
@@ -1187,11 +1198,12 @@ const Option = memo(function Option({
                   <PopoverClose asChild>
                     <button
                       type="button"
-                      className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                      className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
                       onClick={() => {
                         onOpenWorkflowEditor?.(title);
                       }}
                     >
+                      <Workflow className="h-3.5 w-3.5 text-muted-foreground" />
                       Workflow settings
                     </button>
                   </PopoverClose>
@@ -1200,11 +1212,12 @@ const Option = memo(function Option({
                   <PopoverClose asChild>
                     <button
                       type="button"
-                      className="w-full rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
+                      className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
                       onClick={() => {
                         onRequestDeleteTable?.(title);
                       }}
                     >
+                      <Trash2 className="h-3.5 w-3.5" />
                       Delete table
                     </button>
                   </PopoverClose>
@@ -1392,11 +1405,12 @@ const GroupActionsPopover: React.FC<{
               <PopoverClose asChild>
                 <button
                   type="button"
-                  className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
                   onClick={() => {
                     onAddTable(groupName);
                   }}
                 >
+                  <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
                   Add Table
                 </button>
               </PopoverClose>
@@ -1405,11 +1419,12 @@ const GroupActionsPopover: React.FC<{
               <PopoverClose asChild>
                 <button
                   type="button"
-                  className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
                   onClick={() => {
                     onAddGroup();
                   }}
                 >
+                  <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
                   Add Group
                 </button>
               </PopoverClose>
@@ -1418,7 +1433,7 @@ const GroupActionsPopover: React.FC<{
               <PopoverClose asChild>
                 <button
                   type="button"
-                  className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
                   onClick={() => {
                     onAddGroup(undefined, {
                       relativeTo: groupName,
@@ -1426,6 +1441,7 @@ const GroupActionsPopover: React.FC<{
                     });
                   }}
                 >
+                  <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
                   Add Group Above
                 </button>
               </PopoverClose>
@@ -1434,7 +1450,7 @@ const GroupActionsPopover: React.FC<{
               <PopoverClose asChild>
                 <button
                   type="button"
-                  className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
                   onClick={() => {
                     onAddGroup(undefined, {
                       relativeTo: groupName,
@@ -1442,6 +1458,7 @@ const GroupActionsPopover: React.FC<{
                     });
                   }}
                 >
+                  <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
                   Add Group Below
                 </button>
               </PopoverClose>
@@ -1452,11 +1469,12 @@ const GroupActionsPopover: React.FC<{
                 <PopoverClose asChild>
                   <button
                     type="button"
-                    className="w-full rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
+                    className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
                     onClick={() => {
                       onRequestDeleteGroup(groupName, itemCount);
                     }}
                   >
+                    <Trash2 className="h-3.5 w-3.5" />
                     Delete Group
                   </button>
                 </PopoverClose>
@@ -1498,7 +1516,7 @@ const ToggleClose: React.FC<{
   );
 };
 
-const CollapsibleSidebar = memo(CollapsibleSidebarInner);
+const CollapsibleSidebar = CollapsibleSidebarInner;
 CollapsibleSidebar.displayName = 'CollapsibleSidebar';
 
 export default CollapsibleSidebar;
