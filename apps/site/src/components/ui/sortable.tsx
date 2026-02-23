@@ -40,17 +40,17 @@ import { cn } from '@/lib/utils';
 
 const orientationConfig = {
   vertical: {
-    modifiers: [restrictToVerticalAxis, restrictToParentElement],
+    modifiers: [restrictToVerticalAxis],
     strategy: verticalListSortingStrategy,
     collisionDetection: closestCenter,
   },
   horizontal: {
-    modifiers: [restrictToHorizontalAxis, restrictToParentElement],
+    modifiers: [restrictToHorizontalAxis],
     strategy: horizontalListSortingStrategy,
     collisionDetection: closestCenter,
   },
   mixed: {
-    modifiers: [restrictToParentElement],
+    modifiers: [],
     strategy: undefined,
     collisionDetection: closestCorners,
   },
@@ -111,7 +111,15 @@ type SortableProps<T> = DndContextProps & {
   strategy?: SortableContextProps['strategy'];
   orientation?: 'vertical' | 'horizontal' | 'mixed';
   flatCursor?: boolean;
+  confineToParent?: boolean;
 } & (T extends object ? GetItemValue<T> : Partial<GetItemValue<T>>);
+
+export type SortableDragStartEvent = Parameters<
+  NonNullable<DndContextProps['onDragStart']>
+>[0];
+export type SortableDragEndEvent = Parameters<
+  NonNullable<DndContextProps['onDragEnd']>
+>[0];
 
 function Sortable<T>(props: SortableProps<T>) {
   const {
@@ -123,6 +131,7 @@ function Sortable<T>(props: SortableProps<T>) {
     onMove,
     orientation = 'vertical',
     flatCursor = false,
+    confineToParent = true,
     getItemValue: getItemValueProp,
     accessibility,
     ...sortableProps
@@ -160,6 +169,14 @@ function Sortable<T>(props: SortableProps<T>) {
     () => orientationConfig[orientation],
     [orientation],
   );
+  const resolvedModifiers = React.useMemo<DndContextProps['modifiers']>(() => {
+    if (modifiers) return modifiers;
+    const base = [...config.modifiers];
+    if (confineToParent) {
+      base.push(restrictToParentElement);
+    }
+    return base;
+  }, [modifiers, config.modifiers, confineToParent]);
 
   const getItemValue = (item: T): UniqueIdentifier => {
     if (typeof item === 'object' && !getItemValueProp) {
@@ -185,7 +202,8 @@ function Sortable<T>(props: SortableProps<T>) {
 
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over?.id) {
+
+    if (active?.id) {
       setSuppressClick(true);
       if (suppressClickResetTimeoutRef.current !== null) {
         globalThis.clearTimeout(suppressClickResetTimeoutRef.current);
@@ -194,7 +212,9 @@ function Sortable<T>(props: SortableProps<T>) {
         setSuppressClick(false);
         suppressClickResetTimeoutRef.current = null;
       }, 180);
+    }
 
+    if (over && active.id !== over?.id) {
       const activeIndex = value.findIndex(
         (item) => getItemValue(item) === active.id,
       );
@@ -306,7 +326,7 @@ function Sortable<T>(props: SortableProps<T>) {
     () => ({
       id,
       items: optimisticItems ?? items,
-      modifiers: modifiers ?? config.modifiers,
+      modifiers: resolvedModifiers,
       strategy: strategy ?? config.strategy,
       activeId,
       setActiveId,
@@ -318,9 +338,8 @@ function Sortable<T>(props: SortableProps<T>) {
       id,
       items,
       optimisticItems,
-      modifiers,
+      resolvedModifiers,
       strategy,
-      config.modifiers,
       config.strategy,
       activeId,
       suppressClick,
@@ -336,7 +355,7 @@ function Sortable<T>(props: SortableProps<T>) {
     >
       <DndContext
         collisionDetection={collisionDetection ?? config.collisionDetection}
-        modifiers={modifiers ?? config.modifiers}
+        modifiers={resolvedModifiers}
         sensors={sensors}
         {...sortableProps}
         id={id}

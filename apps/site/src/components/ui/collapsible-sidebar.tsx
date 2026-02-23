@@ -31,6 +31,7 @@ import {
   loadSidebarPreferences,
   saveSidebarPreferences,
 } from '@/lib/sidebar-preferences';
+import { cn } from '@/lib/utils';
 import { useAuth } from '../auth-provider';
 import type { PossibleTabConfig } from '../auto-admin';
 import { ThemeToggle } from '../theme/theme-toggle';
@@ -66,6 +67,8 @@ import {
 import {
   Sortable,
   SortableContent,
+  type SortableDragEndEvent,
+  type SortableDragStartEvent,
   SortableItem,
   SortableItemHandle,
 } from './sortable';
@@ -134,6 +137,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   onAddTable,
   onAddGroup,
   onReorderGroups,
+  onMoveTabToGroup,
   onReorderTabs,
   onRenameGroup,
   onDeleteGroup,
@@ -160,6 +164,13 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     name: string;
     itemCount: number;
   } | null>(null);
+  const [activeDraggedTabId, setActiveDraggedTabId] = useState<string | null>(
+    null,
+  );
+  const ungroupDropZoneRef = useRef<HTMLDivElement | null>(null);
+  const groupCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const pointerPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const externalDropHandledRef = useRef(false);
   const tabRenameHandledByKeyRef = useRef(false);
   const groupRenameHandledByKeyRef = useRef(false);
   const iconCatalog = useMemo(() => {
@@ -258,6 +269,13 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   }, [groupedItems, groups]);
 
   const previewGroupOrder = groupNamesToRender;
+  const tabBySortableId = useMemo(() => {
+    const map = new Map<string, PossibleTabConfig>();
+    for (const tab of tabs) {
+      map.set(getTabSortableValue(tab), tab);
+    }
+    return map;
+  }, [tabs]);
 
   const toggleGroup = useCallback(
     (groupName: string) => {
@@ -334,6 +352,127 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     [onDeleteGroup],
   );
 
+  useEffect(() => {
+    if (!activeDraggedTabId) return;
+    const handlePointerMove = (event: PointerEvent) => {
+      pointerPositionRef.current = {
+        x: event.clientX,
+        y: event.clientY,
+      };
+    };
+    window.addEventListener('pointermove', handlePointerMove);
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+    };
+  }, [activeDraggedTabId]);
+
+  const clearTrackedDragState = useCallback(() => {
+    setActiveDraggedTabId(null);
+    pointerPositionRef.current = null;
+  }, []);
+
+  const setGroupCardRef = useCallback(
+    (groupName: string, element: HTMLDivElement | null) => {
+      if (element) {
+        groupCardRefs.current.set(groupName, element);
+        return;
+      }
+      groupCardRefs.current.delete(groupName);
+    },
+    [],
+  );
+
+  const resolveDropGroupFromDragEvent = useCallback(
+    (event: SortableDragEndEvent): string | undefined | null => {
+      const translatedRect = event.active.rect.current.translated;
+      const initialRect = event.active.rect.current.initial;
+      const dropPosition = translatedRect
+        ? {
+            x: translatedRect.left + translatedRect.width / 2,
+            y: translatedRect.top + translatedRect.height / 2,
+          }
+        : initialRect
+          ? {
+              x: initialRect.left + initialRect.width / 2 + event.delta.x,
+              y: initialRect.top + initialRect.height / 2 + event.delta.y,
+            }
+          : pointerPositionRef.current;
+      if (!dropPosition) return null;
+
+      const ungroupZone = ungroupDropZoneRef.current;
+      if (ungroupZone) {
+        const rect = ungroupZone.getBoundingClientRect();
+        const insideUngroupZone =
+          dropPosition.x >= rect.left &&
+          dropPosition.x <= rect.right &&
+          dropPosition.y >= rect.top &&
+          dropPosition.y <= rect.bottom;
+        if (insideUngroupZone) return undefined;
+      }
+
+      for (const [groupName, groupCard] of groupCardRefs.current.entries()) {
+        const rect = groupCard.getBoundingClientRect();
+        const insideGroupCard =
+          dropPosition.x >= rect.left &&
+          dropPosition.x <= rect.right &&
+          dropPosition.y >= rect.top &&
+          dropPosition.y <= rect.bottom;
+        if (insideGroupCard) return groupName;
+      }
+
+      return null;
+    },
+    [],
+  );
+
+  const handleTabDragStart = useCallback(
+    ({ active }: SortableDragStartEvent) => {
+      setActiveDraggedTabId(String(active.id ?? ''));
+      pointerPositionRef.current = null;
+      externalDropHandledRef.current = false;
+    },
+    [],
+  );
+
+  const handleTabDragEnd = useCallback(
+    (event: SortableDragEndEvent) => {
+      const activeId = String(event.active.id ?? '');
+      if (!activeId) {
+        clearTrackedDragState();
+        return;
+      }
+
+      if (!onMoveTabToGroup) {
+        clearTrackedDragState();
+        return;
+      }
+
+      const targetGroupName = resolveDropGroupFromDragEvent(event);
+      if (targetGroupName === null) {
+        clearTrackedDragState();
+        return;
+      }
+
+      const sourceTab = tabBySortableId.get(activeId);
+      const sourceTabTitle = sourceTab?.title?.trim();
+      const sourceGroupName = sourceTab?.group?.trim();
+      if (sourceTabTitle && sourceGroupName !== targetGroupName) {
+        externalDropHandledRef.current = true;
+        queueMicrotask(() => {
+          externalDropHandledRef.current = false;
+        });
+        onMoveTabToGroup(sourceTabTitle, targetGroupName);
+      }
+      clearTrackedDragState();
+    },
+    [
+      clearTrackedDragState,
+      onMoveTabToGroup,
+      resolveDropGroupFromDragEvent,
+      tabBySortableId,
+    ],
+  );
+
   return (
     <nav
       className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${
@@ -408,8 +547,15 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
 
         <div className="space-y-1">
           {editable ? (
-            <div className="flex items-center justify-between rounded-md border border-dashed border-slate-300 px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              <span>Drop here to ungroup</span>
+            <div
+              ref={ungroupDropZoneRef}
+              className={cn(
+                'flex items-center justify-between rounded-md border border-dashed border-slate-300 px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:text-slate-400',
+                activeDraggedTabId &&
+                  'border-primary bg-primary/5 text-primary dark:bg-primary/10',
+              )}
+            >
+              <span>Drag here to remove the element from any group</span>
               <QuickAddPopover
                 editable={editable}
                 onAddGroup={onAddGroup}
@@ -421,7 +567,12 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
             value={ungroupedItems}
             getItemValue={getTabSortableValue}
             orientation="vertical"
+            confineToParent={false}
+            onDragStart={handleTabDragStart}
+            onDragCancel={clearTrackedDragState}
+            onDragEnd={handleTabDragEnd}
             onMove={({ active, over, activeIndex, overIndex }) => {
+              if (externalDropHandledRef.current) return;
               if (!editable || !onReorderTabs || !over) return;
               const sourceTab = ungroupedItems.find(
                 (item) => getTabSortableValue(item) === String(active.id),
@@ -556,6 +707,9 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     asChild
                   >
                     <div
+                      ref={(element) => {
+                        setGroupCardRef(groupName, element);
+                      }}
                       data-sidebar-group-card="true"
                       className="relative mt-1 rounded-lg border border-slate-200/80 p-1 dark:border-slate-800"
                     >
@@ -703,12 +857,17 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                           value={items}
                           getItemValue={getTabSortableValue}
                           orientation="vertical"
+                          confineToParent={false}
+                          onDragStart={handleTabDragStart}
+                          onDragCancel={clearTrackedDragState}
+                          onDragEnd={handleTabDragEnd}
                           onMove={({
                             active,
                             over,
                             activeIndex,
                             overIndex,
                           }) => {
+                            if (externalDropHandledRef.current) return;
                             if (!editable || !onReorderTabs || !over) return;
                             const sourceTab = items.find(
                               (item) =>
