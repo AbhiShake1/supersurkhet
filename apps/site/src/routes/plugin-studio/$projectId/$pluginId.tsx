@@ -3176,7 +3176,7 @@ function PluginStudioPresenter({
             iconName: tab.icon,
             icon: resolveLucideIconByName(tab.icon),
             parsedSchema: compileSchemaDoc(schemaDoc),
-            slug: `plugin-studio/${actorUserId}/${pluginId}/${schemaDoc.schemaId}`,
+            slug: `plugin-studio/${pluginId}/${schemaDoc.schemaId}`,
             treatSlugAsAbsolute: true,
             editable: true,
             onAddColumn: openAddColumnSheet,
@@ -3199,7 +3199,6 @@ function PluginStudioPresenter({
       }
     });
   }, [
-    actorUserId,
     parsed?.adminTabs,
     parsed?.schemaDocs,
     pluginId,

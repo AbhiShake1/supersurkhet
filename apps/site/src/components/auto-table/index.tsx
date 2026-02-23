@@ -4,16 +4,13 @@ import {
   type NestedSchemaType,
   type SchemaKeys,
   type UpdaterParams,
+  useCreate,
   useDelete,
   useGet,
   useUpdate,
 } from '@gta/react-hooks';
 import { DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
-import {
-  type MutationFunctionContext,
-  useMutation,
-  useQuery,
-} from '@tanstack/react-query';
+import { type MutationFunctionContext, useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import type { CellContext, ColumnDef } from '@tanstack/react-table';
 import type { GunMessagePut } from 'gun';
@@ -50,8 +47,6 @@ import {
   resolveRuntimeSchema,
 } from '@/lib/auto-runtime/schema-runtime';
 import { applyFilters } from '@/lib/filter';
-import { gun } from '@/lib/gun';
-import { getGunRef, mergeKeys } from '@/lib/gun/utils/mergeKeys';
 import { appSchema } from '@/lib/schema';
 import { applySorting } from '@/lib/sort';
 import type { DataTableRowAction, FilterVariant } from '@/types/data-table';
@@ -223,9 +218,7 @@ export function AutoTable<T extends SchemaKeys>({
     });
   }, [_data, deriveFns]);
   const search = useSearch({ from: '__root__' });
-  // @ts-expect-error
   const filters = search.filters;
-  // @ts-expect-error
   const sorting = search.sort;
   function getFiltered() {
     if (filters) {
@@ -253,78 +246,28 @@ export function AutoTable<T extends SchemaKeys>({
       props?.onDelete?.(...args);
     },
   });
-  const runtimeCollectionNode = React.useMemo(() => {
+  const runtimeHookKeys = React.useMemo(() => {
     if (!slug || !isRuntimeSchemaMode) return null;
-    return treatSlugAsAbsolute ? gun.get(slug) : getGunRef(mergeKeys(slug));
-  }, [isRuntimeSchemaMode, slug, treatSlugAsAbsolute]);
-  const runtimeCreateMutation = useMutation({
-    mutationFn: async (
-      payload: Record<string, unknown>,
-    ): Promise<GunMessagePut> => {
-      if (!runtimeCollectionNode) {
-        throw new Error('Runtime schema create requires a table namespace');
-      }
-      const providedId = payload.id;
-      const rowId =
-        typeof providedId === 'string' || typeof providedId === 'number'
-          ? String(providedId)
-          : Date.now().toString();
-
-      return new Promise((resolve, reject) => {
-        runtimeCollectionNode.get(rowId).put(payload, (ack) => {
-          if ('err' in ack && ack.err) {
-            reject(new Error(String(ack.err)));
-            return;
-          }
-          resolve(ack);
-        });
-      });
-    },
+    const segments = slug.split('/').filter(Boolean);
+    if (segments.length === 0) return null;
+    return [segments[0] as SchemaKeys, ...segments.slice(1)] as [
+      SchemaKeys,
+      ...string[],
+    ];
+  }, [isRuntimeSchemaMode, slug]);
+  const runtimeCreateMutation = useCreate({
+    keys: runtimeHookKeys ?? (['business'] as [SchemaKeys, ...string[]]),
   });
-  const runtimeUpdateMutation = useMutation({
-    mutationFn: async ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: Record<string, unknown>;
-    }): Promise<GunMessagePut> => {
-      if (!runtimeCollectionNode) {
-        throw new Error('Runtime schema update requires a table namespace');
-      }
-      return new Promise((resolve, reject) => {
-        runtimeCollectionNode.get(id).put(payload, (ack) => {
-          if ('err' in ack && ack.err) {
-            reject(new Error(String(ack.err)));
-            return;
-          }
-          resolve(ack);
-        });
-      });
-    },
+  const runtimeUpdateMutation = useUpdate({
+    keys: runtimeHookKeys ?? (['business'] as [SchemaKeys, ...string[]]),
   });
-  const runtimeDeleteMutation = useMutation({
-    mutationFn: async (
-      id: string,
-    ): Promise<{ deleted: boolean; id: string }> => {
-      if (!runtimeCollectionNode) {
-        throw new Error('Runtime schema delete requires a table namespace');
-      }
-      return new Promise((resolve, reject) => {
-        runtimeCollectionNode.get(id).put(null, (ack) => {
-          if ('err' in ack && ack.err) {
-            reject(new Error(String(ack.err)));
-            return;
-          }
-          resolve({ deleted: true, id });
-        });
-      });
-    },
+  const runtimeDeleteMutation = useDelete({
+    keys: runtimeHookKeys ?? (['business'] as [SchemaKeys, ...string[]]),
   });
-  const canUseRuntimeCrud = Boolean(runtimeCollectionNode);
+  const canUseRuntimeCrud = Boolean(runtimeHookKeys);
   const handleRuntimeCreate = React.useCallback(
     async (payload: Record<string, unknown>) => {
-      await runtimeCreateMutation.mutateAsync(payload);
+      await runtimeCreateMutation.mutateAsync(payload as never);
     },
     [runtimeCreateMutation],
   );
@@ -355,7 +298,6 @@ export function AutoTable<T extends SchemaKeys>({
     [parsedSchema.fields],
   );
 
-  // @ts-expect-error
   const perPage = search.perPage ?? 10;
 
   const { table, shallow, debounceMs, throttleMs } = useDataTable<
@@ -376,7 +318,7 @@ export function AutoTable<T extends SchemaKeys>({
     meta: {
       updateData(rowId: string, data: Record<string, unknown>) {
         if (canUseRuntimeCrud) {
-          runtimeUpdateMutation.mutate({ id: rowId, payload: data });
+          runtimeUpdateMutation.mutate({ id: rowId, ...data } as never);
           return;
         }
         updateMutation.mutate({ id: rowId, ...data });
@@ -468,7 +410,7 @@ export function AutoTable<T extends SchemaKeys>({
           onConfirm={() => {
             setRowAction(null);
             if (canUseRuntimeCrud) {
-              runtimeDeleteMutation.mutate(rowAction?.row.id ?? '');
+              runtimeDeleteMutation.mutate((rowAction?.row.id ?? '') as never);
             } else {
               onDelete(rowAction?.row.id ?? '');
             }
@@ -487,8 +429,8 @@ export function AutoTable<T extends SchemaKeys>({
               if (canUseRuntimeCrud) {
                 runtimeUpdateMutation.mutate({
                   id: rowAction?.row.id ?? '',
-                  payload: data,
-                });
+                  ...data,
+                } as never);
               } else {
                 updateMutation.mutate({ id: rowAction?.row.id ?? '', ...data });
               }
