@@ -58,6 +58,11 @@ export interface AutoAdminProps {
     position?: 'above' | 'below',
   ) => void;
   onMoveTabToGroup?: (tabTitle: string, groupName?: string) => void;
+  onReorderTabs?: (
+    fromTabTitle: string,
+    toTabTitle: string,
+    position?: 'above' | 'below',
+  ) => void;
   onRenameGroup?: (previousGroupName: string, nextGroupName: string) => void;
   onDeleteGroup?: (groupName: string) => void;
   onRenameTab?: (previousTabTitle: string, nextTabTitle: string) => void;
@@ -149,6 +154,7 @@ export function AutoAdmin({
   onAddGroup,
   onReorderGroups,
   onMoveTabToGroup,
+  onReorderTabs,
   onRenameGroup,
   onDeleteGroup,
   onRenameTab,
@@ -449,6 +455,7 @@ export function AutoAdmin({
         onAddGroup={onAddGroup}
         onReorderGroups={onReorderGroups}
         onMoveTabToGroup={handleMoveTabToGroup}
+        onReorderTabs={onReorderTabs}
         onRenameGroup={handleRenameGroup}
         onDeleteGroup={handleDeleteGroup}
         onRenameTab={handleRenameTab}

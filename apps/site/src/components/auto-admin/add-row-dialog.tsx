@@ -1,8 +1,5 @@
-import {
-  type NestedSchemaType,
-  type SchemaKeys,
-  useCreate,
-} from '@gta/react-hooks';
+import type { NestedSchemaType, SchemaKeys } from '@gta/react-hooks';
+import { useMutation } from '@tanstack/react-query';
 import {
   ArrowBigUpDash,
   FileJson,
@@ -27,6 +24,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { api } from '@/lib/api';
 import { resolveRuntimeSchema } from '@/lib/auto-runtime/schema-runtime';
+import { create } from '@/lib/gun/ssr/create';
 import {
   parseCSVFile,
   parseExcelFile,
@@ -52,7 +50,9 @@ export type AddRowDialogProps<T extends SchemaKeys> = Pick<
   AutoTableProps<T>,
   'slug' | 'extender' | 'onCreate' | 'readOnly' | 'className'
 > & {
-  schema: T;
+  schema?: T;
+  runtimeSchema?: ZodObjectOrWrapped;
+  onCreateRow?: (payload: Record<string, unknown>) => Promise<unknown>;
   children?: React.ReactNode;
   buttonLabel?: string | React.ReactNode;
   buttonIcon?: string | React.ReactNode;
@@ -60,6 +60,8 @@ export type AddRowDialogProps<T extends SchemaKeys> = Pick<
 
 export function AddRowDialog<T extends SchemaKeys>({
   schema,
+  runtimeSchema,
+  onCreateRow,
   slug,
   extender,
   onCreate,
@@ -76,19 +78,31 @@ export function AddRowDialog<T extends SchemaKeys>({
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const { user } = useAuth();
   const [isImportPending, setIsImportPending] = React.useState(false);
+  const suggestionsSchema = schema;
 
-  const createMutation = useCreate({
-    keys: [schema, slug ?? ''],
+  const createMutation = useMutation({
+    mutationFn: async (payload: SchemaRecord) => {
+      if (onCreateRow) {
+        return onCreateRow(payload as Record<string, unknown>);
+      }
+      if (!schema || !slug) {
+        throw new Error(
+          'Add row requires either runtime create handler or schema+slug',
+        );
+      }
+      return create(schema, slug)(payload);
+    },
     onSuccess(...args) {
       setDialogOpen(false);
-      onCreate?.(...args);
+      onCreate?.(...(args as Parameters<NonNullable<typeof onCreate>>));
     },
   });
 
   const { schema: finalSchema, schemaObject: finalSchemaObject } =
     resolveRuntimeSchema({
-      schemaKey: schema,
+      schemaKey: runtimeSchema ? undefined : schema,
       schemaShape: appSchema.schemaShape,
+      runtimeSchema,
       extender: extender as
         | ((schema: ZodObjectOrWrapped) => ZodObjectOrWrapped)
         | undefined,
@@ -183,15 +197,17 @@ export function AddRowDialog<T extends SchemaKeys>({
           <CredenzaContent>
             <CredenzaHeader className="min-w-0">
               <CredenzaTitle className="capitalize">
-                Add new {schema}
+                Add new {schema ?? 'row'}
               </CredenzaTitle>
-              <CredenzaDescription asChild>
-                <AddDataSuggestions
-                  schemaName={schema}
-                  slug={slug}
-                  onSelected={setFormValues}
-                />
-              </CredenzaDescription>
+              {suggestionsSchema ? (
+                <CredenzaDescription asChild>
+                  <AddDataSuggestions
+                    schemaName={suggestionsSchema}
+                    slug={slug}
+                    onSelected={setFormValues}
+                  />
+                </CredenzaDescription>
+              ) : null}
             </CredenzaHeader>
             <CredenzaBody asChild>
               <ScrollArea className="h-[50vh] max-h-[60vh]">

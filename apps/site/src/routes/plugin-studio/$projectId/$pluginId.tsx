@@ -4297,6 +4297,35 @@ function PluginStudioPresenter({
     });
   }
 
+  function handleReorderTabs(
+    fromTabTitle: string,
+    toTabTitle: string,
+    position: 'above' | 'below' = 'below',
+  ) {
+    const fromSchemaId = resolveSchemaIdForTabTitle(fromTabTitle);
+    const toSchemaId = resolveSchemaIdForTabTitle(toTabTitle);
+    if (!fromSchemaId || !toSchemaId || fromSchemaId === toSchemaId) return;
+
+    updateSidebarAdminTabs((state) => {
+      const current = [...state.schemaTabs];
+      const fromIndex = current.findIndex((tab) => tab.schema === fromSchemaId);
+      const toIndex = current.findIndex((tab) => tab.schema === toSchemaId);
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
+
+      const [movedTab] = current.splice(fromIndex, 1);
+      if (!movedTab) return;
+      const targetIndex = current.findIndex((tab) => tab.schema === toSchemaId);
+      if (targetIndex < 0) return;
+      const insertAt = position === 'above' ? targetIndex : targetIndex + 1;
+      const targetGroup = current[targetIndex]?.group?.trim() || undefined;
+      current.splice(insertAt, 0, {
+        ...movedTab,
+        group: targetGroup,
+      });
+      state.schemaTabs = current;
+    });
+  }
+
   function handleAddSchema(targetGroupName?: string) {
     const nextSchemaId = `plugin.${pluginId.split('.').pop() || 'custom'}.${availableSchemaDocs.length + 1}`;
     const normalizedGroupName = targetGroupName?.trim();
@@ -4716,6 +4745,7 @@ function PluginStudioPresenter({
                 onAddGroup={handleAddGroup}
                 onReorderGroups={handleReorderGroups}
                 onMoveTabToGroup={handleMoveTabToGroup}
+                onReorderTabs={handleReorderTabs}
                 onRenameGroup={handleRenameGroup}
                 onDeleteGroup={handleDeleteGroup}
                 onRenameTab={handleRenameTab}

@@ -86,6 +86,11 @@ export interface CollapsibleSidebarProps {
     toGroupName: string,
     position?: 'above' | 'below',
   ) => void;
+  onReorderTabs?: (
+    fromTabTitle: string,
+    toTabTitle: string,
+    position?: 'above' | 'below',
+  ) => void;
   onMoveTabToGroup?: (tabTitle: string, groupName?: string) => void;
   onRenameGroup?: (previousGroupName: string, nextGroupName: string) => void;
   onDeleteGroup?: (groupName: string) => void;
@@ -104,6 +109,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   onAddTable,
   onAddGroup,
   onReorderGroups,
+  onReorderTabs,
   onMoveTabToGroup,
   onRenameGroup,
   onDeleteGroup,
@@ -128,6 +134,10 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   const [draggedGroupName, setDraggedGroupName] = useState<string | null>(null);
   const [groupDropIndicator, setGroupDropIndicator] = useState<{
     groupName: string;
+    position: 'above' | 'below';
+  } | null>(null);
+  const [tabDropIndicator, setTabDropIndicator] = useState<{
+    tabTitle: string;
     position: 'above' | 'below';
   } | null>(null);
   const [editingGroupName, setEditingGroupName] = useState<string | null>(null);
@@ -257,6 +267,30 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     return next;
   }, [draggedGroupName, groupDropIndicator, groupNamesToRender]);
 
+  const applyLocalGroupReorder = useCallback(
+    (
+      fromGroupName: string,
+      toGroupName: string,
+      position: 'above' | 'below' = 'below',
+    ) => {
+      const from = fromGroupName.trim();
+      const to = toGroupName.trim();
+      if (!from || !to || from === to) return;
+      setLocalGroupOrder((current) => {
+        const baseline = current.length > 0 ? [...current] : [...groupNamesToRender];
+        if (!baseline.includes(from)) baseline.push(from);
+        if (!baseline.includes(to)) baseline.push(to);
+        const next = baseline.filter((groupName) => groupName !== from);
+        const toIndex = next.indexOf(to);
+        if (toIndex < 0) return current;
+        const insertAt = position === 'above' ? toIndex : toIndex + 1;
+        next.splice(insertAt, 0, from);
+        return next;
+      });
+    },
+    [groupNamesToRender],
+  );
+
   const toggleGroup = useCallback(
     (groupName: string) => {
       setGroupOpenState((prev) => {
@@ -378,6 +412,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
 
   useEffect(() => () => clearDragPreviewElement(), [clearDragPreviewElement]);
 
+  const getDropPositionFromPointer = useCallback(
+    (event: React.DragEvent<HTMLElement>): 'above' | 'below' => {
+      const rect = event.currentTarget.getBoundingClientRect();
+      return event.clientY < rect.top + rect.height / 2 ? 'above' : 'below';
+    },
+    [],
+  );
+
   return (
     <nav
       className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? 'w-52 sm:w-72' : 'w-12 sm:w-16'
@@ -463,6 +505,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
             if (!dropped) return;
             onMoveTabToGroup(dropped, undefined);
             setDraggedTabTitle(null);
+            setTabDropIndicator(null);
             setGroupDropIndicator(null);
           }}
         >
@@ -493,8 +536,70 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
               }}
               onDragEnd={() => {
                 setDraggedTabTitle(null);
+                setTabDropIndicator(null);
                 clearDragPreviewElement();
               }}
+              onDragOver={(event) => {
+                if (!editable || !onReorderTabs) return;
+                const dropped =
+                  event.dataTransfer.getData('text/tab-title') || draggedTabTitle;
+                if (!dropped || dropped === item.title) {
+                  if (tabDropIndicator?.tabTitle === item.title) {
+                    setTabDropIndicator(null);
+                  }
+                  return;
+                }
+                event.preventDefault();
+                event.stopPropagation();
+                const position = getDropPositionFromPointer(
+                  event as React.DragEvent<HTMLElement>,
+                );
+                setTabDropIndicator((current) => {
+                  if (
+                    current?.tabTitle === item.title &&
+                    current.position === position
+                  ) {
+                    return current;
+                  }
+                  return { tabTitle: item.title, position };
+                });
+              }}
+              onDragLeave={(event) => {
+                if (tabDropIndicator?.tabTitle !== item.title) return;
+                const rect = event.currentTarget.getBoundingClientRect();
+                const isStillWithinTarget =
+                  event.clientX >= rect.left &&
+                  event.clientX <= rect.right &&
+                  event.clientY >= rect.top &&
+                  event.clientY <= rect.bottom;
+                if (!isStillWithinTarget) {
+                  setTabDropIndicator(null);
+                }
+              }}
+              onDrop={(event) => {
+                if (!editable || !onReorderTabs) return;
+                const dropped =
+                  event.dataTransfer.getData('text/tab-title') || draggedTabTitle;
+                if (!dropped || dropped === item.title) return;
+                event.preventDefault();
+                event.stopPropagation();
+                const position =
+                  tabDropIndicator?.tabTitle === item.title
+                    ? tabDropIndicator.position
+                    : getDropPositionFromPointer(
+                      event as React.DragEvent<HTMLElement>,
+                    );
+                onReorderTabs(dropped, item.title, position);
+                setDraggedTabTitle(null);
+                setTabDropIndicator(null);
+                setGroupDropIndicator(null);
+              }}
+              className={`${tabDropIndicator?.tabTitle === item.title
+                ? tabDropIndicator.position === 'above'
+                  ? 'ring-2 ring-primary/35 ring-inset border-t-2 border-primary'
+                  : 'ring-2 ring-primary/35 ring-inset border-b-2 border-primary'
+                : ''
+                } rounded-md`}
             >
               {editingTabTitle === item.title ? (
                 <Input
@@ -558,7 +663,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
 
         {/* Grouped navigation items */}
         <LayoutGroup id="sidebar-group-preview">
-          {previewGroupOrder.map((groupName) => {
+          {previewGroupOrder.map((groupName, groupIndex) => {
             const items = groupedItems[groupName] ?? [];
             const isGroupOpen = groupOpenState[groupName] ?? true;
             const isDropTarget = groupDropIndicator?.groupName === groupName;
@@ -566,6 +671,8 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
             const isGroupPreviewActive = Boolean(
               draggedGroupName && groupDropIndicator,
             );
+            const canMoveGroupUp = groupIndex > 0;
+            const canMoveGroupDown = groupIndex < previewGroupOrder.length - 1;
             return (
               <motion.div
                 key={groupName}
@@ -596,14 +703,13 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     if (groupDropIndicator) setGroupDropIndicator(null);
                     return;
                   }
-                  const draggedIndex = groupNamesToRender.indexOf(droppedGroup);
-                  const targetIndex = groupNamesToRender.indexOf(groupName);
-                  const position: 'above' | 'below' =
-                    draggedIndex >= 0 &&
-                      targetIndex >= 0 &&
-                      draggedIndex < targetIndex
-                      ? 'below'
-                      : 'above';
+                  if (droppedGroup === groupName) {
+                    if (groupDropIndicator) setGroupDropIndicator(null);
+                    return;
+                  }
+                  const position = getDropPositionFromPointer(
+                    event as React.DragEvent<HTMLElement>,
+                  );
                   setGroupDropIndicator((current) => {
                     if (
                       current?.groupName === groupName &&
@@ -616,8 +722,13 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                 }}
                 onDragLeave={(event) => {
                   if (groupDropIndicator?.groupName !== groupName) return;
-                  const nextTarget = event.relatedTarget as Node | null;
-                  if (!event.currentTarget.contains(nextTarget)) {
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  const isStillWithinTarget =
+                    event.clientX >= rect.left &&
+                    event.clientX <= rect.right &&
+                    event.clientY >= rect.top &&
+                    event.clientY <= rect.bottom;
+                  if (!isStillWithinTarget) {
                     setGroupDropIndicator(null);
                   }
                 }}
@@ -628,39 +739,18 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     event.dataTransfer.getData('text/group-name') ||
                     draggedGroupName;
                   if (droppedGroup) {
-                    setLocalGroupOrder((current) => {
-                      const baseline =
-                        current.length > 0 ? [...current] : groupNamesToRender;
-                      if (!baseline.includes(droppedGroup))
-                        baseline.push(droppedGroup);
-                      if (!baseline.includes(groupName)) baseline.push(groupName);
-                      const fromIndex = baseline.indexOf(droppedGroup);
-                      const toIndex = baseline.indexOf(groupName);
-                      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
-                        return current;
-                      }
-                      const next = baseline.filter(
-                        (name) => name !== droppedGroup,
-                      );
-                      const targetIndex = next.indexOf(groupName);
-                      if (targetIndex < 0) return current;
-                      const preferredPosition =
-                        groupDropIndicator?.groupName === groupName
-                          ? groupDropIndicator.position
-                          : 'below';
-                      const insertAt =
-                        preferredPosition === 'above'
-                          ? targetIndex
-                          : targetIndex + 1;
-                      next.splice(insertAt, 0, droppedGroup);
-                      return next;
-                    });
                     const preferredPosition =
                       groupDropIndicator?.groupName === groupName
                         ? groupDropIndicator.position
                         : 'below';
+                    applyLocalGroupReorder(
+                      droppedGroup,
+                      groupName,
+                      preferredPosition,
+                    );
                     onReorderGroups?.(droppedGroup, groupName, preferredPosition);
                     setDraggedGroupName(null);
+                    setTabDropIndicator(null);
                     setGroupDropIndicator(null);
                     return;
                   }
@@ -671,6 +761,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   if (!dropped) return;
                   onMoveTabToGroup(dropped, groupName);
                   setDraggedTabTitle(null);
+                  setTabDropIndicator(null);
                   setGroupDropIndicator(null);
                 }}
               >
@@ -719,6 +810,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                           }}
                           onDragStart={(event) => {
                             setDraggedGroupName(groupName);
+                            setTabDropIndicator(null);
                             setGroupDropIndicator(null);
                             const groupCard = (
                               event.currentTarget as HTMLElement
@@ -740,6 +832,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                           }}
                           onDragEnd={() => {
                             setDraggedGroupName(null);
+                            setTabDropIndicator(null);
                             setGroupDropIndicator(null);
                             clearDragPreviewElement();
                           }}
@@ -760,7 +853,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                       {editable && onRenameGroup ? (
                         <button
                           type="button"
-                          className="rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                          className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                           onClick={(event) => {
                             event.preventDefault();
                             event.stopPropagation();
@@ -776,6 +869,45 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         editable={editable}
                         groupName={groupName}
                         itemCount={items.length}
+                        canMoveUp={canMoveGroupUp}
+                        canMoveDown={canMoveGroupDown}
+                        onBeginRenameGroup={
+                          onRenameGroup ? beginGroupRename : undefined
+                        }
+                        onMoveGroupUp={
+                          canMoveGroupUp && onReorderGroups
+                            ? () => {
+                              const previousGroupName =
+                                previewGroupOrder[groupIndex - 1];
+                              if (!previousGroupName) return;
+                              applyLocalGroupReorder(
+                                groupName,
+                                previousGroupName,
+                                'above',
+                              );
+                              onReorderGroups(
+                                groupName,
+                                previousGroupName,
+                                'above',
+                              );
+                            }
+                            : undefined
+                        }
+                        onMoveGroupDown={
+                          canMoveGroupDown && onReorderGroups
+                            ? () => {
+                              const nextGroupName =
+                                previewGroupOrder[groupIndex + 1];
+                              if (!nextGroupName) return;
+                              applyLocalGroupReorder(
+                                groupName,
+                                nextGroupName,
+                                'below',
+                              );
+                              onReorderGroups(groupName, nextGroupName, 'below');
+                            }
+                            : undefined
+                        }
                         onRequestDeleteGroup={requestDeleteGroup}
                         onDeleteGroup={onDeleteGroup}
                         onAddGroup={onAddGroup}
@@ -826,8 +958,72 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         }}
                         onDragEnd={() => {
                           setDraggedTabTitle(null);
+                          setTabDropIndicator(null);
                           clearDragPreviewElement();
                         }}
+                        onDragOver={(event) => {
+                          if (!editable || !onReorderTabs) return;
+                          const dropped =
+                            event.dataTransfer.getData('text/tab-title') ||
+                            draggedTabTitle;
+                          if (!dropped || dropped === item.title) {
+                            if (tabDropIndicator?.tabTitle === item.title) {
+                              setTabDropIndicator(null);
+                            }
+                            return;
+                          }
+                          event.preventDefault();
+                          event.stopPropagation();
+                          const position = getDropPositionFromPointer(
+                            event as React.DragEvent<HTMLElement>,
+                          );
+                          setTabDropIndicator((current) => {
+                            if (
+                              current?.tabTitle === item.title &&
+                              current.position === position
+                            ) {
+                              return current;
+                            }
+                            return { tabTitle: item.title, position };
+                          });
+                        }}
+                        onDragLeave={(event) => {
+                          if (tabDropIndicator?.tabTitle !== item.title) return;
+                          const rect = event.currentTarget.getBoundingClientRect();
+                          const isStillWithinTarget =
+                            event.clientX >= rect.left &&
+                            event.clientX <= rect.right &&
+                            event.clientY >= rect.top &&
+                            event.clientY <= rect.bottom;
+                          if (!isStillWithinTarget) {
+                            setTabDropIndicator(null);
+                          }
+                        }}
+                        onDrop={(event) => {
+                          if (!editable || !onReorderTabs) return;
+                          const dropped =
+                            event.dataTransfer.getData('text/tab-title') ||
+                            draggedTabTitle;
+                          if (!dropped || dropped === item.title) return;
+                          event.preventDefault();
+                          event.stopPropagation();
+                          const position =
+                            tabDropIndicator?.tabTitle === item.title
+                              ? tabDropIndicator.position
+                              : getDropPositionFromPointer(
+                                event as React.DragEvent<HTMLElement>,
+                              );
+                          onReorderTabs(dropped, item.title, position);
+                          setDraggedTabTitle(null);
+                          setTabDropIndicator(null);
+                          setGroupDropIndicator(null);
+                        }}
+                        className={`${tabDropIndicator?.tabTitle === item.title
+                          ? tabDropIndicator.position === 'above'
+                            ? 'ring-2 ring-primary/35 ring-inset border-t-2 border-primary'
+                            : 'ring-2 ring-primary/35 ring-inset border-b-2 border-primary'
+                          : ''
+                          } rounded-md`}
                       >
                         {editingTabTitle === item.title ? (
                           <Input
@@ -1165,7 +1361,7 @@ const Option = memo(function Option({
             {hasRenameAction ? (
               <button
                 type="button"
-                className="rounded p-0.5 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/option:opacity-100 group-hover/option:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                className="rounded p-0.5 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/option:opacity-100 group-hover/option:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -1373,6 +1569,11 @@ const GroupActionsPopover: React.FC<{
   editable: boolean;
   groupName: string;
   itemCount: number;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onBeginRenameGroup?: (groupName: string) => void;
+  onMoveGroupUp?: () => void;
+  onMoveGroupDown?: () => void;
   onRequestDeleteGroup: (groupName: string, itemCount: number) => void;
   onDeleteGroup?: (groupName: string) => void;
   onAddTable?: (targetGroupName?: string) => void;
@@ -1381,18 +1582,33 @@ const GroupActionsPopover: React.FC<{
   editable,
   groupName,
   itemCount,
+  canMoveUp = false,
+  canMoveDown = false,
+  onBeginRenameGroup,
+  onMoveGroupUp,
+  onMoveGroupDown,
   onRequestDeleteGroup,
   onDeleteGroup,
   onAddTable,
   onAddGroup,
 }) => {
-    if (!editable || (!onDeleteGroup && !onAddTable && !onAddGroup)) return null;
+    if (
+      !editable ||
+      (!onDeleteGroup &&
+        !onAddTable &&
+        !onAddGroup &&
+        !onBeginRenameGroup &&
+        !onMoveGroupUp &&
+        !onMoveGroupDown)
+    ) {
+      return null;
+    }
     return (
       <Popover>
         <PopoverTrigger asChild>
           <button
             type="button"
-            className="rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+            className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             aria-label={`Actions for ${groupName}`}
             title={`Actions for ${groupName}`}
           >
@@ -1401,6 +1617,50 @@ const GroupActionsPopover: React.FC<{
         </PopoverTrigger>
         <PopoverContent align="end" className="w-44 p-1">
           <div className="space-y-1">
+            {onBeginRenameGroup ? (
+              <PopoverClose asChild>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                  onClick={() => {
+                    onBeginRenameGroup(groupName);
+                  }}
+                >
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                  Rename Group
+                </button>
+              </PopoverClose>
+            ) : null}
+            {onMoveGroupUp ? (
+              <PopoverClose asChild>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => {
+                    onMoveGroupUp();
+                  }}
+                  disabled={!canMoveUp}
+                >
+                  <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                  Move Group Up
+                </button>
+              </PopoverClose>
+            ) : null}
+            {onMoveGroupDown ? (
+              <PopoverClose asChild>
+                <button
+                  type="button"
+                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                  onClick={() => {
+                    onMoveGroupDown();
+                  }}
+                  disabled={!canMoveDown}
+                >
+                  <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                  Move Group Down
+                </button>
+              </PopoverClose>
+            ) : null}
             {onAddTable ? (
               <PopoverClose asChild>
                 <button
