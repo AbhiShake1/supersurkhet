@@ -17,6 +17,7 @@ import {
   type PluginMarketItem,
   type PluginUserReview,
 } from '@/lib/plugins/admin-plugin-market';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
@@ -84,7 +85,10 @@ function PluginsRouteComponent() {
 
   const installs = installRows as BusinessPluginInstallDoc[];
   const allInstalls = installs;
-  const releases = releaseRows as PluginReleaseDoc[];
+  const releases = useMemo(
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
+    [releaseRows],
+  );
   const reviewRows = reviewRowsRaw as PluginUserReviewDoc[];
 
   const reviews = useMemo(

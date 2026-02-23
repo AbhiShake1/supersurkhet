@@ -2142,9 +2142,21 @@ function PluginStudioPresenter({
       schemaId?: string;
       doc?: unknown;
     }>;
-    const docs = rows
-      .map((row) => row.doc as SchemaDoc | undefined)
-      .filter((doc): doc is SchemaDoc => Boolean(doc?.schemaId));
+    const docsBySchemaId = new Map<string, { doc: SchemaDoc; score: number }>();
+    for (const row of rows) {
+      const doc = row.doc as SchemaDoc | undefined;
+      const schemaId = row.schemaId || doc?.schemaId;
+      if (!schemaId || !doc?.schemaId) continue;
+
+      const canonicalRowId = `${draftId}:${schemaId}`;
+      const rowId = row.id ?? '';
+      const score = rowId === canonicalRowId ? 2 : rowId ? 1 : 0;
+      const existing = docsBySchemaId.get(schemaId);
+      if (!existing || score >= existing.score) {
+        docsBySchemaId.set(schemaId, { doc, score });
+      }
+    }
+    const docs = [...docsBySchemaId.values()].map((entry) => entry.doc);
     if (docs.length > 0) {
       return docs;
     }
@@ -2155,7 +2167,7 @@ function PluginStudioPresenter({
       return revisionDocs;
     }
     return [DEFAULT_SCHEMA_DOC];
-  }, [schemaDocRows, latestActiveDraftRevision?.schemaDocs]);
+  }, [draftId, schemaDocRows, latestActiveDraftRevision?.schemaDocs]);
 
   const workspaceWorkflows = useMemo(() => {
     const rows = workflowDocRows as Array<{
