@@ -166,7 +166,8 @@ export function AutoTable<T extends SchemaKeys>({
   defaultPageSize = 10,
   ...props
 }: AutoTableProps<T>) {
-  const schemaName = 'schema' in props ? props.schema : ('' as SchemaKeys);
+  const hasSchemaKey = 'schema' in props;
+  const schemaName = hasSchemaKey ? props.schema : ('' as SchemaKeys);
   const { schema, schemaObject, parsedSchema } = resolveRuntimeSchema({
     schemaKey: 'schema' in props ? props.schema : undefined,
     schemaShape: appSchema.schemaShape,
@@ -301,7 +302,7 @@ export function AutoTable<T extends SchemaKeys>({
   return (
     <div className="py-6 space-y-4 flex flex-col items-end">
       {!props.readOnly && (
-        <AddRowDialog<T> schema={schemaName} slug={slug} {...props} />
+        hasSchemaKey && <AddRowDialog<T> schema={schemaName} slug={slug} {...props} />
       )}
       <DataTable
         table={table}
