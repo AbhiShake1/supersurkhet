@@ -11,7 +11,7 @@ function omitMeta<T>(obj: T): T {
   if (!obj) return obj;
   return _.transform(obj, (result, value, key) => {
     if (value === undefined) return;
-    if (key === '_') return; // skip this key
+    if (['_', '#'].includes(key)) return;
     if (_.isArray(value)) {
       result[key] = value.map(omitMeta);
     } else if (_.isPlainObject(value)) {

@@ -106,9 +106,6 @@ import { throwOnFailedPersistenceWrites } from '../-plugin-studio-persistence';
 import {
   resolvePluginStudioPluginId,
 } from '../-plugin-studio-plugin-id';
-import type {
-  PluginStudioSidebarSnapshot,
-} from '../-plugin-studio-sidebar-snapshot';
 import { toProjectScopedDraftId } from '../-plugin-studio-project-draft-id';
 
 const optionalSearchStringSchema = z.preprocess(
@@ -356,22 +353,6 @@ function toDraftSnapshotString({
     workflows,
     adminTabs,
   });
-}
-
-function toComparableSidebarSnapshotJson(raw: string | null | undefined) {
-  const normalized = raw?.trim();
-  if (!normalized) return '';
-  try {
-    const parsed = JSON.parse(normalized);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return normalized;
-    }
-    const comparable = { ...(parsed as Record<string, unknown>) };
-    delete comparable.updatedAt;
-    return canonicalStringify(comparable);
-  } catch {
-    return normalized;
-  }
 }
 
 function computeOrderedGroupNames({
@@ -2013,11 +1994,6 @@ function PluginStudioPresenter({
   const blocklyInitialRightFieldRef = useRef('');
   const hasAttemptedDraftCreationRef = useRef<Set<string>>(new Set());
   const initialSnapshotByDraftRef = useRef<Record<string, string | null>>({});
-  const sidebarSnapshotSeededDraftIdRef = useRef<string | null>(null);
-  const sidebarSnapshotPersistTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-  const lastSidebarSnapshotComparableRef = useRef<string | null>(null);
   const lastRequestedDraftSnapshotRef = useRef<string | null>(null);
   const lastAutosaveErrorAtRef = useRef<number>(0);
   const lastPersistenceErrorAtRef = useRef<number>(0);
@@ -2236,12 +2212,6 @@ function PluginStudioPresenter({
         order: number;
         iconName?: string;
       }>;
-      uiStateByUserId?: Record<
-        string,
-        {
-          sidebarSnapshotJson?: string;
-        }
-      >;
     }>;
     const candidates = rows.filter(
       (row) =>
@@ -2265,10 +2235,6 @@ function PluginStudioPresenter({
     draftId,
     routesTabsConfigRows,
   ]);
-  const activeUiStateForActor = useMemo(
-    () => activeRoutesTabsConfigRow?.uiStateByUserId?.[actorUserId],
-    [activeRoutesTabsConfigRow, actorUserId],
-  );
 
   const adminTabsText = useMemo(
     () =>
@@ -2373,12 +2339,8 @@ function PluginStudioPresenter({
     workspaceSchemaDocs,
     workspaceWorkflows,
   ]);
-  const schemaGroupById = parsed?.schemaGroupById ?? {};
-  const schemaIconNameById = parsed?.schemaIconNameById ?? {};
-  const customGroups = parsed?.customGroups ?? [];
   const groupOrder = parsed?.groupOrder ?? [];
   const systemTabs = parsed?.systemTabs ?? DEFAULT_SYSTEM_TABS;
-  const schemaOrder = parsed?.schemaOrder ?? [DEFAULT_SCHEMA_DOC.schemaId];
 
   const availableSchemaDocs = parsed?.schemaDocs ?? [];
   const availableWorkflows = parsed?.workflows ?? [];
@@ -2600,128 +2562,6 @@ function PluginStudioPresenter({
       current === expectedHydratedDraftKey ? current : expectedHydratedDraftKey,
     );
   }, [expectedHydratedDraftKey]);
-
-  useEffect(() => {
-    const persistedComparable = toComparableSidebarSnapshotJson(
-      activeUiStateForActor?.sidebarSnapshotJson,
-    );
-    lastSidebarSnapshotComparableRef.current = persistedComparable;
-  }, [activeUiStateForActor?.sidebarSnapshotJson]);
-
-  useEffect(() => {
-    if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-      clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-      sidebarSnapshotPersistTimeoutRef.current = null;
-    }
-    if (!parsed) return;
-
-    if (sidebarSnapshotSeededDraftIdRef.current !== draftId) {
-      sidebarSnapshotSeededDraftIdRef.current = draftId;
-      if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-        clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-        sidebarSnapshotPersistTimeoutRef.current = null;
-      }
-      return;
-    }
-
-    const latestRevision = activeDraftRevisions[0];
-    const latestRevisionRecencyKey = latestRevision
-      ? toDraftRevisionRecencyKey(latestRevision)
-      : undefined;
-    const latestPersistedSnapshot = latestRevision
-      ? canonicalStringify({
-        schemaDocs: latestRevision.schemaDocs ?? [],
-        workflows: latestRevision.workflows ?? [],
-        adminTabs: latestRevision.adminTabs ?? [],
-      })
-      : null;
-    const currentSnapshot = canonicalStringify({
-      schemaDocs: parsed.schemaDocs,
-      workflows: parsed.workflows,
-      adminTabs: parsed.draftAdminTabs,
-    });
-    if (latestPersistedSnapshot === currentSnapshot) {
-      if (activeUiStateForActor?.sidebarSnapshotJson) {
-        lastSidebarSnapshotComparableRef.current = '';
-        if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-          clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-        }
-        sidebarSnapshotPersistTimeoutRef.current = setTimeout(() => {
-          sidebarSnapshotPersistTimeoutRef.current = null;
-          persistSidebarUiStateForActor({
-            sidebarSnapshotJson: '',
-          });
-        }, 250);
-      }
-      return;
-    }
-
-    const snapshotCore = {
-      version: 1,
-      pluginId,
-      draftId,
-      ...(latestRevisionRecencyKey
-        ? { baseRevisionRecencyKey: latestRevisionRecencyKey }
-        : {}),
-      schemaOrder,
-      schemaTitleById: Object.fromEntries(
-        parsed.schemaDocs.map((schemaDoc) => [
-          schemaDoc.schemaId,
-          schemaDoc.title ?? schemaDoc.schemaId,
-        ]),
-      ),
-      schemaGroupById,
-      schemaIconNameById,
-      customGroups,
-      groupOrder,
-      systemTabs,
-    };
-    const comparableSnapshotJson = canonicalStringify(snapshotCore);
-    if (
-      lastSidebarSnapshotComparableRef.current === comparableSnapshotJson ||
-      toComparableSidebarSnapshotJson(activeUiStateForActor?.sidebarSnapshotJson) ===
-      comparableSnapshotJson
-    ) {
-      return;
-    }
-    lastSidebarSnapshotComparableRef.current = comparableSnapshotJson;
-    if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-      clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-    }
-    sidebarSnapshotPersistTimeoutRef.current = setTimeout(() => {
-      sidebarSnapshotPersistTimeoutRef.current = null;
-      const snapshot: PluginStudioSidebarSnapshot = {
-        ...snapshotCore,
-        updatedAt: new Date().toISOString(),
-      };
-      persistSidebarUiStateForActor({
-        sidebarSnapshotJson: JSON.stringify(snapshot),
-      });
-    }, 250);
-  }, [
-    activeDraftRevisions,
-    activeUiStateForActor,
-    customGroups,
-    draftId,
-    groupOrder,
-    parsed,
-    pluginId,
-    schemaGroupById,
-    schemaIconNameById,
-    schemaOrder,
-    systemTabs,
-    persistSidebarUiStateForActor,
-  ]);
-
-  useEffect(
-    () => () => {
-      if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-        clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-        sidebarSnapshotPersistTimeoutRef.current = null;
-      }
-    },
-    [],
-  );
 
   const { mutateAsync: createDraft } = useMutation({
     mutationKey: ['plugin-studio', 'create-draft', draftId],
@@ -3757,7 +3597,6 @@ function PluginStudioPresenter({
       pluginId,
       businessSlug: 'draft',
       routes: toDraftRoutesFromAdminTabs(nextAdminTabs),
-      uiStateByUserId: activeRoutesTabsConfigRow?.uiStateByUserId,
       savedByUserId: actorUserId,
       savedAt: new Date().toISOString(),
     };
@@ -3793,53 +3632,6 @@ function PluginStudioPresenter({
       await refetchRoutesTabsConfig();
     })().catch((error) =>
       reportPersistenceError('Sidebar tab persistence', error),
-    );
-  }
-
-  function persistSidebarUiStateForActor({
-    sidebarSnapshotJson,
-  }: {
-    sidebarSnapshotJson?: string;
-  }) {
-    if (!parsed) return;
-    const rowId = canonicalRoutesTabsConfigId;
-    const currentStateByUserId = activeRoutesTabsConfigRow?.uiStateByUserId ?? {};
-    const currentActorState = currentStateByUserId[actorUserId] ?? {};
-    const nextActorState = {
-      ...currentActorState,
-      ...(sidebarSnapshotJson !== undefined ? { sidebarSnapshotJson } : {}),
-    };
-    const nextStateByUserId = {
-      ...currentStateByUserId,
-      [actorUserId]: nextActorState,
-    };
-    const payload = {
-      id: rowId,
-      draftId: draftId,
-      revisionId: 'live',
-      pluginId,
-      businessSlug: 'draft',
-      routes: toDraftRoutesFromAdminTabs(parsed.draftAdminTabs),
-      uiStateByUserId: nextStateByUserId,
-      savedByUserId: actorUserId,
-      savedAt: new Date().toISOString(),
-    };
-
-    void (async () => {
-      if (activeRoutesTabsConfigRow?.id === canonicalRoutesTabsConfigId) {
-        await updateRoutesTabsConfigMutation.mutateAsync(payload);
-      } else {
-        try {
-          await createRoutesTabsConfigMutation.mutateAsync(payload);
-        } catch (error) {
-          if (!isDuplicatePersistenceError(error)) {
-            throw error;
-          }
-          await updateRoutesTabsConfigMutation.mutateAsync(payload);
-        }
-      }
-    })().catch((error) =>
-      reportPersistenceError('Sidebar UI state persistence', error),
     );
   }
 
