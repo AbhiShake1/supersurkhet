@@ -45,7 +45,13 @@ interface VercelV0ChatProps {
             onChange: (value: string) => void;
             onSubmit: () => void;
         };
-        onRestart?: () => void;
+        canGoBack?: boolean;
+        onBack?: () => void;
+        backLabel?: string;
+        canGoForward?: boolean;
+        onForward?: () => void;
+        forwardLabel?: string;
+        forwardEchoLabel?: string;
     };
 }
 
@@ -190,6 +196,23 @@ export function VercelV0Chat({
             },
         ]);
         wizard.input.onSubmit();
+    };
+
+    const handleWizardForward = () => {
+        if (!wizard?.onForward) return;
+        if (!wizard.canGoForward) return;
+        if (wizard.forwardEchoLabel?.trim()) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: `${Date.now()}-user-forward`,
+                    role: "user",
+                    content: wizard.forwardEchoLabel!,
+                    timestamp: Date.now(),
+                },
+            ]);
+        }
+        wizard.onForward();
     };
 
     const wizardOptions = wizard?.options ?? [];
@@ -431,14 +454,39 @@ export function VercelV0Chat({
                             </div>
                         ) : null}
 
-                        {wizard.onRestart ? (
-                            <button
-                                type="button"
-                                onClick={wizard.onRestart}
-                                className="text-xs text-zinc-500 hover:text-zinc-300"
-                            >
-                                Restart setup
-                            </button>
+                        {wizard.onBack || wizard.onForward ? (
+                            <div className="flex items-center gap-2">
+                                {wizard.onBack ? (
+                                    <button
+                                        type="button"
+                                        onClick={wizard.onBack}
+                                        disabled={!wizard.canGoBack}
+                                        className={cn(
+                                            "rounded-md border px-2.5 py-1 text-xs",
+                                            wizard.canGoBack
+                                                ? "border-white/20 text-zinc-300 hover:bg-white/5"
+                                                : "cursor-not-allowed border-white/10 text-zinc-600"
+                                        )}
+                                    >
+                                        {wizard.backLabel ?? "Back"}
+                                    </button>
+                                ) : null}
+                                {wizard.onForward ? (
+                                    <button
+                                        type="button"
+                                        onClick={handleWizardForward}
+                                        disabled={!wizard.canGoForward}
+                                        className={cn(
+                                            "ml-auto rounded-md border px-2.5 py-1 text-xs",
+                                            wizard.canGoForward
+                                                ? "border-primary/40 bg-primary/20 text-zinc-100 hover:bg-primary/30"
+                                                : "cursor-not-allowed border-white/10 text-zinc-600"
+                                        )}
+                                    >
+                                        {wizard.forwardLabel ?? "Forward"}
+                                    </button>
+                                ) : null}
+                            </div>
                         ) : null}
                     </div>
                 ) : (

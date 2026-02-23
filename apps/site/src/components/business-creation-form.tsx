@@ -577,6 +577,10 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const supportedAuthModes = resolveProviderSupportedAuthModes(
     selectedAssistantProviderId,
   );
+  const stepTwoAuthModes: AssistantAuthMode[] = [
+    'api-key',
+    'oauth-access-token',
+  ];
   const selectedProviderOauthMethods = providerOauthMethods;
   const resolvedProviderOauthMethodId = selectedProviderOauthMethods.some(
     (method) => method.id === selectedProviderOauthMethodId,
@@ -594,6 +598,11 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     'provider' | 'model' | 'auth' | 'oauth-method' | 'credential' | 'done'
   >('provider');
   const [assistantSecretInput, setAssistantSecretInput] = useState('');
+  const [assistantPickedProvider, setAssistantPickedProvider] = useState(false);
+  const [assistantPickedModel, setAssistantPickedModel] = useState(false);
+  const [assistantPickedAuth, setAssistantPickedAuth] = useState(false);
+  const [assistantPickedOauthMethod, setAssistantPickedOauthMethod] =
+    useState(false);
   const recommendedProviderId = defaultModelOption.provider;
   const recommendedModelId = providerModelOptions[0]?.id ?? selectedModelOption.id;
   const recommendedAuthMode = resolveProviderDefaultAuthMode(
@@ -1121,6 +1130,10 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
 
   function handleAssistantProviderSelect(providerId: string) {
     handleProviderChange(providerId);
+    setAssistantPickedProvider(true);
+    setAssistantPickedModel(false);
+    setAssistantPickedAuth(false);
+    setAssistantPickedOauthMethod(false);
     setAssistantStage('model');
   }
 
@@ -1128,11 +1141,16 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     setSelectedAssistantModelId(modelId);
     setAuthSessionToken('');
     setAuthSessionExpiresAt(null);
+    setAssistantPickedModel(true);
+    setAssistantPickedAuth(false);
+    setAssistantPickedOauthMethod(false);
     setAssistantStage('auth');
   }
 
   function handleAssistantAuthSelect(mode: AssistantAuthMode) {
     setSelectedAssistantAuthMode(mode);
+    setAssistantPickedAuth(true);
+    setAssistantPickedOauthMethod(false);
     setProviderCredentialSavedAt(null);
     setAuthSessionToken('');
     setAuthSessionExpiresAt(null);
@@ -1154,6 +1172,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
 
   function handleAssistantOauthMethodSelect(methodId: string) {
     setSelectedProviderOauthMethodId(methodId);
+    setAssistantPickedOauthMethod(true);
     setAssistantStage('credential');
   }
 
@@ -1169,6 +1188,86 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     setAssistantSecretInput('');
     setAssistantStage('done');
   }
+
+  function handleAssistantBack() {
+    if (assistantStage === 'model') {
+      setAssistantStage('provider');
+      return;
+    }
+    if (assistantStage === 'auth') {
+      setAssistantStage('model');
+      return;
+    }
+    if (assistantStage === 'oauth-method') {
+      setAssistantStage('auth');
+      return;
+    }
+    if (assistantStage === 'credential') {
+      if (
+        selectedAssistantAuthMode === 'oauth-access-token' &&
+        selectedProviderOauthMethods.length > 0
+      ) {
+        setAssistantStage('oauth-method');
+        return;
+      }
+      setAssistantStage('auth');
+      return;
+    }
+    if (assistantStage === 'done') {
+      if (
+        selectedAssistantAuthMode === 'oauth-access-token' ||
+        selectedAssistantAuthMode === 'api-key'
+      ) {
+        setAssistantStage('credential');
+        return;
+      }
+      setAssistantStage('auth');
+    }
+  }
+
+  function handleAssistantForward() {
+    if (assistantStage === 'provider') {
+      setAssistantStage('model');
+      return;
+    }
+    if (assistantStage === 'model') {
+      setAssistantStage('auth');
+      return;
+    }
+    if (assistantStage === 'auth') {
+      if (
+        selectedAssistantAuthMode === 'oauth-access-token' &&
+        selectedProviderOauthMethods.length > 0
+      ) {
+        setAssistantStage('oauth-method');
+        return;
+      }
+      if (
+        selectedAssistantAuthMode === 'api-key' ||
+        selectedAssistantAuthMode === 'oauth-access-token'
+      ) {
+        setAssistantStage('credential');
+        return;
+      }
+      setAssistantStage('done');
+      return;
+    }
+    if (assistantStage === 'oauth-method') {
+      setAssistantStage('credential');
+      return;
+    }
+    if (assistantStage === 'credential') {
+      handleAssistantCredentialSubmit();
+      return;
+    }
+  }
+
+  const canAssistantGoForward =
+    (assistantStage === 'provider' && assistantPickedProvider) ||
+    (assistantStage === 'model' && assistantPickedModel) ||
+    (assistantStage === 'auth' && assistantPickedAuth) ||
+    (assistantStage === 'oauth-method' && assistantPickedOauthMethod) ||
+    (assistantStage === 'credential' && assistantSecretInput.trim().length > 0);
 
   return (
     <div className="space-y-4 rounded-xl border border-border/70 bg-background p-4">
@@ -1210,7 +1309,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                   recommended: index === 0,
                 }))
                 : assistantStage === 'auth'
-                  ? supportedAuthModes.map((authMode) => ({
+                  ? stepTwoAuthModes.map((authMode) => ({
                     id: authMode,
                     label: authModeLabelById[authMode],
                     selected: authMode === selectedAssistantAuthMode,
@@ -1258,10 +1357,28 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                 onSubmit: handleAssistantCredentialSubmit,
               }
               : undefined,
-          onRestart: () => {
-            setAssistantSecretInput('');
-            setAssistantStage('provider');
-          },
+          canGoBack: assistantStage !== 'provider',
+          onBack: handleAssistantBack,
+          backLabel: 'Back',
+          canGoForward: canAssistantGoForward,
+          onForward: handleAssistantForward,
+          forwardLabel: 'Forward',
+          forwardEchoLabel:
+            assistantStage === 'provider'
+              ? formatProviderLabel(selectedAssistantProviderId)
+              : assistantStage === 'model'
+                ? selectedModelOption.label
+                : assistantStage === 'auth'
+                  ? authModeLabelById[selectedAssistantAuthMode]
+                  : assistantStage === 'oauth-method'
+                    ? selectedProviderOauthMethods.find(
+                      (method) => method.id === resolvedProviderOauthMethodId,
+                    )?.label ?? 'OAuth method selected'
+                    : assistantStage === 'credential'
+                      ? selectedAssistantAuthMode === 'api-key'
+                        ? 'API key provided'
+                        : 'OAuth token provided'
+                      : '',
         }}
       />
 
