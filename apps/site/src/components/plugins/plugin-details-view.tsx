@@ -617,6 +617,16 @@ export function PluginDetailsView({
                                   </div>
                                 ))}
                             </div>
+                            <div className="flex justify-center pt-4">
+                              <Button
+                                variant="ghost"
+                                className="text-[#01875f] hover:text-[#01875f] hover:bg-emerald-50 rounded-full text-sm font-medium transition-colors"
+                                onClick={() => setShowOtherReviews(false)}
+                              >
+                                Show Less
+                                <ChevronDown className="ml-2 size-4 rotate-180" />
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </div>
