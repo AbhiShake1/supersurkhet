@@ -9,8 +9,6 @@ import {
   ChevronRight,
   ChevronsRight,
   ChevronsUpDown,
-  CirclePlus,
-  Combine,
   LogOut,
   MoreHorizontal,
   Pencil,
@@ -31,7 +29,6 @@ import {
   loadSidebarPreferences,
   saveSidebarPreferences,
 } from '@/lib/sidebar-preferences';
-import { cn } from '@/lib/utils';
 import { useAuth } from '../auth-provider';
 import type { PossibleTabConfig } from '../auto-admin';
 import { ThemeToggle } from '../theme/theme-toggle';
@@ -167,7 +164,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   const [activeDraggedTabId, setActiveDraggedTabId] = useState<string | null>(
     null,
   );
-  const ungroupDropZoneRef = useRef<HTMLDivElement | null>(null);
   const groupCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const pointerPositionRef = useRef<{ x: number; y: number } | null>(null);
   const externalDropHandledRef = useRef(false);
@@ -386,7 +382,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     (event: SortableDragEndEvent): string | undefined | null => {
       const translatedRect = event.active.rect.current.translated;
       const initialRect = event.active.rect.current.initial;
-      const dropPosition = translatedRect
+      const fallbackDropPosition = translatedRect
         ? {
             x: translatedRect.left + translatedRect.width / 2,
             y: translatedRect.top + translatedRect.height / 2,
@@ -397,18 +393,16 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
               y: initialRect.top + initialRect.height / 2 + event.delta.y,
             }
           : pointerPositionRef.current;
+      const dropPosition = pointerPositionRef.current ?? fallbackDropPosition;
       if (!dropPosition) return null;
 
-      const ungroupZone = ungroupDropZoneRef.current;
-      if (ungroupZone) {
-        const rect = ungroupZone.getBoundingClientRect();
-        const insideUngroupZone =
-          dropPosition.x >= rect.left &&
-          dropPosition.x <= rect.right &&
-          dropPosition.y >= rect.top &&
-          dropPosition.y <= rect.bottom;
-        if (insideUngroupZone) return undefined;
-      }
+      const dropTarget = document
+        .elementFromPoint(dropPosition.x, dropPosition.y)
+        ?.closest<HTMLElement>('[data-sidebar-group-card]');
+      const groupNameFromTarget = dropTarget?.getAttribute(
+        'data-sidebar-group-name',
+      );
+      if (groupNameFromTarget) return groupNameFromTarget;
 
       for (const [groupName, groupCard] of groupCardRefs.current.entries()) {
         const rect = groupCard.getBoundingClientRect();
@@ -447,11 +441,9 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
         return;
       }
 
-      const targetGroupName = resolveDropGroupFromDragEvent(event);
-      if (targetGroupName === null) {
-        clearTrackedDragState();
-        return;
-      }
+      const resolvedDropGroup = resolveDropGroupFromDragEvent(event);
+      const targetGroupName =
+        resolvedDropGroup === null ? undefined : resolvedDropGroup;
 
       const sourceTab = tabBySortableId.get(activeId);
       const sourceTabTitle = sourceTab?.title?.trim();
@@ -546,23 +538,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
         )}
 
         <div className="space-y-1">
-          {editable ? (
-            <div
-              ref={ungroupDropZoneRef}
-              className={cn(
-                'flex items-center justify-between rounded-md border border-dashed border-slate-300 px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 dark:text-slate-400',
-                activeDraggedTabId &&
-                  'border-primary bg-primary/5 text-primary dark:bg-primary/10',
-              )}
-            >
-              <span>Drag here to remove the element from any group</span>
-              <QuickAddPopover
-                editable={editable}
-                onAddGroup={onAddGroup}
-                onAddTable={onAddTable}
-              />
-            </div>
-          ) : null}
           <Sortable
             value={ungroupedItems}
             getItemValue={getTabSortableValue}
@@ -692,7 +667,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
           }}
         >
           <SortableContent asChild>
-            <div>
+            <div className="space-y-2 py-1">
               {previewGroupOrder.map((groupName, groupIndex) => {
                 const items = groupedItems[groupName] ?? [];
                 const isGroupOpen = groupOpenState[groupName] ?? true;
@@ -711,7 +686,8 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         setGroupCardRef(groupName, element);
                       }}
                       data-sidebar-group-card="true"
-                      className="relative mt-1 rounded-lg border border-slate-200/80 p-1 dark:border-slate-800"
+                      data-sidebar-group-name={groupName}
+                      className="relative rounded-lg border border-slate-200/80 p-1 dark:border-slate-800"
                     >
                       {open ? (
                         editingGroupName === groupName ? (
@@ -1022,96 +998,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
         </AlertDialogContent>
       </AlertDialog>
     </nav>
-  );
-};
-
-const QuickAddPopover: React.FC<{
-  editable: boolean;
-  targetGroupName?: string;
-  onAddTable?: (targetGroupName?: string) => void;
-  onAddGroup?: (groupName?: string, options?: GroupAddOptions) => void;
-}> = ({ editable, targetGroupName, onAddTable, onAddGroup }) => {
-  if (!editable || (!onAddTable && !onAddGroup)) return null;
-  return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="rounded p-1 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
-          aria-label={
-            targetGroupName ? `Add in ${targetGroupName}` : 'Add item'
-          }
-        >
-          <CirclePlus className="h-4 w-4" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent align="end" className="w-44 p-1">
-        <div className="space-y-1">
-          {onAddTable ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                onClick={() => {
-                  onAddTable(targetGroupName);
-                }}
-              >
-                <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
-                Add Table
-              </button>
-            </PopoverClose>
-          ) : null}
-          {onAddGroup ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                onClick={() => {
-                  onAddGroup();
-                }}
-              >
-                <Combine className="h-3.5 w-3.5 text-muted-foreground" />
-                Add Group
-              </button>
-            </PopoverClose>
-          ) : null}
-          {onAddGroup && targetGroupName ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                onClick={() => {
-                  onAddGroup(undefined, {
-                    relativeTo: targetGroupName,
-                    position: 'above',
-                  });
-                }}
-              >
-                <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
-                Add Group Above
-              </button>
-            </PopoverClose>
-          ) : null}
-          {onAddGroup && targetGroupName ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
-                onClick={() => {
-                  onAddGroup(undefined, {
-                    relativeTo: targetGroupName,
-                    position: 'below',
-                  });
-                }}
-              >
-                <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
-                Add Group Below
-              </button>
-            </PopoverClose>
-          ) : null}
-        </div>
-      </PopoverContent>
-    </Popover>
   );
 };
 
