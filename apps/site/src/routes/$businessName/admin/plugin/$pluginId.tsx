@@ -190,7 +190,7 @@ function PluginDetailsPage() {
   async function handleSaveReview(rating: number, comment: string) {
     if (!plugin) return;
     const now = new Date().toISOString();
-    const reviewId = `${encodeURIComponent(plugin.pluginId)}::${encodeURIComponent(actorUserId)}`;
+    const reviewId = `${encodeURIComponent(plugin.pluginId)}::${encodeURIComponent(actorUserId)}::${Date.now()}`;
 
     try {
       setSavingReview(true);
@@ -203,11 +203,11 @@ function PluginDetailsPage() {
         userLabel: actorUserLabel,
         rating,
         comment: normalizedComment,
-        createdAt: details?.userReview?.createdAt ?? now,
+        createdAt: now,
         updatedAt: now,
       });
       await refetchReviews();
-      toast.success(details?.userReview ? 'Review updated' : 'Review submitted');
+      toast.success('Review submitted');
     } catch (error) {
       console.error(error);
       toast.error('Failed to save review');
