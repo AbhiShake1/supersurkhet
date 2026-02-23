@@ -395,17 +395,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
 
   const resolveDropGroupFromDragEvent = useCallback(
     (event: SortableDragEndEvent): string | undefined | null => {
-      const overId = event.over ? String(event.over.id) : '';
-      if (overId) {
-        const overTab = tabBySortableId.get(overId);
-        if (overTab) {
-          return overTab.group?.trim() || undefined;
-        }
-        if (groupCardRefs.current.has(overId)) {
-          return overId;
-        }
-      }
-
       const translatedRect = event.active.rect.current.translated;
       const initialRect = event.active.rect.current.initial;
       const fallbackDropPosition = translatedRect
@@ -422,6 +411,9 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       const dropPosition = pointerPositionRef.current ?? fallbackDropPosition;
       if (!dropPosition) return null;
 
+      // Prefer pointer hit-testing over `event.over` because each group renders
+      // in its own sortable context, so `over` can still point to source-group
+      // items even when the pointer is above a different group card.
       const dropTarget = document
         .elementFromPoint(dropPosition.x, dropPosition.y)
         ?.closest<HTMLElement>('[data-sidebar-group-card]');
@@ -438,6 +430,17 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
           dropPosition.y >= rect.top &&
           dropPosition.y <= rect.bottom;
         if (insideGroupCard) return groupName;
+      }
+
+      const overId = event.over ? String(event.over.id) : '';
+      if (overId) {
+        const overTab = tabBySortableId.get(overId);
+        if (overTab) {
+          return overTab.group?.trim() || undefined;
+        }
+        if (groupCardRefs.current.has(overId)) {
+          return overId;
+        }
       }
 
       return undefined;

@@ -6,11 +6,23 @@ import {
   Pencil,
   Plus,
   Search,
+  Trash2,
 } from 'lucide-react';
 import type { MouseEvent } from 'react';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { Logo } from '@/components/logo';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { ButtonGroup } from '@/components/ui/button-group';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -163,6 +175,13 @@ function PluginStudioProjectRoute() {
     field: 'title' | 'description';
   } | null>(null);
   const [editingValue, setEditingValue] = useState('');
+  const [pendingPluginDelete, setPendingPluginDelete] = useState<{
+    pluginId: string;
+    title: string;
+    draftIds: string[];
+    hasInstall: boolean;
+  } | null>(null);
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
 
   const actorUserIdAliases = useMemo(
     () => buildActorUserIdAliases(user),
@@ -177,6 +196,7 @@ function PluginStudioProjectRoute() {
   const { data: memberRows = [] } = api.pluginProjectMember.useGet();
   const { data: draftRows = [], refetch: refetchDrafts } =
     api.pluginDraft.useGet();
+  const deleteDraftMutation = api.pluginDraft.useDelete();
   const updateDraftMutation = api.pluginDraft.useUpdate();
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [projectId],
@@ -512,6 +532,75 @@ function PluginStudioProjectRoute() {
   const stopInlineEdit = () => {
     setEditingField(null);
     setEditingValue('');
+  };
+  const requestDeletePlugin = (
+    event: MouseEvent,
+    card: {
+      pluginId: string;
+      title: string;
+    },
+  ) => {
+    event.stopPropagation();
+    const targetDraftIds = drafts
+      .filter(
+        (draft) =>
+          (draft.projectId ?? '') === projectId &&
+          draft.pluginId === card.pluginId,
+      )
+      .map((draft) => draft.draftId)
+      .filter((draftId): draftId is string => Boolean(draftId));
+    const hasInstall =
+      installsByPluginId.has(card.pluginId) ||
+      draftInstallsByPluginId.has(card.pluginId);
+
+    setDeleteConfirmationInput('');
+    setPendingPluginDelete({
+      pluginId: card.pluginId,
+      title: card.title,
+      draftIds: targetDraftIds,
+      hasInstall,
+    });
+  };
+
+  const closeDeleteDialog = () => {
+    setPendingPluginDelete(null);
+    setDeleteConfirmationInput('');
+  };
+
+  const isDeleteConfirmationValid =
+    pendingPluginDelete !== null &&
+    deleteConfirmationInput.trim() === pendingPluginDelete.pluginId;
+
+  const confirmDeletePlugin = async () => {
+    if (!pendingPluginDelete) return;
+    if (pendingPluginDelete.hasInstall) {
+      toast.error(
+        'This plugin is installed. Uninstall or pause/remove it before deleting drafts.',
+      );
+      return;
+    }
+    if (pendingPluginDelete.draftIds.length === 0) {
+      toast.error('No draft found to delete for this plugin.');
+      closeDeleteDialog();
+      return;
+    }
+
+    try {
+      await Promise.all(
+        pendingPluginDelete.draftIds.map((id) =>
+          deleteDraftMutation.mutateAsync(id as never),
+        ),
+      );
+      setPluginOrder((current) =>
+        current.filter((pluginId) => pluginId !== pendingPluginDelete.pluginId),
+      );
+      await refetchDrafts();
+      toast.success(`Deleted ${pendingPluginDelete.title}.`);
+      closeDeleteDialog();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to delete plugin.');
+    }
   };
 
   const hoveredProject = useMemo(
@@ -938,7 +1027,7 @@ function PluginStudioProjectRoute() {
                         }}
                         role="button"
                         tabIndex={0}
-                        className="rounded-xl border border-border/70 bg-card/70 p-6 text-left transition hover:border-border"
+                        className="group/card rounded-xl border border-border/70 bg-card/70 p-6 text-left transition hover:border-border"
                       >
                         <div className="flex items-start justify-between gap-4">
                           <div>
@@ -1031,14 +1120,26 @@ function PluginStudioProjectRoute() {
                               </div>
                             )}
                           </div>
-                          <SortableItemHandle
-                            aria-label={`Reorder ${card.title}`}
-                            disabled={isReorderDisabled}
-                            onClick={(event) => event.stopPropagation()}
-                            className="mt-1 inline-flex size-8 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition hover:text-foreground"
-                          >
-                            <GripVertical className="size-4" />
-                          </SortableItemHandle>
+                          <div className="mt-1 flex items-center gap-2 opacity-0 transition group-hover/card:opacity-100 group-focus-within/card:opacity-100">
+                            <button
+                              type="button"
+                              aria-label={`Delete ${card.title}`}
+                              onClick={(event) =>
+                                requestDeletePlugin(event, card)
+                              }
+                              className="inline-flex size-8 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition hover:border-destructive/60 hover:text-destructive"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                            <SortableItemHandle
+                              aria-label={`Reorder ${card.title}`}
+                              disabled={isReorderDisabled}
+                              onClick={(event) => event.stopPropagation()}
+                              className="inline-flex size-8 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition hover:text-foreground"
+                            >
+                              <GripVertical className="size-4" />
+                            </SortableItemHandle>
+                          </div>
                         </div>
                         <div className="mt-7">
                           <span className="rounded-full border border-border/80 px-2 py-0.5 text-xs uppercase tracking-wide text-muted-foreground">
@@ -1054,6 +1155,60 @@ function PluginStudioProjectRoute() {
           </section>
         ))}
       </main>
+
+      <AlertDialog
+        open={pendingPluginDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) closeDeleteDialog();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete plugin drafts?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingPluginDelete
+                ? `This permanently deletes all drafts for "${pendingPluginDelete.title}" in this project. To confirm, type ${pendingPluginDelete.pluginId} below.`
+                : 'Delete plugin drafts for this project.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            {pendingPluginDelete?.hasInstall ? (
+              <p className="rounded-md border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-700">
+                This plugin has an active or draft install. Remove the install
+                before deleting drafts.
+              </p>
+            ) : null}
+            <Input
+              value={deleteConfirmationInput}
+              onChange={(event) =>
+                setDeleteConfirmationInput(event.target.value)
+              }
+              placeholder={pendingPluginDelete?.pluginId ?? 'plugin.id'}
+              aria-label="Type plugin id to confirm delete"
+              autoFocus
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={closeDeleteDialog}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(event) => {
+                event.preventDefault();
+                void confirmDeletePlugin();
+              }}
+              disabled={
+                !isDeleteConfirmationValid ||
+                pendingPluginDelete?.hasInstall === true ||
+                deleteDraftMutation.isPending
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete plugin
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
