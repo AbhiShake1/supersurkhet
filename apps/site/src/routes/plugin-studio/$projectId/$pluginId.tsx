@@ -2571,6 +2571,8 @@ function PluginStudioPresenter({
       const userHandle = formatUserHandle(actorUserId);
       const draftTitle = `${pluginId} (${userHandle})`;
       const now = new Date().toISOString();
+      const nextTitle = activeDraftTitle || draftTitle;
+      const nextDescription = activeDraftDescription || undefined;
       const nextDraft: PluginDraftDoc = {
         id: draftId,
         draftId,
@@ -2578,16 +2580,32 @@ function PluginStudioPresenter({
         pluginId,
         ownerUserId: actorUserId,
         status: 'active',
-        title: activeDraftTitle || draftTitle,
-        description: activeDraftDescription || undefined,
+        title: nextTitle,
+        description: nextDescription,
         createdAt: now,
         updatedAt: now,
       };
 
       if (activeDraft) {
+        const hasHeaderChanges =
+          (activeDraft.projectId ?? undefined) !== (projectId || undefined) ||
+          activeDraft.pluginId !== pluginId ||
+          activeDraft.status !== 'active' ||
+          (activeDraft.title ?? undefined) !== nextTitle ||
+          (activeDraft.description?.trim() || undefined) !== nextDescription;
+
+        if (!hasHeaderChanges) {
+          return activeDraft;
+        }
+
         await updateDraftMutation.mutateAsync({
           ...activeDraft,
-          ...nextDraft,
+          projectId,
+          pluginId,
+          status: 'active',
+          title: nextTitle,
+          description: nextDescription,
+          updatedAt: now,
           createdAt: activeDraft.createdAt ?? now,
         } as never);
       } else {
