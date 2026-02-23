@@ -246,26 +246,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     return [...preferred, ...remaining];
   }, [groupedItems, groups, localGroupOrder]);
 
-  const previewGroupOrder = useMemo(() => {
-    if (!draggedGroupName || !groupDropIndicator) return groupNamesToRender;
-    const { groupName: targetGroupName, position } = groupDropIndicator;
-    if (draggedGroupName === targetGroupName) return groupNamesToRender;
-
-    const baseline = [...groupNamesToRender];
-    if (
-      !baseline.includes(draggedGroupName) ||
-      !baseline.includes(targetGroupName)
-    ) {
-      return groupNamesToRender;
-    }
-
-    const next = baseline.filter((name) => name !== draggedGroupName);
-    const targetIndex = next.indexOf(targetGroupName);
-    if (targetIndex < 0) return groupNamesToRender;
-    const insertAt = position === 'above' ? targetIndex : targetIndex + 1;
-    next.splice(insertAt, 0, draggedGroupName);
-    return next;
-  }, [draggedGroupName, groupDropIndicator, groupNamesToRender]);
+  const previewGroupOrder = groupNamesToRender;
 
   const applyLocalGroupReorder = useCallback(
     (
@@ -420,6 +401,28 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     [],
   );
 
+  const readDraggedTabTitle = useCallback(
+    (event: React.DragEvent<HTMLElement>) => {
+      const direct = event.dataTransfer.getData('text/tab-title');
+      if (direct) return direct;
+      const plain = event.dataTransfer.getData('text/plain');
+      if (plain.startsWith('tab:')) return plain.slice(4);
+      return draggedTabTitle;
+    },
+    [draggedTabTitle],
+  );
+
+  const readDraggedGroupName = useCallback(
+    (event: React.DragEvent<HTMLElement>) => {
+      const direct = event.dataTransfer.getData('text/group-name');
+      if (direct) return direct;
+      const plain = event.dataTransfer.getData('text/plain');
+      if (plain.startsWith('group:')) return plain.slice(6);
+      return draggedGroupName;
+    },
+    [draggedGroupName],
+  );
+
   return (
     <nav
       className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${open ? 'w-52 sm:w-72' : 'w-12 sm:w-16'
@@ -500,8 +503,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
           onDrop={(event) => {
             event.preventDefault();
             if (!editable || !onMoveTabToGroup) return;
-            const dropped =
-              event.dataTransfer.getData('text/tab-title') || draggedTabTitle;
+            const dropped = readDraggedTabTitle(event);
             if (!dropped) return;
             onMoveTabToGroup(dropped, undefined);
             setDraggedTabTitle(null);
@@ -530,6 +532,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                 attachDragPreview(event, event.currentTarget);
                 try {
                   event.dataTransfer.setData('text/tab-title', item.title);
+                  event.dataTransfer.setData('text/plain', `tab:${item.title}`);
                 } catch (_error) {
                   // noop
                 }
@@ -541,8 +544,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
               }}
               onDragOver={(event) => {
                 if (!editable || !onReorderTabs) return;
-                const dropped =
-                  event.dataTransfer.getData('text/tab-title') || draggedTabTitle;
+                const dropped = readDraggedTabTitle(event);
                 if (!dropped || dropped === item.title) {
                   if (tabDropIndicator?.tabTitle === item.title) {
                     setTabDropIndicator(null);
@@ -578,8 +580,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
               }}
               onDrop={(event) => {
                 if (!editable || !onReorderTabs) return;
-                const dropped =
-                  event.dataTransfer.getData('text/tab-title') || draggedTabTitle;
+                const dropped = readDraggedTabTitle(event);
                 if (!dropped || dropped === item.title) return;
                 event.preventDefault();
                 event.stopPropagation();
@@ -697,8 +698,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     return;
                   event.preventDefault();
                   const droppedGroup =
-                    event.dataTransfer.getData('text/group-name') ||
-                    draggedGroupName;
+                    readDraggedGroupName(event);
                   if (!droppedGroup) {
                     if (groupDropIndicator) setGroupDropIndicator(null);
                     return;
@@ -736,8 +736,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   event.preventDefault();
                   if (!editable) return;
                   const droppedGroup =
-                    event.dataTransfer.getData('text/group-name') ||
-                    draggedGroupName;
+                    readDraggedGroupName(event);
                   if (droppedGroup) {
                     const preferredPosition =
                       groupDropIndicator?.groupName === groupName
@@ -756,8 +755,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   }
                   if (!onMoveTabToGroup) return;
                   const dropped =
-                    event.dataTransfer.getData('text/tab-title') ||
-                    draggedTabTitle;
+                    readDraggedTabTitle(event);
                   if (!dropped) return;
                   onMoveTabToGroup(dropped, groupName);
                   setDraggedTabTitle(null);
@@ -825,6 +823,10 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                               event.dataTransfer.setData(
                                 'text/group-name',
                                 groupName,
+                              );
+                              event.dataTransfer.setData(
+                                'text/plain',
+                                `group:${groupName}`,
                               );
                             } catch (_error) {
                               // noop
@@ -952,6 +954,10 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                               'text/tab-title',
                               item.title,
                             );
+                            event.dataTransfer.setData(
+                              'text/plain',
+                              `tab:${item.title}`,
+                            );
                           } catch (_error) {
                             // noop
                           }
@@ -963,9 +969,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         }}
                         onDragOver={(event) => {
                           if (!editable || !onReorderTabs) return;
-                          const dropped =
-                            event.dataTransfer.getData('text/tab-title') ||
-                            draggedTabTitle;
+                          const dropped = readDraggedTabTitle(event);
                           if (!dropped || dropped === item.title) {
                             if (tabDropIndicator?.tabTitle === item.title) {
                               setTabDropIndicator(null);
@@ -1001,9 +1005,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         }}
                         onDrop={(event) => {
                           if (!editable || !onReorderTabs) return;
-                          const dropped =
-                            event.dataTransfer.getData('text/tab-title') ||
-                            draggedTabTitle;
+                          const dropped = readDraggedTabTitle(event);
                           if (!dropped || dropped === item.title) return;
                           event.preventDefault();
                           event.stopPropagation();
@@ -1299,19 +1301,26 @@ const Option = memo(function Option({
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="grid place-content-center rounded p-0.5"
+                className="group/icon-trigger relative grid place-content-center rounded p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800"
                 onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                }}
-                onDoubleClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
                   if (!editable || !onRenameIcon) return;
                   setIsIconPickerOpen(true);
                 }}
               >
-                <Icon className="h-4 w-4" />
+                <Icon
+                  className={`h-4 w-4 transition-opacity ${editable && onRenameIcon
+                    ? 'opacity-100 group-hover/icon-trigger:opacity-0 group-focus-visible/icon-trigger:opacity-0'
+                    : ''
+                    }`}
+                />
+                {editable && onRenameIcon ? (
+                  <ChevronsUpDown className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity group-hover/icon-trigger:opacity-100 group-focus-visible/icon-trigger:opacity-100" />
+                ) : null}
+                {editable && onRenameIcon ? (
+                  <span className="sr-only">Edit icon for tab {title}</span>
+                ) : null}
               </button>
             </PopoverTrigger>
             {editable && onRenameIcon ? (
