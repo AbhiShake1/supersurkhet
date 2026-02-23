@@ -3834,6 +3834,9 @@ function PluginStudioPresenter({
       systemTabs: SystemTabState;
       tabOrder: string[];
     }) => void,
+    options?: {
+      availableSchemaDocsOverride?: readonly SchemaDoc[];
+    },
   ) {
     let currentTabs: AdminTabDoc[] = [];
     try {
@@ -3845,8 +3848,13 @@ function PluginStudioPresenter({
     const state = deserializeDraftAdminTabs(currentTabs);
     updater(state);
 
+    const resolvedAvailableSchemaDocs =
+      options?.availableSchemaDocsOverride ?? availableSchemaDocs;
     const availableSchemaById = new Map(
-      availableSchemaDocs.map((schemaDoc) => [schemaDoc.schemaId, schemaDoc]),
+      resolvedAvailableSchemaDocs.map((schemaDoc) => [
+        schemaDoc.schemaId,
+        schemaDoc,
+      ]),
     );
     const filteredSchemaTabs = state.schemaTabs.filter((tab) =>
       availableSchemaById.has(tab.schema),
@@ -3854,7 +3862,7 @@ function PluginStudioPresenter({
     const existingSchemaIds = new Set(filteredSchemaTabs.map((tab) => tab.schema));
     const appendedSchemaTabs = [
       ...filteredSchemaTabs,
-      ...availableSchemaDocs
+      ...resolvedAvailableSchemaDocs
         .filter((schemaDoc) => !existingSchemaIds.has(schemaDoc.schemaId))
         .map(
           (schemaDoc) =>
@@ -4549,7 +4557,8 @@ function PluginStudioPresenter({
         },
       ],
     };
-    persistSchemaDocs([...availableSchemaDocs, nextSchemaDoc]);
+    const nextAvailableSchemaDocs = [...availableSchemaDocs, nextSchemaDoc];
+    persistSchemaDocs(nextAvailableSchemaDocs);
     updateSidebarAdminTabs((state) => {
       state.schemaTabs = [
         ...state.schemaTabs.filter((tab) => tab.schema !== nextSchemaId),
@@ -4559,7 +4568,7 @@ function PluginStudioPresenter({
           group: normalizedGroupName,
         },
       ];
-    });
+    }, { availableSchemaDocsOverride: nextAvailableSchemaDocs });
     setActiveSchemaId(nextSchemaId);
     syncBuilderFromSchemaDoc(nextSchemaDoc);
   }

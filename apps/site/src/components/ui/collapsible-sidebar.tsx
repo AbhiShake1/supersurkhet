@@ -350,15 +350,30 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
 
   useEffect(() => {
     if (!activeDraggedTabId) return;
-    const handlePointerMove = (event: PointerEvent) => {
+    const updatePointerPosition = (x: number, y: number) => {
       pointerPositionRef.current = {
-        x: event.clientX,
-        y: event.clientY,
+        x,
+        y,
       };
     };
+    const handlePointerMove = (event: PointerEvent) => {
+      updatePointerPosition(event.clientX, event.clientY);
+    };
+    const handleMouseMove = (event: MouseEvent) => {
+      updatePointerPosition(event.clientX, event.clientY);
+    };
+    const handleTouchMove = (event: TouchEvent) => {
+      const touch = event.touches[0];
+      if (!touch) return;
+      updatePointerPosition(touch.clientX, touch.clientY);
+    };
     window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchmove', handleTouchMove);
     };
   }, [activeDraggedTabId]);
 
@@ -380,6 +395,17 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
 
   const resolveDropGroupFromDragEvent = useCallback(
     (event: SortableDragEndEvent): string | undefined | null => {
+      const overId = event.over ? String(event.over.id) : '';
+      if (overId) {
+        const overTab = tabBySortableId.get(overId);
+        if (overTab) {
+          return overTab.group?.trim() || undefined;
+        }
+        if (groupCardRefs.current.has(overId)) {
+          return overId;
+        }
+      }
+
       const translatedRect = event.active.rect.current.translated;
       const initialRect = event.active.rect.current.initial;
       const fallbackDropPosition = translatedRect
@@ -414,9 +440,9 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
         if (insideGroupCard) return groupName;
       }
 
-      return null;
+      return undefined;
     },
-    [],
+    [tabBySortableId],
   );
 
   const handleTabDragStart = useCallback(
