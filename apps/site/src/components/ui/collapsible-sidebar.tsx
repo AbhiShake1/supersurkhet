@@ -142,7 +142,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   } | null>(null);
   const [editingGroupName, setEditingGroupName] = useState<string | null>(null);
   const [editingTabTitle, setEditingTabTitle] = useState<string | null>(null);
-  const [localGroupOrder, setLocalGroupOrder] = useState<string[]>([]);
   const [pendingGroupDelete, setPendingGroupDelete] = useState<{
     name: string;
     itemCount: number;
@@ -232,8 +231,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     for (const key of Object.keys(groupedItems)) {
       if (key.trim()) next.add(key);
     }
-    const baselineOrder =
-      localGroupOrder.length > 0 ? localGroupOrder : (groups ?? []);
+    const baselineOrder = groups ?? [];
     const preferred = baselineOrder.filter((groupName) => next.has(groupName));
     for (const groupName of groups ?? []) {
       if (next.has(groupName) && !preferred.includes(groupName)) {
@@ -244,33 +242,9 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       (groupName) => !preferred.includes(groupName),
     );
     return [...preferred, ...remaining];
-  }, [groupedItems, groups, localGroupOrder]);
+  }, [groupedItems, groups]);
 
   const previewGroupOrder = groupNamesToRender;
-
-  const applyLocalGroupReorder = useCallback(
-    (
-      fromGroupName: string,
-      toGroupName: string,
-      position: 'above' | 'below' = 'below',
-    ) => {
-      const from = fromGroupName.trim();
-      const to = toGroupName.trim();
-      if (!from || !to || from === to) return;
-      setLocalGroupOrder((current) => {
-        const baseline = current.length > 0 ? [...current] : [...groupNamesToRender];
-        if (!baseline.includes(from)) baseline.push(from);
-        if (!baseline.includes(to)) baseline.push(to);
-        const next = baseline.filter((groupName) => groupName !== from);
-        const toIndex = next.indexOf(to);
-        if (toIndex < 0) return current;
-        const insertAt = position === 'above' ? toIndex : toIndex + 1;
-        next.splice(insertAt, 0, from);
-        return next;
-      });
-    },
-    [groupNamesToRender],
-  );
 
   const toggleGroup = useCallback(
     (groupName: string) => {
@@ -707,9 +681,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     if (groupDropIndicator) setGroupDropIndicator(null);
                     return;
                   }
-                  const position = getDropPositionFromPointer(
-                    event as React.DragEvent<HTMLElement>,
-                  );
+                  const draggedIndex = groupNamesToRender.indexOf(droppedGroup);
+                  const targetIndex = groupNamesToRender.indexOf(groupName);
+                  if (draggedIndex < 0 || targetIndex < 0) {
+                    if (groupDropIndicator) setGroupDropIndicator(null);
+                    return;
+                  }
+                  const position: 'above' | 'below' =
+                    draggedIndex < targetIndex ? 'below' : 'above';
                   setGroupDropIndicator((current) => {
                     if (
                       current?.groupName === groupName &&
@@ -738,15 +717,18 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   const droppedGroup =
                     readDraggedGroupName(event);
                   if (droppedGroup) {
+                    const fallbackPosition: 'above' | 'below' = (() => {
+                      const draggedIndex = groupNamesToRender.indexOf(droppedGroup);
+                      const targetIndex = groupNamesToRender.indexOf(groupName);
+                      if (draggedIndex >= 0 && targetIndex >= 0) {
+                        return draggedIndex < targetIndex ? 'below' : 'above';
+                      }
+                      return 'below';
+                    })();
                     const preferredPosition =
                       groupDropIndicator?.groupName === groupName
                         ? groupDropIndicator.position
-                        : 'below';
-                    applyLocalGroupReorder(
-                      droppedGroup,
-                      groupName,
-                      preferredPosition,
-                    );
+                        : fallbackPosition;
                     onReorderGroups?.(droppedGroup, groupName, preferredPosition);
                     setDraggedGroupName(null);
                     setTabDropIndicator(null);
@@ -882,11 +864,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                               const previousGroupName =
                                 previewGroupOrder[groupIndex - 1];
                               if (!previousGroupName) return;
-                              applyLocalGroupReorder(
-                                groupName,
-                                previousGroupName,
-                                'above',
-                              );
                               onReorderGroups(
                                 groupName,
                                 previousGroupName,
@@ -901,11 +878,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                               const nextGroupName =
                                 previewGroupOrder[groupIndex + 1];
                               if (!nextGroupName) return;
-                              applyLocalGroupReorder(
-                                groupName,
-                                nextGroupName,
-                                'below',
-                              );
                               onReorderGroups(groupName, nextGroupName, 'below');
                             }
                             : undefined
