@@ -105,9 +105,10 @@ import type {
 } from '@/lib/plugins/types';
 import type { CompileVerifyDiagnostic } from '@/server-functions/plugins-v2-compile-verify';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import * as LucideIcons from 'lucide-react';
 import {
+  ArrowLeft,
   ArrowRight,
   BadgePlus,
   Pencil,
@@ -2098,6 +2099,7 @@ function PluginStudioPresenter({
   user,
   isAuthenticated,
 }: PluginStudioPresenterProps) {
+  const navigate = useNavigate();
   const { fire: fireConfetti } = useConfetti();
   const params = Route.useParams();
   const actorUserIdAliases = useMemo(
@@ -5343,6 +5345,22 @@ function PluginStudioPresenter({
   return (
     <div className="w-full py-6">
       <div className="mx-auto w-full max-w-7xl px-4 space-y-6">
+        <div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 px-2 text-muted-foreground hover:text-foreground"
+            onClick={() =>
+              void navigate({
+                to: '/plugin-studio/$projectId',
+                params: { projectId },
+              })
+            }
+          >
+            <ArrowLeft className="mr-2 size-4" />
+            Back to plugins
+          </Button>
+        </div>
         <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-background via-muted/30 to-background p-6 md:p-8">
           <div className="absolute -right-10 top-6 h-40 w-40 rounded-full bg-primary/20 blur-2xl" />
           <div className="absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-accent/30 blur-2xl" />
