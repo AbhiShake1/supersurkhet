@@ -3182,7 +3182,15 @@ function PluginStudioPresenter({
             onAddColumn: openAddColumnSheet,
             onEditColumn: openEditColumnSheet,
             onDeleteColumn: requestDeleteColumn,
-            onReorderColumns: handleReorderColumns,
+            onReorderColumns: (
+              sourceColumnKey: string,
+              targetColumnKey: string,
+            ) =>
+              handleReorderColumns(
+                schemaDoc.schemaId,
+                sourceColumnKey,
+                targetColumnKey,
+              ),
           },
         ];
       } catch (error) {
@@ -4044,14 +4052,16 @@ function PluginStudioPresenter({
   }
 
   function handleReorderColumns(
+    schemaId: string,
     sourceColumnKey: string,
     targetColumnKey: string,
   ) {
+    const normalizedSchemaId = schemaId.trim();
     const source = sourceColumnKey.trim();
     const target = targetColumnKey.trim();
-    if (!source || !target || source === target) return;
+    if (!normalizedSchemaId || !source || !target || source === target) return;
 
-    setSchemaBuilder((current) => {
+    updateSchemaDoc(normalizedSchemaId, (current) => {
       const sourceIndex = current.fields.findIndex(
         (field) => field.key.trim() === source,
       );
