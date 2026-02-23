@@ -45,6 +45,7 @@ import { CustomUiBuilderPage } from '../ui-builder';
 
 export interface AutoAdminProps {
   tabs: AutoAdminTabInput[];
+  includeSystemTabs?: boolean;
   editable?: boolean;
   onAddTable?: (targetGroupName?: string) => void;
   onAddGroup?: (
@@ -142,6 +143,7 @@ function isRenderableAutoTableTab(tab: unknown): tab is AutoTableItem {
 
 export function AutoAdmin({
   tabs,
+  includeSystemTabs = true,
   editable = false,
   onAddTable,
   onAddGroup,
@@ -206,55 +208,60 @@ export function AutoAdmin({
   });
   const business = allBusinesses[0];
 
-  const tabsWithHome: PossibleTabConfig[] = useMemo(
-    () =>
-      dedupeAdminTabs<PossibleTabConfig>([
-        resolveAdminTabInput({
-          title: dashboardTab.title,
-          group: dashboardTab.group,
-          iconName: dashboardTab.iconName,
-          icon: resolveIconByName(dashboardTab.iconName) ?? BarChart3,
-          children: business ? <AdminDashboard slug={basePath} /> : null,
-        }),
-        ...tabs.map((tab) => resolveAdminTabInput(tab) as PossibleTabConfig),
-        resolveAdminTabInput({
-          title: qrTab.title,
-          group: qrTab.group,
-          iconName: qrTab.iconName,
-          icon: resolveIconByName(qrTab.iconName) ?? QrCodeIcon,
-          children: <QRCodePage slug={basePath} />,
-        }),
-        resolveAdminTabInput({
-          title: websiteTab.title,
-          group: websiteTab.group,
-          iconName: websiteTab.iconName,
-          icon: resolveIconByName(websiteTab.iconName) ?? Sigma,
-          children: <CustomUiBuilderPage slug={basePath} />,
-        }),
-      ]),
-    [
-      dashboardTab.group,
-      dashboardTab.iconName,
-      dashboardTab.title,
-      qrTab.group,
-      qrTab.iconName,
-      qrTab.title,
-      websiteTab.group,
-      websiteTab.iconName,
-      websiteTab.title,
-      business,
-      basePath,
-      tabs,
-    ],
-  );
+  const tabsWithHome: PossibleTabConfig[] = useMemo(() => {
+    const runtimeTabs = tabs.map(
+      (tab) => resolveAdminTabInput(tab) as PossibleTabConfig,
+    );
+    if (!includeSystemTabs) {
+      return dedupeAdminTabs<PossibleTabConfig>(runtimeTabs);
+    }
 
-  const systemGroups = useMemo(
-    () =>
-      [dashboardTab.group, qrTab.group, websiteTab.group].filter(
-        (groupName): groupName is string => Boolean(groupName),
-      ),
-    [dashboardTab.group, qrTab.group, websiteTab.group],
-  );
+    return dedupeAdminTabs<PossibleTabConfig>([
+      resolveAdminTabInput({
+        title: dashboardTab.title,
+        group: dashboardTab.group,
+        iconName: dashboardTab.iconName,
+        icon: resolveIconByName(dashboardTab.iconName) ?? BarChart3,
+        children: business ? <AdminDashboard slug={basePath} /> : null,
+      }),
+      ...runtimeTabs,
+      resolveAdminTabInput({
+        title: qrTab.title,
+        group: qrTab.group,
+        iconName: qrTab.iconName,
+        icon: resolveIconByName(qrTab.iconName) ?? QrCodeIcon,
+        children: <QRCodePage slug={basePath} />,
+      }),
+      resolveAdminTabInput({
+        title: websiteTab.title,
+        group: websiteTab.group,
+        iconName: websiteTab.iconName,
+        icon: resolveIconByName(websiteTab.iconName) ?? Sigma,
+        children: <CustomUiBuilderPage slug={basePath} />,
+      }),
+    ]);
+  }, [
+    includeSystemTabs,
+    dashboardTab.group,
+    dashboardTab.iconName,
+    dashboardTab.title,
+    qrTab.group,
+    qrTab.iconName,
+    qrTab.title,
+    websiteTab.group,
+    websiteTab.iconName,
+    websiteTab.title,
+    business,
+    basePath,
+    tabs,
+  ]);
+
+  const systemGroups = useMemo(() => {
+    if (!includeSystemTabs) return [];
+    return [dashboardTab.group, qrTab.group, websiteTab.group].filter(
+      (groupName): groupName is string => Boolean(groupName),
+    );
+  }, [includeSystemTabs, dashboardTab.group, qrTab.group, websiteTab.group]);
   const mergedGroups = useMemo(() => {
     const next = new Set<string>(groups ?? []);
     for (const groupName of systemGroups) next.add(groupName);

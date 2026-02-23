@@ -1,5 +1,5 @@
 import { Eye } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,9 @@ type PluginPreviewDialogProps = {
   onOpenChange: (open: boolean) => void;
   entry: PluginCatalogEntry;
   businessSlug: string;
+  businessId?: string;
   isInstalled: boolean;
-  onInstall: () => void;
+  onInstall: () => Promise<boolean | undefined>;
 };
 
 export function PluginPreviewDialog({
@@ -26,11 +27,14 @@ export function PluginPreviewDialog({
   onOpenChange,
   entry,
   businessSlug,
+  businessId,
   isInstalled,
   onInstall,
 }: PluginPreviewDialogProps) {
+  const [isInstalling, setIsInstalling] = useState(false);
   const currentConfig = useBusinessConfig({
     slug: businessSlug,
+    businessId,
   });
 
   const currentBusinessTabs = useMemo(
@@ -72,13 +76,25 @@ export function PluginPreviewDialog({
             <Button
               size="sm"
               className="shadow-lg shadow-primary/30 ring-1 ring-primary/40 mr-8"
-              disabled={isInstalled}
-              onClick={() => {
-                onInstall();
-                onOpenChange(false);
+              disabled={isInstalled || isInstalling}
+              onClick={async () => {
+                if (isInstalled || isInstalling) return;
+                setIsInstalling(true);
+                try {
+                  const installSucceeded = await onInstall();
+                  if (installSucceeded !== false) {
+                    onOpenChange(false);
+                  }
+                } finally {
+                  setIsInstalling(false);
+                }
               }}
             >
-              {isInstalled ? 'Installed' : 'Install Plugin'}
+              {isInstalled
+                ? 'Installed'
+                : isInstalling
+                  ? 'Installing...'
+                  : 'Install Plugin'}
             </Button>
           </div>
         </DialogHeader>

@@ -60,7 +60,8 @@ export interface PluginDetailsViewProps {
   plugin: PluginMarketItem;
   details: PluginDetailView;
   businessName: string;
-  onInstall: () => Promise<void>;
+  businessId?: string;
+  onInstall: () => Promise<boolean | undefined>;
   onUninstall: () => Promise<void>;
   onSaveReview: (rating: number, comment: string) => Promise<void>;
   onBack: () => void;
@@ -75,6 +76,7 @@ export function PluginDetailsView({
   plugin,
   details,
   businessName,
+  businessId,
   onInstall,
   onUninstall,
   onSaveReview,
@@ -774,6 +776,7 @@ export function PluginDetailsView({
           onOpenChange={setIsPreviewOpen}
           entry={plugin}
           businessSlug={businessName}
+          businessId={businessId}
           isInstalled={plugin.isInstalled}
           onInstall={onInstall}
         />

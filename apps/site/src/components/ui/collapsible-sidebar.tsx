@@ -9,11 +9,12 @@ import {
   CirclePlus,
   GripVertical,
   LogOut,
+  MoreHorizontal,
+  Pencil,
   PlugZapIcon,
   Search,
   Settings,
   Star,
-  Trash2,
 } from 'lucide-react';
 import type React from 'react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -265,6 +266,11 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     [onRenameTab],
   );
 
+  const beginTabRename = useCallback((title: string) => {
+    tabRenameHandledByKeyRef.current = false;
+    setEditingTabTitle(title);
+  }, []);
+
   const commitGroupRename = useCallback(
     (previousGroupName: string, nextGroupName: string) => {
       return commitSidebarRename({
@@ -276,6 +282,11 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     },
     [onRenameGroup],
   );
+
+  const beginGroupRename = useCallback((groupName: string) => {
+    groupRenameHandledByKeyRef.current = false;
+    setEditingGroupName(groupName);
+  }, []);
 
   const requestDeleteGroup = useCallback(
     (groupName: string, itemCount: number) => {
@@ -485,40 +496,33 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   }}
                 />
               ) : (
-                <div
-                  onDoubleClick={() => {
-                    if (!editable) return;
-                    tabRenameHandledByKeyRef.current = false;
-                    setEditingTabTitle(item.title);
-                  }}
-                >
-                  <Option
-                    Icon={getTabIcon(item)}
-                    iconName={item.iconName}
-                    iconCatalog={iconCatalog}
-                    title={item.title}
-                    url={item.url}
-                    selected={currentTab}
-                    open={open}
-                    editable={editable}
-                    onRenameIcon={onRenameTabIcon}
-                    onOpenWorkflowEditor={
-                      editable &&
-                      onOpenWorkflowEditorForTab &&
-                      ('schema' in item || 'parsedSchema' in item)
-                        ? onOpenWorkflowEditorForTab
-                        : undefined
-                    }
-                    onRequestDeleteTable={
-                      editable &&
-                      onDeleteTableForTab &&
-                      ('schema' in item || 'parsedSchema' in item)
-                        ? onDeleteTableForTab
-                        : undefined
-                    }
-                    onActivate={incrementFrequentUsage}
-                  />
-                </div>
+                <Option
+                  Icon={getTabIcon(item)}
+                  iconName={item.iconName}
+                  iconCatalog={iconCatalog}
+                  title={item.title}
+                  url={item.url}
+                  selected={currentTab}
+                  open={open}
+                  editable={editable}
+                  onBeginRename={editable ? beginTabRename : undefined}
+                  onRenameIcon={onRenameTabIcon}
+                  onOpenWorkflowEditor={
+                    editable &&
+                    onOpenWorkflowEditorForTab &&
+                    ('schema' in item || 'parsedSchema' in item)
+                      ? onOpenWorkflowEditorForTab
+                      : undefined
+                  }
+                  onRequestDeleteTable={
+                    editable &&
+                    onDeleteTableForTab &&
+                    ('schema' in item || 'parsedSchema' in item)
+                      ? onDeleteTableForTab
+                      : undefined
+                  }
+                  onActivate={incrementFrequentUsage}
+                />
               )}
             </div>
           ))}
@@ -659,7 +663,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     }}
                   />
                 ) : (
-                  <div className="flex items-center gap-1">
+                  <div className="group/group-header flex items-center gap-1">
                     {editable && onReorderGroups ? (
                       <button
                         type="button"
@@ -707,11 +711,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     <button
                       type="button"
                       onClick={() => toggleGroup(groupName)}
-                      onDoubleClick={() => {
-                        if (!editable) return;
-                        groupRenameHandledByKeyRef.current = false;
-                        setEditingGroupName(groupName);
-                      }}
                       aria-expanded={isGroupOpen}
                       className={`${SECTION_TOGGLE_BUTTON_CLASS} flex-1`}
                       style={{ WebkitTapHighlightColor: 'transparent' }}
@@ -723,21 +722,27 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         <ChevronRight className="h-4 w-4" />
                       )}
                     </button>
-                    {editable && onDeleteGroup ? (
+                    {editable && onRenameGroup ? (
                       <button
                         type="button"
-                        className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-destructive dark:text-slate-400 dark:hover:bg-slate-800"
-                        onClick={() =>
-                          requestDeleteGroup(groupName, items.length)
-                        }
-                        aria-label={`Delete group ${groupName}`}
+                        className="rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          beginGroupRename(groupName);
+                        }}
+                        aria-label={`Rename group ${groupName}`}
+                        title={`Rename group ${groupName}`}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </button>
                     ) : null}
-                    <QuickAddPopover
+                    <GroupActionsPopover
                       editable={editable}
-                      targetGroupName={groupName}
+                      groupName={groupName}
+                      itemCount={items.length}
+                      onRequestDeleteGroup={requestDeleteGroup}
+                      onDeleteGroup={onDeleteGroup}
                       onAddGroup={onAddGroup}
                       onAddTable={onAddTable}
                     />
@@ -805,40 +810,33 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                           }}
                         />
                       ) : (
-                        <div
-                          onDoubleClick={() => {
-                            if (!editable) return;
-                            tabRenameHandledByKeyRef.current = false;
-                            setEditingTabTitle(item.title);
-                          }}
-                        >
-                          <Option
-                            Icon={getTabIcon(item)}
-                            iconName={item.iconName}
-                            iconCatalog={iconCatalog}
-                            title={item.title}
-                            url={item.url}
-                            selected={currentTab}
-                            open={open}
-                            editable={editable}
-                            onRenameIcon={onRenameTabIcon}
-                            onOpenWorkflowEditor={
-                              editable &&
-                              onOpenWorkflowEditorForTab &&
-                              ('schema' in item || 'parsedSchema' in item)
-                                ? onOpenWorkflowEditorForTab
-                                : undefined
-                            }
-                            onRequestDeleteTable={
-                              editable &&
-                              onDeleteTableForTab &&
-                              ('schema' in item || 'parsedSchema' in item)
-                                ? onDeleteTableForTab
-                                : undefined
-                            }
-                            onActivate={incrementFrequentUsage}
-                          />
-                        </div>
+                        <Option
+                          Icon={getTabIcon(item)}
+                          iconName={item.iconName}
+                          iconCatalog={iconCatalog}
+                          title={item.title}
+                          url={item.url}
+                          selected={currentTab}
+                          open={open}
+                          editable={editable}
+                          onBeginRename={editable ? beginTabRename : undefined}
+                          onRenameIcon={onRenameTabIcon}
+                          onOpenWorkflowEditor={
+                            editable &&
+                            onOpenWorkflowEditorForTab &&
+                            ('schema' in item || 'parsedSchema' in item)
+                              ? onOpenWorkflowEditorForTab
+                              : undefined
+                          }
+                          onRequestDeleteTable={
+                            editable &&
+                            onDeleteTableForTab &&
+                            ('schema' in item || 'parsedSchema' in item)
+                              ? onDeleteTableForTab
+                              : undefined
+                          }
+                          onActivate={incrementFrequentUsage}
+                        />
                       )}
                     </div>
                   ))}
@@ -986,6 +984,7 @@ type OptionProps = {
   selected: string;
   open: boolean;
   editable?: boolean;
+  onBeginRename?: (title: string) => void;
   onRenameIcon?: (title: string, iconName: string) => void;
   onOpenWorkflowEditor?: (tabTitle: string) => void;
   onRequestDeleteTable?: (tabTitle: string) => void;
@@ -1000,21 +999,18 @@ const Option = memo(function Option({
   selected,
   open,
   editable = false,
+  onBeginRename,
   onRenameIcon,
   onOpenWorkflowEditor,
   onRequestDeleteTable,
   onActivate,
 }: OptionProps) {
   const isSelected = selected === title;
+  const hasRenameAction = editable && Boolean(onBeginRename);
   const hasWorkflowAction = Boolean(onOpenWorkflowEditor);
   const hasDeleteAction = Boolean(onRequestDeleteTable);
-  const hasHoverActions = hasWorkflowAction || hasDeleteAction;
-  const actionPaddingClass =
-    hasWorkflowAction && hasDeleteAction
-      ? 'pr-16'
-      : hasHoverActions
-        ? 'pr-8'
-        : '';
+  const hasSideActions = hasWorkflowAction || hasDeleteAction;
+  const actionPaddingClass = hasSideActions ? 'pr-8' : '';
   const [isIconPickerOpen, setIsIconPickerOpen] = useState(false);
   const [iconSearch, setIconSearch] = useState('');
 
@@ -1103,45 +1099,75 @@ const Option = memo(function Option({
         </div>
 
         {open && (
-          <span
-            className={`text-sm font-medium transition-opacity duration-200 ${
-              open ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            {title}
+          <span className="flex min-w-0 items-center gap-1">
+            <span
+              className={`truncate text-sm font-medium transition-opacity duration-200 ${
+                open ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              {title}
+            </span>
+            {hasRenameAction ? (
+              <button
+                type="button"
+                className="rounded p-0.5 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/option:opacity-100 group-hover/option:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onBeginRename?.(title);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                <span className="sr-only">Rename tab {title}</span>
+              </button>
+            ) : null}
           </span>
         )}
       </Link>
-      {hasHoverActions ? (
+      {hasSideActions ? (
         <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5 transition-opacity md:opacity-0 group-focus-within/option:opacity-100 group-hover/option:opacity-100">
-          {hasWorkflowAction ? (
-            <button
-              type="button"
-              className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onOpenWorkflowEditor?.(title);
-              }}
-            >
-              <Settings className="h-4 w-4" />
-              <span className="sr-only">Workflow settings for {title}</span>
-            </button>
-          ) : null}
-          {hasDeleteAction ? (
-            <button
-              type="button"
-              className="rounded p-1 text-slate-500 hover:bg-red-50 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-red-950/20 dark:hover:text-destructive"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                onRequestDeleteTable?.(title);
-              }}
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="sr-only">Delete table {title}</span>
-            </button>
-          ) : null}
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                aria-label={`Actions for ${title}`}
+                title={`Actions for ${title}`}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-44 p-1">
+              <div className="space-y-1">
+                {hasWorkflowAction ? (
+                  <PopoverClose asChild>
+                    <button
+                      type="button"
+                      className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                      onClick={() => {
+                        onOpenWorkflowEditor?.(title);
+                      }}
+                    >
+                      Workflow settings
+                    </button>
+                  </PopoverClose>
+                ) : null}
+                {hasDeleteAction ? (
+                  <PopoverClose asChild>
+                    <button
+                      type="button"
+                      className="w-full rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        onRequestDeleteTable?.(title);
+                      }}
+                    >
+                      Delete table
+                    </button>
+                  </PopoverClose>
+                ) : null}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       ) : null}
     </div>
@@ -1158,6 +1184,7 @@ function areOptionPropsEqual(prev: OptionProps, next: OptionProps) {
     prev.selected === next.selected &&
     prev.open === next.open &&
     prev.editable === next.editable &&
+    prev.onBeginRename === next.onBeginRename &&
     prev.onRenameIcon === next.onRenameIcon &&
     prev.onOpenWorkflowEditor === next.onOpenWorkflowEditor &&
     prev.onRequestDeleteTable === next.onRequestDeleteTable &&
@@ -1282,6 +1309,118 @@ const TitleSection: React.FC<{
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+  );
+};
+
+const GroupActionsPopover: React.FC<{
+  editable: boolean;
+  groupName: string;
+  itemCount: number;
+  onRequestDeleteGroup: (groupName: string, itemCount: number) => void;
+  onDeleteGroup?: (groupName: string) => void;
+  onAddTable?: (targetGroupName?: string) => void;
+  onAddGroup?: (groupName?: string, options?: GroupAddOptions) => void;
+}> = ({
+  editable,
+  groupName,
+  itemCount,
+  onRequestDeleteGroup,
+  onDeleteGroup,
+  onAddTable,
+  onAddGroup,
+}) => {
+  if (!editable || (!onDeleteGroup && !onAddTable && !onAddGroup)) return null;
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="rounded p-1 text-slate-500 opacity-0 transition-opacity hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+          aria-label={`Actions for ${groupName}`}
+          title={`Actions for ${groupName}`}
+        >
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="end" className="w-44 p-1">
+        <div className="space-y-1">
+          {onAddTable ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddTable(groupName);
+                }}
+              >
+                Add Table
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onAddGroup ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddGroup();
+                }}
+              >
+                Add Group
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onAddGroup ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddGroup(undefined, {
+                    relativeTo: groupName,
+                    position: 'above',
+                  });
+                }}
+              >
+                Add Group Above
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onAddGroup ? (
+            <PopoverClose asChild>
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                onClick={() => {
+                  onAddGroup(undefined, {
+                    relativeTo: groupName,
+                    position: 'below',
+                  });
+                }}
+              >
+                Add Group Below
+              </button>
+            </PopoverClose>
+          ) : null}
+          {onDeleteGroup ? (
+            <>
+              <div className="my-1 h-px bg-border" />
+              <PopoverClose asChild>
+                <button
+                  type="button"
+                  className="w-full rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
+                  onClick={() => {
+                    onRequestDeleteGroup(groupName, itemCount);
+                  }}
+                >
+                  Delete Group
+                </button>
+              </PopoverClose>
+            </>
+          ) : null}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 };
 
