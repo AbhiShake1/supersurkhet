@@ -518,7 +518,7 @@ export const pluginSchemaDocStorageSchema = z
     pluginId: z.string(),
     version: z.string(),
     schemaId: z.string(),
-    doc: jsonValueSchema.describe('Canonical serializable schema doc'),
+    doc: z.string().describe('Stringified schema doc JSON payload'),
   })
   .extend(table);
 

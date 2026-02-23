@@ -1953,7 +1953,7 @@ declare global {
      pluginId: import("zod").ZodString;
      version: import("zod").ZodString;
      schemaId: import("zod").ZodString;
-     doc: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+     doc: import("zod").ZodString;
     } & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
@@ -1971,24 +1971,24 @@ declare global {
      version: string;
      pluginId: string;
      schemaId: string;
+     doc: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     doc?: unknown;
     }, {
      version: string;
      pluginId: string;
      schemaId: string;
+     doc: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     doc?: unknown;
     }>;
      readonly title: "Plugin Schema Docs";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;

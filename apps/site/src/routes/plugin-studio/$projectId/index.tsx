@@ -23,6 +23,7 @@ import type {
   PluginProjectMemberDoc,
 } from '@/lib/plugins/types';
 import { PluginStudioGlobalCommand } from '../-plugin-studio-global-command';
+import { resolveNewPluginId } from '../-plugin-studio-new-plugin-id';
 import {
   groupPluginCardsByStatus,
   resolvePluginCardStatus,
@@ -279,6 +280,15 @@ function PluginStudioProjectRoute() {
     () => groupPluginCardsByStatus(pluginCards),
     [pluginCards],
   );
+  const pluginIds = useMemo(
+    () => pluginCards.map((card) => card.pluginId),
+    [pluginCards],
+  );
+  const getNewPluginId = () =>
+    resolveNewPluginId({
+      basePluginId: toPluginIdSeed(project),
+      existingPluginIds: pluginIds,
+    });
   const organizationPluginOptions = useMemo(() => {
     const latestByCompositeKey = new Map<string, PluginDraftDoc>();
     for (const draft of drafts) {
@@ -667,7 +677,7 @@ function PluginStudioProjectRoute() {
                 onSelect: () => {
                   void navigate({
                     to: '/plugin-studio/$projectId/$pluginId',
-                    params: { projectId, pluginId: toPluginIdSeed(project) },
+                    params: { projectId, pluginId: getNewPluginId() },
                   });
                 },
               },
@@ -710,7 +720,7 @@ function PluginStudioProjectRoute() {
             onClick={() =>
               void navigate({
                 to: '/plugin-studio/$projectId/$pluginId',
-                params: { projectId, pluginId: toPluginIdSeed(project) },
+                params: { projectId, pluginId: getNewPluginId() },
               })
             }
           >

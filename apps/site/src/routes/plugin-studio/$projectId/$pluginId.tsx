@@ -213,6 +213,26 @@ function canonicalStringify(input: unknown) {
   return JSON.stringify(input, null, 2);
 }
 
+function stringifySchemaDocForStorage(schemaDoc: SchemaDoc) {
+  return canonicalStringify(schemaDoc);
+}
+
+function parseStoredSchemaDoc(doc: unknown): SchemaDoc | undefined {
+  if (typeof doc === 'string') {
+    try {
+      const parsed = JSON.parse(doc) as SchemaDoc;
+      return parsed?.schemaId ? parsed : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+  if (doc && typeof doc === 'object') {
+    const parsed = doc as SchemaDoc;
+    return parsed?.schemaId ? parsed : undefined;
+  }
+  return undefined;
+}
+
 function toErrorMessage(error: unknown) {
   if (typeof error === 'string' && error.trim()) {
     return error.trim();
@@ -2140,7 +2160,7 @@ function PluginStudioPresenter({
     const rows = schemaDocRows;
     const docsBySchemaId = new Map<string, { doc: SchemaDoc; score: number }>();
     for (const row of rows) {
-      const doc = row.doc as SchemaDoc | undefined;
+      const doc = parseStoredSchemaDoc(row.doc);
       const schemaId = row.schemaId || doc?.schemaId;
       if (!schemaId || !doc?.schemaId) continue;
 
@@ -3355,9 +3375,9 @@ function PluginStudioPresenter({
     const writes: Array<Promise<unknown>> = [];
 
     for (const row of currentRows) {
+      const parsedDoc = parseStoredSchemaDoc(row.doc);
       const schemaId =
-        row.schemaId ||
-        ((row.doc as { schemaId?: string } | undefined)?.schemaId ?? '');
+        row.schemaId || parsedDoc?.schemaId || '';
       const rowId = row.id || schemaId;
       if (!schemaId || !rowId) continue;
       const nextDoc = nextBySchemaId.get(schemaId);
@@ -3370,7 +3390,7 @@ function PluginStudioPresenter({
         pluginId,
         version: draftId,
         schemaId,
-        doc: nextDoc,
+        doc: stringifySchemaDocForStorage(nextDoc),
       }));
       nextBySchemaId.delete(schemaId);
     }
@@ -3381,7 +3401,7 @@ function PluginStudioPresenter({
         pluginId,
         version: draftId,
         schemaId,
-        doc: nextDoc,
+        doc: stringifySchemaDocForStorage(nextDoc),
       }));
     }
 
