@@ -2079,7 +2079,7 @@ function PluginStudioPresenter({
   });
   const [columnSheetMode, setColumnSheetMode] =
     useState<ColumnSheetMode>('add');
-  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
   const [isDeleteColumnDialogOpen, setIsDeleteColumnDialogOpen] =
     useState(false);
   const [pendingDeleteColumnKey, setPendingDeleteColumnKey] = useState<
@@ -3179,9 +3179,11 @@ function PluginStudioPresenter({
             slug: `plugin-studio/${pluginId}/${schemaDoc.schemaId}`,
             treatSlugAsAbsolute: true,
             editable: true,
-            onAddColumn: openAddColumnSheet,
-            onEditColumn: openEditColumnSheet,
-            onDeleteColumn: requestDeleteColumn,
+            onAddColumn: () => openAddColumnSheet(schemaDoc.schemaId),
+            onEditColumn: (columnKey: string) =>
+              openEditColumnSheet(columnKey, schemaDoc.schemaId),
+            onDeleteColumn: (columnKey: string) =>
+              requestDeleteColumn(columnKey, schemaDoc.schemaId),
             onReorderColumns: (
               sourceColumnKey: string,
               targetColumnKey: string,
@@ -4018,32 +4020,57 @@ function PluginStudioPresenter({
     });
   }
 
-  function openAddColumnSheet() {
+  function getTargetSchemaDoc(schemaId?: string) {
+    const normalizedSchemaId = schemaId?.trim();
+    if (normalizedSchemaId) {
+      return availableSchemaDocs.find(
+        (schemaDoc) => schemaDoc.schemaId === normalizedSchemaId,
+      );
+    }
+    return activeSchemaDocForEditor;
+  }
+
+  function openAddColumnSheet(schemaId?: string) {
+    const targetSchemaDoc = getTargetSchemaDoc(schemaId);
+    if (!targetSchemaDoc) {
+      return;
+    }
+    if (activeSchemaId !== targetSchemaDoc.schemaId) {
+      setActiveSchemaId(targetSchemaDoc.schemaId);
+    }
     setColumnSheetMode('add');
-    setEditingColumnId(null);
-    setAddColumnDraft(createAddColumnDraft(schemaBuilder.fields.length));
+    setEditingColumnKey(null);
+    setAddColumnDraft(createAddColumnDraft(targetSchemaDoc.fields.length));
     setIsAddColumnSheetOpen(true);
   }
 
-  function openEditColumnSheet(columnKey: string) {
+  function openEditColumnSheet(columnKey: string, schemaId?: string) {
+    const targetSchemaDoc = getTargetSchemaDoc(schemaId);
+    if (!targetSchemaDoc) {
+      toast.error('Table was not found.');
+      return;
+    }
     const normalizedColumnKey = columnKey.trim();
     if (!normalizedColumnKey) return;
-    const targetField = schemaBuilder.fields.find(
+    const targetField = targetSchemaDoc.fields.find(
       (field) => field.key.trim() === normalizedColumnKey,
     );
     if (!targetField) {
       toast.error(`Column ${normalizedColumnKey} was not found.`);
       return;
     }
+    if (activeSchemaId !== targetSchemaDoc.schemaId) {
+      setActiveSchemaId(targetSchemaDoc.schemaId);
+    }
     setColumnSheetMode('edit');
-    setEditingColumnId(targetField.id);
-    setAddColumnDraft(toAddColumnDraftFromField(targetField));
+    setEditingColumnKey(normalizedColumnKey);
+    setAddColumnDraft(toAddColumnDraftFromField(toBuilderField(targetField)));
     setIsAddColumnSheetOpen(true);
   }
 
   function resetColumnSheetState() {
     setColumnSheetMode('add');
-    setEditingColumnId(null);
+    setEditingColumnKey(null);
   }
 
   function closeColumnSheet() {
@@ -4091,20 +4118,28 @@ function PluginStudioPresenter({
     });
   }
 
-  function requestDeleteColumn(columnKey: string) {
+  function requestDeleteColumn(columnKey: string, schemaId?: string) {
+    const targetSchemaDoc = getTargetSchemaDoc(schemaId);
+    if (!targetSchemaDoc) {
+      toast.error('Table was not found.');
+      return;
+    }
     const normalizedColumnKey = columnKey.trim();
     if (!normalizedColumnKey) return;
-    if (schemaBuilder.fields.length <= 1) {
+    if (targetSchemaDoc.fields.length <= 1) {
       toast.error('At least one column is required.');
       return;
     }
     if (
-      !schemaBuilder.fields.some(
+      !targetSchemaDoc.fields.some(
         (field) => field.key.trim() === normalizedColumnKey,
       )
     ) {
       toast.error(`Column ${normalizedColumnKey} was not found.`);
       return;
+    }
+    if (activeSchemaId !== targetSchemaDoc.schemaId) {
+      setActiveSchemaId(targetSchemaDoc.schemaId);
     }
     setPendingDeleteColumnKey(normalizedColumnKey);
     setIsDeleteColumnDialogOpen(true);
@@ -4167,8 +4202,10 @@ function PluginStudioPresenter({
       return;
     }
     const editingField =
-      columnSheetMode === 'edit' && editingColumnId
-        ? schemaBuilder.fields.find((field) => field.id === editingColumnId)
+      columnSheetMode === 'edit' && editingColumnKey
+        ? schemaBuilder.fields.find(
+          (field) => field.key.trim() === editingColumnKey,
+        )
         : undefined;
     const conflictingField = schemaBuilder.fields.find(
       (field) =>
