@@ -442,14 +442,32 @@ declare global {
      tokens?: Record<string, unknown> | undefined;
     }>, "many">>;
      workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     pluginContractVersion: import("zod").ZodOptional<import("zod").ZodLiteral<"3">>;
      workflowId: import("zod").ZodString;
      title: import("zod").ZodOptional<import("zod").ZodString>;
      table: import("zod").ZodString;
      hook: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     trigger: import("zod").ZodOptional<import("zod").ZodObject<{
+     table: import("zod").ZodString;
+     event: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     filters: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     fieldChange: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }, {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }>>;
      nodes: import("zod").ZodArray<import("zod").ZodObject<{
      nodeId: import("zod").ZodString;
-     type: import("zod").ZodLiteral<"action">;
-     actionId: import("zod").ZodString;
+     type: import("zod").ZodOptional<import("zod").ZodLiteral<"action">>;
+     kind: import("zod").ZodOptional<import("zod").ZodEnum<["action", "branch", "delay", "humanGate"]>>;
+     actionId: import("zod").ZodOptional<import("zod").ZodString>;
      input: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, import("zod").ZodObject<{
      expression: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
     }, "strip", import("zod").ZodTypeAny, {
@@ -458,71 +476,135 @@ declare global {
      expression?: unknown;
     }>]>>;
      runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
+     maxAttempts: import("zod").ZodNumber;
+     backoffMs: import("zod").ZodOptional<import("zod").ZodNumber>;
     }, "strip", import("zod").ZodTypeAny, {
-     type: "action";
-     actionId: string;
-     nodeId: string;
-     input?: unknown;
-     runIf?: unknown;
+     maxAttempts: number;
+     backoffMs?: number | undefined;
     }, {
-     type: "action";
-     actionId: string;
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    }>>;
+     timeoutMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+     idempotencyKeyExpr: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     delayMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }, {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }>, "many">;
      edges: import("zod").ZodArray<import("zod").ZodObject<{
      from: import("zod").ZodString;
      to: import("zod").ZodString;
      condition: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
      conditionToken: import("zod").ZodOptional<import("zod").ZodString>;
+     on: import("zod").ZodOptional<import("zod").ZodEnum<["success", "failure", "always"]>>;
     }, "strip", import("zod").ZodTypeAny, {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }, {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }>, "many">;
     }, "strip", import("zod").ZodTypeAny, {
      workflowId: string;
      table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
-     type: "action";
-     actionId: string;
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }[];
      edges: {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }[];
      title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
     }, {
      workflowId: string;
      table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
-     type: "action";
-     actionId: string;
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }[];
      edges: {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }[];
      title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
     }>, "many">>;
      adminTabs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
      schema: import("zod").ZodString;
@@ -599,19 +681,35 @@ declare global {
      table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
-     type: "action";
-     actionId: string;
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }[];
      edges: {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }[];
      title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
     }[] | undefined;
      adminTabs?: {
      schema: string;
@@ -665,19 +763,35 @@ declare global {
      table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
-     type: "action";
-     actionId: string;
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }[];
      edges: {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }[];
      title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
     }[] | undefined;
      adminTabs?: {
      schema: string;
@@ -1181,14 +1295,32 @@ declare global {
      tokens?: Record<string, unknown> | undefined;
     }>, "many">>;
      workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     pluginContractVersion: import("zod").ZodOptional<import("zod").ZodLiteral<"3">>;
      workflowId: import("zod").ZodString;
      title: import("zod").ZodOptional<import("zod").ZodString>;
      table: import("zod").ZodString;
      hook: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     trigger: import("zod").ZodOptional<import("zod").ZodObject<{
+     table: import("zod").ZodString;
+     event: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     filters: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     fieldChange: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }, {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }>>;
      nodes: import("zod").ZodArray<import("zod").ZodObject<{
      nodeId: import("zod").ZodString;
-     type: import("zod").ZodLiteral<"action">;
-     actionId: import("zod").ZodString;
+     type: import("zod").ZodOptional<import("zod").ZodLiteral<"action">>;
+     kind: import("zod").ZodOptional<import("zod").ZodEnum<["action", "branch", "delay", "humanGate"]>>;
+     actionId: import("zod").ZodOptional<import("zod").ZodString>;
      input: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, import("zod").ZodObject<{
      expression: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
     }, "strip", import("zod").ZodTypeAny, {
@@ -1197,71 +1329,135 @@ declare global {
      expression?: unknown;
     }>]>>;
      runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
+     maxAttempts: import("zod").ZodNumber;
+     backoffMs: import("zod").ZodOptional<import("zod").ZodNumber>;
     }, "strip", import("zod").ZodTypeAny, {
-     type: "action";
-     actionId: string;
-     nodeId: string;
-     input?: unknown;
-     runIf?: unknown;
+     maxAttempts: number;
+     backoffMs?: number | undefined;
     }, {
-     type: "action";
-     actionId: string;
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    }>>;
+     timeoutMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+     idempotencyKeyExpr: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     delayMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }, {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }>, "many">;
      edges: import("zod").ZodArray<import("zod").ZodObject<{
      from: import("zod").ZodString;
      to: import("zod").ZodString;
      condition: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
      conditionToken: import("zod").ZodOptional<import("zod").ZodString>;
+     on: import("zod").ZodOptional<import("zod").ZodEnum<["success", "failure", "always"]>>;
     }, "strip", import("zod").ZodTypeAny, {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }, {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }>, "many">;
     }, "strip", import("zod").ZodTypeAny, {
      workflowId: string;
      table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
-     type: "action";
-     actionId: string;
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }[];
      edges: {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }[];
      title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
     }, {
      workflowId: string;
      table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
-     type: "action";
-     actionId: string;
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }[];
      edges: {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }[];
      title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
     }>, "many">>;
      adminTabs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
      schema: import("zod").ZodString;
@@ -1327,19 +1523,35 @@ declare global {
      table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
-     type: "action";
-     actionId: string;
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }[];
      edges: {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }[];
      title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
     }[] | undefined;
      adminTabs?: {
      schema: string;
@@ -1380,19 +1592,35 @@ declare global {
      table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
-     type: "action";
-     actionId: string;
      nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
      input?: unknown;
      runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
     }[];
      edges: {
      from: string;
      to: string;
      condition?: unknown;
      conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
     }[];
      title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
     }[] | undefined;
      adminTabs?: {
      schema: string;
@@ -1788,13 +2016,129 @@ declare global {
      readonly group: "Plugin Platform";
     };
      readonly pluginUserReviewReply: {
-     readonly schema: any;
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     reviewId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     businessId: import("zod").ZodOptional<import("zod").ZodString>;
+     parentReplyId: import("zod").ZodOptional<import("zod").ZodString>;
+     userId: import("zod").ZodString;
+     userLabel: import("zod").ZodString;
+     comment: import("zod").ZodString;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     userId: string;
+     pluginId: string;
+     createdAt: string;
+     updatedAt: string;
+     userLabel: string;
+     comment: string;
+     reviewId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     businessId?: string | undefined;
+     parentReplyId?: string | undefined;
+    }, {
+     id: string;
+     userId: string;
+     pluginId: string;
+     createdAt: string;
+     updatedAt: string;
+     userLabel: string;
+     comment: string;
+     reviewId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     businessId?: string | undefined;
+     parentReplyId?: string | undefined;
+    }>;
      readonly title: "Plugin Review Replies";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
      readonly pluginUserReviewVote: {
-     readonly schema: any;
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     reviewId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     businessId: import("zod").ZodOptional<import("zod").ZodString>;
+     targetType: import("zod").ZodEnum<["review", "reply"]>;
+     targetId: import("zod").ZodString;
+     userId: import("zod").ZodString;
+     value: import("zod").ZodEnum<["up", "down"]>;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     value: "up" | "down";
+     id: string;
+     userId: string;
+     pluginId: string;
+     createdAt: string;
+     updatedAt: string;
+     reviewId: string;
+     targetType: "review" | "reply";
+     targetId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     businessId?: string | undefined;
+    }, {
+     value: "up" | "down";
+     id: string;
+     userId: string;
+     pluginId: string;
+     createdAt: string;
+     updatedAt: string;
+     reviewId: string;
+     targetType: "review" | "reply";
+     targetId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     businessId?: string | undefined;
+    }>;
      readonly title: "Plugin Review Votes";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
@@ -1892,26 +2236,6 @@ declare global {
      group?: string | undefined;
      iconName?: string | undefined;
     }>, "many">;
-     diagnostics: import("zod").ZodArray<import("zod").ZodObject<{
-     code: import("zod").ZodEnum<["duplicate-route", "invalid-icon"]>;
-     message: import("zod").ZodString;
-     path: import("zod").ZodArray<import("zod").ZodString, "many">;
-    }, "strip", import("zod").ZodTypeAny, {
-     code: "duplicate-route" | "invalid-icon";
-     path: string[];
-     message: string;
-    }, {
-     code: "duplicate-route" | "invalid-icon";
-     path: string[];
-     message: string;
-    }>, "many">;
-     uiStateByUserId: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodObject<{
-     sidebarSnapshotJson: import("zod").ZodOptional<import("zod").ZodString>;
-    }, "strip", import("zod").ZodTypeAny, {
-     sidebarSnapshotJson?: string | undefined;
-    }, {
-     sidebarSnapshotJson?: string | undefined;
-    }>>>;
      savedByUserId: import("zod").ZodString;
      savedAt: import("zod").ZodString;
     } & {
@@ -1932,11 +2256,6 @@ declare global {
      pluginId: string;
      draftId: string;
      revisionId: string;
-     diagnostics: {
-     code: "duplicate-route" | "invalid-icon";
-     path: string[];
-     message: string;
-    }[];
      businessSlug: string;
      routes: {
      schema: string;
@@ -1956,19 +2275,11 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     uiStateByUserId?: Record<string, {
-     sidebarSnapshotJson?: string | undefined;
-    }> | undefined;
     }, {
      id: string;
      pluginId: string;
      draftId: string;
      revisionId: string;
-     diagnostics: {
-     code: "duplicate-route" | "invalid-icon";
-     path: string[];
-     message: string;
-    }[];
      businessSlug: string;
      routes: {
      schema: string;
@@ -1988,9 +2299,6 @@ declare global {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     uiStateByUserId?: Record<string, {
-     sidebarSnapshotJson?: string | undefined;
-    }> | undefined;
     }>;
      readonly title: "Plugin Routes Tabs Config";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
@@ -2001,7 +2309,7 @@ declare global {
      pluginId: import("zod").ZodString;
      version: import("zod").ZodString;
      schemaId: import("zod").ZodString;
-     doc: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+     doc: import("zod").ZodString;
     } & {
      timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
      created_by: import("zod").ZodOptional<import("zod").ZodString>;
@@ -2019,24 +2327,24 @@ declare global {
      version: string;
      pluginId: string;
      schemaId: string;
+     doc: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     doc?: unknown;
     }, {
      version: string;
      pluginId: string;
      schemaId: string;
+     doc: string;
      timestamp?: number | undefined;
      created_by?: string | undefined;
      _?: {
      soul?: string | undefined;
      ">"?: Record<string, string | number> | undefined;
     } | undefined;
-     doc?: unknown;
     }>;
      readonly title: "Plugin Schema Docs";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
@@ -2135,31 +2443,372 @@ declare global {
      readonly group: "Plugin Platform";
     };
      readonly pluginActionDefinitionV3: {
-     readonly schema: any;
+     readonly schema: import("zod").ZodObject<{
+     pluginId: import("zod").ZodString;
+     version: import("zod").ZodString;
+     actionId: import("zod").ZodString;
+     doc: import("zod").ZodObject<{
+     actionId: import("zod").ZodString;
+     runtime: import("zod").ZodEnum<["sandbox-worker", "core"]>;
+     capabilities: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     inputSchema: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     outputSchema: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     handlerRef: import("zod").ZodString;
+     security: import("zod").ZodObject<{
+     networkPolicy: import("zod").ZodOptional<import("zod").ZodEnum<["deny-all", "allow-listed"]>>;
+     secretRefs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     maxCpuMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+     maxMemoryMb: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
+     networkPolicy?: "deny-all" | "allow-listed" | undefined;
+     secretRefs?: string[] | undefined;
+     maxCpuMs?: number | undefined;
+     maxMemoryMb?: number | undefined;
+    }, {
+     networkPolicy?: "deny-all" | "allow-listed" | undefined;
+     secretRefs?: string[] | undefined;
+     maxCpuMs?: number | undefined;
+     maxMemoryMb?: number | undefined;
+    }>;
+    }, "strip", import("zod").ZodTypeAny, {
+     actionId: string;
+     runtime: "sandbox-worker" | "core";
+     handlerRef: string;
+     security: {
+     networkPolicy?: "deny-all" | "allow-listed" | undefined;
+     secretRefs?: string[] | undefined;
+     maxCpuMs?: number | undefined;
+     maxMemoryMb?: number | undefined;
+    };
+     capabilities?: string[] | undefined;
+     inputSchema?: unknown;
+     outputSchema?: unknown;
+    }, {
+     actionId: string;
+     runtime: "sandbox-worker" | "core";
+     handlerRef: string;
+     security: {
+     networkPolicy?: "deny-all" | "allow-listed" | undefined;
+     secretRefs?: string[] | undefined;
+     maxCpuMs?: number | undefined;
+     maxMemoryMb?: number | undefined;
+    };
+     capabilities?: string[] | undefined;
+     inputSchema?: unknown;
+     outputSchema?: unknown;
+    }>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     version: string;
+     pluginId: string;
+     actionId: string;
+     doc: {
+     actionId: string;
+     runtime: "sandbox-worker" | "core";
+     handlerRef: string;
+     security: {
+     networkPolicy?: "deny-all" | "allow-listed" | undefined;
+     secretRefs?: string[] | undefined;
+     maxCpuMs?: number | undefined;
+     maxMemoryMb?: number | undefined;
+    };
+     capabilities?: string[] | undefined;
+     inputSchema?: unknown;
+     outputSchema?: unknown;
+    };
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     version: string;
+     pluginId: string;
+     actionId: string;
+     doc: {
+     actionId: string;
+     runtime: "sandbox-worker" | "core";
+     handlerRef: string;
+     security: {
+     networkPolicy?: "deny-all" | "allow-listed" | undefined;
+     secretRefs?: string[] | undefined;
+     maxCpuMs?: number | undefined;
+     maxMemoryMb?: number | undefined;
+    };
+     capabilities?: string[] | undefined;
+     inputSchema?: unknown;
+     outputSchema?: unknown;
+    };
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>;
      readonly title: "Plugin Action Definitions V3";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
      readonly pluginWorkflowJob: {
-     readonly schema: any;
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     businessId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     workflowId: import("zod").ZodString;
+     table: import("zod").ZodString;
+     hook: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     status: import("zod").ZodEnum<["queued", "leased", "running", "completed", "failed", "dead-lettered", "cancelled"]>;
+     idempotencyKey: import("zod").ZodString;
+     fingerprint: import("zod").ZodString;
+     payload: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+     attempts: import("zod").ZodNumber;
+     nextRunAt: import("zod").ZodString;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "queued" | "leased" | "running" | "completed" | "failed" | "dead-lettered" | "cancelled";
+     id: string;
+     businessId: string;
+     pluginId: string;
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     createdAt: string;
+     updatedAt: string;
+     idempotencyKey: string;
+     fingerprint: string;
+     attempts: number;
+     nextRunAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     payload?: unknown;
+    }, {
+     status: "queued" | "leased" | "running" | "completed" | "failed" | "dead-lettered" | "cancelled";
+     id: string;
+     businessId: string;
+     pluginId: string;
+     workflowId: string;
+     table: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     createdAt: string;
+     updatedAt: string;
+     idempotencyKey: string;
+     fingerprint: string;
+     attempts: number;
+     nextRunAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     payload?: unknown;
+    }>;
      readonly title: "Plugin Workflow Jobs";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
      readonly pluginWorkflowJobAttempt: {
-     readonly schema: any;
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     jobId: import("zod").ZodString;
+     attempt: import("zod").ZodNumber;
+     status: import("zod").ZodEnum<["running", "completed", "failed", "timed_out", "cancelled"]>;
+     leasedAt: import("zod").ZodString;
+     finishedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     errorCode: import("zod").ZodOptional<import("zod").ZodString>;
+     errorMessage: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "running" | "completed" | "failed" | "cancelled" | "timed_out";
+     id: string;
+     jobId: string;
+     attempt: number;
+     leasedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     finishedAt?: string | undefined;
+     errorCode?: string | undefined;
+     errorMessage?: string | undefined;
+    }, {
+     status: "running" | "completed" | "failed" | "cancelled" | "timed_out";
+     id: string;
+     jobId: string;
+     attempt: number;
+     leasedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     finishedAt?: string | undefined;
+     errorCode?: string | undefined;
+     errorMessage?: string | undefined;
+    }>;
      readonly title: "Plugin Workflow Job Attempts";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
      readonly pluginWorkflowEventLog: {
-     readonly schema: any;
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     jobId: import("zod").ZodString;
+     workflowId: import("zod").ZodString;
+     nodeId: import("zod").ZodOptional<import("zod").ZodString>;
+     level: import("zod").ZodEnum<["info", "warn", "error"]>;
+     eventType: import("zod").ZodString;
+     message: import("zod").ZodString;
+     data: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     createdAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     message: string;
+     id: string;
+     workflowId: string;
+     createdAt: string;
+     jobId: string;
+     level: "error" | "info" | "warn";
+     eventType: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     nodeId?: string | undefined;
+     data?: unknown;
+    }, {
+     message: string;
+     id: string;
+     workflowId: string;
+     createdAt: string;
+     jobId: string;
+     level: "error" | "info" | "warn";
+     eventType: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     nodeId?: string | undefined;
+     data?: unknown;
+    }>;
      readonly title: "Plugin Workflow Event Logs";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
      readonly pluginWorkflowDeadLetter: {
-     readonly schema: any;
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     jobId: import("zod").ZodString;
+     workflowId: import("zod").ZodString;
+     reasonCode: import("zod").ZodString;
+     reasonMessage: import("zod").ZodString;
+     payload: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+     failedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     workflowId: string;
+     jobId: string;
+     reasonCode: string;
+     reasonMessage: string;
+     failedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     payload?: unknown;
+    }, {
+     id: string;
+     workflowId: string;
+     jobId: string;
+     reasonCode: string;
+     reasonMessage: string;
+     failedAt: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     payload?: unknown;
+    }>;
      readonly title: "Plugin Workflow Dead Letters";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
@@ -2790,11 +3439,11 @@ declare global {
      special_requests?: boolean | undefined;
      combo_suggestions?: boolean | undefined;
     } | undefined;
-     categories?: string[] | undefined;
      filters?: {
      dietary?: string | undefined;
      availability?: string | undefined;
     } | undefined;
+     categories?: string[] | undefined;
      tip_suggestions?: number[] | undefined;
     }, {
      type: "menu_display" | "order_building" | "order_confirmation" | "payment_selection";
@@ -2809,11 +3458,11 @@ declare global {
      special_requests?: boolean | undefined;
      combo_suggestions?: boolean | undefined;
     } | undefined;
-     categories?: string[] | undefined;
      filters?: {
      dietary?: string | undefined;
      availability?: string | undefined;
     } | undefined;
+     categories?: string[] | undefined;
      tip_suggestions?: number[] | undefined;
     }>, "many">;
     }, "strip", import("zod").ZodTypeAny, {
@@ -2830,11 +3479,11 @@ declare global {
      special_requests?: boolean | undefined;
      combo_suggestions?: boolean | undefined;
     } | undefined;
-     categories?: string[] | undefined;
      filters?: {
      dietary?: string | undefined;
      availability?: string | undefined;
     } | undefined;
+     categories?: string[] | undefined;
      tip_suggestions?: number[] | undefined;
     }[];
     }, {
@@ -2851,11 +3500,11 @@ declare global {
      special_requests?: boolean | undefined;
      combo_suggestions?: boolean | undefined;
     } | undefined;
-     categories?: string[] | undefined;
      filters?: {
      dietary?: string | undefined;
      availability?: string | undefined;
     } | undefined;
+     categories?: string[] | undefined;
      tip_suggestions?: number[] | undefined;
     }[];
     }>>;
@@ -3073,11 +3722,11 @@ declare global {
      special_requests?: boolean | undefined;
      combo_suggestions?: boolean | undefined;
     } | undefined;
-     categories?: string[] | undefined;
      filters?: {
      dietary?: string | undefined;
      availability?: string | undefined;
     } | undefined;
+     categories?: string[] | undefined;
      tip_suggestions?: number[] | undefined;
     }[];
     } | undefined;
@@ -3205,11 +3854,11 @@ declare global {
      special_requests?: boolean | undefined;
      combo_suggestions?: boolean | undefined;
     } | undefined;
-     categories?: string[] | undefined;
      filters?: {
      dietary?: string | undefined;
      availability?: string | undefined;
     } | undefined;
+     categories?: string[] | undefined;
      tip_suggestions?: number[] | undefined;
     }[];
     } | undefined;
@@ -3355,15 +4004,15 @@ declare global {
      progress: import("zod").ZodOptional<import("zod").ZodNumber>;
     }, "strip", import("zod").ZodTypeAny, {
      error?: number | undefined;
-     started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
+     started?: number | undefined;
      progress?: number | undefined;
     }, {
      error?: number | undefined;
-     started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
+     started?: number | undefined;
      progress?: number | undefined;
     }>>;
     }, "strip", import("zod").ZodTypeAny, {
@@ -3373,9 +4022,9 @@ declare global {
      config?: Record<string, any> | undefined;
      stats?: {
      error?: number | undefined;
-     started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
+     started?: number | undefined;
      progress?: number | undefined;
     } | undefined;
     }, {
@@ -3385,19 +4034,15 @@ declare global {
      config?: Record<string, any> | undefined;
      stats?: {
      error?: number | undefined;
-     started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
+     started?: number | undefined;
      progress?: number | undefined;
     } | undefined;
     }>;
     }, "strip", import("zod").ZodTypeAny, {
      type: string;
      id: string;
-     position: {
-     x: number;
-     y: number;
-    };
      data: {
      label: string;
      status?: string | undefined;
@@ -3405,19 +4050,19 @@ declare global {
      config?: Record<string, any> | undefined;
      stats?: {
      error?: number | undefined;
-     started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
+     started?: number | undefined;
      progress?: number | undefined;
     } | undefined;
+    };
+     position: {
+     x: number;
+     y: number;
     };
     }, {
      type: string;
      id: string;
-     position: {
-     x: number;
-     y: number;
-    };
      data: {
      label: string;
      status?: string | undefined;
@@ -3425,11 +4070,15 @@ declare global {
      config?: Record<string, any> | undefined;
      stats?: {
      error?: number | undefined;
-     started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
+     started?: number | undefined;
      progress?: number | undefined;
     } | undefined;
+    };
+     position: {
+     x: number;
+     y: number;
     };
     }>, "many">;
      edges: import("zod").ZodArray<import("zod").ZodObject<{
@@ -3495,10 +4144,6 @@ declare global {
      nodes: {
      type: string;
      id: string;
-     position: {
-     x: number;
-     y: number;
-    };
      data: {
      label: string;
      status?: string | undefined;
@@ -3506,11 +4151,15 @@ declare global {
      config?: Record<string, any> | undefined;
      stats?: {
      error?: number | undefined;
-     started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
+     started?: number | undefined;
      progress?: number | undefined;
     } | undefined;
+    };
+     position: {
+     x: number;
+     y: number;
     };
     }[];
      edges: {
@@ -3544,10 +4193,6 @@ declare global {
      nodes: {
      type: string;
      id: string;
-     position: {
-     x: number;
-     y: number;
-    };
      data: {
      label: string;
      status?: string | undefined;
@@ -3555,11 +4200,15 @@ declare global {
      config?: Record<string, any> | undefined;
      stats?: {
      error?: number | undefined;
-     started?: number | undefined;
      running?: number | undefined;
      completed?: number | undefined;
+     started?: number | undefined;
      progress?: number | undefined;
     } | undefined;
+    };
+     position: {
+     x: number;
+     y: number;
     };
     }[];
      edges: {

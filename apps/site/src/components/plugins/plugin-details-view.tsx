@@ -110,6 +110,7 @@ export function PluginDetailsView({
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details.userReview?.comment ?? '';
+  const reviewComposerKey = `${plugin.pluginId}::${details.userReview?.updatedAt ?? details.userReview?.createdAt ?? 'new'}::${persistedReviewRating}`;
 
   useEffect(() => {
     const heroNode = heroSectionRef.current;
@@ -168,25 +169,27 @@ export function PluginDetailsView({
   const reviewIdSet = useMemo(
     () =>
       new Set(
-        reviewGroups.flatMap((group) => group.reviews.map((review) => review.id)),
+        reviewGroups.flatMap((group) =>
+          group.reviews.map((review) => review.id),
+        ),
       ),
     [reviewGroups],
   );
-  const queryKeys = businessId ? [businessId] : [];
+  const scopedBusinessId = businessId?.trim() || '__missing_business_id__';
+  const queryKeys = [scopedBusinessId];
+  const canPersistReviewFeedback =
+    Boolean(actorUserId?.trim()) &&
+    scopedBusinessId !== '__missing_business_id__';
   const { data: replyRowsRaw = [], refetch: refetchReplyRows } =
-    api.pluginUserReviewReply.useGet(
-      queryKeys.length > 0 ? { keys: queryKeys } : undefined,
-    );
+    api.pluginUserReviewReply.useGet({ keys: queryKeys });
   const { data: voteRowsRaw = [], refetch: refetchVoteRows } =
-    api.pluginUserReviewVote.useGet(
-      queryKeys.length > 0 ? { keys: queryKeys } : undefined,
-    );
-  const createReplyMutation = api.pluginUserReviewReply.useCreate(
-    queryKeys.length > 0 ? { keys: queryKeys } : undefined,
-  );
-  const createVoteMutation = api.pluginUserReviewVote.useCreate(
-    queryKeys.length > 0 ? { keys: queryKeys } : undefined,
-  );
+    api.pluginUserReviewVote.useGet({ keys: queryKeys });
+  const createReplyMutation = api.pluginUserReviewReply.useCreate({
+    keys: queryKeys,
+  });
+  const createVoteMutation = api.pluginUserReviewVote.useCreate({
+    keys: queryKeys,
+  });
   const reviewReplies = useMemo(
     () =>
       (replyRowsRaw as PluginUserReviewReplyDoc[]).filter(
@@ -198,7 +201,8 @@ export function PluginDetailsView({
   const reviewVotes = useMemo(
     () =>
       (voteRowsRaw as PluginUserReviewVoteDoc[]).filter(
-        (vote) => vote.pluginId === plugin.pluginId && reviewIdSet.has(vote.reviewId),
+        (vote) =>
+          vote.pluginId === plugin.pluginId && reviewIdSet.has(vote.reviewId),
       ),
     [voteRowsRaw, plugin.pluginId, reviewIdSet],
   );
@@ -228,7 +232,7 @@ export function PluginDetailsView({
     parentReplyId: string | null,
     commentInput: string,
   ) {
-    if (!actorUserId) {
+    if (!canPersistReviewFeedback) {
       toast.error('Log in to reply');
       return;
     }
@@ -263,7 +267,7 @@ export function PluginDetailsView({
     targetId: string,
     value: 'up' | 'down',
   ) {
-    if (!actorUserId) {
+    if (!canPersistReviewFeedback) {
       toast.error('Log in to vote');
       return;
     }
@@ -685,76 +689,13 @@ export function PluginDetailsView({
 
               {/* Review Input */}
               <div className="rounded-2xl border border-gray-200 p-6 transition-shadow hover:shadow-md">
-                <form
-                  className="space-y-4"
-                  onSubmit={async (event) => {
-                    event.preventDefault();
-                    const formData = new FormData(event.currentTarget);
-                    const rating = Number(formData.get('reviewRating') ?? 0);
-                    const comment = String(formData.get('reviewComment') ?? '');
-                    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
-                      toast.error('Select a rating before saving');
-                      return;
-                    }
-                    await onSaveReview(rating, comment);
-                  }}
-                >
-                  <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-base font-medium text-[#202124]">
-                      Your review
-                    </h3>
-                    <Button
-                      type="submit"
-                      size="sm"
-                      loading={isSavingReview}
-                      disabled={isSavingReview}
-                      className="h-9 rounded-full bg-[#01875f] transition-all hover:bg-[#01704f] hover:shadow-sm disabled:opacity-50"
-                    >
-                      Save review
-                    </Button>
-                  </div>
-                  <div className="mb-4 flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <label
-                        key={star}
-                        className="group relative cursor-pointer p-1 transition-all hover:scale-125"
-                      >
-                        <input
-                          type="radio"
-                          name="reviewRating"
-                          value={star}
-                          defaultChecked={persistedReviewRating === star}
-                          className="sr-only"
-                        />
-                        <svg
-                          aria-hidden="true"
-                          focusable="false"
-                          className={cn(
-                            'size-7 transition-all duration-200',
-                            star <= persistedReviewRating
-                              ? 'fill-[#01875f] text-[#01875f] drop-shadow-sm'
-                              : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300',
-                          )}
-                          viewBox="0 0 24 24"
-                          stroke="none"
-                        >
-                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                        </svg>
-                      </label>
-                    ))}
-                    <span className="ml-3 text-sm font-medium text-gray-500 transition-colors">
-                      {persistedReviewRating > 0
-                        ? `${persistedReviewRating}/5 stars`
-                        : 'Select rating'}
-                    </span>
-                  </div>
-                  <Textarea
-                    name="reviewComment"
-                    defaultValue={persistedReviewComment}
-                    placeholder="Tell us what you think about this plugin..."
-                    className="min-h-[100px] resize-none border-gray-200 transition-colors focus-visible:ring-[#01875f] focus-visible:ring-2"
-                  />
-                </form>
+                <ReviewComposer
+                  key={reviewComposerKey}
+                  initialRating={persistedReviewRating}
+                  initialComment={persistedReviewComment}
+                  isSavingReview={isSavingReview}
+                  onSaveReview={onSaveReview}
+                />
               </div>
 
               {/* Reviews List */}
@@ -818,8 +759,12 @@ export function PluginDetailsView({
                                     <ReviewItem
                                       review={review}
                                       userLabel={userLabel}
-                                      replies={repliesByReviewId.get(review.id) ?? []}
-                                      voteSummaryByTargetId={voteSummaryByTargetId}
+                                      replies={
+                                        repliesByReviewId.get(review.id) ?? []
+                                      }
+                                      voteSummaryByTargetId={
+                                        voteSummaryByTargetId
+                                      }
                                       actorUserId={actorUserId}
                                       onSubmitReply={handleSubmitReply}
                                       onSubmitVote={handleSubmitVote}
@@ -958,6 +903,93 @@ function HeroMetric({ value, label }: { value: ReactNode; label: string }) {
       </p>
       <p className="text-xs text-white/70">{label}</p>
     </div>
+  );
+}
+
+function ReviewComposer({
+  initialRating,
+  initialComment,
+  isSavingReview,
+  onSaveReview,
+}: {
+  initialRating: number;
+  initialComment: string;
+  isSavingReview?: boolean;
+  onSaveReview: (rating: number, comment: string) => Promise<void>;
+}) {
+  const [reviewRating, setReviewRating] = useState(initialRating);
+  const [reviewComment, setReviewComment] = useState(initialComment);
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        if (
+          !Number.isFinite(reviewRating) ||
+          reviewRating < 1 ||
+          reviewRating > 5
+        ) {
+          toast.error('Select a rating before saving');
+          return;
+        }
+        await onSaveReview(reviewRating, reviewComment);
+      }}
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-base font-medium text-[#202124]">Your review</h3>
+        <Button
+          type="submit"
+          size="sm"
+          loading={isSavingReview}
+          disabled={isSavingReview}
+          className="h-9 rounded-full bg-[#01875f] transition-all hover:bg-[#01704f] hover:shadow-sm disabled:opacity-50"
+        >
+          Save review
+        </Button>
+      </div>
+      <div className="mb-4 flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <label
+            key={star}
+            className="group relative cursor-pointer p-1 transition-all hover:scale-125"
+          >
+            <input
+              type="radio"
+              name="reviewRating"
+              value={star}
+              checked={reviewRating === star}
+              onChange={() => setReviewRating(star)}
+              className="sr-only"
+            />
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              className={cn(
+                'size-7 transition-all duration-200',
+                star <= reviewRating
+                  ? 'fill-[#01875f] text-[#01875f] drop-shadow-sm'
+                  : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300',
+              )}
+              viewBox="0 0 24 24"
+              stroke="none"
+            >
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </label>
+        ))}
+        <span className="ml-3 text-sm font-medium text-gray-500 transition-colors">
+          {reviewRating > 0 ? `${reviewRating}/5 stars` : 'Select rating'}
+        </span>
+      </div>
+      <Textarea
+        name="reviewComment"
+        value={reviewComment}
+        onChange={(event) => setReviewComment(event.target.value)}
+        placeholder="Tell us what you think about this plugin..."
+        className="min-h-[100px] resize-none border-gray-200 transition-colors focus-visible:ring-[#01875f] focus-visible:ring-2"
+      />
+    </form>
   );
 }
 
@@ -1268,7 +1300,9 @@ function ReviewItem({
               {userLabel.charAt(0).toUpperCase()}
             </div>
           </div>
-          <span className="text-sm font-medium text-[#202124]">{userLabel}</span>
+          <span className="text-sm font-medium text-[#202124]">
+            {userLabel}
+          </span>
         </div>
         <Button variant="ghost" size="icon" className="size-8">
           <EllipsisVertical className="size-4 text-gray-500" />
@@ -1283,7 +1317,9 @@ function ReviewItem({
           </span>
         </div>
 
-        <p className="text-sm text-[#5f6368] leading-relaxed">{review.comment}</p>
+        <p className="text-sm text-[#5f6368] leading-relaxed">
+          {review.comment}
+        </p>
 
         <div className="flex items-center gap-1">
           <Button
@@ -1300,13 +1336,16 @@ function ReviewItem({
             <ArrowBigUp className="size-[18px]" />
             <span className="sr-only">Upvote</span>
           </Button>
-          <span className="px-1 text-xs font-medium text-gray-600">{score}</span>
+          <span className="px-1 text-xs font-medium text-gray-600">
+            {score}
+          </span>
           <Button
             variant="ghost"
             size="icon"
             className={cn(
               'size-7 rounded-md transition-colors hover:bg-[#7193ff]/10 hover:text-[#7193ff] text-gray-400',
-              voteSummary.userVote === 'down' && 'bg-[#7193ff]/10 text-[#7193ff]',
+              voteSummary.userVote === 'down' &&
+                'bg-[#7193ff]/10 text-[#7193ff]',
             )}
             title="Downvote"
             disabled={!actorUserId}

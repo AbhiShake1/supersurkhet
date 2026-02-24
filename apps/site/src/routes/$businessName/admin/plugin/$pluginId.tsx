@@ -1,9 +1,15 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { useConfetti } from '@/components/confetti-provider';
+import { useLoginPrompt } from '@/components/login-prompt-provider';
+import {
+  PluginDetailsView,
+  type PluginDetailView,
+} from '@/components/plugins/plugin-details-view';
 import { Button } from '@/components/ui/button';
+import { Unauthorized } from '@/components/ui/unauthorized';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
@@ -23,29 +29,51 @@ import {
   installPluginRelease,
   uninstallPluginRelease,
 } from '@/server-functions/plugins';
-import { PluginDetailsView, type PluginDetailView } from '@/components/plugins/plugin-details-view';
 
 export const Route = createFileRoute('/$businessName/admin/plugin/$pluginId')({
   component: PluginDetailsPage,
 });
 
+function decodeURIComponentOrNull(value: string): string | null {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+}
+
 function PluginDetailsPage() {
   const { businessName, pluginId: encodedPluginId } = Route.useParams();
-  const pluginId = decodeURIComponent(encodedPluginId);
-  const { user, anonymousUserId } = useAuth();
+  const pluginId = decodeURIComponentOrNull(encodedPluginId) ?? '';
+  const {
+    isAuthenticated,
+    isLoading: isUserLoading,
+    user,
+    anonymousUserId,
+  } = useAuth();
+  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const { fire } = useConfetti();
+  const userSoul = user?._?.soul;
   const actorUserId = user?._?.soul ?? user?.pub ?? anonymousUserId ?? 'anon';
   const actorUserLabel =
     user?.name?.trim() ||
     user?.email?.trim() ||
     (typeof user?.alias === 'string' ? user.alias.trim() : '') ||
     'Anonymous user';
+  const [installing, setInstalling] = useState(false);
+  const [uninstalling, setUninstalling] = useState(false);
 
-  const { data: businesses = [] } = api.business.useGet({
-    keys: [businessName],
-    single: true,
-  });
+  const { data: businesses = [], isLoading: isBusinessLoading } =
+    api.business.useGet({
+      keys: [businessName],
+      single: true,
+    });
   const business = businesses[0];
+  const isBusinessMember = !!userSoul && !!business?.members?.[userSoul];
+  const hasAccess =
+    user?.role === 'admin' ||
+    business?.created_by === userSoul ||
+    isBusinessMember;
   const businessId = business?.id ?? businessName;
   const actorRole =
     business?.members?.[actorUserId]?.role === 'owner'
@@ -53,6 +81,12 @@ function PluginDetailsPage() {
       : user?.role === 'admin'
         ? 'admin'
         : 'staff';
+
+  useEffect(() => {
+    if (!isAuthenticated && !isUserLoading)
+      promptLogin({ dismissible: false, showBackgroundContent: false });
+    else closeLoginPrompt();
+  }, [isAuthenticated, isUserLoading, promptLogin, closeLoginPrompt]);
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [businessId],
@@ -73,7 +107,7 @@ function PluginDetailsPage() {
     () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
   );
-  
+
   const reviews = useMemo(
     () =>
       (reviewRows as PluginUserReviewDoc[])
@@ -109,7 +143,7 @@ function PluginDetailsPage() {
       }),
     [releases, installs],
   );
-  
+
   const market = useMemo(
     () =>
       buildMarketplaceGroups(catalog, {
@@ -141,14 +175,20 @@ function PluginDetailsPage() {
   );
 
   const similar = useMemo(
-    () =>
-      plugin ? pickSimilarPlugins(plugin, market.all, 6) : [],
+    () => (plugin ? pickSimilarPlugins(plugin, market.all, 6) : []),
     [plugin, market],
   );
+
+  if (isUserLoading || isBusinessLoading) return null;
+
+  if (!user) return null;
+
+  if (!hasAccess) return <Unauthorized />;
 
   async function handleInstall() {
     if (!plugin) return false;
     try {
+      setInstalling(true);
       await installPluginRelease({
         data: {
           actorUserId,
@@ -166,12 +206,15 @@ function PluginDetailsPage() {
       console.error(error);
       toast.error('Failed to install plugin');
       return false;
+    } finally {
+      setInstalling(false);
     }
   }
 
   async function handleUninstall() {
     if (!plugin) return;
     try {
+      setUninstalling(true);
       await uninstallPluginRelease({
         data: {
           actorUserId,
@@ -184,6 +227,8 @@ function PluginDetailsPage() {
     } catch (error) {
       console.error(error);
       toast.error('Failed to uninstall plugin');
+    } finally {
+      setUninstalling(false);
     }
   }
 
@@ -206,7 +251,9 @@ function PluginDetailsPage() {
         updatedAt: now,
       });
       await refetchReviews();
-      toast.success(details?.userReview ? 'Review updated' : 'Review submitted');
+      toast.success(
+        details?.userReview ? 'Review updated' : 'Review submitted',
+      );
     } catch (error) {
       console.error(error);
       toast.error('Failed to save review');
@@ -240,6 +287,8 @@ function PluginDetailsPage() {
       onBack={() => window.history.back()}
       similarPlugins={similar}
       reviewGroups={reviewGroups}
+      isInstalling={installing}
+      isUninstalling={uninstalling}
       isSavingReview={createReviewMutation.isPending}
     />
   );

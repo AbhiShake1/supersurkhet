@@ -1,13 +1,14 @@
-
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Bot, Download, Loader2, Play, Search, Sparkles } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
-
+import { useLoginPrompt } from '@/components/login-prompt-provider';
+import { PluginIcon } from '@/components/plugins/plugin-icon';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Unauthorized } from '@/components/ui/unauthorized';
 import { VercelV0Chat } from '@/components/ui/v0-ai-chat';
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
@@ -22,25 +23,40 @@ import type {
   PluginReleaseDoc,
   PluginUserReviewDoc,
 } from '@/lib/plugins/types';
-import {
-  installPluginRelease,
-} from '@/server-functions/plugins';
-import { PluginIcon } from '@/components/plugins/plugin-icon';
+import { installPluginRelease } from '@/server-functions/plugins';
 
 export const Route = createFileRoute('/$businessName/admin/plugins')({
   component: PluginsRouteComponent,
 });
 
 type ChartType = 'top-installed' | 'recently-updated';
+const SKELETON_CARD_KEYS = [
+  's1',
+  's2',
+  's3',
+  's4',
+  's5',
+  's6',
+  's7',
+  's8',
+  's9',
+];
 
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
-  const { user, anonymousUserId } = useAuth();
+  const {
+    isAuthenticated,
+    isLoading: isUserLoading,
+    user,
+    anonymousUserId,
+  } = useAuth();
+  const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const [query, setQuery] = useState('');
   const [chartType, setChartType] = useState<ChartType>('top-installed');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isChatExpanded, setIsChatExpanded] = useState(false);
   const [installingPluginIds, setInstallingPluginIds] = useState<string[]>([]);
+  const installingPluginIdsLockRef = useRef(new Set<string>());
   const recommendedSectionRef = useRef<HTMLElement>(null);
 
   const { data: businesses = [], isLoading } = api.business.useGet({
@@ -50,13 +66,25 @@ function PluginsRouteComponent() {
   const isAiAuthenticated = true;
   const business = businesses[0];
   const businessId = business?.id ?? businessName;
+  const userSoul = user?._?.soul;
   const actorUserId = user?._?.soul ?? user?.pub ?? anonymousUserId ?? 'anon';
+  const isBusinessMember = !!userSoul && !!business?.members?.[userSoul];
+  const hasAccess =
+    user?.role === 'admin' ||
+    business?.created_by === userSoul ||
+    isBusinessMember;
   const actorRole =
     business?.members?.[actorUserId]?.role === 'owner'
       ? 'owner'
       : user?.role === 'admin'
         ? 'admin'
         : 'staff';
+
+  useEffect(() => {
+    if (!isAuthenticated && !isUserLoading)
+      promptLogin({ dismissible: false, showBackgroundContent: false });
+    else closeLoginPrompt();
+  }, [isAuthenticated, isUserLoading, promptLogin, closeLoginPrompt]);
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
     keys: [businessId],
@@ -116,16 +144,26 @@ function PluginsRouteComponent() {
 
   const visibleItems = useMemo(() => {
     const normalized = query.trim().toLowerCase();
+    const tokens = normalized.length > 0 ? normalized.split(/\s+/) : [];
+    const filterTokens = new Set(tokens);
+    const installedOnly = filterTokens.has('is:installed');
+    const searchTerms = tokens.filter((token) => token !== 'is:installed');
     return marketplace.all.filter((plugin) => {
+      const searchableText = [
+        plugin.title,
+        plugin.description,
+        plugin.pluginId,
+        plugin.category,
+      ]
+        .join(' ')
+        .toLowerCase();
       const matchesQuery =
-        normalized.length === 0 ||
-        [plugin.title, plugin.description, plugin.pluginId, plugin.category]
-          .join(' ')
-          .toLowerCase()
-          .includes(normalized);
+        searchTerms.length === 0 ||
+        searchTerms.every((term) => searchableText.includes(term));
+      const matchesInstalledFilter = !installedOnly || plugin.isInstalled;
       const matchesCategory =
         selectedCategory === 'All' || plugin.category === selectedCategory;
-      return matchesQuery && matchesCategory;
+      return matchesQuery && matchesInstalledFilter && matchesCategory;
     });
   }, [marketplace, query, selectedCategory]);
 
@@ -168,8 +206,13 @@ function PluginsRouteComponent() {
 
   const installSuggestedPlugin = useCallback(
     async (plugin: PluginMarketItem) => {
-      if (installingPluginIds.includes(plugin.pluginId)) return;
-      setInstallingPluginIds((current) => [...current, plugin.pluginId]);
+      if (installingPluginIdsLockRef.current.has(plugin.pluginId)) return;
+      installingPluginIdsLockRef.current.add(plugin.pluginId);
+      setInstallingPluginIds((current) =>
+        current.includes(plugin.pluginId)
+          ? current
+          : [...current, plugin.pluginId],
+      );
       try {
         await installPluginRelease({
           data: {
@@ -186,41 +229,64 @@ function PluginsRouteComponent() {
         console.error(error);
         toast.error('Failed to install plugin');
       } finally {
+        installingPluginIdsLockRef.current.delete(plugin.pluginId);
         setInstallingPluginIds((current) =>
-          current.filter((currentPluginId) => currentPluginId !== plugin.pluginId),
+          current.filter(
+            (currentPluginId) => currentPluginId !== plugin.pluginId,
+          ),
         );
       }
     },
     [actorRole, actorUserId, businessId],
   );
 
-  if (isLoading && !business) {
+  if (isUserLoading || (isLoading && !business)) {
     return <PluginsPageSkeleton />;
   }
+
+  if (!user) return null;
+
+  if (!hasAccess) return <Unauthorized />;
+
+  const getRatingLabel = (plugin: PluginMarketItem) =>
+    plugin.averageRating !== null && (plugin.reviewCount ?? 0) > 0
+      ? `${plugin.averageRating.toFixed(1)} ★`
+      : 'No ratings';
 
   return (
     <div className="min-h-screen bg-white text-[#202124]">
       {/* Header Tabs */}
-      <div data-plugins-sticky-header="true" className="sticky top-0 z-50 border-b bg-white">
+      <div
+        data-plugins-sticky-header="true"
+        className="sticky top-0 z-50 border-b bg-white"
+      >
         <div className="mx-auto flex max-w-[1240px] items-center gap-6 px-6 py-3">
-          <Button asChild variant="ghost" size="sm" className="rounded-full text-[#5f6368]">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="rounded-full text-[#5f6368]"
+          >
             <Link to="/$businessName/admin" params={{ businessName }}>
               Back
             </Link>
           </Button>
           <div className="flex items-center gap-8">
-            <h1 className="text-xl font-medium text-[#5f6368]">Plugin Marketplace</h1>
+            <h1 className="text-xl font-medium text-[#5f6368]">
+              Plugin Marketplace
+            </h1>
             <nav className="flex gap-6">
               <div className="relative flex h-12 items-center px-1 text-sm font-medium text-[#01875f]">
                 Marketplace
                 <div className="absolute bottom-0 left-0 h-1 w-full rounded-t-full bg-[#01875f]" />
               </div>
-              <div
+              <button
+                type="button"
                 onClick={() => setQuery('is:installed')}
-                className="flex h-12 items-center px-1 text-sm font-medium text-[#5f6368] hover:text-[#202124] transition-colors cursor-pointer"
+                className="flex h-12 items-center px-1 text-sm font-medium text-[#5f6368] transition-colors hover:text-[#202124]"
               >
                 Installed
-              </div>
+              </button>
             </nav>
           </div>
           <div className="relative ml-auto w-full max-w-md">
@@ -241,6 +307,7 @@ function PluginsRouteComponent() {
           <div className="flex flex-wrap gap-3">
             {['All', ...marketplace.categories].map((category) => (
               <button
+                type="button"
                 key={category}
                 onClick={() => setSelectedCategory(category)}
                 className={`rounded-full px-5 py-2 text-sm font-medium transition-all ${
@@ -273,7 +340,8 @@ function PluginsRouteComponent() {
                         Recommended by AI
                       </h2>
                       <p className="mt-0.5 text-sm text-white/60">
-                        Based on your business profile, goals, and current marketplace trends.
+                        Based on your business profile, goals, and current
+                        marketplace trends.
                       </p>
                     </div>
                   </div>
@@ -310,7 +378,12 @@ function PluginsRouteComponent() {
                               >
                                 <Link
                                   to="/$businessName/admin/plugin/$pluginId"
-                                  params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+                                  params={{
+                                    businessName,
+                                    pluginId: encodeURIComponent(
+                                      plugin.pluginId,
+                                    ),
+                                  }}
                                   className="flex min-w-0 flex-1 items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                                 >
                                   <div className="relative size-14 shrink-0 overflow-hidden rounded-[20%] border border-primary/20 bg-white shadow-sm transition-all group-hover:shadow-md">
@@ -321,15 +394,20 @@ function PluginsRouteComponent() {
                                   </div>
                                   <div className="min-w-0">
                                     <div className="flex items-center gap-2">
-                                      <p className="truncate text-sm font-semibold tracking-wide text-white/90">{plugin.title}</p>
+                                      <p className="truncate text-sm font-semibold tracking-wide text-white/90">
+                                        {plugin.title}
+                                      </p>
                                       <span className="recommended-ai-try inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium">
                                         <Play className="h-3 w-3" />
                                         Try now
                                       </span>
                                     </div>
-                                    <p className="truncate text-xs text-white/65">{plugin.category}</p>
+                                    <p className="truncate text-xs text-white/65">
+                                      {plugin.category}
+                                    </p>
                                     <p className="mt-1 truncate text-xs text-white/55">
-                                      {plugin.installs.toLocaleString()} installs
+                                      {plugin.installs.toLocaleString()}{' '}
+                                      installs
                                     </p>
                                   </div>
                                 </Link>
@@ -338,9 +416,13 @@ function PluginsRouteComponent() {
                                   variant="outline"
                                   size="icon"
                                   className="h-8 w-8 shrink-0 rounded-full border border-[#ff8657]/45 bg-[#ff8657]/15 text-[#ff9a74] hover:bg-[#ff8657]/25 hover:text-[#ffb294] disabled:opacity-60"
-                                  onClick={() => void installSuggestedPlugin(plugin)}
+                                  onClick={() =>
+                                    void installSuggestedPlugin(plugin)
+                                  }
                                   disabled={
-                                    installingPluginIds.includes(plugin.pluginId) ||
+                                    installingPluginIds.includes(
+                                      plugin.pluginId,
+                                    ) ||
                                     (plugin.isInstalled && !plugin.isUpgradable)
                                   }
                                   aria-label={
@@ -349,7 +431,9 @@ function PluginsRouteComponent() {
                                       : `Install ${plugin.title}`
                                   }
                                 >
-                                  {installingPluginIds.includes(plugin.pluginId) ? (
+                                  {installingPluginIds.includes(
+                                    plugin.pluginId,
+                                  ) ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
                                     <Download className="h-4 w-4" />
@@ -361,7 +445,8 @@ function PluginsRouteComponent() {
                         </div>
                       ) : (
                         <div className="rounded-xl border border-dashed border-[#ff8657]/35 bg-white/[0.04] p-4 text-sm text-white/65">
-                          Recommendations are warming up. Use AI chat for tailored suggestions right now.
+                          Recommendations are warming up. Use AI chat for
+                          tailored suggestions right now.
                         </div>
                       )}
                     </div>
@@ -372,7 +457,10 @@ function PluginsRouteComponent() {
                       <Link
                         key={plugin.pluginId}
                         to="/$businessName/admin/plugin/$pluginId"
-                        params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+                        params={{
+                          businessName,
+                          pluginId: encodeURIComponent(plugin.pluginId),
+                        }}
                         className="group rounded-2xl border border-transparent p-2 text-left transition-all hover:border-[#ff8657]/50 hover:bg-gradient-to-br hover:from-white/10 hover:to-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       >
                         <div className="relative aspect-square w-full overflow-hidden rounded-[24%] border border-primary/20 bg-white shadow-sm transition-all group-hover:-translate-y-1 group-hover:shadow-xl">
@@ -382,8 +470,12 @@ function PluginsRouteComponent() {
                           </div>
                         </div>
                         <div className="mt-3">
-                          <p className="truncate text-sm font-semibold tracking-wide text-white">{plugin.title}</p>
-                          <p className="truncate text-xs text-white/60">{plugin.category}</p>
+                          <p className="truncate text-sm font-semibold tracking-wide text-white">
+                            {plugin.title}
+                          </p>
+                          <p className="truncate text-xs text-white/60">
+                            {plugin.category}
+                          </p>
                           <p className="mt-1 truncate text-xs text-white/50">
                             {plugin.installs.toLocaleString()} installs
                           </p>
@@ -393,7 +485,8 @@ function PluginsRouteComponent() {
                   </div>
                 ) : (
                   <div className="rounded-2xl border border-dashed border-primary/30 bg-background/80 p-6 text-sm text-muted-foreground">
-                    Recommendations are warming up. Use AI chat for tailored suggestions right now.
+                    Recommendations are warming up. Use AI chat for tailored
+                    suggestions right now.
                   </div>
                 )}
               </section>
@@ -402,21 +495,28 @@ function PluginsRouteComponent() {
             {/* Top Charts Ranked List */}
             <section>
               <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-2xl font-semibold tracking-tight">Top Charts</h2>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  Top Charts
+                </h2>
                 <div className="flex gap-2">
-                   {(['top-installed', 'recently-updated'] as const).map((type) => (
-                    <button
-                      key={type}
-                      onClick={() => setChartType(type)}
-                      className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
-                        chartType === type
-                          ? 'bg-[#01875f] text-white'
-                          : 'bg-white text-[#5f6368] ring-1 ring-[#dadce0] hover:bg-[#f8f9fa]'
-                      }`}
-                    >
-                      {type === 'top-installed' ? 'Top Free' : 'Recently Updated'}
-                    </button>
-                  ))}
+                  {(['top-installed', 'recently-updated'] as const).map(
+                    (type) => (
+                      <button
+                        type="button"
+                        key={type}
+                        onClick={() => setChartType(type)}
+                        className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
+                          chartType === type
+                            ? 'bg-[#01875f] text-white'
+                            : 'bg-white text-[#5f6368] ring-1 ring-[#dadce0] hover:bg-[#f8f9fa]'
+                        }`}
+                      >
+                        {type === 'top-installed'
+                          ? 'Top Free'
+                          : 'Recently Updated'}
+                      </button>
+                    ),
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2 lg:grid-cols-3">
@@ -424,18 +524,27 @@ function PluginsRouteComponent() {
                   <Link
                     key={plugin.pluginId}
                     to="/$businessName/admin/plugin/$pluginId"
-                    params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+                    params={{
+                      businessName,
+                      pluginId: encodeURIComponent(plugin.pluginId),
+                    }}
                     className="group flex items-center gap-4 py-1 text-left transition-opacity hover:opacity-80"
                   >
-                    <span className="w-6 text-sm font-medium text-[#5f6368]">{index + 1}</span>
+                    <span className="w-6 text-sm font-medium text-[#5f6368]">
+                      {index + 1}
+                    </span>
                     <div className="size-16 overflow-hidden rounded-[20%] border border-[#dadce0] bg-white shadow-sm transition-shadow group-hover:shadow-md">
                       <PluginIcon plugin={plugin} compact />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-base font-medium">{plugin.title}</p>
-                      <p className="truncate text-sm text-[#5f6368]">{plugin.category}</p>
+                      <p className="truncate text-base font-medium">
+                        {plugin.title}
+                      </p>
+                      <p className="truncate text-sm text-[#5f6368]">
+                        {plugin.category}
+                      </p>
                       <div className="flex items-center gap-1 text-xs text-[#5f6368]">
-                        <span>4.8 ★</span>
+                        <span>{getRatingLabel(plugin)}</span>
                         <span>•</span>
                         <span>{plugin.installs.toLocaleString()} installs</span>
                       </div>
@@ -447,38 +556,56 @@ function PluginsRouteComponent() {
 
             {/* Carousels for Categories */}
             {marketplace.categories.slice(0, 4).map((category) => {
-               const items = marketplace.all.filter((p) => p.category === category);
-               if (items.length === 0) return null;
-               return (
-                 <section key={category}>
-                   <div className="mb-6 flex items-center justify-between">
-                     <h2 className="text-2xl font-semibold tracking-tight">{category}</h2>
-                     <button className="text-sm font-medium text-[#01875f] hover:underline">See more</button>
-                   </div>
-                   <div className="hide-scrollbar flex gap-6 overflow-x-auto pb-4">
-                     {items.slice(0, 10).map((plugin) => (
-                       <Link
-                         key={plugin.pluginId}
-                         to="/$businessName/admin/plugin/$pluginId"
-                         params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
-                         className="w-40 shrink-0 space-y-3 group text-left"
-                       >
-                         <div className="aspect-square w-full overflow-hidden rounded-[20%] border border-[#dadce0] bg-white shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1">
-                           <PluginIcon plugin={plugin} />
-                         </div>
-                         <div>
-                           <p className="truncate text-sm font-medium tracking-wide">{plugin.title}</p>
-                           <p className="truncate text-xs text-[#5f6368]">{plugin.publisher}</p>
-                           <div className="mt-1 flex items-center gap-1 text-xs text-[#5f6368]">
-                             <span>4.5 ★</span>
-                             <span>{plugin.installs.toLocaleString()} installs</span>
-                           </div>
-                         </div>
-                       </Link>
-                     ))}
-                   </div>
-                 </section>
-               );
+              const items = marketplace.all.filter(
+                (p) => p.category === category,
+              );
+              if (items.length === 0) return null;
+              return (
+                <section key={category}>
+                  <div className="mb-6 flex items-center justify-between">
+                    <h2 className="text-2xl font-semibold tracking-tight">
+                      {category}
+                    </h2>
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-[#01875f] hover:underline"
+                    >
+                      See more
+                    </button>
+                  </div>
+                  <div className="hide-scrollbar flex gap-6 overflow-x-auto pb-4">
+                    {items.slice(0, 10).map((plugin) => (
+                      <Link
+                        key={plugin.pluginId}
+                        to="/$businessName/admin/plugin/$pluginId"
+                        params={{
+                          businessName,
+                          pluginId: encodeURIComponent(plugin.pluginId),
+                        }}
+                        className="w-40 shrink-0 space-y-3 group text-left"
+                      >
+                        <div className="aspect-square w-full overflow-hidden rounded-[20%] border border-[#dadce0] bg-white shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1">
+                          <PluginIcon plugin={plugin} />
+                        </div>
+                        <div>
+                          <p className="truncate text-sm font-medium tracking-wide">
+                            {plugin.title}
+                          </p>
+                          <p className="truncate text-xs text-[#5f6368]">
+                            {plugin.publisher}
+                          </p>
+                          <div className="mt-1 flex items-center gap-1 text-xs text-[#5f6368]">
+                            <span>{getRatingLabel(plugin)}</span>
+                            <span>
+                              {plugin.installs.toLocaleString()} installs
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </section>
+              );
             })}
           </div>
         ) : (
@@ -488,17 +615,24 @@ function PluginsRouteComponent() {
               <Link
                 key={plugin.pluginId}
                 to="/$businessName/admin/plugin/$pluginId"
-                params={{ businessName, pluginId: encodeURIComponent(plugin.pluginId) }}
+                params={{
+                  businessName,
+                  pluginId: encodeURIComponent(plugin.pluginId),
+                }}
                 className="group space-y-3 text-left"
               >
                 <div className="aspect-square w-full overflow-hidden rounded-[20%] border border-[#dadce0] bg-white shadow-sm transition-all group-hover:shadow-lg group-hover:-translate-y-1">
                   <PluginIcon plugin={plugin} />
                 </div>
                 <div>
-                  <p className="truncate text-sm font-medium tracking-wide">{plugin.title}</p>
-                  <p className="truncate text-xs text-[#5f6368]">{plugin.publisher}</p>
+                  <p className="truncate text-sm font-medium tracking-wide">
+                    {plugin.title}
+                  </p>
+                  <p className="truncate text-xs text-[#5f6368]">
+                    {plugin.publisher}
+                  </p>
                   <div className="mt-1 flex items-center gap-1 text-xs text-[#5f6368]">
-                    <span>4.5 ★</span>
+                    <span>{getRatingLabel(plugin)}</span>
                     <span>{plugin.installs.toLocaleString()} installs</span>
                   </div>
                 </div>
@@ -507,8 +641,6 @@ function PluginsRouteComponent() {
           </div>
         )}
       </div>
-
-
 
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
@@ -614,7 +746,6 @@ function PluginsRouteComponent() {
   );
 }
 
-
 function PluginsPageSkeleton() {
   return (
     <div className="min-h-screen bg-white">
@@ -633,8 +764,8 @@ function PluginsPageSkeleton() {
         <div className="space-y-6">
           <Skeleton className="h-8 w-40" />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="flex gap-4">
+            {SKELETON_CARD_KEYS.map((key) => (
+              <div key={key} className="flex gap-4">
                 <Skeleton className="size-16 rounded-[20%]" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-3/4" />
