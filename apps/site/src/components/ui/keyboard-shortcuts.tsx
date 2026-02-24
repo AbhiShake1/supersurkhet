@@ -404,16 +404,32 @@ export function useShortcutBinding(
 
 function triggerBinding(binding: ShortcutBinding) {
   if (typeof window === 'undefined') return;
-  const event = new KeyboardEvent('keydown', {
-    key: binding.key,
-    ctrlKey: binding.ctrl,
-    metaKey: binding.meta,
-    altKey: binding.alt,
-    shiftKey: binding.shift,
-    bubbles: true,
-    cancelable: true,
-  });
-  window.dispatchEvent(event);
+  const dispatch = () => {
+    const event = new KeyboardEvent('keydown', {
+      key: binding.key,
+      ctrlKey: binding.ctrl,
+      metaKey: binding.meta,
+      altKey: binding.alt,
+      shiftKey: binding.shift,
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(event);
+  };
+
+  const active = document.activeElement as HTMLElement | null;
+  if (
+    active &&
+    (active.isContentEditable ||
+      active instanceof HTMLInputElement ||
+      active instanceof HTMLTextAreaElement ||
+      active instanceof HTMLSelectElement)
+  ) {
+    active.blur();
+    window.requestAnimationFrame(dispatch);
+    return;
+  }
+  dispatch();
 }
 
 export function useShortcutRegistry() {

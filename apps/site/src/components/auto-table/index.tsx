@@ -633,7 +633,7 @@ export function AutoTable<T extends SchemaKeys>({
       trigger?.click();
       focusActiveRow(row.id);
     },
-    { guard: isTableShortcutTarget },
+    { enabled: rows.length > 0 },
   );
   useShortcutAction(
     AUTO_TABLE_SHORTCUTS.editRow,
@@ -643,7 +643,7 @@ export function AutoTable<T extends SchemaKeys>({
       if (!row) return;
       setRowAction({ row, variant: 'update' });
     },
-    { guard: isTableShortcutTarget },
+    { enabled: rows.length > 0 },
   );
   useShortcutAction(
     AUTO_TABLE_SHORTCUTS.deleteRow,
@@ -653,7 +653,7 @@ export function AutoTable<T extends SchemaKeys>({
       if (!row) return;
       setRowAction({ row, variant: 'delete' });
     },
-    { guard: isTableShortcutTarget },
+    { enabled: rows.length > 0 },
   );
   useShortcutAction(
     AUTO_TABLE_SHORTCUTS.nextFocusable,
@@ -1053,22 +1053,50 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
             </Tooltip>
             <DropdownMenuContent align="end" className="w-48">
               {!readOnly && (
-                <DropdownMenuItem
-                  className="gap-2"
-                  onSelect={() => setRowAction({ row, variant: 'update' })}
-                >
-                  <Pencil className="size-4" aria-hidden="true" />
-                  Edit
-                </DropdownMenuItem>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuItem
+                      className="gap-2"
+                      onSelect={() => setRowAction({ row, variant: 'update' })}
+                    >
+                      <Pencil className="size-4" aria-hidden="true" />
+                      Edit
+                    </DropdownMenuItem>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="left"
+                    className="flex items-center gap-2"
+                  >
+                    <span>Edit row</span>
+                    <ShortcutKbd
+                      actionId={AUTO_TABLE_SHORTCUTS.editRow.id}
+                      interactive={false}
+                    />
+                  </TooltipContent>
+                </Tooltip>
               )}
               {!readOnly && (
-                <DropdownMenuItem
-                  className="gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
-                  onSelect={() => setRowAction({ row, variant: 'delete' })}
-                >
-                  <Trash2 className="size-4" aria-hidden="true" />
-                  Delete
-                </DropdownMenuItem>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuItem
+                      className="gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
+                      onSelect={() => setRowAction({ row, variant: 'delete' })}
+                    >
+                      <Trash2 className="size-4" aria-hidden="true" />
+                      Delete
+                    </DropdownMenuItem>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="left"
+                    className="flex items-center gap-2"
+                  >
+                    <span>Delete row</span>
+                    <ShortcutKbd
+                      actionId={AUTO_TABLE_SHORTCUTS.deleteRow.id}
+                      interactive={false}
+                    />
+                  </TooltipContent>
+                </Tooltip>
               )}
               {!readOnly && actionNode ? <DropdownMenuSeparator /> : null}
               {actionNode}
