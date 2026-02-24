@@ -721,7 +721,7 @@ function toDraftRoutesFromAdminTabs(
   id: string;
   schema: string;
   title: string;
-  group?: string;
+  group: string | null;
   order: number;
   routeSegment: string;
   routePath: string;
@@ -733,7 +733,7 @@ function toDraftRoutesFromAdminTabs(
       id: `${tab.schema}:${index}`,
       schema: tab.schema,
       title: tab.title ?? tab.schema,
-      group: tab.group?.trim() || undefined,
+      group: tab.group?.trim() || null,
       order: index,
       routeSegment,
       routePath: `/plugin-studio/${routeSegment}`,
@@ -747,7 +747,7 @@ function toAdminTabsFromDraftRoutes(
     | Array<{
       schema: string;
       title: string;
-      group?: string;
+      group?: string | null;
       order: number;
       iconName?: string;
     }>
@@ -2390,7 +2390,7 @@ function PluginStudioPresenter({
       routes?: Array<{
         schema: string;
         title: string;
-        group?: string;
+        group?: string | null;
         order: number;
         iconName?: string;
       }>;

@@ -554,6 +554,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   const [focusedSidebarGroupName, setFocusedSidebarGroupName] =
     useState<string>('');
   const groupCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const ungroupDropZoneRef = useRef<HTMLDivElement | null>(null);
   const pointerPositionRef = useRef<{ x: number; y: number } | null>(null);
   const externalDropHandledRef = useRef(false);
   const tabRenameHandledByKeyRef = useRef(false);
@@ -766,13 +767,30 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       if (!touch) return;
       updatePointerPosition(touch.clientX, touch.clientY);
     };
+    const handlePointerUp = (event: PointerEvent) => {
+      updatePointerPosition(event.clientX, event.clientY);
+    };
+    const handleMouseUp = (event: MouseEvent) => {
+      updatePointerPosition(event.clientX, event.clientY);
+    };
+    const handleTouchEnd = (event: TouchEvent) => {
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+      updatePointerPosition(touch.clientX, touch.clientY);
+    };
     window.addEventListener('pointermove', handlePointerMove);
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
     return () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [activeDraggedTabId]);
 
@@ -812,6 +830,19 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
           : pointerPositionRef.current;
       const dropPosition = pointerPositionRef.current ?? fallbackDropPosition;
       if (!dropPosition) return null;
+
+      const ungroupDropZone = ungroupDropZoneRef.current;
+      if (ungroupDropZone) {
+        const ungroupRect = ungroupDropZone.getBoundingClientRect();
+        const insideUngroupDropZone =
+          dropPosition.x >= ungroupRect.left &&
+          dropPosition.x <= ungroupRect.right &&
+          dropPosition.y >= ungroupRect.top &&
+          dropPosition.y <= ungroupRect.bottom;
+        if (insideUngroupDropZone) {
+          return UNGROUP_DROP_SENTINEL;
+        }
+      }
 
       const pointElements = document.elementsFromPoint(
         dropPosition.x,
@@ -1261,6 +1292,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       <div className="flex-grow overflow-y-auto pb-16">
         {editable && (onAddGroup || onAddTable) ? (
           <div
+            ref={ungroupDropZoneRef}
             data-sidebar-ungroup-drop-zone="true"
             className={`mb-2 rounded-lg border p-1 transition-colors ${
               activeDraggedTabId
@@ -1271,13 +1303,8 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
             {open ? (
               <div className="space-y-1">
                 <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
-                  {activeDraggedTabId ? 'Drop zone' : 'Quick add'}
+                  {activeDraggedTabId ? 'Drop here to ungroup' : 'Quick add'}
                 </div>
-                {activeDraggedTabId ? (
-                  <div className="rounded-md border border-dashed border-primary/50 bg-background/70 px-2 py-1.5 text-xs text-primary">
-                    Drag here to ungroup
-                  </div>
-                ) : null}
                 {onAddGroup ? (
                   <Tooltip>
                     <TooltipTrigger asChild>
