@@ -254,7 +254,6 @@ export function AddRowDialog<T extends SchemaKeys>({
     },
     {
       enabled: Boolean(slug && !readOnly && !dialogOpen),
-      guard: isShortcutInScope,
     },
   );
   useShortcutAction(

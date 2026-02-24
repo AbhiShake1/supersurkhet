@@ -31,6 +31,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+  ShortcutKbd,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -200,6 +204,34 @@ const DEFAULT_SYSTEM_TABS: SystemTabState = {
   },
 };
 const DEFAULT_SYSTEM_TAB_ORDER: SystemTabKey[] = ['dashboard', 'qr', 'website'];
+const COLUMN_SHEET_SHORTCUTS = {
+  cancel: {
+    id: 'pluginStudio.columnSheetCancel',
+    label: 'Cancel column sheet',
+    description: 'Close the add/edit column sheet without saving.',
+    scope: 'Plugin Studio',
+    defaultBinding: {
+      key: 'Escape',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  save: {
+    id: 'pluginStudio.columnSheetSave',
+    label: 'Save column',
+    description: 'Save the current add/edit column changes.',
+    scope: 'Plugin Studio',
+    defaultBinding: {
+      key: 'Enter',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: false,
+    },
+  },
+} as const;
 
 const DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_group__/';
 const DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_system__/';
@@ -4088,6 +4120,18 @@ function PluginStudioPresenter({
     }
   }
 
+  const isColumnSheetShortcutTarget = useCallback((event: KeyboardEvent) => {
+    const target = event.target as Node | null;
+    const active = document.activeElement as Node | null;
+    const sheetContent = document.querySelector(
+      '[data-plugin-studio-column-sheet-content="true"]',
+    );
+    if (!sheetContent) return false;
+    if (target && sheetContent.contains(target)) return true;
+    if (active && sheetContent.contains(active)) return true;
+    return false;
+  }, []);
+
   function handleReorderColumns(
     schemaId: string,
     sourceColumnKey: string,
@@ -4301,6 +4345,29 @@ function PluginStudioPresenter({
     }));
     closeColumnSheet();
   }
+
+  useShortcutAction(
+    COLUMN_SHEET_SHORTCUTS.cancel,
+    () => {
+      closeColumnSheet();
+    },
+    {
+      enabled: isAddColumnSheetOpen,
+      allowInEditableContext: true,
+      guard: isColumnSheetShortcutTarget,
+    },
+  );
+  useShortcutAction(
+    COLUMN_SHEET_SHORTCUTS.save,
+    () => {
+      submitAddColumnFromSheet();
+    },
+    {
+      enabled: isAddColumnSheetOpen,
+      allowInEditableContext: true,
+      guard: isColumnSheetShortcutTarget,
+    },
+  );
 
   function handleAddGroup(
     nextGroupName?: string,
@@ -5027,6 +5094,7 @@ function PluginStudioPresenter({
           <SheetContent
             side="right"
             className="w-full overflow-y-auto sm:max-w-lg"
+            data-plugin-studio-column-sheet-content="true"
           >
             <SheetHeader>
               <SheetTitle>
@@ -5207,16 +5275,38 @@ function PluginStudioPresenter({
               </div>
             </div>
             <SheetFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={closeColumnSheet}
-              >
-                Cancel
-              </Button>
-              <Button type="button" onClick={submitAddColumnFromSheet}>
-                {columnSheetMode === 'edit' ? 'Save Column' : 'Add Column'}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={closeColumnSheet}
+                  >
+                    Cancel
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>Cancel</span>
+                  <ShortcutKbd
+                    actionId={COLUMN_SHEET_SHORTCUTS.cancel.id}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button type="button" onClick={submitAddColumnFromSheet}>
+                    {columnSheetMode === 'edit' ? 'Save Column' : 'Add Column'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>{columnSheetMode === 'edit' ? 'Save column' : 'Add column'}</span>
+                  <ShortcutKbd
+                    actionId={COLUMN_SHEET_SHORTCUTS.save.id}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
             </SheetFooter>
           </SheetContent>
         </Sheet>

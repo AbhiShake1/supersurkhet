@@ -1088,7 +1088,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     },
     {
       enabled: editable && Boolean(onAddGroup),
-      guard: isSidebarShortcutTarget,
     },
   );
   useShortcutAction(
@@ -1099,7 +1098,6 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     },
     {
       enabled: editable && Boolean(onAddTable),
-      guard: isSidebarShortcutTarget,
     },
   );
   useShortcutAction(

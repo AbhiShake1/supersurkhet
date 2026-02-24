@@ -715,7 +715,6 @@ export function AutoTable<T extends SchemaKeys>({
     },
     {
       enabled: Boolean(props.editable && !props.readOnly && props.onAddColumn),
-      guard: isTableShortcutTarget,
     },
   );
   useRegisterShortcut(

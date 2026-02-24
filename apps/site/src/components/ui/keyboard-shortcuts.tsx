@@ -1034,14 +1034,6 @@ function SingleShortcutEditor({
         </Button>
         <Button type="button" onClick={saveCandidate} disabled={!canSave}>
           Save
-          <span className="ml-2">
-            <ShortcutKbd
-              actionId={SAVE_SHORTCUT_EDITOR_SHORTCUT.id}
-              defaultBinding={SAVE_SHORTCUT_EDITOR_SHORTCUT.defaultBinding}
-              interaction="trigger-parent"
-              interactive={false}
-            />
-          </span>
         </Button>
       </div>
     </section>
