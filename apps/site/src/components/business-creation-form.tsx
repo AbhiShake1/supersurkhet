@@ -218,6 +218,14 @@ type ModelsDevProviderRecord = {
 };
 
 type OauthFlowState = 'idle' | 'pending' | 'connected' | 'error';
+type SelectedModelWizardOption = {
+  id: string;
+  modelId: string;
+  label: string;
+  recommended: boolean;
+  selected: boolean;
+  showCheckmark: boolean;
+};
 
 const OPENAI_BROWSER_OAUTH_METHOD_ID = 'openai-chatgpt-pro-plus-browser';
 const OPENAI_HEADLESS_OAUTH_METHOD_ID = 'openai-chatgpt-pro-plus-headless';
@@ -305,6 +313,30 @@ function resolveProviderOauthButtonLabelForMethod(
 
   const label = method.label?.trim();
   return label ? `Connect ${label}` : 'Connect OAuth provider';
+}
+
+function toProviderModelSelectionKey(input: {
+  providerId: string;
+  modelId: string;
+}): string {
+  return `${input.providerId}::${input.modelId}`;
+}
+
+function fromProviderModelSelectionKey(key: string): {
+  providerId: string;
+  modelId: string;
+} | null {
+  const separatorIndex = key.indexOf('::');
+  if (separatorIndex < 0) return null;
+
+  const providerId = key.slice(0, separatorIndex).trim();
+  const modelId = key.slice(separatorIndex + 2).trim();
+  if (!providerId || !modelId) return null;
+
+  return {
+    providerId,
+    modelId,
+  };
 }
 
 function normalizeProviderOauthMethodOptions(
@@ -605,7 +637,9 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     useState(false);
   const [selectedProviderIds, setSelectedProviderIds] =
     useState<Set<BusinessOnboardingProviderId>>(new Set());
-  const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(new Set());
+  const [selectedModelKeys, setSelectedModelKeys] = useState<Set<string>>(
+    new Set(),
+  );
   const [integrations, setIntegrations] = useState<Array<{
     providerId: BusinessOnboardingProviderId;
     modelId: string;
@@ -621,6 +655,67 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [isAskingForAnother, setIsAskingForAnother] = useState(false);
   const recommendedProviderId = defaultModelOption.provider;
   const recommendedModelId = providerModelOptions[0]?.id ?? selectedModelOption.id;
+  const modelOptionsForWizard = useMemo<SelectedModelWizardOption[]>(() => {
+    // Model history is keyed by provider+model so identical model ids across providers remain distinct selections.
+    const topModelOptions = providerModelOptions.slice(0, 12);
+    const topSelectionKeys = new Set(
+      topModelOptions.map((option) =>
+        toProviderModelSelectionKey({
+          providerId: selectedAssistantProviderId,
+          modelId: option.id,
+        }),
+      ),
+    );
+    const topOptions: SelectedModelWizardOption[] = topModelOptions.map(
+      (option, index) => ({
+        id: option.id,
+        modelId: option.id,
+        label: option.label,
+        recommended: index === 0,
+        selected: option.id === selectedAssistantModelId,
+        showCheckmark: selectedModelKeys.has(
+          toProviderModelSelectionKey({
+            providerId: selectedAssistantProviderId,
+            modelId: option.id,
+          }),
+        ),
+      }),
+    );
+
+    const historicalOptions: SelectedModelWizardOption[] = [];
+    for (const selectionKey of selectedModelKeys) {
+      const parsed = fromProviderModelSelectionKey(selectionKey);
+      if (!parsed) continue;
+      if (topSelectionKeys.has(selectionKey)) continue;
+
+      const selectionProviderLabel = formatProviderLabel(parsed.providerId);
+      const selectionProviderModels = resolveProviderModelOptions(
+        parsed.providerId,
+      );
+      const matchedSelectionModel = selectionProviderModels.find(
+        (option) => option.id === parsed.modelId,
+      );
+      const selectionModelLabel =
+        matchedSelectionModel?.label ?? parsed.modelId;
+
+      historicalOptions.push({
+        id: selectionKey,
+        modelId: parsed.modelId,
+        label: `${selectionModelLabel} (${selectionProviderLabel})`,
+        recommended: false,
+        selected: false,
+        showCheckmark: true,
+      });
+    }
+
+    return [...topOptions, ...historicalOptions];
+  }, [
+    providerModelOptions,
+    resolveProviderModelOptions,
+    selectedAssistantModelId,
+    selectedAssistantProviderId,
+    selectedModelKeys,
+  ]);
   const recommendedAuthMode = resolveProviderDefaultAuthMode(
     selectedAssistantProviderId,
   );
@@ -1151,12 +1246,20 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     setAssistantPickedModel(false);
     setAssistantPickedAuth(false);
     setAssistantPickedOauthMethod(false);
-    setAssistantStage('model');
+    // setAssistantStage('model');
+    setAssistantStage('auth');
   }
 
   function handleAssistantModelSelect(modelId: string) {
     setSelectedAssistantModelId(modelId);
-    setSelectedModelIds((prev) => new Set(prev).add(modelId));
+    setSelectedModelKeys((prev) =>
+      new Set(prev).add(
+        toProviderModelSelectionKey({
+          providerId: selectedAssistantProviderId,
+          modelId,
+        }),
+      ),
+    );
     setAuthSessionToken('');
     setAuthSessionExpiresAt(null);
     setAssistantPickedModel(true);
@@ -1218,7 +1321,8 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       return;
     }
     if (assistantStage === 'auth') {
-      setAssistantStage('model');
+      // setAssistantStage('model');
+      setAssistantStage('provider');
       return;
     }
     if (assistantStage === 'oauth-method') {
@@ -1250,13 +1354,14 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
 
   function handleAssistantForward() {
     if (assistantStage === 'provider') {
-      setAssistantStage('model');
-      return;
-    }
-    if (assistantStage === 'model') {
+      // setAssistantStage('model');
       setAssistantStage('auth');
       return;
     }
+    // if (assistantStage === 'model') {
+    //   setAssistantStage('auth');
+    //   return;
+    // }
     if (assistantStage === 'auth') {
       if (
         selectedAssistantAuthMode === 'oauth-access-token' &&
@@ -1290,7 +1395,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     isAskingForAnother
       ? true
       : (assistantStage === 'provider' && assistantPickedProvider) ||
-      (assistantStage === 'model' && assistantPickedModel) ||
+      // (assistantStage === 'model' && assistantPickedModel) ||
       (assistantStage === 'auth' && assistantPickedAuth) ||
       (assistantStage === 'oauth-method' && assistantPickedOauthMethod) ||
       (assistantStage === 'credential' && assistantSecretInput.trim().length > 0);
@@ -1337,7 +1442,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     setAssistantPickedModel(false);
     setAssistantPickedAuth(false);
     setAssistantPickedOauthMethod(false);
-    // Keep selectedProviderIds and selectedModelIds to show checkmarks on all previously selected options
+    // Keep selectedProviderIds and selectedModelKeys to show checkmarks on all previously selected options
     setAssistantStage('provider');
     setIsAskingForAnother(false);
   }
@@ -1358,7 +1463,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         fitContainer
         className="h-[520px] max-w-none rounded-xl"
         title="AI Integration"
-        subtitle="AI asks provider, model, and auth options"
+        subtitle="AI asks provider and auth options"
         wizard={{
           stageKey: assistantStage,
           prioritizeRecommended: assistantStage !== 'auth',
@@ -1367,11 +1472,11 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
               ? 'Do you want to add another AI integration?'
               : assistantStage === 'provider'
                 ? `Choose provider. Recommended: ${formatProviderLabel(recommendedProviderId)}.`
-                : assistantStage === 'model'
-                  ? `Choose model. Recommended: ${providerModelOptions[0]?.label ?? selectedModelOption.label}.`
-                  : assistantStage === 'auth'
-                    ? `Choose auth mode. Recommended: ${authModeLabelById[recommendedAuthMode]}.`
-                    : assistantStage === 'oauth-method'
+                // : assistantStage === 'model'
+                //   ? `Choose model. Recommended: ${providerModelOptions[0]?.label ?? selectedModelOption.label}.`
+                : assistantStage === 'auth'
+                  ? `Choose auth mode. Recommended: ${authModeLabelById[recommendedAuthMode]}.`
+                  : assistantStage === 'oauth-method'
                       ? 'Choose OAuth method.'
                       : assistantStage === 'credential'
                         ? selectedAssistantAuthMode === 'api-key'
@@ -1392,16 +1497,16 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                   recommended: option.providerId === recommendedProviderId,
                   showCheckmark: selectedProviderIds.has(option.providerId as BusinessOnboardingProviderId),
                 }))
-                : assistantStage === 'model'
-                  ? providerModelOptions.slice(0, 12).map((option, index) => ({
-                    id: option.id,
-                    label: option.label,
-                    selected: option.id === selectedAssistantModelId,
-                    recommended: index === 0,
-                    showCheckmark: selectedModelIds.has(option.id),
-                  }))
-                  : assistantStage === 'auth'
-                    ? stepTwoAuthModes.map((authMode) => ({
+                // : assistantStage === 'model'
+                //   ? modelOptionsForWizard.map((option) => ({
+                //     id: option.id,
+                //     label: option.label,
+                //     selected: option.selected,
+                //     recommended: option.recommended,
+                //     // showCheckmark: option.showCheckmark,
+                //   }))
+                : assistantStage === 'auth'
+                  ? stepTwoAuthModes.map((authMode) => ({
                       id: authMode,
                       label: authModeLabelById[authMode],
                       selected: authMode === selectedAssistantAuthMode,
@@ -1430,10 +1535,10 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
               handleAssistantProviderSelect(id);
               return;
             }
-            if (assistantStage === 'model') {
-              handleAssistantModelSelect(id);
-              return;
-            }
+            // if (assistantStage === 'model') {
+            //   handleAssistantModelSelect(id);
+            //   return;
+            // }
             if (assistantStage === 'auth') {
               handleAssistantAuthSelect(id as AssistantAuthMode);
               return;
@@ -1470,11 +1575,11 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
               ? 'Continue'
               : assistantStage === 'provider'
                 ? formatProviderLabel(selectedAssistantProviderId)
-                : assistantStage === 'model'
-                  ? selectedModelOption.label
-                  : assistantStage === 'auth'
-                    ? authModeLabelById[selectedAssistantAuthMode]
-                    : assistantStage === 'oauth-method'
+                // : assistantStage === 'model'
+                //   ? selectedModelOption.label
+                : assistantStage === 'auth'
+                  ? authModeLabelById[selectedAssistantAuthMode]
+                  : assistantStage === 'oauth-method'
                       ? selectedProviderOauthMethods.find(
                         (method) => method.id === resolvedProviderOauthMethodId,
                       )?.label ?? 'OAuth method selected'
