@@ -35,7 +35,6 @@ export function useBusinessConfigState({
   });
   const releaseRowsQuery = api.pluginRelease.useGet();
 
-<<<<<<< HEAD
   const installs = (installRowsQuery.data ?? []) as BusinessPluginInstallDoc[];
   const releases = useMemo(
     () =>
@@ -45,18 +44,11 @@ export function useBusinessConfigState({
     [releaseRowsQuery.data],
   );
   const tabs = resolveInstallDrivenTabs({
-=======
-  const installs = installRows as BusinessPluginInstallDoc[];
-  const releases = releaseRows as PluginReleaseDoc[];
-
-  return resolveInstallDrivenTabs({
->>>>>>> mig/v2aiui
     businessId: scopedBusinessId,
     businessSlug: slug,
     installs,
     releases,
   });
-<<<<<<< HEAD
   const isInitialLoadPending =
     !installRowsQuery.isFetched || !releaseRowsQuery.isFetched;
   const isEmptyConfigRefetching =
@@ -73,6 +65,4 @@ export function useBusinessConfig(
   input: UseBusinessConfigInput,
 ): AnyAutoTableTab[] {
   return useBusinessConfigState(input).tabs;
-=======
->>>>>>> mig/v2aiui
 }

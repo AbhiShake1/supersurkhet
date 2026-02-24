@@ -1,5 +1,4 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-<<<<<<< HEAD
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
@@ -11,13 +10,6 @@ import {
 } from '@/components/plugins/plugin-details-view';
 import { Button } from '@/components/ui/button';
 import { Unauthorized } from '@/components/ui/unauthorized';
-=======
-import { useMemo, useState } from 'react';
-import { toast } from 'sonner';
-import { useAuth } from '@/components/auth-provider';
-import { useConfetti } from '@/components/confetti-provider';
-import { Button } from '@/components/ui/button';
->>>>>>> mig/v2aiui
 import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
@@ -37,7 +29,6 @@ import {
   installPluginRelease,
   uninstallPluginRelease,
 } from '@/server-functions/plugins';
-import { PluginDetailsView, type PluginDetailView } from '@/components/plugins/plugin-details-view';
 
 export const Route = createFileRoute('/$businessName/admin/plugin/$pluginId')({
   component: PluginDetailsPage,
@@ -53,7 +44,6 @@ function decodeURIComponentOrNull(value: string): string | null {
 
 function PluginDetailsPage() {
   const { businessName, pluginId: encodedPluginId } = Route.useParams();
-<<<<<<< HEAD
   const pluginId = decodeURIComponentOrNull(encodedPluginId) ?? '';
   const {
     isAuthenticated,
@@ -62,10 +52,6 @@ function PluginDetailsPage() {
     anonymousUserId,
   } = useAuth();
   const { promptLogin, closeLoginPrompt } = useLoginPrompt();
-=======
-  const pluginId = decodeURIComponent(encodedPluginId);
-  const { user, anonymousUserId } = useAuth();
->>>>>>> mig/v2aiui
   const { fire } = useConfetti();
   const userSoul = user?._?.soul;
   const actorUserId = user?._?.soul ?? user?.pub ?? anonymousUserId ?? 'anon';
@@ -117,18 +103,12 @@ function PluginDetailsPage() {
   });
 
   const installs = installRows as BusinessPluginInstallDoc[];
-<<<<<<< HEAD
   const allInstalls = installs;
   const releases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
   );
 
-=======
-  const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
-  const releases = releaseRows as PluginReleaseDoc[];
-  
->>>>>>> mig/v2aiui
   const reviews = useMemo(
     () =>
       (reviewRows as PluginUserReviewDoc[])
@@ -164,11 +144,7 @@ function PluginDetailsPage() {
       }),
     [releases, installs],
   );
-<<<<<<< HEAD
 
-=======
-  
->>>>>>> mig/v2aiui
   const market = useMemo(
     () =>
       buildMarketplaceGroups(catalog, {
@@ -200,7 +176,6 @@ function PluginDetailsPage() {
   );
 
   const similar = useMemo(
-<<<<<<< HEAD
     () => (plugin ? pickSimilarPlugins(plugin, market.all, 6) : []),
     [plugin, market],
   );
@@ -289,87 +264,6 @@ function PluginDetailsPage() {
     }
   }
 
-=======
-    () =>
-      plugin ? pickSimilarPlugins(plugin, market.all, 6) : [],
-    [plugin, market],
-  );
-
-  async function handleInstall() {
-    if (!plugin) return;
-    try {
-      setInstalling(true);
-      await installPluginRelease({
-        data: {
-          actorUserId,
-          actorRole,
-          businessId,
-          pluginId: plugin.pluginId,
-          version: plugin.latestRelease.version,
-          explicitOwnerAction: true,
-        },
-      });
-      toast.success(`Installed ${plugin.title}`);
-      fire();
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to install plugin');
-    } finally {
-      setInstalling(false);
-    }
-  }
-
-  async function handleUninstall() {
-    if (!plugin) return;
-    try {
-      setUninstalling(true);
-      await uninstallPluginRelease({
-        data: {
-          actorUserId,
-          actorRole,
-          businessId,
-          pluginId: plugin.pluginId,
-        },
-      });
-      toast.success(`Uninstalled ${plugin.title}`);
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to uninstall plugin');
-    } finally {
-      setUninstalling(false);
-    }
-  }
-
-  async function handleSaveReview(rating: number, comment: string) {
-    if (!plugin) return;
-    const now = new Date().toISOString();
-    const reviewId = `${encodeURIComponent(plugin.pluginId)}::${encodeURIComponent(actorUserId)}`;
-
-    try {
-      setSavingReview(true);
-      const normalizedComment = comment.trim();
-      await createReviewMutation.mutateAsync({
-        id: reviewId,
-        pluginId: plugin.pluginId,
-        businessId,
-        userId: actorUserId,
-        userLabel: actorUserLabel,
-        rating,
-        comment: normalizedComment,
-        createdAt: details?.userReview?.createdAt ?? now,
-        updatedAt: now,
-      });
-      await refetchReviews();
-      toast.success(details?.userReview ? 'Review updated' : 'Review submitted');
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to save review');
-    } finally {
-      setSavingReview(false);
-    }
-  }
-
->>>>>>> mig/v2aiui
   if (!plugin || !details) {
     return (
       <div className="mx-auto max-w-4xl p-6">
@@ -388,10 +282,7 @@ function PluginDetailsPage() {
       plugin={plugin}
       details={details}
       businessName={businessName}
-<<<<<<< HEAD
       businessId={businessId}
-=======
->>>>>>> mig/v2aiui
       onInstall={handleInstall}
       onUninstall={handleUninstall}
       onSaveReview={handleSaveReview}

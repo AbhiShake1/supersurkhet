@@ -128,10 +128,7 @@ export type AutoAdminTabInput = {
 
 export type AutoTableTabInput<K extends SchemaKeys = SchemaKeys> =
   | {
-<<<<<<< HEAD
       tabId?: string;
-=======
->>>>>>> mig/v2aiui
       title: string;
       group?: string;
       icon?: LucideIcon;
@@ -431,7 +428,6 @@ export function AutoAdmin({
     [updateSystemTab],
   );
 
-<<<<<<< HEAD
   const deleteSystemGroup = useCallback(
     (groupName: string): boolean => {
       let changed = false;
@@ -460,17 +456,6 @@ export function AutoAdmin({
   const getComponents = useCallback(async () => {
     if (!currentItem) return null;
     if ('schema' in currentItem) {
-=======
-  function _canGetComponents() {
-    return !!currentItem;
-  }
-
-  const canGetComponents = _canGetComponents();
-
-  async function getComponents() {
-    if (!canGetComponents) return null;
-    if (!!currentItem && 'schema' in currentItem) {
->>>>>>> mig/v2aiui
       const currentSchema = appSchema[currentItem.schema as SchemaKeys];
       if ('components' in currentSchema) {
         const components = await currentSchema.components();
@@ -482,7 +467,6 @@ export function AutoAdmin({
       }
     }
     return null;
-<<<<<<< HEAD
   }, [basePath, currentItem]);
 
   const handleMoveTabToGroup = useCallback(
@@ -521,10 +505,6 @@ export function AutoAdmin({
     [onRenameTabIcon, renameSystemTabIcon],
   );
 
-=======
-  }
-
->>>>>>> mig/v2aiui
   const { data: components } = useQuery({
     enabled: canGetComponents,
     queryFn: getComponents,
@@ -534,7 +514,6 @@ export function AutoAdmin({
       !!currentItem && 'schema' in currentItem && currentItem.schema,
     ],
   });
-<<<<<<< HEAD
 
   const currentTableItem = useMemo(
     () =>
@@ -543,8 +522,6 @@ export function AutoAdmin({
         : null,
     [currentItem, basePath],
   );
-=======
->>>>>>> mig/v2aiui
 
   if (!currentItem) {
     return <NotFound />;

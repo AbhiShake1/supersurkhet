@@ -24,7 +24,6 @@ interface UseAutoResizeTextareaProps {
 interface VercelV0ChatProps {
     fitContainer?: boolean;
     className?: string;
-<<<<<<< HEAD
     title?: string;
     subtitle?: string;
     wizard?: {
@@ -54,8 +53,6 @@ interface VercelV0ChatProps {
         forwardLabel?: string;
         forwardEchoLabel?: string;
     };
-=======
->>>>>>> mig/v2aiui
 }
 
 function useAutoResizeTextarea({
@@ -105,7 +102,6 @@ function useAutoResizeTextarea({
     return { textareaRef, adjustHeight };
 }
 
-<<<<<<< HEAD
 export function VercelV0Chat({
     fitContainer = false,
     className,
@@ -128,18 +124,6 @@ export function VercelV0Chat({
                 },
             ]
     );
-=======
-export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatProps) {
-    const [value, setValue] = useState("");
-    const [messages, setMessages] = useState<Message[]>([
-        {
-            id: "1",
-            role: "assistant",
-            content: "Hi there! I'm your AI assistant. Tell me about your business so I can recommend the best plugins for you.",
-            timestamp: Date.now(),
-        },
-    ]);
->>>>>>> mig/v2aiui
     const { textareaRef, adjustHeight } = useAutoResizeTextarea({
         minHeight: 60,
         maxHeight: 200,
@@ -160,7 +144,6 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
         scrollToBottom();
     }, [messages]);
 
-<<<<<<< HEAD
     useEffect(() => {
         if (!wizard) return;
         const promptKey = `${wizard.stageKey}:${wizard.prompt}`;
@@ -247,8 +230,6 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
         return [...recommended, ...nonRecommended];
     })();
 
-=======
->>>>>>> mig/v2aiui
     const handleSendMessage = () => {
         if (!value.trim()) return;
 
@@ -285,11 +266,7 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
     return (
         <div
             className={cn(
-<<<<<<< HEAD
                 "flex w-full flex-col overflow-hidden border border-white/10 bg-[#0c0d10] backdrop-blur-sm",
-=======
-                "flex w-full flex-col overflow-hidden border border-white/10 bg-black/5 backdrop-blur-sm",
->>>>>>> mig/v2aiui
                 fitContainer
                     ? "h-full max-w-none rounded-xl"
                     : "mx-auto h-[600px] max-w-4xl rounded-2xl",
@@ -299,11 +276,7 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
             {/* Header */}
             <div
                 className={cn(
-<<<<<<< HEAD
                     "flex items-center justify-between border-b border-white/10 bg-black/30",
-=======
-                    "flex items-center justify-between border-b border-white/10 bg-black/20",
->>>>>>> mig/v2aiui
                     fitContainer ? "px-4 py-3" : "px-6 py-4"
                 )}
             >
@@ -312,13 +285,8 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
                         <Bot className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-<<<<<<< HEAD
                         <h2 className="text-sm font-semibold text-zinc-100">{title}</h2>
                         <p className="text-[10px] text-zinc-500 uppercase tracking-wider">{subtitle}</p>
-=======
-                        <h2 className="text-sm font-semibold text-white">Business Assistant</h2>
-                        <p className="text-[10px] text-zinc-400 uppercase tracking-wider">Explain your business needs to get personalized plugin recommendations.(Powered by AI)</p>
->>>>>>> mig/v2aiui
                     </div>
                 </div>
             </div>
@@ -328,7 +296,6 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
                 ref={messagesContainerRef}
                 className={cn(
                     "scrollbar-hide flex-1 overflow-y-auto",
-<<<<<<< HEAD
                     fitContainer ? "space-y-3 p-4" : "space-y-5 p-6"
                 )}
             >
@@ -385,37 +352,6 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
                         ))}
                     </>
                 )}
-=======
-                    fitContainer ? "space-y-4 p-4" : "space-y-6 p-6"
-                )}
-            >
-                {messages.map((msg) => (
-                    <div
-                        key={msg.id}
-                        className={cn(
-                            "flex w-full items-start gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300",
-                            msg.role === "user" ? "flex-row-reverse" : "flex-row"
-                        )}
-                    >
-                        <div className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center shrink-0 border",
-                            msg.role === "assistant" 
-                                ? "bg-primary/10 border-primary/20 text-primary" 
-                                : "bg-white/5 border-white/10 text-white"
-                        )}>
-                            {msg.role === "assistant" ? <Bot className="w-4 h-4" /> : <User className="w-4 h-4" />}
-                        </div>
-                        <div className={cn(
-                            "max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm",
-                            msg.role === "assistant"
-                                ? "bg-white/5 text-white border border-white/10 rounded-tl-none"
-                                : "bg-primary text-black font-medium rounded-tr-none"
-                        )}>
-                            {msg.content}
-                        </div>
-                    </div>
-                ))}
->>>>>>> mig/v2aiui
             </div>
 
             {/* Input Area */}
@@ -425,7 +361,6 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
                     fitContainer ? "p-3" : "p-4"
                 )}
             >
-<<<<<<< HEAD
                 {wizard ? (
                     <div className="space-y-3 rounded-2xl border border-white/10 bg-black/35 p-3">
                         {wizardOptions.length > 0 ? (
@@ -598,50 +533,6 @@ export function VercelV0Chat({ fitContainer = false, className }: VercelV0ChatPr
                         </button>
                     </div>
                 )}
-=======
-                <div className="relative bg-neutral-900 rounded-xl border border-neutral-800 shadow-2xl">
-                    <div className="overflow-y-auto">
-                        <Textarea
-                            ref={textareaRef}
-                            value={value}
-                            onChange={(e) => {
-                                setValue(e.target.value);
-                                adjustHeight();
-                            }}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Tell me about your business..."
-                            className={cn(
-                                "w-full px-4 py-3 pr-14 pb-10",
-                                "resize-none",
-                                "bg-transparent",
-                                "border-none",
-                                "text-white text-sm",
-                                "focus:outline-none",
-                                "focus-visible:ring-0 focus-visible:ring-offset-0",
-                                "placeholder:text-neutral-500",
-                                "min-h-[60px]"
-                            )}
-                            style={{
-                                overflow: "hidden",
-                            }}
-                        />
-                    </div>
-                    <button
-                        type="button"
-                        onClick={handleSendMessage}
-                        className={cn(
-                            "absolute bottom-3 right-3 flex h-8 w-8 items-center justify-center rounded-full transition-all active:scale-95",
-                            value.trim()
-                                ? "bg-primary text-black hover:bg-primary/90"
-                                : "bg-neutral-800 text-zinc-500 cursor-not-allowed"
-                        )}
-                        disabled={!value.trim()}
-                        aria-label="Send message"
-                    >
-                        <ArrowUpIcon className="h-4 w-4" />
-                    </button>
-                </div>
->>>>>>> mig/v2aiui
             </div>
         </div>
     );
