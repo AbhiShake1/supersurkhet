@@ -603,6 +603,9 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [assistantPickedAuth, setAssistantPickedAuth] = useState(false);
   const [assistantPickedOauthMethod, setAssistantPickedOauthMethod] =
     useState(false);
+  const [selectedProviderIds, setSelectedProviderIds] =
+    useState<Set<BusinessOnboardingProviderId>>(new Set());
+  const [selectedModelIds, setSelectedModelIds] = useState<Set<string>>(new Set());
   const [integrations, setIntegrations] = useState<Array<{
     providerId: BusinessOnboardingProviderId;
     modelId: string;
@@ -1143,6 +1146,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
 
   function handleAssistantProviderSelect(providerId: string) {
     handleProviderChange(providerId);
+    setSelectedProviderIds((prev) => new Set(prev).add(providerId as BusinessOnboardingProviderId));
     setAssistantPickedProvider(true);
     setAssistantPickedModel(false);
     setAssistantPickedAuth(false);
@@ -1152,6 +1156,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
 
   function handleAssistantModelSelect(modelId: string) {
     setSelectedAssistantModelId(modelId);
+    setSelectedModelIds((prev) => new Set(prev).add(modelId));
     setAuthSessionToken('');
     setAuthSessionExpiresAt(null);
     setAssistantPickedModel(true);
@@ -1332,6 +1337,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     setAssistantPickedModel(false);
     setAssistantPickedAuth(false);
     setAssistantPickedOauthMethod(false);
+    // Keep selectedProviderIds and selectedModelIds to show checkmarks on all previously selected options
     setAssistantStage('provider');
     setIsAskingForAnother(false);
   }
@@ -1371,111 +1377,112 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                         ? selectedAssistantAuthMode === 'api-key'
                           ? 'Paste your API key.'
                           : 'Paste your OAuth access token.'
-                        : integrations.length > 0
-                          : 'Setup complete. Save credential to continue.',
-      options:
-      isAskingForAnother
-      ? [
-      {id: 'yes', label: 'Yes, add another integration', selected: false, recommended: true },
-      {id: 'no', label: 'No, finish setup', selected: false, recommended: false },
-      ]
-      : assistantStage === 'provider'
-              ? providerOptions.map((option) => ({
-        id: option.providerId,
-      label: option.label,
-      selected: option.providerId === selectedAssistantProviderId,
-      recommended: option.providerId === recommendedProviderId,
-              }))
-      : assistantStage === 'model'
-                ? providerModelOptions.slice(0, 12).map((option, index) => ({
-        id: option.id,
-      label: option.label,
-      selected: option.id === selectedAssistantModelId,
-      recommended: index === 0,
+                        : 'Setup complete. Save credential to continue.',
+          options:
+            isAskingForAnother
+              ? [
+                { id: 'yes', label: 'Yes', selected: false },
+                { id: 'no', label: 'No', selected: false },
+              ]
+              : assistantStage === 'provider'
+                ? providerOptions.map((option) => ({
+                  id: option.providerId,
+                  label: option.label,
+                  selected: option.providerId === selectedAssistantProviderId,
+                  recommended: option.providerId === recommendedProviderId,
+                  showCheckmark: selectedProviderIds.has(option.providerId as BusinessOnboardingProviderId) || option.providerId === selectedAssistantProviderId,
                 }))
-      : assistantStage === 'auth'
-                  ? stepTwoAuthModes.map((authMode) => ({
-        id: authMode,
-      label: authModeLabelById[authMode],
-      selected: authMode === selectedAssistantAuthMode,
-      recommended: false,
+                : assistantStage === 'model'
+                  ? providerModelOptions.slice(0, 12).map((option, index) => ({
+                    id: option.id,
+                    label: option.label,
+                    selected: option.id === selectedAssistantModelId,
+                    recommended: index === 0,
+                    showCheckmark: selectedModelIds.has(option.id) || option.id === selectedAssistantModelId,
                   }))
-      : assistantStage === 'oauth-method'
-                    ? selectedProviderOauthMethods.map((method, index) => ({
-        id: method.id,
-      label: method.label,
-      selected: method.id === resolvedProviderOauthMethodId,
-      recommended: index === 0,
+                  : assistantStage === 'auth'
+                    ? stepTwoAuthModes.map((authMode) => ({
+                      id: authMode,
+                      label: authModeLabelById[authMode],
+                      selected: authMode === selectedAssistantAuthMode,
+                      recommended: false,
                     }))
-      : [],
+                    : assistantStage === 'oauth-method'
+                      ? selectedProviderOauthMethods.map((method, index) => ({
+                        id: method.id,
+                        label: method.label,
+                        selected: method.id === resolvedProviderOauthMethodId,
+                        recommended: index === 0,
+                      }))
+                      : [],
           onSelectOption: (id) => {
             if (isAskingForAnother) {
               if (id === 'yes') {
-        handleAddAnother();
-      return;
+                handleAddAnother();
+                return;
               }
-      if (id === 'no') {
-        handleFinishSetup();
-      return;
+              if (id === 'no') {
+                handleFinishSetup();
+                return;
               }
             }
-      if (assistantStage === 'provider') {
-        handleAssistantProviderSelect(id);
-      return;
+            if (assistantStage === 'provider') {
+              handleAssistantProviderSelect(id);
+              return;
             }
-      if (assistantStage === 'model') {
-        handleAssistantModelSelect(id);
-      return;
+            if (assistantStage === 'model') {
+              handleAssistantModelSelect(id);
+              return;
             }
-      if (assistantStage === 'auth') {
-        handleAssistantAuthSelect(id as AssistantAuthMode);
-      return;
+            if (assistantStage === 'auth') {
+              handleAssistantAuthSelect(id as AssistantAuthMode);
+              return;
             }
-      if (assistantStage === 'oauth-method') {
-        handleAssistantOauthMethodSelect(id);
+            if (assistantStage === 'oauth-method') {
+              handleAssistantOauthMethodSelect(id);
             }
           },
-      input:
-      assistantStage === 'credential'
-      ? {
-        value: assistantSecretInput,
-      placeholder:
-      selectedAssistantAuthMode === 'api-key'
-      ? 'Paste API key'
-      : 'Paste OAuth access token',
-      submitLabel: 'Submit',
-      maskedEchoLabel:
-      selectedAssistantAuthMode === 'api-key'
-      ? 'API key provided'
-      : 'OAuth token provided',
-      onChange: setAssistantSecretInput,
-      onSubmit: handleAssistantCredentialSubmit,
+          input:
+            assistantStage === 'credential'
+              ? {
+                value: assistantSecretInput,
+                placeholder:
+                  selectedAssistantAuthMode === 'api-key'
+                    ? 'Paste API key'
+                    : 'Paste OAuth access token',
+                submitLabel: 'Submit',
+                maskedEchoLabel:
+                  selectedAssistantAuthMode === 'api-key'
+                    ? 'API key provided'
+                    : 'OAuth token provided',
+                onChange: setAssistantSecretInput,
+                onSubmit: handleAssistantCredentialSubmit,
               }
-      : undefined,
-      canGoBack: assistantStage !== 'provider' || isAskingForAnother,
-      onBack: handleAssistantBack,
-      backLabel: isAskingForAnother ? 'Cancel' : 'Back',
-      canGoForward: canAssistantGoForward,
-      onForward: handleAssistantForward,
-      forwardLabel: 'Forward',
-      forwardEchoLabel:
-      isAskingForAnother
-      ? 'Continue'
-      : assistantStage === 'provider'
-      ? formatProviderLabel(selectedAssistantProviderId)
-      : assistantStage === 'model'
-      ? selectedModelOption.label
-      : assistantStage === 'auth'
-      ? authModeLabelById[selectedAssistantAuthMode]
-      : assistantStage === 'oauth-method'
-      ? selectedProviderOauthMethods.find(
+              : undefined,
+          canGoBack: assistantStage !== 'provider' || isAskingForAnother,
+          onBack: handleAssistantBack,
+          backLabel: isAskingForAnother ? 'Cancel' : 'Back',
+          canGoForward: canAssistantGoForward,
+          onForward: handleAssistantForward,
+          forwardLabel: 'Forward',
+          forwardEchoLabel:
+            isAskingForAnother
+              ? 'Continue'
+              : assistantStage === 'provider'
+                ? formatProviderLabel(selectedAssistantProviderId)
+                : assistantStage === 'model'
+                  ? selectedModelOption.label
+                  : assistantStage === 'auth'
+                    ? authModeLabelById[selectedAssistantAuthMode]
+                    : assistantStage === 'oauth-method'
+                      ? selectedProviderOauthMethods.find(
                         (method) => method.id === resolvedProviderOauthMethodId,
-      )?.label ?? 'OAuth method selected'
-      : assistantStage === 'credential'
-      ? selectedAssistantAuthMode === 'api-key'
-      ? 'API key provided'
-      : 'OAuth token provided'
-      : '',
+                      )?.label ?? 'OAuth method selected'
+                      : assistantStage === 'credential'
+                        ? selectedAssistantAuthMode === 'api-key'
+                          ? 'API key provided'
+                          : 'OAuth token provided'
+                        : '',
         }}
       />
 

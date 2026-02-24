@@ -7,6 +7,7 @@ import {
     ArrowUpIcon,
     Bot,
     User,
+    Check,
 } from "lucide-react";
 
 interface Message {
@@ -170,7 +171,19 @@ export function VercelV0Chat({
         setWizardSearch("");
     }, [wizard?.stageKey]);
 
-    const handleWizardOptionSelect = (option: { id: string; label: string }) => {
+    const handleWizardOptionSelect = (option: { id: string; label: string; showCheckmark?: boolean }) => {
+        if (option.showCheckmark) {
+            setMessages((prev) => [
+                ...prev,
+                {
+                    id: `${Date.now()}-assistant-selected`,
+                    role: "assistant",
+                    content: "Already selected.",
+                    timestamp: Date.now(),
+                },
+            ]);
+            return;
+        }
         setMessages((prev) => [
             ...prev,
             {
@@ -381,11 +394,17 @@ export function VercelV0Chat({
                                                             "flex min-h-11 w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors",
                                                             option.selected
                                                                 ? "border-primary/60 bg-primary/20 text-zinc-100"
-                                                                : "border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10",
+                                                                : option.recommended
+                                                                  ? "border-primary/30 bg-primary/10 text-zinc-100"
+                                                                  : "border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10",
                                                         )}
                                                     >
                                                         <span>{index + 1}. {option.label}</span>
-                                                        {option.recommended ? <span className="text-zinc-500">Recommended</span> : null}
+                                                        {option.showCheckmark ? (
+                                                            <Check className="h-4 w-4 text-primary" />
+                                                        ) : option.recommended ? (
+                                                            <span className="text-zinc-500">Recommended</span>
+                                                        ) : null}
                                                     </button>
                                                 ))}
                                             </div>
