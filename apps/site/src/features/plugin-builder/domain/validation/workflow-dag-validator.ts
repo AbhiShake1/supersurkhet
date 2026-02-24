@@ -8,6 +8,7 @@ export type WorkflowDagValidatorDiagnosticCode =
   | 'missing-edge-from'
   | 'missing-edge-to'
   | 'edge-node-not-found'
+  | 'missing-branch-condition'
   | 'cycle-detected'
   | 'disconnected-node'
   | 'unreachable-terminal';
@@ -30,6 +31,8 @@ type BuiltGraph = {
   reverseAdjacency: Map<string, string[]>;
   indegree: Map<string, number>;
   outdegree: Map<string, number>;
+  edgeIndexesByFrom: Map<string, number[]>;
+  workflow: WorkflowDoc;
 };
 
 export function validateWorkflowDags(
@@ -58,6 +61,7 @@ export function validateWorkflowDag(
   appendCycleDiagnostic(graph, diagnostics, pathOf);
   appendDisconnectedNodeDiagnostics(graph, diagnostics, pathOf);
   appendTerminalReachabilityDiagnostics(graph, diagnostics, pathOf);
+  appendBranchConditionDiagnostics(graph, diagnostics, pathOf);
 
   return {
     diagnostics,
@@ -76,6 +80,7 @@ function buildGraph(
   const reverseAdjacency = new Map<string, string[]>();
   const indegree = new Map<string, number>();
   const outdegree = new Map<string, number>();
+  const edgeIndexesByFrom = new Map<string, number[]>();
 
   for (const [index, node] of workflow.nodes.entries()) {
     validateNode(node, index, diagnostics, pathOf);
@@ -100,6 +105,7 @@ function buildGraph(
     reverseAdjacency.set(nodeId, []);
     indegree.set(nodeId, 0);
     outdegree.set(nodeId, 0);
+    edgeIndexesByFrom.set(nodeId, []);
   }
 
   for (const [edgeIndex, edge] of workflow.edges.entries()) {
@@ -146,6 +152,7 @@ function buildGraph(
     reverseAdjacency.get(to)?.push(from);
     outdegree.set(from, (outdegree.get(from) ?? 0) + 1);
     indegree.set(to, (indegree.get(to) ?? 0) + 1);
+    edgeIndexesByFrom.get(from)?.push(edgeIndex);
   }
 
   for (const next of adjacency.values()) {
@@ -165,6 +172,8 @@ function buildGraph(
     reverseAdjacency,
     indegree,
     outdegree,
+    edgeIndexesByFrom,
+    workflow,
   };
 }
 
@@ -182,15 +191,17 @@ function validateNode(
     });
   }
 
-  if (node.type !== 'action') {
+  const nodeKind = node.kind ?? node.type ?? 'action';
+
+  if (!['action', 'branch', 'delay', 'humanGate'].includes(nodeKind)) {
     diagnostics.push({
       code: 'invalid-node-type',
-      message: `Unsupported workflow node type "${String(node.type)}"`,
-      path: pathOf('nodes', String(index), 'type'),
+      message: `Unsupported workflow node kind "${String(nodeKind)}"`,
+      path: pathOf('nodes', String(index), 'kind'),
     });
   }
 
-  if (!node.actionId?.trim()) {
+  if (nodeKind === 'action' && !node.actionId?.trim()) {
     diagnostics.push({
       code: 'missing-node-action-id',
       message: 'Workflow node actionId is required',
@@ -328,5 +339,30 @@ function appendCycleDiagnostic(
       path: pathOf('edges'),
     });
     return;
+  }
+}
+
+function appendBranchConditionDiagnostics(
+  graph: BuiltGraph,
+  diagnostics: WorkflowDagValidatorDiagnostic[],
+  pathOf: (...suffix: string[]) => string[],
+) {
+  for (const [fromNodeId, edgeIndexes] of graph.edgeIndexesByFrom.entries()) {
+    if (edgeIndexes.length <= 1) {
+      continue;
+    }
+
+    for (const edgeIndex of edgeIndexes) {
+      const edge = graph.workflow.edges[edgeIndex];
+      if (edge?.condition) {
+        continue;
+      }
+
+      diagnostics.push({
+        code: 'missing-branch-condition',
+        message: `Branching edge from "${fromNodeId}" requires a condition`,
+        path: pathOf('edges', String(edgeIndex), 'condition'),
+      });
+    }
   }
 }

@@ -49,13 +49,11 @@ import {
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import type { PluginBuildDiagnostic } from '@/features/plugin-builder/domain/validation/diagnostics-contract';
-import { validateWorkflowDags } from '@/features/plugin-builder/domain/validation/workflow-dag-validator';
-import type {
-  FieldEntity,
-  SchemaEntity,
-} from '@/features/plugin-builder/domain/workspace/workspace-entities';
-import { createActionsManifestEditorState } from '@/features/plugin-builder/workspace/tabs/actions-manifest-editor';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { buildDerivationPathOptions } from '@/features/plugin-builder/workspace/tabs/derivation-path-options';
 import {
   compileDerivedFieldToDeriveIr,
@@ -63,27 +61,15 @@ import {
   DERIVED_FIELD_SOURCE_OPTIONS,
   parseDerivedFieldsFromSchemaDoc,
   type DerivedFieldOperation,
-  type SchemaBuilderDerivedField
+  type SchemaBuilderDerivedField,
 } from '@/features/plugin-builder/workspace/tabs/derived-fields';
-import type {
-  ExpressionRow
-} from '@/features/plugin-builder/workspace/tabs/expression-row-builder';
 import {
-  createFieldConfigPanelModel,
-  serializeFieldConfigPanelDraft,
-} from '@/features/plugin-builder/workspace/tabs/field-config-panel';
-import {
-  createPublishGateTabState
-} from '@/features/plugin-builder/workspace/tabs/publish-gate-tab';
-import {
-  mapRoutesTabsToAutoAdminConfig
-} from '@/features/plugin-builder/workspace/tabs/routes-tabs-mapper';
-import {
-  validateWorkflowReferencePaths,
   WorkflowGraphEditor,
 } from '@/features/plugin-builder/workspace/tabs/workflow-graph-editor';
+import { PluginStudioV3Tabs } from '@/features/plugin-builder/workspace/tabs/plugin-studio-v3-tabs';
 import { api } from '@/lib/api';
-import { previewReleaseHashes } from '@/lib/plugins/release-hash-preview';
+import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
+import { evaluateV3PublishGates } from '@/lib/plugins/v3-gates';
 import {
   mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
@@ -92,8 +78,6 @@ import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
 import type {
   ActionManifestDoc,
   AdminTabDoc,
-  BusinessPluginDraftInstallDoc,
-  BusinessPluginInstallDoc,
   DeriveIR,
   ExpressionDoc,
   PluginDraftDoc,
@@ -103,30 +87,30 @@ import type {
   SchemaFieldDoc,
   WorkflowDoc,
 } from '@/lib/plugins/types';
-import type { CompileVerifyDiagnostic } from '@/server-functions/plugins-v2-compile-verify';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { createFileRoute } from '@tanstack/react-router';
+import { useMutation } from '@tanstack/react-query';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import deepEqual from 'fast-deep-equal';
 import * as LucideIcons from 'lucide-react';
 import {
-  ArrowRight,
+  ArrowLeft,
   BadgePlus,
+  CloudUpload,
   Pencil,
   Plus,
   Trash2,
   Wand2,
-  type LucideIcon
+  type LucideIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { z } from 'zod';
+import { publishPluginRelease } from '@/server-functions/plugins';
 import { throwOnFailedPersistenceWrites } from '../-plugin-studio-persistence';
 import {
   resolvePluginStudioPluginId,
 } from '../-plugin-studio-plugin-id';
-import type {
-  PluginStudioSidebarSnapshot,
-} from '../-plugin-studio-sidebar-snapshot';
 import { toProjectScopedDraftId } from '../-plugin-studio-project-draft-id';
+import { parseStoredSchemaDoc } from '../-plugin-studio-schema-doc';
 
 const optionalSearchStringSchema = z.preprocess(
   (value) => {
@@ -215,6 +199,7 @@ const DEFAULT_SYSTEM_TABS: SystemTabState = {
     group: 'System Configuration',
   },
 };
+const DEFAULT_SYSTEM_TAB_ORDER: SystemTabKey[] = ['dashboard', 'qr', 'website'];
 
 const DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_group__/';
 const DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_system__/';
@@ -231,6 +216,10 @@ const DEFAULT_DRAFT_ADMIN_TABS = serializeDraftAdminTabs({
 
 function canonicalStringify(input: unknown) {
   return JSON.stringify(input, null, 2);
+}
+
+function stringifySchemaDocForStorage(schemaDoc: SchemaDoc) {
+  return canonicalStringify(schemaDoc);
 }
 
 function toErrorMessage(error: unknown) {
@@ -263,13 +252,6 @@ function toErrorMessage(error: unknown) {
   return 'Unknown error';
 }
 
-function isMissingPluginDraftError(error: unknown) {
-  const message = toErrorMessage(error);
-  return (
-    message.includes('Plugin draft "') && message.includes('" does not exist')
-  );
-}
-
 function isDuplicatePersistenceError(error: unknown) {
   const message = toErrorMessage(error).toLowerCase();
   return (
@@ -278,31 +260,6 @@ function isDuplicatePersistenceError(error: unknown) {
     message.includes('unique constraint') ||
     message.includes('conflict')
   );
-}
-
-function toStableWorkspaceSuffix(input: string) {
-  const normalized = input
-    .trim()
-    .replace(/[^A-Za-z0-9._:-]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  return normalized || 'entity';
-}
-
-function toStableDraftIdSuffix(value: string | undefined) {
-  const normalized = (value ?? '')
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9._:-]+/g, '_')
-    .replace(/^_+|_+$/g, '');
-  return normalized || 'anon';
-}
-
-function toDraftId({
-  actorUserId,
-}: {
-  actorUserId: string;
-}) {
-  return `draft.${toStableDraftIdSuffix(actorUserId)}`;
 }
 
 function parseVersionParts(version: string): [number, number, number] | null {
@@ -407,22 +364,6 @@ function toDraftSnapshotString({
   });
 }
 
-function toComparableSidebarSnapshotJson(raw: string | null | undefined) {
-  const normalized = raw?.trim();
-  if (!normalized) return '';
-  try {
-    const parsed = JSON.parse(normalized);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return normalized;
-    }
-    const comparable = { ...(parsed as Record<string, unknown>) };
-    delete comparable.updatedAt;
-    return canonicalStringify(comparable);
-  } catch {
-    return normalized;
-  }
-}
-
 function computeOrderedGroupNames({
   customGroups,
   groupOrder,
@@ -514,14 +455,94 @@ function parseSystemSentinelSchemaId(schemaId: unknown): SystemTabKey | null {
   return null;
 }
 
+function toSchemaTabOrderToken(schemaId: string) {
+  return `schema:${schemaId}`;
+}
+
+function toSystemTabOrderToken(key: SystemTabKey) {
+  return `system:${key}`;
+}
+
+function parseSystemTabOrderToken(token: string): SystemTabKey | null {
+  const normalized = token.trim();
+  if (!normalized.startsWith('system:')) return null;
+  const key = normalized.slice('system:'.length);
+  if (key === 'dashboard' || key === 'qr' || key === 'website') return key;
+  return null;
+}
+
+function parseSchemaTabOrderToken(token: string): string | null {
+  const normalized = token.trim();
+  if (normalized.startsWith('schema:')) {
+    const value = normalized.slice('schema:'.length).trim();
+    return value || null;
+  }
+  if (normalized.startsWith('system:')) return null;
+  return normalized || null;
+}
+
+function computeOrderedTabTokens({
+  tabOrder,
+  schemaOrder,
+}: {
+  tabOrder: readonly string[];
+  schemaOrder: readonly string[];
+}): string[] {
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  const validSchemaTokens = new Set(
+    schemaOrder.map((schemaId) => toSchemaTabOrderToken(schemaId)),
+  );
+  const validSystemTokens = new Set(
+    DEFAULT_SYSTEM_TAB_ORDER.map((key) => toSystemTabOrderToken(key)),
+  );
+
+  for (const token of tabOrder) {
+    const systemKey = parseSystemTabOrderToken(token);
+    if (systemKey) {
+      const normalizedToken = toSystemTabOrderToken(systemKey);
+      if (!seen.has(normalizedToken) && validSystemTokens.has(normalizedToken)) {
+        normalized.push(normalizedToken);
+        seen.add(normalizedToken);
+      }
+      continue;
+    }
+    const schemaId = parseSchemaTabOrderToken(token);
+    if (!schemaId) continue;
+    const normalizedToken = toSchemaTabOrderToken(schemaId);
+    if (!seen.has(normalizedToken) && validSchemaTokens.has(normalizedToken)) {
+      normalized.push(normalizedToken);
+      seen.add(normalizedToken);
+    }
+  }
+
+  for (const schemaId of schemaOrder) {
+    const token = toSchemaTabOrderToken(schemaId);
+    if (!seen.has(token)) {
+      normalized.push(token);
+      seen.add(token);
+    }
+  }
+  for (const key of DEFAULT_SYSTEM_TAB_ORDER) {
+    const token = toSystemTabOrderToken(key);
+    if (!seen.has(token)) {
+      normalized.push(token);
+      seen.add(token);
+    }
+  }
+  return normalized;
+}
+
 function serializeDraftAdminTabs({
   schemaTabs,
   orderedGroups,
   systemTabs,
+  tabOrder = [],
 }: {
   schemaTabs: readonly AdminTabDoc[];
   orderedGroups: readonly string[];
   systemTabs: SystemTabState;
+  tabOrder?: readonly string[];
 }): AdminTabDoc[] {
   const groupSentinels: AdminTabDoc[] = orderedGroups.map(
     (groupName, index) => ({
@@ -529,17 +550,59 @@ function serializeDraftAdminTabs({
       group: groupName,
     }),
   );
-  const systemSentinels: AdminTabDoc[] = (
-    Object.entries(systemTabs) as Array<
-      [SystemTabKey, SystemTabState[SystemTabKey]]
-    >
-  ).map(([key, value]) => ({
-    schema: toSystemSentinelSchemaId(key),
-    title: value.title,
-    group: value.group,
-    icon: value.iconName,
-  }));
-  return [...groupSentinels, ...schemaTabs, ...systemSentinels];
+  const schemaById = new Map(schemaTabs.map((tab) => [tab.schema, tab]));
+  const systemSentinelByKey = new Map<SystemTabKey, AdminTabDoc>(
+    (
+      Object.entries(systemTabs) as Array<
+        [SystemTabKey, SystemTabState[SystemTabKey]]
+      >
+    ).map(([key, value]) => [
+      key,
+      {
+        schema: toSystemSentinelSchemaId(key),
+        title: value.title,
+        group: value.group,
+        icon: value.iconName,
+      },
+    ]),
+  );
+  const orderedTabs: AdminTabDoc[] = [];
+  const usedSchemaIds = new Set<string>();
+  const usedSystemKeys = new Set<SystemTabKey>();
+
+  for (const token of tabOrder) {
+    const systemKey = parseSystemTabOrderToken(token);
+    if (systemKey) {
+      const sentinel = systemSentinelByKey.get(systemKey);
+      if (sentinel && !usedSystemKeys.has(systemKey)) {
+        orderedTabs.push(sentinel);
+        usedSystemKeys.add(systemKey);
+      }
+      continue;
+    }
+    const schemaId = parseSchemaTabOrderToken(token);
+    if (!schemaId) continue;
+    const schemaTab = schemaById.get(schemaId);
+    if (schemaTab && !usedSchemaIds.has(schemaId)) {
+      orderedTabs.push(schemaTab);
+      usedSchemaIds.add(schemaId);
+    }
+  }
+
+  for (const schemaTab of schemaTabs) {
+    if (usedSchemaIds.has(schemaTab.schema)) continue;
+    orderedTabs.push(schemaTab);
+    usedSchemaIds.add(schemaTab.schema);
+  }
+  for (const key of DEFAULT_SYSTEM_TAB_ORDER) {
+    if (usedSystemKeys.has(key)) continue;
+    const sentinel = systemSentinelByKey.get(key);
+    if (!sentinel) continue;
+    orderedTabs.push(sentinel);
+    usedSystemKeys.add(key);
+  }
+
+  return [...groupSentinels, ...orderedTabs];
 }
 
 function deserializeDraftAdminTabs(
@@ -548,11 +611,13 @@ function deserializeDraftAdminTabs(
   schemaTabs: AdminTabDoc[];
   orderedGroups: string[];
   systemTabs: SystemTabState;
+  tabOrder: string[];
 } {
   const tabs = adminTabs ?? [];
   const schemaTabs: AdminTabDoc[] = [];
   const orderedGroups: string[] = [];
   const systemTabs: SystemTabState = { ...DEFAULT_SYSTEM_TABS };
+  const tabOrder: string[] = [];
 
   for (const tab of tabs) {
     if (
@@ -582,10 +647,14 @@ function deserializeDraftAdminTabs(
         group: normalizedGroup || undefined,
         iconName: normalizedIcon || undefined,
       };
+      const token = toSystemTabOrderToken(systemKey);
+      if (!tabOrder.includes(token)) tabOrder.push(token);
       continue;
     }
 
     schemaTabs.push(tab);
+    const schemaToken = toSchemaTabOrderToken(tab.schema);
+    if (!tabOrder.includes(schemaToken)) tabOrder.push(schemaToken);
   }
 
   if (orderedGroups.length === 0) {
@@ -600,6 +669,10 @@ function deserializeDraftAdminTabs(
     schemaTabs,
     orderedGroups,
     systemTabs,
+    tabOrder: computeOrderedTabTokens({
+      tabOrder,
+      schemaOrder: schemaTabs.map((tab) => tab.schema),
+    }),
   };
 }
 
@@ -657,96 +730,6 @@ function toAdminTabsFromDraftRoutes(
       group: route.group?.trim() || undefined,
       icon: route.iconName?.trim() || undefined,
     }));
-}
-
-function toWorkspaceSchemasAndFields(schemaDocs: readonly SchemaDoc[]): {
-  schemas: SchemaEntity[];
-  fields: FieldEntity[];
-} {
-  const schemas: SchemaEntity[] = [];
-  const fields: FieldEntity[] = [];
-
-  for (const [schemaIndex, schemaDoc] of schemaDocs.entries()) {
-    const schemaSuffix = toStableWorkspaceSuffix(
-      schemaDoc.schemaId || `schema_${schemaIndex + 1}`,
-    );
-    const schemaEntityId = `schema_${schemaSuffix}` as const;
-    const rootFieldIds: FieldEntity['id'][] = [];
-
-    const appendField = (
-      fieldDoc: SchemaFieldDoc,
-      context: {
-        suffix: string;
-        parentFieldId?: FieldEntity['id'];
-      },
-    ): FieldEntity['id'] => {
-      const fieldSuffix = toStableWorkspaceSuffix(context.suffix);
-      const fieldId = `field_${fieldSuffix}` as const;
-      const childFieldIds: FieldEntity['id'][] = [];
-      let itemFieldId: FieldEntity['id'] | undefined;
-
-      if (fieldDoc.type === 'array' && fieldDoc.itemType) {
-        const itemFieldDoc: SchemaFieldDoc = {
-          key: `${fieldDoc.key || 'item'}_item`,
-          type: fieldDoc.itemType.type,
-          optional: fieldDoc.optional,
-          enumValues: fieldDoc.itemType.enumValues,
-          fields: fieldDoc.itemType.fields,
-        };
-        itemFieldId = appendField(itemFieldDoc, {
-          suffix: `${fieldSuffix}_item`,
-          parentFieldId: fieldId,
-        });
-      }
-
-      if (fieldDoc.type === 'object' && fieldDoc.fields?.length) {
-        for (const [childIndex, childDoc] of fieldDoc.fields.entries()) {
-          const childId = appendField(childDoc, {
-            suffix: `${fieldSuffix}_${childDoc.key || `child_${childIndex + 1}`}`,
-            parentFieldId: fieldId,
-          });
-          childFieldIds.push(childId);
-        }
-      }
-
-      const nextField: FieldEntity = {
-        id: fieldId,
-        schemaId: schemaEntityId,
-        parentFieldId: context.parentFieldId,
-        itemFieldId,
-        childFieldIds: childFieldIds.length > 0 ? childFieldIds : undefined,
-        key: fieldDoc.key || `field_${fieldSuffix}`,
-        type: fieldDoc.type,
-        optional: fieldDoc.optional,
-        derivationIds: [],
-        refinementIds: [],
-      };
-
-      fields.push(nextField);
-      return fieldId;
-    };
-
-    for (const [fieldIndex, fieldDoc] of schemaDoc.fields.entries()) {
-      const fieldId = appendField(fieldDoc, {
-        suffix: `${schemaSuffix}_${fieldDoc.key || `field_${fieldIndex + 1}`}`,
-      });
-      rootFieldIds.push(fieldId);
-    }
-
-    schemas.push({
-      id: schemaEntityId,
-      schemaId: schemaDoc.schemaId,
-      title: schemaDoc.title,
-      description: schemaDoc.description,
-      fieldIds: rootFieldIds,
-      refinementIds: [],
-    });
-  }
-
-  return {
-    schemas,
-    fields,
-  };
 }
 
 function toLatestTemplateReleases(releases: PluginReleaseDoc[]) {
@@ -818,15 +801,6 @@ function toFallbackTemplateWorkflows(
     ],
     edges: [],
   }));
-}
-
-function titleToPluginId(value: string) {
-  const slug = value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, '.')
-    .replace(/^\.+|\.+$/g, '');
-  return slug.length > 0 ? `plugin.${slug}` : 'example.plugin';
 }
 
 function toDefaultPluginTitle(_pluginId: string) {
@@ -1483,19 +1457,6 @@ function toAddColumnDraftFromField(field: BuilderField): AddColumnDraft {
   };
 }
 
-type HashPreviewInput = {
-  pluginId: string;
-  version: string;
-  docs: {
-    title: string;
-    description: string;
-  };
-  actionManifest: ActionManifestDoc[];
-  schemaDocs: SchemaDoc[];
-  workflows: WorkflowDoc[];
-  adminTabs: AdminTabDoc[];
-};
-
 function toObjectFieldDoc(field: BuilderObjectField): SchemaFieldDoc {
   return {
     key: field.key || 'field_key',
@@ -2029,35 +1990,6 @@ function toBuilderRefinements(schemaDoc: SchemaDoc): {
   };
 }
 
-function applyRevisionToBuilderState(revision: PluginDraftRevisionDoc): {
-  pluginId: string;
-  schemaBuilder: BuilderSchema;
-  schemaRefinements: BuilderRefinement[];
-  blocklyRefinements: BlocklyRefinement[];
-  schemaText: string;
-  workflowText: string;
-} {
-  const schemaDoc = revision.schemaDocs?.[0] ?? DEFAULT_SCHEMA_DOC;
-  const { schemaRefinements, blocklyRefinements } =
-    toBuilderRefinements(schemaDoc);
-
-  return {
-    pluginId: revision.pluginId,
-    schemaBuilder: {
-      schemaId: schemaDoc.schemaId,
-      title: schemaDoc.title ?? schemaDoc.schemaId,
-      fields: schemaDoc.fields.map(toBuilderField),
-      derivedFields: parseDerivedFieldsFromSchemaDoc(schemaDoc),
-    },
-    schemaRefinements,
-    blocklyRefinements,
-    schemaText: canonicalStringify(revision.schemaDocs ?? [schemaDoc]),
-    workflowText: canonicalStringify(
-      revision.workflows ?? [DEFAULT_WORKFLOW_DOC],
-    ),
-  };
-}
-
 type PluginStudioPresenterProps = {
   user: NonNullable<ReturnType<typeof useAuth>['user']>;
   isAuthenticated: boolean;
@@ -2098,12 +2030,10 @@ function PluginStudioPresenter({
   user,
   isAuthenticated,
 }: PluginStudioPresenterProps) {
+  const navigate = useNavigate();
   const { fire: fireConfetti } = useConfetti();
   const params = Route.useParams();
-  const actorUserIdAliases = useMemo(
-    () => buildActorUserIdAliases(user),
-    [user?.pub, user?._?.soul],
-  );
+  const actorUserIdAliases = useMemo(() => buildActorUserIdAliases(user), [user]);
   const actorUserId = actorUserIdAliases[0] ?? 'anon';
   const actorUserIdSet = useMemo(
     () => new Set(actorUserIdAliases),
@@ -2125,16 +2055,9 @@ function PluginStudioPresenter({
   >(null);
   const [editingMetadataValue, setEditingMetadataValue] = useState('');
   const [selectedTemplateLabel, setSelectedTemplateLabel] = useState<string>();
-  const [draggingSchemaId, setDraggingSchemaId] = useState<string | null>(null);
-  const [renamingSchemaId, setRenamingSchemaId] = useState<string | null>(null);
-  const [renamingGroupName, setRenamingGroupName] = useState<string | null>(
-    null,
-  );
   const [coreExtensionSchemaIds, setCoreExtensionSchemaIds] = useState<
     Record<string, true>
   >({});
-  const [lockedCoreFieldKeysBySchemaId, setLockedCoreFieldKeysBySchemaId] =
-    useState<Record<string, string[]>>({});
   const [activeSchemaId, setActiveSchemaId] = useState(
     DEFAULT_SCHEMA_DOC.schemaId,
   );
@@ -2182,6 +2105,23 @@ function PluginStudioPresenter({
   const [isBlocklyReady, setIsBlocklyReady] = useState(false);
   const [blocklyError, setBlocklyError] = useState<string | null>(null);
   const blocklyWorkspaceId = useId();
+  const addColumnFieldIdBase = useId();
+  const schemaEditorFieldIdBase = useId();
+  const workflowEditorFieldIdBase = useId();
+  const addColumnKeyId = `${addColumnFieldIdBase}-key`;
+  const addColumnLabelId = `${addColumnFieldIdBase}-label`;
+  const addColumnDescriptionId = `${addColumnFieldIdBase}-description`;
+  const addColumnDefaultId = `${addColumnFieldIdBase}-default`;
+  const addColumnEnumId = `${addColumnFieldIdBase}-enum`;
+  const addColumnMinId = `${addColumnFieldIdBase}-min`;
+  const addColumnMaxId = `${addColumnFieldIdBase}-max`;
+  const schemaEditorSchemaIdInputId = `${schemaEditorFieldIdBase}-schema-id`;
+  const schemaEditorSchemaTitleInputId = `${schemaEditorFieldIdBase}-schema-title`;
+  const workflowEditorSelectorId = `${workflowEditorFieldIdBase}-selector`;
+  const workflowEditorWorkflowIdInputId = `${workflowEditorFieldIdBase}-workflow-id`;
+  const workflowEditorTableInputId = `${workflowEditorFieldIdBase}-table`;
+  const workflowEditorHookId = `${workflowEditorFieldIdBase}-hook`;
+  const logicComposerFieldId = `${blocklyWorkspaceId}-logic-composer-field`;
   const [blocklyMountElement, setBlocklyMountElement] =
     useState<HTMLDivElement | null>(null);
   const schemaEditorOpenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -2193,23 +2133,14 @@ function PluginStudioPresenter({
   ]);
   const blocklyInitialOperatorRef = useRef<RuleOperator>('eq');
   const blocklyInitialRightFieldRef = useRef('');
-  const [debouncedHashInput, setDebouncedHashInput] =
-    useState<HashPreviewInput | null>(null);
   const hasAttemptedDraftCreationRef = useRef<Set<string>>(new Set());
   const initialSnapshotByDraftRef = useRef<Record<string, string | null>>({});
-  const sidebarSnapshotSeededDraftIdRef = useRef<string | null>(null);
-  const sidebarSnapshotPersistTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
-  const lastSidebarSnapshotComparableRef = useRef<string | null>(null);
   const lastRequestedDraftSnapshotRef = useRef<string | null>(null);
   const lastAutosaveErrorAtRef = useRef<number>(0);
   const lastPersistenceErrorAtRef = useRef<number>(0);
   const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(
     null,
   );
-  const [workspacePublishGateChecked, setWorkspacePublishGateChecked] =
-    useState(false);
   const handleBlocklyContainerRef = useCallback(
     (node: HTMLDivElement | null) => {
       setBlocklyMountElement((current) => (current === node ? current : node));
@@ -2222,7 +2153,7 @@ function PluginStudioPresenter({
     isLoading: isReleaseLoading,
     refetch: refetchReleases,
   } = api.pluginRelease.useGet();
-  const releases = releaseRows as PluginReleaseDoc[];
+  const releases = useMemo(() => releaseRows as PluginReleaseDoc[], [releaseRows]);
   const marketplaceReleases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(releases),
     [releases],
@@ -2231,48 +2162,25 @@ function PluginStudioPresenter({
     data: draftRows = [],
     isLoading: isDraftLoading,
     refetch: refetchDrafts,
-  } = api.pluginDraft.useGet();
+  } = api.pluginDraft.useGet({
+    keys: [draftId],
+    single: true,
+  });
   const createDraftMutation = api.pluginDraft.useCreate();
   const updateDraftMutation = api.pluginDraft.useUpdate();
   const createDraftRevisionMutation = api.pluginDraftRevision.useCreate();
-  const createPluginReleaseMutation = api.pluginRelease.useCreate();
-  const { data: projectInstallRows = [], refetch: refetchProjectInstalls } =
-    api.businessPluginInstall.useGet({
-      keys: [projectId],
-    });
-  const createProjectInstallMutation = api.businessPluginInstall.useCreate({
-    keys: [projectId],
-  });
-  const updateProjectInstallMutation = api.businessPluginInstall.useUpdate({
-    keys: [projectId],
-  });
-  const { data: projectDraftInstallRows = [], refetch: refetchProjectDraftInstalls } =
-    api.businessPluginDraftInstall.useGet({
-      keys: [projectId],
-    });
-  const createProjectDraftInstallMutation = api.businessPluginDraftInstall.useCreate({
-    keys: [projectId],
-  });
-  const updateProjectDraftInstallMutation = api.businessPluginDraftInstall.useUpdate({
-    keys: [projectId],
-  });
-  const drafts = draftRows as PluginDraftDoc[];
-  const projectInstalls = projectInstallRows as BusinessPluginInstallDoc[];
-  const projectDraftInstalls =
-    projectDraftInstallRows as BusinessPluginDraftInstallDoc[];
-  const activeDraft = useMemo(
-    () =>
-      drafts.find(
-        (candidate) =>
-          candidate.draftId === draftId &&
-          (candidate.projectId ?? projectId) === projectId &&
-          (actorUserIdSet.has(candidate.ownerUserId) ||
-            (candidate.collaboratorUserIds ?? []).some((id) =>
-              actorUserIdSet.has(id),
-            )),
-      ) ?? null,
-    [actorUserIdSet, draftId, drafts, projectId],
-  );
+  const activeDraft = useMemo(() => {
+    const candidate = (draftRows as PluginDraftDoc[])[0] ?? null;
+    if (!candidate) return null;
+    if (candidate.draftId !== draftId) return null;
+    if ((candidate.projectId ?? projectId) !== projectId) return null;
+    const hasAccess =
+      actorUserIdSet.has(candidate.ownerUserId) ||
+      (candidate.collaboratorUserIds ?? []).some((id) =>
+        actorUserIdSet.has(id),
+      );
+    return hasAccess ? candidate : null;
+  }, [actorUserIdSet, draftId, draftRows, projectId]);
   const pluginId = useMemo(
     () =>
       resolvePluginStudioPluginId({
@@ -2367,27 +2275,37 @@ function PluginStudioPresenter({
   const deleteRoutesTabsConfigMutation = api.pluginRoutesTabsConfig.useDelete({
     keys: draftDocScopeKeys,
   });
+  const { data: workflowJobs = [] } = api.pluginWorkflowJob.useGet();
+  const { data: workflowEventLogs = [] } = api.pluginWorkflowEventLog.useGet();
 
   const workspaceSchemaDocs = useMemo(() => {
-    const rows = schemaDocRows as Array<{
-      id?: string;
-      schemaId?: string;
-      doc?: unknown;
-    }>;
-    const docs = rows
-      .map((row) => row.doc as SchemaDoc | undefined)
-      .filter((doc): doc is SchemaDoc => Boolean(doc?.schemaId));
+    const rows = schemaDocRows;
+    const docsBySchemaId = new Map<string, { doc: SchemaDoc; score: number }>();
+    for (const row of rows) {
+      const doc = parseStoredSchemaDoc(row.doc);
+      const schemaId = row.schemaId || doc?.schemaId;
+      if (!schemaId || !doc?.schemaId) continue;
+
+      const canonicalRowId = `${draftId}:${schemaId}`;
+      const rowId = row.id ?? '';
+      const score = rowId === canonicalRowId ? 2 : rowId ? 1 : 0;
+      const existing = docsBySchemaId.get(schemaId);
+      if (!existing || score >= existing.score) {
+        docsBySchemaId.set(schemaId, { doc, score });
+      }
+    }
+    const docs = [...docsBySchemaId.values()].map((entry) => entry.doc);
     if (docs.length > 0) {
       return docs;
     }
-    const revisionDocs = (latestActiveDraftRevision?.schemaDocs ?? []).filter(
-      (doc): doc is SchemaDoc => Boolean(doc?.schemaId),
-    );
+    const revisionDocs = (latestActiveDraftRevision?.schemaDocs ?? [])
+      .map((doc) => parseStoredSchemaDoc(doc))
+      .filter((doc): doc is SchemaDoc => Boolean(doc?.schemaId));
     if (revisionDocs.length > 0) {
       return revisionDocs;
     }
     return [DEFAULT_SCHEMA_DOC];
-  }, [schemaDocRows, latestActiveDraftRevision?.schemaDocs]);
+  }, [draftId, schemaDocRows, latestActiveDraftRevision?.schemaDocs]);
 
   const workspaceWorkflows = useMemo(() => {
     const rows = workflowDocRows as Array<{
@@ -2444,12 +2362,6 @@ function PluginStudioPresenter({
         order: number;
         iconName?: string;
       }>;
-      uiStateByUserId?: Record<
-        string,
-        {
-          sidebarSnapshotJson?: string;
-        }
-      >;
     }>;
     const candidates = rows.filter(
       (row) =>
@@ -2473,10 +2385,6 @@ function PluginStudioPresenter({
     draftId,
     routesTabsConfigRows,
   ]);
-  const activeUiStateForActor = useMemo(
-    () => activeRoutesTabsConfigRow?.uiStateByUserId?.[actorUserId],
-    [activeRoutesTabsConfigRow, actorUserId],
-  );
 
   const adminTabsText = useMemo(
     () =>
@@ -2507,6 +2415,7 @@ function PluginStudioPresenter({
         schemaTabs: storedSchemaTabs,
         orderedGroups: storedGroupOrder,
         systemTabs,
+        tabOrder: storedTabOrder,
       } = deserializeDraftAdminTabs(parsedDraftAdminTabs);
       const schemaIdSet = new Set(schemaDocs.map((schemaDoc) => schemaDoc.schemaId));
       const storedSchemaOrder = storedSchemaTabs
@@ -2546,6 +2455,10 @@ function PluginStudioPresenter({
         schemaOrder,
         systemTabs,
       });
+      const tabOrder = computeOrderedTabTokens({
+        tabOrder: storedTabOrder,
+        schemaOrder,
+      });
       const adminTabs: AdminTabDoc[] = schemaOrder.map((schemaId) => ({
         schema: schemaId,
         title: schemaTitleById[schemaId],
@@ -2556,6 +2469,7 @@ function PluginStudioPresenter({
         schemaTabs: adminTabs,
         orderedGroups,
         systemTabs,
+        tabOrder,
       });
       return {
         schemaDocs,
@@ -2568,6 +2482,7 @@ function PluginStudioPresenter({
         customGroups: orderedGroups,
         groupOrder: orderedGroups,
         systemTabs,
+        tabOrder,
         adminTabs,
         draftAdminTabs,
       };
@@ -2581,13 +2496,9 @@ function PluginStudioPresenter({
     workspaceSchemaDocs,
     workspaceWorkflows,
   ]);
-  const schemaTitleById = parsed?.schemaTitleById ?? {};
-  const schemaGroupById = parsed?.schemaGroupById ?? {};
-  const schemaIconNameById = parsed?.schemaIconNameById ?? {};
-  const customGroups = parsed?.customGroups ?? [];
   const groupOrder = parsed?.groupOrder ?? [];
   const systemTabs = parsed?.systemTabs ?? DEFAULT_SYSTEM_TABS;
-  const schemaOrder = parsed?.schemaOrder ?? [DEFAULT_SCHEMA_DOC.schemaId];
+  const tabOrder = parsed?.tabOrder ?? [];
 
   const availableSchemaDocs = parsed?.schemaDocs ?? [];
   const availableWorkflows = parsed?.workflows ?? [];
@@ -2614,77 +2525,51 @@ function PluginStudioPresenter({
   );
   const schemaRefinements = schemaEditorRefinements.schemaRefinements;
   const blocklyRefinements = schemaEditorRefinements.blocklyRefinements;
-  const setSchemaBuilder = useCallback(
-    (
-      value:
-        | BuilderSchema
-        | ((current: BuilderSchema) => BuilderSchema),
-    ) => {
-      const nextBuilder =
-        typeof value === 'function' ? value(schemaBuilder) : value;
-      if (canonicalStringify(nextBuilder) === canonicalStringify(schemaBuilder)) {
-        return;
-      }
-      persistSchemaEditorState(
-        nextBuilder,
-        schemaRefinements,
-        blocklyRefinements,
-      );
-    },
-    [blocklyRefinements, schemaBuilder, schemaRefinements],
-  );
-  const setSchemaRefinements = useCallback(
-    (
-      value:
-        | BuilderRefinement[]
-        | ((current: BuilderRefinement[]) => BuilderRefinement[]),
-    ) => {
-      const nextSchemaRefinements =
-        typeof value === 'function' ? value(schemaRefinements) : value;
-      if (
-        canonicalStringify(nextSchemaRefinements) ===
-        canonicalStringify(schemaRefinements)
-      ) {
-        return;
-      }
-      persistSchemaEditorState(
-        schemaBuilder,
-        nextSchemaRefinements,
-        blocklyRefinements,
-      );
-    },
-    [blocklyRefinements, schemaBuilder, schemaRefinements],
-  );
-  const setBlocklyRefinements = useCallback(
-    (
-      value:
-        | BlocklyRefinement[]
-        | ((current: BlocklyRefinement[]) => BlocklyRefinement[]),
-    ) => {
-      const nextBlocklyRefinements =
-        typeof value === 'function' ? value(blocklyRefinements) : value;
-      if (
-        canonicalStringify(nextBlocklyRefinements) ===
-        canonicalStringify(blocklyRefinements)
-      ) {
-        return;
-      }
-      persistSchemaEditorState(
-        schemaBuilder,
-        schemaRefinements,
-        nextBlocklyRefinements,
-      );
-    },
-    [blocklyRefinements, schemaBuilder, schemaRefinements],
-  );
-  const activeSchemaLockedCoreFields = useMemo(
-    () => new Set(lockedCoreFieldKeysBySchemaId[activeSchemaId] ?? []),
-    [activeSchemaId, lockedCoreFieldKeysBySchemaId],
-  );
-  const isActiveSchemaCoreExtension = Boolean(
-    coreExtensionSchemaIds[activeSchemaId],
-  );
-
+  function setSchemaBuilder(
+    value: BuilderSchema | ((current: BuilderSchema) => BuilderSchema),
+  ) {
+    const nextBuilder = typeof value === 'function' ? value(schemaBuilder) : value;
+    if (deepEqual(nextBuilder, schemaBuilder)) {
+      return;
+    }
+    persistSchemaEditorState(
+      nextBuilder,
+      schemaRefinements,
+      blocklyRefinements,
+    );
+  }
+  function setSchemaRefinements(
+    value:
+      | BuilderRefinement[]
+      | ((current: BuilderRefinement[]) => BuilderRefinement[]),
+  ) {
+    const nextSchemaRefinements =
+      typeof value === 'function' ? value(schemaRefinements) : value;
+    if (deepEqual(nextSchemaRefinements, schemaRefinements)) {
+      return;
+    }
+    persistSchemaEditorState(
+      schemaBuilder,
+      nextSchemaRefinements,
+      blocklyRefinements,
+    );
+  }
+  function setBlocklyRefinements(
+    value:
+      | BlocklyRefinement[]
+      | ((current: BlocklyRefinement[]) => BlocklyRefinement[]),
+  ) {
+    const nextBlocklyRefinements =
+      typeof value === 'function' ? value(blocklyRefinements) : value;
+    if (deepEqual(nextBlocklyRefinements, blocklyRefinements)) {
+      return;
+    }
+    persistSchemaEditorState(
+      schemaBuilder,
+      schemaRefinements,
+      nextBlocklyRefinements,
+    );
+  }
   useEffect(() => {
     if (availableSchemaDocs.length === 0) return;
     if (
@@ -2729,9 +2614,9 @@ function PluginStudioPresenter({
     );
 
     return (pluginId.trim() &&
-    /^[a-z0-9][a-z0-9_.-]*[a-z0-9]$/.test(pluginId) &&
-    parsed &&
-    !hasInvalidFieldConfig && !hasInvalidDerivedFieldConfig)
+      /^[a-z0-9][a-z0-9_.-]*[a-z0-9]$/.test(pluginId) &&
+      parsed &&
+      !hasInvalidFieldConfig && !hasInvalidDerivedFieldConfig)
   }, [parsed, pluginId, schemaBuilder]);
   const isDraftSaveable = useMemo(
     () =>
@@ -2836,128 +2721,7 @@ function PluginStudioPresenter({
     );
   }, [expectedHydratedDraftKey]);
 
-  useEffect(() => {
-    const persistedComparable = toComparableSidebarSnapshotJson(
-      activeUiStateForActor?.sidebarSnapshotJson,
-    );
-    lastSidebarSnapshotComparableRef.current = persistedComparable;
-  }, [activeUiStateForActor?.sidebarSnapshotJson]);
-
-  useEffect(() => {
-    if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-      clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-      sidebarSnapshotPersistTimeoutRef.current = null;
-    }
-    if (!parsed) return;
-
-    if (sidebarSnapshotSeededDraftIdRef.current !== draftId) {
-      sidebarSnapshotSeededDraftIdRef.current = draftId;
-      if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-        clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-        sidebarSnapshotPersistTimeoutRef.current = null;
-      }
-      return;
-    }
-
-    const latestRevision = activeDraftRevisions[0];
-    const latestRevisionRecencyKey = latestRevision
-      ? toDraftRevisionRecencyKey(latestRevision)
-      : undefined;
-    const latestPersistedSnapshot = latestRevision
-      ? canonicalStringify({
-        schemaDocs: latestRevision.schemaDocs ?? [],
-        workflows: latestRevision.workflows ?? [],
-        adminTabs: latestRevision.adminTabs ?? [],
-      })
-      : null;
-    const currentSnapshot = canonicalStringify({
-      schemaDocs: parsed.schemaDocs,
-      workflows: parsed.workflows,
-      adminTabs: parsed.draftAdminTabs,
-    });
-    if (latestPersistedSnapshot === currentSnapshot) {
-      if (activeUiStateForActor?.sidebarSnapshotJson) {
-        lastSidebarSnapshotComparableRef.current = '';
-        if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-          clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-        }
-        sidebarSnapshotPersistTimeoutRef.current = setTimeout(() => {
-          sidebarSnapshotPersistTimeoutRef.current = null;
-          persistSidebarUiStateForActor({
-            sidebarSnapshotJson: '',
-          });
-        }, 250);
-      }
-      return;
-    }
-
-    const snapshotCore = {
-      version: 1,
-      pluginId,
-      draftId,
-      ...(latestRevisionRecencyKey
-        ? { baseRevisionRecencyKey: latestRevisionRecencyKey }
-        : {}),
-      schemaOrder,
-      schemaTitleById: Object.fromEntries(
-        parsed.schemaDocs.map((schemaDoc) => [
-          schemaDoc.schemaId,
-          schemaDoc.title ?? schemaDoc.schemaId,
-        ]),
-      ),
-      schemaGroupById,
-      schemaIconNameById,
-      customGroups,
-      groupOrder,
-      systemTabs,
-    };
-    const comparableSnapshotJson = canonicalStringify(snapshotCore);
-    if (
-      lastSidebarSnapshotComparableRef.current === comparableSnapshotJson ||
-      toComparableSidebarSnapshotJson(activeUiStateForActor?.sidebarSnapshotJson) ===
-      comparableSnapshotJson
-    ) {
-      return;
-    }
-    lastSidebarSnapshotComparableRef.current = comparableSnapshotJson;
-    if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-      clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-    }
-    sidebarSnapshotPersistTimeoutRef.current = setTimeout(() => {
-      sidebarSnapshotPersistTimeoutRef.current = null;
-      const snapshot: PluginStudioSidebarSnapshot = {
-        ...snapshotCore,
-        updatedAt: new Date().toISOString(),
-      };
-      persistSidebarUiStateForActor({
-        sidebarSnapshotJson: JSON.stringify(snapshot),
-      });
-    }, 250);
-  }, [
-    activeDraftRevisions,
-    activeUiStateForActor,
-    customGroups,
-    draftId,
-    groupOrder,
-    parsed,
-    pluginId,
-    schemaGroupById,
-    schemaIconNameById,
-    schemaOrder,
-    systemTabs,
-  ]);
-
-  useEffect(
-    () => () => {
-      if (sidebarSnapshotPersistTimeoutRef.current !== null) {
-        clearTimeout(sidebarSnapshotPersistTimeoutRef.current);
-        sidebarSnapshotPersistTimeoutRef.current = null;
-      }
-    },
-    [],
-  );
-
-  const { mutateAsync: createDraft, isPending: isCreatingDraft } = useMutation({
+  const { mutateAsync: createDraft } = useMutation({
     mutationKey: ['plugin-studio', 'create-draft', draftId],
     onMutate: () => {
     },
@@ -2965,6 +2729,8 @@ function PluginStudioPresenter({
       const userHandle = formatUserHandle(actorUserId);
       const draftTitle = `${pluginId} (${userHandle})`;
       const now = new Date().toISOString();
+      const nextTitle = activeDraftTitle || draftTitle;
+      const nextDescription = activeDraftDescription || undefined;
       const nextDraft: PluginDraftDoc = {
         id: draftId,
         draftId,
@@ -2972,16 +2738,32 @@ function PluginStudioPresenter({
         pluginId,
         ownerUserId: actorUserId,
         status: 'active',
-        title: activeDraftTitle || draftTitle,
-        description: activeDraftDescription || undefined,
+        title: nextTitle,
+        description: nextDescription,
         createdAt: now,
         updatedAt: now,
       };
 
       if (activeDraft) {
+        const hasHeaderChanges =
+          (activeDraft.projectId ?? undefined) !== (projectId || undefined) ||
+          activeDraft.pluginId !== pluginId ||
+          activeDraft.status !== 'active' ||
+          (activeDraft.title ?? undefined) !== nextTitle ||
+          (activeDraft.description?.trim() || undefined) !== nextDescription;
+
+        if (!hasHeaderChanges) {
+          return activeDraft;
+        }
+
         await updateDraftMutation.mutateAsync({
           ...activeDraft,
-          ...nextDraft,
+          projectId,
+          pluginId,
+          status: 'active',
+          title: nextTitle,
+          description: nextDescription,
+          updatedAt: now,
           createdAt: activeDraft.createdAt ?? now,
         } as never);
       } else {
@@ -3023,8 +2805,12 @@ function PluginStudioPresenter({
         const revisionId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
         const snapshotString = canonicalStringify(revisionPayload);
         const digest = snapshotString.length.toString(36);
+        const draftRevisionRowId = toDraftRevisionRowId({
+          draftId: targetDraftId,
+          revisionId,
+        });
         return createDraftRevisionMutation.mutateAsync({
-          id: `${targetDraftId}@${revisionId}`,
+          id: draftRevisionRowId,
           revisionId,
           draftId: targetDraftId,
           pluginId,
@@ -3174,52 +2960,6 @@ function PluginStudioPresenter({
     saveDraftRevision,
   ]);
 
-  useEffect(() => {
-    if (!parsed) {
-      setDebouncedHashInput(null);
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      setDebouncedHashInput({
-        pluginId,
-        version: getNextVersion(marketplaceReleases, pluginId),
-        docs: {
-          title: activeDraftTitle,
-          description: activeDraftDescription,
-        },
-        actionManifest: parsed.actionManifest,
-        schemaDocs: parsed.schemaDocs,
-        workflows: parsed.workflows,
-        adminTabs: parsed.adminTabs,
-      });
-    }, 250);
-
-    return () => {
-      clearTimeout(timeout);
-    };
-  }, [
-    activeDraftDescription,
-    activeDraftTitle,
-    marketplaceReleases,
-    parsed,
-    pluginId,
-  ]);
-
-  const hashPreviewQuery = useQuery({
-    queryKey: ['plugin-studio', 'release-hash-preview', debouncedHashInput],
-    enabled: debouncedHashInput !== null,
-    placeholderData: (previousData) => previousData,
-    refetchOnWindowFocus: false,
-    retry: 1,
-    queryFn: async () => {
-      if (!debouncedHashInput) {
-        throw new Error('Missing release hash preview payload');
-      }
-      return previewReleaseHashes(debouncedHashInput);
-    },
-  });
-
   const { mutateAsync: publishRelease, isPending: isPublishing } = useMutation({
     mutationKey: ['plugin-studio', 'publish-release'],
     mutationFn: async () => {
@@ -3227,38 +2967,22 @@ function PluginStudioPresenter({
         throw new Error('Invalid plugin payload');
       }
       const version = getNextVersion(marketplaceReleases, pluginId);
-      const hashPreview = await previewReleaseHashes({
-        pluginId,
-        version,
-        docs: {
-          title: activeDraftTitle,
-          description: activeDraftDescription,
+      await publishPluginRelease({
+        data: {
+          actorUserId,
+          pluginId,
+          version,
+          docs: {
+            title: activeDraftTitle,
+            description: activeDraftDescription,
+          },
+          actionManifest: parsed.actionManifest,
+          schemaDocs: parsed.schemaDocs,
+          workflows: parsed.workflows,
+          adminTabs: parsed.adminTabs,
         },
-        actionManifest: parsed.actionManifest,
-        schemaDocs: parsed.schemaDocs,
-        workflows: parsed.workflows,
-        adminTabs: parsed.adminTabs,
       });
-      const release: PluginReleaseDoc = {
-        id: `${pluginId}@${version}`,
-        pluginId,
-        version,
-        manifestHash: hashPreview.manifestHash,
-        artifactHash: hashPreview.artifactHash,
-        author: { userId: actorUserId },
-        visibility: 'public',
-        docs: {
-          title: activeDraftTitle,
-          description: activeDraftDescription,
-        },
-        actionManifest: parsed.actionManifest,
-        schemaDocs: parsed.schemaDocs,
-        workflows: parsed.workflows,
-        adminTabs: parsed.adminTabs,
-        publishedAt: new Date().toISOString(),
-      };
-      await createPluginReleaseMutation.mutateAsync(release as never);
-      return release;
+      return { pluginId, version };
     },
     onSuccess: async () => {
       await refetchReleases();
@@ -3322,6 +3046,14 @@ function PluginStudioPresenter({
     [availableRuleFields, compatibleRuleFieldsByLeftField],
   );
   const isInitialLoading = isReleaseLoading && releases.length === 0;
+  const v3PublishGateDiagnostics = useMemo(() => {
+    if (!parsed) return [];
+    return evaluateV3PublishGates({
+      actionManifest: parsed.actionManifest ?? [],
+      schemaDocs: parsed.schemaDocs ?? [],
+      workflows: parsed.workflows ?? [],
+    });
+  }, [parsed]);
 
   useEffect(() => {
     if (leftRuleFields.length === 0) {
@@ -3369,7 +3101,7 @@ function PluginStudioPresenter({
 
       return changed ? nextRules : currentRules;
     });
-  }, [leftRuleFields, availableRuleFieldsByType, fieldTypeByRuleField]);
+  }, [leftRuleFields, availableRuleFieldsByType, fieldTypeByRuleField, setSchemaRefinements]);
 
   const selectedBlocklyField = useMemo(
     () =>
@@ -3392,11 +3124,6 @@ function PluginStudioPresenter({
     [selectedBlocklyField?.type],
   );
   const firstBlocklyComparableField = blocklyComparableFields[0] ?? '';
-  const workspaceSchemasAndFields = useMemo(
-    () =>
-      toWorkspaceSchemasAndFields(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
-    [parsed?.schemaDocs],
-  );
   const derivationPathOptions = useMemo(
     () =>
       buildDerivationPathOptions(parsed?.schemaDocs ?? [DEFAULT_SCHEMA_DOC]),
@@ -3412,53 +3139,6 @@ function PluginStudioPresenter({
           label: fieldKey,
         })),
     [schemaBuilder.fields],
-  );
-  const workspaceActiveSchemaId =
-    workspaceSchemasAndFields.schemas[0]?.id ?? null;
-  const workspaceFieldConfigModel = useMemo(() => {
-    const firstField = schemaBuilder.fields[0];
-    const fallbackFieldType = 'string';
-    const fieldType =
-      firstField?.fieldType &&
-        AUTOFORM_FIELD_TYPES.includes(firstField.fieldType)
-        ? firstField.fieldType
-        : fallbackFieldType;
-
-    const model = createFieldConfigPanelModel(fieldType);
-    const draft = serializeFieldConfigPanelDraft({
-      fieldType,
-      label: firstField?.label || firstField?.key || 'Field',
-      description: firstField?.description || undefined,
-      inputProps: parseJsonObject(firstField?.inputPropsJson),
-      customData: parseJsonObject(firstField?.customDataJson),
-    });
-
-    return {
-      model,
-      draft,
-    };
-  }, [schemaBuilder.fields]);
-  const expressionRows = useMemo<ExpressionRow[]>(
-    () =>
-      schemaRefinements
-        .filter(
-          (rule) =>
-            Boolean(rule.leftField.trim()) && Boolean(rule.rightField.trim()),
-        )
-        .map((rule) => ({
-          operator: rule.operator,
-          operands: [
-            {
-              kind: 'fieldRef',
-              path: [rule.leftField],
-            },
-            {
-              kind: 'fieldRef',
-              path: [rule.rightField],
-            },
-          ],
-        })),
-    [schemaRefinements],
   );
   const workspaceWorkflow =
     parsed?.workflows.find(
@@ -3477,31 +3157,6 @@ function PluginStudioPresenter({
     );
     return scoped.length > 0 ? scoped : availableWorkflows;
   }, [availableWorkflows, workflowEditorLockedTable]);
-  const workspaceActionsManifestState = useMemo(
-    () =>
-      createActionsManifestEditorState({
-        actionManifest: parsed?.actionManifest ?? [],
-        workflows: parsed?.workflows ?? [DEFAULT_WORKFLOW_DOC],
-        capabilityEnvelope: ['db.read', 'db.write', 'email.send', 'http.fetch'],
-        runtimeTarget: 'sandbox-worker',
-      }),
-    [parsed],
-  );
-  const workspaceRoutesTabsResult = useMemo(
-    () =>
-      mapRoutesTabsToAutoAdminConfig({
-        businessSlug: pluginId.replace(/^plugin\./, ''),
-        tabs: (parsed?.adminTabs ?? []).map((tab, index) => ({
-          id: `tab_${tab.schema || index + 1}`,
-          schema: tab.schema,
-          title: tab.title,
-          group: tab.group,
-          iconName: tab.icon,
-          order: index,
-        })),
-      }),
-    [parsed?.adminTabs, pluginId],
-  );
   const livePreviewTabs = useMemo(() => {
     const schemaById = new Map(
       (parsed?.schemaDocs ?? []).map((schemaDoc) => [
@@ -3515,18 +3170,27 @@ function PluginStudioPresenter({
       try {
         return [
           {
+            tabId: schemaDoc.schemaId,
             title: schemaDoc.title || tab.title || schemaDoc.schemaId,
             group: tab.group,
             iconName: tab.icon,
             icon: resolveLucideIconByName(tab.icon),
             parsedSchema: compileSchemaDoc(schemaDoc),
-            slug: `plugin-studio/${actorUserId}/${pluginId}/${schemaDoc.schemaId}`,
+            slug: `plugin-studio/${pluginId}/${schemaDoc.schemaId}`,
             treatSlugAsAbsolute: true,
             editable: true,
             onAddColumn: openAddColumnSheet,
             onEditColumn: openEditColumnSheet,
             onDeleteColumn: requestDeleteColumn,
-            onReorderColumns: handleReorderColumns,
+            onReorderColumns: (
+              sourceColumnKey: string,
+              targetColumnKey: string,
+            ) =>
+              handleReorderColumns(
+                schemaDoc.schemaId,
+                sourceColumnKey,
+                targetColumnKey,
+              ),
           },
         ];
       } catch (error) {
@@ -3535,212 +3199,10 @@ function PluginStudioPresenter({
       }
     });
   }, [
-    actorUserId,
     parsed?.adminTabs,
     parsed?.schemaDocs,
     pluginId,
   ]);
-  const workspaceCompileDiagnostics = useMemo<CompileVerifyDiagnostic[]>(() => {
-    const diagnostics: CompileVerifyDiagnostic[] = [];
-
-    if (!parsed) {
-      diagnostics.push({
-        category: 'schema-compile',
-        code: 'invalid-json',
-        severity: 'error',
-        message: 'Schema/workflow JSON could not be parsed.',
-        path: ['schemaDocs'],
-      });
-    }
-
-    const invalidFieldCount = schemaBuilder.fields.filter((field) =>
-      hasFieldValidationErrors(field),
-    ).length;
-    const schemaFieldKeys = new Set(
-      schemaBuilder.fields
-        .map((field) => field.key.trim())
-        .filter((key) => key.length > 0),
-    );
-    const invalidDerivedCount = schemaBuilder.derivedFields.filter(
-      (derivedField) =>
-        hasDerivedFieldValidationErrors(derivedField, schemaFieldKeys),
-    ).length;
-    if (invalidFieldCount > 0) {
-      diagnostics.push({
-        category: 'schema-compile',
-        code: 'field-validation',
-        severity: 'warning',
-        message: `${invalidFieldCount} field(s) have incomplete or invalid configuration.`,
-        path: ['schemaBuilder', 'fields'],
-      });
-    }
-    if (invalidDerivedCount > 0) {
-      diagnostics.push({
-        category: 'schema-compile',
-        code: 'derived-field-validation',
-        severity: 'warning',
-        message: `${invalidDerivedCount} derived field(s) have incomplete or invalid configuration.`,
-        path: ['schemaBuilder', 'derivedFields'],
-      });
-    }
-
-    if (hashPreviewQuery.isError) {
-      diagnostics.push({
-        category: 'schema-compile',
-        code: 'hash-preview-failed',
-        severity: 'warning',
-        message: toErrorMessage(hashPreviewQuery.error),
-        path: ['hashPreview'],
-      });
-    }
-
-    if (hashPreviewQuery.data) {
-      diagnostics.push({
-        category: 'schema-compile',
-        code: 'hash-preview-ready',
-        severity: 'info',
-        message: 'Release hash preview is up to date.',
-        path: ['hashPreview'],
-      });
-    }
-
-    if (parsed) {
-      const workflowDagDiagnostics = validateWorkflowDags(
-        parsed.workflows,
-      ).diagnostics;
-      for (const diagnostic of workflowDagDiagnostics) {
-        diagnostics.push({
-          category: 'workflow-validation',
-          code: diagnostic.code,
-          severity: 'error',
-          message: diagnostic.message,
-          path: diagnostic.path,
-        });
-      }
-
-      const workflowReferenceDiagnostics = validateWorkflowReferencePaths({
-        workflows: parsed.workflows,
-        schemaDocs: parsed.schemaDocs,
-      });
-      for (const diagnostic of workflowReferenceDiagnostics) {
-        diagnostics.push({
-          category: 'workflow-validation',
-          code: diagnostic.code,
-          severity: diagnostic.severity,
-          message: diagnostic.message,
-          path: diagnostic.path,
-        });
-      }
-    }
-
-    return diagnostics;
-  }, [
-    hashPreviewQuery.data,
-    hashPreviewQuery.error,
-    hashPreviewQuery.isError,
-    parsed,
-    schemaBuilder,
-  ]);
-  const workspaceArtifactDiff = useMemo(() => {
-    const currentBySchema = new Map(
-      (parsed?.schemaDocs ?? []).map((schemaDoc) => [
-        schemaDoc.schemaId,
-        schemaDoc,
-      ]),
-    );
-    const previousBySchema = new Map(
-      (activeDraftRevisions[0]?.schemaDocs ?? []).map((schemaDoc) => [
-        schemaDoc.schemaId,
-        schemaDoc,
-      ]),
-    );
-
-    const added = [...currentBySchema.keys()].filter(
-      (schemaId) => !previousBySchema.has(schemaId),
-    );
-    const removed = [...previousBySchema.keys()].filter(
-      (schemaId) => !currentBySchema.has(schemaId),
-    );
-    const changed = [...currentBySchema.keys()].filter((schemaId) => {
-      if (!previousBySchema.has(schemaId)) return false;
-      return (
-        canonicalStringify(currentBySchema.get(schemaId)) !==
-        canonicalStringify(previousBySchema.get(schemaId))
-      );
-    });
-
-    return {
-      added: added.sort((left, right) => left.localeCompare(right)),
-      changed: changed.sort((left, right) => left.localeCompare(right)),
-      removed: removed.sort((left, right) => left.localeCompare(right)),
-    };
-  }, [parsed?.schemaDocs, activeDraftRevisions]);
-  const workspaceReviewChangelog = useMemo(
-    () => [
-      {
-        label: 'Schemas',
-        summary: `${parsed?.schemaDocs.length ?? 0} schema document(s) in current draft.`,
-      },
-      {
-        label: 'Workflows',
-        summary: `${parsed?.workflows.length ?? 0} workflow document(s) configured.`,
-      },
-      {
-        label: 'Actions',
-        summary: `${parsed?.actionManifest.length ?? 0} action(s) declared in manifest.`,
-      },
-    ],
-    [parsed],
-  );
-  const workspacePublishGateDiagnostics = useMemo<PluginBuildDiagnostic[]>(
-    () =>
-      workspaceCompileDiagnostics.map((diagnostic) => ({
-        code: diagnostic.code,
-        severity: diagnostic.severity,
-        path: diagnostic.path,
-        message: diagnostic.message,
-      })),
-    [workspaceCompileDiagnostics],
-  );
-  const workspacePublishGateState = useMemo(
-    () =>
-      createPublishGateTabState({
-        diagnostics: workspacePublishGateDiagnostics,
-        reviewStatus: workspaceCompileDiagnostics.some(
-          (diagnostic) => diagnostic.severity === 'error',
-        )
-          ? 'required-pending'
-          : 'required-approved',
-        environment: 'production',
-        tenantId: actorUserId,
-        warningBlocklistPolicy: {
-          defaultWarningBlocklistByEnvironment: {
-            production: ['field-validation', 'hash-preview-failed'],
-          },
-        },
-        immutableRevision: {
-          revisionId:
-            activeDraftRevisions[0]?.revisionId ??
-            `draft.${formatUserHandle(actorUserId)}.${pluginId.replace(/[^a-z0-9_.-]+/gi, '_')}`,
-          summary: activeDraft?.title ?? `${pluginId} (draft)`,
-          artifactHash:
-            hashPreviewQuery.data?.artifactHash ??
-            'pending-artifact-hash-preview',
-        },
-        isPublishConfirmationChecked: workspacePublishGateChecked,
-      }),
-    [
-      actorUserId,
-      hashPreviewQuery.data?.artifactHash,
-      activeDraft?.title,
-      activeDraftRevisions,
-      pluginId,
-      workspaceCompileDiagnostics,
-      workspacePublishGateChecked,
-      workspacePublishGateDiagnostics,
-    ],
-  );
-
   useEffect(() => {
     const nextOptions = blocklyComparableFields.length
       ? blocklyComparableFields.map(
@@ -4047,9 +3509,9 @@ function PluginStudioPresenter({
     const writes: Array<Promise<unknown>> = [];
 
     for (const row of currentRows) {
+      const parsedDoc = parseStoredSchemaDoc(row.doc);
       const schemaId =
-        row.schemaId ||
-        ((row.doc as { schemaId?: string } | undefined)?.schemaId ?? '');
+        row.schemaId || parsedDoc?.schemaId || '';
       const rowId = row.id || schemaId;
       if (!schemaId || !rowId) continue;
       const nextDoc = nextBySchemaId.get(schemaId);
@@ -4062,7 +3524,7 @@ function PluginStudioPresenter({
         pluginId,
         version: draftId,
         schemaId,
-        doc: nextDoc,
+        doc: stringifySchemaDocForStorage(nextDoc),
       }));
       nextBySchemaId.delete(schemaId);
     }
@@ -4073,7 +3535,7 @@ function PluginStudioPresenter({
         pluginId,
         version: draftId,
         schemaId,
-        doc: nextDoc,
+        doc: stringifySchemaDocForStorage(nextDoc),
       }));
     }
 
@@ -4315,8 +3777,6 @@ function PluginStudioPresenter({
       pluginId,
       businessSlug: 'draft',
       routes: toDraftRoutesFromAdminTabs(nextAdminTabs),
-      diagnostics: [],
-      uiStateByUserId: activeRoutesTabsConfigRow?.uiStateByUserId,
       savedByUserId: actorUserId,
       savedAt: new Date().toISOString(),
     };
@@ -4355,54 +3815,6 @@ function PluginStudioPresenter({
     );
   }
 
-  function persistSidebarUiStateForActor({
-    sidebarSnapshotJson,
-  }: {
-    sidebarSnapshotJson?: string;
-  }) {
-    if (!parsed) return;
-    const rowId = canonicalRoutesTabsConfigId;
-    const currentStateByUserId = activeRoutesTabsConfigRow?.uiStateByUserId ?? {};
-    const currentActorState = currentStateByUserId[actorUserId] ?? {};
-    const nextActorState = {
-      ...currentActorState,
-      ...(sidebarSnapshotJson !== undefined ? { sidebarSnapshotJson } : {}),
-    };
-    const nextStateByUserId = {
-      ...currentStateByUserId,
-      [actorUserId]: nextActorState,
-    };
-    const payload = {
-      id: rowId,
-      draftId: draftId,
-      revisionId: 'live',
-      pluginId,
-      businessSlug: 'draft',
-      routes: toDraftRoutesFromAdminTabs(parsed.draftAdminTabs),
-      diagnostics: [],
-      uiStateByUserId: nextStateByUserId,
-      savedByUserId: actorUserId,
-      savedAt: new Date().toISOString(),
-    };
-
-    void (async () => {
-      if (activeRoutesTabsConfigRow?.id === canonicalRoutesTabsConfigId) {
-        await updateRoutesTabsConfigMutation.mutateAsync(payload);
-      } else {
-        try {
-          await createRoutesTabsConfigMutation.mutateAsync(payload);
-        } catch (error) {
-          if (!isDuplicatePersistenceError(error)) {
-            throw error;
-          }
-          await updateRoutesTabsConfigMutation.mutateAsync(payload);
-        }
-      }
-    })().catch((error) =>
-      reportPersistenceError('Sidebar UI state persistence', error),
-    );
-  }
-
   function updateSchemaDoc(
     schemaId: string,
     updater: (schemaDoc: SchemaDoc) => SchemaDoc,
@@ -4419,7 +3831,11 @@ function PluginStudioPresenter({
       schemaTabs: AdminTabDoc[];
       orderedGroups: string[];
       systemTabs: SystemTabState;
+      tabOrder: string[];
     }) => void,
+    options?: {
+      availableSchemaDocsOverride?: readonly SchemaDoc[];
+    },
   ) {
     let currentTabs: AdminTabDoc[] = [];
     try {
@@ -4431,8 +3847,13 @@ function PluginStudioPresenter({
     const state = deserializeDraftAdminTabs(currentTabs);
     updater(state);
 
+    const resolvedAvailableSchemaDocs =
+      options?.availableSchemaDocsOverride ?? availableSchemaDocs;
     const availableSchemaById = new Map(
-      availableSchemaDocs.map((schemaDoc) => [schemaDoc.schemaId, schemaDoc]),
+      resolvedAvailableSchemaDocs.map((schemaDoc) => [
+        schemaDoc.schemaId,
+        schemaDoc,
+      ]),
     );
     const filteredSchemaTabs = state.schemaTabs.filter((tab) =>
       availableSchemaById.has(tab.schema),
@@ -4440,7 +3861,7 @@ function PluginStudioPresenter({
     const existingSchemaIds = new Set(filteredSchemaTabs.map((tab) => tab.schema));
     const appendedSchemaTabs = [
       ...filteredSchemaTabs,
-      ...availableSchemaDocs
+      ...resolvedAvailableSchemaDocs
         .filter((schemaDoc) => !existingSchemaIds.has(schemaDoc.schemaId))
         .map(
           (schemaDoc) =>
@@ -4465,12 +3886,18 @@ function PluginStudioPresenter({
       schemaOrder,
       systemTabs: state.systemTabs,
     });
+    const tabOrder = computeOrderedTabTokens({
+      tabOrder: state.tabOrder,
+      schemaOrder,
+    });
+    state.tabOrder = tabOrder;
 
     persistSidebarAdminTabs(
       serializeDraftAdminTabs({
         schemaTabs: appendedSchemaTabs,
         orderedGroups,
         systemTabs: state.systemTabs,
+        tabOrder,
       }),
     );
   }
@@ -4485,37 +3912,6 @@ function PluginStudioPresenter({
       ...schemaDoc,
       title: nextTitle,
     }));
-  }
-
-  function handleDropSchemaOnSchema(targetSchemaId: string) {
-    if (!draggingSchemaId || draggingSchemaId === targetSchemaId) return;
-    updateSidebarAdminTabs((state) => {
-      const current = state.schemaTabs.map((tab) => tab.schema);
-      const next = current.filter((schemaId) => schemaId !== draggingSchemaId);
-      const targetIndex = next.indexOf(targetSchemaId);
-      if (targetIndex < 0) {
-        next.push(draggingSchemaId);
-      } else {
-        next.splice(targetIndex + 1, 0, draggingSchemaId);
-      }
-      const tabBySchema = new Map(state.schemaTabs.map((tab) => [tab.schema, tab]));
-      state.schemaTabs = next
-        .map((schemaId) => tabBySchema.get(schemaId))
-        .filter((tab): tab is AdminTabDoc => Boolean(tab));
-    });
-    setDraggingSchemaId(null);
-  }
-
-  function handleDropSchemaOnGroup(targetGroup: string) {
-    if (!draggingSchemaId) return;
-    updateSidebarAdminTabs((state) => {
-      state.schemaTabs = state.schemaTabs.map((tab) =>
-        tab.schema === draggingSchemaId
-          ? { ...tab, group: targetGroup }
-          : tab,
-      );
-    });
-    setDraggingSchemaId(null);
   }
 
   function applyGroupRename(previousGroup: string, nextGroup: string) {
@@ -4663,14 +4059,16 @@ function PluginStudioPresenter({
   }
 
   function handleReorderColumns(
+    schemaId: string,
     sourceColumnKey: string,
     targetColumnKey: string,
   ) {
+    const normalizedSchemaId = schemaId.trim();
     const source = sourceColumnKey.trim();
     const target = targetColumnKey.trim();
-    if (!source || !target || source === target) return;
+    if (!normalizedSchemaId || !source || !target || source === target) return;
 
-    setSchemaBuilder((current) => {
+    updateSchemaDoc(normalizedSchemaId, (current) => {
       const sourceIndex = current.fields.findIndex(
         (field) => field.key.trim() === source,
       );
@@ -4946,6 +4344,16 @@ function PluginStudioPresenter({
     );
   }
 
+  function resolveSystemTabKeyForTabTitle(tabTitle: string): SystemTabKey | undefined {
+    const normalized = tabTitle.trim().toLowerCase();
+    if (!normalized) return undefined;
+    const entries = Object.entries(systemTabs) as Array<
+      [SystemTabKey, SystemTabState[SystemTabKey]]
+    >;
+    const matched = entries.find(([, value]) => value.title.trim().toLowerCase() === normalized);
+    return matched?.[0];
+  }
+
   function getNextWorkflowId() {
     let counter = availableWorkflows.length + 1;
     while (true) {
@@ -5050,6 +4458,84 @@ function PluginStudioPresenter({
     });
   }
 
+  function handleReorderTabs(
+    fromTabTitle: string,
+    toTabTitle: string,
+    position: 'above' | 'below' = 'below',
+  ) {
+    const fromSystemKey = resolveSystemTabKeyForTabTitle(fromTabTitle);
+    const toSystemKey = resolveSystemTabKeyForTabTitle(toTabTitle);
+    const fromSchemaId = fromSystemKey
+      ? undefined
+      : resolveSchemaIdForTabTitle(fromTabTitle);
+    const toSchemaId = toSystemKey
+      ? undefined
+      : resolveSchemaIdForTabTitle(toTabTitle);
+    const fromToken = fromSystemKey
+      ? toSystemTabOrderToken(fromSystemKey)
+      : fromSchemaId
+        ? toSchemaTabOrderToken(fromSchemaId)
+        : null;
+    const toToken = toSystemKey
+      ? toSystemTabOrderToken(toSystemKey)
+      : toSchemaId
+        ? toSchemaTabOrderToken(toSchemaId)
+        : null;
+    if (!fromToken || !toToken || fromToken === toToken) return;
+
+    updateSidebarAdminTabs((state) => {
+      const current = computeOrderedTabTokens({
+        tabOrder: state.tabOrder,
+        schemaOrder: state.schemaTabs.map((tab) => tab.schema),
+      });
+      const fromIndex = current.indexOf(fromToken);
+      const toIndex = current.indexOf(toToken);
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return;
+
+      const [movedToken] = current.splice(fromIndex, 1);
+      if (!movedToken) return;
+      const targetIndex = current.indexOf(toToken);
+      if (targetIndex < 0) return;
+      const insertAt = position === 'above' ? targetIndex : targetIndex + 1;
+      current.splice(insertAt, 0, movedToken);
+      state.tabOrder = current;
+
+      const targetGroup = (() => {
+        if (toSystemKey) {
+          return state.systemTabs[toSystemKey].group?.trim() || undefined;
+        }
+        if (toSchemaId) {
+          return (
+            state.schemaTabs.find((tab) => tab.schema === toSchemaId)?.group?.trim() ||
+            undefined
+          );
+        }
+        return undefined;
+      })();
+
+      if (fromSystemKey) {
+        state.systemTabs = {
+          ...state.systemTabs,
+          [fromSystemKey]: {
+            ...state.systemTabs[fromSystemKey],
+            group: targetGroup,
+          },
+        };
+        return;
+      }
+      if (fromSchemaId) {
+        state.schemaTabs = state.schemaTabs.map((tab) =>
+          tab.schema === fromSchemaId
+            ? {
+              ...tab,
+              group: targetGroup,
+            }
+            : tab,
+        );
+      }
+    });
+  }
+
   function handleAddSchema(targetGroupName?: string) {
     const nextSchemaId = `plugin.${pluginId.split('.').pop() || 'custom'}.${availableSchemaDocs.length + 1}`;
     const normalizedGroupName = targetGroupName?.trim();
@@ -5070,7 +4556,8 @@ function PluginStudioPresenter({
         },
       ],
     };
-    persistSchemaDocs([...availableSchemaDocs, nextSchemaDoc]);
+    const nextAvailableSchemaDocs = [...availableSchemaDocs, nextSchemaDoc];
+    persistSchemaDocs(nextAvailableSchemaDocs);
     updateSidebarAdminTabs((state) => {
       state.schemaTabs = [
         ...state.schemaTabs.filter((tab) => tab.schema !== nextSchemaId),
@@ -5080,7 +4567,7 @@ function PluginStudioPresenter({
           group: normalizedGroupName,
         },
       ];
-    });
+    }, { availableSchemaDocsOverride: nextAvailableSchemaDocs });
     setActiveSchemaId(nextSchemaId);
     syncBuilderFromSchemaDoc(nextSchemaDoc);
   }
@@ -5100,11 +4587,6 @@ function PluginStudioPresenter({
       );
     });
     setCoreExtensionSchemaIds((current) => {
-      const next = { ...current };
-      delete next[schemaId];
-      return next;
-    });
-    setLockedCoreFieldKeysBySchemaId((current) => {
       const next = { ...current };
       delete next[schemaId];
       return next;
@@ -5182,43 +4664,6 @@ function PluginStudioPresenter({
     if (nextWorkflow.workflowId !== activeWorkflowId) {
       setActiveWorkflowId(nextWorkflow.workflowId);
     }
-  }
-
-  function addWorkflowActionStep() {
-    updateActiveWorkflow((current) => {
-      const nextNodeId = `n${current.nodes.length + 1}`;
-      const nextNodes = [
-        ...current.nodes,
-        {
-          nodeId: nextNodeId,
-          type: 'action',
-          actionId: `${pluginId}.action.${current.nodes.length + 1}`,
-          input: {
-            expression: {
-              kind: 'ref',
-              source: 'payload',
-              path: [],
-            },
-          },
-        },
-      ];
-      return {
-        ...current,
-        nodes: nextNodes,
-        edges: [],
-      };
-    });
-  }
-
-  function removeWorkflowStep(nodeId: string) {
-    updateActiveWorkflow((current) => {
-      const nextNodes = current.nodes.filter((node) => node.nodeId !== nodeId);
-      return {
-        ...current,
-        nodes: nextNodes,
-        edges: [],
-      };
-    });
   }
 
   function applyTemplatePreset(releaseId: string) {
@@ -5341,14 +4786,28 @@ function PluginStudioPresenter({
   if (isInitialLoading) return <PluginStudioSkeleton />;
 
   return (
-    <div className="w-full py-6">
-      <div className="mx-auto w-full max-w-7xl px-4 space-y-6">
-        <section className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-background via-muted/30 to-background p-6 md:p-8">
-          <div className="absolute -right-10 top-6 h-40 w-40 rounded-full bg-primary/20 blur-2xl" />
-          <div className="absolute -left-10 bottom-0 h-44 w-44 rounded-full bg-accent/30 blur-2xl" />
+    <div className="w-full py-4">
+      <div className="mx-auto w-full max-w-7xl px-4 space-y-4">
+        <div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-8 px-2 text-muted-foreground hover:text-foreground"
+            onClick={() =>
+              void navigate({
+                to: '/plugin-studio/$projectId',
+                params: { projectId },
+              })
+            }
+          >
+            <ArrowLeft className="mr-2 size-4" />
+            Back to plugins
+          </Button>
+        </div>
+        <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/10 via-background to-accent/15 p-5 md:p-7">
           <div className="relative flex flex-wrap items-start justify-between gap-4">
             <div className="w-full max-w-3xl">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="group flex items-start gap-2">
                   {editingMetadataField === 'title' ? (
                     <Input
@@ -5367,10 +4826,10 @@ function PluginStudioPresenter({
                           stopMetadataEdit();
                         }
                       }}
-                      className="h-10 text-xl font-semibold md:text-2xl"
+                      className="h-12 text-3xl font-bold tracking-[-0.02em] md:h-14 md:text-5xl"
                     />
                   ) : (
-                    <p className="text-xl font-semibold tracking-tight md:text-2xl">
+                    <p className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-3xl font-bold leading-[1.05] tracking-[-0.03em] text-transparent text-balance md:text-5xl">
                       {activeDraftTitle}
                     </p>
                   )}
@@ -5380,7 +4839,7 @@ function PluginStudioPresenter({
                       size="sm"
                       variant="ghost"
                       onClick={() => beginMetadataEdit('title')}
-                      className="size-7 p-0 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
+                      className="size-8 rounded-full border border-border/60 bg-background/75 p-0 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 group-focus-within:opacity-100"
                       aria-label="Edit title"
                     >
                       <Pencil className="size-3.5" />
@@ -5405,10 +4864,10 @@ function PluginStudioPresenter({
                           commitMetadataEdit();
                         }
                       }}
-                      className="min-h-[96px] resize-none"
+                      className="min-h-[108px] resize-none text-base leading-relaxed"
                     />
                   ) : (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="max-w-2xl text-base leading-relaxed text-balance text-muted-foreground/90 md:text-lg">
                       {activeDraftDescription || 'Add a description'}
                     </p>
                   )}
@@ -5418,7 +4877,7 @@ function PluginStudioPresenter({
                       size="sm"
                       variant="ghost"
                       onClick={() => beginMetadataEdit('description')}
-                      className="size-7 p-0 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100"
+                      className="size-8 rounded-full border border-border/60 bg-background/75 p-0 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 group-focus-within:opacity-100"
                       aria-label="Edit description"
                     >
                       <Pencil className="size-3.5" />
@@ -5427,37 +4886,58 @@ function PluginStudioPresenter({
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setIsTemplatesDialogOpen(true)}
-              >
-                <Wand2 className="mr-2 size-4" />
-                Templates
-              </Button>
-              <Button
-                size="lg"
-                disabled={!isValidInputs || isPublishing}
-                onClick={() => {
-                  if (!isValidInputs) return;
-                  void publishRelease();
-                }}
-              >
-                {isPublishing ? 'Publishing...' : 'Publish Plugin'}
-                {!isPublishing && <ArrowRight className="ml-2 size-4" />}
-              </Button>
-            </div>
           </div>
         </section>
 
         <Card className="border-border/70 bg-card/90">
-          <CardHeader>
-            <CardTitle className="text-base">Sidebar Builder</CardTitle>
-            <CardDescription>
-              Design tables, columns, and workflows inline while the admin UI
-              renders from the same schema docs in real time.
-            </CardDescription>
+          <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-base">Sidebar Builder</CardTitle>
+              <CardDescription>
+                Design tables, columns, and workflows inline while the admin UI
+                renders from the same schema docs in real time.
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-background/80 p-1.5 shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/65">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setIsTemplatesDialogOpen(true)}
+                    className="size-9 rounded-md hover:bg-accent/70"
+                    aria-label="Open starter templates"
+                  >
+                    <Wand2 className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Starter Templates</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="default"
+                      disabled={!isValidInputs || isPublishing}
+                      onClick={() => {
+                        if (!isValidInputs) return;
+                        void publishRelease();
+                      }}
+                      className="size-9 rounded-md shadow-sm"
+                      aria-label={isPublishing ? 'Publishing plugin' : 'Publish plugin'}
+                    >
+                      <CloudUpload className={isPublishing ? 'size-4 animate-pulse' : 'size-4'} />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {isPublishing ? 'Publishing...' : 'Publish Plugin'}
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </CardHeader>
           <CardContent className="grid gap-4">
             {parsed === null ? (
@@ -5471,11 +4951,13 @@ function PluginStudioPresenter({
             ) : (
               <AutoAdmin
                 tabs={livePreviewTabs}
+                tabOrder={tabOrder}
                 editable
                 onAddTable={handleAddSchema}
                 onAddGroup={handleAddGroup}
                 onReorderGroups={handleReorderGroups}
                 onMoveTabToGroup={handleMoveTabToGroup}
+                onReorderTabs={handleReorderTabs}
                 onRenameGroup={handleRenameGroup}
                 onDeleteGroup={handleDeleteGroup}
                 onRenameTab={handleRenameTab}
@@ -5489,6 +4971,14 @@ function PluginStudioPresenter({
             )}
           </CardContent>
         </Card>
+        <PluginStudioV3Tabs
+          schemaDocs={parsed?.schemaDocs ?? []}
+          workflows={parsed?.workflows ?? []}
+          actionManifest={parsed?.actionManifest ?? []}
+          diagnostics={v3PublishGateDiagnostics}
+          jobCount={workflowJobs.length}
+          eventLogCount={workflowEventLogs.length}
+        />
 
         <Sheet
           open={isAddColumnSheetOpen}
@@ -5511,9 +5001,9 @@ function PluginStudioPresenter({
             <div className="mt-4 grid gap-3">
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label htmlFor="add-column-key">Column key</Label>
+                  <Label htmlFor={addColumnKeyId}>Column key</Label>
                   <Input
-                    id="add-column-key"
+                    id={addColumnKeyId}
                     value={addColumnDraft.key}
                     onChange={(event) =>
                       setAddColumnDraft((current) => ({
@@ -5524,9 +5014,9 @@ function PluginStudioPresenter({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="add-column-label">Label</Label>
+                  <Label htmlFor={addColumnLabelId}>Label</Label>
                   <Input
-                    id="add-column-label"
+                    id={addColumnLabelId}
                     value={addColumnDraft.label}
                     onChange={(event) =>
                       setAddColumnDraft((current) => ({
@@ -5538,9 +5028,9 @@ function PluginStudioPresenter({
                 </div>
               </div>
               <div className="space-y-1">
-                <Label htmlFor="add-column-description">Description</Label>
+                <Label htmlFor={addColumnDescriptionId}>Description</Label>
                 <Input
-                  id="add-column-description"
+                  id={addColumnDescriptionId}
                   value={addColumnDraft.description}
                   onChange={(event) =>
                     setAddColumnDraft((current) => ({
@@ -5606,9 +5096,9 @@ function PluginStudioPresenter({
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label htmlFor="add-column-default">Default value</Label>
+                  <Label htmlFor={addColumnDefaultId}>Default value</Label>
                   <Input
-                    id="add-column-default"
+                    id={addColumnDefaultId}
                     value={addColumnDraft.defaultValue}
                     onChange={(event) =>
                       setAddColumnDraft((current) => ({
@@ -5619,9 +5109,9 @@ function PluginStudioPresenter({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="add-column-enum">Enum values</Label>
+                  <Label htmlFor={addColumnEnumId}>Enum values</Label>
                   <Input
-                    id="add-column-enum"
+                    id={addColumnEnumId}
                     value={addColumnDraft.enumValuesText}
                     onChange={(event) =>
                       setAddColumnDraft((current) => ({
@@ -5635,9 +5125,9 @@ function PluginStudioPresenter({
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
-                  <Label htmlFor="add-column-min">Min</Label>
+                  <Label htmlFor={addColumnMinId}>Min</Label>
                   <Input
-                    id="add-column-min"
+                    id={addColumnMinId}
                     value={addColumnDraft.min}
                     onChange={(event) =>
                       setAddColumnDraft((current) => ({
@@ -5648,9 +5138,9 @@ function PluginStudioPresenter({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="add-column-max">Max</Label>
+                  <Label htmlFor={addColumnMaxId}>Max</Label>
                   <Input
-                    id="add-column-max"
+                    id={addColumnMaxId}
                     value={addColumnDraft.max}
                     onChange={(event) =>
                       setAddColumnDraft((current) => ({
@@ -5801,9 +5291,9 @@ function PluginStudioPresenter({
             <div className="min-h-0 flex-1 overflow-y-auto pr-1 grid gap-3">
               <div className="grid gap-2 md:grid-cols-2">
                 <div className="space-y-1">
-                  <Label htmlFor="schema-editor-schema-id">Schema ID</Label>
+                  <Label htmlFor={schemaEditorSchemaIdInputId}>Schema ID</Label>
                   <Input
-                    id="schema-editor-schema-id"
+                    id={schemaEditorSchemaIdInputId}
                     value={schemaBuilder.schemaId}
                     onChange={(event) =>
                       setSchemaBuilder((current) => ({
@@ -5815,11 +5305,11 @@ function PluginStudioPresenter({
                   />
                 </div>
                 <div className="space-y-1">
-                  <Label htmlFor="schema-editor-schema-title">
+                  <Label htmlFor={schemaEditorSchemaTitleInputId}>
                     Schema title
                   </Label>
                   <Input
-                    id="schema-editor-schema-title"
+                    id={schemaEditorSchemaTitleInputId}
                     value={schemaBuilder.title}
                     onChange={(event) =>
                       setSchemaBuilder((current) => ({
@@ -7757,7 +7247,7 @@ function PluginStudioPresenter({
                 </p>
                 <div className="flex items-end gap-2">
                   <div className="space-y-1">
-                    <Label htmlFor="schema-field-logic-composer-field">
+                    <Label htmlFor={logicComposerFieldId}>
                       Field for logic composer
                     </Label>
                     <Select
@@ -7769,10 +7259,7 @@ function PluginStudioPresenter({
                         }))
                       }
                     >
-                      <SelectTrigger
-                        id="schema-field-logic-composer-field"
-                        className="w-[280px]"
-                      >
+                      <SelectTrigger id={logicComposerFieldId} className="w-[280px]">
                         <SelectValue placeholder="Field for logic composer" />
                       </SelectTrigger>
                       <SelectContent>
@@ -7894,12 +7381,12 @@ function PluginStudioPresenter({
                     </div>
                     <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto_auto_auto]">
                       <div className="space-y-1">
-                        <Label htmlFor="workflow-editor-selector">Workflow</Label>
+                        <Label htmlFor={workflowEditorSelectorId}>Workflow</Label>
                         <Select
                           value={workspaceWorkflow.workflowId}
                           onValueChange={(value) => setActiveWorkflowId(value)}
                         >
-                          <SelectTrigger id="workflow-editor-selector">
+                          <SelectTrigger id={workflowEditorSelectorId}>
                             <SelectValue placeholder="Select workflow" />
                           </SelectTrigger>
                           <SelectContent>
@@ -7948,11 +7435,11 @@ function PluginStudioPresenter({
                   </div>
                   <div className="grid gap-2 md:grid-cols-3">
                     <div className="space-y-1">
-                      <Label htmlFor="workflow-editor-workflow-id">
+                      <Label htmlFor={workflowEditorWorkflowIdInputId}>
                         Workflow ID
                       </Label>
                       <Input
-                        id="workflow-editor-workflow-id"
+                        id={workflowEditorWorkflowIdInputId}
                         value={workspaceWorkflow.workflowId}
                         onChange={(event) =>
                           updateActiveWorkflow((current) => ({
@@ -7964,11 +7451,11 @@ function PluginStudioPresenter({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="workflow-editor-table">
+                      <Label htmlFor={workflowEditorTableInputId}>
                         Connected schema ID
                       </Label>
                       <Input
-                        id="workflow-editor-table"
+                        id={workflowEditorTableInputId}
                         value={workflowEditorTable}
                         onChange={(event) => {
                           if (workflowEditorLockedTable) return;
@@ -7982,7 +7469,7 @@ function PluginStudioPresenter({
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="workflow-editor-hook">Hook</Label>
+                      <Label htmlFor={workflowEditorHookId}>Hook</Label>
                       <Select
                         value={workspaceWorkflow.hook}
                         onValueChange={(value) =>
@@ -7992,7 +7479,7 @@ function PluginStudioPresenter({
                           }))
                         }
                       >
-                        <SelectTrigger id="workflow-editor-hook">
+                        <SelectTrigger id={workflowEditorHookId}>
                           <SelectValue placeholder="Hook" />
                         </SelectTrigger>
                         <SelectContent>

@@ -1,10 +1,11 @@
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
+import type React from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
-import type { FieldWrapperProps } from './FieldWrapper';
+import type { AutoFormFieldProps } from '../react';
 
-export interface SliderFieldProps extends FieldWrapperProps {
+export interface SliderFieldProps extends AutoFormFieldProps {
   min?: number;
   max?: number;
   step?: number;
@@ -13,54 +14,73 @@ export interface SliderFieldProps extends FieldWrapperProps {
 }
 
 export function SliderField({
+  id,
   field,
-  label,
-  description,
+  value,
+  path,
+  inputProps,
   error,
   className,
-  min = 0,
-  max = 100,
-  step = 1,
   showInput = true,
-  ...props
+  ...rest
 }: SliderFieldProps) {
-  const value = Array.isArray(field.value) ? field.value[0] : field.value;
-  const numValue = Number(value) || min;
+  const {
+    onChange,
+    name,
+    min: inputMin,
+    max: inputMax,
+    step: inputStep,
+    ...props
+  } = inputProps;
+  const min = Number(inputMin ?? rest.min ?? 0);
+  const max = Number(inputMax ?? rest.max ?? 100);
+  const step = Number(inputStep ?? rest.step ?? 1);
+  const currentValue = Array.isArray(value) ? value[0] : value;
+  const parsedValue = Number(currentValue);
+  const numValue = Number.isFinite(parsedValue) ? parsedValue : min;
+  const form = useFormContext();
+
+  const commitValue = (nextValue: number) => {
+    const clampedValue = Math.min(Math.max(nextValue, min), max);
+    const syntheticEvent = {
+      target: {
+        name: name ?? path.join('.'),
+        value: clampedValue,
+      },
+    } as React.ChangeEvent<HTMLInputElement>;
+    onChange(syntheticEvent);
+    field.fieldConfig?.customData?.onValueChange?.(clampedValue, path, form);
+  };
 
   const handleSliderChange = (newValue: number[]) => {
-    field.onChange(newValue[0]);
+    commitValue(newValue[0] ?? min);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = Number(e.target.value);
-    if (!Number.isNaN(inputValue)) {
-      field.onChange(Math.min(Math.max(inputValue, min), max));
-    }
+    if (!Number.isNaN(inputValue)) commitValue(inputValue);
   };
 
   return (
     <div className={cn('space-y-2', className)}>
-      {label && (
-        <Label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-          {label}
-        </Label>
-      )}
-
       <div className="space-y-4">
         <Slider
+          id={id}
+          disabled={props.disabled}
           min={min}
           max={max}
           step={step}
+          name={name}
           value={[numValue]}
           onValueChange={handleSliderChange}
           className={error ? 'border-destructive' : ''}
-          {...props}
         />
 
         {showInput && (
           <div className="flex items-center gap-3">
             <Input
               type="number"
+              disabled={props.disabled}
               min={min}
               max={max}
               step={step}
@@ -80,13 +100,6 @@ export function SliderField({
           <span>{max}</span>
         </div>
       </div>
-
-      {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
-      )}
-      {error && (
-        <p className="text-sm font-medium text-destructive">{error.message}</p>
-      )}
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import type { SchemaKeys } from '@gta/react-hooks';
+import { useMemo } from 'react';
 import { api } from '@/lib/api';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
@@ -34,7 +36,13 @@ export function useBusinessConfigState({
   const releaseRowsQuery = api.pluginRelease.useGet();
 
   const installs = (installRowsQuery.data ?? []) as BusinessPluginInstallDoc[];
-  const releases = (releaseRowsQuery.data ?? []) as PluginReleaseDoc[];
+  const releases = useMemo(
+    () =>
+      mergeMarketplaceReleasesWithSeed(
+        (releaseRowsQuery.data ?? []) as PluginReleaseDoc[],
+      ),
+    [releaseRowsQuery.data],
+  );
   const tabs = resolveInstallDrivenTabs({
     businessId: scopedBusinessId,
     businessSlug: slug,
@@ -53,6 +61,8 @@ export function useBusinessConfigState({
   };
 }
 
-export function useBusinessConfig(input: UseBusinessConfigInput): AnyAutoTableTab[] {
+export function useBusinessConfig(
+  input: UseBusinessConfigInput,
+): AnyAutoTableTab[] {
   return useBusinessConfigState(input).tabs;
 }

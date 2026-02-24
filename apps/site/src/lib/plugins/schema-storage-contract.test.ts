@@ -224,7 +224,6 @@ describe('plugin storage schema contracts', () => {
           order: 0,
         },
       ],
-      diagnostics: [],
       savedByUserId: 'owner-1',
       savedAt: '2026-01-01T00:00:00.000Z',
     });

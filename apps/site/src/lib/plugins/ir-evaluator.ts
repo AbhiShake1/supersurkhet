@@ -15,7 +15,17 @@ export type EvaluateExpressionOptions = {
 };
 
 export class ExpressionEvaluationError extends Error {
-  constructor(message: string) {
+  constructor(
+    message: string,
+    readonly code:
+      | 'MAX_DEPTH'
+      | 'MAX_NODES'
+      | 'TIMEOUT'
+      | 'INVALID_NODE'
+      | 'UNSUPPORTED_KIND'
+      | 'UNSUPPORTED_OP'
+      | 'INVALID_REGEX' = 'INVALID_NODE',
+  ) {
     super(message);
     this.name = 'ExpressionEvaluationError';
   }
@@ -44,6 +54,16 @@ function asNumber(value: unknown) {
   return Number.isFinite(numeric) ? numeric : 0;
 }
 
+function normalizePathArg(pathArg: unknown): string[] {
+  if (Array.isArray(pathArg)) {
+    return pathArg.map((segment) => String(segment));
+  }
+  if (typeof pathArg === 'string') {
+    return pathArg.split('.').filter(Boolean);
+  }
+  return [];
+}
+
 type WalkState = {
   visitedNodes: number;
   startedAtMs: number;
@@ -66,17 +86,20 @@ export function evaluateExpression(
     if (depth > maxDepth) {
       throw new ExpressionEvaluationError(
         `Expression exceeded max depth (${maxDepth})`,
+        'MAX_DEPTH',
       );
     }
     state.visitedNodes += 1;
     if (state.visitedNodes > maxNodes) {
       throw new ExpressionEvaluationError(
         `Expression exceeded max node count (${maxNodes})`,
+        'MAX_NODES',
       );
     }
     if (Date.now() - state.startedAtMs > timeoutMs) {
       throw new ExpressionEvaluationError(
         `Expression exceeded timeout (${timeoutMs}ms)`,
+        'TIMEOUT',
       );
     }
 
@@ -89,7 +112,7 @@ export function evaluateExpression(
       return node;
     }
     if (!isExpressionObject(node)) {
-      throw new ExpressionEvaluationError('Invalid expression node');
+      throw new ExpressionEvaluationError('Invalid expression node', 'INVALID_NODE');
     }
 
     if (node.kind === 'ref') {
@@ -125,6 +148,7 @@ export function evaluateExpression(
     if (node.kind !== 'op') {
       throw new ExpressionEvaluationError(
         `Unsupported expression node kind "${(node as { kind: string }).kind}"`,
+        'UNSUPPORTED_KIND',
       );
     }
 
@@ -168,9 +192,51 @@ export function evaluateExpression(
         return args.reduce<number>((sum, value) => sum + asNumber(value), 0);
       case 'if':
         return args[0] ? args[1] : args[2];
+      case 'changed': {
+        const path = normalizePathArg(args[0]);
+        if (path.length === 0) {
+          return args[0] !== args[1];
+        }
+        return (
+          getValueAtPath(context.sourceRow, path) !==
+          getValueAtPath(context.row, path)
+        );
+      }
+      case 'was': {
+        const path = normalizePathArg(args[0]);
+        return path.length ? getValueAtPath(context.sourceRow, path) : context.sourceRow;
+      }
+      case 'now': {
+        const path = normalizePathArg(args[0]);
+        return path.length ? getValueAtPath(context.row, path) : context.row;
+      }
+      case 'exists': {
+        const path = normalizePathArg(args[0]);
+        if (!path.length) {
+          return args[0] !== null && args[0] !== undefined;
+        }
+        const value =
+          getValueAtPath(context.row, path) ??
+          getValueAtPath(context.sourceRow, path) ??
+          getValueAtPath(context.payload, path);
+        return value !== null && value !== undefined;
+      }
+      case 'match': {
+        const value = String(args[0] ?? '');
+        const pattern = String(args[1] ?? '');
+        try {
+          return new RegExp(pattern).test(value);
+        } catch {
+          throw new ExpressionEvaluationError(
+            `Invalid regex pattern "${pattern}"`,
+            'INVALID_REGEX',
+          );
+        }
+      }
       default:
         throw new ExpressionEvaluationError(
           `Unsupported expression op "${node.op}"`,
+          'UNSUPPORTED_OP',
         );
     }
   }

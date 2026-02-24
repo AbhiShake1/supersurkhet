@@ -207,7 +207,12 @@ export type ExpressionOpDoc = {
     | 'coalesce'
     | 'concat'
     | 'sum'
-    | 'if';
+    | 'if'
+    | 'changed'
+    | 'was'
+    | 'now'
+    | 'exists'
+    | 'match';
   args: ExpressionDoc[];
 };
 
@@ -311,10 +316,21 @@ export type WorkflowNodeInputDoc =
 
 export type WorkflowNodeDoc = {
   nodeId: string;
-  type: 'action';
-  actionId: string;
+  /**
+   * @deprecated V2 legacy field. Use kind in V3 contracts.
+   */
+  type?: 'action';
+  kind?: 'action' | 'branch' | 'delay' | 'humanGate';
+  actionId?: string;
   input?: WorkflowNodeInputDoc;
   runIf?: ExpressionDoc;
+  retryPolicy?: {
+    maxAttempts: number;
+    backoffMs?: number;
+  };
+  timeoutMs?: number;
+  idempotencyKeyExpr?: ExpressionDoc;
+  delayMs?: number;
 };
 
 export type WorkflowEdgeDoc = {
@@ -322,15 +338,124 @@ export type WorkflowEdgeDoc = {
   to: string;
   condition?: ExpressionDoc;
   conditionToken?: string;
+  on?: 'success' | 'failure' | 'always';
 };
 
 export type WorkflowDoc = {
+  pluginContractVersion?: '3';
   workflowId: string;
   title?: string;
   table: string;
   hook: LifecycleHook;
+  trigger?: {
+    table: string;
+    event: LifecycleHook;
+    filters?: ExpressionDoc;
+    fieldChange?: Record<string, ExpressionDoc>;
+  };
   nodes: WorkflowNodeDoc[];
   edges: WorkflowEdgeDoc[];
+};
+
+export type ActionDefinitionV3 = {
+  actionId: string;
+  runtime: 'sandbox-worker' | 'core';
+  capabilities?: string[];
+  inputSchema?: JsonValue;
+  outputSchema?: JsonValue;
+  handlerRef: string;
+  security: {
+    networkPolicy?: 'deny-all' | 'allow-listed';
+    secretRefs?: string[];
+    maxCpuMs?: number;
+    maxMemoryMb?: number;
+  };
+};
+
+export type ExecutionContextV3 = {
+  event: {
+    businessId: string;
+    teamId?: string;
+    pluginId?: string;
+    workflowId?: string;
+    table: string;
+    hook: LifecycleHook;
+    requestId?: string;
+  };
+  record: {
+    before?: unknown;
+    after?: unknown;
+    patch?: unknown;
+    rowId?: string;
+  };
+  workflow: {
+    nodeOutputs: Record<string, unknown>;
+    attempt: number;
+    jobId?: string;
+    scheduledAt?: string;
+  };
+  helpers?: {
+    getSecret?: (ref: string) => Promise<string | undefined>;
+    log?: (entry: { level: 'info' | 'warn' | 'error'; message: string }) => void;
+    emit?: (event: { type: string; payload?: JsonValue }) => Promise<void>;
+  };
+};
+
+export type PluginWorkflowJob = {
+  id: string;
+  businessId: string;
+  pluginId: string;
+  workflowId: string;
+  table: string;
+  hook: LifecycleHook;
+  status:
+    | 'queued'
+    | 'leased'
+    | 'running'
+    | 'completed'
+    | 'failed'
+    | 'dead-lettered'
+    | 'cancelled';
+  idempotencyKey: string;
+  fingerprint: string;
+  payload: JsonValue;
+  attempts: number;
+  nextRunAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PluginWorkflowJobAttempt = {
+  id: string;
+  jobId: string;
+  attempt: number;
+  status: 'running' | 'completed' | 'failed' | 'timed_out' | 'cancelled';
+  leasedAt: string;
+  finishedAt?: string;
+  errorCode?: string;
+  errorMessage?: string;
+};
+
+export type PluginWorkflowEventLog = {
+  id: string;
+  jobId: string;
+  workflowId: string;
+  nodeId?: string;
+  level: 'info' | 'warn' | 'error';
+  eventType: string;
+  message: string;
+  data?: JsonValue;
+  createdAt: string;
+};
+
+export type PluginWorkflowDeadLetter = {
+  id: string;
+  jobId: string;
+  workflowId: string;
+  reasonCode: string;
+  reasonMessage: string;
+  payload: JsonValue;
+  failedAt: string;
 };
 
 export type PluginReleaseDoc = {

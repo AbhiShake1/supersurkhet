@@ -13,8 +13,10 @@ import { NotFound } from '@/components/ui/not-found';
 import { useBusinessConfigState } from '@/config/business-config';
 import { BusinessProvider } from '@/contexts/business-context';
 import { api } from '@/lib/api';
+import { hasBusinessAccess } from '@/lib/business-access';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
+  mergeMarketplaceReleasesWithSeed,
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
@@ -39,10 +41,7 @@ export const Route = createFileRoute('/$businessName/admin/')({
     if (isLoading || isUserLoading) {
       return (
         <div className="items-center justify-center w-screen h-screen flex">
-          <Loader2
-            className="animate-spin size-8"
-            aria-label="Loading..."
-          />
+          <Loader2 className="animate-spin size-8" aria-label="Loading..." />
         </div>
       );
     }
@@ -55,12 +54,23 @@ export const Route = createFileRoute('/$businessName/admin/')({
       return <NotFound />;
     }
 
+    if (!hasBusinessAccess(business, user)) {
+      return <NotFound />;
+    }
+
     return (
       <BusinessProvider business={business}>
         <Child
           businessName={businessName}
           businessId={business.id}
           actorUserId={user._?.soul ?? 'anon'}
+          actorRole={
+            business?.members?.[user._?.soul ?? 'anon']?.role === 'owner'
+              ? 'owner'
+              : user?.role === 'admin'
+                ? 'admin'
+                : 'staff'
+          }
         />
       </BusinessProvider>
     );
@@ -71,10 +81,12 @@ function Child({
   businessName,
   businessId,
   actorUserId,
+  actorRole,
 }: {
   businessName: string;
   businessId: string;
   actorUserId: string;
+  actorRole: 'owner' | 'admin' | 'staff';
 }) {
   const { tabs: config, isLoading: isConfigLoading } = useBusinessConfigState({
     slug: businessName,
@@ -97,6 +109,7 @@ function Child({
           businessId={businessId}
           businessName={businessName}
           actorUserId={actorUserId}
+          actorRole={actorRole}
         />
       </div>
     );
@@ -111,10 +124,12 @@ function PluginOnboarding({
   businessId,
   businessName,
   actorUserId,
+  actorRole,
 }: {
   businessId: string;
   businessName: string;
   actorUserId: string;
+  actorRole: 'owner' | 'admin' | 'staff';
 }) {
   const [query, setQuery] = useState('');
   const [installingReleaseIds, setInstallingReleaseIds] = useState<string[]>(
@@ -122,7 +137,7 @@ function PluginOnboarding({
   );
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const releases = useMemo(
-    () => releaseRows as PluginReleaseDoc[],
+    () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
   );
 
@@ -148,11 +163,11 @@ function PluginOnboarding({
       await installPluginRelease({
         data: {
           actorUserId,
-          actorRole: 'owner',
+          actorRole,
           businessId,
           pluginId: releaseParts.pluginId,
           version: releaseParts.version,
-          explicitOwnerAction: true,
+          explicitOwnerAction: actorRole === 'owner',
         },
       });
       toast.success('Plugin installed. Your dashboard is ready.');

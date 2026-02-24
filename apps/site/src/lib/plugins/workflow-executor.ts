@@ -4,14 +4,13 @@ import { runSandboxedAction } from '@/lib/plugins/sandbox-runner';
 import type {
   BusinessPluginDraftInstallDoc,
   BusinessPluginInstallDoc,
-  ExpressionDoc,
   ExecuteLifecycleHookInput,
   ExecuteLifecycleHookResult,
   PluginDraftRevisionDoc,
   PluginReleaseDoc,
+  WorkflowDoc,
   WorkflowNodeDoc,
 } from '@/lib/plugins/types';
-import { compileWorkflowDoc } from '@/lib/plugins/workflow-compiler';
 
 export class HashVerificationError extends Error {
   constructor(install: BusinessPluginInstallDoc, release: PluginReleaseDoc) {
@@ -58,9 +57,56 @@ export type ExecuteLifecycleWithRegistryInput = ExecuteLifecycleHookInput & {
   registry: PluginRuntimeRegistry;
 };
 
+type NormalizedEnvelope = {
+  requestId?: string;
+  rowId?: string;
+  before?: unknown;
+  after?: unknown;
+  patch?: unknown;
+};
+
+function normalizeEnvelope(input: ExecuteLifecycleHookInput): NormalizedEnvelope {
+  if (input.envelope) {
+    return input.envelope;
+  }
+
+  return {
+    after: input.payload,
+    patch: input.payload,
+  };
+}
+
+function buildExpressionContext(args: {
+  payload: unknown;
+  businessId: string;
+  table: string;
+  hook: ExecuteLifecycleHookInput['hook'];
+  envelope: NormalizedEnvelope;
+  nodeOutputs?: Record<string, unknown>;
+}) {
+  return {
+    payload: args.payload,
+    formValues: args.payload,
+    context: {
+      businessId: args.businessId,
+      table: args.table,
+      hook: args.hook,
+      event: {
+        requestId: args.envelope.requestId,
+        rowId: args.envelope.rowId,
+      },
+      workflow: {
+        nodeOutputs: args.nodeOutputs ?? {},
+      },
+    },
+    sourceRow: args.envelope.before,
+    row: args.envelope.after ?? args.payload,
+  };
+}
+
 function hasExpressionInput(
   input: WorkflowNodeDoc['input'],
-): input is { expression: ExpressionDoc } {
+): input is { expression: WorkflowDoc['edges'][number]['condition'] } {
   return (
     !!input &&
     typeof input === 'object' &&
@@ -69,82 +115,306 @@ function hasExpressionInput(
   );
 }
 
-function resolveNodeInput(node: WorkflowNodeDoc, payload: unknown) {
+function resolveNodeInput(
+  node: WorkflowNodeDoc,
+  expressionContext: ReturnType<typeof buildExpressionContext>,
+  payload: unknown,
+) {
   if (hasExpressionInput(node.input)) {
-    return evaluateExpression(node.input.expression, {
-      payload,
-      formValues: payload,
-    });
+    return evaluateExpression(node.input.expression, expressionContext);
   }
   return node.input ?? payload;
 }
 
-async function executeWorkflowNodes({
-  compiledNodes,
+function toNodeKind(node: WorkflowNodeDoc): NonNullable<WorkflowNodeDoc['kind']> {
+  return node.kind ?? node.type ?? 'action';
+}
+
+function toOn(edgeOn: WorkflowDoc['edges'][number]['on'], success: boolean) {
+  if (edgeOn === 'always') return true;
+  if (edgeOn === 'failure') return !success;
+  if (edgeOn === 'success') return success;
+  return success;
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs?: number,
+): Promise<T> {
+  if (!timeoutMs || timeoutMs <= 0) {
+    return promise;
+  }
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(() => {
+          reject(new Error(`Node timed out after ${timeoutMs}ms`));
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+async function sleep(ms: number) {
+  if (ms <= 0) return;
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function executeNodeWithPolicy(args: {
+  node: WorkflowNodeDoc;
+  run: () => Promise<unknown>;
+}): Promise<unknown> {
+  const maxAttempts = Math.max(args.node.retryPolicy?.maxAttempts ?? 1, 1);
+  const baseBackoffMs = Math.max(args.node.retryPolicy?.backoffMs ?? 0, 0);
+  let attempt = 0;
+  let lastError: unknown;
+
+  while (attempt < maxAttempts) {
+    attempt += 1;
+    try {
+      return await withTimeout(args.run(), args.node.timeoutMs);
+    } catch (error) {
+      lastError = error;
+      if (attempt >= maxAttempts) {
+        break;
+      }
+      const backoffMs = baseBackoffMs * 2 ** (attempt - 1);
+      await sleep(backoffMs);
+    }
+  }
+
+  throw lastError ?? new Error('Node execution failed');
+}
+
+function matchesWorkflowTrigger(args: {
+  workflow: WorkflowDoc;
+  table: string;
+  hook: ExecuteLifecycleHookInput['hook'];
+  payload: unknown;
+  businessId: string;
+  envelope: NormalizedEnvelope;
+}): boolean {
+  const { workflow, table, hook, payload, businessId, envelope } = args;
+  const triggerTable = workflow.trigger?.table ?? workflow.table;
+  const triggerEvent = workflow.trigger?.event ?? workflow.hook;
+
+  if (triggerTable !== table || triggerEvent !== hook) {
+    return false;
+  }
+
+  if (!workflow.trigger) {
+    return true;
+  }
+
+  const expressionContext = buildExpressionContext({
+    payload,
+    businessId,
+    table,
+    hook,
+    envelope,
+  });
+
+  if (workflow.trigger.filters) {
+    const passesFilter = Boolean(
+      evaluateExpression(workflow.trigger.filters, expressionContext),
+    );
+    if (!passesFilter) {
+      return false;
+    }
+  }
+
+  for (const predicate of Object.values(workflow.trigger.fieldChange ?? {})) {
+    const passesPredicate = Boolean(evaluateExpression(predicate, expressionContext));
+    if (!passesPredicate) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+async function executeWorkflowGraph({
+  workflow,
   actionHandlers,
+  actionManifestById,
   businessId,
   table,
   hook,
   payload,
-  actionManifestById,
+  envelope,
   executedNodeIds,
   actionOutputsByNodeId,
 }: {
-  compiledNodes: WorkflowNodeDoc[];
+  workflow: WorkflowDoc;
   actionHandlers: ExecuteLifecycleHookInput['actionHandlers'];
-  businessId: string;
-  table: string;
-  hook: ExecuteLifecycleHookInput['hook'];
-  payload: unknown;
   actionManifestById: Record<
     string,
     {
       capabilities?: string[];
     }
   >;
+  businessId: string;
+  table: string;
+  hook: ExecuteLifecycleHookInput['hook'];
+  payload: unknown;
+  envelope: NormalizedEnvelope;
   executedNodeIds: string[];
   actionOutputsByNodeId: Record<string, unknown>;
 }) {
-  for (const node of compiledNodes) {
-    if (node.runIf) {
-      const shouldRun = Boolean(
-        evaluateExpression(node.runIf, {
-          payload,
-          formValues: payload,
-          context: {
-            businessId,
-            table,
-            hook,
-          },
-        }),
+  const nodeById = new Map(workflow.nodes.map((node) => [node.nodeId, node]));
+  const indegree = new Map<string, number>();
+  const outgoing = new Map<string, WorkflowDoc['edges']>();
+
+  for (const node of workflow.nodes) {
+    indegree.set(node.nodeId, 0);
+    outgoing.set(node.nodeId, []);
+  }
+
+  for (const edge of workflow.edges) {
+    if (!nodeById.has(edge.from) || !nodeById.has(edge.to)) {
+      continue;
+    }
+    indegree.set(edge.to, (indegree.get(edge.to) ?? 0) + 1);
+    outgoing.get(edge.from)?.push(edge);
+  }
+
+  const queue = workflow.nodes
+    .filter((node) => (indegree.get(node.nodeId) ?? 0) === 0)
+    .map((node) => node.nodeId);
+  const enqueued = new Set(queue);
+  const idempotencyOutputs = new Map<string, unknown>();
+
+  while (queue.length > 0) {
+    const nodeId = queue.shift();
+    if (!nodeId) {
+      continue;
+    }
+
+    const node = nodeById.get(nodeId);
+    if (!node) {
+      continue;
+    }
+
+    const expressionContext = buildExpressionContext({
+      payload,
+      businessId,
+      table,
+      hook,
+      envelope,
+      nodeOutputs: actionOutputsByNodeId,
+    });
+
+    let success = true;
+
+    try {
+      if (node.runIf) {
+        const shouldRun = Boolean(evaluateExpression(node.runIf, expressionContext));
+        if (!shouldRun) {
+          continue;
+        }
+      }
+
+      const nodeKind = toNodeKind(node);
+      let output: unknown = null;
+
+      if (nodeKind === 'action') {
+        if (!node.actionId) {
+          throw new Error(`Workflow node "${node.nodeId}" missing actionId`);
+        }
+
+        const idempotencyKey = node.idempotencyKeyExpr
+          ? String(evaluateExpression(node.idempotencyKeyExpr, expressionContext) ?? '')
+          : '';
+
+        if (idempotencyKey && idempotencyOutputs.has(idempotencyKey)) {
+          output = idempotencyOutputs.get(idempotencyKey);
+        } else {
+          const handler = actionHandlers[node.actionId];
+          if (!handler) {
+            throw new Error(`No action handler registered for "${node.actionId}"`);
+          }
+
+          const requiredCapabilities =
+            actionManifestById[node.actionId]?.capabilities ?? [];
+
+          output = await executeNodeWithPolicy({
+            node,
+            run: async () =>
+              runSandboxedAction({
+                actionId: node.actionId,
+                handler,
+                input: resolveNodeInput(node, expressionContext, payload),
+                context: {
+                  businessId,
+                  table,
+                  hook,
+                  payload,
+                  capabilities: requiredCapabilities,
+                  event: {
+                    businessId,
+                    table,
+                    hook,
+                    requestId: envelope.requestId,
+                    rowId: envelope.rowId,
+                  },
+                  record: {
+                    before: envelope.before,
+                    after: envelope.after,
+                    patch: envelope.patch,
+                    rowId: envelope.rowId,
+                  },
+                  workflow: {
+                    nodeOutputs: actionOutputsByNodeId,
+                    attempt: 1,
+                  },
+                },
+                requiredCapabilities,
+              }),
+          });
+
+          if (idempotencyKey) {
+            idempotencyOutputs.set(idempotencyKey, output);
+          }
+        }
+      } else if (nodeKind === 'delay') {
+        await sleep(Math.max(node.delayMs ?? 0, 0));
+      }
+
+      executedNodeIds.push(node.nodeId);
+      actionOutputsByNodeId[node.nodeId] = output;
+    } catch (error) {
+      success = false;
+
+      const failureEdges = (outgoing.get(node.nodeId) ?? []).filter((edge) =>
+        toOn(edge.on, false),
       );
-      if (!shouldRun) {
-        continue;
+
+      if (failureEdges.length === 0) {
+        throw error;
       }
     }
 
-    const handler = actionHandlers[node.actionId];
-    if (!handler) {
-      throw new Error(`No action handler registered for "${node.actionId}"`);
+    const candidateEdges = (outgoing.get(node.nodeId) ?? []).filter((edge) =>
+      toOn(edge.on, success),
+    );
+
+    for (const edge of candidateEdges) {
+      const shouldFollow = edge.condition
+        ? Boolean(evaluateExpression(edge.condition, expressionContext))
+        : true;
+
+      if (!shouldFollow || enqueued.has(edge.to)) {
+        continue;
+      }
+
+      enqueued.add(edge.to);
+      queue.push(edge.to);
     }
-
-    const requiredCapabilities = actionManifestById[node.actionId]?.capabilities ?? [];
-    const output = await runSandboxedAction({
-      actionId: node.actionId,
-      handler,
-      input: resolveNodeInput(node, payload),
-      context: {
-        businessId,
-        table,
-        hook,
-        payload,
-        capabilities: requiredCapabilities,
-      },
-      requiredCapabilities,
-    });
-
-    executedNodeIds.push(node.nodeId);
-    actionOutputsByNodeId[node.nodeId] = output;
   }
 }
 
@@ -154,9 +424,16 @@ export async function executeLifecycleHook({
   table,
   hook,
   payload,
+  envelope: envelopeInput,
   teamId,
   actionHandlers,
 }: ExecuteLifecycleWithRegistryInput): Promise<ExecuteLifecycleHookResult> {
+  const envelope = envelopeInput ?? {
+    after: payload,
+    patch: payload,
+  };
+  const normalizedPayload = payload ?? envelope.after ?? envelope.patch;
+
   const resolvedReleases = registry.getResolvedInstalledReleasesForBusiness({
     businessId,
   });
@@ -170,19 +447,26 @@ export async function executeLifecycleHook({
   for (const { install, release } of resolvedReleases) {
     verifyInstallHashes(install, release);
     const matchingWorkflows =
-      release.workflows?.filter(
-        (workflow) => workflow.table === table && workflow.hook === hook,
+      release.workflows?.filter((workflow) =>
+        matchesWorkflowTrigger({
+          workflow,
+          table,
+          hook,
+          payload: normalizedPayload,
+          businessId,
+          envelope,
+        }),
       ) ?? [];
 
     for (const workflow of matchingWorkflows) {
-      const compiled = compileWorkflowDoc(workflow);
-      await executeWorkflowNodes({
-        compiledNodes: compiled.orderedNodes,
+      await executeWorkflowGraph({
+        workflow,
         actionHandlers,
         businessId,
         table,
         hook,
-        payload,
+        payload: normalizedPayload,
+        envelope,
         actionManifestById: Object.fromEntries(
           release.actionManifest.map((entry) => [entry.actionId, entry]),
         ),
@@ -195,19 +479,26 @@ export async function executeLifecycleHook({
   for (const { install, revision } of resolvedDraftInstalls) {
     verifyDraftInstallHashes(install, revision);
     const matchingWorkflows =
-      revision.workflows?.filter(
-        (workflow) => workflow.table === table && workflow.hook === hook,
+      revision.workflows?.filter((workflow) =>
+        matchesWorkflowTrigger({
+          workflow,
+          table,
+          hook,
+          payload: normalizedPayload,
+          businessId,
+          envelope,
+        }),
       ) ?? [];
 
     for (const workflow of matchingWorkflows) {
-      const compiled = compileWorkflowDoc(workflow);
-      await executeWorkflowNodes({
-        compiledNodes: compiled.orderedNodes,
+      await executeWorkflowGraph({
+        workflow,
         actionHandlers,
         businessId,
         table,
         hook,
-        payload,
+        payload: normalizedPayload,
+        envelope,
         actionManifestById: {},
         executedNodeIds,
         actionOutputsByNodeId,
@@ -219,4 +510,21 @@ export async function executeLifecycleHook({
     executedNodeIds,
     actionOutputsByNodeId,
   };
+}
+
+export function createLifecycleEnvelope(input: {
+  requestId?: string;
+  rowId?: string;
+  before?: unknown;
+  after?: unknown;
+  patch?: unknown;
+}) {
+  return normalizeEnvelope({
+    businessId: 'n/a',
+    table: 'n/a',
+    hook: 'beforeCreate',
+    payload: input.after,
+    envelope: input,
+    actionHandlers: {},
+  });
 }

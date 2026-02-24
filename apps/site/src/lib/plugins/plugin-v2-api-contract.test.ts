@@ -10,6 +10,11 @@ describe('plugin v2 api scaffolding contracts', () => {
     expect(transformed.shape).toHaveProperty('pluginUserReview');
     expect(transformed.shape).toHaveProperty('pluginActionCapabilityEnvelope');
     expect(transformed.shape).toHaveProperty('pluginRoutesTabsConfig');
+    expect(transformed.shape).toHaveProperty('pluginActionDefinitionV3');
+    expect(transformed.shape).toHaveProperty('pluginWorkflowJob');
+    expect(transformed.shape).toHaveProperty('pluginWorkflowJobAttempt');
+    expect(transformed.shape).toHaveProperty('pluginWorkflowEventLog');
+    expect(transformed.shape).toHaveProperty('pluginWorkflowDeadLetter');
   });
 
   it('exposes new plugin v2 tables in ssr db adapter', () => {
@@ -18,5 +23,10 @@ describe('plugin v2 api scaffolding contracts', () => {
     expect(db).toHaveProperty('pluginUserReview');
     expect(db).toHaveProperty('pluginActionCapabilityEnvelope');
     expect(db).toHaveProperty('pluginRoutesTabsConfig');
+    expect(db).toHaveProperty('pluginActionDefinitionV3');
+    expect(db).toHaveProperty('pluginWorkflowJob');
+    expect(db).toHaveProperty('pluginWorkflowJobAttempt');
+    expect(db).toHaveProperty('pluginWorkflowEventLog');
+    expect(db).toHaveProperty('pluginWorkflowDeadLetter');
   });
 });

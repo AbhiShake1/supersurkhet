@@ -25,6 +25,7 @@ import {
   pluginProjectMemberSchema,
   pluginProjectSchema,
   pluginActionCapabilityEnvelopeSchema,
+  pluginActionDefinitionV3Schema,
   pluginActionManifestDocStorageSchema,
   pluginDraftRevisionSchema,
   pluginDraftSchema,
@@ -35,6 +36,10 @@ import {
   pluginSchemaDocStorageSchema,
   pluginUserReviewSchema,
   pluginV2DiagnosticsSchema,
+  pluginWorkflowDeadLetterSchema,
+  pluginWorkflowEventLogSchema,
+  pluginWorkflowJobAttemptSchema,
+  pluginWorkflowJobSchema,
   pluginWorkflowDocStorageSchema,
 } from './schema/plugins';
 import type {
@@ -370,6 +375,36 @@ export const coreSchema = createSchema({
     icon: List,
     group: 'Plugin Platform',
   },
+  pluginActionDefinitionV3: {
+    schema: pluginActionDefinitionV3Schema,
+    title: 'Plugin Action Definitions V3',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  pluginWorkflowJob: {
+    schema: pluginWorkflowJobSchema,
+    title: 'Plugin Workflow Jobs',
+    icon: Clock,
+    group: 'Plugin Platform',
+  },
+  pluginWorkflowJobAttempt: {
+    schema: pluginWorkflowJobAttemptSchema,
+    title: 'Plugin Workflow Job Attempts',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  pluginWorkflowEventLog: {
+    schema: pluginWorkflowEventLogSchema,
+    title: 'Plugin Workflow Event Logs',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  pluginWorkflowDeadLetter: {
+    schema: pluginWorkflowDeadLetterSchema,
+    title: 'Plugin Workflow Dead Letters',
+    icon: Lock,
+    group: 'Plugin Platform',
+  },
 });
 
 export const featureSchema = createSchema({
@@ -576,6 +611,11 @@ export type PluginUserReview = InferredTable<'pluginUserReview'>;
 export type PluginActionCapabilityEnvelope =
   InferredTable<'pluginActionCapabilityEnvelope'>;
 export type PluginRoutesTabsConfig = InferredTable<'pluginRoutesTabsConfig'>;
+export type PluginActionDefinitionV3 = InferredTable<'pluginActionDefinitionV3'>;
+export type PluginWorkflowJob = InferredTable<'pluginWorkflowJob'>;
+export type PluginWorkflowJobAttempt = InferredTable<'pluginWorkflowJobAttempt'>;
+export type PluginWorkflowEventLog = InferredTable<'pluginWorkflowEventLog'>;
+export type PluginWorkflowDeadLetter = InferredTable<'pluginWorkflowDeadLetter'>;
 // #endregion
 
 export {
@@ -583,6 +623,7 @@ export {
   businessPluginInstallSchema,
   compilePluginSchemasFromDocs,
   pluginActionCapabilityEnvelopeSchema,
+  pluginActionDefinitionV3Schema,
   pluginActionManifestDocStorageSchema,
   pluginDraftRevisionSchema,
   pluginDraftSchema,
@@ -593,6 +634,10 @@ export {
   pluginSchemaDocStorageSchema,
   pluginUserReviewSchema,
   pluginV2DiagnosticsSchema,
+  pluginWorkflowDeadLetterSchema,
+  pluginWorkflowEventLogSchema,
+  pluginWorkflowJobAttemptSchema,
+  pluginWorkflowJobSchema,
   pluginWorkflowDocStorageSchema,
 } from './schema/plugins';
 

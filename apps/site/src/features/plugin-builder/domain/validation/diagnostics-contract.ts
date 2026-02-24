@@ -26,6 +26,7 @@ const ERROR_DIAGNOSTIC_CODES = new Set<PluginBuildDiagnosticCode>([
   'missing-edge-from',
   'missing-edge-to',
   'edge-node-not-found',
+  'missing-branch-condition',
   'cycle-detected',
   'unknown-action',
   'runtime-target-mismatch',

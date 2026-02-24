@@ -84,11 +84,13 @@ import {
 import { CopyPromptButton } from '@/components/ui/ui-builder/copy-prompt-button';
 import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
 import { api } from '@/lib/api';
+import { hasBusinessAccess } from '@/lib/business-access';
 import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
 import { useContextData } from '@/lib/ui-builder/context/context-data-store';
 import { complexComponentDefinitions } from '@/lib/ui-builder/registry/complex-component-definitions';
 import { primitiveComponentDefinitions } from '@/lib/ui-builder/registry/primitive-component-definitions';
 import { zodToJsonSchema } from '@/lib/zod/zod-to-json-schema';
+import { NotFound } from '@/components/ui/not-found';
 
 const componentRegistry = {
   ...primitiveComponentDefinitions,
@@ -560,6 +562,7 @@ Provide the complete UI configuration in JSON format as your response. Do not in
   if (isLoading) return <Spinner />;
 
   if (!user) return null;
+  if (!hasBusinessAccess(_business, user)) return <NotFound />;
 
   const currentLayers = _business?.uiBuilder?.layers;
   function tryParse(str: string) {

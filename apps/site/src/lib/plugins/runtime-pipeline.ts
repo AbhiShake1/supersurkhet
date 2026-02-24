@@ -1,4 +1,5 @@
 import { SSRGetTimeoutError, get as ssrGet } from '@/lib/gun/ssr/get';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import { createPluginRuntimeRegistry } from '@/lib/plugins/runtime-registry';
 import type {
   BusinessPluginDraftInstallDoc,
@@ -22,12 +23,20 @@ export async function runLifecycleHookPipeline({
   table,
   hook,
   payload,
+  envelope,
 }: {
   businessId?: string;
   teamId?: string;
   table: string;
   hook: LifecycleHook;
   payload: unknown;
+  envelope?: {
+    requestId?: string;
+    rowId?: string;
+    before?: unknown;
+    after?: unknown;
+    patch?: unknown;
+  };
 }) {
   if (!businessId) return;
 
@@ -43,7 +52,9 @@ export async function runLifecycleHookPipeline({
       readRowsWithTimeoutFallback(() => ssrGet('pluginDraftRevision')),
     ]);
   const installs = installRows as BusinessPluginInstallDoc[];
-  const releases = releaseRows as PluginReleaseDoc[];
+  const releases = mergeMarketplaceReleasesWithSeed(
+    releaseRows as PluginReleaseDoc[],
+  );
   const draftInstalls = draftInstallRows as BusinessPluginDraftInstallDoc[];
   const draftRevisions = draftRevisionRows as PluginDraftRevisionDoc[];
   const registry = createPluginRuntimeRegistry({
@@ -60,6 +71,7 @@ export async function runLifecycleHookPipeline({
     table,
     hook,
     payload,
+    envelope,
     actionHandlers: runtimeActionHandlers,
   });
 }

@@ -4,6 +4,7 @@ import {
   type NestedSchemaType,
   type SchemaKeys,
   type UpdaterParams,
+  useCreate,
   useDelete,
   useGet,
   useUpdate,
@@ -167,6 +168,7 @@ export function AutoTable<T extends SchemaKeys>({
   ...props
 }: AutoTableProps<T>) {
   const hasSchemaKey = 'schema' in props;
+  const isRuntimeSchemaMode = !hasSchemaKey && 'parsedSchema' in props;
   const schemaName = hasSchemaKey ? props.schema : ('' as SchemaKeys);
   const { schema, schemaObject, parsedSchema } = resolveRuntimeSchema({
     schemaKey: 'schema' in props ? props.schema : undefined,
@@ -216,9 +218,7 @@ export function AutoTable<T extends SchemaKeys>({
     });
   }, [_data, deriveFns]);
   const search = useSearch({ from: '__root__' });
-  // @ts-expect-error
   const filters = search.filters;
-  // @ts-expect-error
   const sorting = search.sort;
   function getFiltered() {
     if (filters) {
@@ -246,6 +246,31 @@ export function AutoTable<T extends SchemaKeys>({
       props?.onDelete?.(...args);
     },
   });
+  const runtimeHookKeys = React.useMemo(() => {
+    if (!slug || !isRuntimeSchemaMode) return null;
+    const segments = slug.split('/').filter(Boolean);
+    if (segments.length === 0) return null;
+    return [segments[0] as SchemaKeys, ...segments.slice(1)] as [
+      SchemaKeys,
+      ...string[],
+    ];
+  }, [isRuntimeSchemaMode, slug]);
+  const runtimeCreateMutation = useCreate({
+    keys: runtimeHookKeys ?? (['business'] as [SchemaKeys, ...string[]]),
+  });
+  const runtimeUpdateMutation = useUpdate({
+    keys: runtimeHookKeys ?? (['business'] as [SchemaKeys, ...string[]]),
+  });
+  const runtimeDeleteMutation = useDelete({
+    keys: runtimeHookKeys ?? (['business'] as [SchemaKeys, ...string[]]),
+  });
+  const canUseRuntimeCrud = Boolean(runtimeHookKeys);
+  const handleRuntimeCreate = React.useCallback(
+    async (payload: Record<string, unknown>) => {
+      await runtimeCreateMutation.mutateAsync(payload as never);
+    },
+    [runtimeCreateMutation],
+  );
   const [rowAction, setRowAction] = React.useState<DataTableRowAction<
     NestedSchemaType<T>
   > | null>(null);
@@ -265,8 +290,14 @@ export function AutoTable<T extends SchemaKeys>({
     onReorderColumns:
       props.editable && !props.readOnly ? props.onReorderColumns : undefined,
   });
+  const reorderableColumnIds = React.useMemo(
+    () =>
+      parsedSchema.fields
+        .map((field) => field.key)
+        .filter((key) => key !== '_'),
+    [parsedSchema.fields],
+  );
 
-  // @ts-expect-error
   const perPage = search.perPage ?? 10;
 
   const { table, shallow, debounceMs, throttleMs } = useDataTable<
@@ -286,6 +317,10 @@ export function AutoTable<T extends SchemaKeys>({
     }),
     meta: {
       updateData(rowId: string, data: Record<string, unknown>) {
+        if (canUseRuntimeCrud) {
+          runtimeUpdateMutation.mutate({ id: rowId, ...data } as never);
+          return;
+        }
         updateMutation.mutate({ id: rowId, ...data });
       },
     },
@@ -302,11 +337,30 @@ export function AutoTable<T extends SchemaKeys>({
   return (
     <div className="py-6 space-y-4 flex flex-col items-end">
       {!props.readOnly && (
-        hasSchemaKey && <AddRowDialog<T> schema={schemaName} slug={slug} {...props} />
+        <AddRowDialog<T>
+          schema={hasSchemaKey ? schemaName : undefined}
+          runtimeSchema={
+            'parsedSchema' in props ? props.parsedSchema : undefined
+          }
+          onCreateRow={canUseRuntimeCrud ? handleRuntimeCreate : undefined}
+          slug={slug}
+          {...props}
+        />
       )}
       <DataTable
         table={table}
-        actionBar={<AutoTableActionBar table={table} onDelete={onDelete} />}
+        onReorderColumns={
+          props.editable && !props.readOnly ? props.onReorderColumns : undefined
+        }
+        reorderableColumnIds={reorderableColumnIds}
+        actionBar={
+          <AutoTableActionBar
+            table={table}
+            onDelete={
+              canUseRuntimeCrud ? runtimeDeleteMutation.mutate : onDelete
+            }
+          />
+        }
         className={className}
       >
         <DataTableAdvancedToolbar
@@ -355,7 +409,11 @@ export function AutoTable<T extends SchemaKeys>({
           showTrigger={false}
           onConfirm={() => {
             setRowAction(null);
-            onDelete(rowAction?.row.id ?? '');
+            if (canUseRuntimeCrud) {
+              runtimeDeleteMutation.mutate((rowAction?.row.id ?? '') as never);
+            } else {
+              onDelete(rowAction?.row.id ?? '');
+            }
             rowAction?.row.toggleSelected(false);
           }}
         />
@@ -368,7 +426,14 @@ export function AutoTable<T extends SchemaKeys>({
           schema={schema}
           onSubmit={(data) => {
             if (data) {
-              updateMutation.mutate({ id: rowAction?.row.id ?? '', ...data });
+              if (canUseRuntimeCrud) {
+                runtimeUpdateMutation.mutate({
+                  id: rowAction?.row.id ?? '',
+                  ...data,
+                } as never);
+              } else {
+                updateMutation.mutate({ id: rowAction?.row.id ?? '', ...data });
+              }
             }
             setRowAction(null);
           }}
@@ -463,6 +528,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
             onDeleteColumn ? () => onDeleteColumn(key) : undefined
           }
           onMoveColumn={onReorderColumns}
+          showReorderHandle={Boolean(onReorderColumns)}
         />
       ),
       cell: ({ cell, table, row }) => {

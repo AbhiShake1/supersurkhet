@@ -174,7 +174,11 @@ const DEFAULT_RECOMMENDED_RELEASE_IDS = [
   'supersurkhet.plugin.customer-loyalty@1.0.0',
 ];
 
-export function parseReleaseId(releaseId: string) {
+export function parseReleaseId(releaseId: string | null | undefined) {
+  if (typeof releaseId !== 'string') {
+    return null;
+  }
+
   const splitAt = releaseId.lastIndexOf('@');
   if (splitAt <= 0 || splitAt === releaseId.length - 1) {
     return null;
@@ -329,18 +333,44 @@ export function toMarketplaceSeedReleaseDocs(): PluginReleaseDoc[] {
 export function mergeMarketplaceReleasesWithSeed(
   releases: PluginReleaseDoc[],
 ): PluginReleaseDoc[] {
-  const seedById = new Map<string, PluginReleaseDoc>();
-  const mergedById = new Map<string, PluginReleaseDoc>();
+  const toCanonicalReleaseKey = (release: PluginReleaseDoc): string => {
+    const pluginId = release.pluginId?.trim();
+    const version = release.version?.trim();
+    if (pluginId && version) {
+      return `${pluginId}@${version}`;
+    }
+
+    const releaseId = typeof release.id === 'string' ? release.id.trim() : '';
+    const parsed = parseReleaseId(releaseId);
+    if (parsed) {
+      return `${parsed.pluginId}@${parsed.version}`;
+    }
+
+    if (releaseId) {
+      return releaseId;
+    }
+
+    if (pluginId || version) {
+      return `${pluginId || '__unknown_plugin__'}@${version || '__unknown_version__'}`;
+    }
+
+    return '__unknown_release__';
+  };
+
+  const seedByCanonicalKey = new Map<string, PluginReleaseDoc>();
+  const mergedByCanonicalKey = new Map<string, PluginReleaseDoc>();
 
   for (const release of toMarketplaceSeedReleaseDocs()) {
-    seedById.set(release.id, release);
-    mergedById.set(release.id, release);
+    const canonicalKey = toCanonicalReleaseKey(release);
+    seedByCanonicalKey.set(canonicalKey, release);
+    mergedByCanonicalKey.set(canonicalKey, release);
   }
 
-  // Live rows should always win over static fallbacks for the same release id.
+  // Live rows should always win over static fallbacks for the same plugin@version.
   for (const release of releases) {
-    const seed = seedById.get(release.id);
-    mergedById.set(release.id, {
+    const canonicalKey = toCanonicalReleaseKey(release);
+    const seed = seedByCanonicalKey.get(canonicalKey);
+    mergedByCanonicalKey.set(canonicalKey, {
       ...seed,
       ...release,
       schemaDocs: release.schemaDocs?.length
@@ -355,5 +385,5 @@ export function mergeMarketplaceReleasesWithSeed(
     });
   }
 
-  return [...mergedById.values()];
+  return [...mergedByCanonicalKey.values()];
 }

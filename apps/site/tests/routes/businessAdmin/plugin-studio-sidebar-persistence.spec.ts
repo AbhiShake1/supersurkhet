@@ -25,7 +25,7 @@ test.describe("Plugin Studio - Sidebar Persistence", () => {
     await expect(renamedTabLink).toBeVisible();
 
     const iconTrigger = renamedTabLink.locator("button").first();
-    await iconTrigger.dblclick();
+    await iconTrigger.click();
 
     const iconSearchInput = page.getByPlaceholder("Search Lucide icons");
     await expect(iconSearchInput).toBeVisible();

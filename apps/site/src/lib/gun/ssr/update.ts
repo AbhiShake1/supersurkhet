@@ -11,7 +11,7 @@ function omitMeta<T>(obj: T): T {
   if (!obj) return obj;
   return _.transform(obj, (result, value, key) => {
     if (value === undefined) return;
-    if (key === '_') return; // skip this key
+    if (['_', '#'].includes(key)) return;
     if (_.isArray(value)) {
       result[key] = value.map(omitMeta);
     } else if (_.isPlainObject(value)) {
@@ -51,6 +51,17 @@ function isPlainObject(x: unknown): x is Record<string, unknown> {
   return typeof x === 'object' && x !== null && !Array.isArray(x);
 }
 
+async function readExistingRow(
+  keys: SchemaKeys,
+  id: string | number,
+): Promise<unknown> {
+  return new Promise((resolve) => {
+    getGunRef(keys)
+      .get(String(id))
+      .once((row) => resolve(omitMeta(row)));
+  });
+}
+
 export function update<const T extends SchemaKeys>(
   key: T,
   ...restKeys: string[]
@@ -62,16 +73,23 @@ export function update<const T extends SchemaKeys>(
   const schema = getNestedZodShape(key, defaultSchema);
   return async ({ id, ...value }: UpdaterParams<T>) => {
     const businessId = resolveLifecycleBusinessId({ table: key, restKeys });
+    const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
+    const beforeRow = await readExistingRow(keys, id);
     if (businessId) {
       await runLifecycleHookPipeline({
         businessId,
         table: key,
         hook: 'beforeUpdate',
         payload: { id, ...value },
+        envelope: {
+          rowId: String(id),
+          before: beforeRow,
+          after: { ...(isPlainObject(beforeRow) ? beforeRow : {}), id, ...value },
+          patch: { id, ...value },
+        },
       });
     }
 
-    const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
     const _encrypted = await encrypt(value, schema);
     const encrypted = omitMeta(_encrypted);
     return new Promise<GunMessagePut>((resolve, reject) => {
@@ -90,6 +108,12 @@ export function update<const T extends SchemaKeys>(
               table: key,
               hook: 'afterUpdate',
               payload: { id, ...value },
+              envelope: {
+                rowId: String(id),
+                before: beforeRow,
+                after: { ...(isPlainObject(beforeRow) ? beforeRow : {}), id, ...value },
+                patch: { id, ...value },
+              },
             })
               .then(() => resolve(ack))
               .catch(reject);

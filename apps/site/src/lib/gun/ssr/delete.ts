@@ -13,16 +13,27 @@ export function remove<const T extends SchemaKeys>(
 ) {
   return async (id: string) => {
     const businessId = resolveLifecycleBusinessId({ table: key, restKeys });
+    const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
+    const beforeRow = await new Promise<unknown>((resolve) => {
+      getGunRef(keys)
+        .get(id)
+        .once((row) => resolve(row));
+    });
     if (businessId) {
       await runLifecycleHookPipeline({
         businessId,
         table: key,
         hook: 'beforeDelete',
         payload: { id },
+        envelope: {
+          rowId: id,
+          before: beforeRow,
+          after: undefined,
+          patch: { id },
+        },
       });
     }
 
-    const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
     return new Promise<{ deleted: true; id: string }>((resolve, reject) => {
       getGunRef(keys)
         .get(id)
@@ -40,6 +51,12 @@ export function remove<const T extends SchemaKeys>(
             table: key,
             hook: 'afterDelete',
             payload: { id },
+            envelope: {
+              rowId: id,
+              before: beforeRow,
+              after: undefined,
+              patch: { id },
+            },
           })
             .then(() => resolve({ deleted: true, id }))
             .catch(reject);

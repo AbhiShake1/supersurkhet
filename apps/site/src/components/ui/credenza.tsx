@@ -1,3 +1,4 @@
+import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
 
 import {
@@ -111,7 +112,12 @@ const CredenzaContent = ({
   }
 
   return (
-    <DialogContent className={mergedClassName} hideClose={hideClose} {...props}>
+    <DialogContent
+      className={mergedClassName}
+      hideClose={hideClose}
+      aria-describedby={undefined}
+      {...props}
+    >
       {children}
     </DialogContent>
   );
@@ -158,10 +164,13 @@ const CredenzaTitle = ({ className, children, ...props }: CredenzaProps) => {
 };
 
 const CredenzaBody = ({ className, children, ...props }: CredenzaProps) => {
+  const { asChild, ...bodyProps } = props;
+  const Comp = asChild ? Slot : 'div';
+
   return (
-    <div className={cn('px-4 md:px-0', className)} {...props}>
+    <Comp className={cn('px-4 md:px-0', className)} {...bodyProps}>
       {children}
-    </div>
+    </Comp>
   );
 };
 

@@ -274,4 +274,163 @@ describe('workflow executor', () => {
     expect(skipped.executedNodeIds).toEqual([]);
     expect(executed.executedNodeIds).toEqual(['n1']);
   });
+
+  it('routes across conditional branch edges and executes only reachable nodes', async () => {
+    const registry = createPluginRuntimeRegistry();
+    registry.publishRelease(
+      baseRelease({
+        workflowId: 'wf-branch',
+        table: 'order',
+        hook: 'afterUpdate',
+        nodes: [
+          { nodeId: 'start', kind: 'branch' },
+          { nodeId: 'notify', type: 'action', actionId: 'core.notify' },
+          { nodeId: 'skip', type: 'action', actionId: 'core.skip' },
+        ],
+        edges: [
+          {
+            from: 'start',
+            to: 'notify',
+            condition: {
+              kind: 'op',
+              op: 'changed',
+              args: ['status'],
+            },
+          },
+          {
+            from: 'start',
+            to: 'skip',
+            condition: {
+              kind: 'op',
+              op: 'eq',
+              args: [true, false],
+            },
+          },
+        ],
+      }),
+    );
+    registry.installRelease(baseInstall(), { explicitOwnerUpdate: true });
+
+    const result = await executeLifecycleHook({
+      registry,
+      businessId: 'business-1',
+      table: 'order',
+      hook: 'afterUpdate',
+      envelope: {
+        rowId: 'order-1',
+        before: { status: 'pending' },
+        after: { status: 'done' },
+        patch: { status: 'done' },
+      },
+      actionHandlers: {
+        'core.notify': async () => ({ notified: true }),
+        'core.skip': async () => ({ skipped: true }),
+      },
+    });
+
+    expect(result.executedNodeIds).toEqual(['start', 'notify']);
+    expect(result.actionOutputsByNodeId).toMatchObject({
+      notify: { notified: true },
+    });
+    expect(result.actionOutputsByNodeId).not.toHaveProperty('skip');
+  });
+
+  it('routes to failure edges when action throws', async () => {
+    const registry = createPluginRuntimeRegistry();
+    registry.publishRelease(
+      baseRelease({
+        workflowId: 'wf-failure-route',
+        table: 'product',
+        hook: 'beforeCreate',
+        nodes: [
+          { nodeId: 'n1', type: 'action', actionId: 'core.fail' },
+          { nodeId: 'n2', type: 'action', actionId: 'core.recover' },
+        ],
+        edges: [
+          { from: 'n1', to: 'n2', on: 'failure' },
+        ],
+      }),
+    );
+    registry.installRelease(baseInstall(), { explicitOwnerUpdate: true });
+
+    const result = await executeLifecycleHook({
+      registry,
+      businessId: 'business-1',
+      table: 'product',
+      hook: 'beforeCreate',
+      payload: { name: 'Rice' },
+      actionHandlers: {
+        'core.fail': async () => {
+          throw new Error('fail');
+        },
+        'core.recover': async () => ({ recovered: true }),
+      },
+    });
+
+    expect(result.executedNodeIds).toEqual(['n2']);
+    expect(result.actionOutputsByNodeId.n2).toEqual({ recovered: true });
+  });
+
+  it('honors retry policy and idempotency key expression', async () => {
+    const registry = createPluginRuntimeRegistry();
+    let attempts = 0;
+    registry.publishRelease(
+      baseRelease({
+        workflowId: 'wf-retry-idempotency',
+        table: 'order',
+        hook: 'afterUpdate',
+        nodes: [
+          {
+            nodeId: 'n1',
+            type: 'action',
+            actionId: 'core.flaky',
+            retryPolicy: { maxAttempts: 2, backoffMs: 1 },
+            idempotencyKeyExpr: {
+              kind: 'op',
+              op: 'concat',
+              args: ['order:', { kind: 'ref', source: 'context', path: ['event', 'rowId'] }],
+            },
+          },
+          {
+            nodeId: 'n2',
+            type: 'action',
+            actionId: 'core.flaky',
+            idempotencyKeyExpr: {
+              kind: 'op',
+              op: 'concat',
+              args: ['order:', { kind: 'ref', source: 'context', path: ['event', 'rowId'] }],
+            },
+          },
+        ],
+        edges: [{ from: 'n1', to: 'n2' }],
+      }),
+    );
+    registry.installRelease(baseInstall(), { explicitOwnerUpdate: true });
+
+    const result = await executeLifecycleHook({
+      registry,
+      businessId: 'business-1',
+      table: 'order',
+      hook: 'afterUpdate',
+      envelope: {
+        rowId: 'o-1',
+        before: { status: 'pending' },
+        after: { status: 'done' },
+        patch: { status: 'done' },
+      },
+      actionHandlers: {
+        'core.flaky': async () => {
+          attempts += 1;
+          if (attempts === 1) {
+            throw new Error('transient');
+          }
+          return { ok: true };
+        },
+      },
+    });
+
+    expect(attempts).toBe(2);
+    expect(result.actionOutputsByNodeId.n1).toEqual({ ok: true });
+    expect(result.actionOutputsByNodeId.n2).toEqual({ ok: true });
+  });
 });

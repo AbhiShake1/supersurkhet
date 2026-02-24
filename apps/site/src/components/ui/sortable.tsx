@@ -1,19 +1,19 @@
 import {
   type Announcements,
+  closestCenter,
+  closestCorners,
   DndContext,
   type DndContextProps,
   type DragEndEvent,
-  DragOverlay,
   type DraggableSyntheticListeners,
+  DragOverlay,
   type DropAnimation,
+  defaultDropAnimationSideEffects,
   KeyboardSensor,
   MouseSensor,
   type ScreenReaderInstructions,
   TouchSensor,
   type UniqueIdentifier,
-  closestCenter,
-  closestCorners,
-  defaultDropAnimationSideEffects,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -23,10 +23,10 @@ import {
   restrictToVerticalAxis,
 } from '@dnd-kit/modifiers';
 import {
-  SortableContext,
-  type SortableContextProps,
   arrayMove,
   horizontalListSortingStrategy,
+  SortableContext,
+  type SortableContextProps,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
@@ -34,24 +34,23 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { Slot } from '@radix-ui/react-slot';
 import * as React from 'react';
-
+import * as ReactDOM from 'react-dom';
 import { composeEventHandlers, useComposedRefs } from '@/lib/composition';
 import { cn } from '@/lib/utils';
-import * as ReactDOM from 'react-dom';
 
 const orientationConfig = {
   vertical: {
-    modifiers: [restrictToVerticalAxis, restrictToParentElement],
+    modifiers: [restrictToVerticalAxis],
     strategy: verticalListSortingStrategy,
     collisionDetection: closestCenter,
   },
   horizontal: {
-    modifiers: [restrictToHorizontalAxis, restrictToParentElement],
+    modifiers: [restrictToHorizontalAxis],
     strategy: horizontalListSortingStrategy,
     collisionDetection: closestCenter,
   },
   mixed: {
-    modifiers: [restrictToParentElement],
+    modifiers: [],
     strategy: undefined,
     collisionDetection: closestCorners,
   },
@@ -78,6 +77,7 @@ interface SortableRootContextValue<T> {
   strategy: SortableContextProps['strategy'];
   activeId: UniqueIdentifier | null;
   setActiveId: (id: UniqueIdentifier | null) => void;
+  suppressClick: boolean;
   getItemValue: (item: T) => UniqueIdentifier;
   flatCursor: boolean;
 }
@@ -111,7 +111,15 @@ type SortableProps<T> = DndContextProps & {
   strategy?: SortableContextProps['strategy'];
   orientation?: 'vertical' | 'horizontal' | 'mixed';
   flatCursor?: boolean;
+  confineToParent?: boolean;
 } & (T extends object ? GetItemValue<T> : Partial<GetItemValue<T>>);
+
+export type SortableDragStartEvent = Parameters<
+  NonNullable<DndContextProps['onDragStart']>
+>[0];
+export type SortableDragEndEvent = Parameters<
+  NonNullable<DndContextProps['onDragEnd']>
+>[0];
 
 function Sortable<T>(props: SortableProps<T>) {
   const {
@@ -123,12 +131,23 @@ function Sortable<T>(props: SortableProps<T>) {
     onMove,
     orientation = 'vertical',
     flatCursor = false,
+    confineToParent = true,
     getItemValue: getItemValueProp,
     accessibility,
     ...sortableProps
   } = props;
   const id = React.useId();
   const [activeId, setActiveId] = React.useState<UniqueIdentifier | null>(null);
+  const [suppressClick, setSuppressClick] = React.useState(false);
+  const [optimisticItems, setOptimisticItems] = React.useState<
+    UniqueIdentifier[] | null
+  >(null);
+  const suppressClickResetTimeoutRef = React.useRef<ReturnType<
+    typeof globalThis.setTimeout
+  > | null>(null);
+  const optimisticResetTimeoutRef = React.useRef<ReturnType<
+    typeof globalThis.setTimeout
+  > | null>(null);
 
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -150,6 +169,14 @@ function Sortable<T>(props: SortableProps<T>) {
     () => orientationConfig[orientation],
     [orientation],
   );
+  const resolvedModifiers = React.useMemo<DndContextProps['modifiers']>(() => {
+    if (modifiers) return modifiers;
+    const base = [...config.modifiers];
+    if (confineToParent) {
+      base.push(restrictToParentElement);
+    }
+    return base;
+  }, [modifiers, config.modifiers, confineToParent]);
 
   const getItemValue = (item: T): UniqueIdentifier => {
     if (typeof item === 'object' && !getItemValueProp) {
@@ -165,8 +192,28 @@ function Sortable<T>(props: SortableProps<T>) {
     // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
   }, [value, getItemValue]);
 
+  const clearOptimisticItems = React.useCallback(() => {
+    setOptimisticItems(null);
+    if (optimisticResetTimeoutRef.current !== null) {
+      globalThis.clearTimeout(optimisticResetTimeoutRef.current);
+      optimisticResetTimeoutRef.current = null;
+    }
+  }, []);
+
   const onDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+
+    if (active?.id) {
+      setSuppressClick(true);
+      if (suppressClickResetTimeoutRef.current !== null) {
+        globalThis.clearTimeout(suppressClickResetTimeoutRef.current);
+      }
+      suppressClickResetTimeoutRef.current = globalThis.setTimeout(() => {
+        setSuppressClick(false);
+        suppressClickResetTimeoutRef.current = null;
+      }, 180);
+    }
+
     if (over && active.id !== over?.id) {
       const activeIndex = value.findIndex(
         (item) => getItemValue(item) === active.id,
@@ -174,15 +221,52 @@ function Sortable<T>(props: SortableProps<T>) {
       const overIndex = value.findIndex(
         (item) => getItemValue(item) === over.id,
       );
+      const nextItems = arrayMove(items, activeIndex, overIndex);
 
       if (onMove) {
+        setOptimisticItems(nextItems);
+        if (optimisticResetTimeoutRef.current !== null) {
+          globalThis.clearTimeout(optimisticResetTimeoutRef.current);
+        }
+        optimisticResetTimeoutRef.current = globalThis.setTimeout(() => {
+          setOptimisticItems(null);
+          optimisticResetTimeoutRef.current = null;
+        }, 1000);
         onMove({ ...event, activeIndex, overIndex });
       } else {
+        clearOptimisticItems();
         onValueChange?.(arrayMove(value, activeIndex, overIndex));
       }
+    } else {
+      clearOptimisticItems();
     }
     setActiveId(null);
   };
+
+  React.useEffect(() => {
+    if (!optimisticItems) return;
+    if (optimisticItems.length !== items.length) {
+      clearOptimisticItems();
+      return;
+    }
+    const hasSameOrder = optimisticItems.every(
+      (item, index) => item === items[index],
+    );
+    if (hasSameOrder) {
+      clearOptimisticItems();
+    }
+  }, [optimisticItems, items, clearOptimisticItems]);
+
+  React.useEffect(() => {
+    return () => {
+      if (suppressClickResetTimeoutRef.current !== null) {
+        globalThis.clearTimeout(suppressClickResetTimeoutRef.current);
+      }
+      if (optimisticResetTimeoutRef.current !== null) {
+        globalThis.clearTimeout(optimisticResetTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const announcements: Announcements = React.useMemo(
     () => ({
@@ -238,25 +322,31 @@ function Sortable<T>(props: SortableProps<T>) {
     [orientation],
   );
 
+  const accessibilityContainer = React.useMemo(() => {
+    return accessibility?.container ?? globalThis.document?.body;
+  }, [accessibility?.container]);
+
   const contextValue = React.useMemo(
     () => ({
       id,
-      items,
-      modifiers: modifiers ?? config.modifiers,
+      items: optimisticItems ?? items,
+      modifiers: resolvedModifiers,
       strategy: strategy ?? config.strategy,
       activeId,
       setActiveId,
+      suppressClick,
       getItemValue,
       flatCursor,
     }),
     [
       id,
       items,
-      modifiers,
+      optimisticItems,
+      resolvedModifiers,
       strategy,
-      config.modifiers,
       config.strategy,
       activeId,
+      suppressClick,
       // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
       getItemValue,
       flatCursor,
@@ -269,19 +359,24 @@ function Sortable<T>(props: SortableProps<T>) {
     >
       <DndContext
         collisionDetection={collisionDetection ?? config.collisionDetection}
-        modifiers={modifiers ?? config.modifiers}
+        modifiers={resolvedModifiers}
         sensors={sensors}
         {...sortableProps}
         id={id}
         onDragStart={composeEventHandlers(
           sortableProps.onDragStart,
-          ({ active }) => setActiveId(active.id),
+          ({ active }) => {
+            clearOptimisticItems();
+            setActiveId(active.id);
+          },
         )}
         onDragEnd={composeEventHandlers(sortableProps.onDragEnd, onDragEnd)}
-        onDragCancel={composeEventHandlers(sortableProps.onDragCancel, () =>
-          setActiveId(null),
-        )}
+        onDragCancel={composeEventHandlers(sortableProps.onDragCancel, () => {
+          clearOptimisticItems();
+          setActiveId(null);
+        })}
         accessibility={{
+          container: accessibilityContainer,
           announcements,
           screenReaderInstructions,
           ...accessibility,
@@ -363,6 +458,7 @@ const SortableItem = React.forwardRef<HTMLDivElement, SortableItemProps>(
       asChild,
       disabled,
       className,
+      onClickCapture,
       ...itemProps
     } = props;
     const inSortableContent = React.useContext(SortableContentContext);
@@ -421,6 +517,12 @@ const SortableItem = React.forwardRef<HTMLDivElement, SortableItemProps>(
         <ItemPrimitive
           id={id}
           data-dragging={isDragging ? '' : undefined}
+          onClickCapture={composeEventHandlers(onClickCapture, (event) => {
+            if (!asHandle) return;
+            if (!context.suppressClick) return;
+            event.preventDefault();
+            event.stopPropagation();
+          })}
           {...itemProps}
           {...(asHandle ? attributes : {})}
           {...(asHandle ? listeners : {})}

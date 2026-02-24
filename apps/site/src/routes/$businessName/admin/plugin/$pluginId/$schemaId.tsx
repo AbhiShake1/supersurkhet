@@ -1,14 +1,21 @@
 import { createFileRoute } from '@tanstack/react-router';
 import z from 'zod';
-import { AutoAdmin } from '@/components/auto-admin';
+import { useAuth } from '@/components/auth-provider';
+import { AutoAdmin, type AutoAdminTabInput } from '@/components/auto-admin';
 import { NotFound } from '@/components/ui/not-found';
 import { api } from '@/lib/api';
 import {
   normalizeAutoTableTab,
   resolveAdminTabInput,
 } from '@/lib/auto-runtime/tab-runtime';
+import { hasBusinessAccess } from '@/lib/business-access';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
 import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
-import type { AdminTabDoc, SchemaDoc } from '@/lib/plugins/types';
+import type {
+  AdminTabDoc,
+  PluginReleaseDoc,
+  SchemaDoc,
+} from '@/lib/plugins/types';
 
 export const Route = createFileRoute(
   '/$businessName/admin/plugin/$pluginId/$schemaId',
@@ -19,12 +26,21 @@ export const Route = createFileRoute(
   component: RuntimePluginSchemaRoute,
 });
 
+function decodeURIComponentOrNull(value: string): string | null {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return null;
+  }
+}
+
 function RuntimePluginSchemaRoute() {
   const { businessName, pluginId, schemaId } = Route.useParams();
   const { tab } = Route.useSearch();
+  const { user } = useAuth();
 
-  const decodedPluginId = decodeURIComponent(pluginId);
-  const decodedSchemaId = decodeURIComponent(schemaId);
+  const decodedPluginId = decodeURIComponentOrNull(pluginId);
+  const decodedSchemaId = decodeURIComponentOrNull(schemaId);
 
   const { data: businesses = [] } = api.business.useGet({
     keys: [businessName],
@@ -36,14 +52,18 @@ function RuntimePluginSchemaRoute() {
     keys: [business?.id ?? businessName],
   });
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
+  const releases = mergeMarketplaceReleasesWithSeed(
+    releaseRows as PluginReleaseDoc[],
+  );
 
   if (!business?.id) return <NotFound />;
+  if (!hasBusinessAccess(business, user)) return <NotFound />;
 
   const installedPlugin = installRows.find(
     (install) => install.pluginId === decodedPluginId,
   );
   const installedRelease = installedPlugin
-    ? releaseRows.find(
+    ? releases.find(
         (release) =>
           release.id === `${decodedPluginId}@${installedPlugin.version}`,
       )
@@ -71,7 +91,7 @@ function RuntimePluginSchemaRoute() {
     pluginSchemaNamespace,
   });
 
-  return <AutoAdmin tabs={[tabInput]} />;
+  return <AutoAdmin tabs={[tabInput]} includeSystemTabs={false} />;
 }
 
 export function resolveRuntimePluginAdminTabInput({
@@ -88,7 +108,7 @@ export function resolveRuntimePluginAdminTabInput({
   decodedSchemaId: string;
   compiledSchema: ReturnType<typeof compileSchemaDoc>;
   pluginSchemaNamespace: string;
-}) {
+}): AutoAdminTabInput {
   const resolvedTab = resolveAdminTabInput({
     title:
       tabSearchValue?.trim() ||
@@ -96,10 +116,10 @@ export function resolveRuntimePluginAdminTabInput({
       schemaDoc.title ||
       decodedSchemaId,
     group: pluginTab?.group,
-    parsedSchema: compiledSchema,
+    parsedSchema: compiledSchema as z.ZodObject<any>,
     slug: pluginSchemaNamespace,
     treatSlugAsAbsolute: true,
-  });
+  } satisfies AutoAdminTabInput);
 
   return normalizeAutoTableTab(resolvedTab, pluginSchemaNamespace);
 }
