@@ -1,5 +1,6 @@
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup, ButtonGroupText } from '@/components/ui/button-group';
 import {
   Dialog,
   DialogContent,
@@ -369,6 +370,33 @@ const OPEN_SIDEBAR_LEGEND_SHORTCUT: ShortcutDefinition = {
 
 type ShortcutKbdInteraction = 'trigger-parent' | 'open-settings';
 
+function ShortcutKeyGroup({
+  actionId,
+  binding,
+}: {
+  actionId: ShortcutActionId;
+  binding: ShortcutBinding;
+}) {
+  const parts = displayBinding(binding);
+  return (
+    <ButtonGroup className="pointer-events-none">
+      <ButtonGroupText
+        className="h-6 gap-1 rounded-md border-border/60 bg-muted/80 px-2 text-xs font-medium shadow-none"
+        aria-hidden="true"
+      >
+        {parts.map((part, index) => (
+          <React.Fragment key={`${actionId}-${part}`}>
+            {index > 0 ? (
+              <span className="px-0.5 text-muted-foreground/80">+</span>
+            ) : null}
+            <span className="leading-none">{part}</span>
+          </React.Fragment>
+        ))}
+      </ButtonGroupText>
+    </ButtonGroup>
+  );
+}
+
 export function ShortcutKbd({
   actionId,
   className,
@@ -424,11 +452,7 @@ export function ShortcutKbd({
   if (!interactive) {
     return (
       <span className={className} aria-hidden="true">
-        <KbdGroup>
-          {displayBinding(binding).map((part) => (
-            <Kbd key={`${actionId}-${part}`}>{part}</Kbd>
-          ))}
-        </KbdGroup>
+        <ShortcutKeyGroup actionId={actionId} binding={binding} />
       </span>
     );
   }
@@ -450,11 +474,7 @@ export function ShortcutKbd({
           : `${actionId} shortcut`
       }
     >
-      <KbdGroup>
-        {displayBinding(binding).map((part) => (
-          <Kbd key={`${actionId}-${part}`}>{part}</Kbd>
-        ))}
-      </KbdGroup>
+      <ShortcutKeyGroup actionId={actionId} binding={binding} />
     </button>
   );
 }
