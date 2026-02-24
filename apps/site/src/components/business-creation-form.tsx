@@ -603,6 +603,19 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   const [assistantPickedAuth, setAssistantPickedAuth] = useState(false);
   const [assistantPickedOauthMethod, setAssistantPickedOauthMethod] =
     useState(false);
+  const [integrations, setIntegrations] = useState<Array<{
+    providerId: BusinessOnboardingProviderId;
+    modelId: string;
+    authMode: AssistantAuthMode;
+    providerApiKey?: string;
+    providerOauthAccessToken?: string;
+    providerBaseUrl?: string;
+    providerRegion?: string;
+    providerOrganization?: string;
+    providerProject?: string;
+    providerOauthMethodId?: string;
+  }>>([]);
+  const [isAskingForAnother, setIsAskingForAnother] = useState(false);
   const recommendedProviderId = defaultModelOption.provider;
   const recommendedModelId = providerModelOptions[0]?.id ?? selectedModelOption.id;
   const recommendedAuthMode = resolveProviderDefaultAuthMode(
@@ -1187,9 +1200,14 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     }
     setAssistantSecretInput('');
     setAssistantStage('done');
+    handleAskForAnother();
   }
 
   function handleAssistantBack() {
+    if (isAskingForAnother) {
+      setIsAskingForAnother(false);
+      return;
+    }
     if (assistantStage === 'model') {
       setAssistantStage('provider');
       return;
@@ -1250,6 +1268,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         return;
       }
       setAssistantStage('done');
+      handleAskForAnother();
       return;
     }
     if (assistantStage === 'oauth-method') {
@@ -1263,11 +1282,69 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
   }
 
   const canAssistantGoForward =
-    (assistantStage === 'provider' && assistantPickedProvider) ||
-    (assistantStage === 'model' && assistantPickedModel) ||
-    (assistantStage === 'auth' && assistantPickedAuth) ||
-    (assistantStage === 'oauth-method' && assistantPickedOauthMethod) ||
-    (assistantStage === 'credential' && assistantSecretInput.trim().length > 0);
+    isAskingForAnother
+      ? true
+      : (assistantStage === 'provider' && assistantPickedProvider) ||
+      (assistantStage === 'model' && assistantPickedModel) ||
+      (assistantStage === 'auth' && assistantPickedAuth) ||
+      (assistantStage === 'oauth-method' && assistantPickedOauthMethod) ||
+      (assistantStage === 'credential' && assistantSecretInput.trim().length > 0);
+
+  function handleSaveCurrentIntegration() {
+    const currentIntegration = {
+      providerId: selectedAssistantProviderId,
+      modelId: selectedAssistantModelId,
+      authMode: selectedAssistantAuthMode,
+      providerApiKey: providerApiKey.trim() || undefined,
+      providerOauthAccessToken: providerOauthAccessToken.trim() || undefined,
+      providerBaseUrl: providerBaseUrl.trim() || undefined,
+      providerRegion: providerRegion.trim() || undefined,
+      providerOrganization: providerOrganization.trim() || undefined,
+      providerProject: providerProject.trim() || undefined,
+      providerOauthMethodId: resolvedProviderOauthMethodId || undefined,
+    };
+    setIntegrations((prev) => [...prev, currentIntegration]);
+  }
+
+  function handleAddAnother() {
+    handleSaveCurrentIntegration();
+    setSelectedAssistantProviderId(defaultModelOption.provider);
+    setSelectedAssistantModelId(defaultModelOption.id);
+    setSelectedAssistantAuthMode(resolveProviderDefaultAuthMode(defaultModelOption.provider));
+    setProviderApiKey('');
+    setProviderOauthAccessToken('');
+    setProviderBaseUrl(resolveProviderDefaultBaseUrl(defaultModelOption.provider) ?? '');
+    setProviderRegion('');
+    setProviderOrganization('');
+    setProviderProject('');
+    setProviderOauthMethods(resolveProviderOauthMethods(defaultModelOption.provider));
+    setSelectedProviderOauthMethodId(
+      resolveDefaultProviderOauthMethodId(resolveProviderOauthMethods(defaultModelOption.provider)) ?? '',
+    );
+    setProviderCredentialSavedAt(null);
+    setAuthSessionToken('');
+    setAuthSessionExpiresAt(null);
+    setOauthFlowState('idle');
+    setOauthFlowMessage('');
+    setOauthAuthorizationUrl('');
+    setOauthVerificationCode('');
+    setAssistantPickedProvider(false);
+    setAssistantPickedModel(false);
+    setAssistantPickedAuth(false);
+    setAssistantPickedOauthMethod(false);
+    setAssistantStage('provider');
+    setIsAskingForAnother(false);
+  }
+
+  function handleFinishSetup() {
+    handleSaveCurrentIntegration();
+    setIsAskingForAnother(false);
+    setAssistantStage('done');
+  }
+
+  function handleAskForAnother() {
+    setIsAskingForAnother(true);
+  }
 
   return (
     <div className="space-y-4 rounded-xl border border-border/70 bg-background p-4">
@@ -1280,110 +1357,130 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
           stageKey: assistantStage,
           prioritizeRecommended: assistantStage !== 'auth',
           prompt:
-            assistantStage === 'provider'
-              ? `Choose provider. Recommended: ${formatProviderLabel(recommendedProviderId)}.`
-              : assistantStage === 'model'
-                ? `Choose model. Recommended: ${providerModelOptions[0]?.label ?? selectedModelOption.label}.`
-                : assistantStage === 'auth'
-                  ? `Choose auth mode. Recommended: ${authModeLabelById[recommendedAuthMode]}.`
-                  : assistantStage === 'oauth-method'
-                    ? 'Choose OAuth method.'
-                    : assistantStage === 'credential'
-                      ? selectedAssistantAuthMode === 'api-key'
-                        ? 'Paste your API key.'
-                        : 'Paste your OAuth access token.'
-                      : 'Setup complete. Save credential to continue.',
-          options:
-            assistantStage === 'provider'
+            isAskingForAnother
+              ? 'Do you want to add another AI integration?'
+              : assistantStage === 'provider'
+                ? `Choose provider. Recommended: ${formatProviderLabel(recommendedProviderId)}.`
+                : assistantStage === 'model'
+                  ? `Choose model. Recommended: ${providerModelOptions[0]?.label ?? selectedModelOption.label}.`
+                  : assistantStage === 'auth'
+                    ? `Choose auth mode. Recommended: ${authModeLabelById[recommendedAuthMode]}.`
+                    : assistantStage === 'oauth-method'
+                      ? 'Choose OAuth method.'
+                      : assistantStage === 'credential'
+                        ? selectedAssistantAuthMode === 'api-key'
+                          ? 'Paste your API key.'
+                          : 'Paste your OAuth access token.'
+                        : integrations.length > 0
+                          : 'Setup complete. Save credential to continue.',
+      options:
+      isAskingForAnother
+      ? [
+      {id: 'yes', label: 'Yes, add another integration', selected: false, recommended: true },
+      {id: 'no', label: 'No, finish setup', selected: false, recommended: false },
+      ]
+      : assistantStage === 'provider'
               ? providerOptions.map((option) => ({
-                id: option.providerId,
-                label: option.label,
-                selected: option.providerId === selectedAssistantProviderId,
-                recommended: option.providerId === recommendedProviderId,
+        id: option.providerId,
+      label: option.label,
+      selected: option.providerId === selectedAssistantProviderId,
+      recommended: option.providerId === recommendedProviderId,
               }))
-              : assistantStage === 'model'
+      : assistantStage === 'model'
                 ? providerModelOptions.slice(0, 12).map((option, index) => ({
-                  id: option.id,
-                  label: option.label,
-                  selected: option.id === selectedAssistantModelId,
-                  recommended: index === 0,
+        id: option.id,
+      label: option.label,
+      selected: option.id === selectedAssistantModelId,
+      recommended: index === 0,
                 }))
-                : assistantStage === 'auth'
+      : assistantStage === 'auth'
                   ? stepTwoAuthModes.map((authMode) => ({
-                    id: authMode,
-                    label: authModeLabelById[authMode],
-                    selected: authMode === selectedAssistantAuthMode,
-                    recommended: false,
+        id: authMode,
+      label: authModeLabelById[authMode],
+      selected: authMode === selectedAssistantAuthMode,
+      recommended: false,
                   }))
-                  : assistantStage === 'oauth-method'
+      : assistantStage === 'oauth-method'
                     ? selectedProviderOauthMethods.map((method, index) => ({
-                      id: method.id,
-                      label: method.label,
-                      selected: method.id === resolvedProviderOauthMethodId,
-                      recommended: index === 0,
+        id: method.id,
+      label: method.label,
+      selected: method.id === resolvedProviderOauthMethodId,
+      recommended: index === 0,
                     }))
-                    : [],
+      : [],
           onSelectOption: (id) => {
-            if (assistantStage === 'provider') {
-              handleAssistantProviderSelect(id);
-              return;
+            if (isAskingForAnother) {
+              if (id === 'yes') {
+        handleAddAnother();
+      return;
+              }
+      if (id === 'no') {
+        handleFinishSetup();
+      return;
+              }
             }
-            if (assistantStage === 'model') {
-              handleAssistantModelSelect(id);
-              return;
+      if (assistantStage === 'provider') {
+        handleAssistantProviderSelect(id);
+      return;
             }
-            if (assistantStage === 'auth') {
-              handleAssistantAuthSelect(id as AssistantAuthMode);
-              return;
+      if (assistantStage === 'model') {
+        handleAssistantModelSelect(id);
+      return;
             }
-            if (assistantStage === 'oauth-method') {
-              handleAssistantOauthMethodSelect(id);
+      if (assistantStage === 'auth') {
+        handleAssistantAuthSelect(id as AssistantAuthMode);
+      return;
+            }
+      if (assistantStage === 'oauth-method') {
+        handleAssistantOauthMethodSelect(id);
             }
           },
-          input:
-            assistantStage === 'credential'
-              ? {
-                value: assistantSecretInput,
-                placeholder:
-                  selectedAssistantAuthMode === 'api-key'
-                    ? 'Paste API key'
-                    : 'Paste OAuth access token',
-                submitLabel: 'Submit',
-                maskedEchoLabel:
-                  selectedAssistantAuthMode === 'api-key'
-                    ? 'API key provided'
-                    : 'OAuth token provided',
-                onChange: setAssistantSecretInput,
-                onSubmit: handleAssistantCredentialSubmit,
+      input:
+      assistantStage === 'credential'
+      ? {
+        value: assistantSecretInput,
+      placeholder:
+      selectedAssistantAuthMode === 'api-key'
+      ? 'Paste API key'
+      : 'Paste OAuth access token',
+      submitLabel: 'Submit',
+      maskedEchoLabel:
+      selectedAssistantAuthMode === 'api-key'
+      ? 'API key provided'
+      : 'OAuth token provided',
+      onChange: setAssistantSecretInput,
+      onSubmit: handleAssistantCredentialSubmit,
               }
-              : undefined,
-          canGoBack: assistantStage !== 'provider',
-          onBack: handleAssistantBack,
-          backLabel: 'Back',
-          canGoForward: canAssistantGoForward,
-          onForward: handleAssistantForward,
-          forwardLabel: 'Forward',
-          forwardEchoLabel:
-            assistantStage === 'provider'
-              ? formatProviderLabel(selectedAssistantProviderId)
-              : assistantStage === 'model'
-                ? selectedModelOption.label
-                : assistantStage === 'auth'
-                  ? authModeLabelById[selectedAssistantAuthMode]
-                  : assistantStage === 'oauth-method'
-                    ? selectedProviderOauthMethods.find(
-                      (method) => method.id === resolvedProviderOauthMethodId,
-                    )?.label ?? 'OAuth method selected'
-                    : assistantStage === 'credential'
-                      ? selectedAssistantAuthMode === 'api-key'
-                        ? 'API key provided'
-                        : 'OAuth token provided'
-                      : '',
+      : undefined,
+      canGoBack: assistantStage !== 'provider' || isAskingForAnother,
+      onBack: handleAssistantBack,
+      backLabel: isAskingForAnother ? 'Cancel' : 'Back',
+      canGoForward: canAssistantGoForward,
+      onForward: handleAssistantForward,
+      forwardLabel: 'Forward',
+      forwardEchoLabel:
+      isAskingForAnother
+      ? 'Continue'
+      : assistantStage === 'provider'
+      ? formatProviderLabel(selectedAssistantProviderId)
+      : assistantStage === 'model'
+      ? selectedModelOption.label
+      : assistantStage === 'auth'
+      ? authModeLabelById[selectedAssistantAuthMode]
+      : assistantStage === 'oauth-method'
+      ? selectedProviderOauthMethods.find(
+                        (method) => method.id === resolvedProviderOauthMethodId,
+      )?.label ?? 'OAuth method selected'
+      : assistantStage === 'credential'
+      ? selectedAssistantAuthMode === 'api-key'
+      ? 'API key provided'
+      : 'OAuth token provided'
+      : '',
         }}
       />
 
-      <div className="flex flex-wrap items-center gap-2">
-        {assistantStage === 'done' && (
+      {!isAskingForAnother && assistantStage === 'done' && (
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -1393,21 +1490,21 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
           >
             {isSavingProviderCredential ? 'Saving...' : 'Save credential'}
           </Button>
-        )}
-        {assistantStage === 'done' && canStartProviderOauth && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={startProviderOauth}
-            disabled={isStartingProviderOauth}
-          >
-            {isStartingProviderOauth
-              ? 'Opening OAuth...'
-              : selectedProviderOauthButtonLabel}
-          </Button>
-        )}
-      </div>
+          {canStartProviderOauth && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={startProviderOauth}
+              disabled={isStartingProviderOauth}
+            >
+              {isStartingProviderOauth
+                ? 'Opening OAuth...'
+                : selectedProviderOauthButtonLabel}
+            </Button>
+          )}
+        </div>
+      )}
 
       {(oauthFlowMessage || oauthVerificationCode || oauthAuthorizationUrl) && (
         <div className="rounded-md border bg-muted/20 p-3 text-xs text-muted-foreground space-y-2">
