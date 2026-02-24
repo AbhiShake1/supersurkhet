@@ -1,3 +1,6 @@
+import { Save } from 'lucide-react';
+import * as React from 'react';
+import type { ZodObject } from 'zod';
 import { AutoForm } from '@/components/ui/autoform';
 import { SubmitButton } from '@/components/ui/autoform/components/SubmitButton';
 import { Button } from '@/components/ui/button';
@@ -10,9 +13,27 @@ import {
   CredenzaHeader,
   CredenzaTitle,
 } from '@/components/ui/credenza';
+import {
+  ShortcutKbd,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Save } from 'lucide-react';
-import type { ZodObject } from 'zod';
+
+const EDIT_ROW_DIALOG_SHORTCUTS = {
+  cancelEditRow: {
+    id: 'autoTable.cancelEditRow',
+    label: 'Cancel edit row',
+    description: 'Close the edit row dialog without saving changes.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'Escape',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+} as const;
 
 interface EditRowDialogProps<T, S> {
   open: boolean;
@@ -32,9 +53,32 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
   onSubmit,
   showTrigger: _showTrigger = false,
 }: EditRowDialogProps<T, S>) {
+  const isShortcutInScope = React.useCallback((event: KeyboardEvent) => {
+    const target = event.target as Node | null;
+    const active = document.activeElement as Node | null;
+    const dialogContent = document.querySelector(
+      '[data-auto-table-edit-dialog-content="true"]',
+    );
+    if (!dialogContent) return false;
+    if (target && dialogContent.contains(target)) return true;
+    if (active && dialogContent.contains(active)) return true;
+    return false;
+  }, []);
+
+  useShortcutAction(
+    EDIT_ROW_DIALOG_SHORTCUTS.cancelEditRow,
+    () => {
+      onOpenChange(false);
+    },
+    {
+      enabled: open,
+      guard: isShortcutInScope,
+    },
+  );
+
   return (
     <Credenza open={open} onOpenChange={onOpenChange}>
-      <CredenzaContent>
+      <CredenzaContent data-auto-table-edit-dialog-content="true">
         <CredenzaHeader>
           <CredenzaTitle>Edit</CredenzaTitle>
           <CredenzaDescription>Edit details</CredenzaDescription>
@@ -56,10 +100,15 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full gap-2"
             onClick={() => onOpenChange(false)}
           >
             Cancel
+            <ShortcutKbd
+              actionId={EDIT_ROW_DIALOG_SHORTCUTS.cancelEditRow.id}
+              interactive={false}
+              className="hidden sm:inline-flex"
+            />
           </Button>
           <SubmitButton form="edit-row-form" className="gap-2 w-full">
             <Save className="size-4" />

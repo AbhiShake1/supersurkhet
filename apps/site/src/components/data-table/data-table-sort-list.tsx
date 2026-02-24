@@ -23,6 +23,12 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
+  ShortcutKbd,
+  useRegisterShortcut,
+  useShortcutAction,
+  type ShortcutDefinition,
+} from '@/components/ui/keyboard-shortcuts';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -36,11 +42,96 @@ import {
   SortableItemHandle,
   SortableOverlay,
 } from '@/components/ui/sortable';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { dataTableConfig } from '@/config/data-table';
 import { cn } from '@/lib/utils';
 
 const OPEN_MENU_SHORTCUT = 's';
 const REMOVE_SORT_SHORTCUTS = ['backspace', 'delete'];
+const DATA_TABLE_SORT_SHORTCUTS = {
+  openSort: {
+    id: 'dataTable.openSort',
+    label: 'Open sorting',
+    description: 'Open the sort list popover.',
+    scope: 'DataTable Sorting',
+    defaultBinding: {
+      key: OPEN_MENU_SHORTCUT,
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  addSort: {
+    id: 'dataTable.addSort',
+    label: 'Add sort',
+    description: 'Add a new sort row.',
+    scope: 'DataTable Sorting',
+    defaultBinding: {
+      key: 'a',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  resetSort: {
+    id: 'dataTable.resetSort',
+    label: 'Reset sorting',
+    description: 'Reset current sorting back to defaults.',
+    scope: 'DataTable Sorting',
+    defaultBinding: {
+      key: 'Backspace',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  sortField: {
+    id: 'dataTable.sortFieldSelector',
+    label: 'Open sort field selector',
+    description: 'Open the field selector for a sort row.',
+    scope: 'DataTable Sorting',
+    defaultBinding: {
+      key: 'ArrowDown',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: false,
+    },
+  },
+  removeSort: {
+    id: 'dataTable.removeSort',
+    label: 'Remove sort',
+    description: 'Remove a sort row.',
+    scope: 'DataTable Sorting',
+    defaultBinding: {
+      key: 'Delete',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: false,
+    },
+  },
+  reorderSort: {
+    id: 'dataTable.reorderSort',
+    label: 'Reorder sort',
+    description: 'Move a sort row.',
+    scope: 'DataTable Sorting',
+    defaultBinding: {
+      key: 'r',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+} as const satisfies Record<string, ShortcutDefinition>;
 
 interface DataTableSortListProps<TData>
   extends React.ComponentProps<typeof PopoverContent> {
@@ -109,6 +200,21 @@ export function DataTableSortList<TData>({
 
   const onSortingReset = () => onSortingChange(table.initialState.sorting);
 
+  useRegisterShortcut(DATA_TABLE_SORT_SHORTCUTS.addSort);
+  useRegisterShortcut(DATA_TABLE_SORT_SHORTCUTS.resetSort);
+  useRegisterShortcut(DATA_TABLE_SORT_SHORTCUTS.sortField);
+  useRegisterShortcut(DATA_TABLE_SORT_SHORTCUTS.removeSort);
+  useRegisterShortcut(DATA_TABLE_SORT_SHORTCUTS.reorderSort);
+  useShortcutAction(
+    DATA_TABLE_SORT_SHORTCUTS.openSort,
+    () => {
+      setOpen(true);
+    },
+    {
+      guard: (event) => !event.shiftKey,
+    },
+  );
+
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (
@@ -116,16 +222,6 @@ export function DataTableSortList<TData>({
         event.target instanceof HTMLTextAreaElement
       ) {
         return;
-      }
-
-      if (
-        event.key.toLowerCase() === OPEN_MENU_SHORTCUT &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.shiftKey
-      ) {
-        event.preventDefault();
-        setOpen(true);
       }
 
       if (
@@ -169,6 +265,11 @@ export function DataTableSortList<TData>({
           >
             <ArrowDownUp className="size-4" />
             Sort
+            <ShortcutKbd
+              actionId={DATA_TABLE_SORT_SHORTCUTS.openSort.id}
+              interactive={false}
+              className="pointer-events-none hidden xl:inline-flex"
+            />
             {sorting.length > 0 && (
               <Badge
                 variant="secondary"
@@ -213,6 +314,7 @@ export function DataTableSortList<TData>({
                     key={sort.id}
                     sort={sort}
                     sortItemId={`${id}-sort-${sort.id}`}
+                    shortcuts={DATA_TABLE_SORT_SHORTCUTS}
                     columns={columns}
                     columnLabels={columnLabels}
                     onSortUpdate={onSortUpdate}
@@ -225,21 +327,31 @@ export function DataTableSortList<TData>({
           <div className="flex w-full items-center gap-2">
             <Button
               size="sm"
-              className="rounded"
+              className="rounded gap-2"
               ref={addButtonRef}
               onClick={onSortAdd}
               disabled={columns.length === 0}
             >
               Add sort
+              <ShortcutKbd
+                actionId={DATA_TABLE_SORT_SHORTCUTS.addSort.id}
+                interactive={false}
+                className="pointer-events-none hidden xl:inline-flex"
+              />
             </Button>
             {sorting.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded"
+                className="rounded gap-2"
                 onClick={onSortingReset}
               >
                 Reset sorting
+                <ShortcutKbd
+                  actionId={DATA_TABLE_SORT_SHORTCUTS.resetSort.id}
+                  interactive={false}
+                  className="pointer-events-none hidden xl:inline-flex"
+                />
               </Button>
             )}
           </div>
@@ -260,6 +372,7 @@ export function DataTableSortList<TData>({
 interface DataTableSortItemProps {
   sort: ColumnSort;
   sortItemId: string;
+  shortcuts: typeof DATA_TABLE_SORT_SHORTCUTS;
   columns: { id: string; label: string }[];
   columnLabels: Map<string, string>;
   onSortUpdate: (sortId: string, updates: Partial<ColumnSort>) => void;
@@ -269,6 +382,7 @@ interface DataTableSortItemProps {
 function DataTableSortItem({
   sort,
   sortItemId,
+  shortcuts,
   columns,
   columnLabels,
   onSortUpdate,
@@ -318,9 +432,14 @@ function DataTableSortItem({
               aria-controls={fieldListboxId}
               variant="outline"
               size="sm"
-              className="w-44 justify-between rounded font-normal"
+              className="w-44 justify-between gap-1 rounded font-normal"
             >
               <span className="truncate">{columnLabels.get(sort.id)}</span>
+              <ShortcutKbd
+                actionId={shortcuts.sortField.id}
+                interactive={false}
+                className="pointer-events-none hidden xl:inline-flex"
+              />
               <ChevronsUpDown className="opacity-50 size-4" />
             </Button>
           </PopoverTrigger>
@@ -372,24 +491,45 @@ function DataTableSortItem({
             ))}
           </SelectContent>
         </Select>
-        <Button
-          aria-controls={sortItemId}
-          variant="outline"
-          size="icon"
-          className="size-8 shrink-0 rounded"
-          onClick={() => onSortRemove(sort.id)}
-        >
-          <Trash2 className="size-4" />
-        </Button>
-        <SortableItemHandle asChild>
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-8 shrink-0 rounded"
-          >
-            <GripVertical className="size-4" />
-          </Button>
-        </SortableItemHandle>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-controls={sortItemId}
+              aria-label="Remove sort"
+              variant="outline"
+              size="icon"
+              className="size-8 shrink-0 rounded"
+              onClick={() => onSortRemove(sort.id)}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Remove sort</span>
+            <ShortcutKbd actionId={shortcuts.removeSort.id} interactive={false} />
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <SortableItemHandle asChild>
+            <TooltipTrigger asChild>
+              <Button
+                aria-label="Reorder sort"
+                variant="outline"
+                size="icon"
+                className="size-8 shrink-0 rounded"
+              >
+                <GripVertical className="size-4" />
+              </Button>
+            </TooltipTrigger>
+          </SortableItemHandle>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Reorder sort</span>
+            <ShortcutKbd
+              actionId={shortcuts.reorderSort.id}
+              interactive={false}
+            />
+          </TooltipContent>
+        </Tooltip>
       </div>
     </SortableItem>
   );

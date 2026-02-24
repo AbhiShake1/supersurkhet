@@ -52,7 +52,15 @@ function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   if (target.isContentEditable) return true;
   const tag = target.tagName;
-  return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  const role = target.getAttribute('role');
+  return role === 'textbox' || role === 'searchbox' || role === 'combobox';
+}
+
+function isEditableContext(event: KeyboardEvent): boolean {
+  if (isEditableTarget(event.target)) return true;
+  if (typeof document === 'undefined') return false;
+  return isEditableTarget(document.activeElement);
 }
 
 function normalizeKey(raw: string): string {
@@ -313,10 +321,15 @@ export function useShortcutBinding(
 export function useShortcutAction(
   definition: ShortcutDefinition,
   handler: (event: KeyboardEvent) => void,
-  options?: { enabled?: boolean; guard?: (event: KeyboardEvent) => boolean },
+  options?: {
+    enabled?: boolean;
+    guard?: (event: KeyboardEvent) => boolean;
+    allowInEditableContext?: boolean;
+  },
 ) {
   const enabled = options?.enabled ?? true;
   const guard = options?.guard;
+  const allowInEditableContext = options?.allowInEditableContext ?? false;
   const binding = useShortcutBinding(definition.id, definition.defaultBinding);
 
   useRegisterShortcut(definition);
@@ -324,17 +337,16 @@ export function useShortcutAction(
   React.useLayoutEffect(() => {
     if (!enabled) return;
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing) return;
       if (!isBindingMatch(event, binding)) return;
       if (guard && !guard(event)) return;
-      const modifierPressed =
-        binding.meta || binding.ctrl || binding.shift || binding.alt;
-      if (isEditableTarget(event.target) && !modifierPressed) return;
+      if (!allowInEditableContext && isEditableContext(event)) return;
       event.preventDefault();
       handler(event);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [binding, enabled, guard, handler]);
+  }, [allowInEditableContext, binding, enabled, guard, handler]);
 }
 
 const OPEN_SIDEBAR_LEGEND_SHORTCUT: ShortcutDefinition = {

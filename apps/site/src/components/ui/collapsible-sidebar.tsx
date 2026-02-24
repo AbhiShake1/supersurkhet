@@ -54,7 +54,7 @@ import {
   DropdownMenuTrigger,
 } from './dropdown-menu';
 import { Input } from './input';
-import { ShortcutKbd, useShortcutAction } from './keyboard-shortcuts';
+import { ShortcutKbd, useRegisterShortcut, useShortcutAction } from './keyboard-shortcuts';
 import { ManageOrganization } from './organizations/manage-organization';
 import {
   Popover,
@@ -179,6 +179,279 @@ const SIDEBAR_SHORTCUTS = {
       shift: true,
     },
   },
+  quickAddGroup: {
+    id: 'autoAdmin.quickAddGroup',
+    label: 'Quick add group',
+    description: 'Create a new sidebar group.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'g',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  quickAddTable: {
+    id: 'autoAdmin.quickAddTable',
+    label: 'Quick add table',
+    description: 'Create a new ungrouped table from the sidebar.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 't',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  toggleFrequentSection: {
+    id: 'autoAdmin.toggleFrequentSection',
+    label: 'Toggle frequently used section',
+    description: 'Expand or collapse the frequently used sidebar section.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'f',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  toggleFocusedGroup: {
+    id: 'autoAdmin.toggleFocusedGroup',
+    label: 'Toggle focused group',
+    description: 'Expand or collapse the currently focused group.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'j',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  openFocusedGroupActions: {
+    id: 'autoAdmin.openFocusedGroupActions',
+    label: 'Open focused group actions',
+    description: 'Open the actions menu for the currently focused group.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'l',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  renameFocusedGroup: {
+    id: 'autoAdmin.renameFocusedGroup',
+    label: 'Rename focused group',
+    description: 'Start renaming the currently focused group.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'u',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  reorderFocusedGroupHandle: {
+    id: 'autoAdmin.reorderFocusedGroupHandle',
+    label: 'Focused group reorder handle',
+    description: 'Use the focused group reorder drag handle.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'd',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  openFocusedTab: {
+    id: 'autoAdmin.openFocusedTab',
+    label: 'Open focused tab',
+    description: 'Open the currently focused sidebar tab.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'o',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  openFocusedTabIconPicker: {
+    id: 'autoAdmin.openFocusedTabIconPicker',
+    label: 'Open tab icon picker',
+    description: 'Open icon picker for the currently focused tab.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'i',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  selectTabIconOption: {
+    id: 'autoAdmin.selectTabIconOption',
+    label: 'Select tab icon option',
+    description: 'Select a focused icon option in the tab icon picker.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'y',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  openFocusedTabWorkflow: {
+    id: 'autoAdmin.openFocusedTabWorkflow',
+    label: 'Open focused tab workflow',
+    description: 'Open workflow settings for the focused tab.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'w',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  deleteFocusedTabTable: {
+    id: 'autoAdmin.deleteFocusedTabTable',
+    label: 'Delete focused table',
+    description: 'Trigger delete action for the focused sidebar table.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'Backspace',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  managePlugins: {
+    id: 'autoAdmin.managePlugins',
+    label: 'Open manage plugins',
+    description: 'Open the manage plugins page for this business.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'm',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  groupActionRename: {
+    id: 'autoAdmin.groupActionRename',
+    label: 'Group action: Rename group',
+    description: 'Rename group from the group actions popover.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'r',
+      ctrl: false,
+      meta: true,
+      alt: true,
+      shift: true,
+    },
+  },
+  groupActionMoveUp: {
+    id: 'autoAdmin.groupActionMoveUp',
+    label: 'Group action: Move group up',
+    description: 'Move group up from the group actions popover.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'ArrowUp',
+      ctrl: false,
+      meta: true,
+      alt: true,
+      shift: true,
+    },
+  },
+  groupActionMoveDown: {
+    id: 'autoAdmin.groupActionMoveDown',
+    label: 'Group action: Move group down',
+    description: 'Move group down from the group actions popover.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'ArrowDown',
+      ctrl: false,
+      meta: true,
+      alt: true,
+      shift: true,
+    },
+  },
+  groupActionAddTable: {
+    id: 'autoAdmin.groupActionAddTable',
+    label: 'Group action: Add table',
+    description: 'Add table from the group actions popover.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 't',
+      ctrl: false,
+      meta: true,
+      alt: true,
+      shift: true,
+    },
+  },
+  groupActionAddGroup: {
+    id: 'autoAdmin.groupActionAddGroup',
+    label: 'Group action: Add group',
+    description: 'Add group from the group actions popover.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'g',
+      ctrl: false,
+      meta: true,
+      alt: true,
+      shift: true,
+    },
+  },
+  groupActionAddGroupAbove: {
+    id: 'autoAdmin.groupActionAddGroupAbove',
+    label: 'Group action: Add group above',
+    description: 'Add a group above from the group actions popover.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: '[',
+      ctrl: false,
+      meta: true,
+      alt: true,
+      shift: true,
+    },
+  },
+  groupActionAddGroupBelow: {
+    id: 'autoAdmin.groupActionAddGroupBelow',
+    label: 'Group action: Add group below',
+    description: 'Add a group below from the group actions popover.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: ']',
+      ctrl: false,
+      meta: true,
+      alt: true,
+      shift: true,
+    },
+  },
+  groupActionDelete: {
+    id: 'autoAdmin.groupActionDelete',
+    label: 'Group action: Delete group',
+    description: 'Delete group from the group actions popover.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'Backspace',
+      ctrl: false,
+      meta: true,
+      alt: true,
+      shift: true,
+    },
+  },
 } as const;
 
 function toReorderPosition(
@@ -273,6 +546,8 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     null,
   );
   const [focusedSidebarTitle, setFocusedSidebarTitle] = useState<string>('');
+  const [focusedSidebarGroupName, setFocusedSidebarGroupName] =
+    useState<string>('');
   const groupCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const pointerPositionRef = useRef<{ x: number; y: number } | null>(null);
   const externalDropHandledRef = useRef(false);
@@ -376,6 +651,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   }, [groupedItems, groups]);
 
   const previewGroupOrder = groupNamesToRender;
+  const isSchemaBackedTab = useCallback(
+    (title: string) => {
+      const matchedItem = tabs.find((item) => item.title === title);
+      if (!matchedItem) return false;
+      return 'schema' in matchedItem || 'parsedSchema' in matchedItem;
+    },
+    [tabs],
+  );
   const tabBySortableId = useMemo(() => {
     const map = new Map<string, PossibleTabConfig>();
     for (const tab of tabs) {
@@ -665,10 +948,18 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   }, []);
 
   const getFocusedSidebarTitle = useCallback(() => {
-    if (focusedSidebarTitle) return focusedSidebarTitle;
     const active = document.activeElement as HTMLElement | null;
-    return active?.getAttribute('data-sidebar-item-title') ?? currentTab;
+    const activeTitle = active?.getAttribute('data-sidebar-item-title');
+    if (activeTitle) return activeTitle;
+    if (focusedSidebarTitle) return focusedSidebarTitle;
+    return currentTab;
   }, [currentTab, focusedSidebarTitle]);
+  const getFocusedSidebarGroupName = useCallback(() => {
+    const active = document.activeElement as HTMLElement | null;
+    const activeGroupName = active?.getAttribute('data-sidebar-group-name');
+    if (activeGroupName) return activeGroupName;
+    return focusedSidebarGroupName;
+  }, [focusedSidebarGroupName]);
 
   const focusSidebarElementByOffset = useCallback(
     (offset: number) => {
@@ -700,6 +991,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       (active ? navRef.current.contains(active) : false)
     );
   }, []);
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.reorderFocusedGroupHandle);
 
   useShortcutAction(
     SIDEBAR_SHORTCUTS.nextFocusable,
@@ -756,6 +1048,143 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     },
     { guard: isSidebarShortcutTarget },
   );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.quickAddGroup,
+    () => {
+      if (!editable || !onAddGroup) return;
+      onAddGroup();
+    },
+    {
+      enabled: editable && Boolean(onAddGroup),
+      guard: isSidebarShortcutTarget,
+    },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.quickAddTable,
+    () => {
+      if (!editable || !onAddTable) return;
+      onAddTable();
+    },
+    {
+      enabled: editable && Boolean(onAddTable),
+      guard: isSidebarShortcutTarget,
+    },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.toggleFrequentSection,
+    () => {
+      if (!frequentItemsBySearch.length) return;
+      setIsFrequentOpen((prev) => !prev);
+    },
+    {
+      enabled: frequentItemsBySearch.length > 0,
+      guard: isSidebarShortcutTarget,
+    },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.toggleFocusedGroup,
+    () => {
+      const groupName = getFocusedSidebarGroupName();
+      if (!groupName) return;
+      toggleGroup(groupName);
+    },
+    { guard: isSidebarShortcutTarget },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.openFocusedGroupActions,
+    () => {
+      const groupName = getFocusedSidebarGroupName();
+      if (!groupName) return;
+      const trigger = navRef.current?.querySelector<HTMLButtonElement>(
+        `[data-sidebar-group-actions="${CSS.escape(groupName)}"]`,
+      );
+      trigger?.click();
+    },
+    { guard: isSidebarShortcutTarget },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.renameFocusedGroup,
+    () => {
+      if (!editable || !onRenameGroup) return;
+      const groupName = getFocusedSidebarGroupName();
+      if (!groupName) return;
+      beginGroupRename(groupName);
+    },
+    {
+      enabled: editable && Boolean(onRenameGroup),
+      guard: isSidebarShortcutTarget,
+    },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.openFocusedTab,
+    () => {
+      const title = getFocusedSidebarTitle();
+      if (!title) return;
+      const tabLink = navRef.current?.querySelector<HTMLElement>(
+        `[data-sidebar-item-link-title="${CSS.escape(title)}"]`,
+      );
+      tabLink?.click();
+    },
+    { guard: isSidebarShortcutTarget },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.openFocusedTabIconPicker,
+    () => {
+      if (!editable || !onRenameTabIcon) return;
+      const title = getFocusedSidebarTitle();
+      if (!title) return;
+      const trigger = navRef.current?.querySelector<HTMLButtonElement>(
+        `[data-sidebar-item-icon-trigger="${CSS.escape(title)}"]`,
+      );
+      trigger?.click();
+    },
+    {
+      enabled: editable && Boolean(onRenameTabIcon),
+      guard: isSidebarShortcutTarget,
+    },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.openFocusedTabWorkflow,
+    () => {
+      if (!editable || !onOpenWorkflowEditorForTab) return;
+      const title = getFocusedSidebarTitle();
+      if (!title) return;
+      if (!isSchemaBackedTab(title)) return;
+      onOpenWorkflowEditorForTab(title);
+    },
+    {
+      enabled: editable && Boolean(onOpenWorkflowEditorForTab),
+      guard: isSidebarShortcutTarget,
+    },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.deleteFocusedTabTable,
+    () => {
+      if (!editable || !onDeleteTableForTab) return;
+      const title = getFocusedSidebarTitle();
+      if (!title) return;
+      if (!isSchemaBackedTab(title)) return;
+      onDeleteTableForTab(title);
+    },
+    {
+      enabled: editable && Boolean(onDeleteTableForTab),
+      guard: isSidebarShortcutTarget,
+    },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.managePlugins,
+    () => {
+      if (!slug) return;
+      const link = navRef.current?.querySelector<HTMLElement>(
+        '[data-sidebar-manage-plugins-link="true"]',
+      );
+      link?.click();
+    },
+    {
+      enabled: Boolean(slug),
+      guard: isSidebarShortcutTarget,
+    },
+  );
 
   return (
     <nav
@@ -778,6 +1207,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
           <div className="relative">
             <Input
               ref={searchInputRef}
+              data-auto-admin-sidebar-search="true"
               placeholder="Filter items..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -825,7 +1255,15 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     }}
                   >
                     <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
-                    Add Group
+                    <span className="flex-1">Add Group</span>
+                    <ShortcutKbd
+                      actionId={SIDEBAR_SHORTCUTS.quickAddGroup.id}
+                      defaultBinding={
+                        SIDEBAR_SHORTCUTS.quickAddGroup.defaultBinding
+                      }
+                      className="pointer-events-none hidden md:inline-flex"
+                      interactive={false}
+                    />
                   </button>
                 ) : null}
                 {onAddTable ? (
@@ -837,7 +1275,15 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     }}
                   >
                     <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    Add Table (Ungrouped)
+                    <span className="flex-1">Add Table (Ungrouped)</span>
+                    <ShortcutKbd
+                      actionId={SIDEBAR_SHORTCUTS.quickAddTable.id}
+                      defaultBinding={
+                        SIDEBAR_SHORTCUTS.quickAddTable.defaultBinding
+                      }
+                      className="pointer-events-none hidden md:inline-flex"
+                      interactive={false}
+                    />
                   </button>
                 ) : null}
               </div>
@@ -893,6 +1339,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                 ) : (
                   <ChevronRight className="h-4 w-4" />
                 )}
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.toggleFrequentSection.id}
+                  defaultBinding={
+                    SIDEBAR_SHORTCUTS.toggleFrequentSection.defaultBinding
+                  }
+                  className="pointer-events-none ml-1 hidden md:inline-flex"
+                  interactive={false}
+                />
               </button>
             ) : (
               <div className="grid place-content-center py-2 text-slate-500">
@@ -910,7 +1364,10 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     selected={currentTab}
                     open={open}
                     onActivate={incrementFrequentUsage}
-                    onFocusItem={setFocusedSidebarTitle}
+                    onFocusItem={(title) => {
+                      setFocusedSidebarTitle(title);
+                      setFocusedSidebarGroupName('');
+                    }}
                   />
                 ))}
               </div>
@@ -1018,7 +1475,10 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                               : undefined
                           }
                           onActivate={incrementFrequentUsage}
-                          onFocusItem={setFocusedSidebarTitle}
+                          onFocusItem={(title) => {
+                            setFocusedSidebarTitle(title);
+                            setFocusedSidebarGroupName('');
+                          }}
                         />
                       )}
                     </div>
@@ -1067,6 +1527,10 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                       ref={(element) => {
                         setGroupCardRef(groupName, element);
                       }}
+                      onFocusCapture={() => {
+                        setFocusedSidebarGroupName(groupName);
+                        setFocusedSidebarTitle('');
+                      }}
                       data-sidebar-group-card="true"
                       data-sidebar-group-name={groupName}
                       className="relative rounded-lg border border-slate-200/80 p-1 dark:border-slate-800"
@@ -1112,10 +1576,22 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                                 <button
                                   type="button"
                                   className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                  data-sidebar-group-name={groupName}
                                   aria-label={`Reorder group ${groupName}`}
                                   title={`Reorder group ${groupName}`}
                                 >
                                   <ChevronsUpDown className="h-4 w-4" />
+                                  <ShortcutKbd
+                                    actionId={
+                                      SIDEBAR_SHORTCUTS.reorderFocusedGroupHandle.id
+                                    }
+                                    defaultBinding={
+                                      SIDEBAR_SHORTCUTS.reorderFocusedGroupHandle
+                                        .defaultBinding
+                                    }
+                                    className="pointer-events-none ml-1 hidden lg:inline-flex"
+                                    interactive={false}
+                                  />
                                 </button>
                               </SortableItemHandle>
                             ) : null}
@@ -1123,12 +1599,23 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                               type="button"
                               onClick={() => toggleGroup(groupName)}
                               aria-expanded={isGroupOpen}
+                              data-sidebar-group-toggle={groupName}
+                              data-sidebar-group-name={groupName}
                               className={`${SECTION_TOGGLE_BUTTON_CLASS} flex-1`}
                               style={{
                                 WebkitTapHighlightColor: 'transparent',
                               }}
                             >
                               <span>{groupName}</span>
+                              <ShortcutKbd
+                                actionId={SIDEBAR_SHORTCUTS.toggleFocusedGroup.id}
+                                defaultBinding={
+                                  SIDEBAR_SHORTCUTS.toggleFocusedGroup
+                                    .defaultBinding
+                                }
+                                className="pointer-events-none hidden md:inline-flex"
+                                interactive={false}
+                              />
                             </button>
                             {editable && onRenameGroup ? (
                               <button
@@ -1139,10 +1626,20 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                                   event.stopPropagation();
                                   beginGroupRename(groupName);
                                 }}
+                                data-sidebar-group-name={groupName}
                                 aria-label={`Rename group ${groupName}`}
                                 title={`Rename group ${groupName}`}
                               >
                                 <Pencil className="h-4 w-4" />
+                                <ShortcutKbd
+                                  actionId={SIDEBAR_SHORTCUTS.renameFocusedGroup.id}
+                                  defaultBinding={
+                                    SIDEBAR_SHORTCUTS.renameFocusedGroup
+                                      .defaultBinding
+                                  }
+                                  className="pointer-events-none ml-1 hidden lg:inline-flex"
+                                  interactive={false}
+                                />
                               </button>
                             ) : null}
                             <GroupActionsPopover
@@ -1191,6 +1688,8 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                               type="button"
                               onClick={() => toggleGroup(groupName)}
                               aria-expanded={isGroupOpen}
+                              data-sidebar-group-toggle={groupName}
+                              data-sidebar-group-name={groupName}
                               aria-label={
                                 isGroupOpen
                                   ? `Collapse group ${groupName}`
@@ -1323,7 +1822,10 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                                             : undefined
                                         }
                                         onActivate={incrementFrequentUsage}
-                                        onFocusItem={setFocusedSidebarTitle}
+                                        onFocusItem={(title) => {
+                                          setFocusedSidebarTitle(title);
+                                          setFocusedSidebarGroupName('');
+                                        }}
                                       />
                                     )}
                                   </div>
@@ -1416,6 +1918,7 @@ const Option = memo(function Option({
   onActivate,
   onFocusItem,
 }: OptionProps) {
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.selectTabIconOption);
   const isSelected = selected === title;
   const hasRenameAction = editable && Boolean(onBeginRename);
   const hasWorkflowAction = Boolean(onOpenWorkflowEditor);
@@ -1442,6 +1945,7 @@ const Option = memo(function Option({
       <Link
         data-sidebar-item-link="true"
         data-sidebar-item-title={title}
+        data-sidebar-item-link-title={title}
         onClick={handleClick}
         onFocus={() => onFocusItem?.(title)}
         to="."
@@ -1461,6 +1965,7 @@ const Option = memo(function Option({
               <button
                 type="button"
                 className="group/icon-trigger relative grid place-content-center rounded p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800"
+                data-sidebar-item-icon-trigger={title}
                 onClick={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -1486,6 +1991,19 @@ const Option = memo(function Option({
             {editable && onRenameIcon ? (
               <PopoverContent align="start" className="w-72 p-2">
                 <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                      Icon options
+                    </span>
+                    <ShortcutKbd
+                      actionId={SIDEBAR_SHORTCUTS.selectTabIconOption.id}
+                      defaultBinding={
+                        SIDEBAR_SHORTCUTS.selectTabIconOption.defaultBinding
+                      }
+                      className="pointer-events-none hidden md:inline-flex"
+                      interactive={false}
+                    />
+                  </div>
                   <Input
                     value={iconSearch}
                     onChange={(event) => setIconSearch(event.target.value)}
@@ -1550,6 +2068,22 @@ const Option = memo(function Option({
                 <span className="sr-only">Rename tab {title}</span>
               </button>
             ) : null}
+            {editable && onRenameIcon ? (
+              <ShortcutKbd
+                actionId={SIDEBAR_SHORTCUTS.openFocusedTabIconPicker.id}
+                defaultBinding={
+                  SIDEBAR_SHORTCUTS.openFocusedTabIconPicker.defaultBinding
+                }
+                className="pointer-events-none hidden md:inline-flex"
+                interactive={false}
+              />
+            ) : null}
+            <ShortcutKbd
+              actionId={SIDEBAR_SHORTCUTS.openFocusedTab.id}
+              defaultBinding={SIDEBAR_SHORTCUTS.openFocusedTab.defaultBinding}
+              className="pointer-events-none hidden md:inline-flex"
+              interactive={false}
+            />
           </span>
         )}
       </Link>
@@ -1598,6 +2132,14 @@ const Option = memo(function Option({
                           Edit triggers and automation
                         </span>
                       </span>
+                      <ShortcutKbd
+                        actionId={SIDEBAR_SHORTCUTS.openFocusedTabWorkflow.id}
+                        defaultBinding={
+                          SIDEBAR_SHORTCUTS.openFocusedTabWorkflow.defaultBinding
+                        }
+                        className="pointer-events-none ml-auto hidden md:inline-flex"
+                        interactive={false}
+                      />
                     </button>
                   </PopoverClose>
                 ) : null}
@@ -1621,6 +2163,14 @@ const Option = memo(function Option({
                           Permanently remove this schema
                         </span>
                       </span>
+                      <ShortcutKbd
+                        actionId={SIDEBAR_SHORTCUTS.deleteFocusedTabTable.id}
+                        defaultBinding={
+                          SIDEBAR_SHORTCUTS.deleteFocusedTabTable.defaultBinding
+                        }
+                        className="pointer-events-none ml-auto hidden md:inline-flex"
+                        interactive={false}
+                      />
                     </button>
                   </PopoverClose>
                 ) : null}
@@ -1663,6 +2213,7 @@ const TitleSection: React.FC<{
   const { openDialog } = useDialog();
   const { logout, isAuthenticated } = useAuth();
   const user = useProfile();
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.managePlugins);
 
   if (!isAuthenticated) return null;
 
@@ -1754,9 +2305,16 @@ const TitleSection: React.FC<{
                   to="/$businessName/admin/plugins"
                   params={{ businessName: slug }}
                   className="gap-1"
+                  data-sidebar-manage-plugins-link="true"
                 >
                   <PlugZapIcon className="size-4" />
                   Manage Plugins
+                  <ShortcutKbd
+                    actionId={SIDEBAR_SHORTCUTS.managePlugins.id}
+                    defaultBinding={SIDEBAR_SHORTCUTS.managePlugins.defaultBinding}
+                    className="pointer-events-none ml-auto hidden md:inline-flex"
+                    interactive={false}
+                  />
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -1799,6 +2357,15 @@ const GroupActionsPopover: React.FC<{
   onAddTable,
   onAddGroup,
 }) => {
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.groupActionRename);
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.groupActionMoveUp);
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.groupActionMoveDown);
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.groupActionAddTable);
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.groupActionAddGroup);
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.groupActionAddGroupAbove);
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.groupActionAddGroupBelow);
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.groupActionDelete);
+  useRegisterShortcut(SIDEBAR_SHORTCUTS.openFocusedGroupActions);
   if (
     !editable ||
     (!onDeleteGroup &&
@@ -1823,8 +2390,16 @@ const GroupActionsPopover: React.FC<{
           className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
           aria-label={`Actions for ${groupName}`}
           title={`Actions for ${groupName}`}
+          data-sidebar-group-name={groupName}
+          data-sidebar-group-actions={groupName}
         >
           <MoreHorizontal className="h-4 w-4" />
+          <ShortcutKbd
+            actionId={SIDEBAR_SHORTCUTS.openFocusedGroupActions.id}
+            defaultBinding={SIDEBAR_SHORTCUTS.openFocusedGroupActions.defaultBinding}
+            className="pointer-events-none ml-1 hidden lg:inline-flex"
+            interactive={false}
+          />
         </button>
       </PopoverTrigger>
       <PopoverContent
@@ -1847,7 +2422,15 @@ const GroupActionsPopover: React.FC<{
                 <span className={actionIconClass}>
                   <Pencil className="h-3.5 w-3.5" />
                 </span>
-                Rename Group
+                <span className="flex-1">Rename Group</span>
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.groupActionRename.id}
+                  defaultBinding={
+                    SIDEBAR_SHORTCUTS.groupActionRename.defaultBinding
+                  }
+                  className="pointer-events-none hidden md:inline-flex"
+                  interactive={false}
+                />
               </button>
             </PopoverClose>
           ) : null}
@@ -1864,7 +2447,15 @@ const GroupActionsPopover: React.FC<{
                 <span className={actionIconClass}>
                   <ArrowUpToLine className="h-3.5 w-3.5" />
                 </span>
-                Move Group Up
+                <span className="flex-1">Move Group Up</span>
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.groupActionMoveUp.id}
+                  defaultBinding={
+                    SIDEBAR_SHORTCUTS.groupActionMoveUp.defaultBinding
+                  }
+                  className="pointer-events-none hidden md:inline-flex"
+                  interactive={false}
+                />
               </button>
             </PopoverClose>
           ) : null}
@@ -1881,7 +2472,15 @@ const GroupActionsPopover: React.FC<{
                 <span className={actionIconClass}>
                   <ArrowDownToLine className="h-3.5 w-3.5" />
                 </span>
-                Move Group Down
+                <span className="flex-1">Move Group Down</span>
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.groupActionMoveDown.id}
+                  defaultBinding={
+                    SIDEBAR_SHORTCUTS.groupActionMoveDown.defaultBinding
+                  }
+                  className="pointer-events-none hidden md:inline-flex"
+                  interactive={false}
+                />
               </button>
             </PopoverClose>
           ) : null}
@@ -1897,7 +2496,15 @@ const GroupActionsPopover: React.FC<{
                 <span className={actionIconClass}>
                   <Table2 className="h-3.5 w-3.5" />
                 </span>
-                Add Table
+                <span className="flex-1">Add Table</span>
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.groupActionAddTable.id}
+                  defaultBinding={
+                    SIDEBAR_SHORTCUTS.groupActionAddTable.defaultBinding
+                  }
+                  className="pointer-events-none hidden md:inline-flex"
+                  interactive={false}
+                />
               </button>
             </PopoverClose>
           ) : null}
@@ -1913,7 +2520,15 @@ const GroupActionsPopover: React.FC<{
                 <span className={actionIconClass}>
                   <Boxes className="h-3.5 w-3.5" />
                 </span>
-                Add Group
+                <span className="flex-1">Add Group</span>
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.groupActionAddGroup.id}
+                  defaultBinding={
+                    SIDEBAR_SHORTCUTS.groupActionAddGroup.defaultBinding
+                  }
+                  className="pointer-events-none hidden md:inline-flex"
+                  interactive={false}
+                />
               </button>
             </PopoverClose>
           ) : null}
@@ -1932,7 +2547,15 @@ const GroupActionsPopover: React.FC<{
                 <span className={actionIconClass}>
                   <ArrowUpToLine className="h-3.5 w-3.5" />
                 </span>
-                Add Group Above
+                <span className="flex-1">Add Group Above</span>
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.groupActionAddGroupAbove.id}
+                  defaultBinding={
+                    SIDEBAR_SHORTCUTS.groupActionAddGroupAbove.defaultBinding
+                  }
+                  className="pointer-events-none hidden md:inline-flex"
+                  interactive={false}
+                />
               </button>
             </PopoverClose>
           ) : null}
@@ -1951,7 +2574,15 @@ const GroupActionsPopover: React.FC<{
                 <span className={actionIconClass}>
                   <ArrowDownToLine className="h-3.5 w-3.5" />
                 </span>
-                Add Group Below
+                <span className="flex-1">Add Group Below</span>
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.groupActionAddGroupBelow.id}
+                  defaultBinding={
+                    SIDEBAR_SHORTCUTS.groupActionAddGroupBelow.defaultBinding
+                  }
+                  className="pointer-events-none hidden md:inline-flex"
+                  interactive={false}
+                />
               </button>
             </PopoverClose>
           ) : null}
@@ -1969,7 +2600,13 @@ const GroupActionsPopover: React.FC<{
                   <span className="grid size-6 shrink-0 place-content-center rounded-md bg-destructive/10 text-destructive">
                     <Trash2 className="h-3.5 w-3.5" />
                   </span>
-                  Delete Group
+                  <span className="flex-1">Delete Group</span>
+                  <ShortcutKbd
+                    actionId={SIDEBAR_SHORTCUTS.groupActionDelete.id}
+                    defaultBinding={SIDEBAR_SHORTCUTS.groupActionDelete.defaultBinding}
+                    className="pointer-events-none hidden md:inline-flex"
+                    interactive={false}
+                  />
                 </button>
               </PopoverClose>
             </>
@@ -1988,6 +2625,8 @@ const ToggleClose: React.FC<{
     // biome-ignore lint/a11y/useButtonType: lint debt cleanup
     <button
       onClick={() => setOpen(!open)}
+      data-auto-admin-sidebar-toggle="true"
+      data-sidebar-open={open ? 'true' : 'false'}
       className="w-full border-t border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 backdrop-blur-2xl"
     >
       <div className="flex items-center p-1 sm:p-3">

@@ -45,6 +45,49 @@ import {
   CredenzaTitle,
   CredenzaTrigger,
 } from '../ui/credenza';
+import { ShortcutKbd, useShortcutAction } from '../ui/keyboard-shortcuts';
+
+const ADD_ROW_DIALOG_SHORTCUTS = {
+  openRowForm: {
+    id: 'autoTable.openRowForm',
+    label: 'Open add row form',
+    description: 'Open the Add New row dialog.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'n',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  openImportMenu: {
+    id: 'autoTable.openImportMenu',
+    label: 'Open import menu',
+    description: 'Open import options for adding rows.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'i',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  cancelAddRow: {
+    id: 'autoTable.cancelAddRow',
+    label: 'Cancel add row',
+    description: 'Close the Add New row dialog.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'Escape',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+} as const;
 
 export type AddRowDialogProps<T extends SchemaKeys> = Pick<
   AutoTableProps<T>,
@@ -76,6 +119,7 @@ export function AddRowDialog<T extends SchemaKeys>({
     {},
   );
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const shortcutScopeRef = React.useRef<HTMLDivElement | null>(null);
   const { user } = useAuth();
   const [isImportPending, setIsImportPending] = React.useState(false);
   const suggestionsSchema = schema;
@@ -180,78 +224,150 @@ export function AddRowDialog<T extends SchemaKeys>({
     input.click();
   };
 
+  const isShortcutInScope = React.useCallback((event: KeyboardEvent) => {
+    const target = event.target as Node | null;
+    const active = document.activeElement as Node | null;
+    const dialogContent = document.querySelector(
+      '[data-auto-table-add-dialog-content="true"]',
+    );
+
+    if (
+      shortcutScopeRef.current &&
+      ((target && shortcutScopeRef.current.contains(target)) ||
+        (active && shortcutScopeRef.current.contains(active)))
+    ) {
+      return true;
+    }
+
+    if (!dialogContent) return false;
+    if (target && dialogContent.contains(target)) return true;
+    if (active && dialogContent.contains(active)) return true;
+    return false;
+  }, []);
+
+  useShortcutAction(
+    ADD_ROW_DIALOG_SHORTCUTS.openRowForm,
+    () => {
+      if (!slug || readOnly) return;
+      setDialogOpen(true);
+    },
+    {
+      enabled: Boolean(slug && !readOnly && !dialogOpen),
+      guard: isShortcutInScope,
+    },
+  );
+  useShortcutAction(
+    ADD_ROW_DIALOG_SHORTCUTS.cancelAddRow,
+    () => {
+      setDialogOpen(false);
+    },
+    {
+      enabled: dialogOpen,
+      guard: isShortcutInScope,
+    },
+  );
+  useShortcutAction(
+    ADD_ROW_DIALOG_SHORTCUTS.openImportMenu,
+    () => {
+      const trigger =
+        shortcutScopeRef.current?.querySelector<HTMLButtonElement>(
+          '[data-auto-table-import-trigger="true"]',
+        );
+      trigger?.click();
+    },
+    {
+      enabled: !readOnly && !isImportPending,
+      guard: isShortcutInScope,
+    },
+  );
+
   if (readOnly) {
     return <>{children}</>;
   }
 
   return (
-    <ButtonGroup className={className}>
-      {slug && (
-        <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
-          <CredenzaTrigger asChild>
-            <Button className="gap-2 rounded-r-none border-r">
-              {buttonIcon}
-              <span className="hidden sm:inline">{buttonLabel}</span>
-            </Button>
-          </CredenzaTrigger>
-          <CredenzaContent>
-            <CredenzaHeader className="min-w-0">
-              <CredenzaTitle className="capitalize">
-                Add new {schema ?? 'row'}
-              </CredenzaTitle>
-              {suggestionsSchema ? (
-                <CredenzaDescription asChild>
-                  <AddDataSuggestions
-                    schemaName={suggestionsSchema}
-                    slug={slug}
-                    onSelected={setFormValues}
-                  />
-                </CredenzaDescription>
-              ) : null}
-            </CredenzaHeader>
-            <CredenzaBody asChild>
-              <ScrollArea className="h-[50vh] max-h-[60vh]">
-                <AutoForm
-                  values={formValues}
-                  schema={finalSchema}
-                  onSubmit={(b) => {
-                    const payload = finalSchemaObject.parse({
-                      ...b,
-                      created_by: user?._?.soul ?? 'anon',
-                      timestamp: Date.now(),
-                    }) as SchemaRecord;
-                    createMutation.mutate(payload);
-                  }}
-                  formProps={{ id: 'auto-table-add-form' }}
-                />
-              </ScrollArea>
-            </CredenzaBody>
-            <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
+    <div ref={shortcutScopeRef}>
+      <ButtonGroup className={className}>
+        {slug && (
+          <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
+            <CredenzaTrigger asChild>
               <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => setDialogOpen(false)}
+                className="gap-2 rounded-r-none border-r"
+                data-auto-table-add-row-trigger="true"
               >
-                Cancel
+                {buttonIcon}
+                <span className="hidden sm:inline">{buttonLabel}</span>
+                <ShortcutKbd
+                  actionId={ADD_ROW_DIALOG_SHORTCUTS.openRowForm.id}
+                  interactive={false}
+                  className="hidden lg:inline-flex"
+                />
               </Button>
-              <SubmitButton
-                form="auto-table-add-form"
-                className="gap-2 w-full"
-                loading={createMutation.isPending}
-              >
-                <Save className="size-4" />
-                Save
-              </SubmitButton>
-            </CredenzaFooter>
-          </CredenzaContent>
-        </Credenza>
-      )}
-      <AddRowImportMenu
-        onImport={handleFileImport}
-        isImportPending={isImportPending}
-      />
-    </ButtonGroup>
+            </CredenzaTrigger>
+            <CredenzaContent data-auto-table-add-dialog-content="true">
+              <CredenzaHeader className="min-w-0">
+                <CredenzaTitle className="capitalize">
+                  Add new {schema ?? 'row'}
+                </CredenzaTitle>
+                {suggestionsSchema ? (
+                  <CredenzaDescription asChild>
+                    <AddDataSuggestions
+                      schemaName={suggestionsSchema}
+                      slug={slug}
+                      onSelected={setFormValues}
+                    />
+                  </CredenzaDescription>
+                ) : null}
+              </CredenzaHeader>
+              <CredenzaBody asChild>
+                <ScrollArea className="h-[50vh] max-h-[60vh]">
+                  <AutoForm
+                    values={formValues}
+                    schema={finalSchema}
+                    onSubmit={(b) => {
+                      const payload = finalSchemaObject.parse({
+                        ...b,
+                        created_by: user?._?.soul ?? 'anon',
+                        timestamp: Date.now(),
+                      }) as SchemaRecord;
+                      createMutation.mutate(payload);
+                    }}
+                    formProps={{ id: 'auto-table-add-form' }}
+                  />
+                </ScrollArea>
+              </CredenzaBody>
+              <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={() => setDialogOpen(false)}
+                >
+                  Cancel
+                  <ShortcutKbd
+                    actionId={ADD_ROW_DIALOG_SHORTCUTS.cancelAddRow.id}
+                    interactive={false}
+                    className="hidden sm:inline-flex"
+                  />
+                </Button>
+                <SubmitButton
+                  form="auto-table-add-form"
+                  className="gap-2 w-full"
+                  loading={createMutation.isPending}
+                >
+                  <Save className="size-4" />
+                  Save
+                </SubmitButton>
+              </CredenzaFooter>
+            </CredenzaContent>
+          </Credenza>
+        )}
+        <AddRowImportMenu
+          onImport={handleFileImport}
+          isImportPending={isImportPending}
+        />
+      </ButtonGroup>
+    </div>
   );
 }
 
@@ -274,10 +390,16 @@ function AddRowImportMenu({
           variant="secondary"
           size="icon"
           aria-label="Import Options"
-          className="rounded-l-none border-l-0"
+          className="rounded-l-none border-l-0 lg:h-9 lg:w-auto lg:gap-2 lg:px-2"
+          data-auto-table-import-trigger="true"
           disabled={isImportPending}
         >
           <ArrowBigUpDash className="size-4" />
+          <ShortcutKbd
+            actionId={ADD_ROW_DIALOG_SHORTCUTS.openImportMenu.id}
+            interactive={false}
+            className="hidden lg:inline-flex"
+          />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">

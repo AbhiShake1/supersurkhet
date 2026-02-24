@@ -41,6 +41,12 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
+  ShortcutKbd,
+  useRegisterShortcut,
+  useShortcutAction,
+  type ShortcutDefinition,
+} from '@/components/ui/keyboard-shortcuts';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -54,6 +60,11 @@ import {
   SortableItemHandle,
   SortableOverlay,
 } from '@/components/ui/sortable';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { dataTableConfig } from '@/config/data-table';
 
 import { getDefaultFilterOperator, getFilterOperators } from '@/lib/data-table';
@@ -74,6 +85,112 @@ const DEBOUNCE_MS = 300;
 const THROTTLE_MS = 50;
 const OPEN_MENU_SHORTCUT = 'f';
 const REMOVE_FILTER_SHORTCUTS = ['backspace', 'delete'];
+const DATA_TABLE_FILTER_SHORTCUTS = {
+  openFilters: {
+    id: 'dataTable.openFilters',
+    label: 'Open filters',
+    description: 'Open the filter list popover.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: OPEN_MENU_SHORTCUT,
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  addFilter: {
+    id: 'dataTable.addFilter',
+    label: 'Add filter',
+    description: 'Add a new filter row.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'a',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  resetFilters: {
+    id: 'dataTable.resetFilters',
+    label: 'Reset filters',
+    description: 'Clear all active filters.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'Backspace',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  filterField: {
+    id: 'dataTable.filterFieldSelector',
+    label: 'Open filter field selector',
+    description: 'Open the field selector for a filter row.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'ArrowDown',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: false,
+    },
+  },
+  removeFilter: {
+    id: 'dataTable.removeFilter',
+    label: 'Remove filter',
+    description: 'Remove the focused filter row.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'Delete',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: false,
+    },
+  },
+  reorderFilter: {
+    id: 'dataTable.reorderFilter',
+    label: 'Reorder filter',
+    description: 'Move a filter row.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'r',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  filterFacetedValue: {
+    id: 'dataTable.openFilterFacetedValue',
+    label: 'Open faceted filter options',
+    description: 'Open selectable options for faceted filters.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'o',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  filterDateValue: {
+    id: 'dataTable.openFilterDateValue',
+    label: 'Open date filter picker',
+    description: 'Open the date or date-range picker for a filter.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'd',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+} as const satisfies Record<string, ShortcutDefinition>;
 
 interface DataTableFilterListProps<TData>
   extends React.ComponentProps<typeof PopoverContent> {
@@ -189,6 +306,23 @@ export function DataTableFilterList<TData>({
     void setJoinOperator('and');
   };
 
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.addFilter);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.resetFilters);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.filterField);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.removeFilter);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.reorderFilter);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.filterFacetedValue);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.filterDateValue);
+  useShortcutAction(
+    DATA_TABLE_FILTER_SHORTCUTS.openFilters,
+    () => {
+      setOpen(true);
+    },
+    {
+      guard: (event) => !event.shiftKey,
+    },
+  );
+
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (
@@ -196,16 +330,6 @@ export function DataTableFilterList<TData>({
         event.target instanceof HTMLTextAreaElement
       ) {
         return;
-      }
-
-      if (
-        event.key.toLowerCase() === OPEN_MENU_SHORTCUT &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.shiftKey
-      ) {
-        event.preventDefault();
-        setOpen(true);
       }
 
       if (
@@ -249,6 +373,11 @@ export function DataTableFilterList<TData>({
           >
             <ListFilter className="size-4" />
             Filter
+            <ShortcutKbd
+              actionId={DATA_TABLE_FILTER_SHORTCUTS.openFilters.id}
+              interactive={false}
+              className="pointer-events-none hidden xl:inline-flex"
+            />
             {filters.length > 0 && (
               <Badge
                 variant="secondary"
@@ -294,6 +423,7 @@ export function DataTableFilterList<TData>({
                     filter={filter}
                     index={index}
                     filterItemId={`${id}-filter-${filter.filterId}`}
+                    shortcuts={DATA_TABLE_FILTER_SHORTCUTS}
                     joinOperator={joinOperator}
                     setJoinOperator={setJoinOperator}
                     columns={columns}
@@ -307,20 +437,30 @@ export function DataTableFilterList<TData>({
           <div className="flex w-full items-center gap-2">
             <Button
               size="sm"
-              className="rounded"
+              className="rounded gap-2"
               ref={addButtonRef}
               onClick={onFilterAdd}
             >
               Add filter
+              <ShortcutKbd
+                actionId={DATA_TABLE_FILTER_SHORTCUTS.addFilter.id}
+                interactive={false}
+                className="pointer-events-none hidden xl:inline-flex"
+              />
             </Button>
             {filters.length > 0 ? (
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded"
+                className="rounded gap-2"
                 onClick={onFiltersReset}
               >
                 Reset filters
+                <ShortcutKbd
+                  actionId={DATA_TABLE_FILTER_SHORTCUTS.resetFilters.id}
+                  interactive={false}
+                  className="pointer-events-none hidden xl:inline-flex"
+                />
               </Button>
             ) : null}
           </div>
@@ -344,6 +484,7 @@ interface DataTableFilterItemProps<TData> {
   filter: ExtendedColumnFilter<TData>;
   index: number;
   filterItemId: string;
+  shortcuts: typeof DATA_TABLE_FILTER_SHORTCUTS;
   joinOperator: JoinOperator;
   setJoinOperator: (value: JoinOperator) => void;
   columns: Column<TData>[];
@@ -358,6 +499,7 @@ function DataTableFilterItem<TData>({
   filter,
   index,
   filterItemId,
+  shortcuts,
   joinOperator,
   setJoinOperator,
   columns,
@@ -447,12 +589,17 @@ function DataTableFilterItem<TData>({
               aria-controls={fieldListboxId}
               variant="outline"
               size="sm"
-              className="w-32 justify-between rounded font-normal"
+              className="w-32 justify-between gap-1 rounded font-normal"
             >
               <span className="truncate">
                 {columns.find((column) => column.id === filter.id)?.columnDef
                   .meta?.label ?? 'Select field'}
               </span>
+              <ShortcutKbd
+                actionId={shortcuts.filterField.id}
+                interactive={false}
+                className="pointer-events-none hidden xl:inline-flex"
+              />
               <ChevronsUpDown className="opacity-50 w-4 h-4" />
             </Button>
           </PopoverTrigger>
@@ -546,22 +693,51 @@ function DataTableFilterItem<TData>({
             onFilterUpdate,
             showValueSelector,
             setShowValueSelector,
+            shortcuts,
           })}
         </div>
-        <Button
-          aria-controls={filterItemId}
-          variant="outline"
-          size="icon"
-          className="size-8 rounded"
-          onClick={() => onFilterRemove(filter.filterId)}
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-        <SortableItemHandle asChild>
-          <Button variant="outline" size="icon" className="size-8 rounded">
-            <GripVertical className="w-4 h-4" />
-          </Button>
-        </SortableItemHandle>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-controls={filterItemId}
+              aria-label="Remove filter"
+              variant="outline"
+              size="icon"
+              className="size-8 rounded"
+              onClick={() => onFilterRemove(filter.filterId)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Remove filter</span>
+            <ShortcutKbd
+              actionId={shortcuts.removeFilter.id}
+              interactive={false}
+            />
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <SortableItemHandle asChild>
+            <TooltipTrigger asChild>
+              <Button
+                aria-label="Reorder filter"
+                variant="outline"
+                size="icon"
+                className="size-8 rounded"
+              >
+                <GripVertical className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+          </SortableItemHandle>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Reorder filter</span>
+            <ShortcutKbd
+              actionId={shortcuts.reorderFilter.id}
+              interactive={false}
+            />
+          </TooltipContent>
+        </Tooltip>
       </div>
     </SortableItem>
   );
@@ -575,6 +751,7 @@ function onFilterInputRender<TData>({
   onFilterUpdate,
   showValueSelector,
   setShowValueSelector,
+  shortcuts,
 }: {
   filter: ExtendedColumnFilter<TData>;
   inputId: string;
@@ -586,6 +763,7 @@ function onFilterInputRender<TData>({
   ) => void;
   showValueSelector: boolean;
   setShowValueSelector: (value: boolean) => void;
+  shortcuts: typeof DATA_TABLE_FILTER_SHORTCUTS;
 }) {
   if (filter.operator === 'isEmpty' || filter.operator === 'isNotEmpty') {
     return (
@@ -706,7 +884,7 @@ function onFilterInputRender<TData>({
               aria-label={`${columnMeta?.label} filter value${multiple ? 's' : ''}`}
               variant="outline"
               size="sm"
-              className="w-full rounded font-normal"
+              className="w-full rounded gap-2 font-normal"
             >
               <FacetedBadgeList
                 options={columnMeta?.options}
@@ -714,6 +892,11 @@ function onFilterInputRender<TData>({
                   columnMeta?.placeholder ??
                   `Select option${multiple ? 's' : ''}...`
                 }
+              />
+              <ShortcutKbd
+                actionId={shortcuts.filterFacetedValue.id}
+                interactive={false}
+                className="pointer-events-none hidden xl:inline-flex"
               />
             </Button>
           </FacetedTrigger>
@@ -773,12 +956,17 @@ function onFilterInputRender<TData>({
               variant="outline"
               size="sm"
               className={cn(
-                'w-full justify-start rounded text-left font-normal',
+                'w-full justify-start rounded gap-2 text-left font-normal',
                 !filter.value && 'text-muted-foreground',
               )}
             >
               <CalendarIcon className="w-4 h-4" />
               <span className="truncate">{displayValue}</span>
+              <ShortcutKbd
+                actionId={shortcuts.filterDateValue.id}
+                interactive={false}
+                className="pointer-events-none hidden xl:inline-flex"
+              />
             </Button>
           </PopoverTrigger>
           <PopoverContent

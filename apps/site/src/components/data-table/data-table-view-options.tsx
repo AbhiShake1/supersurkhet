@@ -17,6 +17,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  ShortcutKbd,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 
@@ -24,9 +28,24 @@ interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
 }
 
+const DATA_TABLE_VIEW_SHORTCUT = {
+  id: 'dataTable.viewOptions',
+  label: 'Open view options',
+  description: 'Open the column visibility menu for the active table.',
+  scope: 'DataTable',
+  defaultBinding: {
+    key: 'v',
+    ctrl: false,
+    meta: true,
+    alt: false,
+    shift: true,
+  },
+} as const;
+
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
+  const [open, setOpen] = React.useState(false);
   const columns = React.useMemo(
     () =>
       table
@@ -38,8 +57,12 @@ export function DataTableViewOptions<TData>({
     [table],
   );
 
+  useShortcutAction(DATA_TABLE_VIEW_SHORTCUT, () => {
+    setOpen(true);
+  });
+
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           aria-label="Toggle columns"
@@ -50,6 +73,11 @@ export function DataTableViewOptions<TData>({
         >
           <Settings2 className="size-4" />
           View
+          <ShortcutKbd
+            actionId={DATA_TABLE_VIEW_SHORTCUT.id}
+            interactive={false}
+            className="pointer-events-none hidden xl:inline-flex"
+          />
           <ChevronsUpDown className="ml-auto opacity-50 size-4" />
         </Button>
       </PopoverTrigger>
