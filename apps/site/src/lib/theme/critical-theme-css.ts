@@ -7,6 +7,24 @@ export interface CriticalThemeStyles {
   dark: ThemeVariableMap;
 }
 
+export function resolveThemeStyles(
+  theme: CriticalThemeStyles | null | undefined,
+  fallbackTheme: CriticalThemeStyles = defaultPresets.tangerine
+    .styles as CriticalThemeStyles,
+): CriticalThemeStyles {
+  if (!theme) {
+    return {
+      light: { ...fallbackTheme.light },
+      dark: { ...fallbackTheme.dark },
+    };
+  }
+
+  return {
+    light: { ...fallbackTheme.light, ...theme.light },
+    dark: { ...fallbackTheme.dark, ...theme.dark },
+  };
+}
+
 function toCssVariableDeclarations(themeVariables: ThemeVariableMap) {
   return Object.entries(themeVariables)
     .filter(([_, value]) => value !== undefined)
@@ -20,17 +38,9 @@ export function buildCriticalThemeCss(
   fallbackTheme: CriticalThemeStyles = defaultPresets.tangerine
     .styles as CriticalThemeStyles,
 ) {
-  if (!theme) {
-    return [
-      `html { color-scheme: ${isDarkMode ? 'dark' : 'light'}; }`,
-      'html, body { background-color: var(--background); color: var(--foreground); }',
-    ].join(' ');
-  }
-
-  const mergedLightTheme = { ...fallbackTheme.light, ...theme.light };
-  const mergedDarkTheme = { ...fallbackTheme.dark, ...theme.dark };
-  const lightDeclarations = toCssVariableDeclarations(mergedLightTheme);
-  const darkDeclarations = toCssVariableDeclarations(mergedDarkTheme);
+  const resolvedTheme = resolveThemeStyles(theme, fallbackTheme);
+  const lightDeclarations = toCssVariableDeclarations(resolvedTheme.light);
+  const darkDeclarations = toCssVariableDeclarations(resolvedTheme.dark);
   const cssRules: string[] = [];
 
   if (lightDeclarations) cssRules.push(`:root { ${lightDeclarations}; }`);

@@ -1,19 +1,29 @@
-import type React from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
-import { defaultPresets, type ThemeStyles } from '@/lib/theme';
 import { createServerFn } from '@tanstack/react-start';
-import { z } from 'zod';
 import {
   deleteCookie,
   getCookie,
   setCookie,
 } from '@tanstack/react-start/server';
+import type React from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
+import { z } from 'zod';
+import { defaultPresets, type ThemeStyles } from '@/lib/theme';
+import { resolveThemeStyles } from '@/lib/theme/critical-theme-css';
 
 const THEME_COOKIE_OPTIONS = {
   path: '/',
   sameSite: 'lax' as const,
   maxAge: 60 * 60 * 24 * 365,
 };
+const useIsomorphicLayoutEffect =
+  typeof window === 'undefined' ? useEffect : useLayoutEffect;
 
 interface ThemeContextType {
   theme: ThemeStyles;
@@ -81,9 +91,10 @@ export function applyTheme(
   currentThemeName: string | null,
 ) {
   const root = document.documentElement;
+  const resolvedTheme = resolveThemeStyles(theme);
 
   // Apply light theme variables
-  Object.entries(theme.light).forEach(([key, value]) => {
+  Object.entries(resolvedTheme.light).forEach(([key, value]) => {
     if (value !== undefined) {
       root.style.setProperty(`--${key}`, value);
     }
@@ -91,18 +102,20 @@ export function applyTheme(
 
   // Apply dark theme variables only when in dark mode
   if (isDarkMode) {
-    Object.entries(theme.dark).forEach(([key, value]) => {
+    Object.entries(resolvedTheme.dark).forEach(([key, value]) => {
       if (value !== undefined) {
         root.style.setProperty(`--${key}`, value);
       }
     });
     root.classList.add('dark');
+    root.style.colorScheme = 'dark';
   } else {
     // Remove dark mode variables when in light mode
-    Object.keys(theme.dark).forEach((key) => {
+    Object.keys(resolvedTheme.dark).forEach((key) => {
       root.style.removeProperty(`--${key}`);
     });
     root.classList.remove('dark');
+    root.style.colorScheme = 'light';
   }
 
   if (currentThemeName) {
@@ -129,9 +142,21 @@ export const ThemeProvider: React.FC<{
     // applyTheme(theme, isDarkMode, currentThemeName ?? null)
     return theme;
   });
+  const handledInitialClientEffectRef = useRef(false);
 
   // Apply theme changes to CSS variables
-  useEffect(() => {
+  useIsomorphicLayoutEffect(() => {
+    if (
+      typeof window !== 'undefined' &&
+      handledInitialClientEffectRef.current === false
+    ) {
+      handledInitialClientEffectRef.current = true;
+      const root = document.documentElement;
+      const modeAlreadyMatches = root.classList.contains('dark') === isDarkMode;
+      if (modeAlreadyMatches) {
+        return;
+      }
+    }
     applyTheme(theme, isDarkMode, currentThemeName ?? null);
   }, [theme, isDarkMode, currentThemeName]);
 
@@ -172,8 +197,16 @@ export const ThemeProvider: React.FC<{
       root.style.removeProperty('--y');
     }
 
-    document.startViewTransition(() => {
+    root.dataset.themeTransition = 'active';
+
+    const transition = document.startViewTransition(() => {
       setIsDarkMode(newMode);
+    });
+
+    void transition.finished.finally(() => {
+      delete root.dataset.themeTransition;
+      root.style.removeProperty('--x');
+      root.style.removeProperty('--y');
     });
   };
 
