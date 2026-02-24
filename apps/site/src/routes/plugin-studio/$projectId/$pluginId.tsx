@@ -3204,6 +3204,9 @@ function PluginStudioPresenter({
     parsed?.adminTabs,
     parsed?.schemaDocs,
     pluginId,
+    openAddColumnSheet,
+    openEditColumnSheet,
+    requestDeleteColumn,
   ]);
   useEffect(() => {
     const nextOptions = blocklyComparableFields.length
