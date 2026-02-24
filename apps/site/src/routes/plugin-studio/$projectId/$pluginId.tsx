@@ -294,6 +294,16 @@ function isDuplicatePersistenceError(error: unknown) {
   );
 }
 
+function isMissingPersistenceError(error: unknown) {
+  const message = toErrorMessage(error).toLowerCase();
+  return (
+    message.includes('not found') ||
+    message.includes('missing') ||
+    message.includes('does not exist') ||
+    message.includes('no record')
+  );
+}
+
 function parseVersionParts(version: string): [number, number, number] | null {
   const parts = version?.split('.');
   if (parts?.length !== 3) return null;
@@ -2170,6 +2180,8 @@ function PluginStudioPresenter({
   const lastRequestedDraftSnapshotRef = useRef<string | null>(null);
   const lastAutosaveErrorAtRef = useRef<number>(0);
   const lastPersistenceErrorAtRef = useRef<number>(0);
+  const isSidebarTabPersistInFlightRef = useRef(false);
+  const pendingSidebarTabPersistRef = useRef<readonly AdminTabDoc[] | null>(null);
   const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(
     null,
   );
@@ -3806,50 +3818,65 @@ function PluginStudioPresenter({
   }
 
   function persistSidebarAdminTabs(nextAdminTabs: readonly AdminTabDoc[]) {
-    const rowId = canonicalRoutesTabsConfigId;
-    const payload = {
-      id: rowId,
-      draftId: draftId,
-      revisionId: 'live',
-      pluginId,
-      businessSlug: 'draft',
-      routes: toDraftRoutesFromAdminTabs(nextAdminTabs),
-      savedByUserId: actorUserId,
-      savedAt: new Date().toISOString(),
-    };
+    pendingSidebarTabPersistRef.current = nextAdminTabs;
+    if (isSidebarTabPersistInFlightRef.current) return;
+    isSidebarTabPersistInFlightRef.current = true;
 
     void (async () => {
-      if (activeRoutesTabsConfigRow?.id === canonicalRoutesTabsConfigId) {
-        await updateRoutesTabsConfigMutation.mutateAsync(payload);
-      } else {
+      while (pendingSidebarTabPersistRef.current) {
+        const nextTabs = pendingSidebarTabPersistRef.current;
+        pendingSidebarTabPersistRef.current = null;
+        const payload = {
+          id: canonicalRoutesTabsConfigId,
+          draftId: draftId,
+          revisionId: 'live',
+          pluginId,
+          businessSlug: 'draft',
+          routes: toDraftRoutesFromAdminTabs(nextTabs),
+          savedByUserId: actorUserId,
+          savedAt: new Date().toISOString(),
+        };
+
         try {
-          await createRoutesTabsConfigMutation.mutateAsync(payload);
+          await updateRoutesTabsConfigMutation.mutateAsync(payload);
         } catch (error) {
-          if (!isDuplicatePersistenceError(error)) {
+          if (!isMissingPersistenceError(error)) {
             throw error;
           }
-          await updateRoutesTabsConfigMutation.mutateAsync(payload);
+          try {
+            await createRoutesTabsConfigMutation.mutateAsync(payload);
+          } catch (createError) {
+            if (!isDuplicatePersistenceError(createError)) {
+              throw createError;
+            }
+            await updateRoutesTabsConfigMutation.mutateAsync(payload);
+          }
         }
-      }
 
-      // Cleanup legacy row key shape (`draftId@live`) after canonical write (`draftId`).
-      if (
-        activeRoutesTabsConfigRow?.id &&
-        activeRoutesTabsConfigRow.id !== canonicalRoutesTabsConfigId
-      ) {
-        try {
-          await deleteRoutesTabsConfigMutation.mutateAsync(
-            activeRoutesTabsConfigRow.id,
-          );
-        } catch (_error) {
-          // Best-effort cleanup only; canonical write has already succeeded.
+        // Cleanup legacy row key shape (`draftId@live`) after canonical write (`draftId`).
+        if (
+          activeRoutesTabsConfigRow?.id &&
+          activeRoutesTabsConfigRow.id !== canonicalRoutesTabsConfigId
+        ) {
+          try {
+            await deleteRoutesTabsConfigMutation.mutateAsync(
+              activeRoutesTabsConfigRow.id,
+            );
+          } catch (_error) {
+            // Best-effort cleanup only; canonical write has already succeeded.
+          }
         }
       }
 
       await refetchRoutesTabsConfig();
-    })().catch((error) =>
-      reportPersistenceError('Sidebar tab persistence', error),
-    );
+    })()
+      .catch((error) => reportPersistenceError('Sidebar tab persistence', error))
+      .finally(() => {
+        isSidebarTabPersistInFlightRef.current = false;
+        if (pendingSidebarTabPersistRef.current) {
+          persistSidebarAdminTabs(pendingSidebarTabPersistRef.current);
+        }
+      });
   }
 
   function updateSchemaDoc(
