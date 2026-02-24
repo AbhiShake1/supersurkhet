@@ -1377,7 +1377,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                         ? selectedAssistantAuthMode === 'api-key'
                           ? 'Paste your API key.'
                           : 'Paste your OAuth access token.'
-                        : 'Setup complete. Save credential to continue.',
+                        : 'Setup complete. Congratulations.',
           options:
             isAskingForAnother
               ? [
@@ -1390,7 +1390,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                   label: option.label,
                   selected: option.providerId === selectedAssistantProviderId,
                   recommended: option.providerId === recommendedProviderId,
-                  showCheckmark: selectedProviderIds.has(option.providerId as BusinessOnboardingProviderId) || option.providerId === selectedAssistantProviderId,
+                  showCheckmark: selectedProviderIds.has(option.providerId as BusinessOnboardingProviderId),
                 }))
                 : assistantStage === 'model'
                   ? providerModelOptions.slice(0, 12).map((option, index) => ({
@@ -1398,7 +1398,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                     label: option.label,
                     selected: option.id === selectedAssistantModelId,
                     recommended: index === 0,
-                    showCheckmark: selectedModelIds.has(option.id) || option.id === selectedAssistantModelId,
+                    showCheckmark: selectedModelIds.has(option.id),
                   }))
                   : assistantStage === 'auth'
                     ? stepTwoAuthModes.map((authMode) => ({

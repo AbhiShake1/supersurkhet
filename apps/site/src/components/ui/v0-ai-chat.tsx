@@ -36,6 +36,7 @@ interface VercelV0ChatProps {
             label: string;
             selected?: boolean;
             recommended?: boolean;
+            showCheckmark?: boolean;
         }>;
         onSelectOption?: (id: string) => void;
         input?: {
