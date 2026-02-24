@@ -62,10 +62,11 @@ export const Route = createFileRoute('/$businessName/admin/')({
       <BusinessProvider business={business}>
         <Child
           businessName={businessName}
-          businessId={business.id}
-          actorUserId={user._?.soul ?? 'anon'}
+          businessId={business.basePath?.trim() || business.id}
+          actorUserId={user._?.soul ?? user?.pub ?? ''}
           actorRole={
-            business?.members?.[user._?.soul ?? 'anon']?.role === 'owner'
+            business?.members?.[user._?.soul ?? user?.pub ?? '']?.role ===
+            'owner'
               ? 'owner'
               : user?.role === 'admin'
                 ? 'admin'
@@ -156,6 +157,10 @@ function PluginOnboarding({
   async function installPlugin(releaseId: string) {
     const releaseParts = parseReleaseId(releaseId);
     if (!releaseParts) return;
+    if (!actorUserId) {
+      toast.error('Could not determine your user identity');
+      return;
+    }
     setInstallingReleaseIds((current) =>
       current.includes(releaseId) ? current : [...current, releaseId],
     );

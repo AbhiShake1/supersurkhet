@@ -1,5 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
+import z from 'zod';
+import { useAuth } from '@/components/auth-provider';
+import { useConfetti } from '@/components/confetti-provider';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -10,9 +13,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { api } from '@/lib/api';
-import { useConfetti } from '@/components/confetti-provider';
-import { useAuth } from '@/components/auth-provider';
-import z from 'zod';
 import { resolveInvitationStatus } from './-invitation-state';
 
 export const Route = createFileRoute('/$businessName/admin/invitation')({
@@ -54,12 +54,17 @@ function RouteComponent() {
   const handleAccept = async () => {
     try {
       if (business && user) {
+        const actorUserId = user._?.soul ?? user?.pub ?? '';
+        if (!actorUserId) {
+          setStatus('error');
+          return;
+        }
         // Update the business to add the user as a member
         const updatedMembers = {
           ...business.members,
-          [user._?.soul ?? 'anon']: {
+          [actorUserId]: {
             role: invitation?.role || 'staff',
-            userId: user._?.soul ?? '',
+            userId: actorUserId,
             joinedAt: Date.now(),
             permissions: invitation?.permissions || {},
           },

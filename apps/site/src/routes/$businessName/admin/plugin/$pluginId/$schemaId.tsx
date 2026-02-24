@@ -47,9 +47,11 @@ function RuntimePluginSchemaRoute() {
     single: true,
   });
   const business = businesses[0];
+  const businessNamespace =
+    business?.basePath?.trim() || business?.id?.trim() || businessName.trim();
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
-    keys: [business?.id ?? businessName],
+    keys: [businessNamespace],
   });
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const releases = mergeMarketplaceReleasesWithSeed(
@@ -81,7 +83,7 @@ function RuntimePluginSchemaRoute() {
   const pluginTab = installedRelease.adminTabs?.find(
     (entry) => entry.schema === decodedSchemaId,
   );
-  const pluginSchemaNamespace = `${business.id}/${decodedPluginId}/${decodedSchemaId}`;
+  const pluginSchemaNamespace = `${businessNamespace}/${decodedPluginId}/${decodedSchemaId}`;
   const tabInput = resolveRuntimePluginAdminTabInput({
     tabSearchValue: tab,
     pluginTab,
@@ -116,7 +118,7 @@ export function resolveRuntimePluginAdminTabInput({
       schemaDoc.title ||
       decodedSchemaId,
     group: pluginTab?.group,
-    parsedSchema: compiledSchema as z.ZodObject<any>,
+    parsedSchema: compiledSchema as z.ZodObject<z.ZodRawShape>,
     slug: pluginSchemaNamespace,
     treatSlugAsAbsolute: true,
   } satisfies AutoAdminTabInput);

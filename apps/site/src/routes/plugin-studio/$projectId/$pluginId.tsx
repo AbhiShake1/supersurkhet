@@ -2034,7 +2034,7 @@ function PluginStudioPresenter({
   const { fire: fireConfetti } = useConfetti();
   const params = Route.useParams();
   const actorUserIdAliases = useMemo(() => buildActorUserIdAliases(user), [user]);
-  const actorUserId = actorUserIdAliases[0] ?? 'anon';
+  const actorUserId = actorUserIdAliases[0] ?? '';
   const actorUserIdSet = useMemo(
     () => new Set(actorUserIdAliases),
     [actorUserIdAliases],
