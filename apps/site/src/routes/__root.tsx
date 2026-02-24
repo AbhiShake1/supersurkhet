@@ -336,23 +336,21 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         <Toaster richColors />
         <Outlet />
         <VibeKanbanWebCompanion />
-        {
-          //<TanStackDevtools
-          //   config={{
-          //     position: 'bottom-right',
-          //     openHotkey: ['Shift', 'd'],
-          //     triggerHidden: true,
-          //     hideUntilHover: true,
-          //   }}
-          //   plugins={[
-          //     {
-          //       name: 'Tanstack Router',
-          //       render: <TanStackRouterDevtoolsPanel />,
-          //     },
-          //     TanStackQueryDevtools,
-          //   ]}
-          // />
-        }
+        <TanStackDevtools
+          config={{
+            position: 'bottom-right',
+            openHotkey: ['Shift', 'd'],
+            triggerHidden: true,
+            hideUntilHover: true,
+          }}
+          plugins={[
+            {
+              name: 'Tanstack Router',
+              render: <TanStackRouterDevtoolsPanel />,
+            },
+            TanStackQueryDevtools,
+          ]}
+        />
       </RootDocument>
     );
   },
