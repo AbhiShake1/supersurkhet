@@ -40,6 +40,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import * as Editable from '@/components/ui/editable';
+import {
+  KeyboardShortcutsBoundary,
+  ShortcutKbd,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
 import { useDataTable } from '@/hooks/use-data-table';
 import { api } from '@/lib/api';
 import {
@@ -64,6 +69,139 @@ import { BadgeMarquee } from '../ui/badge-marquee';
 import { AutoTableActionBar } from './auto-table-action-bar';
 import { applyDerivedValuesToRow } from './derive-row';
 import { getAutoTableInitialState } from './initial-state';
+
+const AUTO_TABLE_SHORTCUTS = {
+  focusActiveRow: {
+    id: 'autoTable.focusActiveRow',
+    label: 'Focus active row',
+    description: 'Focus the active row in the table.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'f',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  nextRow: {
+    id: 'autoTable.nextRow',
+    label: 'Next row',
+    description: 'Move focus to the next row in the active table.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'ArrowDown',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  previousRow: {
+    id: 'autoTable.previousRow',
+    label: 'Previous row',
+    description: 'Move focus to the previous row in the active table.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'ArrowUp',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  toggleSelection: {
+    id: 'autoTable.toggleRowSelection',
+    label: 'Toggle row selection',
+    description: 'Select or deselect the focused table row.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: ' ',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  openRowActions: {
+    id: 'autoTable.openRowActions',
+    label: 'Open row actions',
+    description: 'Open action menu for the focused row.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'k',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  editRow: {
+    id: 'autoTable.editRow',
+    label: 'Edit row',
+    description: 'Open edit dialog for the focused row.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'e',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  deleteRow: {
+    id: 'autoTable.deleteRow',
+    label: 'Delete row',
+    description: 'Open delete dialog for the focused row.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'Backspace',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  nextFocusable: {
+    id: 'autoTable.nextFocusable',
+    label: 'Next table element',
+    description: 'Move focus to next actionable table element.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: ']',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  previousFocusable: {
+    id: 'autoTable.previousFocusable',
+    label: 'Previous table element',
+    description: 'Move focus to previous actionable table element.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: '[',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  activateFocused: {
+    id: 'autoTable.activateFocused',
+    label: 'Activate focused table element',
+    description: 'Click the currently focused table element.',
+    scope: 'AutoTable',
+    defaultBinding: {
+      key: 'Enter',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+} as const;
 
 type AggregationType =
   | 'sum'
@@ -334,115 +472,302 @@ export function AutoTable<T extends SchemaKeys>({
     clearOnDefault: true,
   });
 
+  const [activeRowId, setActiveRowId] = React.useState<string | null>(null);
+  const tableContainerRef = React.useRef<HTMLDivElement | null>(null);
+  const rows = table.getRowModel().rows;
+  const resolvedActiveRowId = React.useMemo(() => {
+    if (!rows.length) return null;
+    if (activeRowId && rows.some((row) => row.id === activeRowId)) {
+      return activeRowId;
+    }
+    return rows[0]?.id ?? null;
+  }, [activeRowId, rows]);
+
+  const focusActiveRow = React.useCallback((rowId: string | null) => {
+    if (!rowId) return;
+    const element = tableContainerRef.current?.querySelector<HTMLElement>(
+      `[data-row-id="${CSS.escape(rowId)}"]`,
+    );
+    element?.focus();
+  }, []);
+
+  const resolveActiveRow = React.useCallback(() => {
+    if (!resolvedActiveRowId) return null;
+    return rows.find((row) => row.id === resolvedActiveRowId) ?? null;
+  }, [resolvedActiveRowId, rows]);
+
+  const moveActiveRow = React.useCallback(
+    (offset: number) => {
+      if (!rows.length) return;
+      const currentIndex = rows.findIndex(
+        (row) => row.id === resolvedActiveRowId,
+      );
+      const nextIndex =
+        currentIndex >= 0
+          ? (currentIndex + offset + rows.length) % rows.length
+          : offset > 0
+            ? 0
+            : rows.length - 1;
+      const row = rows[nextIndex];
+      if (!row) return;
+      setActiveRowId(row.id);
+      focusActiveRow(row.id);
+    },
+    [focusActiveRow, resolvedActiveRowId, rows],
+  );
+
+  const isTableShortcutTarget = React.useCallback((event: KeyboardEvent) => {
+    if (!tableContainerRef.current) return false;
+    const target = event.target as Node | null;
+    const active = document.activeElement as Node | null;
+    if (target && tableContainerRef.current.contains(target)) return true;
+    if (active && tableContainerRef.current.contains(active)) return true;
+    return false;
+  }, []);
+
+  const getVisibleTableFocusables = React.useCallback((): HTMLElement[] => {
+    const root = tableContainerRef.current;
+    if (!root) return [];
+    const nodes = [
+      ...root.querySelectorAll<HTMLElement>(
+        'button, a[href], input, select, textarea, [tabindex]',
+      ),
+    ];
+    return nodes.filter((node) => {
+      if (node.offsetParent === null) return false;
+      if (node.getAttribute('aria-hidden') === 'true') return false;
+      if (
+        node.hasAttribute('disabled') ||
+        node.getAttribute('aria-disabled') === 'true'
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, []);
+
+  const focusTableElementByOffset = React.useCallback(
+    (offset: number) => {
+      const elements = getVisibleTableFocusables();
+      if (!elements.length) return;
+      const active = document.activeElement as HTMLElement | null;
+      const currentIndex = elements.indexOf(active as HTMLElement);
+      const nextIndex =
+        currentIndex >= 0
+          ? (currentIndex + offset + elements.length) % elements.length
+          : offset > 0
+            ? 0
+            : elements.length - 1;
+      elements[nextIndex]?.focus();
+    },
+    [getVisibleTableFocusables],
+  );
+
+  useShortcutAction(AUTO_TABLE_SHORTCUTS.focusActiveRow, () =>
+    focusActiveRow(resolveActiveRow()?.id ?? rows[0]?.id ?? null),
+  );
+  useShortcutAction(
+    AUTO_TABLE_SHORTCUTS.nextRow,
+    () => {
+      moveActiveRow(1);
+    },
+    { guard: isTableShortcutTarget },
+  );
+  useShortcutAction(
+    AUTO_TABLE_SHORTCUTS.previousRow,
+    () => {
+      moveActiveRow(-1);
+    },
+    { guard: isTableShortcutTarget },
+  );
+  useShortcutAction(
+    AUTO_TABLE_SHORTCUTS.toggleSelection,
+    () => {
+      const row = resolveActiveRow();
+      if (!row) return;
+      row.toggleSelected(!row.getIsSelected());
+      focusActiveRow(row.id);
+    },
+    { guard: isTableShortcutTarget },
+  );
+  useShortcutAction(
+    AUTO_TABLE_SHORTCUTS.openRowActions,
+    () => {
+      const row = resolveActiveRow();
+      if (!row) return;
+      const trigger =
+        tableContainerRef.current?.querySelector<HTMLButtonElement>(
+          `[data-row-action-trigger="${CSS.escape(row.id)}"]`,
+        );
+      trigger?.click();
+      focusActiveRow(row.id);
+    },
+    { guard: isTableShortcutTarget },
+  );
+  useShortcutAction(
+    AUTO_TABLE_SHORTCUTS.editRow,
+    () => {
+      if (props.readOnly) return;
+      const row = resolveActiveRow();
+      if (!row) return;
+      setRowAction({ row, variant: 'update' });
+    },
+    { guard: isTableShortcutTarget },
+  );
+  useShortcutAction(
+    AUTO_TABLE_SHORTCUTS.deleteRow,
+    () => {
+      if (props.readOnly) return;
+      const row = resolveActiveRow();
+      if (!row) return;
+      setRowAction({ row, variant: 'delete' });
+    },
+    { guard: isTableShortcutTarget },
+  );
+  useShortcutAction(
+    AUTO_TABLE_SHORTCUTS.nextFocusable,
+    () => {
+      focusTableElementByOffset(1);
+    },
+    { guard: isTableShortcutTarget },
+  );
+  useShortcutAction(
+    AUTO_TABLE_SHORTCUTS.previousFocusable,
+    () => {
+      focusTableElementByOffset(-1);
+    },
+    { guard: isTableShortcutTarget },
+  );
+  useShortcutAction(
+    AUTO_TABLE_SHORTCUTS.activateFocused,
+    () => {
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || !tableContainerRef.current?.contains(active)) return;
+      active.click();
+    },
+    { guard: isTableShortcutTarget },
+  );
+
   if (isLoading) return <SkeletonTableOneWrapper bodyClassName="px-0" />;
 
   return (
-    <div className="py-6 space-y-4 flex flex-col items-end">
-      {!props.readOnly && (
-        <AddRowDialog<T>
-          schema={hasSchemaKey ? schemaName : undefined}
-          runtimeSchema={
-            'parsedSchema' in props ? props.parsedSchema : undefined
-          }
-          onCreateRow={canUseRuntimeCrud ? handleRuntimeCreate : undefined}
-          slug={slug}
-          {...props}
-        />
-      )}
-      <DataTable
-        table={table}
-        onReorderColumns={
-          props.editable && !props.readOnly ? props.onReorderColumns : undefined
-        }
-        reorderableColumnIds={reorderableColumnIds}
-        actionBar={
-          <AutoTableActionBar
-            table={table}
-            onDelete={
-              canUseRuntimeCrud ? runtimeDeleteMutation.mutate : onDelete
-            }
-          />
-        }
-        className={className}
+    <KeyboardShortcutsBoundary>
+      <div
+        ref={tableContainerRef}
+        className="py-6 space-y-4 flex flex-col items-end"
       >
-        <DataTableAdvancedToolbar
+        {!props.readOnly && (
+          <AddRowDialog<T>
+            schema={hasSchemaKey ? schemaName : undefined}
+            runtimeSchema={
+              'parsedSchema' in props ? props.parsedSchema : undefined
+            }
+            onCreateRow={canUseRuntimeCrud ? handleRuntimeCreate : undefined}
+            slug={slug}
+            {...props}
+          />
+        )}
+        <DataTable
           table={table}
-          showViewOptions={showViewOptions}
-          endSlot={
-            props.editable && !props.readOnly && props.onAddColumn ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={props.onAddColumn}
-              >
-                Add Column
-              </Button>
-            ) : null
+          activeRowId={resolvedActiveRowId}
+          onActiveRowChange={setActiveRowId}
+          onReorderColumns={
+            props.editable && !props.readOnly
+              ? props.onReorderColumns
+              : undefined
           }
-        >
-          {enableAdvancedFiltering && (
-            <DataTableFilterList
+          reorderableColumnIds={reorderableColumnIds}
+          actionBar={
+            <AutoTableActionBar
               table={table}
-              shallow={shallow}
-              debounceMs={debounceMs}
-              throttleMs={throttleMs}
-              align="start"
-            >
-              <DataTableSortList table={table} align="start" />
-            </DataTableFilterList>
-          )}
-          {enableAggregations && (
-            <Button variant="outline" size="sm" className="gap-2">
-              <DatabaseZap className="size-4" />
-              Aggregations
-            </Button>
-          )}
-        </DataTableAdvancedToolbar>
-        {/* <DataTableToolbar table={table}>
-             <DataTableSortList table={table} align="end" />
-           </DataTableToolbar> */}
-      </DataTable>
-      {!props.readOnly && (
-        <DeleteRowDialog
-          open={rowAction?.variant === 'delete'}
-          onOpenChange={() => setRowAction(null)}
-          data={rowAction?.row.original ? [rowAction?.row.original] : []}
-          showTrigger={false}
-          onConfirm={() => {
-            setRowAction(null);
-            if (canUseRuntimeCrud) {
-              runtimeDeleteMutation.mutate((rowAction?.row.id ?? '') as never);
-            } else {
-              onDelete(rowAction?.row.id ?? '');
-            }
-            rowAction?.row.toggleSelected(false);
-          }}
-        />
-      )}
-      {!props.readOnly && (
-        <EditRowDialog
-          open={rowAction?.variant === 'update'}
-          onOpenChange={() => setRowAction(null)}
-          data={rowAction?.row.original}
-          schema={schema}
-          onSubmit={(data) => {
-            if (data) {
-              if (canUseRuntimeCrud) {
-                runtimeUpdateMutation.mutate({
-                  id: rowAction?.row.id ?? '',
-                  ...data,
-                } as never);
-              } else {
-                updateMutation.mutate({ id: rowAction?.row.id ?? '', ...data });
+              onDelete={
+                canUseRuntimeCrud ? runtimeDeleteMutation.mutate : onDelete
               }
+            />
+          }
+          className={className}
+        >
+          <DataTableAdvancedToolbar
+            table={table}
+            showViewOptions={showViewOptions}
+            endSlot={
+              props.editable && !props.readOnly && props.onAddColumn ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={props.onAddColumn}
+                >
+                  Add Column
+                </Button>
+              ) : null
             }
-            setRowAction(null);
-          }}
-          showTrigger={false}
-        />
-      )}
-    </div>
+          >
+            {enableAdvancedFiltering && (
+              <DataTableFilterList
+                table={table}
+                shallow={shallow}
+                debounceMs={debounceMs}
+                throttleMs={throttleMs}
+                align="start"
+              >
+                <DataTableSortList table={table} align="start" />
+              </DataTableFilterList>
+            )}
+            {enableAggregations && (
+              <Button variant="outline" size="sm" className="gap-2">
+                <DatabaseZap className="size-4" />
+                Aggregations
+              </Button>
+            )}
+          </DataTableAdvancedToolbar>
+        </DataTable>
+        {!props.readOnly && (
+          <DeleteRowDialog
+            open={rowAction?.variant === 'delete'}
+            onOpenChange={() => setRowAction(null)}
+            data={rowAction?.row.original ? [rowAction?.row.original] : []}
+            showTrigger={false}
+            onConfirm={() => {
+              setRowAction(null);
+              if (canUseRuntimeCrud) {
+                runtimeDeleteMutation.mutate(
+                  (rowAction?.row.id ?? '') as never,
+                );
+              } else {
+                onDelete(rowAction?.row.id ?? '');
+              }
+              rowAction?.row.toggleSelected(false);
+            }}
+          />
+        )}
+        {!props.readOnly && (
+          <EditRowDialog
+            open={rowAction?.variant === 'update'}
+            onOpenChange={() => setRowAction(null)}
+            data={rowAction?.row.original}
+            schema={schema}
+            onSubmit={(data) => {
+              if (data) {
+                if (canUseRuntimeCrud) {
+                  runtimeUpdateMutation.mutate({
+                    id: rowAction?.row.id ?? '',
+                    ...data,
+                  } as never);
+                } else {
+                  updateMutation.mutate({
+                    id: rowAction?.row.id ?? '',
+                    ...data,
+                  });
+                }
+              }
+              setRowAction(null);
+            }}
+            showTrigger={false}
+          />
+        )}
+      </div>
+    </KeyboardShortcutsBoundary>
   );
 }
 
@@ -634,37 +959,13 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
           },
           queryKey: ['auto-table-actions', row.id, row.original],
         });
-        React.useEffect(() => {
-          if (!isMenuOpen || readOnly) return;
-
-          const onKeyDown = (event: KeyboardEvent) => {
-            const isEditShortcut =
-              event.metaKey &&
-              event.shiftKey &&
-              event.key.toLowerCase() === 'e';
-            const isDeleteShortcut =
-              event.shiftKey &&
-              event.metaKey &&
-              (event.key === 'Backspace' || event.key === 'Delete');
-            if (!isEditShortcut && !isDeleteShortcut) return;
-
-            event.preventDefault();
-            setRowAction({
-              row,
-              variant: isEditShortcut ? 'update' : 'delete',
-            });
-            setIsMenuOpen(false);
-          };
-
-          window.addEventListener('keydown', onKeyDown);
-          return () => window.removeEventListener('keydown', onKeyDown);
-        }, [isMenuOpen, readOnly, row, setRowAction]);
 
         return (
           <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 aria-label="Open menu"
+                data-row-action-trigger={row.id}
                 variant="secondary"
                 className="flex size-8 rounded-md border border-transparent p-0 text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground data-[state=open]:border-border data-[state=open]:bg-muted data-[state=open]:text-foreground"
               >
@@ -679,7 +980,9 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
                 >
                   <Pencil className="size-4" aria-hidden="true" />
                   Edit
-                  <DropdownMenuShortcut>⌘⇧E</DropdownMenuShortcut>
+                  <DropdownMenuShortcut>
+                    <ShortcutKbd actionId="autoTable.editRow" interactive={false} />
+                  </DropdownMenuShortcut>
                 </DropdownMenuItem>
               )}
               {!readOnly && (
@@ -689,7 +992,12 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
                 >
                   <Trash2 className="size-4" aria-hidden="true" />
                   Delete
-                  <DropdownMenuShortcut>⌘⇧⌫</DropdownMenuShortcut>
+                  <DropdownMenuShortcut>
+                    <ShortcutKbd
+                      actionId="autoTable.deleteRow"
+                      interactive={false}
+                    />
+                  </DropdownMenuShortcut>
                 </DropdownMenuItem>
               )}
               {!readOnly && actionNode ? <DropdownMenuSeparator /> : null}

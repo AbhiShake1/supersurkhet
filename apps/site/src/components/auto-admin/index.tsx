@@ -21,6 +21,7 @@ import {
 import { ZodEffects } from 'zod';
 import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
 import * as Kanban from '@/components/ui/kanban';
+import { KeyboardShortcutsBoundary } from '@/components/ui/keyboard-shortcuts';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { api } from '@/lib/api';
 import {
@@ -259,13 +260,13 @@ export function AutoAdmin({
     const runtimeTabsByToken = new Map<string, PossibleTabConfig>();
     for (const tab of runtimeTabs) {
       const runtimeTabId =
-        ('tabId' in tab &&
-          typeof tab.tabId === 'string' &&
-          tab.tabId.trim().length > 0
+        'tabId' in tab &&
+        typeof tab.tabId === 'string' &&
+        tab.tabId.trim().length > 0
           ? tab.tabId.trim()
-          : ('schema' in tab && typeof tab.schema === 'string'
+          : 'schema' in tab && typeof tab.schema === 'string'
             ? tab.schema
-            : tab.title));
+            : tab.title;
       runtimeTabsByToken.set(`schema:${runtimeTabId}`, tab);
     }
 
@@ -302,16 +303,17 @@ export function AutoAdmin({
             : candidate === websiteTabConfig
               ? 'system:website'
               : (() => {
-                const runtimeTabId =
-                  ('tabId' in candidate &&
+                  const runtimeTabId =
+                    'tabId' in candidate &&
                     typeof candidate.tabId === 'string' &&
                     candidate.tabId.trim().length > 0
-                    ? candidate.tabId.trim()
-                    : ('schema' in candidate && typeof candidate.schema === 'string'
-                      ? candidate.schema
-                      : candidate.title));
-                return `schema:${runtimeTabId}`;
-              })();
+                      ? candidate.tabId.trim()
+                      : 'schema' in candidate &&
+                          typeof candidate.schema === 'string'
+                        ? candidate.schema
+                        : candidate.title;
+                  return `schema:${runtimeTabId}`;
+                })();
       if (
         token.startsWith('system:')
           ? usedSystemTokens.has(token)
@@ -528,97 +530,103 @@ export function AutoAdmin({
   }
 
   return (
-    <SidebarProvider>
-      <CollapsibleSidebar
-        tabs={tabsWithHome}
-        businessName={business?.name}
-        slug={business?.basePath}
-        editable={editable}
-        onAddTable={onAddTable}
-        onAddGroup={onAddGroup}
-        onReorderGroups={onReorderGroups}
-        onMoveTabToGroup={handleMoveTabToGroup}
-        onReorderTabs={onReorderTabs}
-        onRenameGroup={handleRenameGroup}
-        onDeleteGroup={handleDeleteGroup}
-        onRenameTab={handleRenameTab}
-        onRenameTabIcon={handleRenameTabIcon}
-        onOpenWorkflowEditorForTab={onOpenWorkflowEditorForTab}
-        onDeleteTableForTab={onDeleteTableForTab}
-        groups={mergedGroups}
-      />
-      <SidebarInset className="min-w-0 flex flex-col">
-        <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-12 sm:h-16 shrink-0 items-center gap-0.5 sm:gap-2 border-b transition-[width,height] ease-linear px-0.5 sm:px-4">
-          <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">
-            {currentItem.title}
-          </h1>
+    <KeyboardShortcutsBoundary>
+      <SidebarProvider>
+        <CollapsibleSidebar
+          tabs={tabsWithHome}
+          businessName={business?.name}
+          slug={business?.basePath}
+          editable={editable}
+          onAddTable={onAddTable}
+          onAddGroup={onAddGroup}
+          onReorderGroups={onReorderGroups}
+          onMoveTabToGroup={handleMoveTabToGroup}
+          onReorderTabs={onReorderTabs}
+          onRenameGroup={handleRenameGroup}
+          onDeleteGroup={handleDeleteGroup}
+          onRenameTab={handleRenameTab}
+          onRenameTabIcon={handleRenameTabIcon}
+          onOpenWorkflowEditorForTab={onOpenWorkflowEditorForTab}
+          onDeleteTableForTab={onDeleteTableForTab}
+          groups={mergedGroups}
+        />
+        <SidebarInset className="min-w-0 flex flex-col">
+          <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-12 sm:h-16 shrink-0 items-center gap-0.5 sm:gap-2 border-b transition-[width,height] ease-linear px-0.5 sm:px-4">
+            <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">
+              {currentItem.title}
+            </h1>
 
-          {/* Search and Action Bar */}
-          <div className="ml-auto flex items-center gap-0.5 sm:gap-2 px-2">
-            {/* Language Selector */}
-            <LanguageSelector />
-          </div>
-        </header>
+            <div className="ml-auto flex items-center gap-0.5 sm:gap-2 px-2">
+              <LanguageSelector />
+            </div>
+          </header>
 
-        <section
-          className={cn(
-            'flex-1 overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6',
-          )}
-        >
-          {'children' in currentItem ? (
-            currentItem.children
-          ) : 'parsedSchema' in currentItem && currentTableItem ? (
-            <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
-          ) : !components?.length ? (
-            currentTableItem ? (
+          <section
+            className={cn(
+              'flex-1 overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6',
+            )}
+          >
+            {'children' in currentItem ? (
+              currentItem.children
+            ) : 'parsedSchema' in currentItem && currentTableItem ? (
               <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
-            ) : null
-          ) : (
-            <Tabs
-              key={tab}
-              defaultValue={
-                localStorage.getItem(`tab-#${basePath}-${tab}`) ??
-                components[0]?.name ??
-                'table'
-              }
-              className={cn('flex flex-1 flex-col')}
-              onValueChange={(value) => {
-                localStorage.setItem(`tab-#${basePath}-${tab}`, value);
-              }}
-            >
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                <TabsTrigger value="table">Table View</TabsTrigger>
-                {components.map(({ name }) => (
-                  <TabsTrigger value={name} key={name}>
-                    {name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <TabsContent value="table" className={cn('flex-1 mt-1 sm:mt-4')}>
-                <Card className="border rounded-lg shadow-sm overflow-hidden">
-                  <div className="p-0.5 sm:p-4">
-                    {currentTableItem ? (
-                      <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
-                    ) : null}
-                  </div>
-                </Card>
-              </TabsContent>
-              {components.map(({ component, name }) => (
+            ) : !components?.length ? (
+              currentTableItem ? (
+                <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
+              ) : null
+            ) : (
+              <Tabs
+                key={tab}
+                defaultValue={
+                  localStorage.getItem(`tab-#${basePath}-${tab}`) ??
+                  components[0]?.name ??
+                  'table'
+                }
+                className={cn('flex flex-1 flex-col')}
+                onValueChange={(value) => {
+                  localStorage.setItem(`tab-#${basePath}-${tab}`, value);
+                }}
+              >
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  <TabsTrigger value="table">Table View</TabsTrigger>
+                  {components.map(({ name }) => (
+                    <TabsTrigger value={name} key={name}>
+                      {name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
                 <TabsContent
-                  value={name}
-                  key={name}
-                  className="flex-1 mt-1 sm:mt-4"
+                  value="table"
+                  className={cn('flex-1 mt-1 sm:mt-4')}
                 >
                   <Card className="border rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-0.5 sm:p-4">{component}</div>
+                    <div className="p-0.5 sm:p-4">
+                      {currentTableItem ? (
+                        <AutoTable<SchemaKeys>
+                          {...currentTableItem}
+                          key={tab}
+                        />
+                      ) : null}
+                    </div>
                   </Card>
                 </TabsContent>
-              ))}
-            </Tabs>
-          )}
-        </section>
-      </SidebarInset>
-    </SidebarProvider>
+                {components.map(({ component, name }) => (
+                  <TabsContent
+                    value={name}
+                    key={name}
+                    className="flex-1 mt-1 sm:mt-4"
+                  >
+                    <Card className="border rounded-lg shadow-sm overflow-hidden">
+                      <div className="p-0.5 sm:p-4">{component}</div>
+                    </Card>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            )}
+          </section>
+        </SidebarInset>
+      </SidebarProvider>
+    </KeyboardShortcutsBoundary>
   );
 }
 

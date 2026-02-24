@@ -54,6 +54,7 @@ import {
   DropdownMenuTrigger,
 } from './dropdown-menu';
 import { Input } from './input';
+import { ShortcutKbd, useShortcutAction } from './keyboard-shortcuts';
 import { ManageOrganization } from './organizations/manage-organization';
 import {
   Popover,
@@ -73,6 +74,112 @@ import {
 const SECTION_TOGGLE_BUTTON_CLASS =
   'flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 active:bg-slate-200/60 dark:active:bg-slate-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset';
 const UNGROUP_DROP_SENTINEL = '__sidebar_ungroup_drop__';
+const SIDEBAR_SHORTCUTS = {
+  nextFocusable: {
+    id: 'autoAdmin.nextSidebarItem',
+    label: 'Next sidebar element',
+    description: 'Move focus to the next actionable sidebar element.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'ArrowDown',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  previousFocusable: {
+    id: 'autoAdmin.previousSidebarItem',
+    label: 'Previous sidebar element',
+    description: 'Move focus to the previous actionable sidebar element.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'ArrowUp',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  activateFocused: {
+    id: 'autoAdmin.activateFocusedElement',
+    label: 'Activate focused element',
+    description: 'Click the currently focused sidebar element.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'Enter',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  focusSearch: {
+    id: 'autoAdmin.focusSidebarSearch',
+    label: 'Focus sidebar search',
+    description: 'Focus sidebar search/filter field.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: '/',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  openSidebar: {
+    id: 'autoAdmin.openSidebar',
+    label: 'Show sidebar',
+    description: 'Ensure sidebar is visible.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: '1',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  closeSidebar: {
+    id: 'autoAdmin.closeSidebar',
+    label: 'Hide sidebar',
+    description: 'Collapse the sidebar.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: '2',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  openItemActions: {
+    id: 'autoAdmin.openSidebarItemActions',
+    label: 'Open sidebar item actions',
+    description: 'Open actions for the focused sidebar item.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'k',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  renameItem: {
+    id: 'autoAdmin.renameSidebarItem',
+    label: 'Rename sidebar item',
+    description: 'Start renaming the focused sidebar item.',
+    scope: 'AutoAdmin Sidebar',
+    defaultBinding: {
+      key: 'r',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+} as const;
 
 function toReorderPosition(
   activeIndex: number,
@@ -165,11 +272,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   const [activeDraggedTabId, setActiveDraggedTabId] = useState<string | null>(
     null,
   );
+  const [focusedSidebarTitle, setFocusedSidebarTitle] = useState<string>('');
   const groupCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const pointerPositionRef = useRef<{ x: number; y: number } | null>(null);
   const externalDropHandledRef = useRef(false);
   const tabRenameHandledByKeyRef = useRef(false);
   const groupRenameHandledByKeyRef = useRef(false);
+  const navRef = useRef<HTMLElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const iconCatalog = useMemo(() => {
     const entries = Object.entries(
       LucideIcons.icons as Record<string, LucideIcon>,
@@ -541,8 +651,115 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
     ],
   );
 
+  const getVisibleSidebarFocusables = useCallback((): HTMLElement[] => {
+    const root = navRef.current;
+    if (!root) return [];
+    const items = [...root.querySelectorAll<HTMLElement>('button, a[href]')];
+    return items.filter(
+      (item) =>
+        item.offsetParent !== null &&
+        item.getAttribute('aria-hidden') !== 'true' &&
+        !item.hasAttribute('disabled') &&
+        item.getAttribute('aria-disabled') !== 'true',
+    );
+  }, []);
+
+  const getFocusedSidebarTitle = useCallback(() => {
+    if (focusedSidebarTitle) return focusedSidebarTitle;
+    const active = document.activeElement as HTMLElement | null;
+    return active?.getAttribute('data-sidebar-item-title') ?? currentTab;
+  }, [currentTab, focusedSidebarTitle]);
+
+  const focusSidebarElementByOffset = useCallback(
+    (offset: number) => {
+      const items = getVisibleSidebarFocusables();
+      if (!items.length) return;
+      const activeElement = document.activeElement as HTMLElement | null;
+      const currentIndex = items.indexOf(activeElement);
+      const resolvedIndex =
+        currentIndex >= 0
+          ? (currentIndex + offset + items.length) % items.length
+          : offset > 0
+            ? 0
+            : items.length - 1;
+      const nextItem = items[resolvedIndex];
+      nextItem?.focus();
+      const nextTitle = nextItem?.getAttribute('data-sidebar-item-title');
+      if (nextTitle) setFocusedSidebarTitle(nextTitle);
+    },
+    [getVisibleSidebarFocusables],
+  );
+
+  const isSidebarShortcutTarget = useCallback((event: KeyboardEvent) => {
+    if (!navRef.current) return false;
+    const target = event.target as Node | null;
+    if (!target) return false;
+    const active = document.activeElement as Node | null;
+    return (
+      navRef.current.contains(target) ||
+      (active ? navRef.current.contains(active) : false)
+    );
+  }, []);
+
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.nextFocusable,
+    () => {
+      focusSidebarElementByOffset(1);
+    },
+    { guard: isSidebarShortcutTarget },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.previousFocusable,
+    () => {
+      focusSidebarElementByOffset(-1);
+    },
+    { guard: isSidebarShortcutTarget },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.activateFocused,
+    () => {
+      const active = document.activeElement as HTMLElement | null;
+      if (!active || !navRef.current?.contains(active)) return;
+      active.click();
+    },
+    { guard: isSidebarShortcutTarget },
+  );
+  useShortcutAction(SIDEBAR_SHORTCUTS.focusSearch, () => {
+    if (!open) return;
+    searchInputRef.current?.focus();
+  });
+  useShortcutAction(SIDEBAR_SHORTCUTS.openSidebar, () => {
+    setOpen(true);
+  });
+  useShortcutAction(SIDEBAR_SHORTCUTS.closeSidebar, () => {
+    setOpen(false);
+  });
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.openItemActions,
+    () => {
+      const title = getFocusedSidebarTitle();
+      if (!title) return;
+      const trigger = navRef.current?.querySelector<HTMLButtonElement>(
+        `[data-sidebar-item-actions="${CSS.escape(title)}"]`,
+      );
+      trigger?.click();
+    },
+    { guard: isSidebarShortcutTarget },
+  );
+  useShortcutAction(
+    SIDEBAR_SHORTCUTS.renameItem,
+    () => {
+      if (!editable) return;
+      const title = getFocusedSidebarTitle();
+      if (!title) return;
+      beginTabRename(title);
+    },
+    { guard: isSidebarShortcutTarget },
+  );
+
   return (
     <nav
+      ref={navRef}
       className={`sticky top-0 h-svh min-h-screen shrink-0 border-r transition-all duration-300 ease-in-out ${
         open ? 'w-52 sm:w-72' : 'w-12 sm:w-16'
       } border-slate-200/80 dark:border-slate-800 bg-card/95 p-1.5 sm:p-2 shadow-sm z-50 flex flex-col`}
@@ -558,13 +775,23 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
 
         {/* Search bar */}
         {open && (
-          <Input
-            placeholder="Filter items..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="text-xs pl-8 my-2"
-            leadingIcon={<Search className="h-4 w-4 my-2" />}
-          />
+          <div className="relative">
+            <Input
+              ref={searchInputRef}
+              placeholder="Filter items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="text-xs pl-8 pr-28 my-2"
+              leadingIcon={<Search className="h-4 w-4 my-2" />}
+            />
+            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+              <ShortcutKbd
+                actionId={SIDEBAR_SHORTCUTS.focusSearch.id}
+                defaultBinding={SIDEBAR_SHORTCUTS.focusSearch.defaultBinding}
+                interactive={false}
+              />
+            </span>
+          </div>
         )}
       </div>
 
@@ -683,6 +910,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                     selected={currentTab}
                     open={open}
                     onActivate={incrementFrequentUsage}
+                    onFocusItem={setFocusedSidebarTitle}
                   />
                 ))}
               </div>
@@ -790,6 +1018,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                               : undefined
                           }
                           onActivate={incrementFrequentUsage}
+                          onFocusItem={setFocusedSidebarTitle}
                         />
                       )}
                     </div>
@@ -1094,6 +1323,7 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                                             : undefined
                                         }
                                         onActivate={incrementFrequentUsage}
+                                        onFocusItem={setFocusedSidebarTitle}
                                       />
                                     )}
                                   </div>
@@ -1168,6 +1398,7 @@ type OptionProps = {
   onOpenWorkflowEditor?: (tabTitle: string) => void;
   onRequestDeleteTable?: (tabTitle: string) => void;
   onActivate?: (title: string) => void;
+  onFocusItem?: (title: string) => void;
 };
 
 const Option = memo(function Option({
@@ -1183,6 +1414,7 @@ const Option = memo(function Option({
   onOpenWorkflowEditor,
   onRequestDeleteTable,
   onActivate,
+  onFocusItem,
 }: OptionProps) {
   const isSelected = selected === title;
   const hasRenameAction = editable && Boolean(onBeginRename);
@@ -1208,7 +1440,10 @@ const Option = memo(function Option({
   return (
     <div className="group/option relative">
       <Link
+        data-sidebar-item-link="true"
+        data-sidebar-item-title={title}
         onClick={handleClick}
+        onFocus={() => onFocusItem?.(title)}
         to="."
         search={(current) => ({
           ...(current as Record<string, unknown>),
@@ -1305,6 +1540,13 @@ const Option = memo(function Option({
                 }}
               >
                 <Pencil className="h-3.5 w-3.5" />
+                <span className="ml-1">
+                  <ShortcutKbd
+                    actionId={SIDEBAR_SHORTCUTS.renameItem.id}
+                    defaultBinding={SIDEBAR_SHORTCUTS.renameItem.defaultBinding}
+                    interactive={false}
+                  />
+                </span>
                 <span className="sr-only">Rename tab {title}</span>
               </button>
             ) : null}
@@ -1320,10 +1562,17 @@ const Option = memo(function Option({
                 className="rounded-md border border-border/70 bg-background/75 p-1 text-slate-500 shadow-xs hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                 aria-label={`Actions for ${title}`}
                 title={`Actions for ${title}`}
+                data-sidebar-item-actions={title}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </PopoverTrigger>
+            <ShortcutKbd
+              actionId={SIDEBAR_SHORTCUTS.openItemActions.id}
+              defaultBinding={SIDEBAR_SHORTCUTS.openItemActions.defaultBinding}
+              className="pointer-events-none hidden md:inline-flex"
+              interactive={false}
+            />
             <PopoverContent
               align="end"
               className="w-64 rounded-xl border-border/70 bg-popover/95 p-2.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-popover/85"
@@ -1398,7 +1647,8 @@ function areOptionPropsEqual(prev: OptionProps, next: OptionProps) {
     prev.onRenameIcon === next.onRenameIcon &&
     prev.onOpenWorkflowEditor === next.onOpenWorkflowEditor &&
     prev.onRequestDeleteTable === next.onRequestDeleteTable &&
-    prev.onActivate === next.onActivate
+    prev.onActivate === next.onActivate &&
+    prev.onFocusItem === next.onFocusItem
   );
 }
 
@@ -1757,6 +2007,24 @@ const ToggleClose: React.FC<{
             Hide
           </span>
         )}
+        {open ? (
+          <span className="ml-auto hidden pr-2 sm:inline-flex">
+            <ShortcutKbd
+              actionId={SIDEBAR_SHORTCUTS.closeSidebar.id}
+              defaultBinding={SIDEBAR_SHORTCUTS.closeSidebar.defaultBinding}
+              interactive={false}
+            />
+          </span>
+        ) : null}
+        {!open ? (
+          <span className="ml-auto hidden pr-2 sm:inline-flex">
+            <ShortcutKbd
+              actionId={SIDEBAR_SHORTCUTS.openSidebar.id}
+              defaultBinding={SIDEBAR_SHORTCUTS.openSidebar.defaultBinding}
+              interactive={false}
+            />
+          </span>
+        ) : null}
       </div>
     </button>
   );
