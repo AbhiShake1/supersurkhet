@@ -88,9 +88,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'ArrowDown',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   previousFocusable: {
@@ -101,9 +101,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'ArrowUp',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   activateFocused: {
@@ -114,9 +114,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'Enter',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   focusSearch: {
@@ -125,11 +125,11 @@ const SIDEBAR_SHORTCUTS = {
     description: 'Focus sidebar search/filter field.',
     scope: 'AutoAdmin Sidebar',
     defaultBinding: {
-      key: '/',
+      key: 's',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   openSidebar: {
@@ -142,7 +142,7 @@ const SIDEBAR_SHORTCUTS = {
       ctrl: false,
       meta: true,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   closeSidebar: {
@@ -155,7 +155,7 @@ const SIDEBAR_SHORTCUTS = {
       ctrl: false,
       meta: true,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   openItemActions: {
@@ -164,11 +164,11 @@ const SIDEBAR_SHORTCUTS = {
     description: 'Open actions for the focused sidebar item.',
     scope: 'AutoAdmin Sidebar',
     defaultBinding: {
-      key: 'k',
+      key: 'a',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   renameItem: {
@@ -179,9 +179,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'r',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   quickAddGroup: {
@@ -192,9 +192,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'g',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   quickAddTable: {
@@ -205,9 +205,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 't',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   toggleFrequentSection: {
@@ -218,9 +218,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'f',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   toggleFocusedGroup: {
@@ -229,11 +229,11 @@ const SIDEBAR_SHORTCUTS = {
     description: 'Expand or collapse the currently focused group.',
     scope: 'AutoAdmin Sidebar',
     defaultBinding: {
-      key: 'j',
+      key: 'h',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   openFocusedGroupActions: {
@@ -242,11 +242,11 @@ const SIDEBAR_SHORTCUTS = {
     description: 'Open the actions menu for the currently focused group.',
     scope: 'AutoAdmin Sidebar',
     defaultBinding: {
-      key: 'l',
+      key: 'm',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   renameFocusedGroup: {
@@ -255,9 +255,9 @@ const SIDEBAR_SHORTCUTS = {
     description: 'Start renaming the currently focused group.',
     scope: 'AutoAdmin Sidebar',
     defaultBinding: {
-      key: 'u',
+      key: 'r',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
       shift: true,
     },
@@ -270,9 +270,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'd',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   openFocusedTab: {
@@ -283,9 +283,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'o',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   openFocusedTabIconPicker: {
@@ -296,9 +296,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'i',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   selectTabIconOption: {
@@ -307,11 +307,11 @@ const SIDEBAR_SHORTCUTS = {
     description: 'Select a focused icon option in the tab icon picker.',
     scope: 'AutoAdmin Sidebar',
     defaultBinding: {
-      key: 'y',
+      key: 'Enter',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   openFocusedTabWorkflow: {
@@ -322,9 +322,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'w',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   deleteFocusedTabTable: {
@@ -335,9 +335,9 @@ const SIDEBAR_SHORTCUTS = {
     defaultBinding: {
       key: 'Backspace',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   managePlugins: {
@@ -346,11 +346,11 @@ const SIDEBAR_SHORTCUTS = {
     description: 'Open the manage plugins page for this business.',
     scope: 'AutoAdmin Sidebar',
     defaultBinding: {
-      key: 'm',
+      key: 'p',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   groupActionRename: {
@@ -996,6 +996,33 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       (active ? navRef.current.contains(active) : false)
     );
   }, []);
+  const isPlainArrowSidebarNavigationTarget = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return false;
+      if (!navRef.current) return false;
+      const active = document.activeElement as HTMLElement | null;
+      if (!active) return false;
+      const editable =
+        active.isContentEditable ||
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        active instanceof HTMLSelectElement;
+      if (editable) return false;
+      return navRef.current.contains(active);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      if (!isPlainArrowSidebarNavigationTarget(event)) return;
+      event.preventDefault();
+      focusSidebarElementByOffset(event.key === 'ArrowDown' ? 1 : -1);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [focusSidebarElementByOffset, isPlainArrowSidebarNavigationTarget]);
   useRegisterShortcut(SIDEBAR_SHORTCUTS.reorderFocusedGroupHandle);
 
   useShortcutAction(

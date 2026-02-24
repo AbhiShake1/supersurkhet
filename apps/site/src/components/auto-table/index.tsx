@@ -84,9 +84,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: 'f',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   nextRow: {
@@ -97,9 +97,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: 'ArrowDown',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   previousRow: {
@@ -110,9 +110,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: 'ArrowUp',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   toggleSelection: {
@@ -123,9 +123,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: ' ',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   openRowActions: {
@@ -134,11 +134,11 @@ const AUTO_TABLE_SHORTCUTS = {
     description: 'Open action menu for the focused row.',
     scope: 'AutoTable',
     defaultBinding: {
-      key: 'k',
+      key: 'a',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   editRow: {
@@ -149,9 +149,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: 'e',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   deleteRow: {
@@ -162,9 +162,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: 'Backspace',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   nextFocusable: {
@@ -175,9 +175,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: ']',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   previousFocusable: {
@@ -188,9 +188,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: '[',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   activateFocused: {
@@ -201,9 +201,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: 'Enter',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   addColumn: {
@@ -214,9 +214,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: 'c',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   openAggregations: {
@@ -227,9 +227,9 @@ const AUTO_TABLE_SHORTCUTS = {
     defaultBinding: {
       key: 'g',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
 } as const;

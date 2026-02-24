@@ -54,9 +54,9 @@ const DATA_TABLE_COLUMN_SHORTCUTS = {
     defaultBinding: {
       key: 'r',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
 } as const satisfies Record<string, ShortcutDefinition>;

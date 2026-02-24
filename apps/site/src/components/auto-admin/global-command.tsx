@@ -1,6 +1,6 @@
 import { rankItem } from '@tanstack/match-sorter-utils';
 import { Search } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -14,6 +14,7 @@ import {
 import {
   ShortcutKbd,
   useShortcutAction,
+  useShortcutBinding,
   useShortcutRegistry,
 } from '@/components/ui/keyboard-shortcuts';
 
@@ -23,9 +24,9 @@ const GLOBAL_COMMAND_SHORTCUT = {
   description: 'Search tables, members, and actions across AutoAdmin.',
   scope: 'AutoAdmin',
   defaultBinding: {
-    key: 'k',
+    key: '/',
     ctrl: false,
-    meta: true,
+    meta: false,
     alt: false,
     shift: false,
   },
@@ -91,6 +92,10 @@ export function AutoAdminGlobalCommand({
   const normalizedQuery = query.trim().toLowerCase();
   const { shortcuts, openShortcutDialog, executeShortcut } =
     useShortcutRegistry();
+  const globalCommandBinding = useShortcutBinding(
+    GLOBAL_COMMAND_SHORTCUT.id,
+    GLOBAL_COMMAND_SHORTCUT.defaultBinding,
+  );
 
   const scoreParts = (parts: Array<string | undefined>) => {
     if (!normalizedQuery) return { passed: true, score: 0 };
@@ -174,15 +179,62 @@ export function AutoAdminGlobalCommand({
   const hasShortcuts = filteredShortcuts.length > 0;
   const prioritizeDataSection = normalizedQuery.length > 0 && hasRecords;
 
-  const handleOpenChange = (open: boolean) => {
-    setIsOpen(open);
-    if (!open) setQuery('');
-    onOpenChange?.(open);
-  };
+  const handleOpenChange = useCallback(
+    (open: boolean) => {
+      setIsOpen(open);
+      if (!open) setQuery('');
+      onOpenChange?.(open);
+    },
+    [onOpenChange],
+  );
 
   useShortcutAction(GLOBAL_COMMAND_SHORTCUT, () => {
     handleOpenChange(!isOpen);
   });
+
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      if (target.isContentEditable) return true;
+      const tag = target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
+        return true;
+      }
+      const role = target.getAttribute('role');
+      return role === 'textbox' || role === 'searchbox' || role === 'combobox';
+    };
+
+    const onKeyDownCapture = (event: KeyboardEvent) => {
+      if (isOpen) return;
+      if (
+        isEditableTarget(event.target) ||
+        isEditableTarget(document.activeElement)
+      ) {
+        return;
+      }
+
+      const normalizedEventKey =
+        event.key.length === 1 ? event.key.toLowerCase() : event.key;
+      const normalizedBindingKey =
+        globalCommandBinding.key.length === 1
+          ? globalCommandBinding.key.toLowerCase()
+          : globalCommandBinding.key;
+      const isMatch =
+        normalizedEventKey === normalizedBindingKey &&
+        event.ctrlKey === globalCommandBinding.ctrl &&
+        event.metaKey === globalCommandBinding.meta &&
+        event.altKey === globalCommandBinding.alt &&
+        event.shiftKey === globalCommandBinding.shift;
+      if (!isMatch) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      handleOpenChange(true);
+    };
+
+    window.addEventListener('keydown', onKeyDownCapture, true);
+    return () => window.removeEventListener('keydown', onKeyDownCapture, true);
+  }, [globalCommandBinding, handleOpenChange, isOpen]);
 
   const description =
     'Quick actions and organization-wide search for AutoAdmin.';

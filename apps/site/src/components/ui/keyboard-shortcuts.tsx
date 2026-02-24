@@ -509,10 +509,12 @@ export function useShortcutAction(
       if (guard && !guard(event)) return;
       if (!allowInEditableContext && isEditableContext(event)) return;
       event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       handler(event);
     };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
   }, [allowInEditableContext, binding, enabled, guard, handler]);
 }
 

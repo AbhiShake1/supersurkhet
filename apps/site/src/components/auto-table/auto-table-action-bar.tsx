@@ -30,9 +30,9 @@ const AUTO_TABLE_ACTION_BAR_SHORTCUTS = {
     defaultBinding: {
       key: 'x',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
 } as const;

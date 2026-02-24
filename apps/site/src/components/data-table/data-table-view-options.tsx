@@ -40,9 +40,9 @@ const DATA_TABLE_VIEW_SHORTCUT = {
   defaultBinding: {
     key: 'v',
     ctrl: false,
-    meta: true,
+    meta: false,
     alt: false,
-    shift: true,
+    shift: false,
   },
 } as const;
 

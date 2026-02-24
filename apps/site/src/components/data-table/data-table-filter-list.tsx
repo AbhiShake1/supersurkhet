@@ -106,9 +106,9 @@ const DATA_TABLE_FILTER_SHORTCUTS = {
     defaultBinding: {
       key: 'a',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   resetFilters: {
@@ -119,9 +119,9 @@ const DATA_TABLE_FILTER_SHORTCUTS = {
     defaultBinding: {
       key: 'Backspace',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   filterField: {
@@ -132,7 +132,7 @@ const DATA_TABLE_FILTER_SHORTCUTS = {
     defaultBinding: {
       key: 'ArrowDown',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
       shift: false,
     },
@@ -145,7 +145,7 @@ const DATA_TABLE_FILTER_SHORTCUTS = {
     defaultBinding: {
       key: 'Delete',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
       shift: false,
     },
@@ -158,9 +158,9 @@ const DATA_TABLE_FILTER_SHORTCUTS = {
     defaultBinding: {
       key: 'r',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   filterFacetedValue: {
@@ -171,9 +171,9 @@ const DATA_TABLE_FILTER_SHORTCUTS = {
     defaultBinding: {
       key: 'o',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   filterDateValue: {
@@ -184,9 +184,9 @@ const DATA_TABLE_FILTER_SHORTCUTS = {
     defaultBinding: {
       key: 'd',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
 } as const satisfies Record<string, ShortcutDefinition>;

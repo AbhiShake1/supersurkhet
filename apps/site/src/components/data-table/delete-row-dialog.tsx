@@ -44,9 +44,9 @@ const DELETE_ROW_DIALOG_SHORTCUTS = {
     defaultBinding: {
       key: 'Backspace',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   cancelDeleteRows: {
@@ -70,9 +70,9 @@ const DELETE_ROW_DIALOG_SHORTCUTS = {
     defaultBinding: {
       key: 'Enter',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
 } as const;

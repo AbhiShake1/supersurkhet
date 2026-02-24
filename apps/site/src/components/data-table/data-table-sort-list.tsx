@@ -74,9 +74,9 @@ const DATA_TABLE_SORT_SHORTCUTS = {
     defaultBinding: {
       key: 'a',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   resetSort: {
@@ -87,9 +87,9 @@ const DATA_TABLE_SORT_SHORTCUTS = {
     defaultBinding: {
       key: 'Backspace',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   sortField: {
@@ -100,7 +100,7 @@ const DATA_TABLE_SORT_SHORTCUTS = {
     defaultBinding: {
       key: 'ArrowDown',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
       shift: false,
     },
@@ -113,7 +113,7 @@ const DATA_TABLE_SORT_SHORTCUTS = {
     defaultBinding: {
       key: 'Delete',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
       shift: false,
     },
@@ -126,9 +126,9 @@ const DATA_TABLE_SORT_SHORTCUTS = {
     defaultBinding: {
       key: 'r',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
 } as const satisfies Record<string, ShortcutDefinition>;

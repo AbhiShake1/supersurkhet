@@ -57,9 +57,9 @@ const ADD_ROW_DIALOG_SHORTCUTS = {
     defaultBinding: {
       key: 'n',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   openImportMenu: {
@@ -70,9 +70,9 @@ const ADD_ROW_DIALOG_SHORTCUTS = {
     defaultBinding: {
       key: 'i',
       ctrl: false,
-      meta: true,
+      meta: false,
       alt: false,
-      shift: true,
+      shift: false,
     },
   },
   cancelAddRow: {
