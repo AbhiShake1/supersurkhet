@@ -19,4 +19,24 @@ describe('plugin studio project draft id helper', () => {
       }),
     ).toBe('draft.project_team_acme.plugin_sales_dashboard');
   });
+
+  it('compacts very long ids to avoid oversized storage keys', () => {
+    const projectId = `project.${'a'.repeat(100)}`;
+    const pluginId = `plugin.${'b'.repeat(100)}`;
+    const draftId = toProjectScopedDraftId({
+      projectId,
+      pluginId,
+    });
+
+    expect(draftId.length).toBeLessThanOrEqual(120);
+    expect(draftId.startsWith('draft.project.aaaaaaaaaaaaaaaa')).toBe(true);
+    expect(draftId.includes('.plugin.bbbbbbbbbbbbbbbb')).toBe(true);
+    expect(draftId).toMatch(/^draft\.[a-z0-9._-]+\.[a-z0-9._-]+\.[a-z0-9]+$/);
+    expect(
+      toProjectScopedDraftId({
+        projectId,
+        pluginId,
+      }),
+    ).toBe(draftId);
+  });
 });
