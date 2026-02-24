@@ -1,6 +1,9 @@
 import {
+<<<<<<< HEAD
   ArrowBigDown,
   ArrowBigUp,
+=======
+>>>>>>> mig/v2aiui
   BookmarkPlus,
   ChevronLeft,
   ChevronRight,
@@ -14,6 +17,7 @@ import {
   Star,
   Trash2,
 } from 'lucide-react';
+<<<<<<< HEAD
 import {
   type ReactNode,
   type SVGProps,
@@ -24,6 +28,11 @@ import {
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
+=======
+import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+>>>>>>> mig/v2aiui
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+<<<<<<< HEAD
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type {
@@ -43,6 +53,15 @@ import type {
   PluginUserReviewGroup,
 } from '@/lib/plugins/admin-plugin-market';
 import { cn } from '@/lib/utils';
+=======
+import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
+import { cn } from '@/lib/utils';
+import type { 
+  PluginMarketItem, 
+  PluginUserReview,
+  PluginUserReviewGroup
+} from '@/lib/plugins/admin-plugin-market';
+>>>>>>> mig/v2aiui
 
 export interface PluginDetailView {
   plugin: PluginMarketItem;
@@ -64,8 +83,12 @@ export interface PluginDetailsViewProps {
   plugin: PluginMarketItem;
   details: PluginDetailView;
   businessName: string;
+<<<<<<< HEAD
   businessId?: string;
   onInstall: () => Promise<boolean | undefined>;
+=======
+  onInstall: () => Promise<void>;
+>>>>>>> mig/v2aiui
   onUninstall: () => Promise<void>;
   onSaveReview: (rating: number, comment: string) => Promise<void>;
   onBack: () => void;
@@ -80,13 +103,21 @@ export function PluginDetailsView({
   plugin,
   details,
   businessName,
+<<<<<<< HEAD
   businessId,
+=======
+>>>>>>> mig/v2aiui
   onInstall,
   onUninstall,
   onSaveReview,
   onBack,
+<<<<<<< HEAD
   similarPlugins = [],
   reviewGroups = [],
+=======
+  similarPlugins,
+  reviewGroups,
+>>>>>>> mig/v2aiui
   isInstalling,
   isUninstalling,
   isSavingReview,
@@ -95,7 +126,10 @@ export function PluginDetailsView({
   const [reviewComment, setReviewComment] = useState('');
   const [isHeroOutOfView, setIsHeroOutOfView] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+<<<<<<< HEAD
   const [showOtherReviews, setShowOtherReviews] = useState(false);
+=======
+>>>>>>> mig/v2aiui
   const previewStripRef = useRef<HTMLDivElement | null>(null);
   const heroSectionRef = useRef<HTMLElement | null>(null);
   const reviewDraftSourceKeyRef = useRef<string>('');
@@ -108,16 +142,25 @@ export function PluginDetailsView({
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details.userReview?.comment ?? '';
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> mig/v2aiui
   const isReviewDirty =
     reviewRating !== reviewDraftBaseRef.current.rating ||
     reviewComment !== reviewDraftBaseRef.current.comment;
 
   useEffect(() => {
+<<<<<<< HEAD
     const persistedReviewSourceKey =
       details.userReview?.id ?? `draft::${plugin.pluginId}`;
     const sourceChanged =
       reviewDraftSourceKeyRef.current !== persistedReviewSourceKey;
+=======
+    const persistedReviewSourceKey = details.userReview?.id ?? `draft::${plugin.pluginId}`;
+    const sourceChanged = reviewDraftSourceKeyRef.current !== persistedReviewSourceKey;
+>>>>>>> mig/v2aiui
 
     if (!sourceChanged && isReviewDirty) return;
 
@@ -128,6 +171,7 @@ export function PluginDetailsView({
     };
     setReviewRating(persistedReviewRating);
     setReviewComment(persistedReviewComment);
+<<<<<<< HEAD
   }, [
     plugin.pluginId,
     details.userReview,
@@ -135,6 +179,9 @@ export function PluginDetailsView({
     persistedReviewComment,
     isReviewDirty,
   ]);
+=======
+  }, [plugin.pluginId, details.userReview, persistedReviewRating, persistedReviewComment, isReviewDirty]);
+>>>>>>> mig/v2aiui
 
   useEffect(() => {
     const heroNode = heroSectionRef.current;
@@ -149,12 +196,18 @@ export function PluginDetailsView({
 
     observer.observe(heroNode);
     return () => observer.disconnect();
+<<<<<<< HEAD
   }, []);
 
   const ratingLabel =
     (plugin.averageRating ?? 0) > 0
       ? (plugin.averageRating ?? 0).toFixed(1)
       : 'N/A';
+=======
+  }, [plugin, details]);
+
+  const ratingLabel = (plugin.averageRating ?? 0) > 0 ? (plugin.averageRating ?? 0).toFixed(1) : 'N/A';
+>>>>>>> mig/v2aiui
   const compactInstallCount = new Intl.NumberFormat(undefined, {
     notation: 'compact',
     compactDisplay: 'short',
@@ -173,6 +226,7 @@ export function PluginDetailsView({
     (sum, row) => sum + row.count,
     0,
   );
+<<<<<<< HEAD
   const myReviews = reviewGroups
     .filter((group) => group.isCurrentUser)
     .flatMap((group) =>
@@ -190,6 +244,8 @@ export function PluginDetailsView({
       })),
     );
   const visibleOtherReviews = otherReviews.slice(0, 10);
+=======
+>>>>>>> mig/v2aiui
 
   const heroMediaSrc = details.previewScreenshots[0] ?? plugin.iconUrl ?? null;
 
@@ -265,10 +321,14 @@ export function PluginDetailsView({
         <div className="absolute inset-0 shadow-[inset_0_0_240px_rgba(0,0,0,0.45)]" />
 
         <div className="relative z-10 mx-auto flex min-h-[100svh] w-full max-w-[1440px] flex-col px-4 pb-24 pt-24 sm:px-7 md:px-10 md:pb-28 md:pt-28">
+<<<<<<< HEAD
           <div
             className="max-w-[560px] ml-[8%] space-y-7 pb-3 md:pb-7"
             style={{ marginTop: '80px' }}
           >
+=======
+          <div className="max-w-[560px] ml-[8%] space-y-7 pb-3 md:pb-7" style={{ marginTop: '80px' }}>
+>>>>>>> mig/v2aiui
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
               <div className="size-[104px] shrink-0 overflow-hidden rounded-[20px] border border-white/20 bg-black/35 backdrop-blur-sm">
                 {plugin.iconUrl ? (
@@ -331,11 +391,15 @@ export function PluginDetailsView({
                 <Sparkles
                   className={cn('mr-2 size-4', isInstalling && 'animate-spin')}
                 />
+<<<<<<< HEAD
                 {plugin.isInstalled
                   ? plugin.isUpgradable
                     ? 'Update'
                     : 'Installed'
                   : 'Install'}
+=======
+                {plugin.isInstalled ? (plugin.isUpgradable ? 'Update' : 'Installed') : 'Install'}
+>>>>>>> mig/v2aiui
               </Button>
 
               <Button
@@ -377,8 +441,13 @@ export function PluginDetailsView({
                         Uninstall this plugin?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
+<<<<<<< HEAD
                         This removes {plugin.title} from this business admin.
                         You can install it again later.
+=======
+                        This removes {plugin.title} from this business
+                        admin. You can install it again later.
+>>>>>>> mig/v2aiui
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -397,6 +466,10 @@ export function PluginDetailsView({
               This plugin is available for your business
             </p>
           </div>
+<<<<<<< HEAD
+=======
+
+>>>>>>> mig/v2aiui
         </div>
         <div className="absolute inset-x-0 bottom-0 z-20 border-t border-white/15 bg-gradient-to-r from-[#070d14]/92 via-[#0a1320]/84 to-[#070d14]/92 backdrop-blur-sm">
           <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-3 px-4 py-3 sm:px-7 md:px-10 lg:flex-row lg:items-center lg:justify-between">
@@ -454,15 +527,20 @@ export function PluginDetailsView({
             {/* Preview Gallery */}
             <section className="space-y-4">
               <div className="flex items-center justify-between">
+<<<<<<< HEAD
                 <h2 className="text-xl font-medium text-[#202124]">
                   Screenshots
                 </h2>
+=======
+                <h2 className="text-xl font-medium text-[#202124]">Screenshots</h2>
+>>>>>>> mig/v2aiui
               </div>
               <div className="relative group">
                 <div
                   ref={previewStripRef}
                   className="flex gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
                 >
+<<<<<<< HEAD
                   {details.previewScreenshots.map(
                     (src: string, index: number) => (
                       <div
@@ -477,6 +555,20 @@ export function PluginDetailsView({
                       </div>
                     ),
                   )}
+=======
+                  {details.previewScreenshots.map((src: string, index: number) => (
+                    <div
+                      key={`${src}:${index.toString()}`}
+                      className="h-[400px] w-[225px] shrink-0 overflow-hidden rounded-xl border border-gray-200 bg-black"
+                    >
+                      <img
+                        src={src}
+                        alt={`${plugin.title} preview ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  ))}
+>>>>>>> mig/v2aiui
                   {details.previewScreenshots.length === 0 && (
                     <div className="flex h-[200px] w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-gray-500 text-sm">
                       No screenshots available
@@ -567,6 +659,7 @@ export function PluginDetailsView({
                         ? (row.count / totalBreakdownCount) * 100
                         : 0;
                     return (
+<<<<<<< HEAD
                       <div
                         key={row.stars}
                         className="flex items-center gap-4 text-sm"
@@ -574,6 +667,10 @@ export function PluginDetailsView({
                         <span className="w-1 text-right text-[#5f6368]">
                           {row.stars}
                         </span>
+=======
+                      <div key={row.stars} className="flex items-center gap-4 text-sm">
+                        <span className="w-1 text-right text-[#5f6368]">{row.stars}</span>
+>>>>>>> mig/v2aiui
                         <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-gray-100">
                           <div
                             className="h-full bg-[#01875f]"
@@ -589,16 +686,24 @@ export function PluginDetailsView({
               {/* Review Input */}
               <div className="rounded-2xl border border-gray-200 p-6 transition-shadow hover:shadow-md">
                 <div className="mb-4 flex items-center justify-between">
+<<<<<<< HEAD
                   <h3 className="text-base font-medium text-[#202124]">
                     Your review
                   </h3>
+=======
+                  <h3 className="text-base font-medium text-[#202124]">Your review</h3>
+>>>>>>> mig/v2aiui
                   <Button
                     size="sm"
                     onClick={() => onSaveReview(reviewRating, reviewComment)}
                     loading={isSavingReview}
+<<<<<<< HEAD
                     disabled={
                       isSavingReview || reviewRating <= 0 || !isReviewDirty
                     }
+=======
+                    disabled={isSavingReview || reviewRating <= 0 || !isReviewDirty}
+>>>>>>> mig/v2aiui
                     className="h-9 rounded-full bg-[#01875f] transition-all hover:bg-[#01704f] hover:shadow-sm disabled:opacity-50"
                   >
                     Save review
@@ -614,13 +719,20 @@ export function PluginDetailsView({
                       aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                     >
                       <svg
+<<<<<<< HEAD
                         aria-hidden="true"
                         focusable="false"
+=======
+>>>>>>> mig/v2aiui
                         className={cn(
                           'size-7 transition-all duration-200',
                           star <= reviewRating
                             ? 'fill-[#01875f] text-[#01875f] drop-shadow-sm'
+<<<<<<< HEAD
                             : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300',
+=======
+                            : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300'
+>>>>>>> mig/v2aiui
                         )}
                         viewBox="0 0 24 24"
                         stroke="none"
@@ -630,9 +742,13 @@ export function PluginDetailsView({
                     </button>
                   ))}
                   <span className="ml-3 text-sm font-medium text-gray-500 transition-colors">
+<<<<<<< HEAD
                     {reviewRating > 0
                       ? `${reviewRating}/5 stars`
                       : 'Select rating'}
+=======
+                    {reviewRating > 0 ? `${reviewRating}/5 stars` : 'Select rating'}
+>>>>>>> mig/v2aiui
                   </span>
                 </div>
                 <Textarea
@@ -645,6 +761,7 @@ export function PluginDetailsView({
 
               {/* Reviews List */}
               <div className="space-y-8 divide-y divide-gray-100">
+<<<<<<< HEAD
                 {reviewGroups.length === 0 ? (
                   <div className="py-8 text-center text-sm text-gray-500">
                     No reviews yet. Be the first to review!
@@ -720,6 +837,41 @@ export function PluginDetailsView({
                     )}
                   </div>
                 )}
+=======
+                {reviewGroups.slice(0, 3).map((group, index) => (
+                  <article key={group.userId} className={cn("space-y-3", index > 0 && "pt-8")}>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="size-8 overflow-hidden rounded-full bg-gray-100">
+                          <div className="flex size-full items-center justify-center bg-[#01875f] text-[10px] font-bold text-white">
+                            {group.userLabel.charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                        <span className="text-sm font-medium text-[#202124]">
+                          {group.userLabel}
+                        </span>
+                      </div>
+                      <Button variant="ghost" size="icon" className="size-8">
+                        <EllipsisVertical className="size-4 text-gray-500" />
+                      </Button>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Stars rating={group.latestReview.rating} tone="emerald" sizeClass="size-3" />
+                      <span className="text-xs text-gray-500">
+                        {new Date(group.latestReview.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-[#5f6368] leading-relaxed">
+                      {group.latestReview.comment}
+                    </p>
+                    <div className="flex items-center gap-4">
+                      <span className="text-[11px] text-gray-500">Was this helpful?</span>
+                      <Button variant="outline" size="sm" className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50">Yes</Button>
+                      <Button variant="outline" size="sm" className="h-7 rounded-full px-3 text-[11px] hover:bg-gray-50">No</Button>
+                    </div>
+                  </article>
+                ))}
+>>>>>>> mig/v2aiui
               </div>
             </section>
           </div>
@@ -728,6 +880,7 @@ export function PluginDetailsView({
           <aside className="w-full space-y-10 lg:w-[320px]">
             {/* App Support */}
             <section className="space-y-4">
+<<<<<<< HEAD
               <button
                 type="button"
                 className="flex w-full items-center justify-between border-b pb-4 text-left group"
@@ -735,11 +888,16 @@ export function PluginDetailsView({
                 <span className="text-lg font-medium text-[#202124] group-hover:text-[#01875f] transition-colors">
                   App support
                 </span>
+=======
+              <button className="flex w-full items-center justify-between border-b pb-4 text-left group">
+                <span className="text-lg font-medium text-[#202124] group-hover:text-[#01875f] transition-colors">App support</span>
+>>>>>>> mig/v2aiui
                 <ChevronDown className="size-5 text-gray-400 group-hover:text-[#01875f] transition-colors" />
               </button>
               <div className="space-y-3 pt-2">
                 <div className="flex items-center gap-3 text-sm text-[#5f6368]">
                   <ExternalLink className="size-4 text-gray-400" />
+<<<<<<< HEAD
                   <span className="hover:text-[#01875f] cursor-pointer">
                     Website
                   </span>
@@ -749,6 +907,13 @@ export function PluginDetailsView({
                   <span className="hover:text-[#01875f] cursor-pointer">
                     Support email
                   </span>
+=======
+                  <span className="hover:text-[#01875f] cursor-pointer">Website</span>
+                </div>
+                <div className="flex items-center gap-3 text-sm text-[#5f6368]">
+                  <CircleHelp className="size-4 text-gray-400" />
+                  <span className="hover:text-[#01875f] cursor-pointer">Support email</span>
+>>>>>>> mig/v2aiui
                 </div>
               </div>
             </section>
@@ -756,6 +921,7 @@ export function PluginDetailsView({
             {/* Similar Plugins */}
             <section className="space-y-6">
               <div className="flex items-center justify-between">
+<<<<<<< HEAD
                 <h3 className="text-lg font-medium text-[#202124]">
                   Similar plugins
                 </h3>
@@ -807,6 +973,42 @@ export function PluginDetailsView({
                     </div>
                   );
                 })}
+=======
+                <h3 className="text-lg font-medium text-[#202124]">Similar plugins</h3>
+                <ChevronRight className="size-5 text-gray-400" />
+              </div>
+              <div className="space-y-6">
+                {similarPlugins.slice(0, 5).map((item) => (
+                  <div
+                    key={item.pluginId}
+                    className="flex items-start gap-4 cursor-pointer"
+                  >
+                    <div className="size-14 shrink-0 overflow-hidden rounded-xl border border-gray-100 bg-gray-50">
+                      {item.iconUrl ? (
+                        <img
+                          src={item.iconUrl}
+                          alt={item.title}
+                          className="size-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex size-full items-center justify-center bg-gray-200 text-gray-400">
+                          {item.title.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="truncate text-sm font-medium text-[#202124]">{item.title}</h4>
+                      <p className="truncate text-xs text-gray-500">{item.publisher}</p>
+                      <div className="mt-1 flex items-center gap-1">
+                        <span className="text-xs text-gray-500">
+                          {item.averageRating ? item.averageRating.toFixed(1) : 'N/A'}
+                        </span>
+                        <Star className="size-3 fill-gray-400 text-gray-400" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+>>>>>>> mig/v2aiui
               </div>
             </section>
           </aside>
@@ -817,7 +1019,10 @@ export function PluginDetailsView({
           onOpenChange={setIsPreviewOpen}
           entry={plugin}
           businessSlug={businessName}
+<<<<<<< HEAD
           businessId={businessId}
+=======
+>>>>>>> mig/v2aiui
           isInstalled={plugin.isInstalled}
           onInstall={onInstall}
         />
@@ -871,11 +1076,17 @@ function Stars({
   );
 }
 
+<<<<<<< HEAD
 function ChevronDown(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       aria-hidden="true"
       focusable="false"
+=======
+function ChevronDown(props: any) {
+  return (
+    <svg
+>>>>>>> mig/v2aiui
       {...props}
       xmlns="http://www.w3.org/2000/svg"
       width="24"
@@ -891,6 +1102,7 @@ function ChevronDown(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+<<<<<<< HEAD
 
 // Local type for UI mock replies
 type Reply = {
@@ -1176,3 +1388,5 @@ function ReviewItem({
     </article>
   );
 }
+=======
+>>>>>>> mig/v2aiui

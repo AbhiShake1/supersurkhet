@@ -49,6 +49,7 @@ export function omitEmptyObject<T>(value: T): T {
 
 function isPlainObject(x: unknown): x is Record<string, unknown> {
   return typeof x === 'object' && x !== null && !Array.isArray(x);
+<<<<<<< HEAD
 }
 
 async function readExistingRow(
@@ -60,6 +61,8 @@ async function readExistingRow(
       .get(String(id))
       .once((row) => resolve(omitMeta(row)));
   });
+=======
+>>>>>>> mig/v2aiui
 }
 
 export function update<const T extends SchemaKeys>(

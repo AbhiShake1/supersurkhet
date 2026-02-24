@@ -14,7 +14,10 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { useDrawer } from '@/contexts/dialog-context';
+<<<<<<< HEAD
 import { resolveRuntimeSchema } from '@/lib/auto-runtime/schema-runtime';
+=======
+>>>>>>> mig/v2aiui
 import { GUN_PREFIX, GUN_SEPARATOR, getGunRef } from '@/lib/gun/utils';
 import { AutoTable } from '../auto-table';
 import type { fieldConfig } from '../ui/autoform';
@@ -167,6 +170,7 @@ const ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
   // biome-ignore lint/suspicious/noExplicitAny: lint debt cleanup
   const arraySchema: z.ZodArray<any> =
     schema instanceof z.ZodEffects ? schema.innerType() : schema;
+<<<<<<< HEAD
   const itemSchema = arraySchema._def.type || arraySchema._def.innerType;
   if (
     !(itemSchema instanceof z.ZodObject) &&
@@ -177,6 +181,9 @@ const ArrayPreview: AutoPreviewComponent<any[]> = ({ value, schema }) => {
   const { schemaObject: parsedSchema } = resolveRuntimeSchema({
     runtimeSchema: itemSchema as ZodObjectOrWrapped,
   });
+=======
+  const parsedSchema = arraySchema._def.type || arraySchema._def.innerType;
+>>>>>>> mig/v2aiui
   // biome-ignore lint/correctness/useHookAtTopLevel: lint debt cleanup
   const { openDialog } = useDrawer();
 

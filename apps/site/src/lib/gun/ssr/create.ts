@@ -69,7 +69,11 @@ export function create<const T extends SchemaKeys>(
     const _encrypted = await encrypt(value, schema);
     const encrypted = omitEmptyObject(omitUndefined(_encrypted));
     return new Promise<GunMessagePut>((resolve, reject) => {
+<<<<<<< HEAD
       const id = encrypted?.id ?? rowId;
+=======
+      const id = encrypted?.id ?? `${keys}/${Date.now().toString()}`;
+>>>>>>> mig/v2aiui
       getGunRef(keys)
         .get(id)
         .put(encrypted, (ack) => {

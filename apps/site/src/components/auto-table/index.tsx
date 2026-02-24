@@ -1,5 +1,12 @@
+<<<<<<< HEAD
 import type { ParsedSchema } from '@autoform/core';
 import {
+=======
+import {
+  getNestedZodShape,
+  getSchema,
+  getShape,
+>>>>>>> mig/v2aiui
   type NestedSchema,
   type NestedSchemaType,
   type SchemaKeys,
@@ -60,7 +67,11 @@ import { EditRowDialog } from '../data-table/edit-row-dialog';
 import SkeletonTableOneWrapper from '../mvpblocks/skeleton-table-1';
 import { BadgeMarquee } from '../ui/badge-marquee';
 import { AutoTableActionBar } from './auto-table-action-bar';
+<<<<<<< HEAD
 import { applyDerivedValuesToRow } from './derive-row';
+=======
+import { applyDerivedValuesToRow, getDeriveFn } from './derive-row';
+>>>>>>> mig/v2aiui
 import { getAutoTableInitialState } from './initial-state';
 
 type AggregationType =

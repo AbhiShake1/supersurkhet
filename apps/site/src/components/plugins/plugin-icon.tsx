@@ -5,11 +5,17 @@ import type { PluginMarketItem } from '@/lib/plugins/admin-plugin-market';
 export function PluginIcon({
   plugin,
   compact = false,
+<<<<<<< HEAD
   staticPreview = false,
 }: {
   plugin: PluginMarketItem;
   compact?: boolean;
   staticPreview?: boolean;
+=======
+}: {
+  plugin: PluginMarketItem;
+  compact?: boolean;
+>>>>>>> mig/v2aiui
 }) {
   const iconSize = compact ? 'w-full h-full' : 'w-full h-full';
   const previewSchema = plugin.latestRelease.adminTabs?.[0]?.schema;
@@ -37,6 +43,7 @@ export function PluginIcon({
     );
   }
 
+<<<<<<< HEAD
   if (staticPreview) {
     return (
       <div
@@ -56,6 +63,8 @@ export function PluginIcon({
     );
   }
 
+=======
+>>>>>>> mig/v2aiui
   return (
     <div
       className={`${iconSize} pointer-events-none overflow-hidden rounded-[20%] border border-[#dadce0] bg-[#f8f9fa]`}
@@ -65,7 +74,10 @@ export function PluginIcon({
           schema={previewSchema as SchemaKeys}
           data={[]}
           readOnly
+<<<<<<< HEAD
           showViewOptions={false}
+=======
+>>>>>>> mig/v2aiui
           enableAdvancedFiltering={false}
           enableAdvancedSorting={false}
           enableAggregations={false}
