@@ -556,6 +556,24 @@ export function AutoTable<T extends SchemaKeys>({
     return false;
   }, []);
 
+  const isPlainArrowRowNavigationTarget = React.useCallback(
+    (event: KeyboardEvent) => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return false;
+      const active = document.activeElement as HTMLElement | null;
+      if (!active) return false;
+      const editable =
+        active.isContentEditable ||
+        active instanceof HTMLInputElement ||
+        active instanceof HTMLTextAreaElement ||
+        active instanceof HTMLSelectElement;
+      if (editable) return false;
+      const activeRow = active.closest<HTMLElement>('[data-row-id]');
+      if (!activeRow || !tableContainerRef.current) return false;
+      return tableContainerRef.current.contains(activeRow);
+    },
+    [],
+  );
+
   const getVisibleTableFocusables = React.useCallback((): HTMLElement[] => {
     const root = tableContainerRef.current;
     if (!root) return [];
@@ -593,6 +611,17 @@ export function AutoTable<T extends SchemaKeys>({
     },
     [getVisibleTableFocusables],
   );
+
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+      if (!isPlainArrowRowNavigationTarget(event)) return;
+      event.preventDefault();
+      moveActiveRow(event.key === 'ArrowDown' ? 1 : -1);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isPlainArrowRowNavigationTarget, moveActiveRow]);
 
   useShortcutAction(AUTO_TABLE_SHORTCUTS.focusActiveRow, () =>
     focusActiveRow(resolveActiveRow()?.id ?? rows[0]?.id ?? null),
