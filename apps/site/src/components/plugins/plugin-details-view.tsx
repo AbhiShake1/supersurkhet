@@ -15,8 +15,10 @@ import {
   Trash2,
 } from 'lucide-react';
 import {
+  memo,
   type ReactNode,
   type SVGProps,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -175,21 +177,18 @@ export function PluginDetailsView({
       ),
     [reviewGroups],
   );
-  const scopedBusinessId = businessId?.trim() || '__missing_business_id__';
-  const queryKeys = [scopedBusinessId];
+  const scopedBusinessId = businessId?.trim() || '';
+  const queryOptions = scopedBusinessId
+    ? { keys: [scopedBusinessId] }
+    : undefined;
   const canPersistReviewFeedback =
-    Boolean(actorUserId?.trim()) &&
-    scopedBusinessId !== '__missing_business_id__';
+    Boolean(actorUserId?.trim()) && scopedBusinessId.length > 0;
   const { data: replyRowsRaw = [], refetch: refetchReplyRows } =
-    api.pluginUserReviewReply.useGet({ keys: queryKeys });
+    api.pluginUserReviewReply.useGet(queryOptions);
   const { data: voteRowsRaw = [], refetch: refetchVoteRows } =
-    api.pluginUserReviewVote.useGet({ keys: queryKeys });
-  const createReplyMutation = api.pluginUserReviewReply.useCreate({
-    keys: queryKeys,
-  });
-  const createVoteMutation = api.pluginUserReviewVote.useCreate({
-    keys: queryKeys,
-  });
+    api.pluginUserReviewVote.useGet(queryOptions);
+  const createReplyMutation = api.pluginUserReviewReply.useCreate(queryOptions);
+  const createVoteMutation = api.pluginUserReviewVote.useCreate(queryOptions);
   const reviewReplies = useMemo(
     () =>
       (replyRowsRaw as PluginUserReviewReplyDoc[]).filter(
@@ -227,72 +226,94 @@ export function PluginDetailsView({
 
   const heroMediaSrc = details.previewScreenshots[0] ?? plugin.iconUrl ?? null;
 
-  async function handleSubmitReply(
-    reviewId: string,
-    parentReplyId: string | null,
-    commentInput: string,
-  ) {
-    if (!canPersistReviewFeedback) {
-      toast.error('Log in to reply');
-      return;
-    }
-    const comment = commentInput.trim();
-    if (!comment) return;
-    const now = new Date().toISOString();
-    const suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-    const replyId = `${encodeURIComponent(reviewId)}::${encodeURIComponent(actorUserId)}::${suffix}`;
-    try {
-      await createReplyMutation.mutateAsync({
-        id: replyId,
-        reviewId,
-        pluginId: plugin.pluginId,
-        businessId,
-        parentReplyId: parentReplyId ?? undefined,
-        userId: actorUserId,
-        userLabel: actorLabel,
-        comment,
-        createdAt: now,
-        updatedAt: now,
-      });
-      await refetchReplyRows();
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to save reply');
-    }
-  }
+  const handleSubmitReply = useCallback(
+    async (
+      reviewId: string,
+      parentReplyId: string | null,
+      commentInput: string,
+    ) => {
+      if (!canPersistReviewFeedback) {
+        toast.error('Log in to reply');
+        return;
+      }
+      const comment = commentInput.trim();
+      if (!comment) return;
+      const now = new Date().toISOString();
+      const suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+      const replyId = `${encodeURIComponent(reviewId)}::${encodeURIComponent(actorUserId)}::${suffix}`;
+      try {
+        await createReplyMutation.mutateAsync({
+          id: replyId,
+          reviewId,
+          pluginId: plugin.pluginId,
+          businessId,
+          parentReplyId: parentReplyId ?? undefined,
+          userId: actorUserId,
+          userLabel: actorLabel,
+          comment,
+          createdAt: now,
+          updatedAt: now,
+        });
+        await refetchReplyRows();
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to save reply');
+      }
+    },
+    [
+      actorLabel,
+      actorUserId,
+      businessId,
+      canPersistReviewFeedback,
+      createReplyMutation,
+      plugin.pluginId,
+      refetchReplyRows,
+    ],
+  );
 
-  async function handleSubmitVote(
-    reviewId: string,
-    targetType: 'review' | 'reply',
-    targetId: string,
-    value: 'up' | 'down',
-  ) {
-    if (!canPersistReviewFeedback) {
-      toast.error('Log in to vote');
-      return;
-    }
-    const now = new Date().toISOString();
-    const voteId = `${targetType}::${encodeURIComponent(targetId)}::${encodeURIComponent(actorUserId)}`;
-    const existingVote = reviewVotes.find((vote) => vote.id === voteId);
-    try {
-      await createVoteMutation.mutateAsync({
-        id: voteId,
-        reviewId,
-        pluginId: plugin.pluginId,
-        businessId,
-        targetType,
-        targetId,
-        userId: actorUserId,
-        value,
-        createdAt: existingVote?.createdAt ?? now,
-        updatedAt: now,
-      });
-      await refetchVoteRows();
-    } catch (error) {
-      console.error(error);
-      toast.error('Failed to save vote');
-    }
-  }
+  const handleSubmitVote = useCallback(
+    async (
+      reviewId: string,
+      targetType: 'review' | 'reply',
+      targetId: string,
+      value: 'up' | 'down',
+    ) => {
+      if (!canPersistReviewFeedback) {
+        toast.error('Log in to vote');
+        return;
+      }
+      const now = new Date().toISOString();
+      const voteId = `${targetType}::${encodeURIComponent(targetId)}::${encodeURIComponent(actorUserId)}`;
+      const existingVote = reviewVotes.find((vote) => vote.id === voteId);
+      try {
+        await createVoteMutation.mutateAsync({
+          id: voteId,
+          reviewId,
+          pluginId: plugin.pluginId,
+          businessId,
+          targetType,
+          targetId,
+          userId: actorUserId,
+          value,
+          createdAt: existingVote?.createdAt ?? now,
+          updatedAt: now,
+        });
+        await refetchVoteRows();
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to save vote');
+      }
+    },
+    [
+      actorUserId,
+      businessId,
+      canPersistReviewFeedback,
+      createVoteMutation,
+      plugin.pluginId,
+      refetchVoteRows,
+      reviewVotes,
+    ],
+  );
 
   function scrollPreviewStrip(direction: 'left' | 'right') {
     const node = previewStripRef.current;
@@ -714,7 +735,7 @@ export function PluginDetailsView({
                         </h4>
                         <div className="space-y-6">
                           {myReviews.map(({ review, userLabel }) => (
-                            <ReviewItem
+                            <ReviewItemMemo
                               key={review.id}
                               review={review}
                               userLabel={userLabel}
@@ -756,7 +777,7 @@ export function PluginDetailsView({
                                     key={review.id}
                                     className={cn(index > 0 && 'pt-8')}
                                   >
-                                    <ReviewItem
+                                    <ReviewItemMemo
                                       review={review}
                                       userLabel={userLabel}
                                       replies={
@@ -1241,7 +1262,7 @@ function ReplyItem({
       {reply.replies.length > 0 && (
         <div className="mt-2 space-y-3 border-l-2 border-gray-100 pl-4">
           {reply.replies.map((childReply) => (
-            <ReplyItem
+            <ReplyItemMemo
               key={childReply.id}
               reviewId={reviewId}
               reply={childReply}
@@ -1411,7 +1432,7 @@ function ReviewItem({
         {replies.length > 0 && (
           <div className="mt-4 space-y-3 pl-4 border-l-2 border-gray-100">
             {replies.map((reply) => (
-              <ReplyItem
+              <ReplyItemMemo
                 key={reply.id}
                 reviewId={review.id}
                 reply={reply}
@@ -1427,3 +1448,6 @@ function ReviewItem({
     </article>
   );
 }
+
+const ReplyItemMemo = memo(ReplyItem);
+const ReviewItemMemo = memo(ReviewItem);
