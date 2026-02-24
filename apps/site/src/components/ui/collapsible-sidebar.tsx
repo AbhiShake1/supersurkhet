@@ -1631,8 +1631,8 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                         ) : (
                           <div className="group/group-header flex items-center gap-1">
                             {editable && onReorderGroups ? (
-                              <SortableItemHandle asChild>
-                                <Tooltip>
+                              <Tooltip>
+                                <SortableItemHandle asChild>
                                   <TooltipTrigger asChild>
                                     <button
                                       type="button"
@@ -1644,26 +1644,26 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                                       <ChevronsUpDown className="h-4 w-4" />
                                     </button>
                                   </TooltipTrigger>
-                                  <TooltipContent
-                                    side="right"
-                                    className="flex items-center gap-2"
-                                  >
-                                    <span>Reorder group</span>
-                                    <ShortcutKbd
-                                      actionId={
-                                        SIDEBAR_SHORTCUTS
-                                          .reorderFocusedGroupHandle.id
-                                      }
-                                      defaultBinding={
-                                        SIDEBAR_SHORTCUTS
-                                          .reorderFocusedGroupHandle
-                                          .defaultBinding
-                                      }
-                                      interactive={false}
-                                    />
-                                  </TooltipContent>
-                                </Tooltip>
-                              </SortableItemHandle>
+                                </SortableItemHandle>
+                                <TooltipContent
+                                  side="right"
+                                  className="flex items-center gap-2"
+                                >
+                                  <span>Reorder group</span>
+                                  <ShortcutKbd
+                                    actionId={
+                                      SIDEBAR_SHORTCUTS
+                                        .reorderFocusedGroupHandle.id
+                                    }
+                                    defaultBinding={
+                                      SIDEBAR_SHORTCUTS
+                                        .reorderFocusedGroupHandle
+                                        .defaultBinding
+                                    }
+                                    interactive={false}
+                                  />
+                                </TooltipContent>
+                              </Tooltip>
                             ) : null}
                             <Tooltip>
                               <TooltipTrigger asChild>
