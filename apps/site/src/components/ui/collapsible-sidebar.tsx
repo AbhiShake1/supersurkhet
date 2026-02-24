@@ -523,6 +523,71 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
 
       {/* Navigation items */}
       <div className="flex-grow overflow-y-auto pb-16">
+        {editable && (onAddGroup || onAddTable) ? (
+          <div className="mb-2 rounded-lg border border-slate-200/80 bg-slate-50/40 p-1 dark:border-slate-800 dark:bg-slate-900/40">
+            {open ? (
+              <div className="space-y-1">
+                <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
+                  Quick add
+                </div>
+                {onAddGroup ? (
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted"
+                    onClick={() => {
+                      onAddGroup();
+                    }}
+                  >
+                    <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
+                    Add Group
+                  </button>
+                ) : null}
+                {onAddTable ? (
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted"
+                    onClick={() => {
+                      onAddTable();
+                    }}
+                  >
+                    <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    Add Table (Ungrouped)
+                  </button>
+                ) : null}
+              </div>
+            ) : (
+              <div className="grid gap-1">
+                {onAddGroup ? (
+                  <button
+                    type="button"
+                    className="grid place-content-center rounded-md p-1.5 text-slate-500 hover:bg-muted hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                    onClick={() => {
+                      onAddGroup();
+                    }}
+                    aria-label="Add Group"
+                    title="Add Group"
+                  >
+                    <Boxes className="h-4 w-4" />
+                  </button>
+                ) : null}
+                {onAddTable ? (
+                  <button
+                    type="button"
+                    className="grid place-content-center rounded-md p-1.5 text-slate-500 hover:bg-muted hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200"
+                    onClick={() => {
+                      onAddTable();
+                    }}
+                    aria-label="Add Ungrouped Table"
+                    title="Add Ungrouped Table"
+                  >
+                    <Table2 className="h-4 w-4" />
+                  </button>
+                ) : null}
+              </div>
+            )}
+          </div>
+        ) : null}
+
         {frequentItemsBySearch.length > 0 && (
           <div className="mb-2 rounded-lg border border-slate-200/80 bg-slate-50/40 p-1 dark:border-slate-800 dark:bg-slate-900/40">
             {open ? (
@@ -1193,26 +1258,38 @@ const Option = memo(function Option({
             <PopoverTrigger asChild>
               <button
                 type="button"
-                className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                className="rounded-md border border-border/70 bg-background/75 p-1 text-slate-500 shadow-xs hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                 aria-label={`Actions for ${title}`}
                 title={`Actions for ${title}`}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </button>
             </PopoverTrigger>
-            <PopoverContent align="end" className="w-44 p-1">
-              <div className="space-y-1">
+            <PopoverContent
+              align="end"
+              className="w-56 rounded-xl border-border/70 bg-popover/95 p-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-popover/85"
+            >
+              <div className="space-y-1.5">
                 {hasWorkflowAction ? (
                   <PopoverClose asChild>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                      className="flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-muted/80"
                       onClick={() => {
                         onOpenWorkflowEditor?.(title);
                       }}
                     >
-                      <Workflow className="h-3.5 w-3.5 text-muted-foreground" />
-                      Workflow settings
+                      <span className="mt-0.5 grid size-6 shrink-0 place-content-center rounded-md bg-muted text-muted-foreground">
+                        <Workflow className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium leading-tight">
+                          Workflow settings
+                        </span>
+                        <span className="block text-[11px] leading-tight text-muted-foreground">
+                          Edit triggers and automation
+                        </span>
+                      </span>
                     </button>
                   </PopoverClose>
                 ) : null}
@@ -1220,13 +1297,22 @@ const Option = memo(function Option({
                   <PopoverClose asChild>
                     <button
                       type="button"
-                      className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
+                      className="flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left text-destructive hover:bg-destructive/10"
                       onClick={() => {
                         onRequestDeleteTable?.(title);
                       }}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete table
+                      <span className="mt-0.5 grid size-6 shrink-0 place-content-center rounded-md bg-destructive/10 text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium leading-tight">
+                          Delete table
+                        </span>
+                        <span className="block text-[11px] leading-tight text-destructive/80">
+                          Permanently remove this schema
+                        </span>
+                      </span>
                     </button>
                   </PopoverClose>
                 ) : null}

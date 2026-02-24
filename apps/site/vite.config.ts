@@ -10,7 +10,6 @@ import { nitro } from 'nitro/vite';
 import { zodTypegen } from './scripts/vite/zod-typegen';
 
 const config = defineConfig(({ command }) => {
-  const isBuild = command === 'build';
   return ({
     test: {
       include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
@@ -54,7 +53,7 @@ const config = defineConfig(({ command }) => {
       }),
       tailwindcss(),
       tanstackStart(),
-      !isBuild &&
+      command === "serve" &&
       zodTypegen({
         entry: fileURLToPath(new URL('./src/lib/schema.ts', import.meta.url)),
         output: fileURLToPath(new URL('./src/types/db.d.ts', import.meta.url)),
