@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Kbd, KbdGroup } from '@/components/ui/kbd';
 import {
   Tooltip,
   TooltipContent,
@@ -46,7 +45,13 @@ type ShortcutContextValue = {
     open: boolean;
     selectedActionId?: ShortcutActionId;
   };
-  setBinding: (actionId: ShortcutActionId, binding: ShortcutBinding) => void;
+  setBinding: (
+    actionId: ShortcutActionId,
+    binding: ShortcutBinding,
+  ) => {
+    updated: boolean;
+    replacedActionId?: ShortcutActionId;
+  };
   resetBinding: (actionId: ShortcutActionId) => void;
   resetAllBindings: () => void;
   registerShortcut: (definition: ShortcutDefinition) => void;
@@ -90,7 +95,34 @@ function isBindingMatch(
   );
 }
 
+function isModifierOnlyKey(key: string): boolean {
+  return (
+    key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta'
+  );
+}
+
+function isSameBinding(left: ShortcutBinding, right: ShortcutBinding): boolean {
+  return (
+    normalizeKey(left.key) === normalizeKey(right.key) &&
+    left.ctrl === right.ctrl &&
+    left.meta === right.meta &&
+    left.alt === right.alt &&
+    left.shift === right.shift
+  );
+}
+
+function isEmptyBinding(binding: ShortcutBinding): boolean {
+  return (
+    binding.key.trim().length === 0 &&
+    !binding.ctrl &&
+    !binding.meta &&
+    !binding.alt &&
+    !binding.shift
+  );
+}
+
 function displayBinding(binding: ShortcutBinding): string[] {
+  if (isEmptyBinding(binding)) return [];
   const keys: string[] = [];
   if (binding.meta) keys.push(getMetaKeyLabel());
   if (binding.ctrl) keys.push('Ctrl');
@@ -201,9 +233,34 @@ export function KeyboardShortcutsProvider({
 
   const setBinding = React.useCallback(
     (actionId: ShortcutActionId, binding: ShortcutBinding) => {
-      updateBindings((current) => ({ ...current, [actionId]: binding }));
+      let replacedActionId: ShortcutActionId | undefined;
+      let updated = false;
+      updateBindings((current) => {
+        const currentForAction =
+          current[actionId] ?? registry[actionId]?.defaultBinding;
+        if (currentForAction && isSameBinding(currentForAction, binding)) {
+          return current;
+        }
+
+        const next = { ...current };
+        for (const [registeredActionId, definition] of Object.entries(
+          registry,
+        )) {
+          if (registeredActionId === actionId) continue;
+          const effective =
+            current[registeredActionId] ?? definition.defaultBinding;
+          if (isSameBinding(effective, binding)) {
+            next[registeredActionId] = definition.defaultBinding;
+            replacedActionId = registeredActionId;
+          }
+        }
+        next[actionId] = binding;
+        updated = true;
+        return next;
+      });
+      return { updated, replacedActionId };
     },
-    [updateBindings],
+    [registry, updateBindings],
   );
 
   const resetBinding = React.useCallback(
@@ -368,6 +425,19 @@ const OPEN_SIDEBAR_LEGEND_SHORTCUT: ShortcutDefinition = {
   },
 };
 
+const SAVE_SHORTCUT_EDITOR_SHORTCUT: ShortcutDefinition = {
+  id: 'shortcutEditor.save',
+  label: 'Save edited shortcut',
+  scope: 'Shortcut Editor',
+  defaultBinding: {
+    key: 'Enter',
+    ctrl: false,
+    meta: true,
+    alt: false,
+    shift: false,
+  },
+};
+
 type ShortcutKbdInteraction = 'trigger-parent' | 'open-settings';
 
 function ShortcutKeyGroup({
@@ -401,7 +471,7 @@ export function ShortcutKbd({
   actionId,
   className,
   defaultBinding,
-  interaction = 'trigger-parent',
+  interaction = 'open-settings',
   interactive = true,
 }: {
   actionId: ShortcutActionId;
@@ -412,6 +482,20 @@ export function ShortcutKbd({
 }) {
   const context = React.useContext(ShortcutContext);
   const binding = useShortcutBinding(actionId, defaultBinding);
+  const canOpenSettings = interaction === 'open-settings' && Boolean(context);
+  const shouldRenderButton = interactive || canOpenSettings;
+
+  React.useLayoutEffect(() => {
+    if (!context || !defaultBinding) return;
+    if (context.registry[actionId]) return;
+    context.registerShortcut({
+      id: actionId,
+      label: actionId,
+      scope: 'General',
+      description: `Shortcut for ${actionId}`,
+      defaultBinding,
+    });
+  }, [actionId, context, defaultBinding]);
 
   const triggerParentAction = React.useCallback((target: HTMLElement) => {
     let parent = target.parentElement;
@@ -432,7 +516,11 @@ export function ShortcutKbd({
   const onActivate = React.useCallback(
     (target: HTMLElement) => {
       if (interaction === 'open-settings') {
-        context?.openDialog(actionId);
+        if (context?.registry[actionId]) {
+          context.openDialog(actionId);
+        } else {
+          context?.openDialog();
+        }
         return;
       }
       triggerParentAction(target);
@@ -449,7 +537,7 @@ export function ShortcutKbd({
     [onActivate],
   );
 
-  if (!interactive) {
+  if (!shouldRenderButton) {
     return (
       <span className={className} aria-hidden="true">
         <ShortcutKeyGroup actionId={actionId} binding={binding} />
@@ -473,6 +561,11 @@ export function ShortcutKbd({
           ? `Configure shortcut for ${actionId}`
           : `${actionId} shortcut`
       }
+      title={
+        interaction === 'open-settings' && !context
+          ? 'Shortcut settings are unavailable here'
+          : undefined
+      }
     >
       <ShortcutKeyGroup actionId={actionId} binding={binding} />
     </button>
@@ -486,45 +579,363 @@ function ShortcutRecorder({
 }: {
   actionId: ShortcutActionId;
   binding: ShortcutBinding;
-  onChange: (binding: ShortcutBinding) => void;
+  onChange: (binding: ShortcutBinding) => {
+    updated: boolean;
+    replacedActionId?: ShortcutActionId;
+  };
 }) {
   const [recording, setRecording] = React.useState(false);
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      className="justify-start gap-2"
-      onClick={() => setRecording(true)}
-      onKeyDown={(event) => {
-        if (!recording) return;
-        event.preventDefault();
-        event.stopPropagation();
-        if (event.key === 'Escape') {
-          setRecording(false);
-          return;
-        }
-        const nextBinding: ShortcutBinding = {
-          key: normalizeKey(event.key),
-          ctrl: event.ctrlKey,
-          meta: event.metaKey,
-          alt: event.altKey,
-          shift: event.shiftKey,
-        };
-        onChange(nextBinding);
+  const [previewBinding, setPreviewBinding] = React.useState(binding);
+  const [status, setStatus] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!recording) {
+      setPreviewBinding(binding);
+    }
+  }, [binding, recording]);
+
+  React.useEffect(() => {
+    if (!recording) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const normalized = normalizeKey(event.key);
+      if (normalized === 'Escape' && !event.ctrlKey && !event.metaKey) {
         setRecording(false);
-      }}
-      aria-label={`Record shortcut for ${actionId}`}
-    >
+        setStatus(null);
+        setPreviewBinding(binding);
+        return;
+      }
+
+      const nextBinding: ShortcutBinding = {
+        key: normalized,
+        ctrl: event.ctrlKey,
+        meta: event.metaKey,
+        alt: event.altKey,
+        shift: event.shiftKey,
+      };
+      setPreviewBinding(nextBinding);
+
+      if (isModifierOnlyKey(event.key)) return;
+
+      const result = onChange(nextBinding);
+      if (!result.updated) {
+        setStatus('Shortcut unchanged');
+      } else if (result.replacedActionId) {
+        setStatus(`Reassigned from ${result.replacedActionId}`);
+      } else {
+        setStatus('Shortcut updated');
+      }
+      setRecording(false);
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => window.removeEventListener('keydown', onKeyDown, true);
+  }, [binding, onChange, recording]);
+
+  return (
+    <div className="space-y-1">
+      <button
+        type="button"
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setStatus(null);
+          setRecording(true);
+        }}
+        className={`w-full rounded-md border px-2 py-1.5 text-left transition-colors ${
+          recording
+            ? 'border-primary/70 bg-primary/10'
+            : 'border-border bg-muted/30 hover:bg-muted/50'
+        }`}
+        aria-label={`Record shortcut for ${actionId}`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <ShortcutKeyGroup
+            actionId={`${actionId}-recorder`}
+            binding={recording ? previewBinding : binding}
+          />
+          <span className="text-[11px] text-muted-foreground">
+            {recording ? 'Listening...' : 'Record'}
+          </span>
+        </div>
+      </button>
       {recording ? (
-        <span className="text-xs text-muted-foreground">Press keys...</span>
-      ) : (
-        <KbdGroup>
-          {displayBinding(binding).map((part) => (
-            <Kbd key={`${actionId}-display-${part}`}>{part}</Kbd>
-          ))}
-        </KbdGroup>
-      )}
-    </Button>
+        <p className="text-[11px] text-muted-foreground">
+          Press modifiers + key. Press Escape to cancel.
+        </p>
+      ) : null}
+      {!recording && status ? (
+        <p className="text-[11px] text-muted-foreground">{status}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function findShortcutConflict(
+  actionId: ShortcutActionId,
+  binding: ShortcutBinding,
+  registry: Record<ShortcutActionId, ShortcutDefinition>,
+  bindings: Record<ShortcutActionId, ShortcutBinding>,
+): ShortcutDefinition | undefined {
+  for (const definition of Object.values(registry)) {
+    if (definition.id === actionId) continue;
+    const existingBinding =
+      bindings[definition.id] ?? definition.defaultBinding;
+    if (isSameBinding(existingBinding, binding)) return definition;
+  }
+  return undefined;
+}
+
+function keyToLabel(key: string): string {
+  if (key === ' ') return 'Space';
+  if (key.length === 1) return key.toUpperCase();
+  return key;
+}
+
+function createBindingFromKeyboardEvent(event: KeyboardEvent): ShortcutBinding {
+  return {
+    key: normalizeKey(event.key),
+    ctrl: event.ctrlKey,
+    meta: event.metaKey,
+    alt: event.altKey,
+    shift: event.shiftKey,
+  };
+}
+
+function createPreviewKeysFromBinding(binding: ShortcutBinding): string[] {
+  const parts: string[] = [];
+  if (binding.meta) parts.push(getMetaKeyLabel());
+  if (binding.ctrl) parts.push('Ctrl');
+  if (binding.alt) parts.push('Alt');
+  if (binding.shift) parts.push('Shift');
+  if (!isModifierOnlyKey(binding.key)) {
+    parts.push(keyToLabel(binding.key));
+  }
+  return parts;
+}
+
+function ShortcutKeyPreview({ keys }: { keys: string[] }) {
+  if (!keys.length) {
+    return (
+      <span className="text-sm text-muted-foreground">
+        Press a shortcut combination
+      </span>
+    );
+  }
+
+  return (
+    <ButtonGroup className="pointer-events-none">
+      <ButtonGroupText
+        className="h-7 gap-1 rounded-md border-border/60 bg-muted/80 px-2 text-xs font-medium shadow-none"
+        aria-hidden="true"
+      >
+        {keys.map((key, index) => (
+          <React.Fragment key={key}>
+            {index > 0 ? (
+              <span className="px-0.5 text-muted-foreground/80">+</span>
+            ) : null}
+            <span className="leading-none">{key}</span>
+          </React.Fragment>
+        ))}
+      </ButtonGroupText>
+    </ButtonGroup>
+  );
+}
+
+function SingleShortcutEditor({
+  action,
+  binding,
+  bindings,
+  registry,
+  setBinding,
+  resetBinding,
+  closeDialog,
+}: {
+  action: ShortcutDefinition;
+  binding: ShortcutBinding;
+  bindings: Record<ShortcutActionId, ShortcutBinding>;
+  registry: Record<ShortcutActionId, ShortcutDefinition>;
+  setBinding: (
+    actionId: ShortcutActionId,
+    binding: ShortcutBinding,
+  ) => {
+    updated: boolean;
+    replacedActionId?: ShortcutActionId;
+  };
+  resetBinding: (actionId: ShortcutActionId) => void;
+  closeDialog: () => void;
+}) {
+  const captureRef = React.useRef<HTMLButtonElement | null>(null);
+  const [isListening, setIsListening] = React.useState(true);
+  const [candidate, setCandidate] = React.useState<ShortcutBinding | null>(
+    null,
+  );
+  const [previewKeys, setPreviewKeys] = React.useState<string[]>([]);
+
+  const conflictAction = React.useMemo(
+    () =>
+      candidate
+        ? findShortcutConflict(action.id, candidate, registry, bindings)
+        : undefined,
+    [action.id, bindings, candidate, registry],
+  );
+  const displayKeys =
+    previewKeys.length > 0
+      ? previewKeys
+      : candidate
+        ? createPreviewKeysFromBinding(candidate)
+        : [];
+  const hasChange = candidate ? !isSameBinding(candidate, binding) : false;
+  const canSave = Boolean(candidate) && hasChange && !conflictAction;
+
+  const saveCandidate = React.useCallback(() => {
+    if (!candidate || !canSave) return;
+    setBinding(action.id, candidate);
+    closeDialog();
+  }, [action.id, canSave, candidate, closeDialog, setBinding]);
+
+  useRegisterShortcut(SAVE_SHORTCUT_EDITOR_SHORTCUT);
+  useShortcutAction(
+    SAVE_SHORTCUT_EDITOR_SHORTCUT,
+    () => {
+      saveCandidate();
+    },
+    {
+      enabled: canSave,
+      allowInEditableContext: true,
+      guard: () => true,
+    },
+  );
+
+  React.useEffect(() => {
+    if (!isListening) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const nextBinding = createBindingFromKeyboardEvent(event);
+      setPreviewKeys(createPreviewKeysFromBinding(nextBinding));
+      if (isModifierOnlyKey(event.key)) return;
+      setCandidate(nextBinding);
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.isComposing) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) {
+        setPreviewKeys(
+          createPreviewKeysFromBinding({
+            key: '',
+            meta: event.metaKey,
+            ctrl: event.ctrlKey,
+            alt: event.altKey,
+            shift: event.shiftKey,
+          }),
+        );
+        return;
+      }
+      setPreviewKeys([]);
+    };
+    window.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('keyup', onKeyUp, true);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('keyup', onKeyUp, true);
+    };
+  }, [isListening]);
+
+  React.useEffect(() => {
+    captureRef.current?.focus();
+  }, []);
+
+  return (
+    <section className="space-y-4">
+      <div className="space-y-1">
+        <p className="text-sm font-semibold">{action.label}</p>
+        {action.description ? (
+          <p className="text-xs text-muted-foreground">{action.description}</p>
+        ) : null}
+      </div>
+      <div className="rounded-xl border border-border/70 bg-muted/20 p-3">
+        <div className="mb-2 text-xs font-medium text-muted-foreground">
+          Current shortcut
+        </div>
+        <ShortcutKeyGroup actionId={`${action.id}-current`} binding={binding} />
+      </div>
+      <button
+        ref={captureRef}
+        type="button"
+        className={`w-full rounded-xl border px-4 py-4 text-left transition ${
+          isListening
+            ? 'border-primary/60 bg-primary/5 shadow-sm'
+            : 'border-border/70 bg-muted/20 hover:bg-muted/30'
+        }`}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setIsListening(true);
+        }}
+        onBlur={() => setIsListening(false)}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">New shortcut</p>
+            <p className="text-xs text-muted-foreground">
+              Press keys now. This field captures shortcuts directly.
+            </p>
+          </div>
+          <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            {isListening ? 'Listening' : 'Click to listen'}
+          </span>
+        </div>
+        <div className="mt-3 min-h-7">
+          <ShortcutKeyPreview keys={displayKeys} />
+        </div>
+      </button>
+      <div className="min-h-5 text-xs">
+        {!candidate ? (
+          <p className="text-muted-foreground">
+            Capture a key combination to continue.
+          </p>
+        ) : conflictAction ? (
+          <p className="text-destructive">
+            Already in use by {conflictAction.label}. Choose another shortcut.
+          </p>
+        ) : hasChange ? (
+          <p className="text-emerald-600">Shortcut is available.</p>
+        ) : (
+          <p className="text-muted-foreground">Shortcut is unchanged.</p>
+        )}
+      </div>
+      <div className="flex items-center justify-end gap-2">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            resetBinding(action.id);
+            closeDialog();
+          }}
+        >
+          Reset
+        </Button>
+        <Button type="button" variant="ghost" onClick={closeDialog}>
+          Cancel
+        </Button>
+        <Button type="button" onClick={saveCandidate} disabled={!canSave}>
+          Save
+          <span className="ml-2">
+            <ShortcutKbd
+              actionId={SAVE_SHORTCUT_EDITOR_SHORTCUT.id}
+              defaultBinding={SAVE_SHORTCUT_EDITOR_SHORTCUT.defaultBinding}
+              interaction="trigger-parent"
+              interactive={false}
+            />
+          </span>
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -553,6 +964,10 @@ function KeyboardShortcutSettingsDialog() {
     resetBinding,
     resetAllBindings,
   } = context;
+  const selectedAction = dialogState.selectedActionId
+    ? context.registry[dialogState.selectedActionId]
+    : undefined;
+  const isSingleActionMode = Boolean(dialogState.selectedActionId);
 
   return (
     <Dialog
@@ -561,19 +976,42 @@ function KeyboardShortcutSettingsDialog() {
     >
       <DialogContent className="max-h-[85vh] overflow-hidden sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Keyboard Shortcuts</DialogTitle>
+          <DialogTitle>
+            {isSingleActionMode ? 'Edit Shortcut' : 'Keyboard Shortcuts'}
+          </DialogTitle>
           <DialogDescription>
-            Click a shortcut and press a new key combination. Preferences are
-            saved in local storage.
+            {isSingleActionMode
+              ? 'Press a new key combination to update this shortcut.'
+              : 'Click a shortcut and press a new key combination. Preferences are saved in local storage.'}
           </DialogDescription>
         </DialogHeader>
-        <div className="flex items-center justify-end">
-          <Button type="button" variant="ghost" onClick={resetAllBindings}>
-            Reset all
-          </Button>
-        </div>
+        {!isSingleActionMode ? (
+          <div className="flex items-center justify-end">
+            <Button type="button" variant="ghost" onClick={resetAllBindings}>
+              Reset all
+            </Button>
+          </div>
+        ) : null}
         <div className="grid max-h-[60vh] gap-5 overflow-y-auto pr-1">
-          {actionsByScope.length === 0 ? (
+          {isSingleActionMode ? (
+            selectedAction ? (
+              <SingleShortcutEditor
+                action={selectedAction}
+                binding={
+                  bindings[selectedAction.id] ?? selectedAction.defaultBinding
+                }
+                bindings={bindings}
+                registry={context.registry}
+                setBinding={setBinding}
+                resetBinding={resetBinding}
+                closeDialog={closeDialog}
+              />
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                This shortcut is not registered yet.
+              </p>
+            )
+          ) : actionsByScope.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               No shortcuts registered yet.
             </p>
@@ -608,7 +1046,13 @@ function ShortcutSection({
   actions: ShortcutDefinition[];
   selectedActionId?: ShortcutActionId;
   bindings: Record<ShortcutActionId, ShortcutBinding>;
-  setBinding: (actionId: ShortcutActionId, binding: ShortcutBinding) => void;
+  setBinding: (
+    actionId: ShortcutActionId,
+    binding: ShortcutBinding,
+  ) => {
+    updated: boolean;
+    replacedActionId?: ShortcutActionId;
+  };
   resetBinding: (actionId: ShortcutActionId) => void;
 }) {
   return (

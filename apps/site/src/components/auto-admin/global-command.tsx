@@ -161,6 +161,7 @@ export function AutoAdminGlobalCommand({
   const hasMembers = filteredMembers.length > 0;
   const hasTabs = filteredTabs.length > 0;
   const hasFilteredActions = filteredActions.length > 0;
+  const prioritizeDataSection = normalizedQuery.length > 0 && hasRecords;
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -207,6 +208,34 @@ export function AutoAdminGlobalCommand({
         />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
+          {prioritizeDataSection ? (
+            <CommandGroup heading="Data">
+              {filteredRecords.map((record) => (
+                <CommandItem
+                  key={record.id}
+                  value={`${record.label} ${record.description ?? ''} ${record.scopeLabel ?? ''} ${record.keywords ?? ''}`}
+                  onSelect={() => {
+                    handleOpenChange(false);
+                    record.onSelect();
+                  }}
+                >
+                  <span className="truncate">{record.label}</span>
+                  {record.scopeLabel ? (
+                    <span className="ml-1 rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 text-[10px] leading-none text-muted-foreground">
+                      {record.scopeLabel}
+                    </span>
+                  ) : null}
+                  <CommandShortcut>Row</CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+
+          {prioritizeDataSection &&
+          (hasFilteredActions || hasTabs || hasMembers) ? (
+            <CommandSeparator />
+          ) : null}
+
           {hasFilteredActions ? (
             <CommandGroup heading="Actions">
               {filteredActions.map((action) => (
@@ -256,7 +285,9 @@ export function AutoAdminGlobalCommand({
             </CommandGroup>
           ) : null}
 
-          {hasTabs && (hasRecords || hasMembers) ? <CommandSeparator /> : null}
+          {hasTabs && ((!prioritizeDataSection && hasRecords) || hasMembers) ? (
+            <CommandSeparator />
+          ) : null}
 
           {isSearchingData ? (
             <CommandGroup heading="Data">
@@ -264,7 +295,7 @@ export function AutoAdminGlobalCommand({
             </CommandGroup>
           ) : null}
 
-          {hasRecords ? (
+          {!prioritizeDataSection && hasRecords ? (
             <CommandGroup heading="Data">
               {filteredRecords.map((record) => (
                 <CommandItem
