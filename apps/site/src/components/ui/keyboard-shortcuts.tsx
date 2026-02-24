@@ -8,6 +8,11 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 export type ShortcutActionId = string;
 
@@ -380,18 +385,6 @@ export function ShortcutKbd({
   const context = React.useContext(ShortcutContext);
   const binding = useShortcutBinding(actionId, defaultBinding);
 
-  if (!interactive) {
-    return (
-      <span className={className} aria-hidden="true">
-        <KbdGroup>
-          {displayBinding(binding).map((part) => (
-            <Kbd key={`${actionId}-${part}`}>{part}</Kbd>
-          ))}
-        </KbdGroup>
-      </span>
-    );
-  }
-
   const triggerParentAction = React.useCallback((target: HTMLElement) => {
     let parent = target.parentElement;
     while (parent) {
@@ -427,6 +420,18 @@ export function ShortcutKbd({
     },
     [onActivate],
   );
+
+  if (!interactive) {
+    return (
+      <span className={className} aria-hidden="true">
+        <KbdGroup>
+          {displayBinding(binding).map((part) => (
+            <Kbd key={`${actionId}-${part}`}>{part}</Kbd>
+          ))}
+        </KbdGroup>
+      </span>
+    );
+  }
 
   return (
     <button
@@ -632,21 +637,27 @@ export function KeyboardShortcutLegend() {
 
   return (
     <div className="flex items-center gap-2">
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() => context?.openDialog()}
-      >
-        Shortcuts
-      </Button>
-      <ShortcutKbd
-        actionId={OPEN_SIDEBAR_LEGEND_SHORTCUT.id}
-        defaultBinding={OPEN_SIDEBAR_LEGEND_SHORTCUT.defaultBinding}
-        interaction="open-settings"
-        className="flex items-center gap-1"
-      />
-      <span className="text-xs text-muted-foreground">Open sidebar</span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => context?.openDialog()}
+          >
+            Shortcuts
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="flex items-center gap-2">
+          <span>Open sidebar</span>
+          <ShortcutKbd
+            actionId={OPEN_SIDEBAR_LEGEND_SHORTCUT.id}
+            defaultBinding={OPEN_SIDEBAR_LEGEND_SHORTCUT.defaultBinding}
+            interaction="open-settings"
+            interactive={false}
+          />
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }

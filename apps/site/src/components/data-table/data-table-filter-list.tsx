@@ -1,3 +1,4 @@
+import { useSearch } from '@tanstack/react-router';
 import type { Column, ColumnMeta, Table } from '@tanstack/react-table';
 import {
   CalendarIcon,
@@ -9,8 +10,6 @@ import {
 } from 'lucide-react';
 import { parseAsStringEnum, useQueryState } from 'nuqs';
 import * as React from 'react';
-
-import { useSearch } from '@tanstack/react-router';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,16 +35,16 @@ import {
 } from '@/components/ui/faceted';
 import { Input } from '@/components/ui/input';
 import {
+  type ShortcutDefinition,
+  ShortcutKbd,
+  useRegisterShortcut,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  ShortcutKbd,
-  useRegisterShortcut,
-  useShortcutAction,
-  type ShortcutDefinition,
-} from '@/components/ui/keyboard-shortcuts';
 import {
   Select,
   SelectContent,
@@ -364,30 +363,36 @@ export function DataTableFilterList<TData>({
       getItemValue={(item) => item.filterId}
     >
       <Popover open={open} onOpenChange={setOpen} modal>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            onKeyDown={onTriggerKeyDown}
-            className="gap-2"
-          >
-            <ListFilter className="size-4" />
-            Filter
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onKeyDown={onTriggerKeyDown}
+                className="gap-2"
+              >
+                <ListFilter className="size-4" />
+                Filter
+                {filters.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-[18.24px] rounded-[3.2px] px-[5.12px] font-mono font-normal text-[10.4px]"
+                  >
+                    {filters.length}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Open filters</span>
             <ShortcutKbd
               actionId={DATA_TABLE_FILTER_SHORTCUTS.openFilters.id}
               interactive={false}
-              className="pointer-events-none hidden xl:inline-flex"
             />
-            {filters.length > 0 && (
-              <Badge
-                variant="secondary"
-                className="h-[18.24px] rounded-[3.2px] px-[5.12px] font-mono font-normal text-[10.4px]"
-              >
-                {filters.length}
-              </Badge>
-            )}
-          </Button>
-        </PopoverTrigger>
+          </TooltipContent>
+        </Tooltip>
         <PopoverContent
           aria-describedby={descriptionId}
           aria-labelledby={labelId}
@@ -435,33 +440,45 @@ export function DataTableFilterList<TData>({
             </SortableContent>
           ) : null}
           <div className="flex w-full items-center gap-2">
-            <Button
-              size="sm"
-              className="rounded gap-2"
-              ref={addButtonRef}
-              onClick={onFilterAdd}
-            >
-              Add filter
-              <ShortcutKbd
-                actionId={DATA_TABLE_FILTER_SHORTCUTS.addFilter.id}
-                interactive={false}
-                className="pointer-events-none hidden xl:inline-flex"
-              />
-            </Button>
-            {filters.length > 0 ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded gap-2"
-                onClick={onFiltersReset}
-              >
-                Reset filters
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  className="rounded gap-2"
+                  ref={addButtonRef}
+                  onClick={onFilterAdd}
+                >
+                  Add filter
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="flex items-center gap-2">
+                <span>Add filter</span>
                 <ShortcutKbd
-                  actionId={DATA_TABLE_FILTER_SHORTCUTS.resetFilters.id}
+                  actionId={DATA_TABLE_FILTER_SHORTCUTS.addFilter.id}
                   interactive={false}
-                  className="pointer-events-none hidden xl:inline-flex"
                 />
-              </Button>
+              </TooltipContent>
+            </Tooltip>
+            {filters.length > 0 ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded gap-2"
+                    onClick={onFiltersReset}
+                  >
+                    Reset filters
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>Reset filters</span>
+                  <ShortcutKbd
+                    actionId={DATA_TABLE_FILTER_SHORTCUTS.resetFilters.id}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
             ) : null}
           </div>
         </PopoverContent>
@@ -583,26 +600,32 @@ function DataTableFilterItem<TData>({
           )}
         </div>
         <Popover open={showFieldSelector} onOpenChange={setShowFieldSelector}>
-          <PopoverTrigger asChild>
-            <Button
-              role="combobox"
-              aria-controls={fieldListboxId}
-              variant="outline"
-              size="sm"
-              className="w-32 justify-between gap-1 rounded font-normal"
-            >
-              <span className="truncate">
-                {columns.find((column) => column.id === filter.id)?.columnDef
-                  .meta?.label ?? 'Select field'}
-              </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  role="combobox"
+                  aria-controls={fieldListboxId}
+                  variant="outline"
+                  size="sm"
+                  className="w-32 justify-between gap-1 rounded font-normal"
+                >
+                  <span className="truncate">
+                    {columns.find((column) => column.id === filter.id)
+                      ?.columnDef.meta?.label ?? 'Select field'}
+                  </span>
+                  <ChevronsUpDown className="opacity-50 w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Filter field</span>
               <ShortcutKbd
                 actionId={shortcuts.filterField.id}
                 interactive={false}
-                className="pointer-events-none hidden xl:inline-flex"
               />
-              <ChevronsUpDown className="opacity-50 w-4 h-4" />
-            </Button>
-          </PopoverTrigger>
+            </TooltipContent>
+          </Tooltip>
           <PopoverContent
             id={fieldListboxId}
             align="start"
@@ -877,29 +900,35 @@ function onFilterInputRender<TData>({
           }}
           multiple={multiple}
         >
-          <FacetedTrigger asChild>
-            <Button
-              id={inputId}
-              aria-controls={inputListboxId}
-              aria-label={`${columnMeta?.label} filter value${multiple ? 's' : ''}`}
-              variant="outline"
-              size="sm"
-              className="w-full rounded gap-2 font-normal"
-            >
-              <FacetedBadgeList
-                options={columnMeta?.options}
-                placeholder={
-                  columnMeta?.placeholder ??
-                  `Select option${multiple ? 's' : ''}...`
-                }
-              />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <FacetedTrigger asChild>
+                <Button
+                  id={inputId}
+                  aria-controls={inputListboxId}
+                  aria-label={`${columnMeta?.label} filter value${multiple ? 's' : ''}`}
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded gap-2 font-normal"
+                >
+                  <FacetedBadgeList
+                    options={columnMeta?.options}
+                    placeholder={
+                      columnMeta?.placeholder ??
+                      `Select option${multiple ? 's' : ''}...`
+                    }
+                  />
+                </Button>
+              </FacetedTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Filter value</span>
               <ShortcutKbd
                 actionId={shortcuts.filterFacetedValue.id}
                 interactive={false}
-                className="pointer-events-none hidden xl:inline-flex"
               />
-            </Button>
-          </FacetedTrigger>
+            </TooltipContent>
+          </Tooltip>
           <FacetedContent
             id={inputListboxId}
             className="w-[200px] origin-[var(--radix-popover-content-transform-origin)]"
@@ -948,27 +977,33 @@ function onFilterInputRender<TData>({
 
       return (
         <Popover open={showValueSelector} onOpenChange={setShowValueSelector}>
-          <PopoverTrigger asChild>
-            <Button
-              id={inputId}
-              aria-controls={inputListboxId}
-              aria-label={`${columnMeta?.label} date filter`}
-              variant="outline"
-              size="sm"
-              className={cn(
-                'w-full justify-start rounded gap-2 text-left font-normal',
-                !filter.value && 'text-muted-foreground',
-              )}
-            >
-              <CalendarIcon className="w-4 h-4" />
-              <span className="truncate">{displayValue}</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  id={inputId}
+                  aria-controls={inputListboxId}
+                  aria-label={`${columnMeta?.label} date filter`}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'w-full justify-start rounded gap-2 text-left font-normal',
+                    !filter.value && 'text-muted-foreground',
+                  )}
+                >
+                  <CalendarIcon className="w-4 h-4" />
+                  <span className="truncate">{displayValue}</span>
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Date filter value</span>
               <ShortcutKbd
                 actionId={shortcuts.filterDateValue.id}
                 interactive={false}
-                className="pointer-events-none hidden xl:inline-flex"
               />
-            </Button>
-          </PopoverTrigger>
+            </TooltipContent>
+          </Tooltip>
           <PopoverContent
             id={inputListboxId}
             align="start"

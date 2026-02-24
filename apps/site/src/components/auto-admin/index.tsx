@@ -28,6 +28,11 @@ import {
 } from '@/components/ui/keyboard-shortcuts';
 import { ManageOrganization } from '@/components/ui/organizations/manage-organization';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useDialog } from '@/contexts/dialog-context';
 import { api } from '@/lib/api';
 import {
@@ -36,6 +41,8 @@ import {
   resolveAdminTabInput,
   resolveIconByName,
 } from '@/lib/auto-runtime/tab-runtime';
+import { get as gunGet } from '@/lib/gun/ssr/get';
+import { getGunRef, mergeKeys } from '@/lib/gun/utils';
 import { appSchema } from '@/lib/schema';
 import { cn, getSoulFromUnknown } from '@/lib/utils';
 import { AdminDashboard } from '../admin-dashboard';
@@ -169,9 +176,146 @@ export type AutoTableTabInput<K extends SchemaKeys = SchemaKeys> =
 
 type AutoTableItem = AutoTableProps<SchemaKeys>;
 
+type GlobalSearchSource = {
+  tabTitle: string;
+  tabGroup?: string;
+  mode: 'schema' | 'runtime';
+  schema?: SchemaKeys;
+  slug: string;
+};
+
+type GlobalSearchIndexedRow = {
+  tabTitle: string;
+  tabGroup?: string;
+  schema: SchemaKeys;
+  slug: string;
+  rowId: string;
+  label: string;
+  description?: string;
+  searchText: string;
+};
+
 function isRenderableAutoTableTab(tab: unknown): tab is AutoTableItem {
   if (!tab || typeof tab !== 'object') return false;
   return 'schema' in tab || 'parsedSchema' in tab;
+}
+
+function collectFullTextTokens(value: unknown, out: string[]) {
+  if (value === null || value === undefined) return;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed) out.push(trimmed);
+    return;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    out.push(String(value));
+    return;
+  }
+  if (value instanceof Date) {
+    out.push(value.toISOString());
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectFullTextTokens(item, out);
+    }
+    return;
+  }
+  if (typeof value === 'object') {
+    for (const [entryKey, entryValue] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
+      if (entryKey === '_' || entryKey === '#' || entryKey === '>') continue;
+      collectFullTextTokens(entryValue, out);
+    }
+  }
+}
+
+function getRowDisplayLabel(
+  row: Record<string, unknown>,
+  fallbackIndex: number,
+): { label: string; description?: string } {
+  const labelCandidates = [
+    row.title,
+    row.name,
+    row.label,
+    row.email,
+    row.orderNumber,
+    row.invoiceNumber,
+    row.id,
+  ].filter(
+    (value): value is string | number =>
+      typeof value === 'string' || typeof value === 'number',
+  );
+  const descriptionCandidates = [
+    row.description,
+    row.text,
+    row.phone,
+    row.status,
+    row.date,
+    row.timestamp,
+  ].filter(
+    (value): value is string | number =>
+      typeof value === 'string' || typeof value === 'number',
+  );
+  const label =
+    labelCandidates.length > 0
+      ? String(labelCandidates[0]).trim()
+      : `Row ${fallbackIndex + 1}`;
+  const description =
+    descriptionCandidates.length > 0
+      ? String(descriptionCandidates[0]).trim()
+      : undefined;
+  return { label, description };
+}
+
+async function fetchRuntimeRowsBySlug(slug: string) {
+  const absolutePath = mergeKeys('', slug);
+  const node = getGunRef(absolutePath);
+
+  return new Promise<Array<Record<string, unknown>>>((resolve) => {
+    let settled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve([]);
+    }, 2000);
+
+    node
+      .load((data) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        if (!data || typeof data !== 'object') {
+          resolve([]);
+          return;
+        }
+        const rows: Array<Record<string, unknown>> = [];
+        for (const [soul, value] of Object.entries(
+          data as Record<string, unknown>,
+        )) {
+          if (soul === '_' || value === null || value === undefined) continue;
+          if (typeof value === 'object') {
+            rows.push({
+              ...(value as Record<string, unknown>),
+              _: { soul },
+            });
+            continue;
+          }
+          rows.push({
+            value,
+            _: { soul },
+          });
+        }
+        resolve(rows);
+      })
+      .not(() => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        resolve([]);
+      });
+  });
 }
 
 export function AutoAdmin({
@@ -549,19 +693,7 @@ export function AutoAdmin({
         : null,
     [currentItem, basePath],
   );
-  const currentTableSchemaKey =
-    currentTableItem && 'schema' in currentTableItem
-      ? currentTableItem.schema
-      : null;
-  const currentTableSlug = currentTableItem?.slug;
-  const { data: currentTableRows = [] } = api[
-    (currentTableSchemaKey ?? 'business') as SchemaKeys
-  ].useGet({
-    keys: currentTableSlug ? [currentTableSlug] : undefined,
-    queryOptions: {
-      enabled: Boolean(currentTableSchemaKey && currentTableSlug),
-    },
-  });
+  const [isGlobalCommandOpen, setIsGlobalCommandOpen] = useState(false);
   const { data: organizationMembers = [] } = api.user.useGet();
 
   const selectTab = useCallback(
@@ -599,6 +731,126 @@ export function AutoAdmin({
     [selectTab, tab, tabsWithHome],
   );
 
+  const focusRowById = useCallback((rowId: string) => {
+    let attempts = 0;
+    const maxAttempts = 30;
+    const intervalId = window.setInterval(() => {
+      const target = document.querySelector<HTMLElement>(
+        `[data-row-id="${CSS.escape(rowId)}"]`,
+      );
+      if (target) {
+        window.clearInterval(intervalId);
+        target.focus();
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      attempts += 1;
+      if (attempts >= maxAttempts) {
+        window.clearInterval(intervalId);
+      }
+    }, 100);
+  }, []);
+
+  const searchableSources = useMemo(() => {
+    const schemaShape = appSchema.schemaShape as unknown as Record<
+      string,
+      unknown
+    >;
+    const out: GlobalSearchSource[] = [];
+    for (const tab of tabsWithHome) {
+      if (!isRenderableAutoTableTab(tab)) continue;
+      const normalized = normalizeAutoTableTab(
+        tab as PossibleTabConfig & { slug?: string; data?: unknown },
+        basePath,
+      );
+      const slug = normalized.slug?.trim();
+      if (!slug) continue;
+      if ('schema' in normalized && typeof normalized.schema === 'string') {
+        if (!schemaShape[normalized.schema]) continue;
+        out.push({
+          tabTitle: normalized.title,
+          tabGroup: normalized.group,
+          mode: 'schema',
+          schema: normalized.schema as SchemaKeys,
+          slug,
+        });
+        continue;
+      }
+      if ('parsedSchema' in normalized) {
+        out.push({
+          tabTitle: normalized.title,
+          tabGroup: normalized.group,
+          mode: 'runtime',
+          slug,
+        });
+      }
+    }
+    return out;
+  }, [basePath, tabsWithHome]);
+
+  const { data: globalSearchRows = [], isFetching: isIndexingGlobalSearch } =
+    useQuery({
+      enabled: isGlobalCommandOpen && searchableSources.length > 0,
+      queryFn: async () => {
+        const allBySource = await Promise.all(
+          searchableSources.map(async (source) => {
+            const rows =
+              source.mode === 'schema' && source.schema
+                ? await gunGet({ key: source.schema }, source.slug)
+                : await fetchRuntimeRowsBySlug(source.slug);
+            const indexedRows: GlobalSearchIndexedRow[] = [];
+            rows.forEach((row, index) => {
+              const rowRecord = row as Record<string, unknown>;
+              const rowMeta =
+                rowRecord._ && typeof rowRecord._ === 'object'
+                  ? (rowRecord._ as Record<string, unknown>)
+                  : null;
+              const rowId =
+                getSoulFromUnknown(row) ??
+                (typeof rowMeta?.soul === 'string' ? rowMeta.soul : null) ??
+                (typeof rowRecord.id === 'string' ? rowRecord.id : null) ??
+                (typeof rowRecord.id === 'number'
+                  ? String(rowRecord.id)
+                  : null);
+              if (!rowId) return;
+
+              const { label, description } = getRowDisplayLabel(
+                rowRecord,
+                index,
+              );
+              const fullTextTokens: string[] = [];
+              collectFullTextTokens(rowRecord, fullTextTokens);
+
+              indexedRows.push({
+                tabTitle: source.tabTitle,
+                tabGroup: source.tabGroup,
+                schema: source.schema ?? 'business',
+                slug: source.slug,
+                rowId,
+                label,
+                description,
+                searchText: fullTextTokens.join(' '),
+              });
+            });
+            return indexedRows;
+          }),
+        );
+
+        return allBySource.flat();
+      },
+      queryKey: [
+        'auto-admin-global-full-text-search',
+        searchableSources.map((source) => [
+          source.mode,
+          source.schema ?? 'runtime',
+          source.slug,
+          source.tabTitle,
+        ]),
+      ],
+      staleTime: 0,
+      refetchInterval: isGlobalCommandOpen ? 5_000 : false,
+    });
+
   const commandMembers = useMemo(() => {
     const likelyMembersTab = tabsWithHome.find((item) =>
       /member|members|user|users|team|people|staff/i.test(item.title),
@@ -631,57 +883,21 @@ export function AutoAdmin({
       .slice(0, 150);
   }, [organizationMembers, selectTab, tabsWithHome]);
 
-  const commandRecords = useMemo(() => {
-    if (!Array.isArray(currentTableRows)) return [];
-    if (!currentItem) return [];
-
-    return currentTableRows
-      .map((row, index) => {
-        const rowRecord = row as Record<string, unknown>;
-        const rowMeta =
-          rowRecord._ && typeof rowRecord._ === 'object'
-            ? (rowRecord._ as Record<string, unknown>)
-            : null;
-        const rowId =
-          getSoulFromUnknown(row) ??
-          (typeof rowMeta?.soul === 'string' ? rowMeta.soul : null) ??
-          (typeof rowRecord.id === 'string' ? rowRecord.id : null) ??
-          (typeof rowRecord.id === 'number' ? String(rowRecord.id) : null);
-        if (!rowId) return null;
-
-        const labelCandidates = [
-          rowRecord.title,
-          rowRecord.name,
-          rowRecord.label,
-          rowRecord.email,
-          rowRecord.text,
-          rowRecord.description,
-        ].filter((value): value is string => typeof value === 'string');
-        const label = labelCandidates[0]?.trim() || `Row ${index + 1}`;
-        const description = labelCandidates[1]?.trim() || undefined;
-
-        return {
-          id: `record-${rowId}`,
-          label,
-          description,
-          scopeLabel: currentItem.title,
-          keywords: `${label} ${description ?? ''} row data ${currentItem.title} ${currentTableSchemaKey ?? ''}`,
-          onSelect: () => {
-            selectTab(currentItem.title);
-            window.setTimeout(() => {
-              const target = document.querySelector<HTMLElement>(
-                `[data-row-id="${CSS.escape(String(rowId))}"]`,
-              );
-              if (!target) return;
-              target.focus();
-              target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }, 80);
-          },
-        };
-      })
-      .filter((record): record is NonNullable<typeof record> => Boolean(record))
-      .slice(0, 200);
-  }, [currentItem, currentTableRows, currentTableSchemaKey, selectTab]);
+  const commandRecords = useMemo(
+    () =>
+      globalSearchRows.slice(0, 4000).map((row) => ({
+        id: `record-${row.schema}-${row.rowId}`,
+        label: row.label,
+        description: row.description,
+        scopeLabel: row.tabTitle,
+        keywords: `${row.searchText} ${row.tabTitle} ${row.tabGroup ?? ''} ${row.schema} ${row.slug}`,
+        onSelect: () => {
+          selectTab(row.tabTitle);
+          focusRowById(row.rowId);
+        },
+      })),
+    [focusRowById, globalSearchRows, selectTab],
+  );
 
   const commandActions = useMemo(() => {
     const actions: Array<{
@@ -837,6 +1053,8 @@ export function AutoAdmin({
                 tabs={commandTabs}
                 members={commandMembers}
                 records={commandRecords}
+                isSearchingData={isIndexingGlobalSearch}
+                onOpenChange={setIsGlobalCommandOpen}
               />
               <LanguageSelector />
             </div>
@@ -1053,9 +1271,14 @@ function KanbanColumn<K extends SchemaKeys>({
           )}
         </div>
         <Kanban.ColumnHandle asChild>
-          <Button variant="ghost" size="icon" className="relative">
-            <GripVertical className="h-4 w-4" />
-            <span className="pointer-events-none absolute -right-1 -top-1 hidden lg:inline-flex">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <GripVertical className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Reorder column</span>
               <ShortcutKbd
                 actionId={AUTO_ADMIN_SHORTCUTS.kanbanColumnHandle.id}
                 defaultBinding={
@@ -1063,8 +1286,8 @@ function KanbanColumn<K extends SchemaKeys>({
                 }
                 interactive={false}
               />
-            </span>
-          </Button>
+            </TooltipContent>
+          </Tooltip>
         </Kanban.ColumnHandle>
       </div>
       <div className="flex flex-col gap-2 p-0.5">

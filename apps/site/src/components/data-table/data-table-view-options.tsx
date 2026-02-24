@@ -2,7 +2,7 @@
 
 import type { Table } from '@tanstack/react-table';
 import { Check, ChevronsUpDown, Settings2 } from 'lucide-react';
-
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Command,
@@ -13,16 +13,20 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import {
+  ShortcutKbd,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import {
-  ShortcutKbd,
-  useShortcutAction,
-} from '@/components/ui/keyboard-shortcuts';
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import * as React from 'react';
 
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>;
@@ -63,24 +67,30 @@ export function DataTableViewOptions<TData>({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          aria-label="Toggle columns"
-          role="combobox"
-          variant="outline"
-          size="sm"
-          className="ml-auto hidden h-8 gap-2 lg:flex"
-        >
-          <Settings2 className="size-4" />
-          View
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <Button
+              aria-label="Toggle columns"
+              role="combobox"
+              variant="outline"
+              size="sm"
+              className="ml-auto hidden h-8 gap-2 lg:flex"
+            >
+              <Settings2 className="size-4" />
+              View
+              <ChevronsUpDown className="ml-auto opacity-50 size-4" />
+            </Button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent className="flex items-center gap-2">
+          <span>View options</span>
           <ShortcutKbd
             actionId={DATA_TABLE_VIEW_SHORTCUT.id}
             interactive={false}
-            className="pointer-events-none hidden xl:inline-flex"
           />
-          <ChevronsUpDown className="ml-auto opacity-50 size-4" />
-        </Button>
-      </PopoverTrigger>
+        </TooltipContent>
+      </Tooltip>
       <PopoverContent align="end" className="w-44 p-0">
         <Command>
           <CommandInput placeholder="Search columns..." />

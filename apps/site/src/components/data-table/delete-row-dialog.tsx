@@ -28,6 +28,11 @@ import {
   ShortcutKbd,
   useShortcutAction,
 } from '@/components/ui/keyboard-shortcuts';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useMediaQuery } from '@/hooks/use-media-query';
 
 const DELETE_ROW_DIALOG_SHORTCUTS = {
@@ -181,15 +186,11 @@ export function DeleteRowDialog<T>({
               <DataTableActionBarAction
                 size="icon"
                 tooltip="Delete selected"
+                shortcut={DELETE_ROW_DIALOG_SHORTCUTS.openDeleteRows}
                 data-auto-table-delete-trigger-desktop="true"
                 className="lg:w-auto lg:px-2"
               >
                 <Trash2 />
-                <ShortcutKbd
-                  actionId={DELETE_ROW_DIALOG_SHORTCUTS.openDeleteRows.id}
-                  interactive={false}
-                  className="hidden lg:inline-flex"
-                />
               </DataTableActionBarAction>
             </DialogTrigger>
           ) : null}
@@ -203,36 +204,48 @@ export function DeleteRowDialog<T>({
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-2 sm:space-x-0">
-              <DialogClose asChild>
-                <Button variant="outline" className="gap-2">
-                  Cancel
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DialogClose asChild>
+                    <Button variant="outline" className="gap-2">
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>Cancel delete</span>
                   <ShortcutKbd
                     actionId={DELETE_ROW_DIALOG_SHORTCUTS.cancelDeleteRows.id}
                     interactive={false}
-                    className="hidden sm:inline-flex"
                   />
-                </Button>
-              </DialogClose>
-              <Button
-                aria-label="Delete selected rows"
-                variant="destructive"
-                className="gap-2"
-                onClick={onConfirm}
-                // disabled={isDeletePending}
-              >
-                {/* {isDeletePending && (
-                <Loader
-                  className="mr-2 size-4 animate-spin"
-                  aria-hidden="true"
-                />
-              )} */}
-                Delete
-                <ShortcutKbd
-                  actionId={DELETE_ROW_DIALOG_SHORTCUTS.confirmDeleteRows.id}
-                  interactive={false}
-                  className="hidden sm:inline-flex"
-                />
-              </Button>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    aria-label="Delete selected rows"
+                    variant="destructive"
+                    className="gap-2"
+                    onClick={onConfirm}
+                    // disabled={isDeletePending}
+                  >
+                    {/* {isDeletePending && (
+                    <Loader
+                      className="mr-2 size-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  )} */}
+                    Delete
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>Confirm delete</span>
+                  <ShortcutKbd
+                    actionId={DELETE_ROW_DIALOG_SHORTCUTS.confirmDeleteRows.id}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -244,22 +257,28 @@ export function DeleteRowDialog<T>({
     <div ref={shortcutScopeRef}>
       <Drawer open={open} onOpenChange={handleOpenChange} {...dialogProps}>
         {showTrigger ? (
-          <DrawerTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              data-auto-table-delete-trigger-mobile="true"
-              className="gap-2"
-            >
-              <Trash2 className="mr-2 size-4" aria-hidden="true" />
-              Delete
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DrawerTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  data-auto-table-delete-trigger-mobile="true"
+                  className="gap-2"
+                >
+                  <Trash2 className="mr-2 size-4" aria-hidden="true" />
+                  Delete
+                </Button>
+              </DrawerTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Open delete dialog</span>
               <ShortcutKbd
                 actionId={DELETE_ROW_DIALOG_SHORTCUTS.openDeleteRows.id}
                 interactive={false}
-                className="hidden sm:inline-flex"
               />
-            </Button>
-          </DrawerTrigger>
+            </TooltipContent>
+          </Tooltip>
         ) : null}
         <DrawerContent data-auto-table-delete-dialog-content="true">
           <DrawerHeader>
@@ -271,33 +290,45 @@ export function DeleteRowDialog<T>({
             </DrawerDescription>
           </DrawerHeader>
           <DrawerFooter className="gap-2 sm:space-x-0">
-            <DrawerClose asChild>
-              <Button variant="outline" className="gap-2">
-                Cancel
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DrawerClose asChild>
+                  <Button variant="outline" className="gap-2">
+                    Cancel
+                  </Button>
+                </DrawerClose>
+              </TooltipTrigger>
+              <TooltipContent className="flex items-center gap-2">
+                <span>Cancel delete</span>
                 <ShortcutKbd
                   actionId={DELETE_ROW_DIALOG_SHORTCUTS.cancelDeleteRows.id}
                   interactive={false}
-                  className="hidden sm:inline-flex"
                 />
-              </Button>
-            </DrawerClose>
-            <Button
-              aria-label="Delete selected rows"
-              variant="destructive"
-              className="gap-2"
-              onClick={onConfirm}
-              // disabled={isDeletePending}
-            >
-              {/* {isDeletePending && (
-              <Loader className="mr-2 size-4 animate-spin" aria-hidden="true" />
-            )} */}
-              Delete
-              <ShortcutKbd
-                actionId={DELETE_ROW_DIALOG_SHORTCUTS.confirmDeleteRows.id}
-                interactive={false}
-                className="hidden sm:inline-flex"
-              />
-            </Button>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label="Delete selected rows"
+                  variant="destructive"
+                  className="gap-2"
+                  onClick={onConfirm}
+                  // disabled={isDeletePending}
+                >
+                  {/* {isDeletePending && (
+                  <Loader className="mr-2 size-4 animate-spin" aria-hidden="true" />
+                )} */}
+                  Delete
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="flex items-center gap-2">
+                <span>Confirm delete</span>
+                <ShortcutKbd
+                  actionId={DELETE_ROW_DIALOG_SHORTCUTS.confirmDeleteRows.id}
+                  interactive={false}
+                />
+              </TooltipContent>
+            </Tooltip>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>

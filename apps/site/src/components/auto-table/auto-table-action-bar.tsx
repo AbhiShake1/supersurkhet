@@ -7,10 +7,7 @@ import {
   DataTableActionBarAction,
   DataTableActionBarSelection,
 } from '@/components/data-table/data-table-action-bar';
-import {
-  ShortcutKbd,
-  useShortcutAction,
-} from '@/components/ui/keyboard-shortcuts';
+import { useShortcutAction } from '@/components/ui/keyboard-shortcuts';
 import { Separator } from '@/components/ui/separator';
 import { exportTableToCSV } from '@/lib/export';
 import { DeleteRowDialog } from '../data-table/delete-row-dialog';
@@ -106,16 +103,12 @@ export function AutoTableActionBar<T>({
         <DataTableActionBarAction
           size="icon"
           tooltip="Export as excel"
+          shortcut={AUTO_TABLE_ACTION_BAR_SHORTCUTS.exportSelected}
           className="lg:w-auto lg:px-2"
           isPending={getIsActionPending('export')}
           onClick={onExport}
         >
           <Download />
-          <ShortcutKbd
-            actionId={AUTO_TABLE_ACTION_BAR_SHORTCUTS.exportSelected.id}
-            interactive={false}
-            className="hidden lg:inline-flex"
-          />
         </DataTableActionBarAction>
         <DeleteRowDialog data={rows} onConfirm={deleteSelected} />
         {/* <DataTableActionBarAction

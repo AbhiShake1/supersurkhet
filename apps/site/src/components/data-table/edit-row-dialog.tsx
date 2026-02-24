@@ -18,6 +18,11 @@ import {
   useShortcutAction,
 } from '@/components/ui/keyboard-shortcuts';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 const EDIT_ROW_DIALOG_SHORTCUTS = {
   cancelEditRow: {
@@ -97,19 +102,25 @@ export function EditRowDialog<T, S extends ZodObject<any>>({
           </ScrollArea>
         </CredenzaBody>
         <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full gap-2"
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-            <ShortcutKbd
-              actionId={EDIT_ROW_DIALOG_SHORTCUTS.cancelEditRow.id}
-              interactive={false}
-              className="hidden sm:inline-flex"
-            />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => onOpenChange(false)}
+              >
+                Cancel
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Cancel edit</span>
+              <ShortcutKbd
+                actionId={EDIT_ROW_DIALOG_SHORTCUTS.cancelEditRow.id}
+                interactive={false}
+              />
+            </TooltipContent>
+          </Tooltip>
           <SubmitButton form="edit-row-form" className="gap-2 w-full">
             <Save className="size-4" />
             Save

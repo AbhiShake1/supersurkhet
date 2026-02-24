@@ -54,7 +54,11 @@ import {
   DropdownMenuTrigger,
 } from './dropdown-menu';
 import { Input } from './input';
-import { ShortcutKbd, useRegisterShortcut, useShortcutAction } from './keyboard-shortcuts';
+import {
+  ShortcutKbd,
+  useRegisterShortcut,
+  useShortcutAction,
+} from './keyboard-shortcuts';
 import { ManageOrganization } from './organizations/manage-organization';
 import {
   Popover,
@@ -70,6 +74,7 @@ import {
   SortableItem,
   SortableItemHandle,
 } from './sortable';
+import { Tooltip, TooltipContent, TooltipTrigger } from './tooltip';
 
 const SECTION_TOGGLE_BUTTON_CLASS =
   'flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 active:bg-slate-200/60 dark:active:bg-slate-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset';
@@ -1215,11 +1220,13 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
               leadingIcon={<Search className="h-4 w-4 my-2" />}
             />
             <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
-              <ShortcutKbd
-                actionId={SIDEBAR_SHORTCUTS.focusSearch.id}
-                defaultBinding={SIDEBAR_SHORTCUTS.focusSearch.defaultBinding}
-                interactive={false}
-              />
+              <span className="inline-flex items-center gap-1">
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.focusSearch.id}
+                  defaultBinding={SIDEBAR_SHORTCUTS.focusSearch.defaultBinding}
+                  interactive={false}
+                />
+              </span>
             </span>
           </div>
         )}
@@ -1247,44 +1254,62 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                   </div>
                 ) : null}
                 {onAddGroup ? (
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted"
-                    onClick={() => {
-                      onAddGroup();
-                    }}
-                  >
-                    <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="flex-1">Add Group</span>
-                    <ShortcutKbd
-                      actionId={SIDEBAR_SHORTCUTS.quickAddGroup.id}
-                      defaultBinding={
-                        SIDEBAR_SHORTCUTS.quickAddGroup.defaultBinding
-                      }
-                      className="pointer-events-none hidden md:inline-flex"
-                      interactive={false}
-                    />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted"
+                        onClick={() => {
+                          onAddGroup();
+                        }}
+                      >
+                        <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="flex-1">Add Group</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="flex items-center gap-2"
+                    >
+                      <span>Add group</span>
+                      <ShortcutKbd
+                        actionId={SIDEBAR_SHORTCUTS.quickAddGroup.id}
+                        defaultBinding={
+                          SIDEBAR_SHORTCUTS.quickAddGroup.defaultBinding
+                        }
+                        interactive={false}
+                      />
+                    </TooltipContent>
+                  </Tooltip>
                 ) : null}
                 {onAddTable ? (
-                  <button
-                    type="button"
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted"
-                    onClick={() => {
-                      onAddTable();
-                    }}
-                  >
-                    <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="flex-1">Add Table (Ungrouped)</span>
-                    <ShortcutKbd
-                      actionId={SIDEBAR_SHORTCUTS.quickAddTable.id}
-                      defaultBinding={
-                        SIDEBAR_SHORTCUTS.quickAddTable.defaultBinding
-                      }
-                      className="pointer-events-none hidden md:inline-flex"
-                      interactive={false}
-                    />
-                  </button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted"
+                        onClick={() => {
+                          onAddTable();
+                        }}
+                      >
+                        <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="flex-1">Add Table (Ungrouped)</span>
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="flex items-center gap-2"
+                    >
+                      <span>Add ungrouped table</span>
+                      <ShortcutKbd
+                        actionId={SIDEBAR_SHORTCUTS.quickAddTable.id}
+                        defaultBinding={
+                          SIDEBAR_SHORTCUTS.quickAddTable.defaultBinding
+                        }
+                        interactive={false}
+                      />
+                    </TooltipContent>
+                  </Tooltip>
                 ) : null}
               </div>
             ) : (
@@ -1323,31 +1348,40 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
         {frequentItemsBySearch.length > 0 && (
           <div className="mb-2 rounded-lg border border-slate-200/80 bg-slate-50/40 p-1 dark:border-slate-800 dark:bg-slate-900/40">
             {open ? (
-              <button
-                type="button"
-                onClick={() => setIsFrequentOpen((prev) => !prev)}
-                aria-expanded={isFrequentOpen}
-                className={SECTION_TOGGLE_BUTTON_CLASS}
-                style={{ WebkitTapHighlightColor: 'transparent' }}
-              >
-                <span className="inline-flex items-center gap-2">
-                  <Star className="h-3.5 w-3.5" />
-                  Frequently used
-                </span>
-                {isFrequentOpen ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
-                <ShortcutKbd
-                  actionId={SIDEBAR_SHORTCUTS.toggleFrequentSection.id}
-                  defaultBinding={
-                    SIDEBAR_SHORTCUTS.toggleFrequentSection.defaultBinding
-                  }
-                  className="pointer-events-none ml-1 hidden md:inline-flex"
-                  interactive={false}
-                />
-              </button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    onClick={() => setIsFrequentOpen((prev) => !prev)}
+                    aria-expanded={isFrequentOpen}
+                    className={SECTION_TOGGLE_BUTTON_CLASS}
+                    style={{ WebkitTapHighlightColor: 'transparent' }}
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Star className="h-3.5 w-3.5" />
+                      Frequently used
+                    </span>
+                    {isFrequentOpen ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4" />
+                    )}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="flex items-center gap-2"
+                >
+                  <span>Toggle frequent section</span>
+                  <ShortcutKbd
+                    actionId={SIDEBAR_SHORTCUTS.toggleFrequentSection.id}
+                    defaultBinding={
+                      SIDEBAR_SHORTCUTS.toggleFrequentSection.defaultBinding
+                    }
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
             ) : (
               <div className="grid place-content-center py-2 text-slate-500">
                 <Star className="h-4 w-4" />
@@ -1573,74 +1607,107 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
                           <div className="group/group-header flex items-center gap-1">
                             {editable && onReorderGroups ? (
                               <SortableItemHandle asChild>
-                                <button
-                                  type="button"
-                                  className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                                  data-sidebar-group-name={groupName}
-                                  aria-label={`Reorder group ${groupName}`}
-                                  title={`Reorder group ${groupName}`}
-                                >
-                                  <ChevronsUpDown className="h-4 w-4" />
-                                  <ShortcutKbd
-                                    actionId={
-                                      SIDEBAR_SHORTCUTS.reorderFocusedGroupHandle.id
-                                    }
-                                    defaultBinding={
-                                      SIDEBAR_SHORTCUTS.reorderFocusedGroupHandle
-                                        .defaultBinding
-                                    }
-                                    className="pointer-events-none ml-1 hidden lg:inline-flex"
-                                    interactive={false}
-                                  />
-                                </button>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="rounded p-1 text-slate-500 hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                      data-sidebar-group-name={groupName}
+                                      aria-label={`Reorder group ${groupName}`}
+                                      title={`Reorder group ${groupName}`}
+                                    >
+                                      <ChevronsUpDown className="h-4 w-4" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    side="right"
+                                    className="flex items-center gap-2"
+                                  >
+                                    <span>Reorder group</span>
+                                    <ShortcutKbd
+                                      actionId={
+                                        SIDEBAR_SHORTCUTS
+                                          .reorderFocusedGroupHandle.id
+                                      }
+                                      defaultBinding={
+                                        SIDEBAR_SHORTCUTS
+                                          .reorderFocusedGroupHandle
+                                          .defaultBinding
+                                      }
+                                      interactive={false}
+                                    />
+                                  </TooltipContent>
+                                </Tooltip>
                               </SortableItemHandle>
                             ) : null}
-                            <button
-                              type="button"
-                              onClick={() => toggleGroup(groupName)}
-                              aria-expanded={isGroupOpen}
-                              data-sidebar-group-toggle={groupName}
-                              data-sidebar-group-name={groupName}
-                              className={`${SECTION_TOGGLE_BUTTON_CLASS} flex-1`}
-                              style={{
-                                WebkitTapHighlightColor: 'transparent',
-                              }}
-                            >
-                              <span>{groupName}</span>
-                              <ShortcutKbd
-                                actionId={SIDEBAR_SHORTCUTS.toggleFocusedGroup.id}
-                                defaultBinding={
-                                  SIDEBAR_SHORTCUTS.toggleFocusedGroup
-                                    .defaultBinding
-                                }
-                                className="pointer-events-none hidden md:inline-flex"
-                                interactive={false}
-                              />
-                            </button>
-                            {editable && onRenameGroup ? (
-                              <button
-                                type="button"
-                                className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  beginGroupRename(groupName);
-                                }}
-                                data-sidebar-group-name={groupName}
-                                aria-label={`Rename group ${groupName}`}
-                                title={`Rename group ${groupName}`}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleGroup(groupName)}
+                                  aria-expanded={isGroupOpen}
+                                  data-sidebar-group-toggle={groupName}
+                                  data-sidebar-group-name={groupName}
+                                  className={`${SECTION_TOGGLE_BUTTON_CLASS} flex-1`}
+                                  style={{
+                                    WebkitTapHighlightColor: 'transparent',
+                                  }}
+                                >
+                                  <span>{groupName}</span>
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                side="right"
+                                className="flex items-center gap-2"
                               >
-                                <Pencil className="h-4 w-4" />
+                                <span>Toggle group</span>
                                 <ShortcutKbd
-                                  actionId={SIDEBAR_SHORTCUTS.renameFocusedGroup.id}
+                                  actionId={
+                                    SIDEBAR_SHORTCUTS.toggleFocusedGroup.id
+                                  }
                                   defaultBinding={
-                                    SIDEBAR_SHORTCUTS.renameFocusedGroup
+                                    SIDEBAR_SHORTCUTS.toggleFocusedGroup
                                       .defaultBinding
                                   }
-                                  className="pointer-events-none ml-1 hidden lg:inline-flex"
                                   interactive={false}
                                 />
-                              </button>
+                              </TooltipContent>
+                            </Tooltip>
+                            {editable && onRenameGroup ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                                    onClick={(event) => {
+                                      event.preventDefault();
+                                      event.stopPropagation();
+                                      beginGroupRename(groupName);
+                                    }}
+                                    data-sidebar-group-name={groupName}
+                                    aria-label={`Rename group ${groupName}`}
+                                    title={`Rename group ${groupName}`}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent
+                                  side="right"
+                                  className="flex items-center gap-2"
+                                >
+                                  <span>Rename group</span>
+                                  <ShortcutKbd
+                                    actionId={
+                                      SIDEBAR_SHORTCUTS.renameFocusedGroup.id
+                                    }
+                                    defaultBinding={
+                                      SIDEBAR_SHORTCUTS.renameFocusedGroup
+                                        .defaultBinding
+                                    }
+                                    interactive={false}
+                                  />
+                                </TooltipContent>
+                              </Tooltip>
                             ) : null}
                             <GroupActionsPopover
                               editable={editable}
@@ -1942,237 +2009,274 @@ const Option = memo(function Option({
 
   return (
     <div className="group/option relative">
-      <Link
-        data-sidebar-item-link="true"
-        data-sidebar-item-title={title}
-        data-sidebar-item-link-title={title}
-        onClick={handleClick}
-        onFocus={() => onFocusItem?.(title)}
-        to="."
-        search={(current) => ({
-          ...(current as Record<string, unknown>),
-          tab: title,
-        })}
-        className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${
-          isSelected
-            ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
-            : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
-        } ${actionPaddingClass}`}
-      >
-        <div className="grid h-full w-10 sm:w-12 place-content-center">
-          <Popover open={isIconPickerOpen} onOpenChange={setIsIconPickerOpen}>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="group/icon-trigger relative grid place-content-center rounded p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800"
-                data-sidebar-item-icon-trigger={title}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  if (!editable || !onRenameIcon) return;
-                  setIsIconPickerOpen(true);
-                }}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            data-sidebar-item-link="true"
+            data-sidebar-item-title={title}
+            data-sidebar-item-link-title={title}
+            onClick={handleClick}
+            onFocus={() => onFocusItem?.(title)}
+            to="."
+            search={(current) => ({
+              ...(current as Record<string, unknown>),
+              tab: title,
+            })}
+            className={`relative flex h-11 w-full items-center rounded-md transition-all duration-200 ${
+              isSelected
+                ? 'bg-primary/60 text-accent-foreground shadow-sm border-l-2 border-primary/50'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+            } ${actionPaddingClass}`}
+          >
+            <div className="grid h-full w-10 sm:w-12 place-content-center">
+              <Popover
+                open={isIconPickerOpen}
+                onOpenChange={setIsIconPickerOpen}
               >
-                <Icon
-                  className={`h-4 w-4 transition-opacity ${
-                    editable && onRenameIcon
-                      ? 'opacity-100 group-hover/icon-trigger:opacity-0 group-focus-visible/icon-trigger:opacity-0'
-                      : ''
-                  }`}
-                />
-                {editable && onRenameIcon ? (
-                  <ChevronsUpDown className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity group-hover/icon-trigger:opacity-100 group-focus-visible/icon-trigger:opacity-100" />
-                ) : null}
-                {editable && onRenameIcon ? (
-                  <span className="sr-only">Edit icon for tab {title}</span>
-                ) : null}
-              </button>
-            </PopoverTrigger>
-            {editable && onRenameIcon ? (
-              <PopoverContent align="start" className="w-72 p-2">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                      Icon options
-                    </span>
-                    <ShortcutKbd
-                      actionId={SIDEBAR_SHORTCUTS.selectTabIconOption.id}
-                      defaultBinding={
-                        SIDEBAR_SHORTCUTS.selectTabIconOption.defaultBinding
-                      }
-                      className="pointer-events-none hidden md:inline-flex"
-                      interactive={false}
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="group/icon-trigger relative grid place-content-center rounded p-0.5 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    data-sidebar-item-icon-trigger={title}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      if (!editable || !onRenameIcon) return;
+                      setIsIconPickerOpen(true);
+                    }}
+                  >
+                    <Icon
+                      className={`h-4 w-4 transition-opacity ${
+                        editable && onRenameIcon
+                          ? 'opacity-100 group-hover/icon-trigger:opacity-0 group-focus-visible/icon-trigger:opacity-0'
+                          : ''
+                      }`}
                     />
-                  </div>
-                  <Input
-                    value={iconSearch}
-                    onChange={(event) => setIconSearch(event.target.value)}
-                    placeholder="Search Lucide icons"
-                    className="h-8 text-xs"
-                  />
-                  <div className="grid max-h-52 grid-cols-2 gap-1 overflow-y-auto">
-                    {filteredIcons.map(([name, IconComponent]) => (
+                    {editable && onRenameIcon ? (
+                      <ChevronsUpDown className="pointer-events-none absolute inset-0 m-auto h-3.5 w-3.5 opacity-0 transition-opacity group-hover/icon-trigger:opacity-100 group-focus-visible/icon-trigger:opacity-100" />
+                    ) : null}
+                    {editable && onRenameIcon ? (
+                      <span className="sr-only">Edit icon for tab {title}</span>
+                    ) : null}
+                  </button>
+                </PopoverTrigger>
+                {editable && onRenameIcon ? (
+                  <PopoverContent align="start" className="w-72 p-2">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                          Icon options
+                        </span>
+                      </div>
+                      <Input
+                        value={iconSearch}
+                        onChange={(event) => setIconSearch(event.target.value)}
+                        placeholder="Search Lucide icons"
+                        className="h-8 text-xs"
+                      />
+                      <div className="grid max-h-52 grid-cols-2 gap-1 overflow-y-auto">
+                        {filteredIcons.map(([name, IconComponent]) => (
+                          <button
+                            key={`${title}-${name}`}
+                            type="button"
+                            className={`flex items-center gap-2 rounded border px-2 py-1 text-left text-xs hover:bg-muted ${
+                              iconName === name
+                                ? 'border-primary bg-primary/10'
+                                : ''
+                            }`}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              onRenameIcon(title, name);
+                              setIsIconPickerOpen(false);
+                            }}
+                          >
+                            <IconComponent className="h-4 w-4 shrink-0" />
+                            <span className="truncate">{name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                ) : null}
+              </Popover>
+            </div>
+
+            {open && (
+              <span className="flex min-w-0 items-center gap-1">
+                <span
+                  className={`truncate text-sm font-medium transition-opacity duration-200 ${
+                    open ? 'opacity-100' : 'opacity-0'
+                  }`}
+                >
+                  {title}
+                </span>
+                {hasRenameAction ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <button
-                        key={`${title}-${name}`}
                         type="button"
-                        className={`flex items-center gap-2 rounded border px-2 py-1 text-left text-xs hover:bg-muted ${
-                          iconName === name
-                            ? 'border-primary bg-primary/10'
-                            : ''
-                        }`}
+                        className="rounded p-0.5 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/option:opacity-100 group-hover/option:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
-                          onRenameIcon(title, name);
-                          setIsIconPickerOpen(false);
+                          onBeginRename?.(title);
                         }}
                       >
-                        <IconComponent className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{name}</span>
+                        <Pencil className="h-3.5 w-3.5" />
+                        <span className="sr-only">Rename tab {title}</span>
                       </button>
-                    ))}
-                  </div>
-                </div>
-              </PopoverContent>
-            ) : null}
-          </Popover>
-        </div>
-
-        {open && (
-          <span className="flex min-w-0 items-center gap-1">
-            <span
-              className={`truncate text-sm font-medium transition-opacity duration-200 ${
-                open ? 'opacity-100' : 'opacity-0'
-              }`}
-            >
-              {title}
-            </span>
-            {hasRenameAction ? (
-              <button
-                type="button"
-                className="rounded p-0.5 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/option:opacity-100 group-hover/option:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onBeginRename?.(title);
-                }}
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                <span className="ml-1">
-                  <ShortcutKbd
-                    actionId={SIDEBAR_SHORTCUTS.renameItem.id}
-                    defaultBinding={SIDEBAR_SHORTCUTS.renameItem.defaultBinding}
-                    interactive={false}
-                  />
-                </span>
-                <span className="sr-only">Rename tab {title}</span>
-              </button>
-            ) : null}
-            {editable && onRenameIcon ? (
-              <ShortcutKbd
-                actionId={SIDEBAR_SHORTCUTS.openFocusedTabIconPicker.id}
-                defaultBinding={
-                  SIDEBAR_SHORTCUTS.openFocusedTabIconPicker.defaultBinding
-                }
-                className="pointer-events-none hidden md:inline-flex"
-                interactive={false}
-              />
-            ) : null}
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="flex items-center gap-2"
+                    >
+                      <span>Rename tab</span>
+                      <ShortcutKbd
+                        actionId={SIDEBAR_SHORTCUTS.renameItem.id}
+                        defaultBinding={
+                          SIDEBAR_SHORTCUTS.renameItem.defaultBinding
+                        }
+                        interactive={false}
+                      />
+                    </TooltipContent>
+                  </Tooltip>
+                ) : null}
+              </span>
+            )}
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="flex items-center gap-2">
+          <span>Open tab</span>
+          <ShortcutKbd
+            actionId={SIDEBAR_SHORTCUTS.openFocusedTab.id}
+            defaultBinding={SIDEBAR_SHORTCUTS.openFocusedTab.defaultBinding}
+            interactive={false}
+          />
+          {editable && onRenameIcon ? (
             <ShortcutKbd
-              actionId={SIDEBAR_SHORTCUTS.openFocusedTab.id}
-              defaultBinding={SIDEBAR_SHORTCUTS.openFocusedTab.defaultBinding}
-              className="pointer-events-none hidden md:inline-flex"
+              actionId={SIDEBAR_SHORTCUTS.openFocusedTabIconPicker.id}
+              defaultBinding={
+                SIDEBAR_SHORTCUTS.openFocusedTabIconPicker.defaultBinding
+              }
               interactive={false}
             />
-          </span>
-        )}
-      </Link>
+          ) : null}
+        </TooltipContent>
+      </Tooltip>
       {hasSideActions ? (
         <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5 transition-opacity md:opacity-0 group-focus-within/option:opacity-100 group-hover/option:opacity-100">
           <Popover>
-            <PopoverTrigger asChild>
-              <button
-                type="button"
-                className="rounded-md border border-border/70 bg-background/75 p-1 text-slate-500 shadow-xs hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-                aria-label={`Actions for ${title}`}
-                title={`Actions for ${title}`}
-                data-sidebar-item-actions={title}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </button>
-            </PopoverTrigger>
-            <ShortcutKbd
-              actionId={SIDEBAR_SHORTCUTS.openItemActions.id}
-              defaultBinding={SIDEBAR_SHORTCUTS.openItemActions.defaultBinding}
-              className="pointer-events-none hidden md:inline-flex"
-              interactive={false}
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className="rounded-md border border-border/70 bg-background/75 p-1 text-slate-500 shadow-xs hover:bg-slate-100 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                    aria-label={`Actions for ${title}`}
+                    title={`Actions for ${title}`}
+                    data-sidebar-item-actions={title}
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </button>
+                </PopoverTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <span>Open tab actions</span>
+                <ShortcutKbd
+                  actionId={SIDEBAR_SHORTCUTS.openItemActions.id}
+                  defaultBinding={
+                    SIDEBAR_SHORTCUTS.openItemActions.defaultBinding
+                  }
+                  interactive={false}
+                />
+              </TooltipContent>
+            </Tooltip>
             <PopoverContent
               align="end"
               className="w-64 rounded-xl border-border/70 bg-popover/95 p-2.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-popover/85"
             >
               <div className="space-y-1.5">
                 {hasWorkflowAction ? (
-                  <PopoverClose asChild>
-                    <button
-                      type="button"
-                      className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left hover:bg-muted/80"
-                      onClick={() => {
-                        onOpenWorkflowEditor?.(title);
-                      }}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <PopoverClose asChild>
+                        <button
+                          type="button"
+                          className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left hover:bg-muted/80"
+                          onClick={() => {
+                            onOpenWorkflowEditor?.(title);
+                          }}
+                        >
+                          <span className="mt-0.5 grid size-7 shrink-0 place-content-center rounded-md bg-muted text-muted-foreground">
+                            <Workflow className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-medium leading-tight">
+                              Workflow settings
+                            </span>
+                            <span className="block text-[11px] leading-tight text-muted-foreground">
+                              Edit triggers and automation
+                            </span>
+                          </span>
+                        </button>
+                      </PopoverClose>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="flex items-center gap-2"
                     >
-                      <span className="mt-0.5 grid size-7 shrink-0 place-content-center rounded-md bg-muted text-muted-foreground">
-                        <Workflow className="h-3.5 w-3.5" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium leading-tight">
-                          Workflow settings
-                        </span>
-                        <span className="block text-[11px] leading-tight text-muted-foreground">
-                          Edit triggers and automation
-                        </span>
-                      </span>
+                      <span>Open workflow settings</span>
                       <ShortcutKbd
                         actionId={SIDEBAR_SHORTCUTS.openFocusedTabWorkflow.id}
                         defaultBinding={
-                          SIDEBAR_SHORTCUTS.openFocusedTabWorkflow.defaultBinding
+                          SIDEBAR_SHORTCUTS.openFocusedTabWorkflow
+                            .defaultBinding
                         }
-                        className="pointer-events-none ml-auto hidden md:inline-flex"
                         interactive={false}
                       />
-                    </button>
-                  </PopoverClose>
+                    </TooltipContent>
+                  </Tooltip>
                 ) : null}
                 {hasDeleteAction ? (
-                  <PopoverClose asChild>
-                    <button
-                      type="button"
-                      className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left text-destructive hover:bg-destructive/10"
-                      onClick={() => {
-                        onRequestDeleteTable?.(title);
-                      }}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <PopoverClose asChild>
+                        <button
+                          type="button"
+                          className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left text-destructive hover:bg-destructive/10"
+                          onClick={() => {
+                            onRequestDeleteTable?.(title);
+                          }}
+                        >
+                          <span className="mt-0.5 grid size-7 shrink-0 place-content-center rounded-md bg-destructive/10 text-destructive">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-medium leading-tight">
+                              Delete table
+                            </span>
+                            <span className="block text-[11px] leading-tight text-destructive/80">
+                              Permanently remove this schema
+                            </span>
+                          </span>
+                        </button>
+                      </PopoverClose>
+                    </TooltipTrigger>
+                    <TooltipContent
+                      side="right"
+                      className="flex items-center gap-2"
                     >
-                      <span className="mt-0.5 grid size-7 shrink-0 place-content-center rounded-md bg-destructive/10 text-destructive">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-sm font-medium leading-tight">
-                          Delete table
-                        </span>
-                        <span className="block text-[11px] leading-tight text-destructive/80">
-                          Permanently remove this schema
-                        </span>
-                      </span>
+                      <span>Delete focused table</span>
                       <ShortcutKbd
                         actionId={SIDEBAR_SHORTCUTS.deleteFocusedTabTable.id}
                         defaultBinding={
                           SIDEBAR_SHORTCUTS.deleteFocusedTabTable.defaultBinding
                         }
-                        className="pointer-events-none ml-auto hidden md:inline-flex"
                         interactive={false}
                       />
-                    </button>
-                  </PopoverClose>
+                    </TooltipContent>
+                  </Tooltip>
                 ) : null}
               </div>
             </PopoverContent>
@@ -2301,21 +2405,32 @@ const TitleSection: React.FC<{
           {slug && (
             <>
               <DropdownMenuItem asChild>
-                <Link
-                  to="/$businessName/admin/plugins"
-                  params={{ businessName: slug }}
-                  className="gap-1"
-                  data-sidebar-manage-plugins-link="true"
-                >
-                  <PlugZapIcon className="size-4" />
-                  Manage Plugins
-                  <ShortcutKbd
-                    actionId={SIDEBAR_SHORTCUTS.managePlugins.id}
-                    defaultBinding={SIDEBAR_SHORTCUTS.managePlugins.defaultBinding}
-                    className="pointer-events-none ml-auto hidden md:inline-flex"
-                    interactive={false}
-                  />
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to="/$businessName/admin/plugins"
+                      params={{ businessName: slug }}
+                      className="gap-1"
+                      data-sidebar-manage-plugins-link="true"
+                    >
+                      <PlugZapIcon className="size-4" />
+                      Manage Plugins
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="right"
+                    className="flex items-center gap-2"
+                  >
+                    <span>Manage plugins</span>
+                    <ShortcutKbd
+                      actionId={SIDEBAR_SHORTCUTS.managePlugins.id}
+                      defaultBinding={
+                        SIDEBAR_SHORTCUTS.managePlugins.defaultBinding
+                      }
+                      interactive={false}
+                    />
+                  </TooltipContent>
+                </Tooltip>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
             </>
@@ -2384,24 +2499,32 @@ const GroupActionsPopover: React.FC<{
 
   return (
     <Popover>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
-          aria-label={`Actions for ${groupName}`}
-          title={`Actions for ${groupName}`}
-          data-sidebar-group-name={groupName}
-          data-sidebar-group-actions={groupName}
-        >
-          <MoreHorizontal className="h-4 w-4" />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              className="rounded p-1 text-slate-500 opacity-100 transition-opacity md:opacity-0 hover:bg-slate-100 hover:text-slate-800 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 group-focus-within/group-header:opacity-100 group-hover/group-header:opacity-100 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+              aria-label={`Actions for ${groupName}`}
+              title={`Actions for ${groupName}`}
+              data-sidebar-group-name={groupName}
+              data-sidebar-group-actions={groupName}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="flex items-center gap-2">
+          <span>Open group actions</span>
           <ShortcutKbd
             actionId={SIDEBAR_SHORTCUTS.openFocusedGroupActions.id}
-            defaultBinding={SIDEBAR_SHORTCUTS.openFocusedGroupActions.defaultBinding}
-            className="pointer-events-none ml-1 hidden lg:inline-flex"
+            defaultBinding={
+              SIDEBAR_SHORTCUTS.openFocusedGroupActions.defaultBinding
+            }
             interactive={false}
           />
-        </button>
-      </PopoverTrigger>
+        </TooltipContent>
+      </Tooltip>
       <PopoverContent
         align="end"
         className="w-64 rounded-xl border-border/70 bg-popover/95 p-2.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-popover/85"
@@ -2411,204 +2534,257 @@ const GroupActionsPopover: React.FC<{
             Group actions
           </p>
           {onBeginRenameGroup ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className={actionButtonClass}
-                onClick={() => {
-                  onBeginRenameGroup(groupName);
-                }}
-              >
-                <span className={actionIconClass}>
-                  <Pencil className="h-3.5 w-3.5" />
-                </span>
-                <span className="flex-1">Rename Group</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverClose asChild>
+                  <button
+                    type="button"
+                    className={actionButtonClass}
+                    onClick={() => {
+                      onBeginRenameGroup(groupName);
+                    }}
+                  >
+                    <span className={actionIconClass}>
+                      <Pencil className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="flex-1">Rename Group</span>
+                  </button>
+                </PopoverClose>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <span>Rename group</span>
                 <ShortcutKbd
                   actionId={SIDEBAR_SHORTCUTS.groupActionRename.id}
                   defaultBinding={
                     SIDEBAR_SHORTCUTS.groupActionRename.defaultBinding
                   }
-                  className="pointer-events-none hidden md:inline-flex"
                   interactive={false}
                 />
-              </button>
-            </PopoverClose>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
           {onMoveGroupUp ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className={actionButtonClass}
-                onClick={() => {
-                  onMoveGroupUp();
-                }}
-                disabled={!canMoveUp}
-              >
-                <span className={actionIconClass}>
-                  <ArrowUpToLine className="h-3.5 w-3.5" />
-                </span>
-                <span className="flex-1">Move Group Up</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverClose asChild>
+                  <button
+                    type="button"
+                    className={actionButtonClass}
+                    onClick={() => {
+                      onMoveGroupUp();
+                    }}
+                    disabled={!canMoveUp}
+                  >
+                    <span className={actionIconClass}>
+                      <ArrowUpToLine className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="flex-1">Move Group Up</span>
+                  </button>
+                </PopoverClose>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <span>Move group up</span>
                 <ShortcutKbd
                   actionId={SIDEBAR_SHORTCUTS.groupActionMoveUp.id}
                   defaultBinding={
                     SIDEBAR_SHORTCUTS.groupActionMoveUp.defaultBinding
                   }
-                  className="pointer-events-none hidden md:inline-flex"
                   interactive={false}
                 />
-              </button>
-            </PopoverClose>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
           {onMoveGroupDown ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className={actionButtonClass}
-                onClick={() => {
-                  onMoveGroupDown();
-                }}
-                disabled={!canMoveDown}
-              >
-                <span className={actionIconClass}>
-                  <ArrowDownToLine className="h-3.5 w-3.5" />
-                </span>
-                <span className="flex-1">Move Group Down</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverClose asChild>
+                  <button
+                    type="button"
+                    className={actionButtonClass}
+                    onClick={() => {
+                      onMoveGroupDown();
+                    }}
+                    disabled={!canMoveDown}
+                  >
+                    <span className={actionIconClass}>
+                      <ArrowDownToLine className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="flex-1">Move Group Down</span>
+                  </button>
+                </PopoverClose>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <span>Move group down</span>
                 <ShortcutKbd
                   actionId={SIDEBAR_SHORTCUTS.groupActionMoveDown.id}
                   defaultBinding={
                     SIDEBAR_SHORTCUTS.groupActionMoveDown.defaultBinding
                   }
-                  className="pointer-events-none hidden md:inline-flex"
                   interactive={false}
                 />
-              </button>
-            </PopoverClose>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
           {onAddTable ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className={actionButtonClass}
-                onClick={() => {
-                  onAddTable(groupName);
-                }}
-              >
-                <span className={actionIconClass}>
-                  <Table2 className="h-3.5 w-3.5" />
-                </span>
-                <span className="flex-1">Add Table</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverClose asChild>
+                  <button
+                    type="button"
+                    className={actionButtonClass}
+                    onClick={() => {
+                      onAddTable(groupName);
+                    }}
+                  >
+                    <span className={actionIconClass}>
+                      <Table2 className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="flex-1">Add Table</span>
+                  </button>
+                </PopoverClose>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <span>Add table</span>
                 <ShortcutKbd
                   actionId={SIDEBAR_SHORTCUTS.groupActionAddTable.id}
                   defaultBinding={
                     SIDEBAR_SHORTCUTS.groupActionAddTable.defaultBinding
                   }
-                  className="pointer-events-none hidden md:inline-flex"
                   interactive={false}
                 />
-              </button>
-            </PopoverClose>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
           {onAddGroup ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className={actionButtonClass}
-                onClick={() => {
-                  onAddGroup();
-                }}
-              >
-                <span className={actionIconClass}>
-                  <Boxes className="h-3.5 w-3.5" />
-                </span>
-                <span className="flex-1">Add Group</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverClose asChild>
+                  <button
+                    type="button"
+                    className={actionButtonClass}
+                    onClick={() => {
+                      onAddGroup();
+                    }}
+                  >
+                    <span className={actionIconClass}>
+                      <Boxes className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="flex-1">Add Group</span>
+                  </button>
+                </PopoverClose>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <span>Add group</span>
                 <ShortcutKbd
                   actionId={SIDEBAR_SHORTCUTS.groupActionAddGroup.id}
                   defaultBinding={
                     SIDEBAR_SHORTCUTS.groupActionAddGroup.defaultBinding
                   }
-                  className="pointer-events-none hidden md:inline-flex"
                   interactive={false}
                 />
-              </button>
-            </PopoverClose>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
           {onAddGroup ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className={actionButtonClass}
-                onClick={() => {
-                  onAddGroup(undefined, {
-                    relativeTo: groupName,
-                    position: 'above',
-                  });
-                }}
-              >
-                <span className={actionIconClass}>
-                  <ArrowUpToLine className="h-3.5 w-3.5" />
-                </span>
-                <span className="flex-1">Add Group Above</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverClose asChild>
+                  <button
+                    type="button"
+                    className={actionButtonClass}
+                    onClick={() => {
+                      onAddGroup(undefined, {
+                        relativeTo: groupName,
+                        position: 'above',
+                      });
+                    }}
+                  >
+                    <span className={actionIconClass}>
+                      <ArrowUpToLine className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="flex-1">Add Group Above</span>
+                  </button>
+                </PopoverClose>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <span>Add group above</span>
                 <ShortcutKbd
                   actionId={SIDEBAR_SHORTCUTS.groupActionAddGroupAbove.id}
                   defaultBinding={
                     SIDEBAR_SHORTCUTS.groupActionAddGroupAbove.defaultBinding
                   }
-                  className="pointer-events-none hidden md:inline-flex"
                   interactive={false}
                 />
-              </button>
-            </PopoverClose>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
           {onAddGroup ? (
-            <PopoverClose asChild>
-              <button
-                type="button"
-                className={actionButtonClass}
-                onClick={() => {
-                  onAddGroup(undefined, {
-                    relativeTo: groupName,
-                    position: 'below',
-                  });
-                }}
-              >
-                <span className={actionIconClass}>
-                  <ArrowDownToLine className="h-3.5 w-3.5" />
-                </span>
-                <span className="flex-1">Add Group Below</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <PopoverClose asChild>
+                  <button
+                    type="button"
+                    className={actionButtonClass}
+                    onClick={() => {
+                      onAddGroup(undefined, {
+                        relativeTo: groupName,
+                        position: 'below',
+                      });
+                    }}
+                  >
+                    <span className={actionIconClass}>
+                      <ArrowDownToLine className="h-3.5 w-3.5" />
+                    </span>
+                    <span className="flex-1">Add Group Below</span>
+                  </button>
+                </PopoverClose>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <span>Add group below</span>
                 <ShortcutKbd
                   actionId={SIDEBAR_SHORTCUTS.groupActionAddGroupBelow.id}
                   defaultBinding={
                     SIDEBAR_SHORTCUTS.groupActionAddGroupBelow.defaultBinding
                   }
-                  className="pointer-events-none hidden md:inline-flex"
                   interactive={false}
                 />
-              </button>
-            </PopoverClose>
+              </TooltipContent>
+            </Tooltip>
           ) : null}
           {onDeleteGroup ? (
             <>
               <div className="my-1 h-px bg-border/80" />
-              <PopoverClose asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
-                  onClick={() => {
-                    onRequestDeleteGroup(groupName, itemCount);
-                  }}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <PopoverClose asChild>
+                    <button
+                      type="button"
+                      className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        onRequestDeleteGroup(groupName, itemCount);
+                      }}
+                    >
+                      <span className="grid size-6 shrink-0 place-content-center rounded-md bg-destructive/10 text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </span>
+                      <span className="flex-1">Delete Group</span>
+                    </button>
+                  </PopoverClose>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="right"
+                  className="flex items-center gap-2"
                 >
-                  <span className="grid size-6 shrink-0 place-content-center rounded-md bg-destructive/10 text-destructive">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </span>
-                  <span className="flex-1">Delete Group</span>
+                  <span>Delete group</span>
                   <ShortcutKbd
                     actionId={SIDEBAR_SHORTCUTS.groupActionDelete.id}
-                    defaultBinding={SIDEBAR_SHORTCUTS.groupActionDelete.defaultBinding}
-                    className="pointer-events-none hidden md:inline-flex"
+                    defaultBinding={
+                      SIDEBAR_SHORTCUTS.groupActionDelete.defaultBinding
+                    }
                     interactive={false}
                   />
-                </button>
-              </PopoverClose>
+                </TooltipContent>
+              </Tooltip>
             </>
           ) : null}
         </div>
@@ -2622,50 +2798,52 @@ const ToggleClose: React.FC<{
   setOpen: (open: boolean) => void;
 }> = ({ open, setOpen }) => {
   return (
-    // biome-ignore lint/a11y/useButtonType: lint debt cleanup
-    <button
-      onClick={() => setOpen(!open)}
-      data-auto-admin-sidebar-toggle="true"
-      data-sidebar-open={open ? 'true' : 'false'}
-      className="w-full border-t border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 backdrop-blur-2xl"
-    >
-      <div className="flex items-center p-1 sm:p-3">
-        <div className="grid size-6 sm:size-10 place-content-center">
-          <ChevronsRight
-            className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${
-              open ? 'rotate-180' : ''
-            }`}
-          />
-        </div>
-        {open && (
-          <span
-            className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${
-              open ? 'opacity-100' : 'opacity-0'
-            }`}
-          >
-            Hide
-          </span>
-        )}
-        {open ? (
-          <span className="ml-auto hidden pr-2 sm:inline-flex">
-            <ShortcutKbd
-              actionId={SIDEBAR_SHORTCUTS.closeSidebar.id}
-              defaultBinding={SIDEBAR_SHORTCUTS.closeSidebar.defaultBinding}
-              interactive={false}
-            />
-          </span>
-        ) : null}
-        {!open ? (
-          <span className="ml-auto hidden pr-2 sm:inline-flex">
-            <ShortcutKbd
-              actionId={SIDEBAR_SHORTCUTS.openSidebar.id}
-              defaultBinding={SIDEBAR_SHORTCUTS.openSidebar.defaultBinding}
-              interactive={false}
-            />
-          </span>
-        ) : null}
-      </div>
-    </button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* biome-ignore lint/a11y/useButtonType: lint debt cleanup */}
+        <button
+          onClick={() => setOpen(!open)}
+          data-auto-admin-sidebar-toggle="true"
+          data-sidebar-open={open ? 'true' : 'false'}
+          className="w-full border-t border-gray-200 dark:border-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 backdrop-blur-2xl"
+        >
+          <div className="flex items-center p-1 sm:p-3">
+            <div className="grid size-6 sm:size-10 place-content-center">
+              <ChevronsRight
+                className={`h-3 w-3 sm:h-4 sm:w-4 transition-transform duration-300 text-gray-500 dark:text-gray-400 ${
+                  open ? 'rotate-180' : ''
+                }`}
+              />
+            </div>
+            {open && (
+              <span
+                className={`text-[0.6rem] sm:text-sm font-medium text-gray-600 dark:text-gray-300 transition-opacity duration-200 ${
+                  open ? 'opacity-100' : 'opacity-0'
+                }`}
+              >
+                Hide
+              </span>
+            )}
+          </div>
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="flex items-center gap-2">
+        <span>{open ? 'Hide sidebar' : 'Show sidebar'}</span>
+        <ShortcutKbd
+          actionId={
+            open
+              ? SIDEBAR_SHORTCUTS.closeSidebar.id
+              : SIDEBAR_SHORTCUTS.openSidebar.id
+          }
+          defaultBinding={
+            open
+              ? SIDEBAR_SHORTCUTS.closeSidebar.defaultBinding
+              : SIDEBAR_SHORTCUTS.openSidebar.defaultBinding
+          }
+          interactive={false}
+        />
+      </TooltipContent>
+    </Tooltip>
   );
 };
 

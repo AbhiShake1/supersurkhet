@@ -46,6 +46,7 @@ import {
   CredenzaTrigger,
 } from '../ui/credenza';
 import { ShortcutKbd, useShortcutAction } from '../ui/keyboard-shortcuts';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 const ADD_ROW_DIALOG_SHORTCUTS = {
   openRowForm: {
@@ -290,20 +291,26 @@ export function AddRowDialog<T extends SchemaKeys>({
       <ButtonGroup className={className}>
         {slug && (
           <Credenza open={dialogOpen} onOpenChange={setDialogOpen}>
-            <CredenzaTrigger asChild>
-              <Button
-                className="gap-2 rounded-r-none border-r"
-                data-auto-table-add-row-trigger="true"
-              >
-                {buttonIcon}
-                <span className="hidden sm:inline">{buttonLabel}</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <CredenzaTrigger asChild>
+                  <Button
+                    className="gap-2 rounded-r-none border-r"
+                    data-auto-table-add-row-trigger="true"
+                  >
+                    {buttonIcon}
+                    <span className="hidden sm:inline">{buttonLabel}</span>
+                  </Button>
+                </CredenzaTrigger>
+              </TooltipTrigger>
+              <TooltipContent className="flex items-center gap-2">
+                <span>{buttonLabel}</span>
                 <ShortcutKbd
                   actionId={ADD_ROW_DIALOG_SHORTCUTS.openRowForm.id}
                   interactive={false}
-                  className="hidden lg:inline-flex"
                 />
-              </Button>
-            </CredenzaTrigger>
+              </TooltipContent>
+            </Tooltip>
             <CredenzaContent data-auto-table-add-dialog-content="true">
               <CredenzaHeader className="min-w-0">
                 <CredenzaTitle className="capitalize">
@@ -337,19 +344,25 @@ export function AddRowDialog<T extends SchemaKeys>({
                 </ScrollArea>
               </CredenzaBody>
               <CredenzaFooter className="flex flex-col gap-2 pt-2 pb-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full gap-2"
-                  onClick={() => setDialogOpen(false)}
-                >
-                  Cancel
-                  <ShortcutKbd
-                    actionId={ADD_ROW_DIALOG_SHORTCUTS.cancelAddRow.id}
-                    interactive={false}
-                    className="hidden sm:inline-flex"
-                  />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full gap-2"
+                      onClick={() => setDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="flex items-center gap-2">
+                    <span>Cancel</span>
+                    <ShortcutKbd
+                      actionId={ADD_ROW_DIALOG_SHORTCUTS.cancelAddRow.id}
+                      interactive={false}
+                    />
+                  </TooltipContent>
+                </Tooltip>
                 <SubmitButton
                   form="auto-table-add-form"
                   className="gap-2 w-full"
@@ -386,21 +399,27 @@ function AddRowImportMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          variant="secondary"
-          size="icon"
-          aria-label="Import Options"
-          className="rounded-l-none border-l-0 lg:h-9 lg:w-auto lg:gap-2 lg:px-2"
-          data-auto-table-import-trigger="true"
-          disabled={isImportPending}
-        >
-          <ArrowBigUpDash className="size-4" />
-          <ShortcutKbd
-            actionId={ADD_ROW_DIALOG_SHORTCUTS.openImportMenu.id}
-            interactive={false}
-            className="hidden lg:inline-flex"
-          />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="secondary"
+              size="icon"
+              aria-label="Import Options"
+              className="rounded-l-none border-l-0 lg:h-9 lg:w-auto lg:gap-2 lg:px-2"
+              data-auto-table-import-trigger="true"
+              disabled={isImportPending}
+            >
+              <ArrowBigUpDash className="size-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Import options</span>
+            <ShortcutKbd
+              actionId={ADD_ROW_DIALOG_SHORTCUTS.openImportMenu.id}
+              interactive={false}
+            />
+          </TooltipContent>
+        </Tooltip>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
         <DropdownMenuItem

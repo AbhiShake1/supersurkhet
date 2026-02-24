@@ -36,7 +36,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import * as Editable from '@/components/ui/editable';
@@ -46,6 +45,11 @@ import {
   useRegisterShortcut,
   useShortcutAction,
 } from '@/components/ui/keyboard-shortcuts';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { useDataTable } from '@/hooks/use-data-table';
 import { api } from '@/lib/api';
 import {
@@ -733,20 +737,26 @@ export function AutoTable<T extends SchemaKeys>({
             showViewOptions={showViewOptions}
             endSlot={
               props.editable && !props.readOnly && props.onAddColumn ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                  onClick={props.onAddColumn}
-                >
-                  Add Column
-                  <ShortcutKbd
-                    actionId={AUTO_TABLE_SHORTCUTS.addColumn.id}
-                    interactive={false}
-                    className="hidden lg:inline-flex"
-                  />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={props.onAddColumn}
+                    >
+                      Add Column
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="flex items-center gap-2">
+                    <span>Add column</span>
+                    <ShortcutKbd
+                      actionId={AUTO_TABLE_SHORTCUTS.addColumn.id}
+                      interactive={false}
+                    />
+                  </TooltipContent>
+                </Tooltip>
               ) : null
             }
           >
@@ -762,15 +772,21 @@ export function AutoTable<T extends SchemaKeys>({
               </DataTableFilterList>
             )}
             {enableAggregations && (
-              <Button variant="outline" size="sm" className="gap-2">
-                <DatabaseZap className="size-4" />
-                Aggregations
-                <ShortcutKbd
-                  actionId={AUTO_TABLE_SHORTCUTS.openAggregations.id}
-                  interactive={false}
-                  className="hidden lg:inline-flex"
-                />
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <DatabaseZap className="size-4" />
+                    Aggregations
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>Open aggregations</span>
+                  <ShortcutKbd
+                    actionId={AUTO_TABLE_SHORTCUTS.openAggregations.id}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
             )}
           </DataTableAdvancedToolbar>
         </DataTable>
@@ -1014,21 +1030,27 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
 
         return (
           <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                aria-label="Open menu"
-                data-row-action-trigger={row.id}
-                variant="secondary"
-                className="flex size-8 rounded-md border border-transparent p-0 text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground data-[state=open]:border-border data-[state=open]:bg-muted data-[state=open]:text-foreground lg:h-8 lg:w-auto lg:px-2"
-              >
-                <Ellipsis className="size-4" aria-hidden="true" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    aria-label="Open menu"
+                    data-row-action-trigger={row.id}
+                    variant="secondary"
+                    className="flex size-8 rounded-md border border-transparent p-0 text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground data-[state=open]:border-border data-[state=open]:bg-muted data-[state=open]:text-foreground lg:h-8 lg:w-auto lg:px-2"
+                  >
+                    <Ellipsis className="size-4" aria-hidden="true" />
+                  </Button>
+                </DropdownMenuTrigger>
+              </TooltipTrigger>
+              <TooltipContent className="flex items-center gap-2">
+                <span>Row actions</span>
                 <ShortcutKbd
                   actionId={AUTO_TABLE_SHORTCUTS.openRowActions.id}
                   interactive={false}
-                  className="hidden lg:inline-flex"
                 />
-              </Button>
-            </DropdownMenuTrigger>
+              </TooltipContent>
+            </Tooltip>
             <DropdownMenuContent align="end" className="w-48">
               {!readOnly && (
                 <DropdownMenuItem
@@ -1037,12 +1059,6 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
                 >
                   <Pencil className="size-4" aria-hidden="true" />
                   Edit
-                  <DropdownMenuShortcut>
-                    <ShortcutKbd
-                      actionId="autoTable.editRow"
-                      interactive={false}
-                    />
-                  </DropdownMenuShortcut>
                 </DropdownMenuItem>
               )}
               {!readOnly && (
@@ -1052,12 +1068,6 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
                 >
                   <Trash2 className="size-4" aria-hidden="true" />
                   Delete
-                  <DropdownMenuShortcut>
-                    <ShortcutKbd
-                      actionId="autoTable.deleteRow"
-                      interactive={false}
-                    />
-                  </DropdownMenuShortcut>
                 </DropdownMenuItem>
               )}
               {!readOnly && actionNode ? <DropdownMenuSeparator /> : null}

@@ -18,16 +18,16 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import {
+  type ShortcutDefinition,
+  ShortcutKbd,
+  useRegisterShortcut,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import {
-  ShortcutKbd,
-  useRegisterShortcut,
-  useShortcutAction,
-  type ShortcutDefinition,
-} from '@/components/ui/keyboard-shortcuts';
 import {
   Select,
   SelectContent,
@@ -256,30 +256,36 @@ export function DataTableSortList<TData>({
       getItemValue={(item) => item.id}
     >
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            onKeyDown={onTriggerKeyDown}
-            className="gap-2"
-          >
-            <ArrowDownUp className="size-4" />
-            Sort
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onKeyDown={onTriggerKeyDown}
+                className="gap-2"
+              >
+                <ArrowDownUp className="size-4" />
+                Sort
+                {sorting.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-[18.24px] rounded-[3.2px] px-[5.12px] font-mono font-normal text-[10.4px]"
+                  >
+                    {sorting.length}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Open sorting</span>
             <ShortcutKbd
               actionId={DATA_TABLE_SORT_SHORTCUTS.openSort.id}
               interactive={false}
-              className="pointer-events-none hidden xl:inline-flex"
             />
-            {sorting.length > 0 && (
-              <Badge
-                variant="secondary"
-                className="h-[18.24px] rounded-[3.2px] px-[5.12px] font-mono font-normal text-[10.4px]"
-              >
-                {sorting.length}
-              </Badge>
-            )}
-          </Button>
-        </PopoverTrigger>
+          </TooltipContent>
+        </Tooltip>
         <PopoverContent
           aria-labelledby={labelId}
           aria-describedby={descriptionId}
@@ -325,34 +331,46 @@ export function DataTableSortList<TData>({
             </SortableContent>
           )}
           <div className="flex w-full items-center gap-2">
-            <Button
-              size="sm"
-              className="rounded gap-2"
-              ref={addButtonRef}
-              onClick={onSortAdd}
-              disabled={columns.length === 0}
-            >
-              Add sort
-              <ShortcutKbd
-                actionId={DATA_TABLE_SORT_SHORTCUTS.addSort.id}
-                interactive={false}
-                className="pointer-events-none hidden xl:inline-flex"
-              />
-            </Button>
-            {sorting.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded gap-2"
-                onClick={onSortingReset}
-              >
-                Reset sorting
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  className="rounded gap-2"
+                  ref={addButtonRef}
+                  onClick={onSortAdd}
+                  disabled={columns.length === 0}
+                >
+                  Add sort
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="flex items-center gap-2">
+                <span>Add sort</span>
                 <ShortcutKbd
-                  actionId={DATA_TABLE_SORT_SHORTCUTS.resetSort.id}
+                  actionId={DATA_TABLE_SORT_SHORTCUTS.addSort.id}
                   interactive={false}
-                  className="pointer-events-none hidden xl:inline-flex"
                 />
-              </Button>
+              </TooltipContent>
+            </Tooltip>
+            {sorting.length > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded gap-2"
+                    onClick={onSortingReset}
+                  >
+                    Reset sorting
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>Reset sorting</span>
+                  <ShortcutKbd
+                    actionId={DATA_TABLE_SORT_SHORTCUTS.resetSort.id}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         </PopoverContent>
@@ -425,24 +443,30 @@ function DataTableSortItem({
         onKeyDown={onItemKeyDown}
       >
         <Popover open={showFieldSelector} onOpenChange={setShowFieldSelector}>
-          <PopoverTrigger asChild>
-            <Button
-              id={fieldTriggerId}
-              role="combobox"
-              aria-controls={fieldListboxId}
-              variant="outline"
-              size="sm"
-              className="w-44 justify-between gap-1 rounded font-normal"
-            >
-              <span className="truncate">{columnLabels.get(sort.id)}</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  id={fieldTriggerId}
+                  role="combobox"
+                  aria-controls={fieldListboxId}
+                  variant="outline"
+                  size="sm"
+                  className="w-44 justify-between gap-1 rounded font-normal"
+                >
+                  <span className="truncate">{columnLabels.get(sort.id)}</span>
+                  <ChevronsUpDown className="opacity-50 size-4" />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Sort field</span>
               <ShortcutKbd
                 actionId={shortcuts.sortField.id}
                 interactive={false}
-                className="pointer-events-none hidden xl:inline-flex"
               />
-              <ChevronsUpDown className="opacity-50 size-4" />
-            </Button>
-          </PopoverTrigger>
+            </TooltipContent>
+          </Tooltip>
           <PopoverContent
             id={fieldListboxId}
             className="w-[var(--radix-popover-trigger-width)] origin-[var(--radix-popover-content-transform-origin)] p-0"
@@ -506,7 +530,10 @@ function DataTableSortItem({
           </TooltipTrigger>
           <TooltipContent className="flex items-center gap-2">
             <span>Remove sort</span>
-            <ShortcutKbd actionId={shortcuts.removeSort.id} interactive={false} />
+            <ShortcutKbd
+              actionId={shortcuts.removeSort.id}
+              interactive={false}
+            />
           </TooltipContent>
         </Tooltip>
         <Tooltip>

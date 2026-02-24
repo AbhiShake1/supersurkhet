@@ -23,11 +23,16 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  type ShortcutDefinition,
   ShortcutKbd,
   useRegisterShortcut,
-  type ShortcutDefinition,
 } from '@/components/ui/keyboard-shortcuts';
 import { SortableItemHandle } from '@/components/ui/sortable';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface DataTableColumnHeaderProps<TData, TValue>
@@ -97,20 +102,26 @@ export function DataTableColumnHeader<TData, TValue>({
       <div className={cn('flex min-w-0 items-center gap-1', className)}>
         {showReorderHandle ? (
           <div className="inline-flex items-center gap-1">
-            <SortableItemHandle asChild>
-              <button
-                type="button"
-                className="inline-flex h-8 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-                aria-label={`Reorder column ${String(column.id ?? title)}`}
-              >
-                <GripVertical className="size-4" />
-              </button>
-            </SortableItemHandle>
-            <ShortcutKbd
-              actionId={DATA_TABLE_COLUMN_SHORTCUTS.reorderColumn.id}
-              interactive={false}
-              className="pointer-events-none hidden xl:inline-flex"
-            />
+            <Tooltip>
+              <SortableItemHandle asChild>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex h-8 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                    aria-label={`Reorder column ${String(column.id ?? title)}`}
+                  >
+                    <GripVertical className="size-4" />
+                  </button>
+                </TooltipTrigger>
+              </SortableItemHandle>
+              <TooltipContent className="flex items-center gap-2">
+                <span>Reorder column</span>
+                <ShortcutKbd
+                  actionId={DATA_TABLE_COLUMN_SHORTCUTS.reorderColumn.id}
+                  interactive={false}
+                />
+              </TooltipContent>
+            </Tooltip>
           </div>
         ) : null}
         <DropdownMenu>

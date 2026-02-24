@@ -1,5 +1,6 @@
+import { rankItem } from '@tanstack/match-sorter-utils';
 import { Search } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -10,7 +11,10 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command';
-import { useShortcutAction } from '@/components/ui/keyboard-shortcuts';
+import {
+  ShortcutKbd,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
 
 const GLOBAL_COMMAND_SHORTCUT = {
   id: 'autoAdmin.globalCommand',
@@ -65,6 +69,8 @@ type AutoAdminGlobalCommandProps = {
   tabs: AutoAdminGlobalCommandTab[];
   members?: AutoAdminGlobalCommandMember[];
   records?: AutoAdminGlobalCommandRecord[];
+  isSearchingData?: boolean;
+  onOpenChange?: (open: boolean) => void;
   triggerLabel?: string;
   placeholder?: string;
 };
@@ -74,53 +80,141 @@ export function AutoAdminGlobalCommand({
   tabs,
   members = [],
   records = [],
+  isSearchingData = false,
+  onOpenChange,
   triggerLabel = 'Search anything',
   placeholder = 'Search actions, tables, members, and data...',
 }: AutoAdminGlobalCommandProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const hasActions = actions.length > 0;
-  const hasRecords = records.length > 0;
-  const hasMembers = members.length > 0;
-  const hasTabs = tabs.length > 0;
+  const [query, setQuery] = useState('');
+  const normalizedQuery = query.trim().toLowerCase();
+
+  const scoreParts = (parts: Array<string | undefined>) => {
+    if (!normalizedQuery) return { passed: true, score: 0 };
+    let bestRank = Number.NEGATIVE_INFINITY;
+    let passed = false;
+    let boost = 0;
+    const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+
+    for (const rawPart of parts) {
+      if (!rawPart) continue;
+      const part = rawPart.toLowerCase();
+      const rank = rankItem(part, normalizedQuery);
+      if (rank.passed) passed = true;
+      if (rank.rank > bestRank) bestRank = rank.rank;
+
+      if (part === normalizedQuery) boost = Math.max(boost, 1000);
+      else if (part.startsWith(normalizedQuery)) boost = Math.max(boost, 600);
+      else if (part.includes(normalizedQuery)) boost = Math.max(boost, 300);
+
+      const tokenMatches = queryTokens.filter((token) => part.includes(token));
+      if (tokenMatches.length > 0) {
+        boost = Math.max(boost, tokenMatches.length * 40);
+      }
+    }
+
+    return {
+      passed,
+      score: (Number.isFinite(bestRank) ? bestRank : -1000) + boost,
+    };
+  };
+
+  const rankAndSort = <T,>(
+    items: T[],
+    partsBuilder: (item: T) => Array<string | undefined>,
+  ) => {
+    if (!normalizedQuery) return items;
+    return items
+      .map((item) => {
+        const parts = partsBuilder(item);
+        const { passed, score } = scoreParts(parts);
+        return { item, passed, score };
+      })
+      .filter((entry) => entry.passed)
+      .sort((left, right) => right.score - left.score)
+      .map((entry) => entry.item);
+  };
+
+  const filteredActions = rankAndSort(actions, (action) => [
+    action.label,
+    action.keywords,
+    action.shortcut,
+  ]);
+  const filteredTabs = rankAndSort(tabs, (tab) => [
+    tab.title,
+    tab.group,
+    tab.keywords,
+  ]);
+  const filteredMembers = rankAndSort(members, (member) => [
+    member.label,
+    member.description,
+    member.keywords,
+  ]);
+  const filteredRecords = rankAndSort(records, (record) => [
+    record.label,
+    record.description,
+    record.scopeLabel,
+    record.keywords,
+  ]);
+
+  const hasRecords = filteredRecords.length > 0;
+  const hasMembers = filteredMembers.length > 0;
+  const hasTabs = filteredTabs.length > 0;
+  const hasFilteredActions = filteredActions.length > 0;
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (!open) setQuery('');
+    onOpenChange?.(open);
+  };
 
   useShortcutAction(GLOBAL_COMMAND_SHORTCUT, () => {
-    setIsOpen((current) => !current);
+    handleOpenChange(!isOpen);
   });
 
-  const description = useMemo(() => {
-    return 'Quick actions and organization-wide search for AutoAdmin.';
-  }, []);
+  const description =
+    'Quick actions and organization-wide search for AutoAdmin.';
 
   return (
     <>
       <button
         type="button"
         className="flex h-9 min-w-[220px] items-center justify-between rounded-md border border-border/70 bg-muted/30 px-3 text-sm text-muted-foreground transition hover:border-border hover:text-foreground"
-        onClick={() => setIsOpen(true)}
+        onClick={() => handleOpenChange(true)}
       >
         <span className="inline-flex items-center gap-2">
           <Search className="size-4" />
           {triggerLabel}
         </span>
-        <span className="text-xs">Ctrl/⌘ K</span>
+        <span className="text-xs">
+          <ShortcutKbd
+            actionId={GLOBAL_COMMAND_SHORTCUT.id}
+            interactive={false}
+          />
+        </span>
       </button>
       <CommandDialog
         open={isOpen}
-        onOpenChange={setIsOpen}
+        onOpenChange={handleOpenChange}
         title={triggerLabel}
         description={description}
+        commandProps={{ shouldFilter: false }}
       >
-        <CommandInput placeholder={placeholder} />
+        <CommandInput
+          placeholder={placeholder}
+          value={query}
+          onValueChange={setQuery}
+        />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
-          {hasActions ? (
+          {hasFilteredActions ? (
             <CommandGroup heading="Actions">
-              {actions.map((action) => (
+              {filteredActions.map((action) => (
                 <CommandItem
                   key={action.id}
                   value={`${action.label} ${action.keywords ?? ''}`}
                   onSelect={() => {
-                    setIsOpen(false);
+                    handleOpenChange(false);
                     action.onSelect();
                   }}
                 >
@@ -133,18 +227,18 @@ export function AutoAdminGlobalCommand({
             </CommandGroup>
           ) : null}
 
-          {hasActions && (hasTabs || hasRecords || hasMembers) ? (
+          {hasFilteredActions && (hasTabs || hasRecords || hasMembers) ? (
             <CommandSeparator />
           ) : null}
 
           {hasTabs ? (
             <CommandGroup heading="Tables & Pages">
-              {tabs.map((tab) => (
+              {filteredTabs.map((tab) => (
                 <CommandItem
                   key={tab.id}
                   value={`${tab.title} ${tab.group ?? ''} ${tab.keywords ?? ''}`}
                   onSelect={() => {
-                    setIsOpen(false);
+                    handleOpenChange(false);
                     tab.onSelect();
                   }}
                 >
@@ -164,14 +258,20 @@ export function AutoAdminGlobalCommand({
 
           {hasTabs && (hasRecords || hasMembers) ? <CommandSeparator /> : null}
 
+          {isSearchingData ? (
+            <CommandGroup heading="Data">
+              <CommandItem disabled>Indexing project data...</CommandItem>
+            </CommandGroup>
+          ) : null}
+
           {hasRecords ? (
             <CommandGroup heading="Data">
-              {records.map((record) => (
+              {filteredRecords.map((record) => (
                 <CommandItem
                   key={record.id}
                   value={`${record.label} ${record.description ?? ''} ${record.scopeLabel ?? ''} ${record.keywords ?? ''}`}
                   onSelect={() => {
-                    setIsOpen(false);
+                    handleOpenChange(false);
                     record.onSelect();
                   }}
                 >
@@ -191,12 +291,12 @@ export function AutoAdminGlobalCommand({
 
           {hasMembers ? (
             <CommandGroup heading="Members">
-              {members.map((member) => (
+              {filteredMembers.map((member) => (
                 <CommandItem
                   key={member.id}
                   value={`${member.label} ${member.description ?? ''} ${member.keywords ?? ''}`}
                   onSelect={() => {
-                    setIsOpen(false);
+                    handleOpenChange(false);
                     member.onSelect?.();
                   }}
                 >
