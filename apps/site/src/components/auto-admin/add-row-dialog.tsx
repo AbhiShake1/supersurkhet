@@ -404,7 +404,7 @@ function AddRowImportMenu({
               variant="secondary"
               size="icon"
               aria-label="Import Options"
-              className="rounded-l-none border-l-0 lg:h-9 lg:w-auto lg:gap-2 lg:px-2"
+              className="rounded-l-none border-l-0 lg:w-auto lg:gap-2 lg:px-2"
               data-auto-table-import-trigger="true"
               disabled={isImportPending}
             >
