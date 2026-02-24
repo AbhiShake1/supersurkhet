@@ -1,7 +1,6 @@
 import { rankItem } from '@tanstack/match-sorter-utils';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import {
   CommandDialog,
   CommandEmpty,
@@ -290,11 +289,9 @@ export function AutoAdminGlobalCommand({
                       {shortcut.scope}
                     </span>
                   </div>
-                  <Button
+                  <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-[11px]"
+                    className="inline-flex"
                     onPointerDown={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
@@ -306,15 +303,12 @@ export function AutoAdminGlobalCommand({
                       openShortcutDialog(shortcut.id);
                     }}
                   >
-                    Configure
-                  </Button>
-                  <CommandShortcut>
                     <ShortcutKbd
                       actionId={shortcut.id}
-                      interaction="trigger-parent"
+                      interaction="open-settings"
                       interactive={false}
                     />
-                  </CommandShortcut>
+                  </button>
                 </CommandItem>
               ))}
             </CommandGroup>

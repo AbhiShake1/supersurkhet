@@ -174,6 +174,27 @@ function getShortcutSignature(definition: ShortcutDefinition): string {
   });
 }
 
+function sanitizeInternalShortcutText(value: string | undefined): string {
+  if (!value) return '';
+  return value
+    .replace(/auto[-\s]*admin\s+sidebar/gi, 'Sidebar')
+    .replace(/data\s*table/gi, 'Table')
+    .replace(/auto\s*table/gi, 'Table')
+    .replace(/auto[-\s]*admin/gi, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([,.:;!?])/g, '$1')
+    .trim();
+}
+
+function toUserFacingShortcutScope(scope: string | undefined): string {
+  if (!scope) return 'General';
+  const normalized = sanitizeInternalShortcutText(scope).trim();
+  if (!normalized) return 'General';
+  if (/^table$/i.test(normalized)) return 'Table';
+  if (/^sidebar$/i.test(normalized)) return 'Sidebar';
+  return normalized;
+}
+
 export function KeyboardShortcutsProvider({
   children,
 }: {
@@ -406,9 +427,11 @@ export function useShortcutRegistry() {
             context?.bindings[definition.id] ?? definition.defaultBinding;
           return {
             id: definition.id,
-            label: definition.label,
-            description: definition.description,
-            scope: definition.scope ?? 'General',
+            label:
+              sanitizeInternalShortcutText(definition.label) ||
+              definition.label,
+            description: sanitizeInternalShortcutText(definition.description),
+            scope: toUserFacingShortcutScope(definition.scope),
             binding,
             bindingLabel: displayBinding(binding).join(' + '),
           };
@@ -846,6 +869,9 @@ function SingleShortcutEditor({
         : undefined,
     [action.id, bindings, candidate, registry],
   );
+  const conflictActionLabel = conflictAction
+    ? sanitizeInternalShortcutText(conflictAction.label) || conflictAction.label
+    : undefined;
   const displayKeys =
     previewKeys.length > 0
       ? previewKeys
@@ -966,7 +992,7 @@ function SingleShortcutEditor({
           </p>
         ) : conflictAction ? (
           <p className="text-destructive">
-            Already in use by {conflictAction.label}. Choose another shortcut.
+            Already in use by {conflictActionLabel}. Choose another shortcut.
           </p>
         ) : hasChange ? (
           <p className="text-emerald-600">Shortcut is available.</p>
@@ -1009,9 +1035,17 @@ function KeyboardShortcutSettingsDialog() {
   const actionsByScope = React.useMemo(() => {
     const map = new Map<string, ShortcutDefinition[]>();
     for (const definition of Object.values(context?.registry ?? {})) {
-      const key = definition.scope ?? 'General';
+      const key = toUserFacingShortcutScope(definition.scope);
+      const label =
+        sanitizeInternalShortcutText(definition.label) || definition.label;
+      const description = sanitizeInternalShortcutText(definition.description);
       const current = map.get(key) ?? [];
-      current.push(definition);
+      current.push({
+        ...definition,
+        scope: key,
+        label,
+        description: description || undefined,
+      });
       map.set(key, current);
     }
     return [...map.entries()].sort(([left], [right]) =>
@@ -1031,6 +1065,15 @@ function KeyboardShortcutSettingsDialog() {
   } = context;
   const selectedAction = dialogState.selectedActionId
     ? context.registry[dialogState.selectedActionId]
+    : undefined;
+  const selectedActionLabel = selectedAction
+    ? sanitizeInternalShortcutText(selectedAction.label) || selectedAction.label
+    : '';
+  const selectedActionDescription = selectedAction
+    ? sanitizeInternalShortcutText(selectedAction.description) || undefined
+    : undefined;
+  const selectedActionScope = selectedAction
+    ? toUserFacingShortcutScope(selectedAction.scope)
     : undefined;
   const isSingleActionMode = Boolean(dialogState.selectedActionId);
 
@@ -1061,7 +1104,12 @@ function KeyboardShortcutSettingsDialog() {
           {isSingleActionMode ? (
             selectedAction ? (
               <SingleShortcutEditor
-                action={selectedAction}
+                action={{
+                  ...selectedAction,
+                  label: selectedActionLabel,
+                  description: selectedActionDescription,
+                  scope: selectedActionScope,
+                }}
                 binding={
                   bindings[selectedAction.id] ?? selectedAction.defaultBinding
                 }
