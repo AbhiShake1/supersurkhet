@@ -34,7 +34,6 @@ export function useBusinessConfigState({
     keys: [scopedBusinessId],
   });
   const releaseRowsQuery = api.pluginRelease.useGet();
-
   const installs = (installRowsQuery.data ?? []) as BusinessPluginInstallDoc[];
   const releases = useMemo(
     () =>

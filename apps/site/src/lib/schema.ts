@@ -35,6 +35,8 @@ import {
   pluginRoutesTabsConfigSchema,
   pluginSchemaDocStorageSchema,
   pluginUserReviewSchema,
+  pluginUserReviewReplySchema,
+  pluginUserReviewVoteSchema,
   pluginV2DiagnosticsSchema,
   pluginWorkflowDeadLetterSchema,
   pluginWorkflowEventLogSchema,
@@ -345,6 +347,18 @@ export const coreSchema = createSchema({
     icon: List,
     group: 'Plugin Platform',
   },
+  pluginUserReviewReply: {
+    schema: pluginUserReviewReplySchema,
+    title: 'Plugin Review Replies',
+    icon: List,
+    group: 'Plugin Platform',
+  },
+  pluginUserReviewVote: {
+    schema: pluginUserReviewVoteSchema,
+    title: 'Plugin Review Votes',
+    icon: List,
+    group: 'Plugin Platform',
+  },
   pluginActionCapabilityEnvelope: {
     schema: pluginActionCapabilityEnvelopeSchema,
     title: 'Plugin Capability Envelopes',
@@ -608,6 +622,8 @@ export type PluginRecord = InferredTable<'pluginRecord'>;
 export type PluginV2Diagnostics = InferredTable<'pluginV2Diagnostics'>;
 export type PluginPublishReview = InferredTable<'pluginPublishReview'>;
 export type PluginUserReview = InferredTable<'pluginUserReview'>;
+export type PluginUserReviewReply = InferredTable<'pluginUserReviewReply'>;
+export type PluginUserReviewVote = InferredTable<'pluginUserReviewVote'>;
 export type PluginActionCapabilityEnvelope =
   InferredTable<'pluginActionCapabilityEnvelope'>;
 export type PluginRoutesTabsConfig = InferredTable<'pluginRoutesTabsConfig'>;
@@ -633,6 +649,8 @@ export {
   pluginRoutesTabsConfigSchema,
   pluginSchemaDocStorageSchema,
   pluginUserReviewSchema,
+  pluginUserReviewReplySchema,
+  pluginUserReviewVoteSchema,
   pluginV2DiagnosticsSchema,
   pluginWorkflowDeadLetterSchema,
   pluginWorkflowEventLogSchema,

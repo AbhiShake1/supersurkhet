@@ -55,7 +55,6 @@ export function PluginIcon({
       </div>
     );
   }
-
   return (
     <div
       className={`${iconSize} pointer-events-none overflow-hidden rounded-[20%] border border-[#dadce0] bg-[#f8f9fa]`}

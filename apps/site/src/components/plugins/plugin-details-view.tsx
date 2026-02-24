@@ -18,11 +18,11 @@ import {
   type ReactNode,
   type SVGProps,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 import { toast } from 'sonner';
-import { useAuth } from '@/components/auth-provider';
 import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
 import {
   AlertDialog,
@@ -37,11 +37,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/api';
 import type {
   PluginMarketItem,
   PluginUserReview,
   PluginUserReviewGroup,
 } from '@/lib/plugins/admin-plugin-market';
+import type {
+  PluginUserReviewReplyDoc,
+  PluginUserReviewVoteDoc,
+} from '@/lib/plugins/types';
 import { cn } from '@/lib/utils';
 
 export interface PluginDetailView {
@@ -65,12 +70,14 @@ export interface PluginDetailsViewProps {
   details: PluginDetailView;
   businessName: string;
   businessId?: string;
+  actorUserId?: string;
+  actorUserLabel?: string;
   onInstall: () => Promise<boolean | undefined>;
   onUninstall: () => Promise<void>;
   onSaveReview: (rating: number, comment: string) => Promise<void>;
   onBack: () => void;
-  similarPlugins: PluginMarketItem[];
-  reviewGroups: PluginUserReviewGroup[];
+  similarPlugins?: PluginMarketItem[];
+  reviewGroups?: PluginUserReviewGroup[];
   isInstalling?: boolean;
   isUninstalling?: boolean;
   isSavingReview?: boolean;
@@ -81,6 +88,8 @@ export function PluginDetailsView({
   details,
   businessName,
   businessId,
+  actorUserId,
+  actorUserLabel,
   onInstall,
   onUninstall,
   onSaveReview,
@@ -190,8 +199,130 @@ export function PluginDetailsView({
       })),
     );
   const visibleOtherReviews = otherReviews.slice(0, 10);
+  const reviewIdSet = useMemo(
+    () =>
+      new Set(
+        reviewGroups.flatMap((group) => group.reviews.map((review) => review.id)),
+      ),
+    [reviewGroups],
+  );
+  const queryKeys = businessId ? [businessId] : [];
+  const { data: replyRowsRaw = [], refetch: refetchReplyRows } =
+    api.pluginUserReviewReply.useGet(
+      queryKeys.length > 0 ? { keys: queryKeys } : undefined,
+    );
+  const { data: voteRowsRaw = [], refetch: refetchVoteRows } =
+    api.pluginUserReviewVote.useGet(
+      queryKeys.length > 0 ? { keys: queryKeys } : undefined,
+    );
+  const createReplyMutation = api.pluginUserReviewReply.useCreate(
+    queryKeys.length > 0 ? { keys: queryKeys } : undefined,
+  );
+  const createVoteMutation = api.pluginUserReviewVote.useCreate(
+    queryKeys.length > 0 ? { keys: queryKeys } : undefined,
+  );
+  const reviewReplies = useMemo(
+    () =>
+      (replyRowsRaw as PluginUserReviewReplyDoc[]).filter(
+        (reply) =>
+          reply.pluginId === plugin.pluginId && reviewIdSet.has(reply.reviewId),
+      ),
+    [replyRowsRaw, plugin.pluginId, reviewIdSet],
+  );
+  const reviewVotes = useMemo(
+    () =>
+      (voteRowsRaw as PluginUserReviewVoteDoc[]).filter(
+        (vote) => vote.pluginId === plugin.pluginId && reviewIdSet.has(vote.reviewId),
+      ),
+    [voteRowsRaw, plugin.pluginId, reviewIdSet],
+  );
+  const repliesByReviewId = useMemo(() => {
+    const grouped = new Map<string, PluginReviewReplyNode[]>();
+    const byReviewId = new Map<string, PluginUserReviewReplyDoc[]>();
+    for (const reply of reviewReplies) {
+      const current = byReviewId.get(reply.reviewId);
+      if (current) current.push(reply);
+      else byReviewId.set(reply.reviewId, [reply]);
+    }
+    for (const [reviewId, replies] of byReviewId) {
+      grouped.set(reviewId, buildReplyTree(replies));
+    }
+    return grouped;
+  }, [reviewReplies]);
+  const voteSummaryByTargetId = useMemo(
+    () => summarizeVotes(reviewVotes, actorUserId),
+    [reviewVotes, actorUserId],
+  );
+  const actorLabel = actorUserLabel?.trim() || 'Anonymous user';
 
   const heroMediaSrc = details.previewScreenshots[0] ?? plugin.iconUrl ?? null;
+
+  async function handleSubmitReply(
+    reviewId: string,
+    parentReplyId: string | null,
+    commentInput: string,
+  ) {
+    if (!actorUserId) {
+      toast.error('Log in to reply');
+      return;
+    }
+    const comment = commentInput.trim();
+    if (!comment) return;
+    const now = new Date().toISOString();
+    const suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+    const replyId = `${encodeURIComponent(reviewId)}::${encodeURIComponent(actorUserId)}::${suffix}`;
+    try {
+      await createReplyMutation.mutateAsync({
+        id: replyId,
+        reviewId,
+        pluginId: plugin.pluginId,
+        businessId,
+        parentReplyId: parentReplyId ?? undefined,
+        userId: actorUserId,
+        userLabel: actorLabel,
+        comment,
+        createdAt: now,
+        updatedAt: now,
+      });
+      await refetchReplyRows();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to save reply');
+    }
+  }
+
+  async function handleSubmitVote(
+    reviewId: string,
+    targetType: 'review' | 'reply',
+    targetId: string,
+    value: 'up' | 'down',
+  ) {
+    if (!actorUserId) {
+      toast.error('Log in to vote');
+      return;
+    }
+    const now = new Date().toISOString();
+    const voteId = `${targetType}::${encodeURIComponent(targetId)}::${encodeURIComponent(actorUserId)}`;
+    const existingVote = reviewVotes.find((vote) => vote.id === voteId);
+    try {
+      await createVoteMutation.mutateAsync({
+        id: voteId,
+        reviewId,
+        pluginId: plugin.pluginId,
+        businessId,
+        targetType,
+        targetId,
+        userId: actorUserId,
+        value,
+        createdAt: existingVote?.createdAt ?? now,
+        updatedAt: now,
+      });
+      await refetchVoteRows();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to save vote');
+    }
+  }
 
   function scrollPreviewStrip(direction: 'left' | 'right') {
     const node = previewStripRef.current;
@@ -663,6 +794,11 @@ export function PluginDetailsView({
                               key={review.id}
                               review={review}
                               userLabel={userLabel}
+                              replies={repliesByReviewId.get(review.id) ?? []}
+                              voteSummaryByTargetId={voteSummaryByTargetId}
+                              actorUserId={actorUserId}
+                              onSubmitReply={handleSubmitReply}
+                              onSubmitVote={handleSubmitVote}
                             />
                           ))}
                         </div>
@@ -699,6 +835,11 @@ export function PluginDetailsView({
                                     <ReviewItem
                                       review={review}
                                       userLabel={userLabel}
+                                      replies={repliesByReviewId.get(review.id) ?? []}
+                                      voteSummaryByTargetId={voteSummaryByTargetId}
+                                      actorUserId={actorUserId}
+                                      onSubmitReply={handleSubmitReply}
+                                      onSubmitVote={handleSubmitVote}
                                     />
                                   </div>
                                 ),
@@ -892,53 +1033,142 @@ function ChevronDown(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-// Local type for UI mock replies
-type Reply = {
-  id: string;
-  authorName: string;
-  comment: string;
-  createdAt: string;
-  replies: Reply[];
+type PluginReviewReplyNode = PluginUserReviewReplyDoc & {
+  replies: PluginReviewReplyNode[];
 };
 
-// Global mock state for replies per review ID
-// In a real app, this would come from the API/DB.
-const MOCK_REPLIES: Record<string, Reply[]> = {};
+type VoteSummary = {
+  upCount: number;
+  downCount: number;
+  userVote: 'up' | 'down' | null;
+};
+
+function buildReplyTree(
+  replies: PluginUserReviewReplyDoc[],
+): PluginReviewReplyNode[] {
+  const ordered = [...replies].sort((a, b) =>
+    a.createdAt.localeCompare(b.createdAt),
+  );
+  const nodeById = new Map<string, PluginReviewReplyNode>();
+  for (const reply of ordered) {
+    nodeById.set(reply.id, { ...reply, replies: [] });
+  }
+  const roots: PluginReviewReplyNode[] = [];
+  for (const node of nodeById.values()) {
+    if (node.parentReplyId) {
+      const parent = nodeById.get(node.parentReplyId);
+      if (parent) {
+        parent.replies.push(node);
+        continue;
+      }
+    }
+    roots.push(node);
+  }
+  return roots;
+}
+
+function summarizeVotes(
+  votes: PluginUserReviewVoteDoc[],
+  actorUserId?: string,
+): Map<string, VoteSummary> {
+  const map = new Map<string, VoteSummary>();
+  for (const vote of votes) {
+    const current = map.get(vote.targetId) ?? {
+      upCount: 0,
+      downCount: 0,
+      userVote: null,
+    };
+    if (vote.value === 'up') current.upCount += 1;
+    else current.downCount += 1;
+    if (actorUserId && vote.userId === actorUserId) {
+      current.userVote = vote.value;
+    }
+    map.set(vote.targetId, current);
+  }
+  return map;
+}
 
 function ReplyItem({
+  reviewId,
   reply,
-  onReply,
+  voteSummaryByTargetId,
+  actorUserId,
+  onSubmitReply,
+  onSubmitVote,
   depth = 0,
 }: {
-  reply: Reply;
-  onReply: (parentId: string, text: string) => void;
+  reviewId: string;
+  reply: PluginReviewReplyNode;
+  voteSummaryByTargetId: Map<string, VoteSummary>;
+  actorUserId?: string;
+  onSubmitReply: (
+    reviewId: string,
+    parentReplyId: string | null,
+    comment: string,
+  ) => Promise<void>;
+  onSubmitVote: (
+    reviewId: string,
+    targetType: 'review' | 'reply',
+    targetId: string,
+    value: 'up' | 'down',
+  ) => Promise<void>;
   depth?: number;
 }) {
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
-
-  const handleSubmit = () => {
-    if (!replyText.trim()) return;
-    onReply(reply.id, replyText);
-    setIsReplying(false);
-    setReplyText('');
+  const voteSummary = voteSummaryByTargetId.get(reply.id) ?? {
+    upCount: 0,
+    downCount: 0,
+    userVote: null,
   };
+  const score = voteSummary.upCount - voteSummary.downCount;
 
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium text-[#202124]">
-          {reply.authorName}
+          {reply.userLabel}
         </span>
         <span className="text-[10px] text-gray-500">
           {new Date(reply.createdAt).toLocaleDateString()}
         </span>
       </div>
-      <p className="text-sm text-[#5f6368] border-l-2 border-emerald-500/20 pl-3 py-0.5 bg-emerald-50/30 rounded-r-[4px] rounded-br-[4px]">
+      <p className="rounded-r-[4px] rounded-br-[4px] border-l-2 border-emerald-500/20 bg-emerald-50/30 pl-3 py-0.5 text-sm text-[#5f6368]">
         {reply.comment}
       </p>
 
-      {/* Maximum nesting depth of 4 to prevent UI overflow */}
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            'size-7 rounded-md transition-colors hover:bg-orange-50 hover:text-orange-500 text-gray-400',
+            voteSummary.userVote === 'up' && 'bg-orange-50 text-orange-500',
+          )}
+          title="Upvote"
+          disabled={!actorUserId}
+          onClick={() => onSubmitVote(reviewId, 'reply', reply.id, 'up')}
+        >
+          <ArrowBigUp className="size-[18px]" />
+          <span className="sr-only">Upvote</span>
+        </Button>
+        <span className="px-1 text-xs font-medium text-gray-600">{score}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            'size-7 rounded-md transition-colors hover:bg-[#7193ff]/10 hover:text-[#7193ff] text-gray-400',
+            voteSummary.userVote === 'down' && 'bg-[#7193ff]/10 text-[#7193ff]',
+          )}
+          title="Downvote"
+          disabled={!actorUserId}
+          onClick={() => onSubmitVote(reviewId, 'reply', reply.id, 'down')}
+        >
+          <ArrowBigDown className="size-[18px]" />
+          <span className="sr-only">Downvote</span>
+        </Button>
+      </div>
+
       {depth < 4 && (
         <div className="flex justify-start">
           <Button
@@ -946,6 +1176,7 @@ function ReplyItem({
             size="sm"
             className="h-6 px-2 mt-1 text-[10px] text-[#01875f] hover:bg-emerald-50"
             onClick={() => setIsReplying(!isReplying)}
+            disabled={!actorUserId}
           >
             Reply
           </Button>
@@ -971,7 +1202,11 @@ function ReplyItem({
             </Button>
             <Button
               size="sm"
-              onClick={handleSubmit}
+              onClick={async () => {
+                await onSubmitReply(reviewId, reply.id, replyText);
+                setIsReplying(false);
+                setReplyText('');
+              }}
               disabled={!replyText.trim()}
               className="h-6 text-xs px-2 bg-[#01875f] hover:bg-[#01875f]/90 text-white"
             >
@@ -981,13 +1216,17 @@ function ReplyItem({
         </div>
       )}
 
-      {reply.replies && reply.replies.length > 0 && (
+      {reply.replies.length > 0 && (
         <div className="mt-2 space-y-3 pl-4 border-l-2 border-gray-100">
           {reply.replies.map((childReply) => (
             <ReplyItem
               key={childReply.id}
+              reviewId={reviewId}
               reply={childReply}
-              onReply={onReply}
+              voteSummaryByTargetId={voteSummaryByTargetId}
+              actorUserId={actorUserId}
+              onSubmitReply={onSubmitReply}
+              onSubmitVote={onSubmitVote}
               depth={depth + 1}
             />
           ))}
@@ -1000,76 +1239,37 @@ function ReplyItem({
 function ReviewItem({
   review,
   userLabel,
+  replies,
+  voteSummaryByTargetId,
+  actorUserId,
+  onSubmitReply,
+  onSubmitVote,
 }: {
   review: PluginUserReview;
   userLabel: string;
+  replies: PluginReviewReplyNode[];
+  voteSummaryByTargetId: Map<string, VoteSummary>;
+  actorUserId?: string;
+  onSubmitReply: (
+    reviewId: string,
+    parentReplyId: string | null,
+    comment: string,
+  ) => Promise<void>;
+  onSubmitVote: (
+    reviewId: string,
+    targetType: 'review' | 'reply',
+    targetId: string,
+    value: 'up' | 'down',
+  ) => Promise<void>;
 }) {
-  const { user } = useAuth();
   const [isReplying, setIsReplying] = useState(false);
   const [replyText, setReplyText] = useState('');
-
-  // Force re-render when adding mock replies
-  const [replies, setReplies] = useState<Reply[]>(
-    MOCK_REPLIES[review.id] || [],
-  );
-
-  const recursivelyAddReply = (
-    replyList: Reply[],
-    parentId: string,
-    newReply: Reply,
-  ): Reply[] => {
-    return replyList.map((rep) => {
-      if (rep.id === parentId) {
-        return { ...rep, replies: [...(rep.replies || []), newReply] };
-      }
-      if (rep.replies && rep.replies.length > 0) {
-        return {
-          ...rep,
-          replies: recursivelyAddReply(rep.replies, parentId, newReply),
-        };
-      }
-      return rep;
-    });
+  const voteSummary = voteSummaryByTargetId.get(review.id) ?? {
+    upCount: 0,
+    downCount: 0,
+    userVote: null,
   };
-
-  const handleReviewReplySubmit = () => {
-    if (!replyText.trim()) return;
-    const newReply: Reply = {
-      id: Date.now().toString(),
-      authorName: user?.name || 'Current User',
-      comment: replyText.trim(),
-      createdAt: new Date().toISOString(),
-      replies: [],
-    };
-
-    const updatedReplies = [...(MOCK_REPLIES[review.id] || []), newReply];
-    MOCK_REPLIES[review.id] = updatedReplies;
-    setReplies(updatedReplies);
-    setReplyText('');
-    setIsReplying(false);
-    toast.success('Reply submitted');
-  };
-
-  const handleNestedReplySubmit = (parentId: string, text: string) => {
-    const newReply: Reply = {
-      id: Date.now().toString(),
-      authorName: user?.name || 'Current User',
-      comment: text.trim(),
-      createdAt: new Date().toISOString(),
-      replies: [],
-    };
-
-    const currentReplies = MOCK_REPLIES[review.id] || [];
-    const updatedReplies = recursivelyAddReply(
-      currentReplies,
-      parentId,
-      newReply,
-    );
-
-    MOCK_REPLIES[review.id] = updatedReplies;
-    setReplies(updatedReplies);
-    toast.success('Reply submitted');
-  };
+  const score = voteSummary.upCount - voteSummary.downCount;
 
   return (
     <article className="space-y-3">
@@ -1080,9 +1280,7 @@ function ReviewItem({
               {userLabel.charAt(0).toUpperCase()}
             </div>
           </div>
-          <span className="text-sm font-medium text-[#202124]">
-            {userLabel}
-          </span>
+          <span className="text-sm font-medium text-[#202124]">{userLabel}</span>
         </div>
         <Button variant="ghost" size="icon" className="size-8">
           <EllipsisVertical className="size-4 text-gray-500" />
@@ -1097,26 +1295,34 @@ function ReviewItem({
           </span>
         </div>
 
-        <p className="text-sm text-[#5f6368] leading-relaxed">
-          {review.comment}
-        </p>
+        <p className="text-sm text-[#5f6368] leading-relaxed">{review.comment}</p>
 
         <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 rounded-md transition-colors hover:bg-orange-50 hover:text-orange-500 text-gray-400"
+            className={cn(
+              'size-7 rounded-md transition-colors hover:bg-orange-50 hover:text-orange-500 text-gray-400',
+              voteSummary.userVote === 'up' && 'bg-orange-50 text-orange-500',
+            )}
             title="Upvote"
+            disabled={!actorUserId}
+            onClick={() => onSubmitVote(review.id, 'review', review.id, 'up')}
           >
             <ArrowBigUp className="size-[18px]" />
             <span className="sr-only">Upvote</span>
           </Button>
-          <span className="text-xs font-medium text-gray-600 px-1">24</span>
+          <span className="px-1 text-xs font-medium text-gray-600">{score}</span>
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 rounded-md transition-colors hover:bg-[#7193ff]/10 hover:text-[#7193ff] text-gray-400"
+            className={cn(
+              'size-7 rounded-md transition-colors hover:bg-[#7193ff]/10 hover:text-[#7193ff] text-gray-400',
+              voteSummary.userVote === 'down' && 'bg-[#7193ff]/10 text-[#7193ff]',
+            )}
             title="Downvote"
+            disabled={!actorUserId}
+            onClick={() => onSubmitVote(review.id, 'review', review.id, 'down')}
           >
             <ArrowBigDown className="size-[18px]" />
             <span className="sr-only">Downvote</span>
@@ -1126,12 +1332,12 @@ function ReviewItem({
             size="sm"
             className="h-7 px-3 ml-2 text-[12px] font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-800 rounded-full transition-colors"
             onClick={() => setIsReplying(!isReplying)}
+            disabled={!actorUserId}
           >
             Reply
           </Button>
         </div>
 
-        {/* Top-level Reply Area */}
         {isReplying && (
           <div className="mt-2 space-y-2 rounded-lg bg-gray-50 p-3">
             <Textarea
@@ -1150,7 +1356,11 @@ function ReviewItem({
               </Button>
               <Button
                 size="sm"
-                onClick={handleReviewReplySubmit}
+                onClick={async () => {
+                  await onSubmitReply(review.id, null, replyText);
+                  setIsReplying(false);
+                  setReplyText('');
+                }}
                 disabled={!replyText.trim()}
                 className="bg-[#01875f] hover:bg-[#01875f]/90 text-white"
               >
@@ -1160,14 +1370,17 @@ function ReviewItem({
           </div>
         )}
 
-        {/* Threaded Replies */}
         {replies.length > 0 && (
           <div className="mt-4 space-y-3 pl-4 border-l-2 border-gray-100">
             {replies.map((reply) => (
               <ReplyItem
                 key={reply.id}
+                reviewId={review.id}
                 reply={reply}
-                onReply={handleNestedReplySubmit}
+                voteSummaryByTargetId={voteSummaryByTargetId}
+                actorUserId={actorUserId}
+                onSubmitReply={onSubmitReply}
+                onSubmitVote={onSubmitVote}
               />
             ))}
           </div>

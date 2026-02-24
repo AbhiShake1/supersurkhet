@@ -523,6 +523,36 @@ export const pluginUserReviewSchema = z
   })
   .extend(table);
 
+export const pluginUserReviewReplySchema = z
+  .object({
+    id: z.string().describe('Deterministic reply id'),
+    reviewId: z.string().describe('Parent review id: pluginId::userId'),
+    pluginId: z.string(),
+    businessId: z.string().optional(),
+    parentReplyId: z.string().optional(),
+    userId: z.string(),
+    userLabel: z.string(),
+    comment: z.string().max(2000),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const pluginUserReviewVoteSchema = z
+  .object({
+    id: z.string().describe('Deterministic vote id: targetType::targetId::userId'),
+    reviewId: z.string().describe('Top-level review id this vote belongs to'),
+    pluginId: z.string(),
+    businessId: z.string().optional(),
+    targetType: z.enum(['review', 'reply']),
+    targetId: z.string(),
+    userId: z.string(),
+    value: z.enum(['up', 'down']),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
 export const pluginActionCapabilityEnvelopeSchema = z
   .object({
     id: z
