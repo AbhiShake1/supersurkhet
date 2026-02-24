@@ -300,7 +300,12 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     const savedThemeName = await getAppTheme();
     const savedDarkMode = await getAppDarkMode();
     const _savedTheme = await getAppThemeData();
-    const savedTheme = _savedTheme ?? defaultPresets.tangerine.styles;
+    const savedPresetTheme =
+      savedThemeName && savedThemeName in defaultPresets
+        ? defaultPresets[savedThemeName as keyof typeof defaultPresets].styles
+        : null;
+    const savedTheme =
+      _savedTheme ?? savedPresetTheme ?? defaultPresets.tangerine.styles;
     const isDarkMode = resolveDarkModePreference(savedDarkMode);
 
     // Generate critical CSS for the current theme to prevent FOUC

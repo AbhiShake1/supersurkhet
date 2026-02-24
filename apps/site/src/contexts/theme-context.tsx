@@ -10,7 +10,6 @@ import {
   useContext,
   useEffect,
   useLayoutEffect,
-  useRef,
   useState,
 } from 'react';
 import { z } from 'zod';
@@ -142,21 +141,8 @@ export const ThemeProvider: React.FC<{
     // applyTheme(theme, isDarkMode, currentThemeName ?? null)
     return theme;
   });
-  const handledInitialClientEffectRef = useRef(false);
-
   // Apply theme changes to CSS variables
   useIsomorphicLayoutEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      handledInitialClientEffectRef.current === false
-    ) {
-      handledInitialClientEffectRef.current = true;
-      const root = document.documentElement;
-      const modeAlreadyMatches = root.classList.contains('dark') === isDarkMode;
-      if (modeAlreadyMatches) {
-        return;
-      }
-    }
     applyTheme(theme, isDarkMode, currentThemeName ?? null);
   }, [theme, isDarkMode, currentThemeName]);
 
