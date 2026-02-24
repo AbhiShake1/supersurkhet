@@ -1,5 +1,4 @@
-@import "tailwindcss";
-@import "../../../../styles.css";
+@reference "../../../../styles.css";
 @import "./partials/code.css";
 @import "./partials/placeholder.css";
 @import "./partials/lists.css";
