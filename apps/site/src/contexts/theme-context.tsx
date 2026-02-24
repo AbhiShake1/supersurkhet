@@ -9,6 +9,12 @@ import {
   setCookie,
 } from '@tanstack/react-start/server';
 
+const THEME_COOKIE_OPTIONS = {
+  path: '/',
+  sameSite: 'lax' as const,
+  maxAge: 60 * 60 * 24 * 365,
+};
+
 interface ThemeContextType {
   theme: ThemeStyles;
   setTheme: React.Dispatch<React.SetStateAction<ThemeStyles>>;
@@ -25,8 +31,8 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 export const setAppTheme = createServerFn()
   .inputValidator(z.string().nullable())
   .handler(({ data }) => {
-    if (!data) return deleteCookie('app-theme');
-    return setCookie('app-theme', data);
+    if (!data) return deleteCookie('app-theme', { path: '/' });
+    return setCookie('app-theme', data, THEME_COOKIE_OPTIONS);
   });
 
 export const getAppTheme = createServerFn().handler(async () => {
@@ -36,24 +42,38 @@ export const getAppTheme = createServerFn().handler(async () => {
 export const setAppThemeData = createServerFn()
   .inputValidator(z.custom<ThemeStyles>())
   .handler(({ data }) => {
-    return setCookie('app-theme-data', JSON.stringify(data));
+    return setCookie(
+      'app-theme-data',
+      JSON.stringify(data),
+      THEME_COOKIE_OPTIONS,
+    );
   });
 
 export const getAppThemeData = createServerFn().handler(async () => {
   const theme = getCookie('app-theme-data');
   if (!theme) return null;
-  return JSON.parse(theme) as ThemeStyles;
+  try {
+    return JSON.parse(theme) as ThemeStyles;
+  } catch {
+    return null;
+  }
 });
 
 export const setAppDarkMode = createServerFn()
   .inputValidator(z.boolean())
   .handler(({ data }) => {
-    return setCookie('app-dark-mode', data.toString());
+    return setCookie('app-dark-mode', data.toString(), THEME_COOKIE_OPTIONS);
   });
 
 export const getAppDarkMode = createServerFn().handler(async () => {
   return getCookie('app-dark-mode');
 });
+
+export function resolveDarkModePreference(
+  savedDarkMode: string | null | undefined,
+) {
+  return savedDarkMode !== 'false';
+}
 
 export function applyTheme(
   theme: ThemeStyles,
@@ -102,7 +122,7 @@ export const ThemeProvider: React.FC<{
     savedThemeName ?? null,
   );
   const [isDarkMode, setIsDarkMode] = useState(
-    savedDarkMode === undefined || savedDarkMode === 'true',
+    resolveDarkModePreference(savedDarkMode),
   );
   const [theme, setTheme] = useState(() => {
     const theme = savedTheme ?? defaultPresets.tangerine.styles;

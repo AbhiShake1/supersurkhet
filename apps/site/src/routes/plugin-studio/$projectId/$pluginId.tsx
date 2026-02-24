@@ -7669,7 +7669,7 @@ function PluginStudioSkeleton() {
   const editorSkeletonIds = ['editor-a', 'editor-b', 'editor-c'];
 
   return (
-    <div className="w-full py-6">
+    <div className="min-h-screen w-full bg-background text-foreground py-6">
       <div className="mx-auto w-full max-w-7xl px-4 space-y-6">
       <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/10 via-background to-accent/15 p-5 md:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
