@@ -1,6 +1,7 @@
 import { rankItem } from '@tanstack/match-sorter-utils';
 import { Search } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   CommandDialog,
   CommandEmpty,
@@ -14,6 +15,7 @@ import {
 import {
   ShortcutKbd,
   useShortcutAction,
+  useShortcutRegistry,
 } from '@/components/ui/keyboard-shortcuts';
 
 const GLOBAL_COMMAND_SHORTCUT = {
@@ -88,6 +90,8 @@ export function AutoAdminGlobalCommand({
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState('');
   const normalizedQuery = query.trim().toLowerCase();
+  const { shortcuts, openShortcutDialog, executeShortcut } =
+    useShortcutRegistry();
 
   const scoreParts = (parts: Array<string | undefined>) => {
     if (!normalizedQuery) return { passed: true, score: 0 };
@@ -156,11 +160,19 @@ export function AutoAdminGlobalCommand({
     record.scopeLabel,
     record.keywords,
   ]);
+  const filteredShortcuts = rankAndSort(shortcuts, (shortcut) => [
+    shortcut.label,
+    shortcut.description,
+    shortcut.scope,
+    shortcut.bindingLabel,
+    shortcut.id,
+  ]);
 
   const hasRecords = filteredRecords.length > 0;
   const hasMembers = filteredMembers.length > 0;
   const hasTabs = filteredTabs.length > 0;
   const hasFilteredActions = filteredActions.length > 0;
+  const hasShortcuts = filteredShortcuts.length > 0;
   const prioritizeDataSection = normalizedQuery.length > 0 && hasRecords;
 
   const handleOpenChange = (open: boolean) => {
@@ -256,7 +268,59 @@ export function AutoAdminGlobalCommand({
             </CommandGroup>
           ) : null}
 
-          {hasFilteredActions && (hasTabs || hasRecords || hasMembers) ? (
+          {hasFilteredActions &&
+          (hasShortcuts || hasTabs || hasRecords || hasMembers) ? (
+            <CommandSeparator />
+          ) : null}
+
+          {hasShortcuts ? (
+            <CommandGroup heading="Keyboard Shortcuts">
+              {filteredShortcuts.map((shortcut) => (
+                <CommandItem
+                  key={shortcut.id}
+                  value={`${shortcut.label} ${shortcut.description ?? ''} ${shortcut.scope} ${shortcut.bindingLabel} ${shortcut.id}`}
+                  onSelect={() => {
+                    handleOpenChange(false);
+                    executeShortcut(shortcut.id);
+                  }}
+                >
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="truncate">{shortcut.label}</span>
+                    <span className="rounded-full border border-border/70 bg-muted/40 px-2 py-0.5 text-[10px] leading-none text-muted-foreground">
+                      {shortcut.scope}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-[11px]"
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                    }}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleOpenChange(false);
+                      openShortcutDialog(shortcut.id);
+                    }}
+                  >
+                    Configure
+                  </Button>
+                  <CommandShortcut>
+                    <ShortcutKbd
+                      actionId={shortcut.id}
+                      interaction="trigger-parent"
+                      interactive={false}
+                    />
+                  </CommandShortcut>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          ) : null}
+
+          {hasShortcuts && (hasTabs || hasRecords || hasMembers) ? (
             <CommandSeparator />
           ) : null}
 

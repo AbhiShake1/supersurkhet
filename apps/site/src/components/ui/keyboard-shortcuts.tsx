@@ -381,6 +381,71 @@ export function useShortcutBinding(
   );
 }
 
+function triggerBinding(binding: ShortcutBinding) {
+  if (typeof window === 'undefined') return;
+  const event = new KeyboardEvent('keydown', {
+    key: binding.key,
+    ctrlKey: binding.ctrl,
+    metaKey: binding.meta,
+    altKey: binding.alt,
+    shiftKey: binding.shift,
+    bubbles: true,
+    cancelable: true,
+  });
+  window.dispatchEvent(event);
+}
+
+export function useShortcutRegistry() {
+  const context = React.useContext(ShortcutContext);
+
+  const shortcuts = React.useMemo(
+    () =>
+      Object.values(context?.registry ?? {})
+        .map((definition) => {
+          const binding =
+            context?.bindings[definition.id] ?? definition.defaultBinding;
+          return {
+            id: definition.id,
+            label: definition.label,
+            description: definition.description,
+            scope: definition.scope ?? 'General',
+            binding,
+            bindingLabel: displayBinding(binding).join(' + '),
+          };
+        })
+        .sort((left, right) => {
+          const scopeCompare = left.scope.localeCompare(right.scope);
+          if (scopeCompare !== 0) return scopeCompare;
+          return left.label.localeCompare(right.label);
+        }),
+    [context?.bindings, context?.registry],
+  );
+
+  const openShortcutDialog = React.useCallback(
+    (actionId: ShortcutActionId) => {
+      context?.openDialog(actionId);
+    },
+    [context],
+  );
+
+  const executeShortcut = React.useCallback(
+    (actionId: ShortcutActionId) => {
+      const definition = context?.registry[actionId];
+      if (!definition) return false;
+      const binding = context.bindings[actionId] ?? definition.defaultBinding;
+      triggerBinding(binding);
+      return true;
+    },
+    [context],
+  );
+
+  return {
+    shortcuts,
+    openShortcutDialog,
+    executeShortcut,
+  };
+}
+
 export function useShortcutAction(
   definition: ShortcutDefinition,
   handler: (event: KeyboardEvent) => void,
