@@ -100,50 +100,16 @@ export function PluginDetailsView({
   isUninstalling,
   isSavingReview,
 }: PluginDetailsViewProps) {
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewComment, setReviewComment] = useState('');
   const [isHeroOutOfView, setIsHeroOutOfView] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showOtherReviews, setShowOtherReviews] = useState(false);
   const previewStripRef = useRef<HTMLDivElement | null>(null);
   const heroSectionRef = useRef<HTMLElement | null>(null);
-  const reviewDraftSourceKeyRef = useRef<string>('');
-  const reviewDraftBaseRef = useRef<{ rating: number; comment: string }>({
-    rating: 0,
-    comment: '',
-  });
 
   const persistedReviewRating = details.userReview
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details.userReview?.comment ?? '';
-
-  const isReviewDirty =
-    reviewRating !== reviewDraftBaseRef.current.rating ||
-    reviewComment !== reviewDraftBaseRef.current.comment;
-
-  useEffect(() => {
-    const persistedReviewSourceKey =
-      details.userReview?.id ?? `draft::${plugin.pluginId}`;
-    const sourceChanged =
-      reviewDraftSourceKeyRef.current !== persistedReviewSourceKey;
-
-    if (!sourceChanged && isReviewDirty) return;
-
-    reviewDraftSourceKeyRef.current = persistedReviewSourceKey;
-    reviewDraftBaseRef.current = {
-      rating: persistedReviewRating,
-      comment: persistedReviewComment,
-    };
-    setReviewRating(persistedReviewRating);
-    setReviewComment(persistedReviewComment);
-  }, [
-    plugin.pluginId,
-    details.userReview,
-    persistedReviewRating,
-    persistedReviewComment,
-    isReviewDirty,
-  ]);
 
   useEffect(() => {
     const heroNode = heroSectionRef.current;
@@ -719,59 +685,76 @@ export function PluginDetailsView({
 
               {/* Review Input */}
               <div className="rounded-2xl border border-gray-200 p-6 transition-shadow hover:shadow-md">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-base font-medium text-[#202124]">
-                    Your review
-                  </h3>
-                  <Button
-                    size="sm"
-                    onClick={() => onSaveReview(reviewRating, reviewComment)}
-                    loading={isSavingReview}
-                    disabled={
-                      isSavingReview || reviewRating <= 0 || !isReviewDirty
+                <form
+                  className="space-y-4"
+                  onSubmit={async (event) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    const rating = Number(formData.get('reviewRating') ?? 0);
+                    const comment = String(formData.get('reviewComment') ?? '');
+                    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+                      toast.error('Select a rating before saving');
+                      return;
                     }
-                    className="h-9 rounded-full bg-[#01875f] transition-all hover:bg-[#01704f] hover:shadow-sm disabled:opacity-50"
-                  >
-                    Save review
-                  </Button>
-                </div>
-                <div className="mb-4 flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewRating(star)}
-                      className="group relative p-1 transition-all hover:scale-125 focus:outline-none focus:ring-2 focus:ring-[#01875f]/20 rounded-lg"
-                      aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                    await onSaveReview(rating, comment);
+                  }}
+                >
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-base font-medium text-[#202124]">
+                      Your review
+                    </h3>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      loading={isSavingReview}
+                      disabled={isSavingReview}
+                      className="h-9 rounded-full bg-[#01875f] transition-all hover:bg-[#01704f] hover:shadow-sm disabled:opacity-50"
                     >
-                      <svg
-                        aria-hidden="true"
-                        focusable="false"
-                        className={cn(
-                          'size-7 transition-all duration-200',
-                          star <= reviewRating
-                            ? 'fill-[#01875f] text-[#01875f] drop-shadow-sm'
-                            : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300',
-                        )}
-                        viewBox="0 0 24 24"
-                        stroke="none"
+                      Save review
+                    </Button>
+                  </div>
+                  <div className="mb-4 flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <label
+                        key={star}
+                        className="group relative cursor-pointer p-1 transition-all hover:scale-125"
                       >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    </button>
-                  ))}
-                  <span className="ml-3 text-sm font-medium text-gray-500 transition-colors">
-                    {reviewRating > 0
-                      ? `${reviewRating}/5 stars`
-                      : 'Select rating'}
-                  </span>
-                </div>
-                <Textarea
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  placeholder="Tell us what you think about this plugin..."
-                  className="min-h-[100px] resize-none border-gray-200 transition-colors focus-visible:ring-[#01875f] focus-visible:ring-2"
-                />
+                        <input
+                          type="radio"
+                          name="reviewRating"
+                          value={star}
+                          defaultChecked={persistedReviewRating === star}
+                          className="sr-only"
+                        />
+                        <svg
+                          aria-hidden="true"
+                          focusable="false"
+                          className={cn(
+                            'size-7 transition-all duration-200',
+                            star <= persistedReviewRating
+                              ? 'fill-[#01875f] text-[#01875f] drop-shadow-sm'
+                              : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300',
+                          )}
+                          viewBox="0 0 24 24"
+                          stroke="none"
+                        >
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                        </svg>
+                      </label>
+                    ))}
+                    <span className="ml-3 text-sm font-medium text-gray-500 transition-colors">
+                      {persistedReviewRating > 0
+                        ? `${persistedReviewRating}/5 stars`
+                        : 'Select rating'}
+                    </span>
+                  </div>
+                  <Textarea
+                    name="reviewComment"
+                    defaultValue={persistedReviewComment}
+                    placeholder="Tell us what you think about this plugin..."
+                    className="min-h-[100px] resize-none border-gray-200 transition-colors focus-visible:ring-[#01875f] focus-visible:ring-2"
+                  />
+                </form>
               </div>
 
               {/* Reviews List */}
@@ -1114,8 +1097,6 @@ function ReplyItem({
   ) => Promise<void>;
   depth?: number;
 }) {
-  const [isReplying, setIsReplying] = useState(false);
-  const [replyText, setReplyText] = useState('');
   const voteSummary = voteSummaryByTargetId.get(reply.id) ?? {
     upCount: 0,
     downCount: 0,
@@ -1170,54 +1151,63 @@ function ReplyItem({
       </div>
 
       {depth < 4 && (
-        <div className="flex justify-start">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 mt-1 text-[10px] text-[#01875f] hover:bg-emerald-50"
-            onClick={() => setIsReplying(!isReplying)}
-            disabled={!actorUserId}
+        <details className="mt-1">
+          <summary
+            className={cn(
+              'inline-flex cursor-pointer list-none items-center rounded px-2 py-1 text-[10px] text-[#01875f] hover:bg-emerald-50',
+              !actorUserId && 'pointer-events-none opacity-50',
+            )}
           >
             Reply
-          </Button>
-        </div>
-      )}
-
-      {isReplying && (
-        <div className="mt-2 mb-3 space-y-2 rounded-lg bg-gray-50 p-3">
-          <Textarea
-            placeholder="Write a reply..."
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            className="min-h-[50px] text-xs resize-none bg-white"
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 text-xs px-2"
-              onClick={() => setIsReplying(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={async () => {
-                await onSubmitReply(reviewId, reply.id, replyText);
-                setIsReplying(false);
-                setReplyText('');
-              }}
-              disabled={!replyText.trim()}
-              className="h-6 text-xs px-2 bg-[#01875f] hover:bg-[#01875f]/90 text-white"
-            >
-              Submit
-            </Button>
-          </div>
-        </div>
+          </summary>
+          <form
+            className="mt-2 mb-3 space-y-2 rounded-lg bg-gray-50 p-3"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              const replyText = String(formData.get('replyText') ?? '');
+              if (!replyText.trim()) return;
+              await onSubmitReply(reviewId, reply.id, replyText);
+              event.currentTarget.reset();
+              const detailsNode = event.currentTarget.closest('details');
+              if (detailsNode) {
+                detailsNode.open = false;
+              }
+            }}
+          >
+            <Textarea
+              name="replyText"
+              placeholder="Write a reply..."
+              className="min-h-[50px] resize-none bg-white text-xs"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={(event) => {
+                  const detailsNode = event.currentTarget.closest('details');
+                  if (detailsNode) detailsNode.open = false;
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="h-6 bg-[#01875f] px-2 text-xs text-white hover:bg-[#01875f]/90"
+                disabled={!actorUserId}
+              >
+                Submit
+              </Button>
+            </div>
+          </form>
+        </details>
       )}
 
       {reply.replies.length > 0 && (
-        <div className="mt-2 space-y-3 pl-4 border-l-2 border-gray-100">
+        <div className="mt-2 space-y-3 border-l-2 border-gray-100 pl-4">
           {reply.replies.map((childReply) => (
             <ReplyItem
               key={childReply.id}
@@ -1262,8 +1252,6 @@ function ReviewItem({
     value: 'up' | 'down',
   ) => Promise<void>;
 }) {
-  const [isReplying, setIsReplying] = useState(false);
-  const [replyText, setReplyText] = useState('');
   const voteSummary = voteSummaryByTargetId.get(review.id) ?? {
     upCount: 0,
     downCount: 0,
@@ -1327,48 +1315,59 @@ function ReviewItem({
             <ArrowBigDown className="size-[18px]" />
             <span className="sr-only">Downvote</span>
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-3 ml-2 text-[12px] font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-800 rounded-full transition-colors"
-            onClick={() => setIsReplying(!isReplying)}
-            disabled={!actorUserId}
-          >
-            Reply
-          </Button>
+          <details className="ml-2">
+            <summary
+              className={cn(
+                'inline-flex list-none cursor-pointer items-center rounded-full px-3 py-1.5 text-[12px] font-semibold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800',
+                !actorUserId && 'pointer-events-none opacity-50',
+              )}
+            >
+              Reply
+            </summary>
+            <form
+              className="mt-2 space-y-2 rounded-lg bg-gray-50 p-3"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.currentTarget);
+                const replyText = String(formData.get('replyText') ?? '');
+                if (!replyText.trim()) return;
+                await onSubmitReply(review.id, null, replyText);
+                event.currentTarget.reset();
+                const detailsNode = event.currentTarget.closest('details');
+                if (detailsNode) {
+                  detailsNode.open = false;
+                }
+              }}
+            >
+              <Textarea
+                name="replyText"
+                placeholder="Write a reply..."
+                className="min-h-[60px] resize-none bg-white text-sm"
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(event) => {
+                    const detailsNode = event.currentTarget.closest('details');
+                    if (detailsNode) detailsNode.open = false;
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-[#01875f] text-white hover:bg-[#01875f]/90"
+                  disabled={!actorUserId}
+                >
+                  Submit
+                </Button>
+              </div>
+            </form>
+          </details>
         </div>
-
-        {isReplying && (
-          <div className="mt-2 space-y-2 rounded-lg bg-gray-50 p-3">
-            <Textarea
-              placeholder="Write a reply..."
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              className="min-h-[60px] text-sm resize-none bg-white"
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsReplying(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={async () => {
-                  await onSubmitReply(review.id, null, replyText);
-                  setIsReplying(false);
-                  setReplyText('');
-                }}
-                disabled={!replyText.trim()}
-                className="bg-[#01875f] hover:bg-[#01875f]/90 text-white"
-              >
-                Submit
-              </Button>
-            </div>
-          </div>
-        )}
 
         {replies.length > 0 && (
           <div className="mt-4 space-y-3 pl-4 border-l-2 border-gray-100">

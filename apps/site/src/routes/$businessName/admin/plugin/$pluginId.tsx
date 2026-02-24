@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { useConfetti } from '@/components/confetti-provider';
@@ -40,10 +40,6 @@ function PluginDetailsPage() {
     user?.email?.trim() ||
     (typeof user?.alias === 'string' ? user.alias.trim() : '') ||
     'Anonymous user';
-
-  const [installing, setInstalling] = useState(false);
-  const [uninstalling, setUninstalling] = useState(false);
-  const [savingReview, setSavingReview] = useState(false);
 
   const { data: businesses = [] } = api.business.useGet({
     keys: [businessName],
@@ -153,7 +149,6 @@ function PluginDetailsPage() {
   async function handleInstall() {
     if (!plugin) return false;
     try {
-      setInstalling(true);
       await installPluginRelease({
         data: {
           actorUserId,
@@ -171,15 +166,12 @@ function PluginDetailsPage() {
       console.error(error);
       toast.error('Failed to install plugin');
       return false;
-    } finally {
-      setInstalling(false);
     }
   }
 
   async function handleUninstall() {
     if (!plugin) return;
     try {
-      setUninstalling(true);
       await uninstallPluginRelease({
         data: {
           actorUserId,
@@ -192,8 +184,6 @@ function PluginDetailsPage() {
     } catch (error) {
       console.error(error);
       toast.error('Failed to uninstall plugin');
-    } finally {
-      setUninstalling(false);
     }
   }
 
@@ -203,7 +193,6 @@ function PluginDetailsPage() {
     const reviewId = `${encodeURIComponent(plugin.pluginId)}::${encodeURIComponent(actorUserId)}`;
 
     try {
-      setSavingReview(true);
       const normalizedComment = comment.trim();
       await createReviewMutation.mutateAsync({
         id: reviewId,
@@ -221,8 +210,6 @@ function PluginDetailsPage() {
     } catch (error) {
       console.error(error);
       toast.error('Failed to save review');
-    } finally {
-      setSavingReview(false);
     }
   }
 
@@ -253,9 +240,7 @@ function PluginDetailsPage() {
       onBack={() => window.history.back()}
       similarPlugins={similar}
       reviewGroups={reviewGroups}
-      isInstalling={installing}
-      isUninstalling={uninstalling}
-      isSavingReview={savingReview}
+      isSavingReview={createReviewMutation.isPending}
     />
   );
 }
