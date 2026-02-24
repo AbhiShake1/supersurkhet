@@ -72,6 +72,7 @@ import {
 
 const SECTION_TOGGLE_BUTTON_CLASS =
   'flex w-full items-center justify-between rounded-md px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 hover:bg-slate-100/60 dark:hover:bg-slate-800/60 active:bg-slate-200/60 dark:active:bg-slate-700/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset';
+const UNGROUP_DROP_SENTINEL = '__sidebar_ungroup_drop__';
 
 function toReorderPosition(
   activeIndex: number,
@@ -394,7 +395,10 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
   );
 
   const resolveDropGroupFromDragEvent = useCallback(
-    (event: SortableDragEndEvent): string | undefined | null => {
+    (event: SortableDragEndEvent): string | null => {
+      const activeId = String(event.active.id ?? '');
+      const activeTab = activeId ? tabBySortableId.get(activeId) : undefined;
+      const sourceGroupName = activeTab?.group?.trim() || undefined;
       const translatedRect = event.active.rect.current.translated;
       const initialRect = event.active.rect.current.initial;
       const fallbackDropPosition = translatedRect
@@ -411,17 +415,37 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       const dropPosition = pointerPositionRef.current ?? fallbackDropPosition;
       if (!dropPosition) return null;
 
+      const pointElements = document.elementsFromPoint(
+        dropPosition.x,
+        dropPosition.y,
+      );
+      if (
+        pointElements.some((element) =>
+          element.closest('[data-sidebar-ungroup-drop-zone]'),
+        )
+      ) {
+        return UNGROUP_DROP_SENTINEL;
+      }
+
       // Prefer pointer hit-testing over `event.over` because each group renders
       // in its own sortable context, so `over` can still point to source-group
       // items even when the pointer is above a different group card.
-      const dropTarget = document
-        .elementFromPoint(dropPosition.x, dropPosition.y)
-        ?.closest<HTMLElement>('[data-sidebar-group-card]');
-      const groupNameFromTarget = dropTarget?.getAttribute(
-        'data-sidebar-group-name',
+      const groupsFromPoint = pointElements
+        .map((element) =>
+          element
+            .closest<HTMLElement>('[data-sidebar-group-card]')
+            ?.getAttribute('data-sidebar-group-name'),
+        )
+        .filter((groupName): groupName is string => Boolean(groupName));
+      const uniqueGroupsFromPoint = [...new Set(groupsFromPoint)];
+      const preferredGroupFromPoint = uniqueGroupsFromPoint.find(
+        (groupName) => groupName !== sourceGroupName,
       );
-      if (groupNameFromTarget) return groupNameFromTarget;
+      if (preferredGroupFromPoint) return preferredGroupFromPoint;
+      if (uniqueGroupsFromPoint[0]) return uniqueGroupsFromPoint[0];
 
+      const groupBoundsMatches: Array<{ groupName: string; distance: number }> =
+        [];
       for (const [groupName, groupCard] of groupCardRefs.current.entries()) {
         const rect = groupCard.getBoundingClientRect();
         const insideGroupCard =
@@ -429,21 +453,38 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
           dropPosition.x <= rect.right &&
           dropPosition.y >= rect.top &&
           dropPosition.y <= rect.bottom;
-        if (insideGroupCard) return groupName;
+        if (!insideGroupCard) continue;
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        const distance = Math.hypot(
+          dropPosition.x - centerX,
+          dropPosition.y - centerY,
+        );
+        groupBoundsMatches.push({ groupName, distance });
+      }
+      if (groupBoundsMatches.length > 0) {
+        const sortedByDistance = groupBoundsMatches.sort(
+          (left, right) => left.distance - right.distance,
+        );
+        const preferredGroupFromBounds = sortedByDistance.find(
+          (candidate) => candidate.groupName !== sourceGroupName,
+        );
+        if (preferredGroupFromBounds) return preferredGroupFromBounds.groupName;
+        return sortedByDistance[0]?.groupName ?? null;
       }
 
       const overId = event.over ? String(event.over.id) : '';
       if (overId) {
         const overTab = tabBySortableId.get(overId);
         if (overTab) {
-          return overTab.group?.trim() || undefined;
+          return overTab.group?.trim() || UNGROUP_DROP_SENTINEL;
         }
         if (groupCardRefs.current.has(overId)) {
           return overId;
         }
       }
 
-      return undefined;
+      return null;
     },
     [tabBySortableId],
   );
@@ -471,8 +512,14 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       }
 
       const resolvedDropGroup = resolveDropGroupFromDragEvent(event);
+      if (resolvedDropGroup === null) {
+        clearTrackedDragState();
+        return;
+      }
       const targetGroupName =
-        resolvedDropGroup === null ? undefined : resolvedDropGroup;
+        resolvedDropGroup === UNGROUP_DROP_SENTINEL
+          ? undefined
+          : resolvedDropGroup;
 
       const sourceTab = tabBySortableId.get(activeId);
       const sourceTabTitle = sourceTab?.title?.trim();
@@ -524,12 +571,24 @@ const CollapsibleSidebarInner: React.FC<CollapsibleSidebarProps> = ({
       {/* Navigation items */}
       <div className="flex-grow overflow-y-auto pb-16">
         {editable && (onAddGroup || onAddTable) ? (
-          <div className="mb-2 rounded-lg border border-slate-200/80 bg-slate-50/40 p-1 dark:border-slate-800 dark:bg-slate-900/40">
+          <div
+            data-sidebar-ungroup-drop-zone="true"
+            className={`mb-2 rounded-lg border p-1 transition-colors ${
+              activeDraggedTabId
+                ? 'border-primary/60 bg-primary/10 ring-1 ring-primary/40'
+                : 'border-slate-200/80 bg-slate-50/40 dark:border-slate-800 dark:bg-slate-900/40'
+            }`}
+          >
             {open ? (
               <div className="space-y-1">
                 <div className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">
-                  Quick add
+                  {activeDraggedTabId ? 'Drop zone' : 'Quick add'}
                 </div>
+                {activeDraggedTabId ? (
+                  <div className="rounded-md border border-dashed border-primary/50 bg-background/70 px-2 py-1.5 text-xs text-primary">
+                    Drag here to ungroup
+                  </div>
+                ) : null}
                 {onAddGroup ? (
                   <button
                     type="button"
@@ -1267,19 +1326,19 @@ const Option = memo(function Option({
             </PopoverTrigger>
             <PopoverContent
               align="end"
-              className="w-56 rounded-xl border-border/70 bg-popover/95 p-2 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-popover/85"
+              className="w-64 rounded-xl border-border/70 bg-popover/95 p-2.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-popover/85"
             >
               <div className="space-y-1.5">
                 {hasWorkflowAction ? (
                   <PopoverClose asChild>
                     <button
                       type="button"
-                      className="flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left hover:bg-muted/80"
+                      className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left hover:bg-muted/80"
                       onClick={() => {
                         onOpenWorkflowEditor?.(title);
                       }}
                     >
-                      <span className="mt-0.5 grid size-6 shrink-0 place-content-center rounded-md bg-muted text-muted-foreground">
+                      <span className="mt-0.5 grid size-7 shrink-0 place-content-center rounded-md bg-muted text-muted-foreground">
                         <Workflow className="h-3.5 w-3.5" />
                       </span>
                       <span className="min-w-0">
@@ -1297,12 +1356,12 @@ const Option = memo(function Option({
                   <PopoverClose asChild>
                     <button
                       type="button"
-                      className="flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left text-destructive hover:bg-destructive/10"
+                      className="flex w-full items-start gap-2.5 rounded-lg px-3 py-2.5 text-left text-destructive hover:bg-destructive/10"
                       onClick={() => {
                         onRequestDeleteTable?.(title);
                       }}
                     >
-                      <span className="mt-0.5 grid size-6 shrink-0 place-content-center rounded-md bg-destructive/10 text-destructive">
+                      <span className="mt-0.5 grid size-7 shrink-0 place-content-center rounded-md bg-destructive/10 text-destructive">
                         <Trash2 className="h-3.5 w-3.5" />
                       </span>
                       <span className="min-w-0">
@@ -1501,6 +1560,11 @@ const GroupActionsPopover: React.FC<{
   ) {
     return null;
   }
+  const actionButtonClass =
+    'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50';
+  const actionIconClass =
+    'grid size-6 shrink-0 place-content-center rounded-md bg-muted text-muted-foreground';
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -1513,18 +1577,26 @@ const GroupActionsPopover: React.FC<{
           <MoreHorizontal className="h-4 w-4" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-44 p-1">
+      <PopoverContent
+        align="end"
+        className="w-64 rounded-xl border-border/70 bg-popover/95 p-2.5 shadow-lg backdrop-blur supports-[backdrop-filter]:bg-popover/85"
+      >
         <div className="space-y-1">
+          <p className="px-1 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+            Group actions
+          </p>
           {onBeginRenameGroup ? (
             <PopoverClose asChild>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                className={actionButtonClass}
                 onClick={() => {
                   onBeginRenameGroup(groupName);
                 }}
               >
-                <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className={actionIconClass}>
+                  <Pencil className="h-3.5 w-3.5" />
+                </span>
                 Rename Group
               </button>
             </PopoverClose>
@@ -1533,13 +1605,15 @@ const GroupActionsPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                className={actionButtonClass}
                 onClick={() => {
                   onMoveGroupUp();
                 }}
                 disabled={!canMoveUp}
               >
-                <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className={actionIconClass}>
+                  <ArrowUpToLine className="h-3.5 w-3.5" />
+                </span>
                 Move Group Up
               </button>
             </PopoverClose>
@@ -1548,13 +1622,15 @@ const GroupActionsPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+                className={actionButtonClass}
                 onClick={() => {
                   onMoveGroupDown();
                 }}
                 disabled={!canMoveDown}
               >
-                <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className={actionIconClass}>
+                  <ArrowDownToLine className="h-3.5 w-3.5" />
+                </span>
                 Move Group Down
               </button>
             </PopoverClose>
@@ -1563,12 +1639,14 @@ const GroupActionsPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                className={actionButtonClass}
                 onClick={() => {
                   onAddTable(groupName);
                 }}
               >
-                <Table2 className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className={actionIconClass}>
+                  <Table2 className="h-3.5 w-3.5" />
+                </span>
                 Add Table
               </button>
             </PopoverClose>
@@ -1577,12 +1655,14 @@ const GroupActionsPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                className={actionButtonClass}
                 onClick={() => {
                   onAddGroup();
                 }}
               >
-                <Boxes className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className={actionIconClass}>
+                  <Boxes className="h-3.5 w-3.5" />
+                </span>
                 Add Group
               </button>
             </PopoverClose>
@@ -1591,7 +1671,7 @@ const GroupActionsPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                className={actionButtonClass}
                 onClick={() => {
                   onAddGroup(undefined, {
                     relativeTo: groupName,
@@ -1599,7 +1679,9 @@ const GroupActionsPopover: React.FC<{
                   });
                 }}
               >
-                <ArrowUpToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className={actionIconClass}>
+                  <ArrowUpToLine className="h-3.5 w-3.5" />
+                </span>
                 Add Group Above
               </button>
             </PopoverClose>
@@ -1608,7 +1690,7 @@ const GroupActionsPopover: React.FC<{
             <PopoverClose asChild>
               <button
                 type="button"
-                className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs hover:bg-muted"
+                className={actionButtonClass}
                 onClick={() => {
                   onAddGroup(undefined, {
                     relativeTo: groupName,
@@ -1616,23 +1698,27 @@ const GroupActionsPopover: React.FC<{
                   });
                 }}
               >
-                <ArrowDownToLine className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className={actionIconClass}>
+                  <ArrowDownToLine className="h-3.5 w-3.5" />
+                </span>
                 Add Group Below
               </button>
             </PopoverClose>
           ) : null}
           {onDeleteGroup ? (
             <>
-              <div className="my-1 h-px bg-border" />
+              <div className="my-1 h-px bg-border/80" />
               <PopoverClose asChild>
                 <button
                   type="button"
-                  className="flex w-full items-center gap-2 rounded px-2 py-1 text-left text-xs text-destructive hover:bg-destructive/10"
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
                   onClick={() => {
                     onRequestDeleteGroup(groupName, itemCount);
                   }}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <span className="grid size-6 shrink-0 place-content-center rounded-md bg-destructive/10 text-destructive">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </span>
                   Delete Group
                 </button>
               </PopoverClose>

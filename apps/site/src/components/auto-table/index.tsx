@@ -9,7 +9,6 @@ import {
   useGet,
   useUpdate,
 } from '@gta/react-hooks';
-import { DropdownMenuItem } from '@radix-ui/react-dropdown-menu';
 import { type MutationFunctionContext, useQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import type { CellContext, ColumnDef } from '@tanstack/react-table';
@@ -20,7 +19,9 @@ import {
   CircleDashed,
   DatabaseZap,
   Ellipsis,
+  Pencil,
   Text,
+  Trash2,
 } from 'lucide-react';
 import * as React from 'react';
 import { z } from 'zod';
@@ -33,6 +34,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuTrigger,
@@ -623,6 +625,7 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
       id: 'actions',
       cell: function Cell(props) {
         const { row } = props;
+        const [isMenuOpen, setIsMenuOpen] = React.useState(false);
         const { data: actionNode } = useQuery({
           enabled: !!actions,
           queryFn: async () => {
@@ -631,37 +634,65 @@ function getAutoTableColumns<T extends SchemaKeys, S extends z.ZodObject<any>>({
           },
           queryKey: ['auto-table-actions', row.id, row.original],
         });
+        React.useEffect(() => {
+          if (!isMenuOpen || readOnly) return;
+
+          const onKeyDown = (event: KeyboardEvent) => {
+            const isEditShortcut =
+              event.metaKey &&
+              event.shiftKey &&
+              event.key.toLowerCase() === 'e';
+            const isDeleteShortcut =
+              event.shiftKey &&
+              event.metaKey &&
+              (event.key === 'Backspace' || event.key === 'Delete');
+            if (!isEditShortcut && !isDeleteShortcut) return;
+
+            event.preventDefault();
+            setRowAction({
+              row,
+              variant: isEditShortcut ? 'update' : 'delete',
+            });
+            setIsMenuOpen(false);
+          };
+
+          window.addEventListener('keydown', onKeyDown);
+          return () => window.removeEventListener('keydown', onKeyDown);
+        }, [isMenuOpen, readOnly, row, setRowAction]);
 
         return (
-          <DropdownMenu>
+          <DropdownMenu open={isMenuOpen} onOpenChange={setIsMenuOpen}>
             <DropdownMenuTrigger asChild>
               <Button
                 aria-label="Open menu"
                 variant="secondary"
-                className="flex size-8 p-0 data-[state=open]:bg-muted"
+                className="flex size-8 rounded-md border border-transparent p-0 text-muted-foreground transition-colors hover:border-border hover:bg-muted/70 hover:text-foreground data-[state=open]:border-border data-[state=open]:bg-muted data-[state=open]:text-foreground"
               >
                 <Ellipsis className="size-4" aria-hidden="true" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
+            <DropdownMenuContent align="end" className="w-48">
               {!readOnly && (
-                <>
-                  <DropdownMenuItem
-                    onSelect={() => setRowAction({ row, variant: 'update' })}
-                  >
-                    Edit
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                </>
+                <DropdownMenuItem
+                  className="gap-2"
+                  onSelect={() => setRowAction({ row, variant: 'update' })}
+                >
+                  <Pencil className="size-4" aria-hidden="true" />
+                  Edit
+                  <DropdownMenuShortcut>⌘⇧E</DropdownMenuShortcut>
+                </DropdownMenuItem>
               )}
               {!readOnly && (
                 <DropdownMenuItem
+                  className="gap-2 text-destructive focus:bg-destructive/10 focus:text-destructive"
                   onSelect={() => setRowAction({ row, variant: 'delete' })}
                 >
+                  <Trash2 className="size-4" aria-hidden="true" />
                   Delete
-                  <DropdownMenuShortcut>⌘⌫</DropdownMenuShortcut>
+                  <DropdownMenuShortcut>⌘⇧⌫</DropdownMenuShortcut>
                 </DropdownMenuItem>
               )}
+              {!readOnly && actionNode ? <DropdownMenuSeparator /> : null}
               {actionNode}
             </DropdownMenuContent>
           </DropdownMenu>
