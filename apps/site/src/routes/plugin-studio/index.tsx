@@ -97,13 +97,27 @@ function toStableSegment(value: string) {
 }
 
 function toDisplayPluginTitle(input: string | undefined, pluginId: string) {
-  const fallback = pluginId.replace(/^plugin\./, '');
-  const normalized = input?.trim() || fallback;
-  const withoutSuffix = normalized.replace(
+  const fallback = 'no name provided';
+  const normalizedInput = input?.trim() ?? '';
+  const normalizedPluginId = pluginId.trim();
+  const normalizedPluginSlug = normalizedPluginId
+    .replace(/^plugin\./i, '')
+    .trim();
+  const normalizedInputWithoutSuffix = normalizedInput.replace(
     /(?:\s*\([^)]*\)\s*$)|(?:\s*\[[^\]]*]\s*$)/,
     '',
   );
-  return withoutSuffix.trim() || fallback;
+  const normalizedInputLower = normalizedInputWithoutSuffix.toLowerCase();
+  const normalizedPluginIdLower = normalizedPluginId.toLowerCase();
+  const normalizedPluginSlugLower = normalizedPluginSlug.toLowerCase();
+  if (
+    !normalizedInputLower ||
+    normalizedInputLower === normalizedPluginIdLower ||
+    normalizedInputLower === normalizedPluginSlugLower
+  ) {
+    return fallback;
+  }
+  return normalizedInputWithoutSuffix.trim() || fallback;
 }
 
 function toDraftRecencyKey(draft: PluginDraftDoc) {
