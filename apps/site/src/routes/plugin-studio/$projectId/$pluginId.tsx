@@ -89,8 +89,10 @@ import type {
   PluginReleaseDoc,
   SchemaDoc,
   SchemaFieldDoc,
+  SchemaWorkflowDoc,
   WorkflowDoc,
 } from '@/lib/plugins/types';
+import { flattenSchemaWorkflows } from 'supersurkhet-sdk';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import deepEqual from 'fast-deep-equal';
@@ -392,16 +394,13 @@ function toDraftRevisionRecencyKey(
 
 function toDraftSnapshotString({
   schemaDocs,
-  workflows,
   adminTabs,
 }: {
   schemaDocs: readonly SchemaDoc[];
-  workflows: readonly WorkflowDoc[];
   adminTabs: readonly AdminTabDoc[];
 }) {
   return canonicalStringify({
     schemaDocs,
-    workflows,
     adminTabs,
   });
 }
@@ -808,40 +807,7 @@ function toFallbackTemplateSchemaDocs(template: PluginReleaseDoc): SchemaDoc[] {
         },
       },
     ],
-  }));
-}
-
-function toFallbackTemplateWorkflows(
-  template: PluginReleaseDoc,
-  schemaDocs: readonly SchemaDoc[],
-): WorkflowDoc[] {
-  if (schemaDocs.length === 0) {
-    return [DEFAULT_WORKFLOW_DOC];
-  }
-
-  return schemaDocs.map((schemaDoc, index) => ({
-    workflowId: `${template.pluginId}.workflow.${schemaDoc.schemaId || index + 1}`,
-    table: schemaDoc.schemaId || DEFAULT_SCHEMA_DOC.schemaId,
-    hook: 'afterCreate',
-    nodes: [
-      {
-        nodeId: 'n1',
-        type: 'action',
-        actionId:
-          template.actionManifest[index]?.actionId ??
-          template.actionManifest[0]?.actionId ??
-          DEFAULT_WORKFLOW_DOC.nodes[0]?.actionId ??
-          'example.action',
-        input: {
-          expression: {
-            kind: 'ref',
-            source: 'payload',
-            path: [],
-          },
-        },
-      },
-    ],
-    edges: [],
+    workflows: [],
   }));
 }
 
@@ -2248,12 +2214,6 @@ function PluginStudioPresenter({
     keys: draftDocScopeKeys,
   });
   const {
-    data: workflowDocRows = [],
-    refetch: refetchWorkflowDocs,
-  } = api.pluginWorkflowDoc.useGet({
-    keys: draftDocScopeKeys,
-  });
-  const {
     data: actionManifestDocRows = [],
     refetch: refetchActionManifestDocs,
   } = api.pluginActionManifestDoc.useGet({
@@ -2290,15 +2250,6 @@ function PluginStudioPresenter({
     keys: draftDocScopeKeys,
   });
   const deleteSchemaDocMutation = api.pluginSchemaDoc.useDelete({
-    keys: draftDocScopeKeys,
-  });
-  const createWorkflowDocMutation = api.pluginWorkflowDoc.useCreate({
-    keys: draftDocScopeKeys,
-  });
-  const updateWorkflowDocMutation = api.pluginWorkflowDoc.useUpdate({
-    keys: draftDocScopeKeys,
-  });
-  const deleteWorkflowDocMutation = api.pluginWorkflowDoc.useDelete({
     keys: draftDocScopeKeys,
   });
   const createActionManifestDocMutation = api.pluginActionManifestDoc.useCreate({
@@ -2350,27 +2301,6 @@ function PluginStudioPresenter({
     }
     return [DEFAULT_SCHEMA_DOC];
   }, [draftId, schemaDocRows, latestActiveDraftRevision?.schemaDocs]);
-
-  const workspaceWorkflows = useMemo(() => {
-    const rows = workflowDocRows as Array<{
-      id?: string;
-      workflowId?: string;
-      doc?: unknown;
-    }>;
-    const docs = rows
-      .map((row) => row.doc as WorkflowDoc | undefined)
-      .filter((doc): doc is WorkflowDoc => Boolean(doc?.workflowId));
-    if (docs.length > 0) {
-      return docs;
-    }
-    const revisionDocs = (latestActiveDraftRevision?.workflows ?? []).filter(
-      (doc): doc is WorkflowDoc => Boolean(doc?.workflowId),
-    );
-    if (revisionDocs.length > 0) {
-      return revisionDocs;
-    }
-    return [DEFAULT_WORKFLOW_DOC];
-  }, [workflowDocRows, latestActiveDraftRevision?.workflows]);
 
   const workspaceActionManifest = useMemo(() => {
     const rows = actionManifestDocRows as Array<{
@@ -2452,7 +2382,7 @@ function PluginStudioPresenter({
   const parsed = useMemo(() => {
     try {
       const schemaDocs = workspaceSchemaDocs;
-      const workflows = workspaceWorkflows;
+      const workflows = flattenSchemaWorkflows(schemaDocs);
       const actionManifest = workspaceActionManifest;
       const parsedDraftAdminTabs = JSON.parse(adminTabsText) as AdminTabDoc[];
       const {
@@ -2538,14 +2468,39 @@ function PluginStudioPresenter({
     adminTabsText,
     workspaceActionManifest,
     workspaceSchemaDocs,
-    workspaceWorkflows,
   ]);
   const groupOrder = parsed?.groupOrder ?? [];
   const systemTabs = parsed?.systemTabs ?? DEFAULT_SYSTEM_TABS;
   const tabOrder = parsed?.tabOrder ?? [];
 
   const availableSchemaDocs = parsed?.schemaDocs ?? [];
-  const availableWorkflows = parsed?.workflows ?? [];
+  const availableWorkflows = useMemo(() => {
+    const schemaDocs = parsed?.schemaDocs ?? [];
+    const fallbackSchema =
+      schemaDocs.find((schemaDoc) => schemaDoc.schemaId === activeSchemaId) ??
+      schemaDocs[0] ??
+      DEFAULT_SCHEMA_DOC;
+    const schemaId = fallbackSchema.schemaId;
+    const scopedWorkflows = (fallbackSchema.workflows ?? []).map((workflow) => ({
+      ...workflow,
+      table: schemaId,
+      trigger: workflow.trigger
+        ? {
+            ...workflow.trigger,
+            table: schemaId,
+          }
+        : undefined,
+    }));
+    if (scopedWorkflows.length > 0) {
+      return scopedWorkflows;
+    }
+    return [
+      {
+        ...DEFAULT_WORKFLOW_DOC,
+        table: schemaId,
+      },
+    ];
+  }, [activeSchemaId, parsed?.schemaDocs]);
   const availableGroups = groupOrder;
   const activeSchemaDocForEditor = useMemo(
     () =>
@@ -2842,7 +2797,6 @@ function PluginStudioPresenter({
         await createDraft();
         const revisionPayload = {
           schemaDocs: parsed.schemaDocs,
-          workflows: parsed.workflows,
           adminTabs: parsed.draftAdminTabs,
         };
         const now = new Date().toISOString();
@@ -2861,7 +2815,6 @@ function PluginStudioPresenter({
           manifestHash: `manifest-${digest}-${revisionId.slice(0, 8)}`,
           artifactHash: `artifact-${digest}-${revisionId.slice(-8)}`,
           schemaDocs: revisionPayload.schemaDocs,
-          workflows: revisionPayload.workflows,
           adminTabs: revisionPayload.adminTabs,
           createdAt: now,
           createdByUserId: actorUserId,
@@ -2886,7 +2839,6 @@ function PluginStudioPresenter({
     if (!latestRevision) return null;
     return toDraftSnapshotString({
       schemaDocs: latestRevision.schemaDocs ?? [],
-      workflows: latestRevision.workflows ?? [],
       adminTabs: latestRevision.adminTabs ?? [],
     });
   }, [activeDraftRevisions]);
@@ -2895,7 +2847,6 @@ function PluginStudioPresenter({
     if (!parsed) return null;
     return toDraftSnapshotString({
       schemaDocs: parsed.schemaDocs,
-      workflows: parsed.workflows,
       adminTabs: parsed.draftAdminTabs,
     });
   }, [parsed]);
@@ -3022,7 +2973,6 @@ function PluginStudioPresenter({
           },
           actionManifest: parsed.actionManifest,
           schemaDocs: parsed.schemaDocs,
-          workflows: parsed.workflows,
           adminTabs: parsed.adminTabs,
         },
       });
@@ -3185,22 +3135,18 @@ function PluginStudioPresenter({
     [schemaBuilder.fields],
   );
   const workspaceWorkflow =
-    parsed?.workflows.find(
+    availableWorkflows.find(
       (workflowDoc) => workflowDoc.workflowId === activeWorkflowId,
     ) ??
-    parsed?.workflows[0] ??
+    availableWorkflows[0] ??
     DEFAULT_WORKFLOW_DOC;
   const workflowEditorTable =
-    workflowEditorLockedTable ?? workspaceWorkflow.table;
+    workflowEditorLockedTable ??
+    workspaceWorkflow.table ??
+    activeSchemaDocForEditor.schemaId;
   const workflowEditorScopedWorkflows = useMemo(() => {
-    if (!workflowEditorLockedTable) {
-      return availableWorkflows;
-    }
-    const scoped = availableWorkflows.filter(
-      (workflowDoc) => workflowDoc.table === workflowEditorLockedTable,
-    );
-    return scoped.length > 0 ? scoped : availableWorkflows;
-  }, [availableWorkflows, workflowEditorLockedTable]);
+    return availableWorkflows;
+  }, [availableWorkflows]);
   const livePreviewTabs = useMemo(() => {
     const schemaById = new Map(
       (parsed?.schemaDocs ?? []).map((schemaDoc) => [
@@ -3602,60 +3548,32 @@ function PluginStudioPresenter({
       .catch((error) => reportPersistenceError('Schema persistence', error));
   }
 
-  function persistWorkflowDocs(nextWorkflowDocs: readonly WorkflowDoc[]) {
-    const nextByWorkflowId = new Map(
-      nextWorkflowDocs.map((workflowDoc) => [workflowDoc.workflowId, workflowDoc]),
-    );
-    const currentRows = workflowDocRows as Array<{
-      id?: string;
-      workflowId?: string;
-      doc?: unknown;
-    }>;
-    const writes: Array<Promise<unknown>> = [];
+  function persistSchemaWorkflows(
+    schemaId: string,
+    nextWorkflowDocs: readonly WorkflowDoc[],
+  ) {
+    const toSchemaWorkflowDoc = (workflowDoc: WorkflowDoc): SchemaWorkflowDoc => ({
+      pluginContractVersion: workflowDoc.pluginContractVersion,
+      workflowId: workflowDoc.workflowId.startsWith(`${schemaId}::`)
+        ? workflowDoc.workflowId.slice(`${schemaId}::`.length)
+        : workflowDoc.workflowId,
+      title: workflowDoc.title,
+      hook: workflowDoc.hook,
+      trigger: workflowDoc.trigger
+        ? {
+            event: workflowDoc.trigger.event,
+            filters: workflowDoc.trigger.filters,
+            fieldChange: workflowDoc.trigger.fieldChange,
+          }
+        : undefined,
+      nodes: workflowDoc.nodes,
+      edges: workflowDoc.edges,
+    });
 
-    for (const row of currentRows) {
-      const workflowId =
-        row.workflowId ||
-        ((row.doc as { workflowId?: string } | undefined)?.workflowId ?? '');
-      const rowId = row.id || workflowId;
-      if (!workflowId || !rowId) continue;
-      const nextDoc = nextByWorkflowId.get(workflowId);
-      if (!nextDoc) {
-        writes.push(deleteWorkflowDocMutation.mutateAsync(rowId));
-        continue;
-      }
-      writes.push(updateWorkflowDocMutation.mutateAsync({
-        id: rowId,
-        pluginId,
-        version: draftId,
-        workflowId,
-        doc: nextDoc,
-      }));
-      nextByWorkflowId.delete(workflowId);
-    }
-
-    for (const [workflowId, nextDoc] of nextByWorkflowId) {
-      writes.push(createWorkflowDocMutation.mutateAsync({
-        id: `${draftId}:${workflowId}`,
-        pluginId,
-        version: draftId,
-        workflowId,
-        doc: nextDoc,
-      }));
-    }
-
-    if (writes.length === 0) {
-      return;
-    }
-    void Promise.allSettled(writes)
-      .then((settled) => {
-        throwOnFailedPersistenceWrites({
-          context: 'Workflow persistence',
-          settled,
-        });
-        return refetchWorkflowDocs();
-      })
-      .catch((error) => reportPersistenceError('Workflow persistence', error));
+    updateSchemaDoc(schemaId, (schemaDoc) => ({
+      ...schemaDoc,
+      workflows: nextWorkflowDocs.map(toSchemaWorkflowDoc),
+    }));
   }
 
   function persistActionManifestDocs(nextActionManifest: readonly ActionManifestDoc[]) {
@@ -4502,15 +4420,35 @@ function PluginStudioPresenter({
   function openWorkflowEditorForTable(table: string) {
     const trimmedTable = table.trim();
     if (!trimmedTable) return;
+    const schemaDoc = availableSchemaDocs.find(
+      (candidate) => candidate.schemaId === trimmedTable,
+    );
+    if (!schemaDoc) {
+      toast.error(`Schema "${trimmedTable}" was not found.`);
+      return;
+    }
+    const scopedWorkflows = (schemaDoc.workflows ?? []).map((workflow) => ({
+      ...workflow,
+      table: trimmedTable,
+      trigger: workflow.trigger
+        ? {
+            ...workflow.trigger,
+            table: trimmedTable,
+          }
+        : undefined,
+    }));
     const preferredWorkflow =
-      availableWorkflows.find(
+      scopedWorkflows.find(
         (workflowDoc) =>
           workflowDoc.workflowId === activeWorkflowId &&
           workflowDoc.table === trimmedTable,
       ) ??
-      availableWorkflows.find(
+      scopedWorkflows.find(
         (workflowDoc) => workflowDoc.table === trimmedTable,
       );
+    if (activeSchemaId !== trimmedTable) {
+      setActiveSchemaId(trimmedTable);
+    }
     if (preferredWorkflow) {
       setActiveWorkflowId(preferredWorkflow.workflowId);
       setWorkflowEditorLockedTable(trimmedTable);
@@ -4524,7 +4462,7 @@ function PluginStudioPresenter({
       nodes: [],
       edges: [],
     };
-    persistWorkflowDocs([...availableWorkflows, nextWorkflow]);
+    persistSchemaWorkflows(trimmedTable, [...scopedWorkflows, nextWorkflow]);
     setActiveWorkflowId(nextWorkflow.workflowId);
     setWorkflowEditorLockedTable(trimmedTable);
     setIsWorkflowEditorOpen(true);
@@ -4746,7 +4684,7 @@ function PluginStudioPresenter({
       nodes: [],
       edges: [],
     };
-    persistWorkflowDocs([...availableWorkflows, nextWorkflow]);
+    persistSchemaWorkflows(workflowEditorTable, [...availableWorkflows, nextWorkflow]);
     setActiveWorkflowId(nextWorkflow.workflowId);
   }
 
@@ -4758,7 +4696,7 @@ function PluginStudioPresenter({
     const nextWorkflows = availableWorkflows.filter(
       (workflow) => workflow.workflowId !== workflowId,
     );
-    persistWorkflowDocs(nextWorkflows);
+    persistSchemaWorkflows(workflowEditorTable, nextWorkflows);
     if (activeWorkflowId === workflowId) {
       setActiveWorkflowId(
         nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
@@ -4776,7 +4714,7 @@ function PluginStudioPresenter({
       nodes: workspaceWorkflow.nodes.map((node) => ({ ...node })),
       edges: workspaceWorkflow.edges.map((edge) => ({ ...edge })),
     };
-    persistWorkflowDocs([...availableWorkflows, nextWorkflow]);
+    persistSchemaWorkflows(workflowEditorTable, [...availableWorkflows, nextWorkflow]);
     setActiveWorkflowId(nextWorkflow.workflowId);
   }
 
@@ -4794,7 +4732,7 @@ function PluginStudioPresenter({
         ? nextWorkflow
         : workflowDoc,
     );
-    persistWorkflowDocs(nextWorkflows);
+    persistSchemaWorkflows(workflowEditorTable, nextWorkflows);
     if (nextWorkflow.workflowId !== activeWorkflowId) {
       setActiveWorkflowId(nextWorkflow.workflowId);
     }
@@ -4841,18 +4779,11 @@ function PluginStudioPresenter({
       template.schemaDocs && template.schemaDocs.length > 0
         ? template.schemaDocs
         : toFallbackTemplateSchemaDocs(template);
-    const nextWorkflows =
-      template.workflows && template.workflows.length > 0
-        ? template.workflows
-        : toFallbackTemplateWorkflows(template, nextSchemaDocs);
     const nextActiveSchema = nextSchemaDocs[0] ?? DEFAULT_SCHEMA_DOC;
 
     persistSchemaDocs(nextSchemaDocs);
-    persistWorkflowDocs(nextWorkflows);
     setActiveSchemaId(nextActiveSchema.schemaId);
-    setActiveWorkflowId(
-      nextWorkflows[0]?.workflowId ?? DEFAULT_WORKFLOW_DOC.workflowId,
-    );
+    setActiveWorkflowId(DEFAULT_WORKFLOW_DOC.workflowId);
     syncBuilderFromSchemaDoc(nextActiveSchema);
     setSelectedTemplateLabel(template.docs?.title);
     setIsTemplatesDialogOpen(false);
@@ -7609,20 +7540,14 @@ function PluginStudioPresenter({
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor={workflowEditorTableInputId}>
-                        Connected schema ID
+                        Connected Schema ID
                       </Label>
                       <Input
                         id={workflowEditorTableInputId}
                         value={workflowEditorTable}
-                        onChange={(event) => {
-                          if (workflowEditorLockedTable) return;
-                          updateActiveWorkflow((current) => ({
-                            ...current,
-                            table: event.target.value,
-                          }));
-                        }}
+                        readOnly
                         placeholder="Connected schema ID"
-                        disabled={Boolean(workflowEditorLockedTable)}
+                        disabled
                       />
                     </div>
                     <div className="space-y-1">

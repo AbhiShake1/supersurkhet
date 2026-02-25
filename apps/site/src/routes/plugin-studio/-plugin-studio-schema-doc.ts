@@ -1,4 +1,4 @@
-import type { SchemaDoc, SchemaFieldDoc } from '@/lib/plugins/types';
+import type { SchemaDoc, SchemaFieldDoc, SchemaWorkflowDoc } from '@/lib/plugins/types';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -44,6 +44,20 @@ function normalizeSchemaDoc(input: unknown): SchemaDoc | undefined {
   if (isRecord(input.tokens)) {
     normalized.tokens = input.tokens as SchemaDoc['tokens'];
   }
+  const workflowDiagnostics: string[] = [];
+  if (Array.isArray(input.workflows)) {
+    const workflows = input.workflows
+      .map((entry, index) => normalizeSchemaWorkflowDoc(entry, index, workflowDiagnostics))
+      .filter((entry): entry is SchemaWorkflowDoc => entry !== null);
+    if (workflows.length > 0) {
+      normalized.workflows = workflows;
+    }
+  }
+  if (workflowDiagnostics.length > 0) {
+    console.warn(
+      `[plugin-studio] filtered malformed schema workflows for "${schemaId}": ${workflowDiagnostics.join('; ')}`,
+    );
+  }
 
   return normalized;
 }
@@ -57,4 +71,27 @@ export function parseStoredSchemaDoc(doc: unknown): SchemaDoc | undefined {
     }
   }
   return normalizeSchemaDoc(doc);
+}
+
+function normalizeSchemaWorkflowDoc(
+  input: unknown,
+  index: number,
+  diagnostics: string[],
+): SchemaWorkflowDoc | null {
+  if (!isRecord(input)) {
+    diagnostics.push(`workflows[${index}] is not an object`);
+    return null;
+  }
+  const workflowId = typeof input.workflowId === 'string' ? input.workflowId.trim() : '';
+  const hook = typeof input.hook === 'string' ? input.hook.trim() : '';
+  if (!workflowId || !hook) {
+    diagnostics.push(`workflows[${index}] missing workflowId/hook`);
+    return null;
+  }
+  if (!Array.isArray(input.nodes) || !Array.isArray(input.edges)) {
+    diagnostics.push(`workflows[${index}] missing nodes/edges arrays`);
+    return null;
+  }
+
+  return input as SchemaWorkflowDoc;
 }
