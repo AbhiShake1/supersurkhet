@@ -653,6 +653,16 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     providerOauthMethodId?: string;
   }>>([]);
   const [isAskingForAnother, setIsAskingForAnother] = useState(false);
+  
+  // Track which providers have auth integrated (credentials saved)
+  const providersWithAuthIntegrated = useMemo(() => {
+    const authIntegrated = new Set<BusinessOnboardingProviderId>();
+    integrations.forEach((integration) => {
+      authIntegrated.add(integration.providerId);
+    });
+    return authIntegrated;
+  }, [integrations]);
+  
   const recommendedProviderId = defaultModelOption.provider;
   const recommendedModelId = providerModelOptions[0]?.id ?? selectedModelOption.id;
   const modelOptionsForWizard = useMemo<SelectedModelWizardOption[]>(() => {
@@ -893,6 +903,31 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
         return;
       }
 
+      // Update integrations state to reflect auth integrated status
+      setIntegrations((prev) => {
+        const existingIndex = prev.findIndex(
+          (item) => item.providerId === selectedAssistantProviderId && item.modelId === selectedAssistantModelId
+        );
+        const newIntegration = {
+          providerId: selectedAssistantProviderId,
+          modelId: selectedAssistantModelId,
+          authMode: selectedAssistantAuthMode,
+          providerApiKey: payload.authMode === 'api-key' ? payload.apiKey : undefined,
+          providerOauthAccessToken: payload.authMode === 'oauth-access-token' ? payload.oauthAccessToken : undefined,
+          providerBaseUrl: payload.baseURL?.trim() || undefined,
+          providerRegion: payload.region?.trim() || undefined,
+          providerOrganization: payload.organization?.trim() || undefined,
+          providerProject: payload.project?.trim() || undefined,
+          providerOauthMethodId: resolvedProviderOauthMethodId || undefined,
+        };
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = newIntegration;
+          return updated;
+        }
+        return [...prev, newIntegration];
+      });
+
       setProviderCredentialSavedAt(Date.now());
       setAuthSessionToken('');
       setAuthSessionExpiresAt(null);
@@ -943,6 +978,26 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       if (match.authMode) {
         setSelectedAssistantAuthMode(match.authMode);
       }
+      
+      // Update integrations state to reflect auth integrated status
+      setIntegrations((prev) => {
+        const existingIndex = prev.findIndex(
+          (item) => item.providerId === selectedAssistantProviderId && item.modelId === (match.model || selectedAssistantModelId)
+        );
+        const newIntegration = {
+          providerId: selectedAssistantProviderId,
+          modelId: match.model || selectedAssistantModelId,
+          authMode: match.authMode || selectedAssistantAuthMode,
+          providerOauthMethodId: resolvedProviderOauthMethodId || undefined,
+        };
+        if (existingIndex >= 0) {
+          const updated = [...prev];
+          updated[existingIndex] = newIntegration;
+          return updated;
+        }
+        return [...prev, newIntegration];
+      });
+      
       setOauthFlowState('connected');
       setOauthFlowMessage('Credential detected for selected provider.');
       return true;
@@ -1496,6 +1551,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                   selected: option.providerId === selectedAssistantProviderId,
                   recommended: option.providerId === recommendedProviderId,
                   showCheckmark: selectedProviderIds.has(option.providerId as BusinessOnboardingProviderId),
+                  authIntegrated: providersWithAuthIntegrated.has(option.providerId as BusinessOnboardingProviderId),
                 }))
                 // : assistantStage === 'model'
                 //   ? modelOptionsForWizard.map((option) => ({

@@ -7,10 +7,10 @@ import {
     ArrowUpIcon,
     Bot,
     User,
-    Check,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
+import { AuthIntegratedLabel } from "@/content/auth-integrated-label";
 
 interface Message {
     id: string;
@@ -39,6 +39,7 @@ interface VercelV0ChatProps {
             selected?: boolean;
             recommended?: boolean;
             showCheckmark?: boolean;
+            authIntegrated?: boolean;
         }>;
         onSelectOption?: (id: string) => void;
         input?: {
@@ -402,12 +403,14 @@ export function VercelV0Chat({
                                                                   : "border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10",
                                                         )}
                                                     >
-                                                        <span>{index + 1}. {option.label}</span>
-                                                        {option.showCheckmark ? (
-                                                            <Check className="h-4 w-4 text-primary" />
-                                                        ) : option.recommended ? (
-                                                            <span className="text-zinc-500">Recommended</span>
-                                                        ) : null}
+                                                        <span className="flex-1 pr-2">{index + 1}. {option.label}</span>
+                                                        <div className="flex shrink-0 items-center gap-1.5">
+                                                            {option.authIntegrated ? (
+                                                                <AuthIntegratedLabel />
+                                                            ) : option.recommended ? (
+                                                                <span className="text-xs text-zinc-500">Recommended</span>
+                                                            ) : null}
+                                                        </div>
                                                     </button>
                                                 ))}
                                             </div>
