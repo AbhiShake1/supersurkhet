@@ -1568,8 +1568,12 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                   selected: option.providerId === selectedAssistantProviderId,
                   recommended: option.providerId === recommendedProviderId,
                   showCheckmark: selectedProviderIds.has(option.providerId as BusinessOnboardingProviderId),
-                  authIntegrated: providersWithAuthIntegrated.has(option.providerId as BusinessOnboardingProviderId),
-                  disabled: providersWithAuthIntegrated.has(option.providerId as BusinessOnboardingProviderId),
+                  authIntegrated:
+                    providersWithAuthIntegrated.has(option.providerId as BusinessOnboardingProviderId) ||
+                    selectedProviderIds.has(option.providerId as BusinessOnboardingProviderId),
+                  disabled:
+                    providersWithAuthIntegrated.has(option.providerId as BusinessOnboardingProviderId) ||
+                    selectedProviderIds.has(option.providerId as BusinessOnboardingProviderId),
                 }))
                 // : assistantStage === 'model'
                 //   ? modelOptionsForWizard.map((option) => ({
