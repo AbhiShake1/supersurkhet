@@ -1062,7 +1062,7 @@ export function AutoAdmin({
 
           <section
             className={cn(
-              'flex-1 overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6',
+              'min-w-0 flex-1 overflow-x-auto overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6',
             )}
           >
             {'children' in currentItem ? (

@@ -15,35 +15,38 @@ import {
   Users,
   Users2,
 } from 'lucide-react';
+import React from 'react';
 import { z } from 'zod';
 import { fieldConfig } from '@/components/ui/autoform';
 import { dataMatrixActionSchema } from './datamatrix';
 import {
-  businessUiTemplateInstallSchema,
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
-  pluginProjectInviteSchema,
-  pluginProjectMemberSchema,
-  pluginProjectSchema,
+  businessUiTemplateInstallSchema,
+  cliApiTokenSchema,
+  cliSchemaSnapshotSchema,
   pluginActionCapabilityEnvelopeSchema,
   pluginActionDefinitionV3Schema,
   pluginActionManifestDocStorageSchema,
   pluginDraftRevisionSchema,
   pluginDraftSchema,
+  pluginProjectInviteSchema,
+  pluginProjectMemberSchema,
+  pluginProjectSchema,
   pluginPublishReviewSchema,
   pluginRecordSchema,
   pluginReleaseSchema,
   pluginRoutesTabsConfigSchema,
   pluginSchemaDocStorageSchema,
-  pluginUserReviewSchema,
   pluginUserReviewReplySchema,
+  pluginUserReviewSchema,
   pluginUserReviewVoteSchema,
   pluginV2DiagnosticsSchema,
-  uiTemplateReleaseSchema,
   pluginWorkflowDeadLetterSchema,
   pluginWorkflowEventLogSchema,
   pluginWorkflowJobAttemptSchema,
   pluginWorkflowJobSchema,
+  uiTemplateReleaseSchema,
 } from './schema/plugins';
 import type {
   AppSchemaType,
@@ -70,15 +73,22 @@ import {
   tripSchema,
 } from './schemas/retail';
 import { uiBuilderSchema } from './schemas/ui-builder-schema';
-import React from 'react';
 
-
-const OrderKanban = React.lazy(() => import('@/components/ui/admin/order-kanban'));
-const MenuManagement = React.lazy(() => import('@/components/ui/admin/menu-management'));
-const TripManagement = React.lazy(() => import('@/components/ui/admin/trip-management'));
-const PartyManagement = React.lazy(() => import('@/components/ui/admin/party-management'));
-const InvoiceManagement = React.lazy(() => import('@/components/ui/admin/invoice-management'));
-
+const OrderKanban = React.lazy(
+  () => import('@/components/ui/admin/order-kanban'),
+);
+const MenuManagement = React.lazy(
+  () => import('@/components/ui/admin/menu-management'),
+);
+const TripManagement = React.lazy(
+  () => import('@/components/ui/admin/trip-management'),
+);
+const PartyManagement = React.lazy(
+  () => import('@/components/ui/admin/party-management'),
+);
+const InvoiceManagement = React.lazy(
+  () => import('@/components/ui/admin/invoice-management'),
+);
 
 function getPermissions() {
   return ['product'] as readonly [string, ...string[]];
@@ -426,6 +436,18 @@ export const coreSchema = createSchema({
     icon: Lock,
     group: 'Plugin Platform',
   },
+  cliApiToken: {
+    schema: cliApiTokenSchema,
+    title: 'CLI API Tokens',
+    icon: Lock,
+    group: 'Plugin Platform',
+  },
+  cliSchemaSnapshot: {
+    schema: cliSchemaSnapshotSchema,
+    title: 'CLI Schema Snapshots',
+    icon: List,
+    group: 'Plugin Platform',
+  },
 });
 
 export const featureSchema = createSchema({
@@ -637,17 +659,24 @@ export type PluginUserReviewVote = InferredTable<'pluginUserReviewVote'>;
 export type PluginActionCapabilityEnvelope =
   InferredTable<'pluginActionCapabilityEnvelope'>;
 export type PluginRoutesTabsConfig = InferredTable<'pluginRoutesTabsConfig'>;
-export type PluginActionDefinitionV3 = InferredTable<'pluginActionDefinitionV3'>;
+export type PluginActionDefinitionV3 =
+  InferredTable<'pluginActionDefinitionV3'>;
 export type PluginWorkflowJob = InferredTable<'pluginWorkflowJob'>;
-export type PluginWorkflowJobAttempt = InferredTable<'pluginWorkflowJobAttempt'>;
+export type PluginWorkflowJobAttempt =
+  InferredTable<'pluginWorkflowJobAttempt'>;
 export type PluginWorkflowEventLog = InferredTable<'pluginWorkflowEventLog'>;
-export type PluginWorkflowDeadLetter = InferredTable<'pluginWorkflowDeadLetter'>;
+export type PluginWorkflowDeadLetter =
+  InferredTable<'pluginWorkflowDeadLetter'>;
+export type CliApiToken = InferredTable<'cliApiToken'>;
+export type CliSchemaSnapshot = InferredTable<'cliSchemaSnapshot'>;
 // #endregion
 
 export {
-  businessUiTemplateInstallSchema,
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
+  businessUiTemplateInstallSchema,
+  cliApiTokenSchema,
+  cliSchemaSnapshotSchema,
   compilePluginSchemasFromDocs,
   pluginActionCapabilityEnvelopeSchema,
   pluginActionDefinitionV3Schema,
@@ -659,15 +688,15 @@ export {
   pluginReleaseSchema,
   pluginRoutesTabsConfigSchema,
   pluginSchemaDocStorageSchema,
-  pluginUserReviewSchema,
   pluginUserReviewReplySchema,
+  pluginUserReviewSchema,
   pluginUserReviewVoteSchema,
   pluginV2DiagnosticsSchema,
-  uiTemplateReleaseSchema,
   pluginWorkflowDeadLetterSchema,
   pluginWorkflowEventLogSchema,
   pluginWorkflowJobAttemptSchema,
   pluginWorkflowJobSchema,
+  uiTemplateReleaseSchema,
 } from './schema/plugins';
 
 export function transformSchema<const TSchema extends BaseAppSchemaType>(

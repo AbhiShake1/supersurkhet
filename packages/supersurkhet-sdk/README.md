@@ -19,13 +19,19 @@ cd my-plugin
 supersurkhet types --config supersurkhet.config.mjs --out supersurkhet/schema.types.ts
 ```
 
-4. Push local schema snapshot to relay store (file-backed for now):
+4. Link your local directory to a remote project:
+
+```bash
+supersurkhet link --project <project-id> --endpoint <api-url> --token <api-token>
+```
+
+5. Push local schema snapshot to remote project:
 
 ```bash
 supersurkhet sync-up --config supersurkhet.config.mjs
 ```
 
-5. Pull latest snapshot back down:
+6. Pull latest snapshot back down:
 
 ```bash
 supersurkhet sync-down --config supersurkhet.config.mjs --out supersurkhet/schema.synced.json

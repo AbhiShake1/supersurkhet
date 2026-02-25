@@ -35,13 +35,18 @@ import { Route as BusinessNameAdminPluginsRouteImport } from './routes/$business
 import { Route as BusinessNameAdminInvitationRouteImport } from './routes/$businessName/admin/invitation'
 import { Route as BusinessNameAdminEditorRouteImport } from './routes/$businessName/admin/editor'
 import { Route as V1IntegrationsGitRepositoriesRouteImport } from './routes/v1/integrations/git/repositories'
+import { Route as V1CliProjectsProjectIdRouteImport } from './routes/v1/cli/projects/$projectId'
 import { Route as V1AuthProvidersMethodsRouteImport } from './routes/v1/auth/providers/methods'
 import { Route as BusinessNameAdminPluginPluginIdRouteImport } from './routes/$businessName/admin/plugin/$pluginId'
 import { Route as V1IntegrationsGitOauthStartRouteImport } from './routes/v1/integrations/git/oauth/start'
 import { Route as V1IntegrationsGitOauthCallbackRouteImport } from './routes/v1/integrations/git/oauth/callback'
+import { Route as V1CliProjectsProjectIdTokensRouteImport } from './routes/v1/cli/projects/$projectId/tokens'
+import { Route as V1CliProjectsProjectIdSchemasRouteImport } from './routes/v1/cli/projects/$projectId/schemas'
 import { Route as V1AuthProvidersOauthCallbackRouteImport } from './routes/v1/auth/providers/oauth/callback'
 import { Route as V1AuthProvidersOauthAuthorizeRouteImport } from './routes/v1/auth/providers/oauth/authorize'
 import { Route as BusinessNameAdminPluginPluginIdSchemaIdRouteImport } from './routes/$businessName/admin/plugin/$pluginId/$schemaId'
+import { Route as V1CliProjectsProjectIdTokensRotateRouteImport } from './routes/v1/cli/projects/$projectId/tokens/rotate'
+import { Route as V1CliProjectsProjectIdTokensTokenIdRouteImport } from './routes/v1/cli/projects/$projectId/tokens/$tokenId'
 
 const S3testRoute = S3testRouteImport.update({
   id: '/s3test',
@@ -177,6 +182,11 @@ const V1IntegrationsGitRepositoriesRoute =
     path: '/v1/integrations/git/repositories',
     getParentRoute: () => rootRouteImport,
   } as any)
+const V1CliProjectsProjectIdRoute = V1CliProjectsProjectIdRouteImport.update({
+  id: '/v1/cli/projects/$projectId',
+  path: '/v1/cli/projects/$projectId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V1AuthProvidersMethodsRoute = V1AuthProvidersMethodsRouteImport.update({
   id: '/methods',
   path: '/methods',
@@ -200,6 +210,18 @@ const V1IntegrationsGitOauthCallbackRoute =
     path: '/v1/integrations/git/oauth/callback',
     getParentRoute: () => rootRouteImport,
   } as any)
+const V1CliProjectsProjectIdTokensRoute =
+  V1CliProjectsProjectIdTokensRouteImport.update({
+    id: '/tokens',
+    path: '/tokens',
+    getParentRoute: () => V1CliProjectsProjectIdRoute,
+  } as any)
+const V1CliProjectsProjectIdSchemasRoute =
+  V1CliProjectsProjectIdSchemasRouteImport.update({
+    id: '/schemas',
+    path: '/schemas',
+    getParentRoute: () => V1CliProjectsProjectIdRoute,
+  } as any)
 const V1AuthProvidersOauthCallbackRoute =
   V1AuthProvidersOauthCallbackRouteImport.update({
     id: '/oauth/callback',
@@ -217,6 +239,18 @@ const BusinessNameAdminPluginPluginIdSchemaIdRoute =
     id: '/$schemaId',
     path: '/$schemaId',
     getParentRoute: () => BusinessNameAdminPluginPluginIdRoute,
+  } as any)
+const V1CliProjectsProjectIdTokensRotateRoute =
+  V1CliProjectsProjectIdTokensRotateRouteImport.update({
+    id: '/rotate',
+    path: '/rotate',
+    getParentRoute: () => V1CliProjectsProjectIdTokensRoute,
+  } as any)
+const V1CliProjectsProjectIdTokensTokenIdRoute =
+  V1CliProjectsProjectIdTokensTokenIdRouteImport.update({
+    id: '/$tokenId',
+    path: '/$tokenId',
+    getParentRoute: () => V1CliProjectsProjectIdTokensRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -246,12 +280,17 @@ export interface FileRoutesByFullPath {
   '/plugin-studio/$projectId/': typeof PluginStudioProjectIdIndexRoute
   '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRouteWithChildren
   '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
+  '/v1/cli/projects/$projectId': typeof V1CliProjectsProjectIdRouteWithChildren
   '/v1/integrations/git/repositories': typeof V1IntegrationsGitRepositoriesRoute
   '/$businessName/admin/plugin/$pluginId/$schemaId': typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
   '/v1/auth/providers/oauth/authorize': typeof V1AuthProvidersOauthAuthorizeRoute
   '/v1/auth/providers/oauth/callback': typeof V1AuthProvidersOauthCallbackRoute
+  '/v1/cli/projects/$projectId/schemas': typeof V1CliProjectsProjectIdSchemasRoute
+  '/v1/cli/projects/$projectId/tokens': typeof V1CliProjectsProjectIdTokensRouteWithChildren
   '/v1/integrations/git/oauth/callback': typeof V1IntegrationsGitOauthCallbackRoute
   '/v1/integrations/git/oauth/start': typeof V1IntegrationsGitOauthStartRoute
+  '/v1/cli/projects/$projectId/tokens/$tokenId': typeof V1CliProjectsProjectIdTokensTokenIdRoute
+  '/v1/cli/projects/$projectId/tokens/rotate': typeof V1CliProjectsProjectIdTokensRotateRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -279,12 +318,17 @@ export interface FileRoutesByTo {
   '/plugin-studio/$projectId': typeof PluginStudioProjectIdIndexRoute
   '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRouteWithChildren
   '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
+  '/v1/cli/projects/$projectId': typeof V1CliProjectsProjectIdRouteWithChildren
   '/v1/integrations/git/repositories': typeof V1IntegrationsGitRepositoriesRoute
   '/$businessName/admin/plugin/$pluginId/$schemaId': typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
   '/v1/auth/providers/oauth/authorize': typeof V1AuthProvidersOauthAuthorizeRoute
   '/v1/auth/providers/oauth/callback': typeof V1AuthProvidersOauthCallbackRoute
+  '/v1/cli/projects/$projectId/schemas': typeof V1CliProjectsProjectIdSchemasRoute
+  '/v1/cli/projects/$projectId/tokens': typeof V1CliProjectsProjectIdTokensRouteWithChildren
   '/v1/integrations/git/oauth/callback': typeof V1IntegrationsGitOauthCallbackRoute
   '/v1/integrations/git/oauth/start': typeof V1IntegrationsGitOauthStartRoute
+  '/v1/cli/projects/$projectId/tokens/$tokenId': typeof V1CliProjectsProjectIdTokensTokenIdRoute
+  '/v1/cli/projects/$projectId/tokens/rotate': typeof V1CliProjectsProjectIdTokensRotateRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -315,12 +359,17 @@ export interface FileRoutesById {
   '/plugin-studio/$projectId/': typeof PluginStudioProjectIdIndexRoute
   '/$businessName/admin/plugin/$pluginId': typeof BusinessNameAdminPluginPluginIdRouteWithChildren
   '/v1/auth/providers/methods': typeof V1AuthProvidersMethodsRoute
+  '/v1/cli/projects/$projectId': typeof V1CliProjectsProjectIdRouteWithChildren
   '/v1/integrations/git/repositories': typeof V1IntegrationsGitRepositoriesRoute
   '/$businessName/admin/plugin/$pluginId/$schemaId': typeof BusinessNameAdminPluginPluginIdSchemaIdRoute
   '/v1/auth/providers/oauth/authorize': typeof V1AuthProvidersOauthAuthorizeRoute
   '/v1/auth/providers/oauth/callback': typeof V1AuthProvidersOauthCallbackRoute
+  '/v1/cli/projects/$projectId/schemas': typeof V1CliProjectsProjectIdSchemasRoute
+  '/v1/cli/projects/$projectId/tokens': typeof V1CliProjectsProjectIdTokensRouteWithChildren
   '/v1/integrations/git/oauth/callback': typeof V1IntegrationsGitOauthCallbackRoute
   '/v1/integrations/git/oauth/start': typeof V1IntegrationsGitOauthStartRoute
+  '/v1/cli/projects/$projectId/tokens/$tokenId': typeof V1CliProjectsProjectIdTokensTokenIdRoute
+  '/v1/cli/projects/$projectId/tokens/rotate': typeof V1CliProjectsProjectIdTokensRotateRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -351,12 +400,17 @@ export interface FileRouteTypes {
     | '/plugin-studio/$projectId/'
     | '/$businessName/admin/plugin/$pluginId'
     | '/v1/auth/providers/methods'
+    | '/v1/cli/projects/$projectId'
     | '/v1/integrations/git/repositories'
     | '/$businessName/admin/plugin/$pluginId/$schemaId'
     | '/v1/auth/providers/oauth/authorize'
     | '/v1/auth/providers/oauth/callback'
+    | '/v1/cli/projects/$projectId/schemas'
+    | '/v1/cli/projects/$projectId/tokens'
     | '/v1/integrations/git/oauth/callback'
     | '/v1/integrations/git/oauth/start'
+    | '/v1/cli/projects/$projectId/tokens/$tokenId'
+    | '/v1/cli/projects/$projectId/tokens/rotate'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -384,12 +438,17 @@ export interface FileRouteTypes {
     | '/plugin-studio/$projectId'
     | '/$businessName/admin/plugin/$pluginId'
     | '/v1/auth/providers/methods'
+    | '/v1/cli/projects/$projectId'
     | '/v1/integrations/git/repositories'
     | '/$businessName/admin/plugin/$pluginId/$schemaId'
     | '/v1/auth/providers/oauth/authorize'
     | '/v1/auth/providers/oauth/callback'
+    | '/v1/cli/projects/$projectId/schemas'
+    | '/v1/cli/projects/$projectId/tokens'
     | '/v1/integrations/git/oauth/callback'
     | '/v1/integrations/git/oauth/start'
+    | '/v1/cli/projects/$projectId/tokens/$tokenId'
+    | '/v1/cli/projects/$projectId/tokens/rotate'
   id:
     | '__root__'
     | '/'
@@ -419,12 +478,17 @@ export interface FileRouteTypes {
     | '/plugin-studio/$projectId/'
     | '/$businessName/admin/plugin/$pluginId'
     | '/v1/auth/providers/methods'
+    | '/v1/cli/projects/$projectId'
     | '/v1/integrations/git/repositories'
     | '/$businessName/admin/plugin/$pluginId/$schemaId'
     | '/v1/auth/providers/oauth/authorize'
     | '/v1/auth/providers/oauth/callback'
+    | '/v1/cli/projects/$projectId/schemas'
+    | '/v1/cli/projects/$projectId/tokens'
     | '/v1/integrations/git/oauth/callback'
     | '/v1/integrations/git/oauth/start'
+    | '/v1/cli/projects/$projectId/tokens/$tokenId'
+    | '/v1/cli/projects/$projectId/tokens/rotate'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -446,6 +510,7 @@ export interface RootRouteChildren {
   V1AuthSessionsRoute: typeof V1AuthSessionsRoute
   V1ChatCompletionsRoute: typeof V1ChatCompletionsRoute
   PluginStudioProjectIdIndexRoute: typeof PluginStudioProjectIdIndexRoute
+  V1CliProjectsProjectIdRoute: typeof V1CliProjectsProjectIdRouteWithChildren
   V1IntegrationsGitRepositoriesRoute: typeof V1IntegrationsGitRepositoriesRoute
   V1IntegrationsGitOauthCallbackRoute: typeof V1IntegrationsGitOauthCallbackRoute
   V1IntegrationsGitOauthStartRoute: typeof V1IntegrationsGitOauthStartRoute
@@ -635,6 +700,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V1IntegrationsGitRepositoriesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v1/cli/projects/$projectId': {
+      id: '/v1/cli/projects/$projectId'
+      path: '/v1/cli/projects/$projectId'
+      fullPath: '/v1/cli/projects/$projectId'
+      preLoaderRoute: typeof V1CliProjectsProjectIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v1/auth/providers/methods': {
       id: '/v1/auth/providers/methods'
       path: '/methods'
@@ -663,6 +735,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V1IntegrationsGitOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v1/cli/projects/$projectId/tokens': {
+      id: '/v1/cli/projects/$projectId/tokens'
+      path: '/tokens'
+      fullPath: '/v1/cli/projects/$projectId/tokens'
+      preLoaderRoute: typeof V1CliProjectsProjectIdTokensRouteImport
+      parentRoute: typeof V1CliProjectsProjectIdRoute
+    }
+    '/v1/cli/projects/$projectId/schemas': {
+      id: '/v1/cli/projects/$projectId/schemas'
+      path: '/schemas'
+      fullPath: '/v1/cli/projects/$projectId/schemas'
+      preLoaderRoute: typeof V1CliProjectsProjectIdSchemasRouteImport
+      parentRoute: typeof V1CliProjectsProjectIdRoute
+    }
     '/v1/auth/providers/oauth/callback': {
       id: '/v1/auth/providers/oauth/callback'
       path: '/oauth/callback'
@@ -683,6 +769,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/$businessName/admin/plugin/$pluginId/$schemaId'
       preLoaderRoute: typeof BusinessNameAdminPluginPluginIdSchemaIdRouteImport
       parentRoute: typeof BusinessNameAdminPluginPluginIdRoute
+    }
+    '/v1/cli/projects/$projectId/tokens/rotate': {
+      id: '/v1/cli/projects/$projectId/tokens/rotate'
+      path: '/rotate'
+      fullPath: '/v1/cli/projects/$projectId/tokens/rotate'
+      preLoaderRoute: typeof V1CliProjectsProjectIdTokensRotateRouteImport
+      parentRoute: typeof V1CliProjectsProjectIdTokensRoute
+    }
+    '/v1/cli/projects/$projectId/tokens/$tokenId': {
+      id: '/v1/cli/projects/$projectId/tokens/$tokenId'
+      path: '/$tokenId'
+      fullPath: '/v1/cli/projects/$projectId/tokens/$tokenId'
+      preLoaderRoute: typeof V1CliProjectsProjectIdTokensTokenIdRouteImport
+      parentRoute: typeof V1CliProjectsProjectIdTokensRoute
     }
   }
 }
@@ -753,6 +853,41 @@ const V1AuthProvidersRouteWithChildren = V1AuthProvidersRoute._addFileChildren(
   V1AuthProvidersRouteChildren,
 )
 
+interface V1CliProjectsProjectIdTokensRouteChildren {
+  V1CliProjectsProjectIdTokensTokenIdRoute: typeof V1CliProjectsProjectIdTokensTokenIdRoute
+  V1CliProjectsProjectIdTokensRotateRoute: typeof V1CliProjectsProjectIdTokensRotateRoute
+}
+
+const V1CliProjectsProjectIdTokensRouteChildren: V1CliProjectsProjectIdTokensRouteChildren =
+  {
+    V1CliProjectsProjectIdTokensTokenIdRoute:
+      V1CliProjectsProjectIdTokensTokenIdRoute,
+    V1CliProjectsProjectIdTokensRotateRoute:
+      V1CliProjectsProjectIdTokensRotateRoute,
+  }
+
+const V1CliProjectsProjectIdTokensRouteWithChildren =
+  V1CliProjectsProjectIdTokensRoute._addFileChildren(
+    V1CliProjectsProjectIdTokensRouteChildren,
+  )
+
+interface V1CliProjectsProjectIdRouteChildren {
+  V1CliProjectsProjectIdSchemasRoute: typeof V1CliProjectsProjectIdSchemasRoute
+  V1CliProjectsProjectIdTokensRoute: typeof V1CliProjectsProjectIdTokensRouteWithChildren
+}
+
+const V1CliProjectsProjectIdRouteChildren: V1CliProjectsProjectIdRouteChildren =
+  {
+    V1CliProjectsProjectIdSchemasRoute: V1CliProjectsProjectIdSchemasRoute,
+    V1CliProjectsProjectIdTokensRoute:
+      V1CliProjectsProjectIdTokensRouteWithChildren,
+  }
+
+const V1CliProjectsProjectIdRouteWithChildren =
+  V1CliProjectsProjectIdRoute._addFileChildren(
+    V1CliProjectsProjectIdRouteChildren,
+  )
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BusinessNameRoute: BusinessNameRouteWithChildren,
@@ -772,6 +907,7 @@ const rootRouteChildren: RootRouteChildren = {
   V1AuthSessionsRoute: V1AuthSessionsRoute,
   V1ChatCompletionsRoute: V1ChatCompletionsRoute,
   PluginStudioProjectIdIndexRoute: PluginStudioProjectIdIndexRoute,
+  V1CliProjectsProjectIdRoute: V1CliProjectsProjectIdRouteWithChildren,
   V1IntegrationsGitRepositoriesRoute: V1IntegrationsGitRepositoriesRoute,
   V1IntegrationsGitOauthCallbackRoute: V1IntegrationsGitOauthCallbackRoute,
   V1IntegrationsGitOauthStartRoute: V1IntegrationsGitOauthStartRoute,

@@ -3993,6 +3993,506 @@ declare global {
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
+     readonly cliApiToken: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     projectId: import("zod").ZodString;
+     userId: import("zod").ZodString;
+     name: import("zod").ZodOptional<import("zod").ZodString>;
+     tokenHash: import("zod").ZodString;
+     tokenPrefix: import("zod").ZodString;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+     lastUsedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     revokedAt: import("zod").ZodOptional<import("zod").ZodString>;
+     rotatedFromTokenId: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     userId: string;
+     createdAt: string;
+     updatedAt: string;
+     projectId: string;
+     tokenHash: string;
+     tokenPrefix: string;
+     name?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     lastUsedAt?: string | undefined;
+     revokedAt?: string | undefined;
+     rotatedFromTokenId?: string | undefined;
+    }, {
+     id: string;
+     userId: string;
+     createdAt: string;
+     updatedAt: string;
+     projectId: string;
+     tokenHash: string;
+     tokenPrefix: string;
+     name?: string | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     lastUsedAt?: string | undefined;
+     revokedAt?: string | undefined;
+     rotatedFromTokenId?: string | undefined;
+    }>;
+     readonly title: "CLI API Tokens";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly cliSchemaSnapshot: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     projectId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     revisionId: import("zod").ZodString;
+     schemaDocs: import("zod").ZodArray<import("zod").ZodObject<{
+     schemaId: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     fields: import("zod").ZodArray<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, "many">;
+     refinements: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     code: import("zod").ZodOptional<import("zod").ZodLiteral<"custom">>;
+     path: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     message: import("zod").ZodString;
+     when: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+    }, "strip", import("zod").ZodTypeAny, {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }, {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }>, "many">>;
+     tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    } & {
+     workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<Omit<{
+     pluginContractVersion: import("zod").ZodOptional<import("zod").ZodLiteral<"3">>;
+     workflowId: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     table: import("zod").ZodString;
+     hook: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     trigger: import("zod").ZodOptional<import("zod").ZodObject<{
+     table: import("zod").ZodString;
+     event: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     filters: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     fieldChange: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }, {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }>>;
+     nodes: import("zod").ZodArray<import("zod").ZodObject<{
+     nodeId: import("zod").ZodString;
+     type: import("zod").ZodOptional<import("zod").ZodLiteral<"action">>;
+     kind: import("zod").ZodOptional<import("zod").ZodEnum<["action", "branch", "delay", "humanGate"]>>;
+     actionId: import("zod").ZodOptional<import("zod").ZodString>;
+     input: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, import("zod").ZodObject<{
+     expression: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+    }, "strip", import("zod").ZodTypeAny, {
+     expression?: unknown;
+    }, {
+     expression?: unknown;
+    }>]>>;
+     runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
+     maxAttempts: import("zod").ZodNumber;
+     backoffMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    }, {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    }>>;
+     timeoutMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+     idempotencyKeyExpr: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     delayMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }, {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }>, "many">;
+     edges: import("zod").ZodArray<import("zod").ZodObject<{
+     from: import("zod").ZodString;
+     to: import("zod").ZodString;
+     condition: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     conditionToken: import("zod").ZodOptional<import("zod").ZodString>;
+     on: import("zod").ZodOptional<import("zod").ZodEnum<["success", "failure", "always"]>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }, {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }>, "many">;
+    }, "table" | "trigger"> & {
+     trigger: import("zod").ZodOptional<import("zod").ZodObject<{
+     event: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     filters: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     fieldChange: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }, {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }, {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }>, "many">>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }, {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }>, "many">;
+     updatedAt: import("zod").ZodString;
+     updatedByUserId: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     pluginId: string;
+     schemaDocs: {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }[];
+     updatedAt: string;
+     projectId: string;
+     revisionId: string;
+     updatedByUserId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     id: string;
+     pluginId: string;
+     schemaDocs: {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }[];
+     updatedAt: string;
+     projectId: string;
+     revisionId: string;
+     updatedByUserId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }>;
+     readonly title: "CLI Schema Snapshots";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
     } & {
      readonly product: {
      readonly schema: import("zod").ZodObject<{

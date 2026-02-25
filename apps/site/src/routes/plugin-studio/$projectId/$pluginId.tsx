@@ -5004,7 +5004,7 @@ function PluginStudioPresenter({
               </Tooltip>
             </div>
           </CardHeader>
-          <CardContent className="grid gap-4">
+          <CardContent className="grid min-w-0 gap-4">
             {parsed === null ? (
               <div className="p-4 text-sm text-muted-foreground">
                 Fix schema/workflow JSON parse issues to render preview.
@@ -5014,25 +5014,27 @@ function PluginStudioPresenter({
                 Add at least one table schema to render live preview.
               </div>
             ) : (
-              <AutoAdmin
-                tabs={livePreviewTabs}
-                tabOrder={tabOrder}
-                editable
-                onAddTable={handleAddSchema}
-                onAddGroup={handleAddGroup}
-                onReorderGroups={handleReorderGroups}
-                onMoveTabToGroup={handleMoveTabToGroup}
-                onReorderTabs={handleReorderTabs}
-                onRenameGroup={handleRenameGroup}
-                onDeleteGroup={handleDeleteGroup}
-                onRenameTab={handleRenameTab}
-                onRenameTabIcon={handleRenameTabIcon}
-                onOpenWorkflowEditorForTab={handleOpenWorkflowEditorForTab}
-                onDeleteTableForTab={handleDeleteTableFromTab}
-                systemTabs={systemTabs}
-                onSystemTabChange={handleSystemTabChange}
-                groups={availableGroups}
-              />
+              <div className="min-w-0 max-w-full overflow-x-auto">
+                <AutoAdmin
+                  tabs={livePreviewTabs}
+                  tabOrder={tabOrder}
+                  editable
+                  onAddTable={handleAddSchema}
+                  onAddGroup={handleAddGroup}
+                  onReorderGroups={handleReorderGroups}
+                  onMoveTabToGroup={handleMoveTabToGroup}
+                  onReorderTabs={handleReorderTabs}
+                  onRenameGroup={handleRenameGroup}
+                  onDeleteGroup={handleDeleteGroup}
+                  onRenameTab={handleRenameTab}
+                  onRenameTabIcon={handleRenameTabIcon}
+                  onOpenWorkflowEditorForTab={handleOpenWorkflowEditorForTab}
+                  onDeleteTableForTab={handleDeleteTableFromTab}
+                  systemTabs={systemTabs}
+                  onSystemTabChange={handleSystemTabChange}
+                  groups={availableGroups}
+                />
+              </div>
             )}
           </CardContent>
         </Card>

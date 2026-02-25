@@ -19,6 +19,11 @@ import {
 } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
   TemplateShortcutHint,
   TemplateShortcutSettingsEntry,
 } from '@/components/ui/ui-builder/internal/templates/shortcuts/template-shortcut-hints';
@@ -288,16 +293,22 @@ export function TemplateMarketplaceSheet({
   return (
     <KeyboardShortcutsBoundary>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetTrigger asChild>
-          <TemplateShortcutHint
-            label="Open templates"
-            actionId={TEMPLATE_SHORTCUTS.openSheet.id}
-          >
-            <Button variant="outline" size="sm" aria-label="Open Templates">
-              Templates
-            </Button>
-          </TemplateShortcutHint>
-        </SheetTrigger>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="sm" aria-label="Open Templates">
+                Templates
+              </Button>
+            </SheetTrigger>
+          </TooltipTrigger>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Open templates</span>
+            <ShortcutKbd
+              actionId={TEMPLATE_SHORTCUTS.openSheet.id}
+              interactive={false}
+            />
+          </TooltipContent>
+        </Tooltip>
       <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle>UI Templates</SheetTitle>

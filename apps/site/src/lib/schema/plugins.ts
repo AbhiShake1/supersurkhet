@@ -384,7 +384,9 @@ const uiTemplatePluginBundleSchema = z
 
 export const uiTemplateReleaseSchema = z
   .object({
-    id: z.string().describe('Deterministic template release id: templateId@version'),
+    id: z
+      .string()
+      .describe('Deterministic template release id: templateId@version'),
     templateId: z.string().describe('Stable template identifier'),
     version: z.string().describe('Immutable template release version'),
     visibility: z.literal('public').default('public'),
@@ -528,7 +530,9 @@ export const pluginDraftRevisionSchema = z
   .object({
     id: z
       .string()
-      .describe('Deterministic draft revision row id derived from draftId+revisionId'),
+      .describe(
+        'Deterministic draft revision row id derived from draftId+revisionId',
+      ),
     revisionId: z.string(),
     draftId: z.string(),
     pluginId: z.string(),
@@ -640,7 +644,9 @@ export const pluginUserReviewReplySchema = z
 
 export const pluginUserReviewVoteSchema = z
   .object({
-    id: z.string().describe('Deterministic vote id: targetType::targetId::userId'),
+    id: z
+      .string()
+      .describe('Deterministic vote id: targetType::targetId::userId'),
     reviewId: z.string().describe('Top-level review id this vote belongs to'),
     pluginId: z.string(),
     businessId: z.string().optional(),
@@ -744,7 +750,13 @@ export const pluginWorkflowJobAttemptSchema = z
     id: z.string(),
     jobId: z.string(),
     attempt: z.number().int().min(1),
-    status: z.enum(['running', 'completed', 'failed', 'timed_out', 'cancelled']),
+    status: z.enum([
+      'running',
+      'completed',
+      'failed',
+      'timed_out',
+      'cancelled',
+    ]),
     leasedAt: z.string().datetime({ offset: true }),
     finishedAt: z.string().datetime({ offset: true }).optional(),
     errorCode: z.string().optional(),
@@ -775,6 +787,40 @@ export const pluginWorkflowDeadLetterSchema = z
     reasonMessage: z.string(),
     payload: jsonValueSchema,
     failedAt: z.string().datetime({ offset: true }),
+  })
+  .extend(table);
+
+export const cliApiTokenSchema = z
+  .object({
+    id: z
+      .string()
+      .describe('Deterministic token row id: cli-token::<sha256(token)>'),
+    projectId: z.string(),
+    userId: z.string(),
+    name: z.string().optional(),
+    tokenHash: z.string(),
+    tokenPrefix: z.string(),
+    createdAt: z.string().datetime({ offset: true }),
+    updatedAt: z.string().datetime({ offset: true }),
+    lastUsedAt: z.string().datetime({ offset: true }).optional(),
+    revokedAt: z.string().datetime({ offset: true }).optional(),
+    rotatedFromTokenId: z.string().optional(),
+  })
+  .extend(table);
+
+export const cliSchemaSnapshotSchema = z
+  .object({
+    id: z
+      .string()
+      .describe(
+        'Deterministic schema snapshot row id: cli-snapshot::<projectId>::<pluginId>',
+      ),
+    projectId: z.string(),
+    pluginId: z.string(),
+    revisionId: z.string(),
+    schemaDocs: z.array(pluginSchemaDocSchema),
+    updatedAt: z.string().datetime({ offset: true }),
+    updatedByUserId: z.string(),
   })
   .extend(table);
 
