@@ -1,5 +1,21 @@
 import type { AssistantAuthMode } from '@/lib/ai/business-onboarding-models';
 
+export type BusinessOnboardingRecoveryPromptAction =
+  | 'accept_rollback'
+  | 'dismiss';
+
+export const DEFAULT_BUSINESS_ONBOARDING_RECOVERY_PROMPT_ACTION: BusinessOnboardingRecoveryPromptAction =
+  'accept_rollback';
+
+export const BUSINESS_ONBOARDING_RECOVERY_ACCEPT_SHORTCUT = {
+  id: 'recovery.rollback.accept',
+  key: 'Enter',
+  ctrl: false,
+  meta: false,
+  alt: false,
+  shift: false,
+} as const;
+
 export type BusinessOnboardingStage =
   | 'select_provider'
   | 'select_model'
@@ -230,4 +246,19 @@ export function canTransitionToBusinessIntent(
   state: Pick<BusinessOnboardingSessionState, 'authStatus'>,
 ): boolean {
   return state.authStatus === 'connected' || state.authStatus === 'skipped';
+}
+
+export function resolveBusinessOnboardingRecoveryPromptAction(input: {
+  action?: BusinessOnboardingRecoveryPromptAction;
+  key?: string | null;
+}): BusinessOnboardingRecoveryPromptAction {
+  if (input.action) {
+    return input.action;
+  }
+
+  if (input.key && input.key !== BUSINESS_ONBOARDING_RECOVERY_ACCEPT_SHORTCUT.key) {
+    return 'dismiss';
+  }
+
+  return DEFAULT_BUSINESS_ONBOARDING_RECOVERY_PROMPT_ACTION;
 }

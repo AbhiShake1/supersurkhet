@@ -18,6 +18,7 @@ import {
 import { Suggestion, Suggestions } from '@/components/ai-elements/suggestion';
 import { Badge } from '@/components/ui/badge';
 import type { AssistantAuthMode } from '@/lib/ai/business-onboarding-models';
+import type { AssistantInsightExplanation } from '@/lib/business-insights/explain';
 import { cn } from '@/lib/utils';
 import type { BusinessOnboardingStage } from './business-onboarding-chat-state';
 import {
@@ -32,6 +33,7 @@ interface ChatMessage {
   role: 'assistant' | 'user';
   content: string;
   id: string;
+  insightExplanations?: readonly AssistantInsightExplanation[];
 }
 
 interface BusinessOnboardingChatProps {
@@ -69,6 +71,7 @@ interface BusinessOnboardingChatProps {
   isSavingManualCredential: boolean;
   isRefreshingCredential: boolean;
   quickOptions: readonly string[];
+  insightExplanations?: readonly AssistantInsightExplanation[];
   onPickQuickOption: (value: string) => void;
   onSubmitBusinessIntent: (value: string) => void;
 }
@@ -117,6 +120,7 @@ export function BusinessOnboardingChat({
   isSavingManualCredential,
   isRefreshingCredential,
   quickOptions,
+  insightExplanations = [],
   onPickQuickOption,
   onSubmitBusinessIntent,
 }: BusinessOnboardingChatProps) {
@@ -149,9 +153,95 @@ export function BusinessOnboardingChat({
                 <Message key={message.id} from={message.role}>
                   <MessageContent>
                     <MessageResponse>{message.content}</MessageResponse>
+                    {message.role === 'assistant' &&
+                      message.insightExplanations &&
+                      message.insightExplanations.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {message.insightExplanations.map((insight) => (
+                            <div
+                              key={insight.id}
+                              className="rounded-lg border border-border/70 bg-background p-2 text-xs"
+                            >
+                              <p className="font-medium text-foreground">
+                                {insight.title}
+                              </p>
+                              <p className="mt-1 text-muted-foreground">
+                                {insight.suggestion}
+                              </p>
+                              <p className="mt-1 text-muted-foreground">
+                                {insight.explanation}
+                              </p>
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[10px]"
+                                >
+                                  Confidence{' '}
+                                  {Math.round(insight.confidence.score * 100)}%
+                                </Badge>
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[10px]"
+                                >
+                                  Impact{' '}
+                                  {Math.round(insight.impact.score * 100)}%
+                                </Badge>
+                                {insight.sanitized && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px]"
+                                  >
+                                    Sensitive fields sanitized
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="mt-2">
+                                <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                                  Sources
+                                </p>
+                                <ul className="mt-1 space-y-1 text-[11px] text-muted-foreground">
+                                  {insight.sources.map((source) => (
+                                    <li
+                                      key={`${insight.id}:${source.type}:${source.id}`}
+                                    >
+                                      {source.type}: {source.label} ({source.id}
+                                      )
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                   </MessageContent>
                 </Message>
               ))}
+
+              {stage === 'business_intent' &&
+                insightExplanations.length > 0 &&
+                thread.every(
+                  (message) => !message.insightExplanations?.length,
+                ) && (
+                  <div className="rounded-lg border border-border/70 bg-background p-2 text-xs">
+                    <p className="font-medium text-foreground">
+                      Insight explanations
+                    </p>
+                    <ul className="mt-2 space-y-2 text-muted-foreground">
+                      {insightExplanations.map((insight) => (
+                        <li key={insight.id}>
+                          <p className="text-foreground">{insight.title}</p>
+                          <p>{insight.suggestion}</p>
+                          <p className="text-[11px]">
+                            Confidence{' '}
+                            {Math.round(insight.confidence.score * 100)}% ·
+                            Impact {Math.round(insight.impact.score * 100)}%
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
               {stage === 'business_intent' && quickOptions.length > 0 && (
                 <div className="pt-1">

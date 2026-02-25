@@ -1,3 +1,9 @@
+import {
+  type AssistantInsightExplanation,
+  buildAssistantInsightExplanations,
+  type InsightDraft,
+} from './business-insights/explain';
+
 export interface TodoItem {
   id: string;
   title: string;
@@ -22,12 +28,14 @@ export interface AssistantTurnResponse {
   suggestedReleaseIds: string[];
   scaffoldProposal: AssistantScaffoldProposal | null;
   todoItems: TodoItem[];
+  insightExplanations: AssistantInsightExplanation[];
 }
 
 export interface BuildAssistantFallbackParams {
   selectedReleaseIds: string[];
   availableReleaseIds: string[];
   prompt: string;
+  insights?: readonly InsightDraft[];
 }
 
 export function mergeSelectedReleaseIds(
@@ -51,6 +59,7 @@ export function buildAssistantFallbackResponse({
   selectedReleaseIds,
   availableReleaseIds,
   prompt,
+  insights,
 }: BuildAssistantFallbackParams): AssistantTurnResponse {
   const normalizedPrompt = prompt.toLowerCase();
   const hasBusinessSignal =
@@ -98,6 +107,48 @@ export function buildAssistantFallbackResponse({
     selectedByIntent.length > 0
       ? selectedByIntent
       : availableReleaseIds.slice(0, Math.min(2, availableReleaseIds.length));
+  const confidenceScore = hasOperationSignal
+    ? 0.78
+    : hasBusinessSignal
+      ? 0.58
+      : 0.34;
+  const impactScore = suggestedReleaseIds.length > 0 ? 0.74 : 0.42;
+  const fallbackInsights: InsightDraft[] = hasBusinessSignal
+    ? [
+        {
+          id: 'launch-setup-priority',
+          title: 'Launch workflow focus',
+          suggestion:
+            suggestedReleaseIds.length > 0
+              ? 'Start with the suggested plugin setup and validate your top customer journey first.'
+              : 'Define your top customer journey and map the first operational workflow before selecting tools.',
+          reasoning:
+            'This recommendation uses your onboarding intent, setup progress, and optional plugin matching signals.',
+          confidenceScore,
+          impactScore,
+          sources: [
+            {
+              type: 'metric',
+              id: 'onboarding.intent.signal',
+              label: 'Intent signal strength',
+            },
+            {
+              type: 'table',
+              id: 'plugin_marketplace_releases',
+              label: 'Plugin marketplace releases',
+            },
+            {
+              type: 'schema-field',
+              id: 'business.intent.prompt',
+              label: 'Business intent prompt',
+            },
+          ],
+        },
+      ]
+    : [];
+  const insightExplanations = buildAssistantInsightExplanations(
+    insights && insights.length > 0 ? insights : fallbackInsights,
+  );
 
   const todoItems: TodoItem[] = [
     {
@@ -129,7 +180,7 @@ export function buildAssistantFallbackResponse({
       'Great start. What does your team do every day, and what should customers be able to do first?';
   } else if (hasOperationSignal && suggestedReleaseIds.length > 0) {
     assistantMessage =
-      'Great, I drafted an optional setup plan based on that workflow. We can refine it before you create the business.';
+      'Great, I drafted an optional setup plan with plugin suggestions based on that workflow. We can refine it before you create the business.';
   } else if (hasOperationSignal) {
     assistantMessage =
       'Understood. I can keep refining your launch setup in chat, even if no exact plugin match is available yet.';
@@ -145,16 +196,18 @@ export function buildAssistantFallbackResponse({
         'List my top pain points',
         'Focus on customer experience',
       ],
-      otherOptionLabel: 'Type custom follow-up',
+      otherOptionLabel: 'Something else (type custom follow-up)',
     },
     suggestedReleaseIds,
     scaffoldProposal:
       suggestedReleaseIds.length === 0
         ? {
             title: 'Custom workflow scaffold',
-            reason: 'No exact marketplace plugin matched this onboarding input.',
+            reason:
+              'No exact marketplace plugin matched this onboarding input.',
           }
         : null,
     todoItems,
+    insightExplanations,
   };
 }

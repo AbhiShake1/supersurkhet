@@ -1,11 +1,12 @@
+import NepaliDate from 'nepali-datetime';
 import { useMemo } from 'react';
 import { api } from '@/lib/api';
-import NepaliDate from 'nepali-datetime';
-import type { Sale, StockImport } from '@/lib/schemas/sales';
 import {
-  lineTotal,
-  toFiniteNumber,
-} from './business-analytics-number-utils';
+  type BusinessInsightEngineInput,
+  integrateBusinessInsights,
+} from '@/lib/business-insights';
+import type { Sale, StockImport } from '@/lib/schemas/sales';
+import { lineTotal, toFiniteNumber } from './business-analytics-number-utils';
 
 const saleTotal = (sale: Sale) =>
   sale.items?.reduce((sum, i) => sum + lineTotal(i.quantity, i.unitPrice), 0) ??
@@ -158,7 +159,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       .slice(0, 5)
       .map(([partyId, total]) => {
         const party = partiesBySoul.get(partyId);
-        return { name: party?.name || "Deleted Party", total };
+        return { name: party?.name || 'Deleted Party', total };
       });
   }, [filteredStockImports, partiesBySoul.get]);
 
@@ -180,7 +181,7 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       .slice(0, 5)
       .map(([productId, revenue]) => {
         const product = productsBySoul.get(productId);
-        return { name: product?.title || "Deleted Product", revenue };
+        return { name: product?.title || 'Deleted Product', revenue };
       });
   }, [filteredSales, productsBySoul]);
 
@@ -377,6 +378,36 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
       })
       .filter((c) => c.totalAmount > 0);
   }, [filteredStockImports, partiesBySoul, productsBySoul]);
+
+  const insightEngineInput = useMemo(
+    () =>
+      buildBusinessInsightEngineInput({
+        salesTrends,
+        currentInventory,
+        totalRevenue,
+        totalCosts,
+        netProfit,
+        accountsReceivable,
+      }),
+    [
+      salesTrends,
+      currentInventory,
+      totalRevenue,
+      totalCosts,
+      netProfit,
+      accountsReceivable,
+    ],
+  );
+
+  const insightsDelivery = useMemo(
+    () =>
+      integrateBusinessInsights({
+        engineInput: insightEngineInput,
+        confidenceThreshold: 0.7,
+      }),
+    [insightEngineInput],
+  );
+
   return {
     totalRevenue,
     totalCosts,
@@ -395,7 +426,110 @@ export function useBusinessAnalytics(slug: string, period: string = 'all') {
     lowStockItems,
     outOfStockItems,
     customerPurchaseHistory,
+    insights: insightsDelivery.items,
+    insightFallbackMessage: insightsDelivery.fallbackMessage,
+    insightTelemetryCounters: insightsDelivery.counters,
+    insightRuntimeTelemetry: insightsDelivery.runtimeTelemetry,
   } as const;
+}
+
+function buildBusinessInsightEngineInput(input: {
+  salesTrends: Array<{ date: string; revenue: number }>;
+  // biome-ignore lint/suspicious/noExplicitAny: existing inventory typing
+  currentInventory: Array<{ product: any; currentStock: number }>;
+  totalRevenue: number;
+  totalCosts: number;
+  netProfit: number;
+  accountsReceivable: number;
+}): BusinessInsightEngineInput {
+  const inventoryIndicators = input.currentInventory
+    .filter((item) => item.product?._?.soul)
+    .map((item) => {
+      const reorderLevel = toFiniteNumber(item.product.reorderLevel || 5);
+      const currentStock = toFiniteNumber(item.currentStock);
+      const avgDailyUnitsSold =
+        currentStock <= reorderLevel
+          ? 1
+          : Math.max(0.1, reorderLevel > 0 ? reorderLevel / 30 : 0.1);
+
+      return {
+        schemaId: 'product',
+        skuId: item.product._.soul,
+        productName: item.product.title,
+        table: 'products',
+        currentStock,
+        reorderLevel,
+        avgDailyUnitsSold,
+        unitCost: toFiniteNumber(item.product.costPrice),
+        unitPrice: toFiniteNumber(
+          item.product.sellingPrice ?? item.product.price ?? item.product.mrp,
+        ),
+      };
+    });
+
+  const metricSeries = [
+    {
+      schemaId: 'sales',
+      metricKey: 'dailyRevenue',
+      table: 'sale',
+      points: input.salesTrends.map((point) => ({
+        timestamp: new Date(point.date).toISOString(),
+        value: toFiniteNumber(point.revenue),
+      })),
+    },
+    {
+      schemaId: 'finance',
+      metricKey: 'netProfit',
+      table: 'summary',
+      points: [
+        {
+          timestamp: new Date().toISOString(),
+          value: toFiniteNumber(input.netProfit),
+        },
+      ],
+    },
+    {
+      schemaId: 'finance',
+      metricKey: 'accountsReceivable',
+      table: 'summary',
+      points: [
+        {
+          timestamp: new Date().toISOString(),
+          value: toFiniteNumber(input.accountsReceivable),
+        },
+      ],
+    },
+    {
+      schemaId: 'finance',
+      metricKey: 'totalRevenue',
+      table: 'summary',
+      points: [
+        {
+          timestamp: new Date().toISOString(),
+          value: toFiniteNumber(input.totalRevenue),
+        },
+      ],
+    },
+    {
+      schemaId: 'finance',
+      metricKey: 'totalCosts',
+      table: 'summary',
+      points: [
+        {
+          timestamp: new Date().toISOString(),
+          value: toFiniteNumber(input.totalCosts),
+        },
+      ],
+    },
+  ];
+
+  return {
+    generatedAt: new Date().toISOString(),
+    metricSeries,
+    funnels: [],
+    inventoryIndicators,
+    workflowIndicators: [],
+  };
 }
 
 function filterByPeriod<
