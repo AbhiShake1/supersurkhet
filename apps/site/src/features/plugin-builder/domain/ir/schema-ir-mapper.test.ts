@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { SchemaDoc } from 'supersurkhet-sdk';
+import type { SchemaDoc } from '@supersurkhet/sdk';
 import {
   mapSchemaDocsToWorkspace,
   mapWorkspaceSchemasToSchemaDocs,

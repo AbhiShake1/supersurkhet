@@ -40,7 +40,7 @@ import type {
 } from '@/lib/plugins/types';
 import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
 import { mergeUiTemplateLayers } from '@/lib/ui-builder/template-merge';
-import { flattenSchemaWorkflows } from 'supersurkhet-sdk';
+import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
 import { runPluginsV2CompileVerifyPipeline } from './plugins-v2-compile-verify';
 
 const jsonPrimitiveSchema = z.union([

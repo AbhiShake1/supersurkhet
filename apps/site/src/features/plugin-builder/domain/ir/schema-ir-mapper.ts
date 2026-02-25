@@ -12,7 +12,7 @@ import {
   type SchemaDoc,
   type SchemaFieldDoc,
   type SchemaFieldType,
-} from 'supersurkhet-sdk';
+} from '@supersurkhet/sdk';
 
 const SUPPORTED_SCHEMA_FIELD_TYPES = new Set<SchemaFieldType>([
   ...BUILTIN_SCHEMA_FIELD_TYPES,

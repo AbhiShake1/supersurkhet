@@ -23,7 +23,7 @@ import type {
   WorkflowDoc,
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
-} from 'supersurkhet-sdk';
+} from '@supersurkhet/sdk';
 import { Link } from '@tanstack/react-router';
 import {
   Check,

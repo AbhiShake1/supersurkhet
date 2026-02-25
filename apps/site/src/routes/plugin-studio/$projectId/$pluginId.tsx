@@ -92,7 +92,7 @@ import type {
   SchemaWorkflowDoc,
   WorkflowDoc,
 } from '@/lib/plugins/types';
-import { flattenSchemaWorkflows } from 'supersurkhet-sdk';
+import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
 import { useMutation } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import deepEqual from 'fast-deep-equal';

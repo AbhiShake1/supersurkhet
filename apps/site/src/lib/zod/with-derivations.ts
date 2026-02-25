@@ -2,4 +2,4 @@ export {
   getSchemaDerivations,
   runDeriveWithRuntimeFormValues,
   z,
-} from 'supersurkhet-sdk/zod';
+} from '@supersurkhet/sdk/zod';

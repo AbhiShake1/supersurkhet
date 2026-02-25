@@ -12,7 +12,7 @@ import type {
   WorkflowDbAdapter,
   WorkflowNodeDoc,
 } from '@/lib/plugins/types';
-import { CORE_DB_ACTION_IDS, flattenSchemaWorkflows } from 'supersurkhet-sdk';
+import { CORE_DB_ACTION_IDS, flattenSchemaWorkflows } from '@supersurkhet/sdk';
 
 export class HashVerificationError extends Error {
   constructor(install: BusinessPluginInstallDoc, release: PluginReleaseDoc) {

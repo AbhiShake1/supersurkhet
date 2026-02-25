@@ -1,7 +1,7 @@
-import { createActionRegistry } from 'supersurkhet-sdk';
+import { createActionRegistry } from '@supersurkhet/sdk';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-describe('supersurkhet-sdk ActionRegistry', () => {
+describe('@supersurkhet/sdk ActionRegistry', () => {
   it('infers action id from input object without explicit id generic', async () => {
     const registry = createActionRegistry().defineAction({
       id: 'math.multiply',

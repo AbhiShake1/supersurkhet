@@ -942,6 +942,1086 @@ declare global {
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
+     readonly uiTemplateRelease: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     templateId: import("zod").ZodString;
+     version: import("zod").ZodString;
+     visibility: import("zod").ZodDefault<import("zod").ZodLiteral<"public">>;
+     publisher: import("zod").ZodObject<{
+     businessId: import("zod").ZodString;
+     userId: import("zod").ZodString;
+     label: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strict", import("zod").ZodTypeAny, {
+     userId: string;
+     businessId: string;
+     label?: string | undefined;
+    }, {
+     userId: string;
+     businessId: string;
+     label?: string | undefined;
+    }>;
+     docs: import("zod").ZodObject<{
+     title: import("zod").ZodString;
+     description: import("zod").ZodString;
+     category: import("zod").ZodOptional<import("zod").ZodString>;
+     tags: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+    }, "strict", import("zod").ZodTypeAny, {
+     description: string;
+     title: string;
+     tags?: string[] | undefined;
+     category?: string | undefined;
+    }, {
+     description: string;
+     title: string;
+     tags?: string[] | undefined;
+     category?: string | undefined;
+    }>;
+     uiSnapshot: import("zod").ZodObject<{
+     layers: import("zod").ZodEffects<import("zod").ZodString, string, string>;
+    }, "strict", import("zod").ZodTypeAny, {
+     layers: string;
+    }, {
+     layers: string;
+    }>;
+     pluginBundles: import("zod").ZodArray<import("zod").ZodObject<{
+     pluginId: import("zod").ZodString;
+     version: import("zod").ZodString;
+     requestedCapabilities: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     release: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     version: import("zod").ZodString;
+     manifestHash: import("zod").ZodString;
+     artifactHash: import("zod").ZodString;
+     author: import("zod").ZodObject<{
+     userId: import("zod").ZodString;
+     name: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     userId: string;
+     name?: string | undefined;
+    }, {
+     userId: string;
+     name?: string | undefined;
+    }>;
+     visibility: import("zod").ZodDefault<import("zod").ZodLiteral<"public">>;
+     docs: import("zod").ZodOptional<import("zod").ZodObject<{
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     description?: string | undefined;
+     title?: string | undefined;
+    }, {
+     description?: string | undefined;
+     title?: string | undefined;
+    }>>;
+     actionManifest: import("zod").ZodArray<import("zod").ZodObject<{
+     actionId: import("zod").ZodString;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     capabilities: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     runtime: import("zod").ZodOptional<import("zod").ZodEnum<["sandbox-worker", "core"]>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }, {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }>, "many">;
+     schemaDocs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     schemaId: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     description: import("zod").ZodOptional<import("zod").ZodString>;
+     fields: import("zod").ZodArray<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, "many">;
+     refinements: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     code: import("zod").ZodOptional<import("zod").ZodLiteral<"custom">>;
+     path: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodString, "many">>;
+     message: import("zod").ZodString;
+     when: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+    }, "strip", import("zod").ZodTypeAny, {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }, {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }>, "many">>;
+     tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    } & {
+     workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<Omit<{
+     pluginContractVersion: import("zod").ZodOptional<import("zod").ZodLiteral<"3">>;
+     workflowId: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     table: import("zod").ZodString;
+     hook: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     trigger: import("zod").ZodOptional<import("zod").ZodObject<{
+     table: import("zod").ZodString;
+     event: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     filters: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     fieldChange: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }, {
+     table: string;
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }>>;
+     nodes: import("zod").ZodArray<import("zod").ZodObject<{
+     nodeId: import("zod").ZodString;
+     type: import("zod").ZodOptional<import("zod").ZodLiteral<"action">>;
+     kind: import("zod").ZodOptional<import("zod").ZodEnum<["action", "branch", "delay", "humanGate"]>>;
+     actionId: import("zod").ZodOptional<import("zod").ZodString>;
+     input: import("zod").ZodOptional<import("zod").ZodUnion<[import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>, import("zod").ZodObject<{
+     expression: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
+    }, "strip", import("zod").ZodTypeAny, {
+     expression?: unknown;
+    }, {
+     expression?: unknown;
+    }>]>>;
+     runIf: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     retryPolicy: import("zod").ZodOptional<import("zod").ZodObject<{
+     maxAttempts: import("zod").ZodNumber;
+     backoffMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    }, {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    }>>;
+     timeoutMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+     idempotencyKeyExpr: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     delayMs: import("zod").ZodOptional<import("zod").ZodNumber>;
+    }, "strip", import("zod").ZodTypeAny, {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }, {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }>, "many">;
+     edges: import("zod").ZodArray<import("zod").ZodObject<{
+     from: import("zod").ZodString;
+     to: import("zod").ZodString;
+     condition: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     conditionToken: import("zod").ZodOptional<import("zod").ZodString>;
+     on: import("zod").ZodOptional<import("zod").ZodEnum<["success", "failure", "always"]>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }, {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }>, "many">;
+    }, "table" | "trigger"> & {
+     trigger: import("zod").ZodOptional<import("zod").ZodObject<{
+     event: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     filters: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     fieldChange: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }, {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }, {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }>, "many">>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }, {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }>, "many">>;
+     adminTabs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+     schema: import("zod").ZodString;
+     title: import("zod").ZodOptional<import("zod").ZodString>;
+     group: import("zod").ZodOptional<import("zod").ZodString>;
+     icon: import("zod").ZodOptional<import("zod").ZodString>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }, {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }>, "many">>;
+     publishedAt: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     version: string;
+     visibility: "public";
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     author: {
+     userId: string;
+     name?: string | undefined;
+    };
+     actionManifest: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     docs?: {
+     description?: string | undefined;
+     title?: string | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+     publishedAt?: string | undefined;
+    }, {
+     id: string;
+     version: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     author: {
+     userId: string;
+     name?: string | undefined;
+    };
+     actionManifest: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     visibility?: "public" | undefined;
+     docs?: {
+     description?: string | undefined;
+     title?: string | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+     publishedAt?: string | undefined;
+    }>;
+    }, "strict", import("zod").ZodTypeAny, {
+     version: string;
+     pluginId: string;
+     release: {
+     id: string;
+     version: string;
+     visibility: "public";
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     author: {
+     userId: string;
+     name?: string | undefined;
+    };
+     actionManifest: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     docs?: {
+     description?: string | undefined;
+     title?: string | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+     publishedAt?: string | undefined;
+    };
+     requestedCapabilities?: string[] | undefined;
+    }, {
+     version: string;
+     pluginId: string;
+     release: {
+     id: string;
+     version: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     author: {
+     userId: string;
+     name?: string | undefined;
+    };
+     actionManifest: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     visibility?: "public" | undefined;
+     docs?: {
+     description?: string | undefined;
+     title?: string | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+     publishedAt?: string | undefined;
+    };
+     requestedCapabilities?: string[] | undefined;
+    }>, "many">;
+     publishedAt: import("zod").ZodString;
+     created_at: import("zod").ZodOptional<import("zod").ZodString>;
+     updated_at: import("zod").ZodOptional<import("zod").ZodString>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     version: string;
+     visibility: "public";
+     docs: {
+     description: string;
+     title: string;
+     tags?: string[] | undefined;
+     category?: string | undefined;
+    };
+     publishedAt: string;
+     templateId: string;
+     publisher: {
+     userId: string;
+     businessId: string;
+     label?: string | undefined;
+    };
+     uiSnapshot: {
+     layers: string;
+    };
+     pluginBundles: {
+     version: string;
+     pluginId: string;
+     release: {
+     id: string;
+     version: string;
+     visibility: "public";
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     author: {
+     userId: string;
+     name?: string | undefined;
+    };
+     actionManifest: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     docs?: {
+     description?: string | undefined;
+     title?: string | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+     publishedAt?: string | undefined;
+    };
+     requestedCapabilities?: string[] | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     created_at?: string | undefined;
+     updated_at?: string | undefined;
+    }, {
+     id: string;
+     version: string;
+     docs: {
+     description: string;
+     title: string;
+     tags?: string[] | undefined;
+     category?: string | undefined;
+    };
+     publishedAt: string;
+     templateId: string;
+     publisher: {
+     userId: string;
+     businessId: string;
+     label?: string | undefined;
+    };
+     uiSnapshot: {
+     layers: string;
+    };
+     pluginBundles: {
+     version: string;
+     pluginId: string;
+     release: {
+     id: string;
+     version: string;
+     pluginId: string;
+     manifestHash: string;
+     artifactHash: string;
+     author: {
+     userId: string;
+     name?: string | undefined;
+    };
+     actionManifest: {
+     actionId: string;
+     description?: string | undefined;
+     capabilities?: string[] | undefined;
+     runtime?: "sandbox-worker" | "core" | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     visibility?: "public" | undefined;
+     docs?: {
+     description?: string | undefined;
+     title?: string | undefined;
+    } | undefined;
+     schemaDocs?: {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }[] | undefined;
+     adminTabs?: {
+     schema: string;
+     icon?: string | undefined;
+     title?: string | undefined;
+     group?: string | undefined;
+    }[] | undefined;
+     publishedAt?: string | undefined;
+    };
+     requestedCapabilities?: string[] | undefined;
+    }[];
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     visibility?: "public" | undefined;
+     created_at?: string | undefined;
+     updated_at?: string | undefined;
+    }>;
+     readonly title: "UI Template Releases";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly businessUiTemplateInstall: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     businessId: import("zod").ZodString;
+     templateId: import("zod").ZodString;
+     version: import("zod").ZodString;
+     installedByUserId: import("zod").ZodString;
+     installedAt: import("zod").ZodString;
+     mergeStrategy: import("zod").ZodDefault<import("zod").ZodLiteral<"best-effort">>;
+     status: import("zod").ZodDefault<import("zod").ZodEnum<["active"]>>;
+     summary: import("zod").ZodObject<{
+     pagesAdded: import("zod").ZodNumber;
+     pagesMerged: import("zod").ZodNumber;
+     conflictsCount: import("zod").ZodNumber;
+     pluginsInstalled: import("zod").ZodNumber;
+     pluginsUpdated: import("zod").ZodNumber;
+    }, "strict", import("zod").ZodTypeAny, {
+     pagesAdded: number;
+     pagesMerged: number;
+     conflictsCount: number;
+     pluginsInstalled: number;
+     pluginsUpdated: number;
+    }, {
+     pagesAdded: number;
+     pagesMerged: number;
+     conflictsCount: number;
+     pluginsInstalled: number;
+     pluginsUpdated: number;
+    }>;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     status: "active";
+     id: string;
+     version: string;
+     businessId: string;
+     installedAt: string;
+     installedByUserId: string;
+     templateId: string;
+     mergeStrategy: "best-effort";
+     summary: {
+     pagesAdded: number;
+     pagesMerged: number;
+     conflictsCount: number;
+     pluginsInstalled: number;
+     pluginsUpdated: number;
+    };
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+    }, {
+     id: string;
+     version: string;
+     businessId: string;
+     installedAt: string;
+     installedByUserId: string;
+     templateId: string;
+     summary: {
+     pagesAdded: number;
+     pagesMerged: number;
+     conflictsCount: number;
+     pluginsInstalled: number;
+     pluginsUpdated: number;
+    };
+     status?: "active" | undefined;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     mergeStrategy?: "best-effort" | undefined;
+    }>;
+     readonly title: "Business UI Template Installs";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
      readonly pluginProject: {
      readonly schema: import("zod").ZodObject<{
      id: import("zod").ZodString;

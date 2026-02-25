@@ -3,7 +3,7 @@ import type {
   RefineIssueIR,
   SchemaDoc,
   SchemaFieldDoc,
-} from 'supersurkhet-sdk';
+} from '@supersurkhet/sdk';
 
 export type VisualRefinementRule = {
   id: string;

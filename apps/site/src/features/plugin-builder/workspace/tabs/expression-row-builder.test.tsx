@@ -1,4 +1,4 @@
-import type { ExpressionDoc } from 'supersurkhet-sdk';
+import type { ExpressionDoc } from '@supersurkhet/sdk';
 import { describe, expect, it } from 'vitest';
 import {
   buildExpressionRowAst,

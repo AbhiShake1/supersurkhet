@@ -3,7 +3,7 @@ import {
   type ExpressionDoc,
   type LifecycleHook,
   type WorkflowNodeInputDoc,
-} from 'supersurkhet-sdk';
+} from '@supersurkhet/sdk';
 import { z } from 'zod';
 
 export type SchemaEntityId = `schema_${string}`;

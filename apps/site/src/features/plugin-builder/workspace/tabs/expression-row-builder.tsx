@@ -2,7 +2,7 @@ import type {
   ExpressionDoc,
   ExpressionOpDoc,
   JsonPrimitive,
-} from 'supersurkhet-sdk';
+} from '@supersurkhet/sdk';
 
 export type ExpressionRowOperator =
   | 'eq'

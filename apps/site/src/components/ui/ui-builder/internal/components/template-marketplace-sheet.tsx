@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useId, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -21,12 +21,12 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { TemplatePublishPanel } from '@/components/ui/ui-builder/internal/templates/publish/template-publish-panel';
 import { api } from '@/lib/api';
 import type {
   BusinessUiTemplateInstallDoc,
@@ -48,22 +48,6 @@ type TemplateMarketplaceSheetProps = {
   actorRole: ActorRole;
   layers: ComponentLayer[];
   onInstallApplied: (layers: ComponentLayer[]) => void;
-};
-
-type PublishDraft = {
-  templateSlug: string;
-  title: string;
-  description: string;
-  category: string;
-  tags: string;
-};
-
-const DEFAULT_PUBLISH_DRAFT: PublishDraft = {
-  templateSlug: 'starter',
-  title: '',
-  description: '',
-  category: '',
-  tags: '',
 };
 
 const TEMPLATE_SHEET_SHORTCUTS = {
@@ -160,15 +144,6 @@ const TEMPLATE_SHEET_SHORTCUTS = {
   },
 } as const satisfies Record<string, ShortcutDefinition>;
 
-function slugify(input: string) {
-  return input
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)+/g, '')
-    .slice(0, 64);
-}
-
 function normalizeErrorMessage(error: unknown) {
   if (!error || typeof error !== 'object') {
     return 'Something went wrong';
@@ -215,16 +190,11 @@ export function TemplateMarketplaceSheet({
   const [isInstallLoading, setIsInstallLoading] = useState(false);
   const [isPublishLoading, setIsPublishLoading] = useState(false);
   const [publishedRef, setPublishedRef] = useState('');
-  const [publishDraft, setPublishDraft] =
-    useState<PublishDraft>(DEFAULT_PUBLISH_DRAFT);
-  const [slugTouched, setSlugTouched] = useState(false);
   const marketplaceSearchRef = useRef<HTMLInputElement | null>(null);
 
   const templateVersionId = useId();
   const pluginUpdateConfirmId = useId();
   const preferLatestId = useId();
-  const categoryDatalistId = useId();
-  const draftStorageKey = `ui-template-publish-draft:${businessId}`;
 
   const { data: templateRows = [] } = api.uiTemplateRelease.useGet();
   const templateReleases = templateRows as UiTemplateReleaseDoc[];
@@ -232,45 +202,6 @@ export function TemplateMarketplaceSheet({
     keys: [businessId],
   });
   const installedTemplates = installRows as BusinessUiTemplateInstallDoc[];
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const storage = window.localStorage;
-    if (
-      !storage ||
-      typeof storage.getItem !== 'function' ||
-      typeof storage.setItem !== 'function'
-    ) {
-      return;
-    }
-    const raw = storage.getItem(draftStorageKey);
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw) as Partial<PublishDraft>;
-      setPublishDraft((current) => ({
-        ...current,
-        ...parsed,
-      }));
-      if (parsed.templateSlug?.trim()) {
-        setSlugTouched(true);
-      }
-    } catch (_error) {
-      // no-op
-    }
-  }, [draftStorageKey]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const storage = window.localStorage;
-    if (
-      !storage ||
-      typeof storage.getItem !== 'function' ||
-      typeof storage.setItem !== 'function'
-    ) {
-      return;
-    }
-    storage.setItem(draftStorageKey, JSON.stringify(publishDraft));
-  }, [draftStorageKey, publishDraft]);
 
   const templatesById = useMemo(() => {
     const map = new Map<string, UiTemplateReleaseDoc[]>();
@@ -366,16 +297,6 @@ export function TemplateMarketplaceSheet({
     (release) => release.version === resolvedVersion,
   );
 
-  const pagesInBuilder = layers.length;
-  const layerTagsSuggestion = useMemo(
-    () =>
-      layers
-        .map((layer) => layer.name?.trim())
-        .filter((name): name is string => Boolean(name))
-        .slice(0, 5),
-    [layers],
-  );
-
   const pluginsInSelectedTemplate = selectedRelease?.pluginBundles?.length ?? 0;
 
   useShortcutAction(TEMPLATE_SHEET_SHORTCUTS.openSheet, () => {
@@ -469,32 +390,26 @@ export function TemplateMarketplaceSheet({
     }
   }
 
-  async function handlePublish() {
-    if (
-      !publishDraft.title.trim() ||
-      !publishDraft.description.trim() ||
-      !publishDraft.templateSlug.trim()
-    ) {
-      toast.error('Template slug, title, and description are required');
-      return;
-    }
-    if (layers.length === 0) {
-      toast.error('Add at least one page before publishing a template');
-      return;
-    }
+  async function handlePublish(draft: {
+    templateSlug: string;
+    title: string;
+    description: string;
+    category: string;
+    tags: string;
+  }) {
     setIsPublishLoading(true);
     try {
-      const templateId = `${businessId}/${publishDraft.templateSlug.trim()}`;
+      const templateId = `${businessId}/${draft.templateSlug.trim()}`;
       const response = await publishUiTemplateRelease({
         data: {
           actorUserId,
           businessId,
           templateId,
           docs: {
-            title: publishDraft.title.trim(),
-            description: publishDraft.description.trim(),
-            category: publishDraft.category.trim() || undefined,
-            tags: publishDraft.tags
+            title: draft.title.trim(),
+            description: draft.description.trim(),
+            category: draft.category.trim() || undefined,
+            tags: draft.tags
               .split(',')
               .map((tag) => tag.trim())
               .filter(Boolean),
@@ -540,17 +455,6 @@ export function TemplateMarketplaceSheet({
         !isInstallLoading &&
         preview?.hardConflicts.length === 0 &&
         (!preview?.requiresPluginUpdateConfirmation || confirmPluginUpdates),
-    },
-  );
-
-  useShortcutAction(
-    TEMPLATE_SHEET_SHORTCUTS.publishTemplate,
-    () => {
-      void handlePublish();
-    },
-    {
-      enabled: open && activeTab === 'publish' && !isPublishLoading,
-      allowInEditableContext: true,
     },
   );
 
@@ -921,152 +825,23 @@ export function TemplateMarketplaceSheet({
           </TabsContent>
 
           <TabsContent value="publish" className="space-y-3">
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-md border p-2">
-                <p className="text-muted-foreground">Pages to snapshot</p>
-                <p className="font-semibold">{pagesInBuilder}</p>
-              </div>
-              <div className="rounded-md border p-2">
-                <p className="text-muted-foreground">Suggested tags</p>
-                <p className="font-semibold">{layerTagsSuggestion.length}</p>
-              </div>
-            </div>
-
-            <Input
-              value={publishDraft.templateSlug}
-              onChange={(event) => {
-                setSlugTouched(true);
-                setPublishDraft((current) => ({
-                  ...current,
-                  templateSlug: slugify(event.target.value),
-                }));
+            <TemplatePublishPanel
+              businessId={businessId}
+              layers={layers}
+              availableCategories={availableCategories}
+              isPublishLoading={isPublishLoading}
+              publishedRef={publishedRef}
+              publishShortcut={TEMPLATE_SHEET_SHORTCUTS.publishTemplate}
+              isActive={open && activeTab === 'publish'}
+              onPublish={(draft) => {
+                void handlePublish(draft);
               }}
-              placeholder="Template slug (e.g. starter)"
-            />
-            <Input
-              value={publishDraft.title}
-              onChange={(event) => {
-                const nextTitle = event.target.value;
-                setPublishDraft((current) => ({
-                  ...current,
-                  title: nextTitle,
-                  templateSlug: slugTouched
-                    ? current.templateSlug
-                    : slugify(nextTitle) || current.templateSlug,
-                }));
+              onOpenPublishedTemplate={(templateId) => {
+                setActiveTab('marketplace');
+                setSelectedTemplateId(templateId);
+                setPreferLatestVersion(true);
               }}
-              placeholder="Template title"
             />
-            <Textarea
-              value={publishDraft.description}
-              onChange={(event) =>
-                setPublishDraft((current) => ({
-                  ...current,
-                  description: event.target.value,
-                }))
-              }
-              placeholder="Template description"
-            />
-            <Input
-              value={publishDraft.category}
-              onChange={(event) =>
-                setPublishDraft((current) => ({
-                  ...current,
-                  category: event.target.value,
-                }))
-              }
-              placeholder="Category (optional)"
-              list={categoryDatalistId}
-            />
-            <datalist id={categoryDatalistId}>
-              {availableCategories.map((category) => (
-                <option key={category} value={category} />
-              ))}
-            </datalist>
-            <Input
-              value={publishDraft.tags}
-              onChange={(event) =>
-                setPublishDraft((current) => ({
-                  ...current,
-                  tags: event.target.value,
-                }))
-              }
-              placeholder="Tags comma-separated (optional)"
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setPublishDraft((current) => ({
-                    ...current,
-                    tags: layerTagsSuggestion.join(', '),
-                  }))
-                }
-              >
-                Use page names as tags
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setPublishDraft(DEFAULT_PUBLISH_DRAFT);
-                  setSlugTouched(false);
-                }}
-              >
-                Reset form
-              </Button>
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  onClick={handlePublish}
-                  disabled={isPublishLoading || layers.length === 0}
-                  className="w-full"
-                >
-                  {isPublishLoading ? 'Publishing...' : 'Publish Template'}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="flex items-center gap-2">
-                <span>Publish current builder as template</span>
-                <ShortcutKbd
-                  actionId={TEMPLATE_SHEET_SHORTCUTS.publishTemplate.id}
-                  interactive={false}
-                />
-              </TooltipContent>
-            </Tooltip>
-            {publishedRef && (
-              <div className="rounded-md border p-3 text-sm">
-                <p className="font-medium">Published</p>
-                <p className="text-muted-foreground break-all">{publishedRef}</p>
-                <div className="mt-2 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      void navigator.clipboard?.writeText(publishedRef);
-                      toast.success('Template reference copied');
-                    }}
-                  >
-                    Copy Reference
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setActiveTab('marketplace');
-                      const [templateId] = publishedRef.split('@');
-                      if (templateId) {
-                        setSelectedTemplateId(templateId);
-                        setPreferLatestVersion(true);
-                      }
-                    }}
-                  >
-                    Open in Marketplace
-                  </Button>
-                </div>
-              </div>
-            )}
           </TabsContent>
         </Tabs>
       </SheetContent>

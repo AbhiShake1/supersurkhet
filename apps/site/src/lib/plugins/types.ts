@@ -31,7 +31,7 @@ import type {
   WorkflowDoc,
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
-} from 'supersurkhet-sdk';
+} from '@supersurkhet/sdk';
 
 export type {
   ActionManifestDoc,
