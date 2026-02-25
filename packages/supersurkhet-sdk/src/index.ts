@@ -1,3 +1,5 @@
+import { z } from './zod';
+
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue =
   | JsonPrimitive
@@ -633,16 +635,24 @@ export function defineWorkflowDoc<T extends WorkflowDoc>(doc: T): T {
   return doc;
 }
 
+export type ZodSchemaFactory<TSchema extends ZodLikeObjectSchema = ZodLikeObjectSchema> = (
+  input: {
+    z: typeof z;
+  },
+) => TSchema;
+
 export type DefineZodSchemaDocInput<TSchema extends ZodLikeObjectSchema = ZodLikeObjectSchema> = {
   schemaId: string;
-  schema: TSchema;
+  schema: ZodSchemaFactory<TSchema>;
   title?: string;
   description?: string;
   tokens?: Record<string, JsonValue>;
 };
 
 export type InferSchemaType<TInput extends DefineZodSchemaDocInput> = TInput['schema'] extends {
-  _output: infer TOutput;
+  (...args: any): {
+    _output: infer TOutput;
+  };
 }
   ? TOutput
   : unknown;
@@ -655,10 +665,10 @@ type ZodLikeType = {
     shape?: (() => Record<string, ZodLikeType>) | Record<string, ZodLikeType>;
     checks?: Array<{
       kind?: string;
-      value?: number;
+      value?: unknown;
       message?: string;
     }>;
-    values?: Set<string>;
+    values?: unknown;
   };
   unwrap?: () => ZodLikeType;
   isOptional?: () => boolean;
@@ -705,10 +715,18 @@ const readFieldRules = (schema: ZodLikeType): SchemaRuleDoc[] | undefined => {
   const rules: SchemaRuleDoc[] = [];
   for (const check of schema._def?.checks ?? []) {
     if (check.kind === 'min') {
-      rules.push({ kind: 'min', value: check.value, message: check.message });
+      rules.push({
+        kind: 'min',
+        value: typeof check.value === 'number' ? check.value : undefined,
+        message: check.message,
+      });
     }
     if (check.kind === 'max') {
-      rules.push({ kind: 'max', value: check.value, message: check.message });
+      rules.push({
+        kind: 'max',
+        value: typeof check.value === 'number' ? check.value : undefined,
+        message: check.message,
+      });
     }
     if (check.kind === 'int') {
       rules.push({ kind: 'int', message: check.message });
@@ -758,7 +776,14 @@ const zodFieldToSchemaField = (
   }
 
   if (baseType === 'ZodEnum') {
-    const enumValues = base.options ? [...base.options] : [...(base._def?.values ?? [])];
+    const valuesFromDef = base._def?.values;
+    const enumValues = base.options
+      ? [...base.options]
+      : Array.isArray(valuesFromDef)
+        ? [...valuesFromDef]
+        : valuesFromDef instanceof Set
+          ? [...valuesFromDef]
+          : [];
     return { ...common, type: 'enum', dataType: 'enum', fieldType: 'select', enumValues };
   }
 
@@ -804,7 +829,16 @@ const zodFieldToSchemaField = (
 export function defineZodSchemaDoc<TSchema extends ZodLikeObjectSchema>(
   input: DefineZodSchemaDocInput<TSchema>,
 ): SchemaDoc {
-  const fields = Object.entries(getObjectShape(input.schema)).map(([key, schema]) =>
+  const authoredSchema = input.schema({ z });
+  const baseSchema = unwrappedZodType(authoredSchema);
+
+  if (zodTypeName(baseSchema) !== 'ZodObject') {
+    throw new Error(
+      'defineZodSchemaDoc schema factory must return ZodObject (or wrappers around ZodObject).',
+    );
+  }
+
+  const fields = Object.entries(getObjectShape(baseSchema)).map(([key, schema]) =>
     zodFieldToSchemaField(key, schema),
   );
 
@@ -976,3 +1010,5 @@ export function generateSchemaTypes(
 
   return lines.join('\n');
 }
+
+export { z, getSchemaDerivations, runDeriveWithRuntimeFormValues } from './zod';

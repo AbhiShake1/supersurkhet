@@ -71,14 +71,20 @@ export default definePlugin({
 });
 ```
 
-### Zod-like schema conversion
+### Zod schema conversion (SDK-patched Zod)
 
 ```ts
 import { defineZodSchemaDoc } from 'supersurkhet-sdk';
 
 const schema = defineZodSchemaDoc({
   schemaId: 'product',
-  schema: myZodObject,
+  schema: ({ z }) =>
+    z
+      .object({
+        name: z.string(),
+        price: z.number().min(0),
+      })
+      .withDerivation('isPremium', z.boolean()),
 });
 ```
 

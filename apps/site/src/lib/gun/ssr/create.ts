@@ -6,6 +6,7 @@ import { mergeOptionsWithDefaults } from '../options';
 import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
 import { encrypt } from '../utils/sea';
 import { resolveAfterNextTick, resolveLifecycleBusinessId } from './lifecycle';
+import { normalizeRowId } from './row-id';
 
 export function omitEmptyObject<T>(value: T): T {
   if (Array.isArray(value)) {
@@ -50,7 +51,10 @@ export function create<const T extends SchemaKeys>(
   ) => {
     const businessId = resolveLifecycleBusinessId({ table: key, restKeys });
     const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
-    const rowId = String(value.id ?? `${keys}/${Date.now().toString()}`);
+    const rowId = normalizeRowId(
+      value.id,
+      String(key).split('/').pop() || Date.now().toString(),
+    );
     if (businessId) {
       await runLifecycleHookPipeline({
         businessId,
@@ -69,7 +73,10 @@ export function create<const T extends SchemaKeys>(
     const _encrypted = await encrypt(value, schema);
     const encrypted = omitEmptyObject(omitUndefined(_encrypted));
     return new Promise<GunMessagePut>((resolve, reject) => {
-      const id = encrypted?.id ?? rowId;
+      const id = normalizeRowId(
+        (encrypted as { id?: string | number } | null | undefined)?.id ?? rowId,
+        String(key).split('/').pop() || Date.now().toString(),
+      );
       getGunRef(keys)
         .get(id)
         .put(encrypted, (ack) => {

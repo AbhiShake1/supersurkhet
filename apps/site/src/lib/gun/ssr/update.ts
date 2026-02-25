@@ -6,6 +6,7 @@ import { mergeOptionsWithDefaults } from '../options';
 import { getGunRef, getNestedZodShape, mergeKeys } from '../utils';
 import { encrypt } from '../utils/sea';
 import { resolveAfterNextTick, resolveLifecycleBusinessId } from './lifecycle';
+import { normalizeRowId } from './row-id';
 
 function omitMeta<T>(obj: T): T {
   if (!obj) return obj;
@@ -72,9 +73,10 @@ export function update<const T extends SchemaKeys>(
   }
   const schema = getNestedZodShape(key, defaultSchema);
   return async ({ id, ...value }: UpdaterParams<T>) => {
+    const rowId = normalizeRowId(id, String(key).split('/').pop() || 'row');
     const businessId = resolveLifecycleBusinessId({ table: key, restKeys });
     const keys = mergeKeys(key, ...restKeys) as SchemaKeys;
-    const beforeRow = await readExistingRow(keys, id);
+    const beforeRow = await readExistingRow(keys, rowId);
     if (businessId) {
       await runLifecycleHookPipeline({
         businessId,
@@ -82,7 +84,7 @@ export function update<const T extends SchemaKeys>(
         hook: 'beforeUpdate',
         payload: { id, ...value },
         envelope: {
-          rowId: String(id),
+          rowId,
           before: beforeRow,
           after: { ...(isPlainObject(beforeRow) ? beforeRow : {}), id, ...value },
           patch: { id, ...value },
@@ -94,7 +96,7 @@ export function update<const T extends SchemaKeys>(
     const encrypted = omitMeta(_encrypted);
     return new Promise<GunMessagePut>((resolve, reject) => {
       getGunRef(keys)
-        .get(id)
+        .get(rowId)
         .put(omitEmptyObject(encrypted), (ack) => {
           if ('err' in ack && !!ack.err) {
             reject(ack.err);
@@ -107,13 +109,13 @@ export function update<const T extends SchemaKeys>(
               businessId,
               table: key,
               hook: 'afterUpdate',
-              payload: { id, ...value },
-              envelope: {
-                rowId: String(id),
-                before: beforeRow,
-                after: { ...(isPlainObject(beforeRow) ? beforeRow : {}), id, ...value },
-                patch: { id, ...value },
-              },
+                payload: { id, ...value },
+                envelope: {
+                  rowId,
+                  before: beforeRow,
+                  after: { ...(isPlainObject(beforeRow) ? beforeRow : {}), id, ...value },
+                  patch: { id, ...value },
+                },
             })
               .then(() => resolve(ack))
               .catch(reject);

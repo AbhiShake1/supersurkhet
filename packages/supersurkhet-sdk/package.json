@@ -9,7 +9,14 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./zod": {
+      "types": "./src/zod.ts",
+      "default": "./src/zod.ts"
     }
+  },
+  "dependencies": {
+    "zod": "^3.25.76"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

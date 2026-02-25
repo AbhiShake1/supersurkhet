@@ -2,14 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   putMock,
+  onceMock,
   getMock,
   runLifecycleHookPipelineMock,
   encryptMock,
 } = vi.hoisted(() => {
   const put = vi.fn();
-  const get = vi.fn(() => ({ put }));
+  const once = vi.fn((callback: (row: unknown) => void) => callback(undefined));
+  const get = vi.fn(() => ({ put, once }));
   return {
     putMock: put,
+    onceMock: once,
     getMock: get,
     runLifecycleHookPipelineMock: vi.fn(async () => undefined),
     encryptMock: vi.fn(async (value: unknown) => value),
@@ -39,6 +42,7 @@ import { update } from './update';
 describe('ssr update', () => {
   beforeEach(() => {
     putMock.mockReset();
+    onceMock.mockClear();
     getMock.mockClear();
     runLifecycleHookPipelineMock.mockClear();
     encryptMock.mockClear();
