@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { AUTOFORM_FIELD_TYPES } from '@/components/ui/autoform';
 import { ClassNameFieldControl } from '@/components/ui/autoform/components/ClassNameField';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -132,6 +133,7 @@ const pluginStudioSearchSchema = z.object({
   pluginId: optionalSearchStringSchema,
   draftId: optionalSearchStringSchema,
   sortBy: optionalSearchStringSchema,
+  subdomain: optionalSearchStringSchema,
   sortOrder: z
     .preprocess(
       (value) => (typeof value === 'string' ? value.trim().toLowerCase() : undefined),
@@ -235,9 +237,99 @@ const COLUMN_SHEET_SHORTCUTS = {
     },
   },
 } as const;
+const SUBDOMAIN_STUDIO_SHORTCUTS = {
+  prevCard: {
+    id: 'pluginStudio.subdomainPrevCard',
+    label: 'Previous subdomain card',
+    description: 'Focus the previous subdomain card.',
+    scope: 'Plugin Studio',
+    defaultBinding: {
+      key: 'ArrowLeft',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: false,
+    },
+  },
+  nextCard: {
+    id: 'pluginStudio.subdomainNextCard',
+    label: 'Next subdomain card',
+    description: 'Focus the next subdomain card.',
+    scope: 'Plugin Studio',
+    defaultBinding: {
+      key: 'ArrowRight',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: false,
+    },
+  },
+  openBuilder: {
+    id: 'pluginStudio.subdomainOpenBuilder',
+    label: 'Open subdomain builder',
+    description: 'Open builder for the focused subdomain card.',
+    scope: 'Plugin Studio',
+    defaultBinding: {
+      key: 'Enter',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: false,
+    },
+  },
+  moveLeft: {
+    id: 'pluginStudio.subdomainMoveLeft',
+    label: 'Move subdomain left',
+    description: 'Reorder focused subdomain card to the left.',
+    scope: 'Plugin Studio',
+    defaultBinding: {
+      key: 'ArrowLeft',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  moveRight: {
+    id: 'pluginStudio.subdomainMoveRight',
+    label: 'Move subdomain right',
+    description: 'Reorder focused subdomain card to the right.',
+    scope: 'Plugin Studio',
+    defaultBinding: {
+      key: 'ArrowRight',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+} as const;
 
 const DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_group__/';
 const DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_system__/';
+const DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_subdomain__/';
+const DRAFT_DNS_SENTINEL_SCHEMA_ID = '__plugin_studio_dns__/cloudflare';
+type SubdomainUiProjectKind = 'index' | 'admin' | 'custom';
+type SubdomainPipelineState = Array<{
+  subdomain: string;
+  basePath: string;
+  uiProject: SubdomainUiProjectKind;
+  autoAdminInjected: boolean;
+}>;
+const DEFAULT_SUBDOMAIN_PIPELINE: SubdomainPipelineState = [
+  {
+    subdomain: 'index',
+    basePath: '/',
+    uiProject: 'index',
+    autoAdminInjected: false,
+  },
+  {
+    subdomain: 'admin',
+    basePath: '/',
+    uiProject: 'admin',
+    autoAdminInjected: true,
+  },
+];
 const DEFAULT_DRAFT_ADMIN_TABS = serializeDraftAdminTabs({
   schemaTabs: [
     {
@@ -247,6 +339,8 @@ const DEFAULT_DRAFT_ADMIN_TABS = serializeDraftAdminTabs({
   ],
   orderedGroups: [],
   systemTabs: DEFAULT_SYSTEM_TABS,
+  subdomains: DEFAULT_SUBDOMAIN_PIPELINE,
+  cloudflareDnsAutoConfigured: true,
 });
 
 function canonicalStringify(input: unknown) {
@@ -488,6 +582,23 @@ function toSystemSentinelSchemaId(key: SystemTabKey): string {
   return `${DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX}${key}`;
 }
 
+function isSubdomainSentinelSchemaId(schemaId: unknown): boolean {
+  return (
+    typeof schemaId === 'string' &&
+    schemaId.startsWith(DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX)
+  );
+}
+
+function parseSubdomainSentinelSchemaId(schemaId: unknown): string | null {
+  if (!isSubdomainSentinelSchemaId(schemaId)) return null;
+  const value = schemaId.slice(DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX.length).trim();
+  return value.length > 0 ? value : null;
+}
+
+function toSubdomainSentinelSchemaId(subdomain: string): string {
+  return `${DRAFT_SUBDOMAIN_SENTINEL_SCHEMA_PREFIX}${subdomain}`;
+}
+
 function parseSystemSentinelSchemaId(schemaId: unknown): SystemTabKey | null {
   if (!isSystemSentinelSchemaId(schemaId)) return null;
   const key = schemaId.slice(DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX.length);
@@ -521,6 +632,23 @@ function parseSchemaTabOrderToken(token: string): string | null {
   }
   if (normalized.startsWith('system:')) return null;
   return normalized || null;
+}
+
+function normalizeSubdomainName(value: string | undefined): string {
+  const normalized = (value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return normalized || 'index';
+}
+
+function normalizeSubdomainBasePath(value: string | undefined): string {
+  const normalized = (value ?? '').trim();
+  if (!normalized) return '/';
+  const withLeadingSlash = normalized.startsWith('/') ? normalized : `/${normalized}`;
+  const compact = withLeadingSlash.replace(/\/{2,}/g, '/');
+  return compact || '/';
 }
 
 function computeOrderedTabTokens({
@@ -579,11 +707,15 @@ function serializeDraftAdminTabs({
   schemaTabs,
   orderedGroups,
   systemTabs,
+  subdomains = DEFAULT_SUBDOMAIN_PIPELINE,
+  cloudflareDnsAutoConfigured = true,
   tabOrder = [],
 }: {
   schemaTabs: readonly AdminTabDoc[];
   orderedGroups: readonly string[];
   systemTabs: SystemTabState;
+  subdomains?: SubdomainPipelineState;
+  cloudflareDnsAutoConfigured?: boolean;
   tabOrder?: readonly string[];
 }): AdminTabDoc[] {
   const groupSentinels: AdminTabDoc[] = orderedGroups.map(
@@ -608,6 +740,16 @@ function serializeDraftAdminTabs({
       },
     ]),
   );
+  const subdomainSentinels: AdminTabDoc[] = subdomains.map((entry) => ({
+    schema: toSubdomainSentinelSchemaId(normalizeSubdomainName(entry.subdomain)),
+    title: normalizeSubdomainBasePath(entry.basePath),
+    group: entry.uiProject,
+    icon: entry.autoAdminInjected ? 'autoadmin' : 'none',
+  }));
+  const dnsSentinel: AdminTabDoc = {
+    schema: DRAFT_DNS_SENTINEL_SCHEMA_ID,
+    title: cloudflareDnsAutoConfigured ? 'auto' : 'manual',
+  };
   const orderedTabs: AdminTabDoc[] = [];
   const usedSchemaIds = new Set<string>();
   const usedSystemKeys = new Set<SystemTabKey>();
@@ -644,7 +786,7 @@ function serializeDraftAdminTabs({
     usedSystemKeys.add(key);
   }
 
-  return [...groupSentinels, ...orderedTabs];
+  return [...groupSentinels, ...subdomainSentinels, dnsSentinel, ...orderedTabs];
 }
 
 function deserializeDraftAdminTabs(
@@ -653,12 +795,16 @@ function deserializeDraftAdminTabs(
   schemaTabs: AdminTabDoc[];
   orderedGroups: string[];
   systemTabs: SystemTabState;
+  subdomains: SubdomainPipelineState;
+  cloudflareDnsAutoConfigured: boolean;
   tabOrder: string[];
 } {
   const tabs = adminTabs ?? [];
   const schemaTabs: AdminTabDoc[] = [];
   const orderedGroups: string[] = [];
   const systemTabs: SystemTabState = { ...DEFAULT_SYSTEM_TABS };
+  const subdomains: SubdomainPipelineState = [];
+  let cloudflareDnsAutoConfigured = true;
   const tabOrder: string[] = [];
 
   for (const tab of tabs) {
@@ -694,6 +840,28 @@ function deserializeDraftAdminTabs(
       continue;
     }
 
+    const subdomain = parseSubdomainSentinelSchemaId(tab.schema);
+    if (subdomain) {
+      const normalizedProject = tab.group?.trim();
+      subdomains.push({
+        subdomain: normalizeSubdomainName(subdomain),
+        basePath: normalizeSubdomainBasePath(tab.title),
+        uiProject:
+          normalizedProject === 'index' ||
+            normalizedProject === 'admin' ||
+            normalizedProject === 'custom'
+            ? normalizedProject
+            : 'custom',
+        autoAdminInjected: tab.icon?.trim() === 'autoadmin',
+      });
+      continue;
+    }
+
+    if (tab.schema === DRAFT_DNS_SENTINEL_SCHEMA_ID) {
+      cloudflareDnsAutoConfigured = (tab.title?.trim() || 'auto') !== 'manual';
+      continue;
+    }
+
     schemaTabs.push(tab);
     const schemaToken = toSchemaTabOrderToken(tab.schema);
     if (!tabOrder.includes(schemaToken)) tabOrder.push(schemaToken);
@@ -711,6 +879,9 @@ function deserializeDraftAdminTabs(
     schemaTabs,
     orderedGroups,
     systemTabs,
+    subdomains:
+      subdomains.length > 0 ? subdomains : [...DEFAULT_SUBDOMAIN_PIPELINE],
+    cloudflareDnsAutoConfigured,
     tabOrder: computeOrderedTabTokens({
       tabOrder,
       schemaOrder: schemaTabs.map((tab) => tab.schema),
@@ -2265,6 +2436,7 @@ function PluginStudioPresenter({
   const navigate = useNavigate();
   const { fire: fireConfetti } = useConfetti();
   const params = Route.useParams();
+  const search = Route.useSearch();
   const actorUserIdAliases = useMemo(() => buildActorUserIdAliases(user), [user]);
   const actorUserId = actorUserIdAliases[0] ?? '';
   const actorUserIdSet = useMemo(
@@ -2324,6 +2496,13 @@ function PluginStudioPresenter({
   } | null>(null);
   const [isSchemaEditorOpen, setIsSchemaEditorOpen] = useState(false);
   const [isTemplatesDialogOpen, setIsTemplatesDialogOpen] = useState(false);
+  const [editingSubdomainTitle, setEditingSubdomainTitle] = useState<{
+    originalSubdomain: string;
+    value: string;
+  } | null>(null);
+  const [pendingDeleteSubdomain, setPendingDeleteSubdomain] = useState<
+    string | null
+  >(null);
   const [isWorkflowEditorOpen, setIsWorkflowEditorOpen] = useState(false);
   const [workflowEditorLockedTable, setWorkflowEditorLockedTable] = useState<
     string | null
@@ -2615,6 +2794,8 @@ function PluginStudioPresenter({
         schemaTabs: storedSchemaTabs,
         orderedGroups: storedGroupOrder,
         systemTabs,
+        subdomains,
+        cloudflareDnsAutoConfigured,
         tabOrder: storedTabOrder,
       } = deserializeDraftAdminTabs(parsedDraftAdminTabs);
       const schemaIdSet = new Set(schemaDocs.map((schemaDoc) => schemaDoc.schemaId));
@@ -2669,6 +2850,8 @@ function PluginStudioPresenter({
         schemaTabs: adminTabs,
         orderedGroups,
         systemTabs,
+        subdomains,
+        cloudflareDnsAutoConfigured,
         tabOrder,
       });
       return {
@@ -2682,6 +2865,8 @@ function PluginStudioPresenter({
         customGroups: orderedGroups,
         groupOrder: orderedGroups,
         systemTabs,
+        subdomains,
+        cloudflareDnsAutoConfigured,
         tabOrder,
         adminTabs,
         draftAdminTabs,
@@ -2697,7 +2882,11 @@ function PluginStudioPresenter({
   ]);
   const groupOrder = parsed?.groupOrder ?? [];
   const systemTabs = parsed?.systemTabs ?? DEFAULT_SYSTEM_TABS;
+  const subdomains = parsed?.subdomains ?? DEFAULT_SUBDOMAIN_PIPELINE;
+  const cloudflareDnsAutoConfigured =
+    parsed?.cloudflareDnsAutoConfigured ?? true;
   const tabOrder = parsed?.tabOrder ?? [];
+  const isSubdomainStudioMode = true;
 
   const availableSchemaDocs = parsed?.schemaDocs ?? [];
   const availableWorkflows = useMemo(() => {
@@ -4039,6 +4228,8 @@ function PluginStudioPresenter({
       schemaTabs: AdminTabDoc[];
       orderedGroups: string[];
       systemTabs: SystemTabState;
+      subdomains: SubdomainPipelineState;
+      cloudflareDnsAutoConfigured: boolean;
       tabOrder: string[];
     }) => void,
     options?: {
@@ -4105,6 +4296,8 @@ function PluginStudioPresenter({
         schemaTabs: appendedSchemaTabs,
         orderedGroups,
         systemTabs: state.systemTabs,
+        subdomains: state.subdomains,
+        cloudflareDnsAutoConfigured: state.cloudflareDnsAutoConfigured,
         tabOrder,
       }),
     );
@@ -4225,6 +4418,198 @@ function PluginStudioPresenter({
       };
     });
   }
+
+  function handleSubdomainChange(
+    previousSubdomain: string,
+    patch: Partial<SubdomainPipelineState[number]>,
+  ) {
+    const normalizedPrevious = normalizeSubdomainName(previousSubdomain);
+    updateSidebarAdminTabs((state) => {
+      state.subdomains = state.subdomains.map((entry) => {
+        if (normalizeSubdomainName(entry.subdomain) !== normalizedPrevious) {
+          return entry;
+        }
+        const nextSubdomain = normalizeSubdomainName(
+          patch.subdomain ?? entry.subdomain,
+        );
+        const nextUiProject =
+          nextSubdomain === 'index'
+            ? 'index'
+            : nextSubdomain === 'admin'
+              ? 'admin'
+              : (patch.uiProject ?? entry.uiProject);
+        return {
+          subdomain: nextSubdomain,
+          basePath: '/',
+          uiProject: nextUiProject,
+          autoAdminInjected:
+            nextUiProject === 'admin'
+              ? true
+              : (patch.autoAdminInjected ?? entry.autoAdminInjected),
+        };
+      });
+    });
+  }
+
+  function handleAddSubdomain() {
+    updateSidebarAdminTabs((state) => {
+      let counter = state.subdomains.length + 1;
+      let candidate = `subdomain-${counter}`;
+      const existing = new Set(
+        state.subdomains.map((entry) => normalizeSubdomainName(entry.subdomain)),
+      );
+      while (existing.has(candidate)) {
+        counter += 1;
+        candidate = `subdomain-${counter}`;
+      }
+      state.subdomains = [
+        ...state.subdomains,
+        {
+          subdomain: candidate,
+          basePath: '/',
+          uiProject: 'custom',
+          autoAdminInjected: false,
+        },
+      ];
+    });
+  }
+
+  function handleRemoveSubdomain(subdomain: string) {
+    const normalized = normalizeSubdomainName(subdomain);
+    if (normalized === 'index' || normalized === 'admin') {
+      toast.error('Default subdomains index and admin cannot be removed.');
+      return;
+    }
+    updateSidebarAdminTabs((state) => {
+      state.subdomains = state.subdomains.filter(
+        (entry) => normalizeSubdomainName(entry.subdomain) !== normalized,
+      );
+    });
+  }
+
+  function beginSubdomainTitleEdit(subdomain: string) {
+    setEditingSubdomainTitle({
+      originalSubdomain: subdomain,
+      value: subdomain,
+    });
+  }
+
+  function cancelSubdomainTitleEdit() {
+    setEditingSubdomainTitle(null);
+  }
+
+  function commitSubdomainTitleEdit() {
+    if (!editingSubdomainTitle) return;
+    const nextTitle = editingSubdomainTitle.value.trim();
+    if (!nextTitle) {
+      setEditingSubdomainTitle(null);
+      return;
+    }
+    handleSubdomainChange(editingSubdomainTitle.originalSubdomain, {
+      subdomain: nextTitle,
+    });
+    setEditingSubdomainTitle(null);
+  }
+
+  function handleDeleteSubdomainDialogOpenChange(nextOpen: boolean) {
+    if (!nextOpen) {
+      setPendingDeleteSubdomain(null);
+    }
+  }
+
+  function confirmDeleteSubdomain() {
+    if (!pendingDeleteSubdomain) return;
+    handleRemoveSubdomain(pendingDeleteSubdomain);
+    setPendingDeleteSubdomain(null);
+  }
+
+  const selectedSubdomain = normalizeSubdomainName(
+    search.subdomain ??
+      subdomains[0]?.subdomain ??
+      DEFAULT_SUBDOMAIN_PIPELINE[0]?.subdomain,
+  );
+  const selectedSubdomainIndex = subdomains.findIndex(
+    (entry) => normalizeSubdomainName(entry.subdomain) === selectedSubdomain,
+  );
+
+  function selectSubdomain(subdomain: string) {
+    const normalized = normalizeSubdomainName(subdomain);
+    void navigate({
+      to: '.',
+      search: (current) => ({
+        ...(current as Record<string, unknown>),
+        subdomain: normalized,
+      }),
+    });
+  }
+
+  function openSubdomainBuilder(subdomain: string) {
+    selectSubdomain(subdomain);
+  }
+
+  function moveSubdomainSelection(offset: number) {
+    if (subdomains.length === 0) return;
+    const startIndex = selectedSubdomainIndex >= 0 ? selectedSubdomainIndex : 0;
+    const nextIndex = Math.min(
+      Math.max(startIndex + offset, 0),
+      subdomains.length - 1,
+    );
+    const next = subdomains[nextIndex];
+    if (!next) return;
+    selectSubdomain(next.subdomain);
+  }
+
+  function reorderSubdomainByOffset(offset: number, fromSubdomain?: string) {
+    if (subdomains.length < 2) return;
+    const fromIndex =
+      fromSubdomain
+        ? subdomains.findIndex(
+          (entry) =>
+            normalizeSubdomainName(entry.subdomain) ===
+            normalizeSubdomainName(fromSubdomain),
+        )
+        : selectedSubdomainIndex;
+    if (fromIndex < 0) return;
+    const targetIndex = fromIndex + offset;
+    if (targetIndex < 0 || targetIndex >= subdomains.length) return;
+    updateSidebarAdminTabs((state) => {
+      const current = [...state.subdomains];
+      const [moved] = current.splice(fromIndex, 1);
+      if (!moved) return;
+      current.splice(targetIndex, 0, moved);
+      state.subdomains = current;
+    });
+    const next = subdomains[targetIndex];
+    if (next) {
+      selectSubdomain(next.subdomain);
+    }
+  }
+
+  useShortcutAction(
+    SUBDOMAIN_STUDIO_SHORTCUTS.prevCard,
+    () => moveSubdomainSelection(-1),
+    { enabled: isSubdomainStudioMode, allowInEditableContext: true },
+  );
+  useShortcutAction(
+    SUBDOMAIN_STUDIO_SHORTCUTS.nextCard,
+    () => moveSubdomainSelection(1),
+    { enabled: isSubdomainStudioMode, allowInEditableContext: true },
+  );
+  useShortcutAction(
+    SUBDOMAIN_STUDIO_SHORTCUTS.openBuilder,
+    () => openSubdomainBuilder(selectedSubdomain),
+    { enabled: isSubdomainStudioMode, allowInEditableContext: true },
+  );
+  useShortcutAction(
+    SUBDOMAIN_STUDIO_SHORTCUTS.moveLeft,
+    () => reorderSubdomainByOffset(-1),
+    { enabled: isSubdomainStudioMode, allowInEditableContext: true },
+  );
+  useShortcutAction(
+    SUBDOMAIN_STUDIO_SHORTCUTS.moveRight,
+    () => reorderSubdomainByOffset(1),
+    { enabled: isSubdomainStudioMode, allowInEditableContext: true },
+  );
 
   function getTargetSchemaDoc(schemaId?: string) {
     const normalizedSchemaId = schemaId?.trim();
@@ -5042,6 +5427,8 @@ function PluginStudioPresenter({
           ),
         ),
         systemTabs,
+        subdomains,
+        cloudflareDnsAutoConfigured,
       }),
     );
   }
@@ -5083,6 +5470,264 @@ function PluginStudioPresenter({
   }
 
   if (isInitialLoading) return <PluginStudioSkeleton />;
+
+  if (isSubdomainStudioMode) {
+    return (
+      <div className="relative min-h-screen w-full overflow-hidden bg-gradient-to-br from-background via-background to-accent/10">
+        <div className="pointer-events-none absolute -top-24 right-[-8%] h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-28 left-[-6%] h-64 w-64 rounded-full bg-accent/20 blur-3xl" />
+        <div className="mx-auto w-full max-w-7xl px-4 py-6 md:py-8">
+          <div className="relative space-y-6">
+              <div className="rounded-2xl border border-border/70 bg-card/80 p-5 backdrop-blur-sm">
+                <div className="space-y-3">
+                  <div className="group flex items-start gap-2">
+                    {editingMetadataField === 'title' ? (
+                      <Input
+                        value={editingMetadataValue}
+                        autoFocus
+                        placeholder="Plugin name"
+                        onChange={(event) => setEditingMetadataValue(event.target.value)}
+                        onBlur={commitMetadataEdit}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault();
+                            commitMetadataEdit();
+                          }
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            stopMetadataEdit();
+                          }
+                        }}
+                        className="h-11 border-border/70 bg-background/80 text-2xl font-semibold text-foreground placeholder:text-muted-foreground md:text-3xl"
+                      />
+                    ) : (
+                      <p className="bg-gradient-to-r from-foreground via-foreground to-foreground/70 bg-clip-text text-2xl font-semibold text-transparent md:text-3xl">
+                        {activeDraftTitle}
+                      </p>
+                    )}
+                    {editingMetadataField === 'title' ? null : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => beginMetadataEdit('title')}
+                        className="size-8 rounded-full border border-border/70 bg-background/75 p-0 text-muted-foreground opacity-0 transition hover:text-foreground group-hover:opacity-100 group-focus-within:opacity-100"
+                        aria-label="Edit title"
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="group flex items-start gap-2">
+                    {editingMetadataField === 'description' ? (
+                      <Textarea
+                        value={editingMetadataValue}
+                        autoFocus
+                        placeholder="Add a description"
+                        onChange={(event) => setEditingMetadataValue(event.target.value)}
+                        onBlur={commitMetadataEdit}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Escape') {
+                            event.preventDefault();
+                            stopMetadataEdit();
+                          }
+                          if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+                            event.preventDefault();
+                            commitMetadataEdit();
+                          }
+                        }}
+                        className="min-h-[88px] resize-none border-border/70 bg-background/80 text-base leading-relaxed text-foreground placeholder:text-muted-foreground"
+                      />
+                    ) : (
+                      <p className="text-base text-muted-foreground">
+                        {activeDraftDescription || 'Add a description'}
+                      </p>
+                    )}
+                    {editingMetadataField === 'description' ? null : (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => beginMetadataEdit('description')}
+                        className="size-8 rounded-full border border-border/70 bg-background/75 p-0 text-muted-foreground opacity-0 transition hover:text-foreground group-hover:opacity-100 group-focus-within:opacity-100"
+                        aria-label="Edit description"
+                      >
+                        <Pencil className="size-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end">
+                <Button type="button" onClick={handleAddSubdomain}>
+                  <Plus className="mr-2 size-4" />
+                  Add subdomain
+                </Button>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {subdomains.map((entry) => {
+                  const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
+                  const displayTitle =
+                    normalizedSubdomain === 'index'
+                      ? 'Home'
+                      : normalizedSubdomain === 'admin'
+                        ? 'Admin'
+                        : normalizedSubdomain;
+                  const isDefaultSubdomain =
+                    normalizedSubdomain === 'index' || normalizedSubdomain === 'admin';
+                  const isSelected = normalizedSubdomain === selectedSubdomain;
+                  const isEditingTitle =
+                    editingSubdomainTitle?.originalSubdomain === entry.subdomain;
+                  return (
+                    <div key={normalizedSubdomain} className="space-y-2">
+                      <button
+                        type="button"
+                        className={`group block h-64 w-full rounded-2xl border p-4 text-left transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${isSelected
+                          ? 'border-primary/50 bg-gradient-to-br from-primary/10 via-accent/30 to-background shadow-sm'
+                          : 'border-border/70 bg-card hover:border-primary/40 hover:bg-accent/30 hover:shadow-sm'
+                          }`}
+                        onClick={() => openSubdomainBuilder(normalizedSubdomain)}
+                        onFocus={() => selectSubdomain(normalizedSubdomain)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'ArrowRight') {
+                            event.preventDefault();
+                            moveSubdomainSelection(1);
+                          }
+                          if (event.key === 'ArrowLeft') {
+                            event.preventDefault();
+                            moveSubdomainSelection(-1);
+                          }
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            openSubdomainBuilder(normalizedSubdomain);
+                          }
+                        }}
+                        aria-label={`Open ${displayTitle} builder`}
+                        aria-current={isSelected ? 'true' : undefined}
+                        >
+                        <div className="mb-3 flex items-center justify-between">
+                          <div className="group/title flex items-center gap-1">
+                            {isEditingTitle ? (
+                              <Input
+                                value={editingSubdomainTitle.value}
+                                autoFocus
+                                onClick={(event) => event.stopPropagation()}
+                                onChange={(event) =>
+                                  setEditingSubdomainTitle((current) =>
+                                    current
+                                      ? { ...current, value: event.target.value }
+                                      : current,
+                                  )
+                                }
+                                onBlur={commitSubdomainTitleEdit}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    commitSubdomainTitleEdit();
+                                  }
+                                  if (event.key === 'Escape') {
+                                    event.preventDefault();
+                                    cancelSubdomainTitleEdit();
+                                  }
+                                }}
+                                className="h-8 w-40"
+                              />
+                            ) : (
+                              <>
+                                <p className="text-sm font-semibold tracking-wide text-foreground">
+                                  {displayTitle}
+                                </p>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="ghost"
+                                  className="size-7 p-0 opacity-0 transition group-hover/title:opacity-100"
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                    beginSubdomainTitleEdit(entry.subdomain);
+                                  }}
+                                  aria-label={`Edit ${displayTitle} title`}
+                                >
+                                  <Pencil className="size-3.5" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                          <div className="flex items-center">
+                            <Badge
+                              variant="secondary"
+                              className="group-hover:hidden group-focus-within:hidden"
+                            >
+                              Live preview
+                            </Badge>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="destructive"
+                              className="hidden h-7 items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex"
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                setPendingDeleteSubdomain(entry.subdomain);
+                              }}
+                              disabled={isDefaultSubdomain}
+                            >
+                              <Trash2 className="size-3.5" />
+                              Delete
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="h-[calc(100%-2.25rem)] rounded-xl border border-border/70 bg-muted/30 p-3">
+                          <div className="space-y-2">
+                            <div className="h-6 w-3/5 rounded-md bg-muted-foreground/20" />
+                            <div className="h-4 w-4/5 rounded-md bg-muted-foreground/15" />
+                            <div className="h-16 rounded-lg border border-border/60 bg-background/60" />
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="h-6 rounded-md bg-primary/30" />
+                              <div className="h-6 rounded-md bg-accent/70" />
+                              <div className="h-6 rounded-md bg-secondary" />
+                            </div>
+                            <p className="pt-1 text-xs text-muted-foreground">
+                              {entry.autoAdminInjected
+                                ? 'Admin schema + AutoAdmin presets ready.'
+                                : 'Blank UI Builder canvas with full component registry.'}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+              <AlertDialog
+                open={pendingDeleteSubdomain !== null}
+                onOpenChange={handleDeleteSubdomainDialogOpenChange}
+              >
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete subdomain?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {pendingDeleteSubdomain
+                        ? `Subdomain "${pendingDeleteSubdomain}" will be removed from this plugin workspace.`
+                        : 'This subdomain will be removed from this plugin workspace.'}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmDeleteSubdomain}>
+                      Delete Subdomain
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full py-4">
@@ -5187,6 +5832,88 @@ function PluginStudioPresenter({
             </div>
           </div>
         </section>
+
+        <Card className="border-border/70 bg-card/90">
+          <CardHeader className="space-y-2">
+            <CardTitle className="text-base">Subdomain Projects</CardTitle>
+            <CardDescription>
+              Create subdomain projects. Routing, DNS, and infra mapping are handled
+              automatically. <code>admin</code> is bootstrapped with AutoAdmin by default.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3">
+              {subdomains.map((entry) => {
+                const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
+                const isDefaultSubdomain =
+                  normalizedSubdomain === 'index' || normalizedSubdomain === 'admin';
+                return (
+                  <div
+                    key={normalizedSubdomain}
+                    className="grid gap-3 rounded-lg border border-border/60 bg-background/40 p-3 md:grid-cols-[1fr_auto]"
+                  >
+                    <div className="space-y-1">
+                      <Label>Project</Label>
+                      <Input
+                        value={entry.subdomain}
+                        onChange={(event) =>
+                          handleSubdomainChange(entry.subdomain, {
+                            subdomain: event.target.value,
+                          })
+                        }
+                        placeholder="subdomain name"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Blank UI Builder project on <code>{normalizedSubdomain}</code>.
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-start justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary">UI Builder</Badge>
+                        <Badge
+                          variant={entry.autoAdminInjected ? 'default' : 'outline'}
+                        >
+                          {entry.autoAdminInjected
+                            ? 'AutoAdmin bootstrapped'
+                            : 'Blank canvas'}
+                        </Badge>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            void navigate({
+                              to: '.',
+                              search: (current) => ({
+                                ...(current as Record<string, unknown>),
+                                tab: systemTabs.website.title,
+                              }),
+                            })
+                          }
+                        >
+                          Open project
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveSubdomain(entry.subdomain)}
+                          disabled={isDefaultSubdomain}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <Button type="button" variant="outline" onClick={handleAddSubdomain}>
+              <Plus className="mr-2 size-4" />
+              New subdomain project
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card className="border-border/70 bg-card/90">
           <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
