@@ -15,8 +15,8 @@ import type {
   AdminTabDoc,
   SchemaDoc,
   SchemaFieldDoc,
-  WorkflowDoc,
 } from '@/lib/plugins/types';
+import { flattenSchemaWorkflows } from 'supersurkhet-sdk';
 
 export type CompileVerifySeverity = 'error' | 'warning' | 'info';
 
@@ -42,7 +42,6 @@ export type PluginsV2CompileVerifyInput = {
   };
   actionManifest?: ActionManifestDoc[];
   schemaDocs?: SchemaDoc[];
-  workflows?: WorkflowDoc[];
   adminTabs?: AdminTabDoc[];
   capabilityEnvelope?: string[];
   runtimeTarget?: 'sandbox-worker' | 'core';
@@ -59,7 +58,6 @@ export type PluginsV2CompileVerifyResult = {
     artifactHash: string;
     artifactPayload: {
       schemaDocs: SchemaDoc[];
-      workflows: WorkflowDoc[];
       adminTabs: AdminTabDoc[];
     };
   };
@@ -95,7 +93,7 @@ export function runPluginsV2CompileVerifyPipeline(
   input: PluginsV2CompileVerifyInput,
 ): PluginsV2CompileVerifyResult {
   const schemaDocs = input.schemaDocs ?? [];
-  const workflows = input.workflows ?? [];
+  const workflows = flattenSchemaWorkflows(schemaDocs);
   const actionManifest = input.actionManifest ?? [];
   const adminTabs = input.adminTabs ?? [];
   const capabilityEnvelope = input.capabilityEnvelope ?? [];
@@ -313,7 +311,7 @@ export function runPluginsV2CompileVerifyPipeline(
       code: diagnostic.code,
       severity: 'error',
       message: diagnostic.message,
-      path: diagnostic.path,
+      path: toSchemaWorkflowPath(diagnostic.path),
     });
   }
 
@@ -335,7 +333,7 @@ export function runPluginsV2CompileVerifyPipeline(
           ? 'warning'
           : 'error',
       message: diagnostic.message,
-      path: diagnostic.path,
+      path: toSchemaWorkflowPath(diagnostic.path),
     });
   }
 
@@ -364,13 +362,11 @@ export function runPluginsV2CompileVerifyPipeline(
     docs: input.docs,
     actionManifest,
     schemaDocs,
-    workflows,
     adminTabs,
   };
 
   const artifactPayload = {
     schemaDocs,
-    workflows,
     adminTabs,
   };
 
@@ -423,6 +419,22 @@ export function runPluginsV2CompileVerifyPipeline(
       },
     },
   };
+}
+
+function toSchemaWorkflowPath(path: string[]): string[] {
+  if (path[0] !== 'workflows') {
+    return path;
+  }
+
+  const workflowKey = path[1] ?? '';
+  const separatorIndex = workflowKey.indexOf('::');
+  if (separatorIndex <= 0) {
+    return path;
+  }
+  const schemaId = workflowKey.slice(0, separatorIndex);
+  const workflowId = workflowKey.slice(separatorIndex + 2);
+  const suffix = path.slice(2);
+  return ['schemaDocs', schemaId, 'workflows', workflowId, ...suffix];
 }
 
 function collectFieldLocations(

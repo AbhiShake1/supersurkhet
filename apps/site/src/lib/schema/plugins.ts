@@ -179,7 +179,7 @@ pluginSchemaFieldDocSchema = z.lazy(() =>
   }),
 );
 
-const pluginSchemaDocSchema = z.object({
+const pluginSchemaDocBaseSchema = z.object({
   schemaId: z.string(),
   title: z.string().optional(),
   description: z.string().optional(),
@@ -248,6 +248,25 @@ const workflowDocSchema = z.object({
   ),
 });
 
+const schemaWorkflowDocSchema = workflowDocSchema
+  .omit({
+    table: true,
+    trigger: true,
+  })
+  .extend({
+    trigger: z
+      .object({
+        event: lifecycleHookSchema,
+        filters: expressionDocSchema.optional(),
+        fieldChange: z.record(z.string(), expressionDocSchema).optional(),
+      })
+      .optional(),
+  });
+
+const pluginSchemaDocSchema = pluginSchemaDocBaseSchema.extend({
+  workflows: z.array(schemaWorkflowDocSchema).optional(),
+});
+
 const pluginTabDocSchema = z.object({
   schema: z.string(),
   title: z.string().optional(),
@@ -313,7 +332,6 @@ export const pluginReleaseSchema = z
       .optional(),
     actionManifest: z.array(actionManifestDocSchema),
     schemaDocs: z.array(pluginSchemaDocSchema).optional(),
-    workflows: z.array(workflowDocSchema).optional(),
     adminTabs: z.array(pluginTabDocSchema).optional(),
     publishedAt: z.string().datetime({ offset: true }).optional(),
   })
@@ -434,7 +452,6 @@ export const pluginDraftRevisionSchema = z
     manifestHash: z.string(),
     artifactHash: z.string(),
     schemaDocs: z.array(pluginSchemaDocSchema).optional(),
-    workflows: z.array(workflowDocSchema).optional(),
     adminTabs: z.array(pluginTabDocSchema).optional(),
     createdAt: z.string().datetime({ offset: true }),
     createdByUserId: z.string(),
@@ -591,15 +608,6 @@ export const pluginSchemaDocStorageSchema = z
     version: z.string(),
     schemaId: z.string(),
     doc: z.string().describe('Stringified schema doc JSON payload'),
-  })
-  .extend(table);
-
-export const pluginWorkflowDocStorageSchema = z
-  .object({
-    pluginId: z.string(),
-    version: z.string(),
-    workflowId: z.string(),
-    doc: jsonValueSchema.describe('Canonical serializable workflow doc'),
   })
   .extend(table);
 

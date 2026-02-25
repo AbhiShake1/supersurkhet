@@ -16,6 +16,7 @@ import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
 import {
   createInMemoryPluginPlatformStore,
   createPluginPlatformService,
+  MissingReleaseError,
   toReleaseId,
 } from '@/lib/plugins/plugin-service';
 import type {
@@ -35,6 +36,7 @@ import type {
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
 } from '@/lib/plugins/types';
+import { flattenSchemaWorkflows } from 'supersurkhet-sdk';
 import { runPluginsV2CompileVerifyPipeline } from './plugins-v2-compile-verify';
 
 const jsonPrimitiveSchema = z.union([
@@ -229,7 +231,7 @@ const schemaFieldDocSchema: z.ZodType<SchemaFieldDoc> = z.lazy(() =>
     .strict(),
 );
 
-const schemaDocInputSchema: z.ZodType<SchemaDoc> = z
+const schemaDocInputBaseSchema = z
   .object({
     schemaId: z.string(),
     title: z.string().optional(),
@@ -290,12 +292,11 @@ const workflowEdgeDocInputSchema: z.ZodType<WorkflowEdgeDoc> = z
   })
   .strict();
 
-const workflowDocInputSchema: z.ZodType<WorkflowDoc> = z
+const schemaWorkflowDocInputSchema = z
   .object({
     pluginContractVersion: z.literal('3').optional(),
     workflowId: z.string(),
     title: z.string().optional(),
-    table: z.string(),
     hook: z.enum([
       'beforeCreate',
       'afterCreate',
@@ -306,7 +307,6 @@ const workflowDocInputSchema: z.ZodType<WorkflowDoc> = z
     ]),
     trigger: z
       .object({
-        table: z.string(),
         event: z.enum([
           'beforeCreate',
           'afterCreate',
@@ -321,6 +321,12 @@ const workflowDocInputSchema: z.ZodType<WorkflowDoc> = z
       .optional(),
     nodes: z.array(workflowNodeDocInputSchema),
     edges: z.array(workflowEdgeDocInputSchema),
+  })
+  .strict();
+
+const schemaDocInputSchema: z.ZodType<SchemaDoc> = schemaDocInputBaseSchema
+  .extend({
+    workflows: z.array(schemaWorkflowDocInputSchema).optional(),
   })
   .strict();
 
@@ -357,7 +363,6 @@ const releasePublishInputSchema = z
     docs: pluginDocsInputSchema.optional(),
     actionManifest: z.array(actionManifestInputSchema).default([]),
     schemaDocs: z.array(schemaDocInputSchema).optional(),
-    workflows: z.array(workflowDocInputSchema).optional(),
     adminTabs: z.array(adminTabInputSchema).optional(),
   })
   .strict();
@@ -599,11 +604,14 @@ export async function publishPluginRelease({ data }: { data: unknown }) {
     data,
     entrypoint: 'publishPluginRelease',
   });
+  const flattenedWorkflows = flattenSchemaWorkflows(parsedInput.schemaDocs ?? []);
+  const workflowPathPrefixById = toWorkflowPathPrefixById(parsedInput.schemaDocs ?? []);
 
   const gateDiagnostics = evaluateV3PublishGates({
     actionManifest: parsedInput.actionManifest ?? [],
     schemaDocs: parsedInput.schemaDocs ?? [],
-    workflows: parsedInput.workflows ?? [],
+    workflows: flattenedWorkflows,
+    workflowPathPrefixById,
   });
 
   const compileVerify = runPluginsV2CompileVerifyPipeline({
@@ -612,7 +620,6 @@ export async function publishPluginRelease({ data }: { data: unknown }) {
     docs: parsedInput.docs,
     actionManifest: parsedInput.actionManifest ?? [],
     schemaDocs: parsedInput.schemaDocs ?? [],
-    workflows: parsedInput.workflows ?? [],
     adminTabs: parsedInput.adminTabs ?? [],
     capabilityEnvelope: [
       ...new Set(
@@ -649,7 +656,6 @@ export async function publishPluginRelease({ data }: { data: unknown }) {
       docs: parsedInput.docs,
       actionManifest: parsedInput.actionManifest ?? [],
       schemaDocs: parsedInput.schemaDocs,
-      workflows: parsedInput.workflows,
       adminTabs: parsedInput.adminTabs,
     },
   });
@@ -852,7 +858,8 @@ export async function installPluginRelease({ data }: { data: unknown }) {
   const installGateDiagnostics = evaluateV3InstallGates({
     actionManifest: release.actionManifest ?? [],
     schemaDocs: release.schemaDocs ?? [],
-    workflows: release.workflows ?? [],
+    workflows: flattenSchemaWorkflows(release.schemaDocs ?? []),
+    workflowPathPrefixById: toWorkflowPathPrefixById(release.schemaDocs ?? []),
     requestedCapabilities: parsedInput.requestedCapabilities ?? [],
   });
   if (hasBlockingV3Gates(installGateDiagnostics)) {
@@ -937,7 +944,8 @@ export async function syncBusinessPluginInstalls({ data }: { data: unknown }) {
     const installGateDiagnostics = evaluateV3InstallGates({
       actionManifest: release.actionManifest ?? [],
       schemaDocs: release.schemaDocs ?? [],
-      workflows: release.workflows ?? [],
+      workflows: flattenSchemaWorkflows(release.schemaDocs ?? []),
+      workflowPathPrefixById: toWorkflowPathPrefixById(release.schemaDocs ?? []),
       requestedCapabilities: install.requestedCapabilities ?? [],
     });
     if (hasBlockingV3Gates(installGateDiagnostics)) {
@@ -1097,7 +1105,6 @@ export async function createPluginDraft({
         draftId: migratedDraft.draftId,
         revision: {
           schemaDocs: latestLegacyRevision.schemaDocs,
-          workflows: latestLegacyRevision.workflows,
           adminTabs: latestLegacyRevision.adminTabs,
         },
       });
@@ -1176,7 +1183,6 @@ export async function ensureMarketplaceSeedReleases({
         docs: seedRelease.docs,
         actionManifest: seedRelease.actionManifest as ActionManifestDoc[],
         schemaDocs: seedReleaseDoc?.schemaDocs,
-        workflows: seedReleaseDoc?.workflows,
         adminTabs: seedRelease.adminTabs as AdminTabDoc[],
       },
     });
@@ -1194,6 +1200,22 @@ export async function ensureMarketplaceSeedReleases({
     seededReleaseCount: MARKETPLACE_SEED_RELEASES.length,
     createdCount: createdReleaseIds.length,
   };
+}
+
+function toWorkflowPathPrefixById(schemaDocs: readonly SchemaDoc[]): Record<string, string[]> {
+  const pathByWorkflowId: Record<string, string[]> = {};
+  for (const schemaDoc of schemaDocs) {
+    for (const workflow of schemaDoc.workflows ?? []) {
+      if (!workflow.workflowId) continue;
+      pathByWorkflowId[`${schemaDoc.schemaId}::${workflow.workflowId}`] = [
+        'schemaDocs',
+        schemaDoc.schemaId,
+        'workflows',
+        workflow.workflowId,
+      ];
+    }
+  }
+  return pathByWorkflowId;
 }
 //
 // export const ensureMarketplaceSeedReleases = createServerFn({ method: 'POST' })

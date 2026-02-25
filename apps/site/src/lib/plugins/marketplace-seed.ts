@@ -3,7 +3,6 @@ import type {
   AdminTabDoc,
   PluginReleaseDoc,
   SchemaDoc,
-  WorkflowDoc,
 } from '@/lib/plugins/types';
 
 export type MarketplaceSeedRelease = {
@@ -228,7 +227,6 @@ function toSeedReleaseDoc(
     docs: release.docs,
     actionManifest: release.actionManifest,
     schemaDocs: toFallbackSchemaDocs(release),
-    workflows: toFallbackWorkflows(release),
     adminTabs: release.adminTabs,
     publishedAt,
   };
@@ -265,9 +263,10 @@ function toActionIdForWorkflow(
 
 function toFallbackSchemaDocs(release: MarketplaceSeedRelease): SchemaDoc[] {
   if (release.adminTabs.length === 0) {
+    const schemaId = 'example.table';
     return [
       {
-        schemaId: 'example.table',
+        schemaId,
         title: 'Example Table',
         fields: [
           {
@@ -275,11 +274,12 @@ function toFallbackSchemaDocs(release: MarketplaceSeedRelease): SchemaDoc[] {
             type: 'string',
           },
         ],
+        workflows: toFallbackSchemaWorkflows(release, schemaId, 0),
       },
     ];
   }
 
-  return release.adminTabs.map((tab) => {
+  return release.adminTabs.map((tab, index) => {
     const schemaId = toTemplateSchemaId(tab.schema);
     return {
       schemaId,
@@ -291,20 +291,23 @@ function toFallbackSchemaDocs(release: MarketplaceSeedRelease): SchemaDoc[] {
           description: `Primary label for ${tab.title || schemaId}`,
         },
       ],
+      workflows: toFallbackSchemaWorkflows(release, schemaId, index),
     };
   });
 }
 
-function toFallbackWorkflows(release: MarketplaceSeedRelease): WorkflowDoc[] {
-  const schemaDocs = toFallbackSchemaDocs(release);
-
-  return schemaDocs.map((schemaDoc, index) => ({
+function toFallbackSchemaWorkflows(
+  release: MarketplaceSeedRelease,
+  schemaId: string,
+  index: number,
+): NonNullable<SchemaDoc['workflows']> {
+  return [
+    {
     workflowId: toTemplateWorkflowId(
       release.pluginId,
-      schemaDoc.schemaId,
+      schemaId,
       index,
     ),
-    table: schemaDoc.schemaId,
     hook: 'afterCreate',
     nodes: [
       {
@@ -321,7 +324,8 @@ function toFallbackWorkflows(release: MarketplaceSeedRelease): WorkflowDoc[] {
       },
     ],
     edges: [],
-  }));
+  },
+  ];
 }
 
 export function toMarketplaceSeedReleaseDocs(): PluginReleaseDoc[] {
@@ -376,9 +380,6 @@ export function mergeMarketplaceReleasesWithSeed(
       schemaDocs: release.schemaDocs?.length
         ? release.schemaDocs
         : seed?.schemaDocs,
-      workflows: release.workflows?.length
-        ? release.workflows
-        : seed?.workflows,
       adminTabs: release.adminTabs?.length
         ? release.adminTabs
         : seed?.adminTabs,

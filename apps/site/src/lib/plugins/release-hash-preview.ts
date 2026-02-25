@@ -2,7 +2,6 @@ import type {
   ActionManifestDoc,
   AdminTabDoc,
   SchemaDoc,
-  WorkflowDoc,
 } from './types';
 
 type JsonValue =
@@ -22,7 +21,6 @@ export type ReleaseHashPreviewInput = {
   };
   actionManifest: ActionManifestDoc[];
   schemaDocs?: SchemaDoc[];
-  workflows?: WorkflowDoc[];
   adminTabs?: AdminTabDoc[];
 };
 
@@ -87,12 +85,10 @@ export async function previewReleaseHashes(
     docs: input.docs,
     actionManifest: input.actionManifest ?? [],
     schemaDocs: input.schemaDocs ?? [],
-    workflows: input.workflows ?? [],
     adminTabs: input.adminTabs ?? [],
   };
   const artifactPayload = {
     schemaDocs: input.schemaDocs ?? [],
-    workflows: input.workflows ?? [],
     adminTabs: input.adminTabs ?? [],
   };
 

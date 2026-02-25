@@ -7,7 +7,6 @@ import type {
   PluginDraftRevisionDoc,
   PluginReleaseDoc,
   SchemaDoc,
-  WorkflowDoc,
 } from '@/lib/plugins/types';
 import { createServerFn } from '@tanstack/react-start';
 import { v4 as uuidv4 } from 'uuid';
@@ -100,7 +99,7 @@ type ReleaseSeed = Omit<
 
 type DraftRevisionSeed = Pick<
   PluginDraftRevisionDoc,
-  'schemaDocs' | 'workflows' | 'adminTabs'
+  'schemaDocs' | 'adminTabs'
 > &
   Partial<Pick<PluginDraftRevisionDoc, 'revisionId'>>;
 
@@ -334,7 +333,6 @@ function toManifestPayload({
   docs,
   actionManifest,
   schemaDocs,
-  workflows,
   adminTabs,
 }: Pick<
   PluginReleaseDoc,
@@ -343,7 +341,6 @@ function toManifestPayload({
   | 'docs'
   | 'actionManifest'
   | 'schemaDocs'
-  | 'workflows'
   | 'adminTabs'
 >) {
   return {
@@ -352,23 +349,19 @@ function toManifestPayload({
     docs,
     actionManifest,
     schemaDocs,
-    workflows,
     adminTabs,
   };
 }
 
 function toArtifactPayload({
   schemaDocs,
-  workflows,
   adminTabs,
 }: {
   schemaDocs?: SchemaDoc[];
-  workflows?: WorkflowDoc[];
   adminTabs?: AdminTabDoc[];
 }) {
   return {
     schemaDocs: schemaDocs ?? [],
-    workflows: workflows ?? [],
     adminTabs: adminTabs ?? [],
   };
 }
@@ -398,14 +391,12 @@ export function createPluginPlatformService({
           docs: release.docs,
           actionManifest: release.actionManifest ?? [],
           schemaDocs: release.schemaDocs,
-          workflows: release.workflows,
           adminTabs: release.adminTabs,
         }),
       );
       const artifactHash = await hashCanonicalJsonValue(
         toArtifactPayload({
           schemaDocs: release.schemaDocs,
-          workflows: release.workflows,
           adminTabs: release.adminTabs,
         }),
       );
@@ -420,7 +411,6 @@ export function createPluginPlatformService({
         docs: release.docs,
         actionManifest: release.actionManifest ?? [],
         schemaDocs: release.schemaDocs,
-        workflows: release.workflows,
         adminTabs: release.adminTabs,
         publishedAt: release.publishedAt ?? now,
         visibility: 'public',
@@ -544,7 +534,6 @@ export function createPluginPlatformService({
         },
         actionManifest: [],
         schemaDocs: revision.schemaDocs,
-        workflows: revision.workflows,
         adminTabs: revision.adminTabs,
       });
       const created: PluginDraftRevisionDoc = {
@@ -557,12 +546,10 @@ export function createPluginPlatformService({
         artifactHash: await hashCanonicalJsonValue(
           toArtifactPayload({
             schemaDocs: revision.schemaDocs,
-            workflows: revision.workflows,
             adminTabs: revision.adminTabs,
           }),
         ),
         schemaDocs: revision.schemaDocs,
-        workflows: revision.workflows,
         adminTabs: revision.adminTabs,
         createdAt: now,
         createdByUserId: actorUserId,

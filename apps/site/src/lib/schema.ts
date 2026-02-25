@@ -42,7 +42,6 @@ import {
   pluginWorkflowEventLogSchema,
   pluginWorkflowJobAttemptSchema,
   pluginWorkflowJobSchema,
-  pluginWorkflowDocStorageSchema,
 } from './schema/plugins';
 import type {
   AppSchemaType,
@@ -377,12 +376,6 @@ export const coreSchema = createSchema({
     icon: List,
     group: 'Plugin Platform',
   },
-  pluginWorkflowDoc: {
-    schema: pluginWorkflowDocStorageSchema,
-    title: 'Plugin Workflow Docs',
-    icon: MapIcon,
-    group: 'Plugin Platform',
-  },
   pluginActionManifestDoc: {
     schema: pluginActionManifestDocStorageSchema,
     title: 'Plugin Action Manifest Docs',
@@ -656,7 +649,6 @@ export {
   pluginWorkflowEventLogSchema,
   pluginWorkflowJobAttemptSchema,
   pluginWorkflowJobSchema,
-  pluginWorkflowDocStorageSchema,
 } from './schema/plugins';
 
 export function transformSchema<const TSchema extends BaseAppSchemaType>(

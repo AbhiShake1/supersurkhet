@@ -3,7 +3,6 @@ import type { SchemaKeys } from '..';
 const draftScopedPluginTables = new Set<SchemaKeys>([
   'pluginRoutesTabsConfig',
   'pluginSchemaDoc',
-  'pluginWorkflowDoc',
   'pluginActionManifestDoc',
 ]);
 
