@@ -1,6 +1,8 @@
 import type { PluginCatalogEntry } from '@/lib/plugins/admin-plugin-catalog';
 import type { BusinessPluginInstallDoc } from '@/lib/plugins/types';
 
+const SUBDOMAIN_SENTINEL_PREFIX = '__plugin_studio_subdomain__/';
+
 export type PluginUserReview = {
   id: string;
   pluginId: string;
@@ -252,12 +254,48 @@ export function buildPluginDetailView(
   const userReview = reviews.find(
     (review) => review.pluginId === plugin.pluginId && review.userId === userId,
   );
+  const subdomainPreviewTabs = (plugin.latestRelease.adminTabs ?? [])
+    .flatMap((tab) => {
+      const schema = tab.schema?.trim() ?? '';
+      if (!schema.startsWith(SUBDOMAIN_SENTINEL_PREFIX)) return [];
+      const rawSubdomain = schema
+        .slice(SUBDOMAIN_SENTINEL_PREFIX.length)
+        .trim();
+      if (!rawSubdomain) return [];
+      const subdomain = rawSubdomain
+        .toLowerCase()
+        .replace(/[^a-z0-9-]+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      if (!subdomain) return [];
+      const label = subdomain
+        .split('-')
+        .map((part) =>
+          part.length > 0 ? `${part[0].toUpperCase()}${part.slice(1)}` : part,
+        )
+        .join(' ');
+      return [
+        {
+          schema,
+          title: label,
+          group: 'Subdomain',
+        },
+      ];
+    })
+    .filter(
+      (entry, index, list) =>
+        list.findIndex((candidate) => candidate.schema === entry.schema) ===
+        index,
+    );
+
   const previewTabs =
-    plugin.latestRelease.adminTabs?.map((tab) => ({
-      schema: tab.schema,
-      title: tab.title ?? tab.schema,
-      group: tab.group,
-    })) ?? [];
+    subdomainPreviewTabs.length > 0
+      ? subdomainPreviewTabs
+      : (plugin.latestRelease.adminTabs?.map((tab) => ({
+          schema: tab.schema,
+          title: tab.title ?? tab.schema,
+          group: tab.group,
+        })) ?? []);
 
   return {
     plugin,

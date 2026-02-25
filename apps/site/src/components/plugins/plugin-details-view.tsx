@@ -106,6 +106,7 @@ export function PluginDetailsView({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showOtherReviews, setShowOtherReviews] = useState(false);
   const previewStripRef = useRef<HTMLDivElement | null>(null);
+  const subdomainStripRef = useRef<HTMLDivElement | null>(null);
   const heroSectionRef = useRef<HTMLElement | null>(null);
 
   const persistedReviewRating = details.userReview
@@ -322,6 +323,13 @@ export function PluginDetailsView({
     node.scrollBy({ left: delta, behavior: 'smooth' });
   }
 
+  function scrollSubdomainStrip(direction: 'left' | 'right') {
+    const node = subdomainStripRef.current;
+    if (!node) return;
+    const delta = direction === 'left' ? -300 : 300;
+    node.scrollBy({ left: delta, behavior: 'smooth' });
+  }
+
   function renderPreviewTabButtons(chipClassName: string) {
     if (details.previewTabs.length === 0) {
       return (
@@ -532,7 +540,7 @@ export function PluginDetailsView({
                 Try Now
               </Button>
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-white/70">
-                Try live preview by tab
+                Try live preview across subdomains
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -557,7 +565,7 @@ export function PluginDetailsView({
                 Try Now
               </Button>
               <p className="text-xs font-medium uppercase tracking-[0.12em] text-white/70">
-                Try live preview by tab
+                Try live preview across subdomains
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -620,6 +628,65 @@ export function PluginDetailsView({
                       size="icon"
                       className="absolute -right-5 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border-gray-200 bg-white shadow-md group-hover:flex"
                       onClick={() => scrollPreviewStrip('right')}
+                    >
+                      <ChevronRight className="size-5" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </section>
+
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-medium text-[#202124]">
+                  Subdomain previews
+                </h2>
+              </div>
+              <div className="relative group">
+                <div
+                  ref={subdomainStripRef}
+                  className="flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {details.previewTabs.length > 0 ? (
+                    details.previewTabs.map((tab) => (
+                      <button
+                        type="button"
+                        key={tab.schema}
+                        onClick={() => setIsPreviewOpen(true)}
+                        className="w-[230px] shrink-0 rounded-2xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-[#01875f]/50 hover:shadow-sm"
+                      >
+                        <p className="text-xs uppercase tracking-[0.08em] text-[#5f6368]">
+                          {tab.group ?? 'Subdomain'}
+                        </p>
+                        <p className="mt-1 text-base font-medium text-[#202124]">
+                          {tab.title}
+                        </p>
+                        <p className="mt-2 text-xs text-[#5f6368]">
+                          Open live preview
+                        </p>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="flex h-[120px] w-full items-center justify-center rounded-xl border border-dashed border-gray-300 bg-gray-50 text-gray-500 text-sm">
+                      No subdomain previews available
+                    </div>
+                  )}
+                </div>
+                {details.previewTabs.length > 1 && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute -left-5 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border-gray-200 bg-white shadow-md group-hover:flex"
+                      onClick={() => scrollSubdomainStrip('left')}
+                    >
+                      <ChevronLeft className="size-5" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="absolute -right-5 top-1/2 z-10 hidden -translate-y-1/2 rounded-full border-gray-200 bg-white shadow-md group-hover:flex"
+                      onClick={() => scrollSubdomainStrip('right')}
                     >
                       <ChevronRight className="size-5" />
                     </Button>

@@ -148,7 +148,8 @@ describe('admin plugin market helpers', () => {
         ?.reviewCount,
     ).toBe(2);
     expect(
-      groups.all.find((item) => item.pluginId === 'acme.finance')?.averageRating,
+      groups.all.find((item) => item.pluginId === 'acme.finance')
+        ?.averageRating,
     ).toBe(0);
     expect(
       groups.all.find((item) => item.pluginId === 'acme.finance')?.reviewCount,
@@ -269,6 +270,48 @@ describe('admin plugin market helpers', () => {
     expect(details.previewTabs.length).toBeGreaterThan(0);
     expect(details.reviewStats.totalReviews).toBe(0);
     expect(details.reviewStats.averageRating).toBe(0);
+  });
+
+  it('builds details preview tabs from plugin subdomain sentinels', () => {
+    const catalog = [
+      entry({
+        pluginId: 'acme.subdomain-plugin',
+        latestRelease: {
+          id: 'acme.subdomain-plugin@1.0.0',
+          pluginId: 'acme.subdomain-plugin',
+          version: '1.0.0',
+          docs: {
+            title: 'Subdomain plugin',
+            description: 'Subdomain-aware release',
+          },
+          actionManifest: [{ actionId: 'subdomain.run', capabilities: [] }],
+          adminTabs: [
+            { schema: '__plugin_studio_subdomain__/index' },
+            { schema: '__plugin_studio_subdomain__/admin' },
+            { schema: '__plugin_studio_subdomain__/orders-dashboard' },
+          ],
+          manifestHash: 'm',
+          artifactHash: 'a',
+          author: { userId: 'u1' },
+          visibility: 'public',
+          publishedAt: '2026-02-15T00:00:00.000Z',
+        },
+      }),
+    ];
+
+    const groups = buildMarketplaceGroups(catalog);
+    const plugin = groups.all[0];
+    expect(plugin).toBeDefined();
+    if (!plugin) {
+      throw new Error('Expected a plugin for subdomain preview tabs');
+    }
+    const details = buildPluginDetailView(plugin);
+
+    expect(details.previewTabs.map((tab) => tab.title)).toEqual([
+      'Index',
+      'Admin',
+      'Orders Dashboard',
+    ]);
   });
 
   it('groups reviews by user and prioritizes the current user at the top', () => {
