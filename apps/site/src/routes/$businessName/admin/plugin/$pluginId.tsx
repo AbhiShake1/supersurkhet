@@ -1,4 +1,3 @@
-import type { SchemaKeys } from '@gta/react-hooks';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   CalendarDays,
@@ -11,10 +10,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
-import { AutoTable } from '@/components/auto-table';
 import { useConfetti } from '@/components/confetti-provider';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
 import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
@@ -81,16 +79,13 @@ function PluginDetailsPage() {
     (typeof user?.alias === 'string' ? user.alias.trim() : '') ||
     'Anonymous user';
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewSubdomain, setPreviewSubdomain] = useState<string | undefined>(
+    undefined,
+  );
   const [installing, setInstalling] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewComment, setReviewComment] = useState('');
   const [savingReview, setSavingReview] = useState(false);
-  const reviewDraftSourceKeyRef = useRef<string>('');
-  const reviewDraftBaseRef = useRef<{ rating: number; comment: string }>({
-    rating: 0,
-    comment: '',
-  });
+  const reviewRatingInputId = useId();
 
   const { data: businesses = [], isLoading: isBusinessLoading } =
     api.business.useGet({
@@ -210,7 +205,7 @@ function PluginDetailsPage() {
   );
   const activePreviewTabKey =
     typeof search.tab === 'string' ? search.tab.trim().toLowerCase() : '';
-  const iconPreviewSchemaKey = useMemo(() => {
+  const selectedPreviewTab = useMemo(() => {
     const validTabs = (details?.previewTabs ?? []).filter(
       (tab) => typeof tab.schema === 'string' && tab.schema.trim().length > 0,
     );
@@ -223,8 +218,12 @@ function PluginDetailsPage() {
           );
         })
       : undefined;
-    return (matchingTab ?? validTabs[0])?.schema?.trim() ?? null;
+    return matchingTab ?? validTabs[0] ?? null;
   }, [details, activePreviewTabKey]);
+  const iconPreviewImage =
+    selectedPreviewTab?.screenshotUrls?.[0] ??
+    details?.previewScreenshots?.[0] ??
+    null;
 
   const persistedReviewSourceKey =
     details?.userReview?.id ??
@@ -233,29 +232,6 @@ function PluginDetailsPage() {
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details?.userReview?.comment ?? '';
-  const isReviewDirty =
-    reviewRating !== reviewDraftBaseRef.current.rating ||
-    reviewComment !== reviewDraftBaseRef.current.comment;
-
-  useEffect(() => {
-    const sourceChanged =
-      reviewDraftSourceKeyRef.current !== persistedReviewSourceKey;
-
-    if (!sourceChanged && isReviewDirty) return;
-
-    reviewDraftSourceKeyRef.current = persistedReviewSourceKey;
-    reviewDraftBaseRef.current = {
-      rating: persistedReviewRating,
-      comment: persistedReviewComment,
-    };
-    setReviewRating(persistedReviewRating);
-    setReviewComment(persistedReviewComment);
-  }, [
-    persistedReviewSourceKey,
-    persistedReviewRating,
-    persistedReviewComment,
-    isReviewDirty,
-  ]);
 
   if (isUserLoading || isBusinessLoading) return null;
 
@@ -366,12 +342,12 @@ function PluginDetailsPage() {
     toast.success('Plugin link copied');
   }
 
-  async function saveReview() {
+  async function saveReview(rating: number, comment: string) {
     if (!actorUserId) {
       toast.error('Could not determine your user identity');
       return;
     }
-    if (reviewRating <= 0) {
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
       toast.error('Select a star rating before saving your review.');
       return;
     }
@@ -381,23 +357,18 @@ function PluginDetailsPage() {
 
     try {
       setSavingReview(true);
-      const normalizedComment = reviewComment.trim();
+      const normalizedComment = comment.trim();
       await createReviewMutation.mutateAsync({
         id: reviewId,
         pluginId: pluginData.pluginId,
         businessId: businessNamespace,
         userId: actorUserId,
         userLabel: actorUserLabel,
-        rating: reviewRating,
+        rating,
         comment: normalizedComment,
         createdAt: details.userReview?.createdAt ?? now,
         updatedAt: now,
       });
-      reviewDraftBaseRef.current = {
-        rating: reviewRating,
-        comment: normalizedComment,
-      };
-      setReviewComment(normalizedComment);
       await refetchReviews();
       toast.success(details.userReview ? 'Review updated' : 'Review submitted');
     } catch (error) {
@@ -520,24 +491,12 @@ function PluginDetailsPage() {
               alt={`${pluginData.title} icon`}
               className="size-44 rounded-3xl object-cover shadow-sm"
             />
-          ) : iconPreviewSchemaKey ? (
-            <div className="size-44 overflow-hidden rounded-3xl border border-border/70 bg-muted/20">
-              <div className="w-[430%] origin-top-left scale-[0.23]">
-                <AutoTable<SchemaKeys>
-                  schema={iconPreviewSchemaKey as SchemaKeys}
-                  slug={businessNamespace}
-                  readOnly
-                  enableAdvancedFiltering={false}
-                  enableAdvancedSorting={false}
-                  enableAggregations={false}
-                  enableColumnPinning={false}
-                  enableRowSelection={false}
-                  enableGlobalFiltering={false}
-                  enablePagination={false}
-                  defaultPageSize={4}
-                />
-              </div>
-            </div>
+          ) : iconPreviewImage ? (
+            <img
+              src={iconPreviewImage}
+              alt={`${pluginData.title} preview`}
+              className="size-44 rounded-3xl object-cover shadow-sm"
+            />
           ) : (
             <div className="size-44 flex items-center justify-center rounded-3xl border border-dashed border-border bg-muted/40 text-xs font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               No UI
@@ -576,7 +535,10 @@ function PluginDetailsPage() {
                         key={tab.schema}
                         variant="outline"
                         size="sm"
-                        onClick={() => setIsPreviewOpen(true)}
+                        onClick={() => {
+                          setPreviewSubdomain(tab.subdomain);
+                          setIsPreviewOpen(true);
+                        }}
                       >
                         Try {tab.title ?? tab.schema}
                       </Button>
@@ -585,7 +547,10 @@ function PluginDetailsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setIsPreviewOpen(true)}
+                        onClick={() => {
+                          setPreviewSubdomain(undefined);
+                          setIsPreviewOpen(true);
+                        }}
                       >
                         Try dashboard preview
                       </Button>
@@ -593,6 +558,44 @@ function PluginDetailsPage() {
                   </div>
                 </div>
               )}
+              {details.previewTabs.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">Subdomain galleries</p>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {details.previewTabs.map((tab) => (
+                      <button
+                        type="button"
+                        key={`preview-gallery-${tab.schema}`}
+                        onClick={() => {
+                          setPreviewSubdomain(tab.subdomain);
+                          setIsPreviewOpen(true);
+                        }}
+                        className="overflow-hidden rounded-2xl border border-border/70 bg-background text-left transition-colors hover:border-primary/40"
+                      >
+                        {tab.screenshotUrls?.[0] ? (
+                          <img
+                            src={tab.screenshotUrls[0]}
+                            alt={`${tab.title} preview`}
+                            className="h-36 w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-36 w-full items-center justify-center bg-muted/30 text-xs text-muted-foreground">
+                            No screenshot
+                          </div>
+                        )}
+                        <div className="space-y-1 p-3">
+                          <p className="text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                            {tab.group ?? 'Subdomain'}
+                          </p>
+                          <p className="text-sm font-medium text-foreground">
+                            {tab.title}
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </CardContent>
           </Card>
 
@@ -654,56 +657,66 @@ function PluginDetailsPage() {
             <div className="space-y-4">
               <div className="rounded-2xl border border-border/70 p-4 md:p-5">
                 <p className="text-base font-medium">Your review</p>
-                <div className="mt-2 flex items-center gap-1">
-                  {Array.from({ length: 5 }).map((_, index) => {
-                    const value = index + 1;
-                    const active = value <= reviewRating;
-                    return (
-                      <button
-                        key={`rating-star-${value.toString()}`}
-                        type="button"
-                        aria-label={`Rate ${value} star${value === 1 ? '' : 's'}`}
-                        className="rounded p-0.5 hover:bg-muted"
-                        onClick={() => setReviewRating(value)}
-                      >
-                        <Star
-                          className={cn(
-                            'size-5 transition-colors',
-                            active
-                              ? 'fill-amber-400 text-amber-500'
-                              : 'text-muted-foreground/40',
-                          )}
-                        />
-                      </button>
+                <form
+                  key={`${persistedReviewSourceKey}::${persistedReviewRating}::${encodeURIComponent(persistedReviewComment)}`}
+                  className="space-y-3"
+                  onSubmit={async (event) => {
+                    event.preventDefault();
+                    const formData = new FormData(event.currentTarget);
+                    const reviewRatingValue = Number(
+                      formData.get('reviewRating') ?? Number.NaN,
                     );
-                  })}
-                  <span className="ml-2 text-xs text-muted-foreground">
-                    {reviewRating > 0
-                      ? `${reviewRating.toString()}/5`
-                      : 'Select rating'}
-                  </span>
-                </div>
-                <Textarea
-                  className="mt-3 min-h-24"
-                  value={reviewComment}
-                  onChange={(event) => setReviewComment(event.target.value)}
-                  placeholder="Share details about your experience with this plugin."
-                  maxLength={2000}
-                />
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <span className="text-xs text-muted-foreground">
-                    You can edit and resave your review any time.
-                  </span>
-                  <Button
-                    size="sm"
-                    onClick={saveReview}
-                    loading={savingReview}
-                    disabled={
-                      savingReview || reviewRating <= 0 || !isReviewDirty
-                    }
-                  >
-                    Save review
-                  </Button>
+                    const reviewCommentValue = String(
+                      formData.get('reviewComment') ?? '',
+                    );
+                    await saveReview(reviewRatingValue, reviewCommentValue);
+                  }}
+                >
+                  <div className="mt-2 flex items-center gap-2">
+                    <label
+                      htmlFor={reviewRatingInputId}
+                      className="text-xs text-muted-foreground"
+                    >
+                      Rating
+                    </label>
+                    <input
+                      id={reviewRatingInputId}
+                      name="reviewRating"
+                      type="number"
+                      min={1}
+                      max={5}
+                      step={1}
+                      defaultValue={
+                        persistedReviewRating > 0
+                          ? persistedReviewRating.toString()
+                          : ''
+                      }
+                      className="h-8 w-16 rounded-md border border-input bg-background px-2 text-sm"
+                    />
+                    <span className="text-xs text-muted-foreground">/5</span>
+                  </div>
+                  <Textarea
+                    name="reviewComment"
+                    className="min-h-24"
+                    defaultValue={persistedReviewComment}
+                    placeholder="Share details about your experience with this plugin."
+                    maxLength={2000}
+                  />
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-muted-foreground">
+                      You can edit and resave your review any time.
+                    </span>
+                    <Button size="sm" type="submit" loading={savingReview}>
+                      Save review
+                    </Button>
+                  </div>
+                </form>
+                <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
+                  <Star className="size-3.5 text-amber-500" />
+                  Current saved rating:{' '}
+                  {persistedReviewRating > 0
+                    ? `${persistedReviewRating.toString()}/5`
+                    : 'none'}
                 </div>
               </div>
 
@@ -798,7 +811,9 @@ function PluginDetailsPage() {
         onOpenChange={setIsPreviewOpen}
         entry={pluginData}
         businessSlug={businessName}
+        businessId={businessNamespace}
         isInstalled={pluginData.isInstalled}
+        initialSubdomain={previewSubdomain}
         onInstall={installCurrent}
       />
     </div>

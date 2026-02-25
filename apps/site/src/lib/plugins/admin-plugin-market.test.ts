@@ -383,6 +383,10 @@ describe('admin plugin market helpers', () => {
       'https://cdn.example.com/index-preview.png',
       'https://cdn.example.com/admin-preview.png',
     ]);
+    expect(plugin.screenshotUrls).toEqual([
+      'https://cdn.example.com/index-preview.png',
+      'https://cdn.example.com/admin-preview.png',
+    ]);
   });
 
   it('groups reviews by user and prioritizes the current user at the top', () => {

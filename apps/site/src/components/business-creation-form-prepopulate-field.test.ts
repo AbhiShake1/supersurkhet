@@ -47,4 +47,19 @@ describe('business creation prepopulate field resolver', () => {
 
     expect(field).toBeNull();
   });
+
+  it('ignores plugin studio sentinel tabs for prepopulate resolution', () => {
+    const field = getBusinessDataFieldFromSelectedReleases({
+      selectedReleaseIds: ['acme.subdomain@1.0.0'],
+      releases: [
+        release('acme.subdomain@1.0.0', [
+          { schema: '__plugin_studio_subdomain__/index' },
+          { schema: '__plugin_studio_subdomain_ui__/admin' },
+          { schema: '__plugin_studio_dns__/cloudflare' },
+        ]),
+      ],
+    });
+
+    expect(field).toBeNull();
+  });
 });

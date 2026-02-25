@@ -1,6 +1,7 @@
 import type { SchemaKeys } from '@gta/react-hooks';
 import { AutoTable } from '@/components/auto-table';
 import type { PluginMarketItem } from '@/lib/plugins/admin-plugin-market';
+import { isPluginSystemSentinelSchema } from '@/lib/plugins/subdomain-surface';
 
 export function PluginIcon({
   plugin,
@@ -12,7 +13,12 @@ export function PluginIcon({
   staticPreview?: boolean;
 }) {
   const iconSize = compact ? 'w-full h-full' : 'w-full h-full';
-  const previewSchema = plugin.latestRelease.adminTabs?.[0]?.schema;
+  const previewSchema = (plugin.latestRelease.adminTabs ?? []).find(
+    (tab) =>
+      typeof tab.schema === 'string' &&
+      tab.schema.trim().length > 0 &&
+      !isPluginSystemSentinelSchema(tab.schema),
+  )?.schema;
   const previewScale = compact
     ? 'w-[460%] scale-[0.2]'
     : 'w-[380%] scale-[0.24]';
@@ -22,6 +28,16 @@ export function PluginIcon({
       <img
         src={plugin.iconUrl}
         alt={`${plugin.title} icon`}
+        className={`${iconSize} pointer-events-none rounded-[20%] object-cover`}
+      />
+    );
+  }
+
+  if (plugin.screenshotUrls[0]) {
+    return (
+      <img
+        src={plugin.screenshotUrls[0]}
+        alt={`${plugin.title} preview`}
         className={`${iconSize} pointer-events-none rounded-[20%] object-cover`}
       />
     );

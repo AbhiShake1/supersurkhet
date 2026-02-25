@@ -118,7 +118,7 @@ export function PluginDetailsView({
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details.userReview?.comment ?? '';
-  const reviewComposerKey = `${plugin.pluginId}::${details.userReview?.createdAt ?? 'new'}::${persistedReviewRating}`;
+  const reviewComposerKey = `${plugin.pluginId}::${details.userReview?.createdAt ?? 'new'}::${persistedReviewRating}::${encodeURIComponent(persistedReviewComment)}`;
 
   useEffect(() => {
     const heroNode = heroSectionRef.current;

@@ -1,10 +1,9 @@
+import { resolveReleaseSubdomainSurface } from '@/lib/plugins/subdomain-surface';
 import type {
-  AdminTabDoc,
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
 } from '@/lib/plugins/types';
 
-const SUBDOMAIN_SENTINEL_PREFIX = '__plugin_studio_subdomain__/';
 const DNS_SENTINEL_SCHEMA_ID = '__plugin_studio_dns__/cloudflare';
 const MANAGED_COMMENT_PREFIX = 'supersurkhet-managed-dns';
 
@@ -114,10 +113,9 @@ function toCloudflareConfig():
 }
 
 function collectReleaseDnsProjection(
-  adminTabs: readonly AdminTabDoc[] | undefined,
+  release: Pick<PluginReleaseDoc, 'adminTabs'>,
 ): ReleaseDnsProjection {
-  const tabs = adminTabs ?? [];
-  const subdomains = new Set<string>();
+  const tabs = release.adminTabs ?? [];
   let autoConfigureDns = true;
 
   for (const tab of tabs) {
@@ -126,21 +124,16 @@ function collectReleaseDnsProjection(
 
     if (schema === DNS_SENTINEL_SCHEMA_ID) {
       autoConfigureDns = (tab.title?.trim() || 'auto') !== 'manual';
-      continue;
     }
-
-    if (!schema.startsWith(SUBDOMAIN_SENTINEL_PREFIX)) {
-      continue;
-    }
-
-    const candidate = schema.slice(SUBDOMAIN_SENTINEL_PREFIX.length).trim();
-    if (!candidate) continue;
-    subdomains.add(normalizeSubdomainName(candidate));
   }
+  const surface = resolveReleaseSubdomainSurface(release, {
+    ensureDefaultSubdomains: false,
+    includeAdminFallbackLayers: false,
+  });
 
   return {
     autoConfigureDns,
-    subdomains: [...subdomains],
+    subdomains: surface.subdomains,
   };
 }
 
@@ -161,7 +154,7 @@ export function collectDesiredBusinessSubdomainHosts({
   for (const install of installs) {
     const release = releaseById.get(`${install.pluginId}@${install.version}`);
     if (!release) continue;
-    const projection = collectReleaseDnsProjection(release.adminTabs ?? []);
+    const projection = collectReleaseDnsProjection(release);
     if (!projection.autoConfigureDns) continue;
 
     for (const subdomain of projection.subdomains) {

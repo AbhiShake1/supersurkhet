@@ -1,4 +1,5 @@
 import type { SchemaKeys } from '@gta/react-hooks';
+import { isPluginSystemSentinelSchema } from '@/lib/plugins/subdomain-surface';
 import type { PluginReleaseDoc } from '@/lib/plugins/types';
 
 const PREPOPULATE_DATA_TABLE_PRIORITY: readonly SchemaKeys[] = [
@@ -24,6 +25,13 @@ export function getBusinessDataFieldFromSelectedReleases({
     if (!release) continue;
 
     for (const tab of release.adminTabs ?? []) {
+      if (
+        typeof tab.schema !== 'string' ||
+        tab.schema.trim().length === 0 ||
+        isPluginSystemSentinelSchema(tab.schema)
+      ) {
+        continue;
+      }
       const schema = tab.schema as SchemaKeys;
       if (PREPOPULATE_DATA_TABLE_SET.has(schema)) {
         return schema;

@@ -1,10 +1,9 @@
-import type { SchemaKeys } from '@gta/react-hooks';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Search } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
-import { AutoTable } from '@/components/auto-table';
+import { PluginIcon as MarketplacePluginIcon } from '@/components/plugins/plugin-icon';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +14,6 @@ import { api } from '@/lib/api';
 import { buildPluginCatalog } from '@/lib/plugins/admin-plugin-catalog';
 import {
   buildMarketplaceGroups,
-  type PluginMarketItem,
   type PluginUserReview,
 } from '@/lib/plugins/admin-plugin-market';
 import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
@@ -41,9 +39,9 @@ function PluginsRouteComponent() {
 
   const { data: businesses = [], isLoading: isBusinessLoading } =
     api.business.useGet({
-    keys: [businessName],
-    single: true,
-  });
+      keys: [businessName],
+      single: true,
+    });
   const business = businesses[0];
   const businessNamespace =
     business?.basePath?.trim() || business?.id?.trim() || businessName.trim();
@@ -208,7 +206,7 @@ function PluginsRouteComponent() {
               <div className="w-5 text-sm text-muted-foreground">
                 {index + 1}
               </div>
-              <PluginIcon plugin={plugin} compact />
+              <MarketplacePluginIcon plugin={plugin} compact />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{plugin.title}</p>
                 <p className="truncate text-xs text-muted-foreground">
@@ -263,7 +261,7 @@ function PluginsRouteComponent() {
                       className="group rounded-2xl border border-border/70 p-4 transition-colors hover:border-primary/40"
                     >
                       <div className="mb-3 flex items-start gap-3">
-                        <PluginIcon plugin={plugin} />
+                        <MarketplacePluginIcon plugin={plugin} />
                         <div className="min-w-0">
                           <p className="truncate text-base font-medium">
                             {plugin.title}
@@ -287,63 +285,6 @@ function PluginsRouteComponent() {
             );
           })}
       </section>
-    </div>
-  );
-}
-
-function PluginIcon({
-  plugin,
-  compact = false,
-}: {
-  plugin: PluginMarketItem;
-  compact?: boolean;
-}) {
-  const iconSize = compact ? 'size-11' : 'size-14';
-  const previewSchema = plugin.latestRelease.adminTabs?.[0]?.schema;
-  const previewScale = compact
-    ? 'w-[460%] scale-[0.2]'
-    : 'w-[380%] scale-[0.24]';
-
-  if (plugin.iconUrl) {
-    return (
-      <img
-        src={plugin.iconUrl}
-        alt={`${plugin.title} icon`}
-        className={`${iconSize} pointer-events-none rounded-2xl object-cover shadow-sm`}
-      />
-    );
-  }
-
-  if (!previewSchema) {
-    return (
-      <div
-        className={`${iconSize} pointer-events-none flex items-center justify-center rounded-2xl border border-dashed border-border bg-muted/40 text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground`}
-      >
-        No UI
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className={`${iconSize} pointer-events-none overflow-hidden rounded-2xl border border-border/70 bg-muted/20`}
-    >
-      <div className={`${previewScale} origin-top-left`}>
-        <AutoTable<SchemaKeys>
-          schema={previewSchema as SchemaKeys}
-          data={[]}
-          readOnly
-          enableAdvancedFiltering={false}
-          enableAdvancedSorting={false}
-          enableAggregations={false}
-          enableColumnPinning={false}
-          enableRowSelection={false}
-          enableGlobalFiltering={false}
-          enablePagination={false}
-          defaultPageSize={3}
-          className="min-h-0"
-        />
-      </div>
     </div>
   );
 }

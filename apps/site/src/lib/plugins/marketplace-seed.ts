@@ -1,3 +1,4 @@
+import { isPluginSystemSentinelSchema } from '@/lib/plugins/subdomain-surface';
 import type {
   ActionManifestDoc,
   AdminTabDoc,
@@ -213,6 +214,8 @@ function toSeedReleaseDoc(
     Date.UTC(2025, 0, 1 + index, 9, Math.min(index, 59), 0, 0),
   ).toISOString();
 
+  const adminTabs = ensureSeedSubdomainSentinels(release.adminTabs);
+
   return {
     id: releaseId,
     pluginId: release.pluginId,
@@ -226,10 +229,39 @@ function toSeedReleaseDoc(
     visibility: 'public',
     docs: release.docs,
     actionManifest: release.actionManifest,
-    schemaDocs: toFallbackSchemaDocs(release),
-    adminTabs: release.adminTabs,
+    schemaDocs: toFallbackSchemaDocs({ ...release, adminTabs }),
+    adminTabs,
     publishedAt,
   };
+}
+
+function ensureSeedSubdomainSentinels(tabs: AdminTabDoc[]): AdminTabDoc[] {
+  const nextTabs = [...tabs];
+  const hasIndex = nextTabs.some(
+    (tab) => tab.schema?.trim() === '__plugin_studio_subdomain__/index',
+  );
+  const hasAdmin = nextTabs.some(
+    (tab) => tab.schema?.trim() === '__plugin_studio_subdomain__/admin',
+  );
+
+  if (!hasIndex) {
+    nextTabs.unshift({
+      schema: '__plugin_studio_subdomain__/index',
+      title: '/',
+      group: 'index',
+      icon: 'globe',
+    });
+  }
+  if (!hasAdmin) {
+    nextTabs.unshift({
+      schema: '__plugin_studio_subdomain__/admin',
+      title: '/admin',
+      group: 'admin',
+      icon: 'autoadmin',
+    });
+  }
+
+  return nextTabs;
 }
 
 function toTemplateSchemaId(input: string) {
@@ -262,7 +294,13 @@ function toActionIdForWorkflow(
 }
 
 function toFallbackSchemaDocs(release: MarketplaceSeedRelease): SchemaDoc[] {
-  if (release.adminTabs.length === 0) {
+  const schemaTabs = release.adminTabs.filter(
+    (tab) =>
+      typeof tab.schema === 'string' &&
+      tab.schema.trim().length > 0 &&
+      !isPluginSystemSentinelSchema(tab.schema),
+  );
+  if (schemaTabs.length === 0) {
     const schemaId = 'example.table';
     return [
       {
@@ -279,7 +317,7 @@ function toFallbackSchemaDocs(release: MarketplaceSeedRelease): SchemaDoc[] {
     ];
   }
 
-  return release.adminTabs.map((tab, index) => {
+  return schemaTabs.map((tab, index) => {
     const schemaId = toTemplateSchemaId(tab.schema);
     return {
       schemaId,
@@ -303,28 +341,24 @@ function toFallbackSchemaWorkflows(
 ): NonNullable<SchemaDoc['workflows']> {
   return [
     {
-    workflowId: toTemplateWorkflowId(
-      release.pluginId,
-      schemaId,
-      index,
-    ),
-    hook: 'afterCreate',
-    nodes: [
-      {
-        nodeId: 'n1',
-        type: 'action',
-        actionId: toActionIdForWorkflow(release.actionManifest, index),
-        input: {
-          expression: {
-            kind: 'ref',
-            source: 'payload',
-            path: [],
+      workflowId: toTemplateWorkflowId(release.pluginId, schemaId, index),
+      hook: 'afterCreate',
+      nodes: [
+        {
+          nodeId: 'n1',
+          type: 'action',
+          actionId: toActionIdForWorkflow(release.actionManifest, index),
+          input: {
+            expression: {
+              kind: 'ref',
+              source: 'payload',
+              path: [],
+            },
           },
         },
-      },
-    ],
-    edges: [],
-  },
+      ],
+      edges: [],
+    },
   ];
 }
 

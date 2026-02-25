@@ -185,12 +185,19 @@ export function buildMarketplaceGroups(
     const reviewStats = allReviews
       ? summarizeReviewStats(entry.pluginId, allReviews)
       : null;
+    const releaseSurface = resolveReleaseSubdomainSurface(entry.latestRelease, {
+      ensureDefaultSubdomains: true,
+      includeAdminFallbackLayers: true,
+    });
+    const screenshotUrls = Array.from(
+      new Set(releaseSurface.surfaces.flatMap((surface) => surface.imageUrls)),
+    );
     return {
       ...entry,
       category,
       publisher: resolvePublisher(entry),
       iconUrl: undefined,
-      screenshotUrls: [],
+      screenshotUrls,
       installs: installCounts.get(entry.pluginId) ?? 0,
       averageRating: reviewStats?.averageRating ?? null,
       reviewCount: reviewStats?.totalReviews ?? null,

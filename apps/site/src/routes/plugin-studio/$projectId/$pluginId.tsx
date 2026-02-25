@@ -114,6 +114,7 @@ import {
   parseReleaseId,
 } from '@/lib/plugins/marketplace-seed';
 import { compileSchemaDoc } from '@/lib/plugins/schema-compiler';
+import { isPluginSystemSentinelSchema } from '@/lib/plugins/subdomain-surface';
 import type {
   ActionManifestDoc,
   AdminTabDoc,
@@ -1100,7 +1101,12 @@ function toLatestTemplateReleases(releases: PluginReleaseDoc[]) {
 }
 
 function toFallbackTemplateSchemaDocs(template: PluginReleaseDoc): SchemaDoc[] {
-  const tabs = template.adminTabs ?? [];
+  const tabs = (template.adminTabs ?? []).filter(
+    (tab) =>
+      typeof tab.schema === 'string' &&
+      tab.schema.trim().length > 0 &&
+      !isPluginSystemSentinelSchema(tab.schema),
+  );
   if (tabs.length === 0) {
     return [DEFAULT_SCHEMA_DOC];
   }

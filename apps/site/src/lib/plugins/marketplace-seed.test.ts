@@ -44,6 +44,16 @@ describe('marketplace seed catalog', () => {
       id: `${MARKETPLACE_SEED_RELEASES[0]?.pluginId}@${MARKETPLACE_SEED_RELEASES[0]?.version}`,
       visibility: 'public',
     });
+    expect(
+      releaseDocs[0]?.adminTabs?.some(
+        (tab) => tab.schema === '__plugin_studio_subdomain__/index',
+      ),
+    ).toBe(true);
+    expect(
+      releaseDocs[0]?.adminTabs?.some(
+        (tab) => tab.schema === '__plugin_studio_subdomain__/admin',
+      ),
+    ).toBe(true);
   });
 
   it('merges live releases with static seeds without overriding live records', () => {
@@ -116,6 +126,11 @@ describe('marketplace seed catalog', () => {
         (schemaDoc) => (schemaDoc.workflows?.length ?? 0) > 0,
       ),
     ).toBe(true);
+    expect(
+      (restaurantRelease?.schemaDocs ?? []).some((schemaDoc) =>
+        schemaDoc.schemaId.startsWith('__plugin_studio_'),
+      ),
+    ).toBe(false);
   });
 
   it('dedupes by pluginId@version even when live rows have different ids', () => {
