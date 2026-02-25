@@ -77,7 +77,11 @@ import { cn } from '@/lib/utils';
 
 const Z_INDEX = 40;
 
-export function NavBar() {
+export function NavBar({
+  extraActions,
+}: {
+  extraActions?: React.ReactNode;
+}) {
   const selectedPageId = useLayerStore((state) => state.selectedPageId);
   const findLayerById = useLayerStore((state) => state.findLayerById);
   const componentRegistry = useEditorStore((state) => state.registry);
@@ -220,6 +224,7 @@ export function NavBar() {
         <div className="hidden md:flex h-10 w-px bg-border"></div>
         <PagesPopover />
         <PreviewModeToggle />
+        {extraActions}
       </div>
 
       <div className="w-full flex items-center justify-end gap-2">

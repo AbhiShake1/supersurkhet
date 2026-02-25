@@ -44,6 +44,7 @@ export interface TabsContentConfig {
  */
 interface PanelConfig {
   navBar?: React.ReactNode;
+  navBarActions?: React.ReactNode;
   pageConfigPanel?: React.ReactNode;
   pageConfigPanelTabsContent?: TabsContentConfig;
   editorPanel?: React.ReactNode;
@@ -98,7 +99,10 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   const currentPanelConfig = useMemo(() => {
     const effectiveTabsContent =
       userPanelConfig?.pageConfigPanelTabsContent || memoizedDefaultTabsContent;
-    const defaultPanels = getDefaultPanelConfigValues(effectiveTabsContent);
+    const defaultPanels = getDefaultPanelConfigValues(
+      effectiveTabsContent,
+      userPanelConfig?.navBarActions,
+    );
 
     return {
       navBar: userPanelConfig?.navBar ?? defaultPanels.navBar,
@@ -385,9 +389,12 @@ export function LoadingSkeleton() {
  * @param {TabsContentConfig} tabsContent - The content for the page config panel tabs.
  * @returns {PanelConfig} The default panel configuration.
  */
-export const getDefaultPanelConfigValues = (tabsContent: TabsContentConfig) => {
+export const getDefaultPanelConfigValues = (
+  tabsContent: TabsContentConfig,
+  navBarActions?: React.ReactNode,
+) => {
   return {
-    navBar: <NavBar />,
+    navBar: <NavBar extraActions={navBarActions} />,
     pageConfigPanel: (
       <PageConfigPanel
         className="pt-4 pb-20 md:pb-4 overflow-y-auto relative size-full"

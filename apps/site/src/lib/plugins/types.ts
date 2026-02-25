@@ -155,3 +155,98 @@ export type ExecuteLifecycleHookResult = {
   executedNodeIds: string[];
   actionOutputsByNodeId: Record<string, unknown>;
 };
+
+export type UiTemplatePluginBundleDoc = {
+  pluginId: string;
+  version: string;
+  requestedCapabilities?: string[];
+  release: PluginReleaseDoc;
+};
+
+export type UiTemplateReleaseDoc = {
+  id: string;
+  templateId: string;
+  version: string;
+  visibility: 'public';
+  publisher: {
+    businessId: string;
+    userId: string;
+    label?: string;
+  };
+  docs: {
+    title: string;
+    description: string;
+    category?: string;
+    tags?: string[];
+  };
+  uiSnapshot: {
+    layers: string;
+  };
+  pluginBundles: UiTemplatePluginBundleDoc[];
+  publishedAt: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type BusinessUiTemplateInstallDoc = {
+  id: string;
+  businessId: string;
+  templateId: string;
+  version: string;
+  installedByUserId: string;
+  installedAt: string;
+  mergeStrategy: 'best-effort';
+  status: 'active';
+  summary: {
+    pagesAdded: number;
+    pagesMerged: number;
+    conflictsCount: number;
+    pluginsInstalled: number;
+    pluginsUpdated: number;
+  };
+};
+
+export type UiTemplateInstallPreview = {
+  templateId: string;
+  version: string;
+  mergeSummary: {
+    pagesAdded: number;
+    pagesMerged: number;
+    hardConflicts: number;
+  };
+  pluginPlan: {
+    install: Array<{
+      pluginId: string;
+      version: string;
+      releaseMissingInTarget: boolean;
+    }>;
+    update: Array<{
+      pluginId: string;
+      fromVersion: string;
+      toVersion: string;
+      releaseMissingInTarget: boolean;
+      requiresConfirmation: boolean;
+    }>;
+    noOp: Array<{
+      pluginId: string;
+      version: string;
+      releaseMissingInTarget: boolean;
+    }>;
+  };
+  hardConflicts: Array<{
+    code:
+      | 'id-type-mismatch'
+      | 'children-shape-mismatch'
+      | 'duplicate-id'
+      | 'invalid-template-snapshot'
+      | 'invalid-target-snapshot';
+    message: string;
+    pageKey: string;
+    path: string;
+    layerId?: string;
+    targetType?: string;
+    templateType?: string;
+    source?: 'template' | 'target';
+  }>;
+  requiresPluginUpdateConfirmation: boolean;
+};

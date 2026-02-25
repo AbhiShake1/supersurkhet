@@ -19,6 +19,7 @@ import { z } from 'zod';
 import { fieldConfig } from '@/components/ui/autoform';
 import { dataMatrixActionSchema } from './datamatrix';
 import {
+  businessUiTemplateInstallSchema,
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
   pluginProjectInviteSchema,
@@ -38,6 +39,7 @@ import {
   pluginUserReviewReplySchema,
   pluginUserReviewVoteSchema,
   pluginV2DiagnosticsSchema,
+  uiTemplateReleaseSchema,
   pluginWorkflowDeadLetterSchema,
   pluginWorkflowEventLogSchema,
   pluginWorkflowJobAttemptSchema,
@@ -283,6 +285,18 @@ export const coreSchema = createSchema({
   businessPluginInstall: {
     schema: businessPluginInstallSchema,
     title: 'Business Plugin Installs',
+    icon: Building,
+    group: 'Plugin Platform',
+  },
+  uiTemplateRelease: {
+    schema: uiTemplateReleaseSchema,
+    title: 'UI Template Releases',
+    icon: Package,
+    group: 'Plugin Platform',
+  },
+  businessUiTemplateInstall: {
+    schema: businessUiTemplateInstallSchema,
+    title: 'Business UI Template Installs',
     icon: Building,
     group: 'Plugin Platform',
   },
@@ -607,6 +621,9 @@ export type Business = InferredTable<'business'>;
 export type Order = InferredTable<'order'>;
 export type PluginRelease = InferredTable<'pluginRelease'>;
 export type BusinessPluginInstall = InferredTable<'businessPluginInstall'>;
+export type UiTemplateRelease = InferredTable<'uiTemplateRelease'>;
+export type BusinessUiTemplateInstall =
+  InferredTable<'businessUiTemplateInstall'>;
 export type PluginDraft = InferredTable<'pluginDraft'>;
 export type PluginDraftRevision = InferredTable<'pluginDraftRevision'>;
 export type BusinessPluginDraftInstall =
@@ -628,6 +645,7 @@ export type PluginWorkflowDeadLetter = InferredTable<'pluginWorkflowDeadLetter'>
 // #endregion
 
 export {
+  businessUiTemplateInstallSchema,
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
   compilePluginSchemasFromDocs,
@@ -645,6 +663,7 @@ export {
   pluginUserReviewReplySchema,
   pluginUserReviewVoteSchema,
   pluginV2DiagnosticsSchema,
+  uiTemplateReleaseSchema,
   pluginWorkflowDeadLetterSchema,
   pluginWorkflowEventLogSchema,
   pluginWorkflowJobAttemptSchema,

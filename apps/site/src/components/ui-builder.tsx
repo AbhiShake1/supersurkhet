@@ -8,10 +8,12 @@ import _ from 'lodash';
 import { Spinner } from './ui/spinner';
 import { NotFound } from './ui/not-found';
 import { ContextDataStore } from '@/lib/ui-builder/context/context-data-store';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import type { Business } from '@/lib/schema';
 import { useProfile } from '@/hooks/use-profile';
 import { useAuth } from './auth-provider';
 import { useSearch } from '@tanstack/react-router';
+import { TemplateMarketplaceSheet } from '@/components/ui/ui-builder/internal/components/template-marketplace-sheet';
 
 const LayerRenderer = lazy(
   () => import('@/components/ui/ui-builder/layer-renderer'),
@@ -82,13 +84,29 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
     keys: [slug],
     single: true,
   });
+  const { user } = useAuth();
   const data = omitMeta(_data?.[0]);
+  const pages = useLayerStore((state) => state.pages);
+  const initializeLayers = useLayerStore((state) => state.initialize);
 
   const currentLayers = data?.uiBuilder?.layers;
+  const businessNamespace = data?.basePath?.trim() || data?.id?.trim() || slug.trim();
+  const actorUserId = user?._?.soul ?? user?.pub ?? '';
+  const actorRole =
+    data?.members?.[actorUserId]?.role === 'owner'
+      ? 'owner'
+      : user?.role === 'admin'
+        ? 'admin'
+        : 'staff';
 
   const handleLayersChange: LayerChangeHandler = (newLayers) => {
     if (isLoading) return;
     upsert({ id: slug, uiBuilder: { layers: JSON.stringify(newLayers) } });
+  };
+
+  const handleTemplateApplied = (nextLayers: typeof pages) => {
+    initializeLayers(nextLayers, nextLayers[0]?.id, nextLayers[0]?.id);
+    upsert({ id: slug, uiBuilder: { layers: JSON.stringify(nextLayers) } });
   };
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: lint debt cleanup
@@ -108,6 +126,17 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
         onChange={handleLayersChange}
         initialLayers={currentLayers ? JSON.parse(currentLayers) : undefined}
         createNew={createNew}
+        panelConfig={{
+          navBarActions: actorUserId ? (
+            <TemplateMarketplaceSheet
+              businessId={businessNamespace}
+              actorUserId={actorUserId}
+              actorRole={actorRole}
+              layers={pages}
+              onInstallApplied={handleTemplateApplied}
+            />
+          ) : null,
+        }}
       />
     </ContextDataStore>
   );

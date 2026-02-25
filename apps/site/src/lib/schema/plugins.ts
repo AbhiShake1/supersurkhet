@@ -3,6 +3,7 @@ import { AUTOFORM_FIELD_TYPES } from '@/components/ui/autoform';
 import { compileSchemaDocs } from '@/lib/plugins/schema-compiler';
 import type { SchemaDoc } from '@/lib/plugins/types';
 import { table } from '../schemas/listings';
+import { uiBuilderLayerSchema } from '../schemas/ui-builder-schema';
 
 const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
   z.union([
@@ -310,6 +311,24 @@ const routesTabsMappedRouteSchema = z.object({
   iconName: z.string().optional(),
 });
 
+const uiTemplateLayersStringSchema = z.string().superRefine((value, ctx) => {
+  try {
+    const parsed = JSON.parse(value);
+    const result = uiBuilderLayerSchema.array().safeParse(parsed);
+    if (!result.success) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'uiSnapshot.layers must be a JSON array of uiBuilder layers',
+      });
+    }
+  } catch (_error) {
+    ctx.addIssue({
+      code: 'custom',
+      message: 'uiSnapshot.layers must be valid JSON',
+    });
+  }
+});
+
 export const pluginReleaseSchema = z
   .object({
     id: z
@@ -351,6 +370,70 @@ export const businessPluginInstallSchema = z
     installedByUserId: z.string(),
     status: z.enum(['active', 'paused']).default('active'),
     requestedCapabilities: z.array(z.string()).optional(),
+  })
+  .extend(table);
+
+const uiTemplatePluginBundleSchema = z
+  .object({
+    pluginId: z.string(),
+    version: z.string(),
+    requestedCapabilities: z.array(z.string()).optional(),
+    release: pluginReleaseSchema,
+  })
+  .strict();
+
+export const uiTemplateReleaseSchema = z
+  .object({
+    id: z.string().describe('Deterministic template release id: templateId@version'),
+    templateId: z.string().describe('Stable template identifier'),
+    version: z.string().describe('Immutable template release version'),
+    visibility: z.literal('public').default('public'),
+    publisher: z
+      .object({
+        businessId: z.string(),
+        userId: z.string(),
+        label: z.string().optional(),
+      })
+      .strict(),
+    docs: z
+      .object({
+        title: z.string(),
+        description: z.string(),
+        category: z.string().optional(),
+        tags: z.array(z.string()).optional(),
+      })
+      .strict(),
+    uiSnapshot: z
+      .object({
+        layers: uiTemplateLayersStringSchema,
+      })
+      .strict(),
+    pluginBundles: z.array(uiTemplatePluginBundleSchema),
+    publishedAt: z.string().datetime({ offset: true }),
+    created_at: z.string().datetime({ offset: true }).optional(),
+    updated_at: z.string().datetime({ offset: true }).optional(),
+  })
+  .extend(table);
+
+export const businessUiTemplateInstallSchema = z
+  .object({
+    id: z.string().describe('Deterministic install id: businessId::templateId'),
+    businessId: z.string(),
+    templateId: z.string(),
+    version: z.string(),
+    installedByUserId: z.string(),
+    installedAt: z.string().datetime({ offset: true }),
+    mergeStrategy: z.literal('best-effort').default('best-effort'),
+    status: z.enum(['active']).default('active'),
+    summary: z
+      .object({
+        pagesAdded: z.number().int().min(0),
+        pagesMerged: z.number().int().min(0),
+        conflictsCount: z.number().int().min(0),
+        pluginsInstalled: z.number().int().min(0),
+        pluginsUpdated: z.number().int().min(0),
+      })
+      .strict(),
   })
   .extend(table);
 

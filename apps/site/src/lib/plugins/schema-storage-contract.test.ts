@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  businessUiTemplateInstallSchema,
   businessPluginDraftInstallSchema,
   businessPluginInstallSchema,
   coreSchema,
@@ -12,12 +13,15 @@ import {
   pluginRoutesTabsConfigSchema,
   pluginUserReviewSchema,
   pluginV2DiagnosticsSchema,
+  uiTemplateReleaseSchema,
 } from '@/lib/schema';
 
 describe('plugin storage schema contracts', () => {
   it('exposes all plugin platform tables in core schema', () => {
     expect(coreSchema.rawShape).toHaveProperty('pluginRelease');
     expect(coreSchema.rawShape).toHaveProperty('businessPluginInstall');
+    expect(coreSchema.rawShape).toHaveProperty('uiTemplateRelease');
+    expect(coreSchema.rawShape).toHaveProperty('businessUiTemplateInstall');
     expect(coreSchema.rawShape).toHaveProperty('pluginDraft');
     expect(coreSchema.rawShape).toHaveProperty('pluginDraftRevision');
     expect(coreSchema.rawShape).toHaveProperty('businessPluginDraftInstall');
@@ -64,6 +68,81 @@ describe('plugin storage schema contracts', () => {
     });
 
     expect(parsed.requestedCapabilities).toEqual(['inventory:write']);
+  });
+
+  it('stores immutable ui template releases with bundled plugin docs', () => {
+    const parsed = uiTemplateReleaseSchema.parse({
+      id: 'acme/restaurant::starter@1.0.0',
+      templateId: 'acme/restaurant::starter',
+      version: '1.0.0',
+      visibility: 'public',
+      publisher: {
+        businessId: 'business-1',
+        userId: 'owner-1',
+      },
+      docs: {
+        title: 'Starter Restaurant',
+        description: 'Landing + menu + booking pages',
+        category: 'restaurant',
+        tags: ['starter', 'public'],
+      },
+      uiSnapshot: {
+        layers: JSON.stringify([
+          {
+            id: 'page-1',
+            name: 'Home',
+            type: 'div',
+            props: {},
+            children: [],
+          },
+        ]),
+      },
+      pluginBundles: [
+        {
+          pluginId: 'acme.inventory',
+          version: '1.0.0',
+          requestedCapabilities: ['inventory:write'],
+          release: {
+            id: 'acme.inventory@1.0.0',
+            pluginId: 'acme.inventory',
+            version: '1.0.0',
+            manifestHash: 'manifest-hash',
+            artifactHash: 'artifact-hash',
+            actionManifest: [],
+            author: {
+              userId: 'owner-1',
+            },
+            visibility: 'public',
+          },
+        },
+      ],
+      publishedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(parsed.pluginBundles[0]?.release.id).toBe('acme.inventory@1.0.0');
+  });
+
+  it('stores business template install summaries', () => {
+    const parsed = businessUiTemplateInstallSchema.parse({
+      id: 'business-1::acme/restaurant::starter',
+      businessId: 'business-1',
+      templateId: 'acme/restaurant::starter',
+      version: '1.0.1',
+      installedByUserId: 'owner-1',
+      installedAt: '2026-01-01T00:00:00.000Z',
+      mergeStrategy: 'best-effort',
+      status: 'active',
+      summary: {
+        pagesAdded: 2,
+        pagesMerged: 1,
+        conflictsCount: 0,
+        pluginsInstalled: 1,
+        pluginsUpdated: 1,
+      },
+    });
+
+    expect(parsed.summary.pagesAdded).toBe(2);
+    expect(parsed.status).toBe('active');
   });
 
   it('supports mutable draft headers and immutable draft revisions', () => {

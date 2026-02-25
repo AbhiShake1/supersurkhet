@@ -22,6 +22,7 @@ import {
 import type {
   ActionManifestDoc,
   AdminTabDoc,
+  BusinessUiTemplateInstallDoc,
   BusinessPluginDraftInstallDoc,
   BusinessPluginInstallDoc,
   ExpressionDoc,
@@ -32,10 +33,13 @@ import type {
   SchemaDoc,
   SchemaFieldDoc,
   SchemaRuleDoc,
-  WorkflowDoc,
+  UiTemplateInstallPreview,
+  UiTemplateReleaseDoc,
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
 } from '@/lib/plugins/types';
+import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
+import { mergeUiTemplateLayers } from '@/lib/ui-builder/template-merge';
 import { flattenSchemaWorkflows } from 'supersurkhet-sdk';
 import { runPluginsV2CompileVerifyPipeline } from './plugins-v2-compile-verify';
 
@@ -410,6 +414,46 @@ const ensureMarketplaceInputSchema = z.object({
   actorUserId: z.string().optional(),
 });
 
+const uiTemplateDocsInputSchema = z
+  .object({
+    title: z.string().min(1),
+    description: z.string().min(1),
+    category: z.string().optional(),
+    tags: z.array(z.string()).optional(),
+  })
+  .strict();
+
+const uiTemplatePublishInputSchema = z
+  .object({
+    actorUserId: z.string(),
+    businessId: z.string(),
+    templateId: z.string(),
+    version: z.string().optional(),
+    docs: uiTemplateDocsInputSchema,
+    layers: z.array(uiBuilderLayerSchema),
+    publisherLabel: z.string().optional(),
+  })
+  .strict();
+
+const uiTemplatePreviewInputSchema = z
+  .object({
+    businessId: z.string(),
+    templateId: z.string(),
+    version: z.string().optional(),
+  })
+  .strict();
+
+const uiTemplateInstallInputSchema = z
+  .object({
+    actorUserId: z.string(),
+    actorRole: z.enum(['owner', 'admin', 'staff']),
+    businessId: z.string(),
+    templateId: z.string(),
+    version: z.string().optional(),
+    confirmPluginUpdates: z.boolean().optional(),
+  })
+  .strict();
+
 function appendUserIdAliases(aliases: Set<string>, value: string | undefined) {
   const normalized = value?.trim();
   if (!normalized) return;
@@ -453,7 +497,10 @@ function matchesUserIdAlias({
 
 export type PluginInputValidationEntrypoint =
   | 'publishPluginRelease'
-  | 'installPluginRelease';
+  | 'installPluginRelease'
+  | 'publishUiTemplateRelease'
+  | 'previewUiTemplateInstall'
+  | 'installUiTemplateRelease';
 
 export type PluginInputValidationIssue = {
   code: z.ZodIssueCode;
@@ -598,6 +645,164 @@ export function parsePromotionReleaseInput<
   });
 }
 
+function parseSemverParts(version: string): [number, number, number] | null {
+  const match = version.trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
+  if (!match) return null;
+  return [
+    Number.parseInt(match[1] ?? '0', 10),
+    Number.parseInt(match[2] ?? '0', 10),
+    Number.parseInt(match[3] ?? '0', 10),
+  ];
+}
+
+function compareSemver(left: string, right: string) {
+  const leftParts = parseSemverParts(left);
+  const rightParts = parseSemverParts(right);
+  if (!leftParts || !rightParts) {
+    return left.localeCompare(right);
+  }
+  for (let index = 0; index < 3; index += 1) {
+    const delta = (leftParts[index] ?? 0) - (rightParts[index] ?? 0);
+    if (delta !== 0) return delta;
+  }
+  return 0;
+}
+
+function toNextPatchVersion(version: string | undefined) {
+  const parsed = parseSemverParts(version ?? '0.0.0');
+  if (!parsed) return '0.0.1';
+  const [major, minor, patch] = parsed;
+  return `${major}.${minor}.${patch + 1}`;
+}
+
+function parseUiBuilderLayers(value: string | undefined) {
+  if (!value) {
+    return {
+      ok: true as const,
+      layers: [] as z.infer<typeof uiBuilderLayerSchema>[],
+    };
+  }
+  try {
+    const parsed = JSON.parse(value);
+    const validated = uiBuilderLayerSchema.array().safeParse(parsed);
+    if (!validated.success) {
+      return {
+        ok: false as const,
+        reason: 'invalid-json-shape',
+      };
+    }
+    return {
+      ok: true as const,
+      layers: validated.data,
+    };
+  } catch (_error) {
+    return {
+      ok: false as const,
+      reason: 'invalid-json',
+    };
+  }
+}
+
+async function loadUiTemplateReleaseRows() {
+  return (await readRowsWithTimeoutFallback(() =>
+    ssrGet('uiTemplateRelease'),
+  )) as UiTemplateReleaseDoc[];
+}
+
+function resolveUiTemplateRelease({
+  releases,
+  templateId,
+  version,
+}: {
+  releases: UiTemplateReleaseDoc[];
+  templateId: string;
+  version?: string;
+}) {
+  const candidates = releases
+    .filter((release) => release.templateId === templateId)
+    .sort((left, right) => compareSemver(right.version, left.version));
+
+  if (candidates.length === 0) return null;
+  if (version) {
+    return candidates.find((release) => release.version === version) ?? null;
+  }
+  return candidates[0] ?? null;
+}
+
+async function getBusinessUiBuilderLayers(businessId: string) {
+  const businessRows = await readRowsWithTimeoutFallback(() =>
+    ssrGet({ key: 'business', single: true }, businessId),
+  );
+  let business = businessRows[0] as
+    | { id?: string; basePath?: string; uiBuilder?: { layers?: string } }
+    | undefined;
+  if (!business) {
+    const allBusinesses = (await readRowsWithTimeoutFallback(() =>
+      ssrGet('business'),
+    )) as Array<{ id?: string; basePath?: string; uiBuilder?: { layers?: string } }>;
+    business = allBusinesses.find(
+      (entry) => entry.id === businessId || entry.basePath === businessId,
+    );
+  }
+  if (!business) {
+    throw new Error(`Business "${businessId}" was not found`);
+  }
+  return {
+    business,
+    parsedLayers: parseUiBuilderLayers(business.uiBuilder?.layers),
+  };
+}
+
+function buildUiTemplatePluginPlan({
+  bundles,
+  installs,
+  knownReleaseIds,
+}: {
+  bundles: UiTemplateReleaseDoc['pluginBundles'];
+  installs: BusinessPluginInstallDoc[];
+  knownReleaseIds: Set<string>;
+}) {
+  const install: UiTemplateInstallPreview['pluginPlan']['install'] = [];
+  const update: UiTemplateInstallPreview['pluginPlan']['update'] = [];
+  const noOp: UiTemplateInstallPreview['pluginPlan']['noOp'] = [];
+  const installsByPluginId = new Map(installs.map((entry) => [entry.pluginId, entry]));
+
+  for (const bundle of bundles) {
+    const releaseId = toReleaseId(bundle.pluginId, bundle.version);
+    const releaseMissingInTarget = !knownReleaseIds.has(releaseId);
+    const currentInstall = installsByPluginId.get(bundle.pluginId);
+    if (!currentInstall) {
+      install.push({
+        pluginId: bundle.pluginId,
+        version: bundle.version,
+        releaseMissingInTarget,
+      });
+      continue;
+    }
+    if (currentInstall.version !== bundle.version) {
+      update.push({
+        pluginId: bundle.pluginId,
+        fromVersion: currentInstall.version,
+        toVersion: bundle.version,
+        releaseMissingInTarget,
+        requiresConfirmation: true,
+      });
+      continue;
+    }
+    noOp.push({
+      pluginId: bundle.pluginId,
+      version: bundle.version,
+      releaseMissingInTarget,
+    });
+  }
+
+  return {
+    install,
+    update,
+    noOp,
+  };
+}
+
 export async function publishPluginRelease({ data }: { data: unknown }) {
   const parsedInput = requireParsedInput({
     schema: releasePublishInputSchema,
@@ -675,6 +880,378 @@ export async function publishPluginRelease({ data }: { data: unknown }) {
   };
 }
 
+export async function publishUiTemplateRelease({ data }: { data: unknown }) {
+  const parsedInput = requireParsedInput({
+    schema: uiTemplatePublishInputSchema,
+    data,
+    entrypoint: 'publishUiTemplateRelease',
+  });
+  const now = new Date().toISOString();
+  const templateRows = await loadUiTemplateReleaseRows();
+  const existingVersions = templateRows
+    .filter((entry) => entry.templateId === parsedInput.templateId)
+    .sort((left, right) => compareSemver(right.version, left.version));
+  const version =
+    parsedInput.version ??
+    toNextPatchVersion(existingVersions[0]?.version);
+  const releaseId = `${parsedInput.templateId}@${version}`;
+
+  if (templateRows.some((entry) => entry.id === releaseId)) {
+    throw new Error(`Template release "${releaseId}" already exists`);
+  }
+
+  const [installedPlugins, publishedReleases] = await Promise.all([
+    readRowsWithTimeoutFallback(() =>
+      ssrGet('businessPluginInstall', parsedInput.businessId),
+    ),
+    readRowsWithTimeoutFallback(() => ssrGet('pluginRelease')),
+  ]);
+
+  const releasesById = new Map(
+    (publishedReleases as PluginReleaseDoc[]).map((release) => [release.id, release]),
+  );
+
+  const pluginBundles = (installedPlugins as BusinessPluginInstallDoc[]).map((install) => {
+    const releaseIdForInstall = toReleaseId(install.pluginId, install.version);
+    const release = releasesById.get(releaseIdForInstall);
+    if (!release) {
+      throw new MissingReleaseError(releaseIdForInstall);
+    }
+    return {
+      pluginId: install.pluginId,
+      version: install.version,
+      requestedCapabilities: install.requestedCapabilities,
+      release,
+    };
+  });
+
+  const release: UiTemplateReleaseDoc = {
+    id: releaseId,
+    templateId: parsedInput.templateId,
+    version,
+    visibility: 'public',
+    publisher: {
+      businessId: parsedInput.businessId,
+      userId: parsedInput.actorUserId,
+      label: parsedInput.publisherLabel,
+    },
+    docs: {
+      title: parsedInput.docs.title,
+      description: parsedInput.docs.description,
+      category: parsedInput.docs.category,
+      tags: parsedInput.docs.tags,
+    },
+    uiSnapshot: {
+      layers: JSON.stringify(parsedInput.layers),
+    },
+    pluginBundles,
+    publishedAt: now,
+    created_at: now,
+    updated_at: now,
+  };
+
+  await upsertGlobalRow({
+    key: 'uiTemplateRelease',
+    id: release.id,
+    row: release as unknown as Record<string, unknown>,
+  });
+
+  return {
+    release,
+  };
+}
+
+export async function previewUiTemplateInstall({
+  data,
+}: {
+  data: unknown;
+}): Promise<UiTemplateInstallPreview> {
+  const parsedInput = requireParsedInput({
+    schema: uiTemplatePreviewInputSchema,
+    data,
+    entrypoint: 'previewUiTemplateInstall',
+  });
+
+  const [templateRows, releaseRows, installRows] = await Promise.all([
+    loadUiTemplateReleaseRows(),
+    readRowsWithTimeoutFallback(() => ssrGet('pluginRelease')),
+    readRowsWithTimeoutFallback(() =>
+      ssrGet('businessPluginInstall', parsedInput.businessId),
+    ),
+  ]);
+
+  const release = resolveUiTemplateRelease({
+    releases: templateRows,
+    templateId: parsedInput.templateId,
+    version: parsedInput.version,
+  });
+  if (!release) {
+    throw new Error(
+      `Template release "${parsedInput.templateId}@${parsedInput.version ?? 'latest'}" not found`,
+    );
+  }
+
+  const { parsedLayers } = await getBusinessUiBuilderLayers(parsedInput.businessId);
+  if (!parsedLayers.ok) {
+    return {
+      templateId: release.templateId,
+      version: release.version,
+      mergeSummary: {
+        pagesAdded: 0,
+        pagesMerged: 0,
+        hardConflicts: 1,
+      },
+      pluginPlan: {
+        install: [],
+        update: [],
+        noOp: [],
+      },
+      hardConflicts: [
+        {
+          code: 'invalid-target-snapshot',
+          message: 'Target business uiBuilder.layers JSON is invalid',
+          pageKey: '*',
+          path: 'business.uiBuilder.layers',
+          source: 'target',
+        },
+      ],
+      requiresPluginUpdateConfirmation: false,
+    };
+  }
+
+  const templateLayersParsed = parseUiBuilderLayers(release.uiSnapshot.layers);
+  if (!templateLayersParsed.ok) {
+    return {
+      templateId: release.templateId,
+      version: release.version,
+      mergeSummary: {
+        pagesAdded: 0,
+        pagesMerged: 0,
+        hardConflicts: 1,
+      },
+      pluginPlan: {
+        install: [],
+        update: [],
+        noOp: [],
+      },
+      hardConflicts: [
+        {
+          code: 'invalid-template-snapshot',
+          message: 'Template uiSnapshot.layers JSON is invalid',
+          pageKey: '*',
+          path: `${release.id}.uiSnapshot.layers`,
+          source: 'template',
+        },
+      ],
+      requiresPluginUpdateConfirmation: false,
+    };
+  }
+
+  const mergeResult = mergeUiTemplateLayers({
+    targetLayers: parsedLayers.layers,
+    templateLayers: templateLayersParsed.layers,
+  });
+  const pluginPlan = buildUiTemplatePluginPlan({
+    bundles: release.pluginBundles,
+    installs: installRows as BusinessPluginInstallDoc[],
+    knownReleaseIds: new Set(
+      (releaseRows as PluginReleaseDoc[]).map((row) => row.id),
+    ),
+  });
+
+  return {
+    templateId: release.templateId,
+    version: release.version,
+    mergeSummary: {
+      pagesAdded: mergeResult.summary.pagesAdded,
+      pagesMerged: mergeResult.summary.pagesMerged,
+      hardConflicts: mergeResult.summary.hardConflicts,
+    },
+    pluginPlan,
+    hardConflicts: mergeResult.hardConflicts,
+    requiresPluginUpdateConfirmation: pluginPlan.update.length > 0,
+  };
+}
+
+export async function installUiTemplateRelease({
+  data,
+}: {
+  data: unknown;
+}) {
+  const parsedInput = requireParsedInput({
+    schema: uiTemplateInstallInputSchema,
+    data,
+    entrypoint: 'installUiTemplateRelease',
+  });
+
+  const preview = await previewUiTemplateInstall({
+    data: {
+      businessId: parsedInput.businessId,
+      templateId: parsedInput.templateId,
+      version: parsedInput.version,
+    },
+  });
+
+  if (preview.hardConflicts.length > 0) {
+    throw new Error('Cannot install template while hard conflicts exist');
+  }
+  if (
+    preview.requiresPluginUpdateConfirmation &&
+    !parsedInput.confirmPluginUpdates
+  ) {
+    throw new Error(
+      'Template updates existing plugins and requires explicit confirmation',
+    );
+  }
+
+  const templateRows = await loadUiTemplateReleaseRows();
+  const release = resolveUiTemplateRelease({
+    releases: templateRows,
+    templateId: parsedInput.templateId,
+    version: preview.version,
+  });
+  if (!release) {
+    throw new Error(
+      `Template release "${parsedInput.templateId}@${preview.version}" not found`,
+    );
+  }
+
+  const { business, parsedLayers } = await getBusinessUiBuilderLayers(parsedInput.businessId);
+  if (!parsedLayers.ok) {
+    throw new Error('Target business uiBuilder.layers JSON is invalid');
+  }
+  const templateLayersParsed = parseUiBuilderLayers(release.uiSnapshot.layers);
+  if (!templateLayersParsed.ok) {
+    throw new Error('Template uiSnapshot.layers JSON is invalid');
+  }
+
+  const mergeResult = mergeUiTemplateLayers({
+    targetLayers: parsedLayers.layers,
+    templateLayers: templateLayersParsed.layers,
+  });
+  if (mergeResult.hardConflicts.length > 0) {
+    throw new Error('Cannot install template while hard conflicts exist');
+  }
+
+  const [publishedReleaseRows, businessInstallRows] = await Promise.all([
+    readRowsWithTimeoutFallback(() => ssrGet('pluginRelease')),
+    readRowsWithTimeoutFallback(() =>
+      ssrGet('businessPluginInstall', parsedInput.businessId),
+    ),
+  ]);
+  const publishedReleaseIds = new Set(
+    (publishedReleaseRows as PluginReleaseDoc[]).map((entry) => entry.id),
+  );
+  const existingInstallsByPluginId = new Map(
+    (businessInstallRows as BusinessPluginInstallDoc[]).map((entry) => [
+      entry.pluginId,
+      entry,
+    ]),
+  );
+
+  for (const bundle of release.pluginBundles) {
+    const releaseId = toReleaseId(bundle.pluginId, bundle.version);
+    if (publishedReleaseIds.has(releaseId)) continue;
+    await upsertGlobalRow({
+      key: 'pluginRelease',
+      id: bundle.release.id,
+      row: bundle.release as unknown as Record<string, unknown>,
+    });
+    publishedReleaseIds.add(releaseId);
+  }
+
+  const store = await loadPublishedStore(parsedInput.businessId);
+  const service = createPluginPlatformService({ store });
+
+  let pluginsInstalled = 0;
+  let pluginsUpdated = 0;
+  for (const bundle of release.pluginBundles) {
+    const existingInstall = existingInstallsByPluginId.get(bundle.pluginId);
+    const isUpdate =
+      !!existingInstall && existingInstall.version !== bundle.version;
+    const install = service.installPublishedRelease({
+      actorUserId: parsedInput.actorUserId,
+      actorRole: parsedInput.actorRole,
+      explicitOwnerAction: isUpdate
+        ? Boolean(parsedInput.confirmPluginUpdates)
+        : true,
+      install: {
+        businessId: parsedInput.businessId,
+        pluginId: bundle.pluginId,
+        version: bundle.version,
+        requestedCapabilities: bundle.requestedCapabilities,
+      },
+    });
+    await upsertScopedRow({
+      key: 'businessPluginInstall',
+      scopeKey: parsedInput.businessId,
+      id: install.id,
+      row: install as unknown as Record<string, unknown>,
+    });
+    if (!existingInstall) {
+      pluginsInstalled += 1;
+    } else if (existingInstall.version !== bundle.version) {
+      pluginsUpdated += 1;
+    }
+  }
+
+  await ssrUpdate('business')({
+    id: business.id ?? parsedInput.businessId,
+    uiBuilder: {
+      layers: JSON.stringify(mergeResult.layers),
+    },
+  } as never);
+
+  const installedAt = new Date().toISOString();
+  const installSummary: BusinessUiTemplateInstallDoc = {
+    id: `${parsedInput.businessId}::${release.templateId}`,
+    businessId: parsedInput.businessId,
+    templateId: release.templateId,
+    version: release.version,
+    installedByUserId: parsedInput.actorUserId,
+    installedAt,
+    mergeStrategy: 'best-effort',
+    status: 'active',
+    summary: {
+      pagesAdded: mergeResult.summary.pagesAdded,
+      pagesMerged: mergeResult.summary.pagesMerged,
+      conflictsCount: mergeResult.summary.hardConflicts,
+      pluginsInstalled,
+      pluginsUpdated,
+    },
+  };
+  await upsertScopedRow({
+    key: 'businessUiTemplateInstall',
+    scopeKey: parsedInput.businessId,
+    id: installSummary.id,
+    row: installSummary as unknown as Record<string, unknown>,
+  });
+
+  return {
+    templateId: release.templateId,
+    version: release.version,
+    mergeSummary: installSummary.summary,
+    installedAt,
+    layers: mergeResult.layers,
+  };
+}
+
+export async function listUiTemplateReleases({
+  data,
+}: {
+  data?: { templateId?: string };
+} = {}) {
+  const rows = await loadUiTemplateReleaseRows();
+  const filtered = data?.templateId
+    ? rows.filter((row) => row.templateId === data.templateId)
+    : rows;
+  return filtered.sort((left, right) => {
+    const templateDelta = left.templateId.localeCompare(right.templateId);
+    if (templateDelta !== 0) return templateDelta;
+    return compareSemver(right.version, left.version);
+  });
+}
+
 async function loadPublishedStore(businessId?: string) {
   const [releases, installs] = await Promise.all([
     readRowsWithTimeoutFallback(() => ssrGet('pluginRelease')),
@@ -750,7 +1327,11 @@ async function upsertGlobalRow({
   id,
   row,
 }: {
-  key: 'pluginRelease' | 'pluginDraft' | 'pluginDraftRevision';
+  key:
+    | 'pluginRelease'
+    | 'pluginDraft'
+    | 'pluginDraftRevision'
+    | 'uiTemplateRelease';
   id: string;
   row: Record<string, unknown>;
 }) {
@@ -782,7 +1363,10 @@ async function upsertScopedRow({
   id,
   row,
 }: {
-  key: 'businessPluginInstall' | 'businessPluginDraftInstall';
+  key:
+    | 'businessPluginInstall'
+    | 'businessPluginDraftInstall'
+    | 'businessUiTemplateInstall';
   scopeKey: string;
   id: string;
   row: Record<string, unknown>;
