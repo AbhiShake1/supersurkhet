@@ -1,32 +1,22 @@
 {
-  "name": "@supersurkhet/sdk",
+  "name": "@supersurkhet/cli",
   "version": "0.0.1",
   "type": "module",
+  "bin": {
+    "supersurkhet": "./dist/index.js"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
     "dist",
     "README.md"
   ],
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    },
-    "./zod": {
-      "types": "./dist/zod.d.ts",
-      "import": "./dist/zod.js",
-      "default": "./dist/zod.js"
-    }
-  },
   "publishConfig": {
     "access": "public",
     "provenance": true
   },
-  "sideEffects": false,
   "dependencies": {
-    "zod": "^3.25.76"
+    "@supersurkhet/sdk": "workspace:*"
   },
   "scripts": {
     "clean": "rm -rf dist",

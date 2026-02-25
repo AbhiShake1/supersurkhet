@@ -1,4 +1,4 @@
-import { z } from './zod';
+import { z } from './zod.js';
 
 export type JsonPrimitive = string | number | boolean | null;
 export type JsonValue =
@@ -1100,4 +1100,4 @@ export function generateSchemaTypes(
   return lines.join('\n');
 }
 
-export { z, getSchemaDerivations, runDeriveWithRuntimeFormValues } from './zod';
+export { z, getSchemaDerivations, runDeriveWithRuntimeFormValues } from './zod.js';

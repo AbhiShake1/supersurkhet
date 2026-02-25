@@ -3,10 +3,18 @@
 import type React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TEMPLATE_SHORTCUTS } from '@/components/ui/ui-builder/internal/templates/shortcuts/template-shortcuts';
 
-const { useGetMock, previewUiTemplateInstallMock } = vi.hoisted(() => ({
+const {
+  useGetMock,
+  previewUiTemplateInstallMock,
+  useShortcutActionMock,
+  publishShortcutIds,
+} = vi.hoisted(() => ({
   useGetMock: vi.fn(),
   previewUiTemplateInstallMock: vi.fn(),
+  useShortcutActionMock: vi.fn(),
+  publishShortcutIds: [] as string[],
 }));
 
 vi.mock('sonner', () => ({
@@ -61,22 +69,6 @@ vi.mock('@/components/ui/tabs', () => ({
   TabsContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 
-vi.mock('@/components/ui/checkbox', () => ({
-  Checkbox: ({
-    checked,
-    onCheckedChange,
-  }: {
-    checked?: boolean;
-    onCheckedChange?: (value: boolean) => void;
-  }) => (
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={(event) => onCheckedChange?.(event.target.checked)}
-    />
-  ),
-}));
-
 vi.mock('@/components/ui/tooltip', () => ({
   Tooltip: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   TooltipTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -91,9 +83,120 @@ vi.mock('@/components/ui/keyboard-shortcuts', () => ({
   }: {
     children: React.ReactNode;
   }) => <>{children}</>,
-  ShortcutKbd: () => <span>kbd</span>,
-  useShortcutAction: () => {},
+  ShortcutKbd: ({ actionId }: { actionId: string }) => (
+    <span data-shortcut-action-id={actionId}>kbd</span>
+  ),
+  useShortcutAction: useShortcutActionMock,
 }));
+
+vi.mock(
+  '@/components/ui/ui-builder/internal/templates/marketplace/template-marketplace-panel',
+  () => ({
+    TemplateMarketplacePanel: ({
+      onSelectionChange,
+      onPreviewInstall,
+    }: {
+      onSelectionChange: (selection: {
+        templateId: string;
+        selectedVersion: string;
+        resolvedVersion: string;
+        preferLatestVersion: boolean;
+      }) => void;
+      onPreviewInstall: (selection: {
+        templateId: string;
+        selectedVersion: string;
+        resolvedVersion: string;
+        preferLatestVersion: boolean;
+      }) => void;
+    }) => (
+      <div>
+        <button
+          type="button"
+          onClick={() =>
+            onSelectionChange({
+              templateId: 'acme/site/starter',
+              selectedVersion: '1.0.0',
+              resolvedVersion: '1.0.0',
+              preferLatestVersion: true,
+            })
+          }
+        >
+          Starter
+        </button>
+        <button
+          type="button"
+          onClick={() =>
+            onPreviewInstall({
+              templateId: 'acme/site/starter',
+              selectedVersion: '1.0.0',
+              resolvedVersion: '1.0.0',
+              preferLatestVersion: true,
+            })
+          }
+        >
+          Preview Install
+        </button>
+      </div>
+    ),
+  }),
+);
+
+vi.mock(
+  '@/components/ui/ui-builder/internal/templates/install/template-install-preview-panel',
+  () => ({
+    TemplateInstallPreviewPanel: ({
+      preview,
+      onApplyTemplate,
+    }: {
+      preview:
+        | null
+        | {
+            hardConflicts: unknown[];
+            requiresPluginUpdateConfirmation: boolean;
+          };
+      onApplyTemplate: () => void;
+    }) => (
+      <button
+        type="button"
+        onClick={onApplyTemplate}
+        disabled={Boolean(preview && preview.hardConflicts.length > 0)}
+      >
+        Apply Template
+      </button>
+    ),
+  }),
+);
+
+vi.mock(
+  '@/components/ui/ui-builder/internal/templates/publish/template-publish-panel',
+  () => ({
+    TemplatePublishPanel: ({
+      publishShortcut,
+    }: {
+      publishShortcut: { id: string };
+    }) => {
+      publishShortcutIds.push(publishShortcut.id);
+      return <div data-testid="template-publish-panel" />;
+    },
+  }),
+);
+
+vi.mock(
+  '@/components/ui/ui-builder/internal/templates/history/template-install-history-panel',
+  () => ({
+    TemplateInstallHistoryPanel: ({
+      installs,
+      releases,
+    }: {
+      installs: Array<{ id: string }>;
+      releases: Array<{ id: string }>;
+    }) => (
+      <div data-testid="template-install-history-panel">
+        history installs:{installs.length} releases:{releases.length}
+      </div>
+    ),
+  }),
+);
 
 import { TemplateMarketplaceSheet } from './template-marketplace-sheet';
 
@@ -122,6 +225,8 @@ describe('TemplateMarketplaceSheet', () => {
             category: 'restaurant',
             tags: ['starter'],
           },
+          pluginBundles: [],
+          publishedAt: '2026-02-25T00:00:00.000Z',
         },
       ],
     });
@@ -148,6 +253,7 @@ describe('TemplateMarketplaceSheet', () => {
       ],
       requiresPluginUpdateConfirmation: false,
     });
+    publishShortcutIds.length = 0;
   });
 
   afterEach(() => {
@@ -188,5 +294,55 @@ describe('TemplateMarketplaceSheet', () => {
     );
     expect(applyButton).toBeTruthy();
     expect(applyButton?.getAttribute('disabled')).not.toBeNull();
+
+    expect(
+      container.querySelector('[data-testid="template-install-history-panel"]')
+        ?.textContent,
+    ).toContain('history installs:0 releases:1');
+  });
+
+  it('wires sheet shortcuts from shared template shortcut exports', async () => {
+    root.render(
+      <TemplateMarketplaceSheet
+        businessId="business-1"
+        actorUserId="owner-1"
+        actorRole="owner"
+        layers={[]}
+        onInstallApplied={() => {}}
+      />,
+    );
+    await flush();
+
+    const actionDefinitions = useShortcutActionMock.mock.calls.map(
+      (call) => call[0] as { id: string },
+    );
+
+    expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.openSheet);
+    expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.switchMarketplaceTab);
+    expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.switchPublishTab);
+    expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.focusMarketplaceSearch);
+    expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.previewInstall);
+    expect(actionDefinitions).toContain(TEMPLATE_SHORTCUTS.applyTemplate);
+
+    const registeredActionIds = actionDefinitions.map((definition) => definition.id);
+    expect(registeredActionIds).toContain(TEMPLATE_SHORTCUTS.openSheet.id);
+    expect(registeredActionIds).toContain(TEMPLATE_SHORTCUTS.switchMarketplaceTab.id);
+    expect(registeredActionIds).toContain(TEMPLATE_SHORTCUTS.switchPublishTab.id);
+    expect(registeredActionIds).toContain(
+      TEMPLATE_SHORTCUTS.focusMarketplaceSearch.id,
+    );
+    expect(registeredActionIds).toContain(TEMPLATE_SHORTCUTS.previewInstall.id);
+    expect(registeredActionIds).toContain(TEMPLATE_SHORTCUTS.applyTemplate.id);
+
+    expect(publishShortcutIds).toContain(TEMPLATE_SHORTCUTS.publishTemplate.id);
+
+    const shortcutKbdIds = [
+      ...container.querySelectorAll('[data-shortcut-action-id]'),
+    ].map((element) => element.getAttribute('data-shortcut-action-id'));
+
+    expect(shortcutKbdIds).toContain(TEMPLATE_SHORTCUTS.openSheet.id);
+    expect(shortcutKbdIds).toContain(TEMPLATE_SHORTCUTS.switchMarketplaceTab.id);
+    expect(shortcutKbdIds).toContain(TEMPLATE_SHORTCUTS.switchPublishTab.id);
+    expect(shortcutKbdIds).toContain(TEMPLATE_SHORTCUTS.focusMarketplaceSearch.id);
   });
 });

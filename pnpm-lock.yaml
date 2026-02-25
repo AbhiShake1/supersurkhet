@@ -232,6 +232,9 @@ importers:
       '@streamdown/mermaid':
         specifier: ^1.0.2
         version: 1.0.2(react@19.2.3)
+      '@supersurkhet/sdk':
+        specifier: workspace:*
+        version: link:../../packages/supersurkhet-sdk
       '@tabler/icons-react':
         specifier: ^3.36.1
         version: 3.36.1(react@19.2.3)
@@ -520,9 +523,6 @@ importers:
       streamdown:
         specifier: ^2.1.0
         version: 2.1.0(react@19.2.3)
-      supersurkhet-sdk:
-        specifier: workspace:*
-        version: link:../../packages/supersurkhet-sdk
       tailwind-merge:
         specifier: ^3.0.2
         version: 3.4.0
@@ -783,6 +783,12 @@ importers:
       typescript:
         specifier: ~5.8.3
         version: 5.8.3
+
+  packages/supersurkhet-cli:
+    dependencies:
+      '@supersurkhet/sdk':
+        specifier: workspace:*
+        version: link:../supersurkhet-sdk
 
   packages/supersurkhet-sdk:
     dependencies:

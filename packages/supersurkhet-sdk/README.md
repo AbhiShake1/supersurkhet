@@ -1,4 +1,4 @@
-# supersurkhet-sdk
+# @supersurkhet/sdk
 
 ## Developer experience (today)
 
@@ -38,7 +38,7 @@ supersurkhet sync-down --config supersurkhet.config.mjs --out supersurkhet/schem
 ### Define actions + plugin
 
 ```ts
-import { createActionRegistry, definePlugin, defineSchemaDoc } from 'supersurkhet-sdk';
+import { createActionRegistry, definePlugin, defineSchemaDoc } from '@supersurkhet/sdk';
 
 const actions = createActionRegistry().defineAction({
   id: 'product.create',
@@ -74,7 +74,7 @@ export default definePlugin({
 ### Zod schema conversion (SDK-patched Zod)
 
 ```ts
-import { defineZodSchemaDoc } from 'supersurkhet-sdk';
+import { defineZodSchemaDoc } from '@supersurkhet/sdk';
 
 const schema = defineZodSchemaDoc({
   schemaId: 'product',
@@ -91,7 +91,7 @@ const schema = defineZodSchemaDoc({
 ### Realtime-ready schema sync store
 
 ```ts
-import { createSchemaSyncStore } from 'supersurkhet-sdk';
+import { createSchemaSyncStore } from '@supersurkhet/sdk';
 
 const store = createSchemaSyncStore();
 store.subscribe((envelope) => {

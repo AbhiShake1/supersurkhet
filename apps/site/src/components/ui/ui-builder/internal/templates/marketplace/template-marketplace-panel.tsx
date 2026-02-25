@@ -38,6 +38,8 @@ export type TemplateMarketplacePanelProps = {
   onSelectionChange?: (selection: TemplateMarketplaceSelection) => void;
   onPreviewInstall?: (selection: TemplateMarketplaceSelection) => void;
   searchInputRef?: RefObject<HTMLInputElement | null>;
+  selectedTemplateId?: string;
+  isPreviewLoading?: boolean;
 };
 
 function compareTemplateVersions(left: string, right: string) {
@@ -236,6 +238,8 @@ export function TemplateMarketplacePanel({
   onSelectionChange,
   onPreviewInstall,
   searchInputRef,
+  selectedTemplateId: selectedTemplateIdFromParent,
+  isPreviewLoading = false,
 }: TemplateMarketplacePanelProps) {
   const [filters, setFilters] = useState<TemplateMarketplaceFiltersState>(
     DEFAULT_TEMPLATE_MARKETPLACE_FILTERS,
@@ -267,6 +271,21 @@ export function TemplateMarketplacePanel({
   const resolvedVersion = preferLatestVersion
     ? (selectedEntry?.releases[0]?.version ?? '')
     : (selectedVersion || selectedEntry?.releases[0]?.version || '');
+
+  useEffect(() => {
+    if (!selectedTemplateIdFromParent) {
+      return;
+    }
+    const targetEntry = entries.find(
+      (entry) => entry.templateId === selectedTemplateIdFromParent,
+    );
+    if (!targetEntry) {
+      return;
+    }
+    setSelectedTemplateId(targetEntry.templateId);
+    setSelectedVersion(targetEntry.releases[0]?.version ?? '');
+    setPreferLatestVersion(true);
+  }, [entries, selectedTemplateIdFromParent]);
 
   useEffect(() => {
     if (!selectedEntry || !resolvedVersion) {
@@ -421,7 +440,7 @@ export function TemplateMarketplacePanel({
             <div className="rounded-md border p-2">
               <p>Plugins bundled</p>
               <p className="font-semibold text-foreground">
-                {selectedEntry.latestRelease.pluginBundles.length}
+                {selectedEntry.latestRelease.pluginBundles?.length ?? 0}
               </p>
             </div>
           </div>
@@ -441,8 +460,9 @@ export function TemplateMarketplacePanel({
               });
             }}
             data-testid="template-marketplace-preview-action"
+            disabled={isPreviewLoading}
           >
-            Preview Install
+            {isPreviewLoading ? 'Loading preview...' : 'Preview Install'}
           </button>
         </div>
       ) : null}
