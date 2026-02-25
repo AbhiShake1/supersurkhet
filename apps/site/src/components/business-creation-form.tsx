@@ -1466,7 +1466,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
       return assistantPickedOauthMethod;
     }
     if (assistantStage === 'credential') {
-      return assistantSecretInput.trim().length > 0;
+      return false;
     }
     
     return false;
