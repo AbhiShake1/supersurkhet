@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { Button } from '@/components/ui/button';
+import { KeyboardShortcutsBoundary } from '@/components/ui/keyboard-shortcuts';
 import {
   ResizableHandle,
   ResizablePanel,
@@ -66,6 +67,7 @@ export interface UIBuilderProps<
   allowPagesDeletion?: boolean;
   isLoading?: boolean;
   createNew?: boolean;
+  enableFocusMode?: boolean;
 }
 
 /**
@@ -83,12 +85,14 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
   allowPagesCreation = true,
   allowPagesDeletion = true,
   createNew = true,
+  enableFocusMode = true,
 }: UIBuilderProps<TRegistry>) => {
   const layerStore = useStore(useLayerStore, (state) => state);
   const editorStore = useStore(useEditorStore, (state) => state);
 
-  const [editorStoreInitialized, setEditorStoreInitialized] = useState(false);
-  const [layerStoreInitialized, setLayerStoreInitialized] = useState(false);
+  const [storesInitialized, setStoresInitialized] = useState(false);
+  const editorInitializedRef = useRef(false);
+  const layerInitializedRef = useRef(false);
   const lastEmittedPagesRef = useRef<ComponentLayer[] | null>(null);
 
   const memoizedDefaultTabsContent = useMemo(
@@ -102,6 +106,7 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
     const defaultPanels = getDefaultPanelConfigValues(
       effectiveTabsContent,
       userPanelConfig?.navBarActions,
+      enableFocusMode,
     );
 
     return {
@@ -111,51 +116,54 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
       editorPanel: userPanelConfig?.editorPanel ?? defaultPanels.editorPanel,
       propsPanel: userPanelConfig?.propsPanel ?? defaultPanels.propsPanel,
     };
-  }, [userPanelConfig, memoizedDefaultTabsContent]);
+  }, [userPanelConfig, memoizedDefaultTabsContent, enableFocusMode]);
 
-  // Effect 1: Initialize Editor Store with registry and page form props
+  // Initialize editor/layer stores once per mounted builder instance.
   useEffect(() => {
-    if (editorStore && componentRegistry && !editorStoreInitialized) {
+    if (!layerStore || !editorStore) {
+      return;
+    }
+
+    if (!editorInitializedRef.current) {
       editorStore.initialize(
         componentRegistry,
         persistLayerStore,
         allowPagesCreation,
         allowPagesDeletion,
       );
-      setEditorStoreInitialized(true);
+      editorInitializedRef.current = true;
     }
-  }, [
-    editorStore,
-    componentRegistry,
-    editorStoreInitialized,
-    persistLayerStore,
-    allowPagesCreation,
-    allowPagesDeletion,
-  ]);
 
-  // Effect 2: Conditionally initialize Layer Store *after* Editor Store is initialized
-  useEffect(() => {
-    if (layerStore && editorStore) {
-      if (initialLayers?.length && !layerStoreInitialized) {
+    if (!layerInitializedRef.current) {
+      if (initialLayers?.length) {
         layerStore.initialize(initialLayers, undefined, undefined);
-        setLayerStoreInitialized(true);
         const { clear } = useLayerStore.temporal.getState();
         clear();
-      } else if (createNew) {
-        setLayerStoreInitialized(true);
+      } else if (!createNew) {
+        return;
       }
+
+      layerInitializedRef.current = true;
+    }
+
+    if (!storesInitialized) {
+      setStoresInitialized(true);
     }
   }, [
-    layerStore,
+    allowPagesCreation,
+    allowPagesDeletion,
+    componentRegistry,
+    createNew,
     editorStore,
     initialLayers,
-    layerStoreInitialized,
-    createNew,
+    layerStore,
+    persistLayerStore,
+    storesInitialized,
   ]);
 
   // Effect 3: Handle onChange callback when pages change
   useEffect(() => {
-    if (onChange && layerStore?.pages && layerStoreInitialized) {
+    if (onChange && layerStore?.pages && storesInitialized) {
       if (
         lastEmittedPagesRef.current &&
         isDeepEqual(lastEmittedPagesRef.current, layerStore.pages)
@@ -165,9 +173,9 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
       lastEmittedPagesRef.current = layerStore.pages;
       onChange(layerStore.pages);
     }
-  }, [layerStore?.pages, onChange, layerStoreInitialized]);
+  }, [layerStore?.pages, onChange, storesInitialized]);
 
-  const isLoading = !layerStoreInitialized || !editorStoreInitialized;
+  const isLoading = !storesInitialized;
   const layout = isLoading ? (
     <LoadingSkeleton />
   ) : (
@@ -182,7 +190,9 @@ const UIBuilder = <TRegistry extends ComponentRegistry = ComponentRegistry>({
       enableSystem
       disableTransitionOnChange
     >
-      <TooltipProvider>{layout}</TooltipProvider>
+      <KeyboardShortcutsBoundary>
+        <TooltipProvider>{layout}</TooltipProvider>
+      </KeyboardShortcutsBoundary>
     </ThemeProvider>
   );
 };
@@ -224,22 +234,19 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
     return panels;
   }, [panelConfig, showLeftPanel, showRightPanel]);
 
-  const [selectedPanel, setSelectedPanel] = useState(() => {
-    const editorPanel = mainPanels.find((panel) => panel.title === 'UI Editor');
-    return editorPanel || mainPanels[0];
-  });
-
-  // Update selected panel when panels change
-  useEffect(() => {
-    const editorPanel = mainPanels.find((panel) => panel.title === 'UI Editor');
+  const [selectedPanelTitle, setSelectedPanelTitle] = useState('UI Editor');
+  const selectedPanel = useMemo(() => {
     const currentPanel = mainPanels.find(
-      (panel) => panel.title === selectedPanel.title,
+      (panel) => panel.title === selectedPanelTitle,
     );
-
-    if (!currentPanel) {
-      setSelectedPanel(editorPanel || mainPanels[0]);
+    if (currentPanel) {
+      return currentPanel;
     }
-  }, [mainPanels, selectedPanel.title]);
+    const fallbackPanel = mainPanels.find(
+      (panel) => panel.title === 'UI Editor',
+    );
+    return fallbackPanel ?? mainPanels[0];
+  }, [mainPanels, selectedPanelTitle]);
 
   const handlePanelClickById = useCallback(
     (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -247,7 +254,7 @@ function MainLayout({ panelConfig }: { panelConfig: PanelConfig }) {
         e.currentTarget.dataset.panelIndex || '0',
         10,
       );
-      setSelectedPanel(mainPanels[panelIndex]);
+      setSelectedPanelTitle(mainPanels[panelIndex]?.title ?? 'UI Editor');
     },
     [mainPanels],
   );
@@ -392,6 +399,7 @@ export function LoadingSkeleton() {
 export const getDefaultPanelConfigValues = (
   tabsContent: TabsContentConfig,
   navBarActions?: React.ReactNode,
+  enableFocusMode = true,
 ) => {
   return {
     navBar: <NavBar extraActions={navBarActions} />,
@@ -401,7 +409,12 @@ export const getDefaultPanelConfigValues = (
         tabsContent={tabsContent}
       />
     ),
-    editorPanel: <EditorPanel className="pb-20 md:pb-0 overflow-y-auto" />,
+    editorPanel: (
+      <EditorPanel
+        className="pb-20 md:pb-0 overflow-y-auto"
+        focusModeEnabled={enableFocusMode}
+      />
+    ),
     propsPanel: (
       <PropsPanel className="px-4 pt-4 pb-20 md:pb-4 overflow-y-auto relative size-full" />
     ),

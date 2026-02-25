@@ -8,12 +8,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Input } from '@/components/ui/input';
 
 export type ShortcutActionId = string;
 
@@ -38,6 +38,37 @@ export type ShortcutDefinition = {
   scope?: ShortcutScope;
   defaultBinding: ShortcutBinding;
 };
+
+type UIBuilderFocusShortcutAction = 'focusSelected' | 'exitFocus';
+
+export const UI_BUILDER_FOCUS_SHORTCUTS = {
+  focusSelected: {
+    id: 'uiBuilder.focus.focusSelected',
+    label: 'Focus selected component',
+    description: 'Zoom into selected component subtree in UI Builder.',
+    scope: 'UI Builder Focus',
+    defaultBinding: {
+      key: 'f',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: true,
+    },
+  },
+  exitFocus: {
+    id: 'uiBuilder.focus.exitFocus',
+    label: 'Zoom out one level',
+    description: 'Exit one level from current component focus.',
+    scope: 'UI Builder Focus',
+    defaultBinding: {
+      key: 'Escape',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+} as const satisfies Record<UIBuilderFocusShortcutAction, ShortcutDefinition>;
 
 const STORAGE_KEY = 'auto-admin-shortcuts-v3';
 const SEQUENCE_TIMEOUT_STORAGE_KEY = 'auto-admin-shortcuts-sequence-timeout-v1';
@@ -185,7 +216,9 @@ function isSequencePrefixMatch(
   prefix: ShortcutStroke[],
 ): boolean {
   if (prefix.length > sequence.length) return false;
-  return prefix.every((stroke, index) => isStrokeMatch(stroke, sequence[index]));
+  return prefix.every((stroke, index) =>
+    isStrokeMatch(stroke, sequence[index]),
+  );
 }
 
 function isModifierOnlyKey(key: string): boolean {
@@ -261,10 +294,12 @@ function loadStoredBindings(): Record<ShortcutActionId, ShortcutBinding> {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
     const parsed = JSON.parse(raw) as Record<ShortcutActionId, ShortcutBinding>;
-    const normalizedEntries = Object.entries(parsed).map(([actionId, binding]) => [
-      actionId,
-      buildBindingFromSequence(getBindingSequence(binding)),
-    ]);
+    const normalizedEntries = Object.entries(parsed).map(
+      ([actionId, binding]) => [
+        actionId,
+        buildBindingFromSequence(getBindingSequence(binding)),
+      ],
+    );
     return Object.fromEntries(normalizedEntries);
   } catch {
     return {};
@@ -424,13 +459,18 @@ export function KeyboardShortcutsProvider({
 
   const setBinding = React.useCallback(
     (actionId: ShortcutActionId, binding: ShortcutBinding) => {
-      const normalizedBinding = buildBindingFromSequence(getBindingSequence(binding));
+      const normalizedBinding = buildBindingFromSequence(
+        getBindingSequence(binding),
+      );
       let replacedActionId: ShortcutActionId | undefined;
       let updated = false;
       updateBindings((current) => {
         const currentForAction =
           current[actionId] ?? registry[actionId]?.defaultBinding;
-        if (currentForAction && isSameBinding(currentForAction, normalizedBinding)) {
+        if (
+          currentForAction &&
+          isSameBinding(currentForAction, normalizedBinding)
+        ) {
           return current;
         }
 
@@ -564,7 +604,8 @@ export function KeyboardShortcutsProvider({
           if (editableContext && !listener.allowInEditableContext()) continue;
           if (listener.guard && !listener.guard(event)) continue;
 
-          const definition = registryRef.current[listener.actionId] ?? listener.definition;
+          const definition =
+            registryRef.current[listener.actionId] ?? listener.definition;
           const binding =
             bindingsRef.current[listener.actionId] ?? definition.defaultBinding;
           const sequence = getBindingSequence(binding);
@@ -886,7 +927,15 @@ export function useShortcutAction(
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [allowInEditableContext, binding, context, definition, enabled, guard, handler]);
+  }, [
+    allowInEditableContext,
+    binding,
+    context,
+    definition,
+    enabled,
+    guard,
+    handler,
+  ]);
 }
 
 const OPEN_SIDEBAR_LEGEND_SHORTCUT: ShortcutDefinition = {
@@ -1092,14 +1141,15 @@ function ShortcutRecorder({
   };
 }) {
   const context = React.useContext(ShortcutContext);
-  const sequenceTimeoutMs = context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
+  const sequenceTimeoutMs =
+    context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
   const [recording, setRecording] = React.useState(false);
   const [previewBinding, setPreviewBinding] = React.useState(binding);
   const [status, setStatus] = React.useState<string | null>(null);
   const pendingSequenceRef = React.useRef<ShortcutStroke[]>([]);
-  const finalizeTimeoutRef = React.useRef<ReturnType<typeof window.setTimeout> | null>(
-    null,
-  );
+  const finalizeTimeoutRef = React.useRef<ReturnType<
+    typeof window.setTimeout
+  > | null>(null);
 
   React.useEffect(() => {
     if (!recording) {
@@ -1347,12 +1397,13 @@ function SingleShortcutEditor({
   closeDialog: () => void;
 }) {
   const context = React.useContext(ShortcutContext);
-  const sequenceTimeoutMs = context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
+  const sequenceTimeoutMs =
+    context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
   const captureRef = React.useRef<HTMLButtonElement | null>(null);
   const pendingSequenceRef = React.useRef<ShortcutStroke[]>([]);
-  const finalizeTimeoutRef = React.useRef<ReturnType<typeof window.setTimeout> | null>(
-    null,
-  );
+  const finalizeTimeoutRef = React.useRef<ReturnType<
+    typeof window.setTimeout
+  > | null>(null);
   const [isListening, setIsListening] = React.useState(true);
   const [candidate, setCandidate] = React.useState<ShortcutBinding | null>(
     null,
@@ -1384,7 +1435,8 @@ function SingleShortcutEditor({
         ? createPreviewKeysFromBinding(candidate)
         : [];
   const hasChange = candidate ? !isSameBinding(candidate, binding) : false;
-  const canSave = Boolean(candidate) && hasChange && !conflictDetails.exactConflict;
+  const canSave =
+    Boolean(candidate) && hasChange && !conflictDetails.exactConflict;
 
   const saveCandidate = React.useCallback(() => {
     if (!candidate || !canSave) return;
@@ -1450,7 +1502,9 @@ function SingleShortcutEditor({
       }
 
       pendingSequenceRef.current = [...pendingSequenceRef.current, nextStroke];
-      const previewBinding = buildBindingFromSequence(pendingSequenceRef.current);
+      const previewBinding = buildBindingFromSequence(
+        pendingSequenceRef.current,
+      );
       setPreviewKeys(createPreviewKeysFromBinding(previewBinding));
       setCandidate(previewBinding);
 
@@ -1549,8 +1603,8 @@ function SingleShortcutEditor({
           </p>
         ) : hasPrefixConflict ? (
           <p className="text-amber-600">
-            Shares a prefix with {prefixConflictLabels.join(' and ')}. The shorter
-            shortcut waits for timeout before firing.
+            Shares a prefix with {prefixConflictLabels.join(' and ')}. The
+            shorter shortcut waits for timeout before firing.
           </p>
         ) : hasChange ? (
           <p className="text-emerald-600">Shortcut is available.</p>
@@ -1582,7 +1636,8 @@ function SingleShortcutEditor({
 
 function KeyboardShortcutSettingsDialog() {
   const context = React.useContext(ShortcutContext);
-  const sequenceTimeoutMs = context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
+  const sequenceTimeoutMs =
+    context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
   const [sequenceTimeoutInputValue, setSequenceTimeoutInputValue] =
     React.useState<string>(() => String(sequenceTimeoutMs));
 
@@ -1688,7 +1743,8 @@ function KeyboardShortcutSettingsDialog() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Shorter shortcuts that share a prefix wait this long before firing.
+              Shorter shortcuts that share a prefix wait this long before
+              firing.
             </p>
           </div>
         ) : null}

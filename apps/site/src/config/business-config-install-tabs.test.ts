@@ -1,9 +1,57 @@
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+import type { AutoAdminRootFocusedConfigPatch } from '@/config/business-config';
 import { resolveInstallDrivenTabs } from '@/config/business-config-resolver';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
 } from '@/lib/plugins/types';
+
+vi.mock('@/lib/api', () => ({
+  api: {
+    businessPluginInstall: {
+      useGet: () => ({
+        data: [],
+        isFetched: true,
+        isFetching: false,
+      }),
+    },
+    pluginRelease: {
+      useGet: () => ({
+        data: [],
+        isFetched: true,
+        isFetching: false,
+      }),
+    },
+  },
+}));
+
+vi.mock('@/lib/plugins/marketplace-seed', () => ({
+  mergeMarketplaceReleasesWithSeed: (releases: unknown[]) => releases,
+}));
+
+let readAutoAdminRootFocusedConfig:
+  | ((props: Record<string, unknown>) => {
+      tabs: unknown[];
+      bindings: Record<string, unknown>;
+      systemTabs: Record<string, unknown>;
+      dataScopes: Record<string, unknown>;
+      bindingCarrierKeys: string[];
+      dataScopeCarrierKeys: string[];
+    })
+  | undefined;
+let applyAutoAdminRootFocusedConfigPatch:
+  | ((
+      props: Record<string, unknown>,
+      patch: AutoAdminRootFocusedConfigPatch,
+    ) => Record<string, unknown>)
+  | undefined;
+
+beforeAll(async () => {
+  const helpers = await import('@/config/business-config');
+  readAutoAdminRootFocusedConfig = helpers.readAutoAdminRootFocusedConfig;
+  applyAutoAdminRootFocusedConfigPatch =
+    helpers.applyAutoAdminRootFocusedConfigPatch;
+});
 
 function release(overrides: Partial<PluginReleaseDoc> = {}): PluginReleaseDoc {
   const pluginId = overrides.pluginId ?? 'acme.admin';
@@ -75,5 +123,79 @@ describe('business config install-driven tab resolver', () => {
     });
 
     expect(tabs).toEqual([]);
+  });
+});
+
+describe('auto admin root focused config helpers', () => {
+  it('reads focused config from mixed object/string carriers', () => {
+    if (!readAutoAdminRootFocusedConfig) {
+      throw new Error('readAutoAdminRootFocusedConfig is not initialized');
+    }
+
+    const focused = readAutoAdminRootFocusedConfig({
+      tabs: JSON.stringify([{ title: 'Orders' }]),
+      bindings: { orders: 'sales.orders' },
+      tabBindings: JSON.stringify({ customers: 'crm.customers' }),
+      systemTabs: JSON.stringify({
+        dashboard: { title: 'Overview' },
+      }),
+      dataScopes: { orders: { source: 'orders' } },
+    });
+
+    expect(focused.tabs).toEqual([{ title: 'Orders' }]);
+    expect(focused.bindings).toEqual({
+      orders: 'sales.orders',
+      customers: 'crm.customers',
+    });
+    expect(focused.systemTabs).toEqual({
+      dashboard: { title: 'Overview' },
+    });
+    expect(focused.dataScopes).toEqual({
+      orders: { source: 'orders' },
+    });
+    expect(focused.bindingCarrierKeys).toEqual(['bindings', 'tabBindings']);
+    expect(focused.dataScopeCarrierKeys).toEqual(['dataScopes']);
+  });
+
+  it('keeps legacy tabBindings carrier when applying bindings patch', () => {
+    if (!applyAutoAdminRootFocusedConfigPatch) {
+      throw new Error(
+        'applyAutoAdminRootFocusedConfigPatch is not initialized',
+      );
+    }
+
+    const next = applyAutoAdminRootFocusedConfigPatch(
+      {
+        tabBindings: { orders: 'sales.orders' },
+      },
+      {
+        bindings: { inventory: 'catalog.inventory' },
+      },
+    );
+
+    expect(next).toEqual({
+      tabBindings: { inventory: 'catalog.inventory' },
+    });
+  });
+
+  it('updates all hybrid binding carriers while preserving storage format', () => {
+    if (!applyAutoAdminRootFocusedConfigPatch) {
+      throw new Error(
+        'applyAutoAdminRootFocusedConfigPatch is not initialized',
+      );
+    }
+
+    const next = applyAutoAdminRootFocusedConfigPatch(
+      {
+        bindings: JSON.stringify({ orders: 'sales.orders' }),
+        tabBindings: { orders: 'sales.orders' },
+      },
+      {
+        bindings: { customers: 'crm.customers' },
+      },
+    );
+
+    expect(next.bindings).toBe(JSON.stringify({ customers: 'crm.customers' }));
+    expect(next.tabBindings).toEqual({ customers: 'crm.customers' });
   });
 });

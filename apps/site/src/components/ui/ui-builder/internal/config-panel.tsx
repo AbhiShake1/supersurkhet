@@ -1,11 +1,36 @@
 import type React from 'react';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { z } from 'zod';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import { Button } from '@/components/ui/button';
 import AutoForm from '@/components/ui/auto-form';
-import { addDefaultValues } from '@/lib/ui-builder/store/schema-utils';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import {
+  applyAutoAdminRootFocusedConfigPatch,
+  readAutoAdminRootFocusedConfig,
+} from '@/config/business-config';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { addDefaultValues } from '@/lib/ui-builder/store/schema-utils';
+
+type FocusAwareEditorStoreState = {
+  focusStack?: string[];
+  getEffectiveCanvasRootId?: (
+    page: ComponentLayer | null | undefined,
+  ) => string | null;
+};
+
+type JsonSectionKey = 'tabs' | 'bindings' | 'systemTabs' | 'dataScopes';
+type JsonSectionState = Record<JsonSectionKey, string>;
+type JsonSectionErrorState = Partial<Record<JsonSectionKey, string>>;
+
+function formatJson(value: unknown) {
+  return JSON.stringify(value, null, 2);
+}
+
+function parseJson<T>(value: string): T {
+  return JSON.parse(value) as T;
+}
 
 export const ConfigPanel = () => {
   const {
@@ -17,7 +42,22 @@ export const ConfigPanel = () => {
     pages,
   } = useLayerStore();
 
-  const selectedLayer = findLayerById(selectedPageId) as ComponentLayer;
+  const selectedLayer = findLayerById(selectedPageId) as
+    | ComponentLayer
+    | undefined;
+  const focusStack = useEditorStore(
+    (state) => (state as FocusAwareEditorStoreState).focusStack ?? [],
+  );
+  const effectiveCanvasRootId = useEditorStore((state) =>
+    (state as FocusAwareEditorStoreState).getEffectiveCanvasRootId?.(
+      selectedLayer,
+    ),
+  );
+  const focusedLayerId = focusStack.at(-1);
+  const isFocusedAutoAdminRoot =
+    selectedLayer?.type === 'AutoAdminRoot' &&
+    (effectiveCanvasRootId === selectedLayer.id ||
+      focusedLayerId === selectedLayer.id);
 
   const handleDeleteLayer = useCallback(
     (layerId: string) => {
@@ -44,14 +84,26 @@ export const ConfigPanel = () => {
     [updateLayer],
   );
 
+  if (!selectedLayer) {
+    return null;
+  }
+
   return (
-    <PageLayerForm
-      selectedLayer={selectedLayer}
-      removeLayer={handleDeleteLayer}
-      duplicateLayer={handleDuplicateLayer}
-      updateLayerProps={handleUpdateLayerProps}
-      allowDelete={pages.length > 1}
-    />
+    <>
+      <PageLayerForm
+        selectedLayer={selectedLayer}
+        removeLayer={handleDeleteLayer}
+        duplicateLayer={handleDuplicateLayer}
+        updateLayerProps={handleUpdateLayerProps}
+        allowDelete={pages.length > 1}
+      />
+      {isFocusedAutoAdminRoot ? (
+        <FocusedAutoAdminRootConfigForm
+          selectedLayer={selectedLayer}
+          updateLayerProps={handleUpdateLayerProps}
+        />
+      ) : null}
+    </>
   );
 };
 
@@ -159,5 +211,174 @@ const PageLayerForm: React.FC<PageLayerFormProps> = ({
     </AutoForm>
   );
 };
+
+function FocusedAutoAdminRootConfigForm({
+  selectedLayer,
+  updateLayerProps,
+}: {
+  selectedLayer: ComponentLayer;
+  updateLayerProps: (
+    id: string,
+    props: Record<string, unknown>,
+    rest?: Omit<ComponentLayer, 'props' | 'children'>,
+  ) => void;
+}) {
+  const focusedConfig = useMemo(
+    () => readAutoAdminRootFocusedConfig(selectedLayer.props),
+    [selectedLayer.props],
+  );
+  const [drafts, setDrafts] = useState<JsonSectionState>({
+    tabs: formatJson(focusedConfig.tabs),
+    bindings: formatJson(focusedConfig.bindings),
+    systemTabs: formatJson(focusedConfig.systemTabs),
+    dataScopes: formatJson(focusedConfig.dataScopes),
+  });
+  const [errors, setErrors] = useState<JsonSectionErrorState>({});
+
+  useEffect(() => {
+    setDrafts({
+      tabs: formatJson(focusedConfig.tabs),
+      bindings: formatJson(focusedConfig.bindings),
+      systemTabs: formatJson(focusedConfig.systemTabs),
+      dataScopes: formatJson(focusedConfig.dataScopes),
+    });
+    setErrors({});
+  }, [
+    focusedConfig.tabs,
+    focusedConfig.bindings,
+    focusedConfig.systemTabs,
+    focusedConfig.dataScopes,
+  ]);
+
+  const setDraft = useCallback((key: JsonSectionKey, value: string) => {
+    setDrafts((current) => ({ ...current, [key]: value }));
+  }, []);
+
+  const applyDraft = useCallback(
+    (key: JsonSectionKey) => {
+      try {
+        const parsedByKey = {
+          tabs: parseJson<unknown[]>(drafts.tabs),
+          bindings: parseJson<Record<string, unknown>>(drafts.bindings),
+          systemTabs: parseJson<Record<string, unknown>>(drafts.systemTabs),
+          dataScopes: parseJson<Record<string, unknown>>(drafts.dataScopes),
+        } as const;
+        const parsedValue = parsedByKey[key];
+        const expectedArray = key === 'tabs';
+        if (expectedArray && !Array.isArray(parsedValue)) {
+          setErrors((current) => ({
+            ...current,
+            [key]: 'Tabs must be a JSON array.',
+          }));
+          return;
+        }
+        if (
+          !expectedArray &&
+          (typeof parsedValue !== 'object' ||
+            parsedValue === null ||
+            Array.isArray(parsedValue))
+        ) {
+          setErrors((current) => ({
+            ...current,
+            [key]: 'Value must be a JSON object.',
+          }));
+          return;
+        }
+
+        const nextProps = applyAutoAdminRootFocusedConfigPatch(
+          selectedLayer.props,
+          {
+            [key]: parsedValue,
+          },
+        );
+        updateLayerProps(selectedLayer.id, nextProps);
+        setErrors((current) => {
+          const { [key]: _removed, ...rest } = current;
+          return rest;
+        });
+      } catch {
+        setErrors((current) => ({
+          ...current,
+          [key]: 'Invalid JSON.',
+        }));
+      }
+    },
+    [drafts, selectedLayer, updateLayerProps],
+  );
+
+  return (
+    <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
+      <h3 className="text-sm font-medium">Focused AutoAdminRoot Config</h3>
+      <JsonSection
+        title="Tabs"
+        description="Configure admin tabs rendered by AutoAdminRoot."
+        value={drafts.tabs}
+        error={errors.tabs}
+        onChange={(value) => setDraft('tabs', value)}
+        onApply={() => applyDraft('tabs')}
+      />
+      <JsonSection
+        title="Bindings"
+        description="Configure tab/data binding map. Hybrid bindings are preserved."
+        value={drafts.bindings}
+        error={errors.bindings}
+        onChange={(value) => setDraft('bindings', value)}
+        onApply={() => applyDraft('bindings')}
+      />
+      <JsonSection
+        title="System Tabs"
+        description="Configure system tab title, group, and icon details."
+        value={drafts.systemTabs}
+        error={errors.systemTabs}
+        onChange={(value) => setDraft('systemTabs', value)}
+        onApply={() => applyDraft('systemTabs')}
+      />
+      <JsonSection
+        title="Data Scopes"
+        description="Configure scoped data sources for focused AutoAdminRoot editing."
+        value={drafts.dataScopes}
+        error={errors.dataScopes}
+        onChange={(value) => setDraft('dataScopes', value)}
+        onApply={() => applyDraft('dataScopes')}
+      />
+    </div>
+  );
+}
+
+function JsonSection({
+  title,
+  description,
+  value,
+  error,
+  onChange,
+  onApply,
+}: {
+  title: string;
+  description: string;
+  value: string;
+  error?: string;
+  onChange: (value: string) => void;
+  onApply: () => void;
+}) {
+  return (
+    <section className="space-y-2 rounded-md border border-border/60 p-3">
+      <div className="space-y-1">
+        <p className="text-sm font-medium">{title}</p>
+        <p className="text-xs text-muted-foreground">{description}</p>
+      </div>
+      <Textarea
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="min-h-36 font-mono text-xs"
+      />
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      <div className="flex justify-end">
+        <Button type="button" size="sm" onClick={onApply}>
+          Apply
+        </Button>
+      </div>
+    </section>
+  );
+}
 
 export default PageLayerForm;

@@ -1,9 +1,15 @@
-import { create, type StateCreator } from 'zustand';
 import type { ComponentType as ReactComponentType } from 'react';
+import { create, type StateCreator } from 'zustand';
 import type {
-  RegistryEntry,
+  ComponentLayer,
   ComponentRegistry,
+  RegistryEntry,
 } from '@/components/ui/ui-builder/types';
+import {
+  getEffectiveCanvasRootId,
+  isLayerInFocusedSubtree,
+  resolveFocusStackForPage,
+} from '@/lib/ui-builder/store/editor-utils';
 
 export interface EditorStore {
   previewMode: 'mobile' | 'tablet' | 'desktop' | 'responsive';
@@ -41,6 +47,21 @@ export interface EditorStore {
   setShowLeftPanel: (show: boolean) => void;
   showRightPanel: boolean;
   setShowRightPanel: (show: boolean) => void;
+
+  focusStack: string[];
+  setFocusStack: (stack: string[]) => void;
+  focusSelectedLayer: (selectedLayerId: string | null | undefined) => void;
+  focusLayer: (layerId: string) => void;
+  exitFocus: () => void;
+  resetFocus: () => void;
+  getResolvedFocusStack: (page: ComponentLayer | null | undefined) => string[];
+  getEffectiveCanvasRootId: (
+    page: ComponentLayer | null | undefined,
+  ) => string | null;
+  isLayerInFocusScope: (
+    page: ComponentLayer | null | undefined,
+    layerId: string | null | undefined,
+  ) => boolean;
 }
 
 const store: StateCreator<EditorStore, [], []> = (set, get) => ({
@@ -90,6 +111,64 @@ const store: StateCreator<EditorStore, [], []> = (set, get) => ({
   setShowLeftPanel: (show) => set({ showLeftPanel: show }),
   showRightPanel: true,
   setShowRightPanel: (show) => set({ showRightPanel: show }),
+
+  focusStack: [],
+  setFocusStack: (stack) =>
+    set((state) => {
+      const nextStack = Array.isArray(stack)
+        ? stack.filter((item) => typeof item === 'string' && item.length > 0)
+        : [];
+      const isSameStack =
+        state.focusStack.length === nextStack.length &&
+        state.focusStack.every((value, index) => value === nextStack[index]);
+      if (isSameStack) {
+        return state;
+      }
+      return { focusStack: nextStack };
+    }),
+  focusSelectedLayer: (selectedLayerId) => {
+    if (!selectedLayerId) {
+      return;
+    }
+    get().focusLayer(selectedLayerId);
+  },
+  focusLayer: (layerId) =>
+    set((state) => {
+      if (!layerId) {
+        return state;
+      }
+
+      const existingFocusIndex = state.focusStack.indexOf(layerId);
+      if (existingFocusIndex >= 0) {
+        return {
+          focusStack: state.focusStack.slice(0, existingFocusIndex + 1),
+        };
+      }
+
+      return {
+        focusStack: [...state.focusStack, layerId],
+      };
+    }),
+  exitFocus: () =>
+    set((state) => ({
+      focusStack:
+        state.focusStack.length > 0
+          ? state.focusStack.slice(0, -1)
+          : state.focusStack,
+    })),
+  resetFocus: () =>
+    set((state) => {
+      if (state.focusStack.length === 0) {
+        return state;
+      }
+      return { focusStack: [] };
+    }),
+  getResolvedFocusStack: (page) =>
+    resolveFocusStackForPage(page, get().focusStack),
+  getEffectiveCanvasRootId: (page) =>
+    getEffectiveCanvasRootId(page, get().focusStack),
+  isLayerInFocusScope: (page, layerId) =>
+    isLayerInFocusedSubtree(page, get().focusStack, layerId),
 });
 
 export const useEditorStore = create<EditorStore>()(store);

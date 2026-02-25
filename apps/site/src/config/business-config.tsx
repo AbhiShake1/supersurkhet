@@ -15,6 +15,138 @@ type AnyAutoTableTab = {
   group?: string;
 };
 
+type JsonRecord = Record<string, unknown>;
+type BindingCarrierKey = 'bindings' | 'tabBindings';
+type DataScopeCarrierKey = 'dataScopes' | 'tabDataScopes';
+
+export type AutoAdminRootFocusedConfig = {
+  tabs: unknown[];
+  bindings: JsonRecord;
+  systemTabs: JsonRecord;
+  dataScopes: JsonRecord;
+  bindingCarrierKeys: BindingCarrierKey[];
+  dataScopeCarrierKeys: DataScopeCarrierKey[];
+};
+
+export type AutoAdminRootFocusedConfigPatch = Partial<{
+  tabs: unknown[];
+  bindings: JsonRecord;
+  systemTabs: JsonRecord;
+  dataScopes: JsonRecord;
+}>;
+
+function isJsonRecord(value: unknown): value is JsonRecord {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function parseJson(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return undefined;
+  }
+}
+
+function toArrayValue(value: unknown): unknown[] {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = parseJson(value);
+    if (Array.isArray(parsed)) return parsed;
+  }
+  return [];
+}
+
+function toRecordValue(value: unknown): JsonRecord {
+  if (isJsonRecord(value)) return value;
+  if (typeof value === 'string') {
+    const parsed = parseJson(value);
+    if (isJsonRecord(parsed)) return parsed;
+  }
+  return {};
+}
+
+function resolveBindingCarrierKeys(
+  props: Record<string, unknown>,
+): BindingCarrierKey[] {
+  const keys = (['bindings', 'tabBindings'] as const).filter((key) =>
+    Object.hasOwn(props, key),
+  );
+  return keys.length > 0 ? [...keys] : ['bindings'];
+}
+
+function resolveDataScopeCarrierKeys(
+  props: Record<string, unknown>,
+): DataScopeCarrierKey[] {
+  const keys = (['dataScopes', 'tabDataScopes'] as const).filter((key) =>
+    Object.hasOwn(props, key),
+  );
+  return keys.length > 0 ? [...keys] : ['dataScopes'];
+}
+
+function toCarrierValue(
+  existingValue: unknown,
+  nextValue: unknown[] | JsonRecord,
+): unknown {
+  if (typeof existingValue === 'string') {
+    return JSON.stringify(nextValue);
+  }
+  return nextValue;
+}
+
+export function readAutoAdminRootFocusedConfig(
+  props: Record<string, unknown>,
+): AutoAdminRootFocusedConfig {
+  const bindingCarrierKeys = resolveBindingCarrierKeys(props);
+  const dataScopeCarrierKeys = resolveDataScopeCarrierKeys(props);
+  const bindings: JsonRecord = {};
+  for (const key of bindingCarrierKeys) {
+    Object.assign(bindings, toRecordValue(props[key]));
+  }
+  const dataScopes: JsonRecord = {};
+  for (const key of dataScopeCarrierKeys) {
+    Object.assign(dataScopes, toRecordValue(props[key]));
+  }
+
+  return {
+    tabs: toArrayValue(props.tabs),
+    bindings,
+    systemTabs: toRecordValue(props.systemTabs),
+    dataScopes,
+    bindingCarrierKeys,
+    dataScopeCarrierKeys,
+  };
+}
+
+export function applyAutoAdminRootFocusedConfigPatch(
+  props: Record<string, unknown>,
+  patch: AutoAdminRootFocusedConfigPatch,
+): Record<string, unknown> {
+  const nextProps = { ...props };
+  const focusedConfig = readAutoAdminRootFocusedConfig(props);
+
+  if (patch.tabs) {
+    nextProps.tabs = toCarrierValue(props.tabs, patch.tabs);
+  }
+
+  if (patch.systemTabs) {
+    nextProps.systemTabs = toCarrierValue(props.systemTabs, patch.systemTabs);
+  }
+
+  if (patch.bindings) {
+    for (const key of focusedConfig.bindingCarrierKeys) {
+      nextProps[key] = toCarrierValue(props[key], patch.bindings);
+    }
+  }
+
+  if (patch.dataScopes) {
+    for (const key of focusedConfig.dataScopeCarrierKeys) {
+      nextProps[key] = toCarrierValue(props[key], patch.dataScopes);
+    }
+  }
+
+  return nextProps;
+}
+
 type UseBusinessConfigInput = {
   slug: string;
   businessId?: string;

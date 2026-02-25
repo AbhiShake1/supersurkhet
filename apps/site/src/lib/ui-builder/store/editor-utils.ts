@@ -1,10 +1,11 @@
-import type { ComponentRegistry } from '@/components/ui/ui-builder/types';
+import type { ComponentType as ReactComponentType } from 'react';
+import type { FieldConfigItem } from '@/components/ui/auto-form/types';
 import type {
   ComponentLayer,
+  ComponentRegistry,
   RegistryEntry,
 } from '@/components/ui/ui-builder/types';
-import type { FieldConfigItem } from '@/components/ui/auto-form/types';
-import type { ComponentType as ReactComponentType } from 'react';
+import { findLayerRecursive } from '@/lib/ui-builder/store/layer-utils';
 
 // Cache for field overrides to avoid regenerating them
 const fieldOverrideCache = new Map<string, Record<string, FieldConfigItem>>();
@@ -76,3 +77,81 @@ export function isCustomComponent(
 ): boolean {
   return component.from !== undefined && component.from !== null;
 }
+
+export const findLayerInTree = (
+  page: ComponentLayer | null | undefined,
+  layerId: string,
+): ComponentLayer | undefined => {
+  if (!page) {
+    return undefined;
+  }
+  if (page.id === layerId) {
+    return page;
+  }
+  if (!Array.isArray(page.children)) {
+    return undefined;
+  }
+  return findLayerRecursive(page.children, layerId);
+};
+
+export const resolveFocusStackForPage = (
+  page: ComponentLayer | null | undefined,
+  focusStack: string[],
+): string[] => {
+  if (!page || focusStack.length === 0) {
+    return [];
+  }
+
+  const resolvedStack: string[] = [];
+  let currentRoot: ComponentLayer = page;
+
+  for (const focusedLayerId of focusStack) {
+    const nextRoot =
+      focusedLayerId === currentRoot.id
+        ? currentRoot
+        : findLayerInTree(currentRoot, focusedLayerId);
+
+    if (!nextRoot) {
+      break;
+    }
+
+    resolvedStack.push(nextRoot.id);
+    currentRoot = nextRoot;
+  }
+
+  return resolvedStack;
+};
+
+export const getEffectiveCanvasRootId = (
+  page: ComponentLayer | null | undefined,
+  focusStack: string[],
+): string | null => {
+  if (!page) {
+    return null;
+  }
+
+  const resolvedStack = resolveFocusStackForPage(page, focusStack);
+  return resolvedStack.at(-1) ?? page.id;
+};
+
+export const isLayerInFocusedSubtree = (
+  page: ComponentLayer | null | undefined,
+  focusStack: string[],
+  layerId: string | null | undefined,
+): boolean => {
+  if (!page || !layerId) {
+    return false;
+  }
+
+  const effectiveRootId = getEffectiveCanvasRootId(page, focusStack);
+  if (!effectiveRootId) {
+    return false;
+  }
+
+  if (layerId === effectiveRootId) {
+    return true;
+  }
+
+  const effectiveRootLayer = findLayerInTree(page, effectiveRootId);
+  return Boolean(findLayerInTree(effectiveRootLayer, layerId));
+};

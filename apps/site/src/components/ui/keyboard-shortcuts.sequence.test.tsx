@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 
-import type React from 'react';
 import { fireEvent } from '@testing-library/dom';
+import type React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   KeyboardShortcutLegend,
   KeyboardShortcutsBoundary,
   type ShortcutDefinition,
+  UI_BUILDER_FOCUS_SHORTCUTS,
   useShortcutAction,
 } from '@/components/ui/keyboard-shortcuts';
 
@@ -32,8 +33,12 @@ vi.mock('@/components/ui/dialog', () => ({
   DialogContent: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
-  DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-  DialogTitle: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogHeader: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
+  DialogTitle: ({ children }: { children: React.ReactNode }) => (
+    <div>{children}</div>
+  ),
   DialogDescription: ({ children }: { children: React.ReactNode }) => (
     <div>{children}</div>
   ),
@@ -155,13 +160,7 @@ function SequenceHarness({
   return null;
 }
 
-function BranchHarness({
-  onGh,
-  onGl,
-}: {
-  onGh: () => void;
-  onGl: () => void;
-}) {
+function BranchHarness({ onGh, onGl }: { onGh: () => void; onGl: () => void }) {
   useShortcutAction(G_H_SHORTCUT, () => onGh());
   useShortcutAction(G_L_SHORTCUT, () => onGl());
   return null;
@@ -178,6 +177,22 @@ function EditableHarness({
     allowInEditableContext,
   });
   return <input aria-label="editable-target" />;
+}
+
+function BuilderFocusHarness({
+  onFocusSelected,
+  onExitFocus,
+}: {
+  onFocusSelected: () => void;
+  onExitFocus: () => void;
+}) {
+  useShortcutAction(UI_BUILDER_FOCUS_SHORTCUTS.focusSelected, () => {
+    onFocusSelected();
+  });
+  useShortcutAction(UI_BUILDER_FOCUS_SHORTCUTS.exitFocus, () => {
+    onExitFocus();
+  });
+  return null;
 }
 
 let container: HTMLDivElement;
@@ -394,5 +409,59 @@ describe('keyboard shortcut sequences', () => {
     expect(
       localStorageState.get('auto-admin-shortcuts-sequence-timeout-v1'),
     ).toBe('325');
+  });
+
+  it('triggers UI builder focus shortcuts with default bindings', async () => {
+    const onFocusSelected = vi.fn();
+    const onExitFocus = vi.fn();
+
+    root.render(
+      <KeyboardShortcutsBoundary>
+        <BuilderFocusHarness
+          onFocusSelected={onFocusSelected}
+          onExitFocus={onExitFocus}
+        />
+      </KeyboardShortcutsBoundary>,
+    );
+    await flush();
+
+    dispatchKey('f', { metaKey: true, shiftKey: true });
+    dispatchKey('Escape');
+
+    expect(onFocusSelected).toHaveBeenCalledTimes(1);
+    expect(onExitFocus).toHaveBeenCalledTimes(1);
+  });
+
+  it('supports rebound UI builder focus selected shortcut from persisted bindings', async () => {
+    localStorageState.set(
+      'auto-admin-shortcuts-v3',
+      JSON.stringify({
+        [UI_BUILDER_FOCUS_SHORTCUTS.focusSelected.id]: {
+          key: 'g',
+          ctrl: true,
+          meta: false,
+          alt: true,
+          shift: false,
+        },
+      }),
+    );
+    const onFocusSelected = vi.fn();
+    const onExitFocus = vi.fn();
+
+    root.render(
+      <KeyboardShortcutsBoundary>
+        <BuilderFocusHarness
+          onFocusSelected={onFocusSelected}
+          onExitFocus={onExitFocus}
+        />
+      </KeyboardShortcutsBoundary>,
+    );
+    await flush();
+
+    dispatchKey('f', { metaKey: true, shiftKey: true });
+    dispatchKey('g', { ctrlKey: true, altKey: true });
+
+    expect(onFocusSelected).toHaveBeenCalledTimes(1);
+    expect(onExitFocus).toHaveBeenCalledTimes(0);
   });
 });

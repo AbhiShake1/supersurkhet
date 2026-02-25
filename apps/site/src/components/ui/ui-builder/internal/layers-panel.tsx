@@ -1,6 +1,6 @@
 import isDeepEqual from 'fast-deep-equal';
 import { type Id, useHeTree } from 'he-tree-react';
-import { Plus } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import React, {
   useCallback,
   useEffect,
@@ -17,12 +17,21 @@ import {
   TreeRowPlaceholder,
 } from '@/components/ui/ui-builder/internal/components/tree-row-node';
 import type { ComponentLayer } from '@/components/ui/ui-builder/types';
+import { useEditorStore } from '@/lib/ui-builder/store/editor-store';
 import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
 import {
   findAllParentLayersRecursive,
   hasLayerChildren,
 } from '@/lib/ui-builder/store/layer-utils';
 import { cn } from '@/lib/utils';
+
+type FocusModeStoreSlice = {
+  focusStack?: string[];
+  focusLayer?: (layerId: string) => void;
+  getEffectiveCanvasRootId?: (
+    page: ComponentLayer | null | undefined,
+  ) => string | null;
+};
 
 interface LayersPanelProps {
   className?: string;
@@ -34,28 +43,84 @@ const LayersPanel: React.FC<LayersPanelProps> = ({ className }) => {
   const pageLayer = useLayerStore((state) =>
     state.findLayerById(state.selectedPageId),
   );
+  const findLayerById = useLayerStore((state) => state.findLayerById);
   const updateLayer = useLayerStore((state) => state.updateLayer);
   const selectLayer = useLayerStore((state) => state.selectLayer);
   const removeLayer = useLayerStore((state) => state.removeLayer);
   const duplicateLayer = useLayerStore((state) => state.duplicateLayer);
+  const focusModeStore = useEditorStore(
+    (state) => state as unknown as FocusModeStoreSlice,
+  );
 
   const layers = useMemo(() => [pageLayer as ComponentLayer], [pageLayer]);
+  const isFocusModeAvailable = typeof focusModeStore.focusLayer === 'function';
+
+  const focusBreadcrumbs = useMemo(() => {
+    if (!pageLayer) return [];
+    const stack = focusModeStore.focusStack ?? [];
+    const effectiveCanvasRootId =
+      focusModeStore.getEffectiveCanvasRootId?.(pageLayer) ?? null;
+    if (stack.length > 0) {
+      const mapped = stack
+        .map((layerId) => findLayerById(layerId))
+        .filter(Boolean) as ComponentLayer[];
+      return [pageLayer, ...mapped];
+    }
+    const focusedRootId = effectiveCanvasRootId;
+    if (focusedRootId && focusedRootId !== selectedPageId) {
+      const focusedRootLayer = findLayerById(focusedRootId);
+      if (focusedRootLayer) {
+        const parents = findAllParentLayersRecursive(layers, focusedRootId);
+        return [pageLayer, ...parents, focusedRootLayer];
+      }
+    }
+    const fallbackLayerId = selectedLayerId ?? selectedPageId;
+    const fallbackLayer = findLayerById(fallbackLayerId);
+    if (!fallbackLayer) return [pageLayer];
+    const parents = findAllParentLayersRecursive(layers, fallbackLayerId);
+    return [pageLayer, ...parents, fallbackLayer];
+  }, [
+    findLayerById,
+    focusModeStore.focusStack,
+    focusModeStore.getEffectiveCanvasRootId,
+    layers,
+    pageLayer,
+    selectedLayerId,
+    selectedPageId,
+  ]);
+
+  const onSelectBreadcrumb = useCallback(
+    (layerId: string) => {
+      if (isFocusModeAvailable) {
+        focusModeStore.focusLayer?.(layerId);
+      }
+      selectLayer(layerId);
+    },
+    [focusModeStore, isFocusModeAvailable, selectLayer],
+  );
 
   if (!pageLayer) {
     return null;
   }
 
   return (
-    <LayersTree
-      className={className}
-      layers={layers}
-      selectedPageId={selectedPageId}
-      selectedLayerId={selectedLayerId}
-      updateLayer={updateLayer}
-      selectLayer={selectLayer}
-      removeLayer={removeLayer}
-      duplicateLayer={duplicateLayer}
-    />
+    <div className={cn(className, 'flex h-full min-h-0 flex-col')}>
+      <FocusBreadcrumbs
+        items={focusBreadcrumbs}
+        onSelect={onSelectBreadcrumb}
+        focusModeAvailable={isFocusModeAvailable}
+      />
+      <LayersTree
+        className="min-h-0 flex-1"
+        layers={layers}
+        selectedPageId={selectedPageId}
+        selectedLayerId={selectedLayerId}
+        updateLayer={updateLayer}
+        selectLayer={selectLayer}
+        removeLayer={removeLayer}
+        duplicateLayer={duplicateLayer}
+      />
+    </div>
   );
 };
 
@@ -73,6 +138,57 @@ interface LayersTreeProps {
   selectLayer: (layerId: string) => void;
   removeLayer: (layerId: string) => void;
   duplicateLayer: (layerId: string) => void;
+}
+
+function FocusBreadcrumbs({
+  items,
+  onSelect,
+  focusModeAvailable,
+}: {
+  items: ComponentLayer[];
+  onSelect: (layerId: string) => void;
+  focusModeAvailable: boolean;
+}) {
+  const uniqueItems = useMemo(() => {
+    const seen = new Set<string>();
+    return items.filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, [items]);
+
+  const renderLabel = useCallback((item: ComponentLayer, index: number) => {
+    if (index === 0) return item.name || 'Page';
+    return item.name || item.type || item.id;
+  }, []);
+
+  return (
+    <div className="flex items-center gap-1 overflow-x-auto border-b border-border/60 bg-muted/20 px-2 py-1.5 text-xs">
+      {uniqueItems.map((item, index) => (
+        <React.Fragment key={`${item.id}-${index + 1}`}>
+          {index > 0 ? (
+            <ChevronRight className="size-3 shrink-0 text-muted-foreground/70" />
+          ) : null}
+          <button
+            type="button"
+            className={cn(
+              buttonVariants({ variant: 'ghost', size: 'sm' }),
+              'h-6 shrink-0 px-2 text-xs font-medium',
+            )}
+            onClick={() => onSelect(item.id)}
+            title={
+              focusModeAvailable
+                ? 'Select and focus this layer'
+                : 'Select this layer'
+            }
+          >
+            <span className="truncate">{renderLabel(item, index)}</span>
+          </button>
+        </React.Fragment>
+      ))}
+    </div>
+  );
 }
 
 export const LayersTree: React.FC<LayersTreeProps> = React.memo(
