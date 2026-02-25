@@ -11,7 +11,7 @@ const TOKEN_VERSION = 'v1';
 const CIPHER = 'aes-256-gcm';
 const IV_SIZE = 12;
 const AUTH_TAG_SIZE = 16;
-const runtimeFallbackSecret = toBase64Url(randomBytes(32));
+let runtimeFallbackSecret: string | null = null;
 
 export const AI_PROVIDER_STORE_COOKIE_NAME = 'ss-ai-provider-store';
 export const AI_PROVIDER_OAUTH_STATE_COOKIE_NAME = 'ss-ai-provider-oauth-state';
@@ -90,12 +90,19 @@ function resolveNowInSeconds(source?: TimeSource): number {
   return Math.floor(Date.now() / 1000);
 }
 
+function getRuntimeFallbackSecret(): string {
+  if (!runtimeFallbackSecret) {
+    runtimeFallbackSecret = toBase64Url(randomBytes(32));
+  }
+  return runtimeFallbackSecret;
+}
+
 function resolveSecretKey(secret?: string): Buffer {
   const fallback =
     secret ||
     process.env.AI_AUTH_STORE_SECRET ||
     process.env.OPENAI_API_KEY ||
-    runtimeFallbackSecret;
+    getRuntimeFallbackSecret();
   return createHash('sha256').update(fallback).digest();
 }
 

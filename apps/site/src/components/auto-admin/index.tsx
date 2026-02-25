@@ -1,7 +1,7 @@
 import type { NestedSchemaType, SchemaKeys } from '@gta/react-hooks';
 import { getNestedZodShape } from '@gta/react-hooks';
 import { useQuery } from '@tanstack/react-query';
-import { useLocation } from '@tanstack/react-router';
+import { useLocation, useNavigate } from '@tanstack/react-router';
 import _ from 'lodash';
 import {
   BarChart3,
@@ -21,7 +21,19 @@ import {
 import { ZodEffects } from 'zod';
 import CollapsibleSidebar from '@/components/ui/collapsible-sidebar';
 import * as Kanban from '@/components/ui/kanban';
+import {
+  KeyboardShortcutsBoundary,
+  ShortcutKbd,
+  useRegisterShortcut,
+} from '@/components/ui/keyboard-shortcuts';
+import { ManageOrganization } from '@/components/ui/organizations/manage-organization';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useDialog } from '@/contexts/dialog-context';
 import { api } from '@/lib/api';
 import {
   dedupeAdminTabs,
@@ -29,6 +41,8 @@ import {
   resolveAdminTabInput,
   resolveIconByName,
 } from '@/lib/auto-runtime/tab-runtime';
+import { get as gunGet } from '@/lib/gun/ssr/get';
+import { getGunRef, mergeKeys } from '@/lib/gun/utils';
 import { appSchema } from '@/lib/schema';
 import { cn, getSoulFromUnknown } from '@/lib/utils';
 import { AdminDashboard } from '../admin-dashboard';
@@ -42,6 +56,23 @@ import { NotFound } from '../ui/not-found';
 import { Skeleton } from '../ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { CustomUiBuilderPage } from '../ui-builder';
+import { AutoAdminGlobalCommand } from './global-command';
+
+const AUTO_ADMIN_SHORTCUTS = {
+  kanbanColumnHandle: {
+    id: 'autoAdmin.kanbanColumnHandle',
+    label: 'Kanban column handle',
+    description: 'Use the drag handle on a Kanban column header.',
+    scope: 'AutoAdmin Kanban',
+    defaultBinding: {
+      key: 'd',
+      ctrl: false,
+      meta: true,
+      alt: true,
+      shift: true,
+    },
+  },
+} as const;
 
 export interface AutoAdminProps {
   tabs: AutoAdminTabInput[];
@@ -145,9 +176,146 @@ export type AutoTableTabInput<K extends SchemaKeys = SchemaKeys> =
 
 type AutoTableItem = AutoTableProps<SchemaKeys>;
 
+type GlobalSearchSource = {
+  tabTitle: string;
+  tabGroup?: string;
+  mode: 'schema' | 'runtime';
+  schema?: SchemaKeys;
+  slug: string;
+};
+
+type GlobalSearchIndexedRow = {
+  tabTitle: string;
+  tabGroup?: string;
+  schema: SchemaKeys;
+  slug: string;
+  rowId: string;
+  label: string;
+  description?: string;
+  searchText: string;
+};
+
 function isRenderableAutoTableTab(tab: unknown): tab is AutoTableItem {
   if (!tab || typeof tab !== 'object') return false;
   return 'schema' in tab || 'parsedSchema' in tab;
+}
+
+function collectFullTextTokens(value: unknown, out: string[]) {
+  if (value === null || value === undefined) return;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (trimmed) out.push(trimmed);
+    return;
+  }
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    out.push(String(value));
+    return;
+  }
+  if (value instanceof Date) {
+    out.push(value.toISOString());
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectFullTextTokens(item, out);
+    }
+    return;
+  }
+  if (typeof value === 'object') {
+    for (const [entryKey, entryValue] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
+      if (entryKey === '_' || entryKey === '#' || entryKey === '>') continue;
+      collectFullTextTokens(entryValue, out);
+    }
+  }
+}
+
+function getRowDisplayLabel(
+  row: Record<string, unknown>,
+  fallbackIndex: number,
+): { label: string; description?: string } {
+  const labelCandidates = [
+    row.title,
+    row.name,
+    row.label,
+    row.email,
+    row.orderNumber,
+    row.invoiceNumber,
+    row.id,
+  ].filter(
+    (value): value is string | number =>
+      typeof value === 'string' || typeof value === 'number',
+  );
+  const descriptionCandidates = [
+    row.description,
+    row.text,
+    row.phone,
+    row.status,
+    row.date,
+    row.timestamp,
+  ].filter(
+    (value): value is string | number =>
+      typeof value === 'string' || typeof value === 'number',
+  );
+  const label =
+    labelCandidates.length > 0
+      ? String(labelCandidates[0]).trim()
+      : `Row ${fallbackIndex + 1}`;
+  const description =
+    descriptionCandidates.length > 0
+      ? String(descriptionCandidates[0]).trim()
+      : undefined;
+  return { label, description };
+}
+
+async function fetchRuntimeRowsBySlug(slug: string) {
+  const absolutePath = mergeKeys('', slug);
+  const node = getGunRef(absolutePath);
+
+  return new Promise<Array<Record<string, unknown>>>((resolve) => {
+    let settled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      resolve([]);
+    }, 2000);
+
+    node
+      .load((data) => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        if (!data || typeof data !== 'object') {
+          resolve([]);
+          return;
+        }
+        const rows: Array<Record<string, unknown>> = [];
+        for (const [soul, value] of Object.entries(
+          data as Record<string, unknown>,
+        )) {
+          if (soul === '_' || value === null || value === undefined) continue;
+          if (typeof value === 'object') {
+            rows.push({
+              ...(value as Record<string, unknown>),
+              _: { soul },
+            });
+            continue;
+          }
+          rows.push({
+            value,
+            _: { soul },
+          });
+        }
+        resolve(rows);
+      })
+      .not(() => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        resolve([]);
+      });
+  });
 }
 
 export function AutoAdmin({
@@ -171,6 +339,8 @@ export function AutoAdmin({
   groups,
 }: AutoAdminProps) {
   'use memo';
+  const navigate = useNavigate();
+  const { openDialog } = useDialog();
   const { search, pathname: currentPathname } = useLocation();
   const [basePath] = currentPathname.split('/').filter((i) => !!i.length);
   const [uncontrolledSystemTabs, setUncontrolledSystemTabs] =
@@ -259,13 +429,13 @@ export function AutoAdmin({
     const runtimeTabsByToken = new Map<string, PossibleTabConfig>();
     for (const tab of runtimeTabs) {
       const runtimeTabId =
-        ('tabId' in tab &&
-          typeof tab.tabId === 'string' &&
-          tab.tabId.trim().length > 0
+        'tabId' in tab &&
+        typeof tab.tabId === 'string' &&
+        tab.tabId.trim().length > 0
           ? tab.tabId.trim()
-          : ('schema' in tab && typeof tab.schema === 'string'
+          : 'schema' in tab && typeof tab.schema === 'string'
             ? tab.schema
-            : tab.title));
+            : tab.title;
       runtimeTabsByToken.set(`schema:${runtimeTabId}`, tab);
     }
 
@@ -302,16 +472,17 @@ export function AutoAdmin({
             : candidate === websiteTabConfig
               ? 'system:website'
               : (() => {
-                const runtimeTabId =
-                  ('tabId' in candidate &&
+                  const runtimeTabId =
+                    'tabId' in candidate &&
                     typeof candidate.tabId === 'string' &&
                     candidate.tabId.trim().length > 0
-                    ? candidate.tabId.trim()
-                    : ('schema' in candidate && typeof candidate.schema === 'string'
-                      ? candidate.schema
-                      : candidate.title));
-                return `schema:${runtimeTabId}`;
-              })();
+                      ? candidate.tabId.trim()
+                      : 'schema' in candidate &&
+                          typeof candidate.schema === 'string'
+                        ? candidate.schema
+                        : candidate.title;
+                  return `schema:${runtimeTabId}`;
+                })();
       if (
         token.startsWith('system:')
           ? usedSystemTokens.has(token)
@@ -522,103 +693,439 @@ export function AutoAdmin({
         : null,
     [currentItem, basePath],
   );
+  const [isGlobalCommandOpen, setIsGlobalCommandOpen] = useState(false);
+  const { data: organizationMembers = [] } = api.user.useGet();
+
+  const selectTab = useCallback(
+    (nextTab: string) => {
+      void navigate({
+        to: '.',
+        search: (current) => ({
+          ...(current as Record<string, unknown>),
+          tab: nextTab,
+        }),
+      });
+    },
+    [navigate],
+  );
+
+  const commandTabs = useMemo(
+    () =>
+      tabsWithHome.map((item, index) => ({
+        id: `tab-${item.title}-${index}`,
+        title: item.title,
+        group: item.group,
+        active: item.title === tab,
+        keywords: [
+          'table',
+          'page',
+          'sidebar',
+          'autoadmin',
+          'organization',
+          item.group ?? '',
+        ].join(' '),
+        onSelect: () => {
+          selectTab(item.title);
+        },
+      })),
+    [selectTab, tab, tabsWithHome],
+  );
+
+  const focusRowById = useCallback((rowId: string) => {
+    let attempts = 0;
+    const maxAttempts = 30;
+    const intervalId = window.setInterval(() => {
+      const target = document.querySelector<HTMLElement>(
+        `[data-row-id="${CSS.escape(rowId)}"]`,
+      );
+      if (target) {
+        window.clearInterval(intervalId);
+        target.focus();
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      attempts += 1;
+      if (attempts >= maxAttempts) {
+        window.clearInterval(intervalId);
+      }
+    }, 100);
+  }, []);
+
+  const searchableSources = useMemo(() => {
+    const schemaShape = appSchema.schemaShape as unknown as Record<
+      string,
+      unknown
+    >;
+    const out: GlobalSearchSource[] = [];
+    for (const tab of tabsWithHome) {
+      if (!isRenderableAutoTableTab(tab)) continue;
+      const normalized = normalizeAutoTableTab(
+        tab as PossibleTabConfig & { slug?: string; data?: unknown },
+        basePath,
+      );
+      const slug = normalized.slug?.trim();
+      if (!slug) continue;
+      if ('schema' in normalized && typeof normalized.schema === 'string') {
+        if (!schemaShape[normalized.schema]) continue;
+        out.push({
+          tabTitle: normalized.title,
+          tabGroup: normalized.group,
+          mode: 'schema',
+          schema: normalized.schema as SchemaKeys,
+          slug,
+        });
+        continue;
+      }
+      if ('parsedSchema' in normalized) {
+        out.push({
+          tabTitle: normalized.title,
+          tabGroup: normalized.group,
+          mode: 'runtime',
+          slug,
+        });
+      }
+    }
+    return out;
+  }, [basePath, tabsWithHome]);
+
+  const { data: globalSearchRows = [], isFetching: isIndexingGlobalSearch } =
+    useQuery({
+      enabled: isGlobalCommandOpen && searchableSources.length > 0,
+      queryFn: async () => {
+        const allBySource = await Promise.all(
+          searchableSources.map(async (source) => {
+            const rows =
+              source.mode === 'schema' && source.schema
+                ? await gunGet({ key: source.schema }, source.slug)
+                : await fetchRuntimeRowsBySlug(source.slug);
+            const indexedRows: GlobalSearchIndexedRow[] = [];
+            rows.forEach((row, index) => {
+              const rowRecord = row as Record<string, unknown>;
+              const rowMeta =
+                rowRecord._ && typeof rowRecord._ === 'object'
+                  ? (rowRecord._ as Record<string, unknown>)
+                  : null;
+              const rowId =
+                getSoulFromUnknown(row) ??
+                (typeof rowMeta?.soul === 'string' ? rowMeta.soul : null) ??
+                (typeof rowRecord.id === 'string' ? rowRecord.id : null) ??
+                (typeof rowRecord.id === 'number'
+                  ? String(rowRecord.id)
+                  : null);
+              if (!rowId) return;
+
+              const { label, description } = getRowDisplayLabel(
+                rowRecord,
+                index,
+              );
+              const fullTextTokens: string[] = [];
+              collectFullTextTokens(rowRecord, fullTextTokens);
+
+              indexedRows.push({
+                tabTitle: source.tabTitle,
+                tabGroup: source.tabGroup,
+                schema: source.schema ?? 'business',
+                slug: source.slug,
+                rowId,
+                label,
+                description,
+                searchText: fullTextTokens.join(' '),
+              });
+            });
+            return indexedRows;
+          }),
+        );
+
+        return allBySource.flat();
+      },
+      queryKey: [
+        'auto-admin-global-full-text-search',
+        searchableSources.map((source) => [
+          source.mode,
+          source.schema ?? 'runtime',
+          source.slug,
+          source.tabTitle,
+        ]),
+      ],
+      staleTime: 0,
+      refetchInterval: isGlobalCommandOpen ? 5_000 : false,
+    });
+
+  const commandMembers = useMemo(() => {
+    const likelyMembersTab = tabsWithHome.find((item) =>
+      /member|members|user|users|team|people|staff/i.test(item.title),
+    );
+
+    return organizationMembers
+      .map((member) => {
+        const id = member?._?.soul ?? member?.email ?? member?.name;
+        if (!id) return null;
+        const label = member?.name?.trim() || member?.email?.trim() || id;
+        const description =
+          member?.email?.trim() && member.email !== label
+            ? member.email.trim()
+            : undefined;
+        return {
+          id: `member-${id}`,
+          label,
+          description,
+          keywords: `${member?.name ?? ''} ${member?.email ?? ''} member user organization`,
+          onSelect: () => {
+            if (likelyMembersTab) {
+              selectTab(likelyMembersTab.title);
+              return;
+            }
+            window.location.assign('/apps');
+          },
+        };
+      })
+      .filter((member): member is NonNullable<typeof member> => Boolean(member))
+      .slice(0, 150);
+  }, [organizationMembers, selectTab, tabsWithHome]);
+
+  const commandRecords = useMemo(
+    () =>
+      globalSearchRows.slice(0, 4000).map((row) => ({
+        id: `record-${row.schema}-${row.rowId}`,
+        label: row.label,
+        description: row.description,
+        scopeLabel: row.tabTitle,
+        keywords: `${row.searchText} ${row.tabTitle} ${row.tabGroup ?? ''} ${row.schema} ${row.slug}`,
+        onSelect: () => {
+          selectTab(row.tabTitle);
+          focusRowById(row.rowId);
+        },
+      })),
+    [focusRowById, globalSearchRows, selectTab],
+  );
+
+  const commandActions = useMemo(() => {
+    const actions: Array<{
+      id: string;
+      label: string;
+      keywords?: string;
+      shortcut?: string;
+      onSelect: () => void;
+    }> = [];
+
+    const businessSlug = business?.basePath;
+    if (businessSlug) {
+      actions.push({
+        id: 'go-organizations',
+        label: 'Manage organization',
+        keywords: 'organization business settings manage',
+        shortcut: 'Go',
+        onSelect: () => {
+          openDialog({
+            children: (
+              <ManageOrganization slug={businessSlug} tabs={tabsWithHome} />
+            ),
+            className: 'sm:max-w-[70%] h-[80%] p-0 overflow-clip',
+          });
+        },
+      });
+    }
+
+    actions.push({
+      id: 'toggle-sidebar',
+      label: 'Toggle sidebar',
+      keywords: 'sidebar collapse expand hide show',
+      shortcut: 'UI',
+      onSelect: () => {
+        const toggle = document.querySelector<HTMLButtonElement>(
+          '[data-auto-admin-sidebar-toggle="true"]',
+        );
+        if (!toggle) return;
+        toggle.click();
+      },
+    });
+
+    actions.push({
+      id: 'focus-sidebar-search',
+      label: 'Focus sidebar filter',
+      keywords: 'sidebar search filter',
+      shortcut: 'UI',
+      onSelect: () => {
+        const input = document.querySelector<HTMLInputElement>(
+          '[data-auto-admin-sidebar-search="true"]',
+        );
+        input?.focus();
+      },
+    });
+
+    actions.push({
+      id: 'add-row',
+      label: 'Add new row',
+      keywords: 'create insert row record data table',
+      shortcut: 'Table',
+      onSelect: () => {
+        const trigger = document.querySelector<HTMLButtonElement>(
+          '[data-auto-table-add-row-trigger="true"]',
+        );
+        trigger?.click();
+      },
+    });
+
+    if (businessSlug) {
+      actions.push({
+        id: 'go-plugins',
+        label: 'Go to plugins',
+        keywords: 'plugin integrations extensions',
+        shortcut: 'Go',
+        onSelect: () => {
+          void navigate({
+            to: '/$businessName/admin/plugins',
+            params: { businessName: businessSlug },
+          });
+        },
+      });
+    }
+
+    if (editable && onAddTable) {
+      actions.push({
+        id: 'add-table',
+        label: 'Add table',
+        keywords: 'new table schema editable',
+        shortcut: 'Edit',
+        onSelect: () => {
+          onAddTable();
+        },
+      });
+    }
+
+    if (editable && onAddGroup) {
+      actions.push({
+        id: 'add-group',
+        label: 'Add group',
+        keywords: 'new group sidebar editable',
+        shortcut: 'Edit',
+        onSelect: () => {
+          onAddGroup();
+        },
+      });
+    }
+
+    return actions;
+  }, [
+    business?.basePath,
+    editable,
+    navigate,
+    onAddGroup,
+    onAddTable,
+    openDialog,
+    tabsWithHome,
+  ]);
 
   if (!currentItem) {
     return <NotFound />;
   }
 
   return (
-    <SidebarProvider>
-      <CollapsibleSidebar
-        tabs={tabsWithHome}
-        businessName={business?.name}
-        slug={business?.basePath}
-        editable={editable}
-        onAddTable={onAddTable}
-        onAddGroup={onAddGroup}
-        onReorderGroups={onReorderGroups}
-        onMoveTabToGroup={handleMoveTabToGroup}
-        onReorderTabs={onReorderTabs}
-        onRenameGroup={handleRenameGroup}
-        onDeleteGroup={handleDeleteGroup}
-        onRenameTab={handleRenameTab}
-        onRenameTabIcon={handleRenameTabIcon}
-        onOpenWorkflowEditorForTab={onOpenWorkflowEditorForTab}
-        onDeleteTableForTab={onDeleteTableForTab}
-        groups={mergedGroups}
-      />
-      <SidebarInset className="min-w-0 flex flex-col">
-        <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-12 sm:h-16 shrink-0 items-center gap-0.5 sm:gap-2 border-b transition-[width,height] ease-linear px-0.5 sm:px-4">
-          <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">
-            {currentItem.title}
-          </h1>
+    <KeyboardShortcutsBoundary>
+      <SidebarProvider>
+        <CollapsibleSidebar
+          tabs={tabsWithHome}
+          businessName={business?.name}
+          slug={business?.basePath}
+          editable={editable}
+          onAddTable={onAddTable}
+          onAddGroup={onAddGroup}
+          onReorderGroups={onReorderGroups}
+          onMoveTabToGroup={handleMoveTabToGroup}
+          onReorderTabs={onReorderTabs}
+          onRenameGroup={handleRenameGroup}
+          onDeleteGroup={handleDeleteGroup}
+          onRenameTab={handleRenameTab}
+          onRenameTabIcon={handleRenameTabIcon}
+          onOpenWorkflowEditorForTab={onOpenWorkflowEditorForTab}
+          onDeleteTableForTab={onDeleteTableForTab}
+          groups={mergedGroups}
+        />
+        <SidebarInset className="min-w-0 flex flex-col">
+          <header className="sticky top-0 bg-background/95 backdrop-blur z-50 flex h-12 sm:h-16 shrink-0 items-center gap-0.5 sm:gap-2 border-b transition-[width,height] ease-linear px-0.5 sm:px-4">
+            <h1 className="font-bold text-sm sm:text-lg truncate px-0.5 sm:px-4">
+              {currentItem.title}
+            </h1>
 
-          {/* Search and Action Bar */}
-          <div className="ml-auto flex items-center gap-0.5 sm:gap-2 px-2">
-            {/* Language Selector */}
-            <LanguageSelector />
-          </div>
-        </header>
+            <div className="ml-auto flex items-center gap-0.5 sm:gap-2 px-2">
+              <AutoAdminGlobalCommand
+                actions={commandActions}
+                tabs={commandTabs}
+                members={commandMembers}
+                records={commandRecords}
+                isSearchingData={isIndexingGlobalSearch}
+                onOpenChange={setIsGlobalCommandOpen}
+              />
+              <LanguageSelector />
+            </div>
+          </header>
 
-        <section
-          className={cn(
-            'flex-1 overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6',
-          )}
-        >
-          {'children' in currentItem ? (
-            currentItem.children
-          ) : 'parsedSchema' in currentItem && currentTableItem ? (
-            <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
-          ) : !components?.length ? (
-            currentTableItem ? (
+          <section
+            className={cn(
+              'flex-1 overflow-y-auto mx-0.5 sm:mx-6 items-start justify-center mt-4 sm:mt-6',
+            )}
+          >
+            {'children' in currentItem ? (
+              currentItem.children
+            ) : 'parsedSchema' in currentItem && currentTableItem ? (
               <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
-            ) : null
-          ) : (
-            <Tabs
-              key={tab}
-              defaultValue={
-                localStorage.getItem(`tab-#${basePath}-${tab}`) ??
-                components[0]?.name ??
-                'table'
-              }
-              className={cn('flex flex-1 flex-col')}
-              onValueChange={(value) => {
-                localStorage.setItem(`tab-#${basePath}-${tab}`, value);
-              }}
-            >
-              <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-                <TabsTrigger value="table">Table View</TabsTrigger>
-                {components.map(({ name }) => (
-                  <TabsTrigger value={name} key={name}>
-                    {name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              <TabsContent value="table" className={cn('flex-1 mt-1 sm:mt-4')}>
-                <Card className="border rounded-lg shadow-sm overflow-hidden">
-                  <div className="p-0.5 sm:p-4">
-                    {currentTableItem ? (
-                      <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
-                    ) : null}
-                  </div>
-                </Card>
-              </TabsContent>
-              {components.map(({ component, name }) => (
+            ) : !components?.length ? (
+              currentTableItem ? (
+                <AutoTable<SchemaKeys> {...currentTableItem} key={tab} />
+              ) : null
+            ) : (
+              <Tabs
+                key={tab}
+                defaultValue={
+                  localStorage.getItem(`tab-#${basePath}-${tab}`) ??
+                  components[0]?.name ??
+                  'table'
+                }
+                className={cn('flex flex-1 flex-col')}
+                onValueChange={(value) => {
+                  localStorage.setItem(`tab-#${basePath}-${tab}`, value);
+                }}
+              >
+                <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                  <TabsTrigger value="table">Table View</TabsTrigger>
+                  {components.map(({ name }) => (
+                    <TabsTrigger value={name} key={name}>
+                      {name}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
                 <TabsContent
-                  value={name}
-                  key={name}
-                  className="flex-1 mt-1 sm:mt-4"
+                  value="table"
+                  className={cn('flex-1 mt-1 sm:mt-4')}
                 >
                   <Card className="border rounded-lg shadow-sm overflow-hidden">
-                    <div className="p-0.5 sm:p-4">{component}</div>
+                    <div className="p-0.5 sm:p-4">
+                      {currentTableItem ? (
+                        <AutoTable<SchemaKeys>
+                          {...currentTableItem}
+                          key={tab}
+                        />
+                      ) : null}
+                    </div>
                   </Card>
                 </TabsContent>
-              ))}
-            </Tabs>
-          )}
-        </section>
-      </SidebarInset>
-    </SidebarProvider>
+                {components.map(({ component, name }) => (
+                  <TabsContent
+                    value={name}
+                    key={name}
+                    className="flex-1 mt-1 sm:mt-4"
+                  >
+                    <Card className="border rounded-lg shadow-sm overflow-hidden">
+                      <div className="p-0.5 sm:p-4">{component}</div>
+                    </Card>
+                  </TabsContent>
+                ))}
+              </Tabs>
+            )}
+          </section>
+        </SidebarInset>
+      </SidebarProvider>
+    </KeyboardShortcutsBoundary>
   );
 }
 
@@ -745,6 +1252,7 @@ function KanbanColumn<K extends SchemaKeys>({
   isItemLocked,
   ...props
 }: KanbanColumnProps<K>) {
+  useRegisterShortcut(AUTO_ADMIN_SHORTCUTS.kanbanColumnHandle);
   const context = Kanban.useKanbanContext('KanbanColumn');
   return (
     <Kanban.Column value={value} {...props}>
@@ -763,9 +1271,23 @@ function KanbanColumn<K extends SchemaKeys>({
           )}
         </div>
         <Kanban.ColumnHandle asChild>
-          <Button variant="ghost" size="icon">
-            <GripVertical className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <GripVertical className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Reorder column</span>
+              <ShortcutKbd
+                actionId={AUTO_ADMIN_SHORTCUTS.kanbanColumnHandle.id}
+                defaultBinding={
+                  AUTO_ADMIN_SHORTCUTS.kanbanColumnHandle.defaultBinding
+                }
+                interactive={false}
+              />
+            </TooltipContent>
+          </Tooltip>
         </Kanban.ColumnHandle>
       </div>
       <div className="flex flex-col gap-2 p-0.5">

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Bot, Download, Loader2, Play, Search, Sparkles } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuth } from '@/components/auth-provider';
 import { useLoginPrompt } from '@/components/login-prompt-provider';
@@ -30,22 +30,26 @@ export const Route = createFileRoute('/$businessName/admin/plugins')({
 });
 
 type ChartType = 'top-installed' | 'recently-updated';
+const SKELETON_CARD_KEYS = [
+  's1',
+  's2',
+  's3',
+  's4',
+  's5',
+  's6',
+  's7',
+  's8',
+  's9',
+];
 
 function PluginsRouteComponent() {
   const { businessName } = Route.useParams();
-  const {
-    isAuthenticated,
-    isLoading: isUserLoading,
-    user,
-    anonymousUserId,
-  } = useAuth();
+  const { isAuthenticated, isLoading: isUserLoading, user } = useAuth();
   const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const [query, setQuery] = useState('');
   const [chartType, setChartType] = useState<ChartType>('top-installed');
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [isChatExpanded, setIsChatExpanded] = useState(false);
-  const [installingPluginIds, setInstallingPluginIds] = useState<string[]>([]);
-  const installingPluginIdsLockRef = useRef(new Set<string>());
   const recommendedSectionRef = useRef<HTMLElement>(null);
 
   const { data: businesses = [], isLoading } = api.business.useGet({
@@ -54,9 +58,10 @@ function PluginsRouteComponent() {
   });
   const isAiAuthenticated = true;
   const business = businesses[0];
-  const businessId = business?.id ?? businessName;
+  const businessNamespace =
+    business?.basePath?.trim() || business?.id?.trim() || businessName.trim();
   const userSoul = user?._?.soul;
-  const actorUserId = user?._?.soul ?? user?.pub ?? anonymousUserId ?? 'anon';
+  const actorUserId = user?._?.soul ?? user?.pub ?? '';
   const isBusinessMember = !!userSoul && !!business?.members?.[userSoul];
   const hasAccess =
     user?.role === 'admin' ||
@@ -76,15 +81,14 @@ function PluginsRouteComponent() {
   }, [isAuthenticated, isUserLoading, promptLogin, closeLoginPrompt]);
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
-    keys: [businessId],
+    keys: [businessNamespace],
   });
+  const { data: allInstallRows = [] } = api.businessPluginInstall.useGet();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
-  const { data: reviewRowsRaw = [] } = api.pluginUserReview.useGet({
-    keys: [businessId],
-  });
+  const { data: reviewRowsRaw = [] } = api.pluginUserReview.useGet();
 
   const installs = installRows as BusinessPluginInstallDoc[];
-  const allInstalls = installs;
+  const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
   const releases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
@@ -196,19 +200,16 @@ function PluginsRouteComponent() {
 
   const installSuggestedPlugin = useCallback(
     async (plugin: PluginMarketItem) => {
-      if (installingPluginIdsLockRef.current.has(plugin.pluginId)) return;
-      installingPluginIdsLockRef.current.add(plugin.pluginId);
-      setInstallingPluginIds((current) =>
-        current.includes(plugin.pluginId)
-          ? current
-          : [...current, plugin.pluginId],
-      );
+      if (!actorUserId) {
+        toast.error('Could not determine your user identity');
+        return;
+      }
       try {
         await installPluginRelease({
           data: {
             actorUserId,
             actorRole,
-            businessId,
+            businessId: businessNamespace,
             pluginId: plugin.pluginId,
             version: plugin.latestRelease.version,
             explicitOwnerAction: true,
@@ -218,16 +219,9 @@ function PluginsRouteComponent() {
       } catch (error) {
         console.error(error);
         toast.error('Failed to install plugin');
-      } finally {
-        installingPluginIdsLockRef.current.delete(plugin.pluginId);
-        setInstallingPluginIds((current) =>
-          current.filter(
-            (currentPluginId) => currentPluginId !== plugin.pluginId,
-          ),
-        );
       }
     },
-    [actorRole, actorUserId, businessId],
+    [actorRole, actorUserId, businessNamespace],
   );
 
   if (isUserLoading || (isLoading && !business)) {
@@ -237,6 +231,11 @@ function PluginsRouteComponent() {
   if (!user) return null;
 
   if (!hasAccess) return <Unauthorized />;
+
+  const getRatingLabel = (plugin: PluginMarketItem) =>
+    plugin.averageRating !== null && (plugin.reviewCount ?? 0) > 0
+      ? `${plugin.averageRating.toFixed(1)} ★`
+      : 'No ratings';
 
   return (
     <div className="min-h-screen bg-white text-[#202124]">
@@ -265,12 +264,13 @@ function PluginsRouteComponent() {
                 Marketplace
                 <div className="absolute bottom-0 left-0 h-1 w-full rounded-t-full bg-[#01875f]" />
               </div>
-              <div
+              <button
+                type="button"
                 onClick={() => setQuery('is:installed')}
-                className="flex h-12 items-center px-1 text-sm font-medium text-[#5f6368] hover:text-[#202124] transition-colors cursor-pointer"
+                className="flex h-12 items-center px-1 text-sm font-medium text-[#5f6368] transition-colors hover:text-[#202124]"
               >
                 Installed
-              </div>
+              </button>
             </nav>
           </div>
           <div className="relative ml-auto w-full max-w-md">
@@ -291,6 +291,7 @@ function PluginsRouteComponent() {
           <div className="flex flex-wrap gap-3">
             {['All', ...marketplace.categories].map((category) => (
               <button
+                type="button"
                 key={category}
                 onClick={() => setSelectedCategory(category)}
                 className={`rounded-full px-5 py-2 text-sm font-medium transition-all ${
@@ -394,34 +395,10 @@ function PluginsRouteComponent() {
                                     </p>
                                   </div>
                                 </Link>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-8 w-8 shrink-0 rounded-full border border-[#ff8657]/45 bg-[#ff8657]/15 text-[#ff9a74] hover:bg-[#ff8657]/25 hover:text-[#ffb294] disabled:opacity-60"
-                                  onClick={() =>
-                                    void installSuggestedPlugin(plugin)
-                                  }
-                                  disabled={
-                                    installingPluginIds.includes(
-                                      plugin.pluginId,
-                                    ) ||
-                                    (plugin.isInstalled && !plugin.isUpgradable)
-                                  }
-                                  aria-label={
-                                    plugin.isInstalled && !plugin.isUpgradable
-                                      ? `Installed ${plugin.title}`
-                                      : `Install ${plugin.title}`
-                                  }
-                                >
-                                  {installingPluginIds.includes(
-                                    plugin.pluginId,
-                                  ) ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <Download className="h-4 w-4" />
-                                  )}
-                                </Button>
+                                <SuggestedInstallButton
+                                  plugin={plugin}
+                                  onInstall={installSuggestedPlugin}
+                                />
                               </div>
                             ))}
                           </div>
@@ -485,6 +462,7 @@ function PluginsRouteComponent() {
                   {(['top-installed', 'recently-updated'] as const).map(
                     (type) => (
                       <button
+                        type="button"
                         key={type}
                         onClick={() => setChartType(type)}
                         className={`rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
@@ -526,7 +504,7 @@ function PluginsRouteComponent() {
                         {plugin.category}
                       </p>
                       <div className="flex items-center gap-1 text-xs text-[#5f6368]">
-                        <span>4.8 ★</span>
+                        <span>{getRatingLabel(plugin)}</span>
                         <span>•</span>
                         <span>{plugin.installs.toLocaleString()} installs</span>
                       </div>
@@ -548,7 +526,10 @@ function PluginsRouteComponent() {
                     <h2 className="text-2xl font-semibold tracking-tight">
                       {category}
                     </h2>
-                    <button className="text-sm font-medium text-[#01875f] hover:underline">
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-[#01875f] hover:underline"
+                    >
                       See more
                     </button>
                   </div>
@@ -574,7 +555,7 @@ function PluginsRouteComponent() {
                             {plugin.publisher}
                           </p>
                           <div className="mt-1 flex items-center gap-1 text-xs text-[#5f6368]">
-                            <span>4.5 ★</span>
+                            <span>{getRatingLabel(plugin)}</span>
                             <span>
                               {plugin.installs.toLocaleString()} installs
                             </span>
@@ -611,7 +592,7 @@ function PluginsRouteComponent() {
                     {plugin.publisher}
                   </p>
                   <div className="mt-1 flex items-center gap-1 text-xs text-[#5f6368]">
-                    <span>4.5 ★</span>
+                    <span>{getRatingLabel(plugin)}</span>
                     <span>{plugin.installs.toLocaleString()} installs</span>
                   </div>
                 </div>
@@ -725,6 +706,48 @@ function PluginsRouteComponent() {
   );
 }
 
+const SuggestedInstallButton = memo(function SuggestedInstallButton({
+  plugin,
+  onInstall,
+}: {
+  plugin: PluginMarketItem;
+  onInstall: (plugin: PluginMarketItem) => Promise<void>;
+}) {
+  const [isInstalling, setIsInstalling] = useState(false);
+  const isLockedRef = useRef(false);
+  const isInstalled = plugin.isInstalled && !plugin.isUpgradable;
+
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      size="icon"
+      className="h-8 w-8 shrink-0 rounded-full border border-[#ff8657]/45 bg-[#ff8657]/15 text-[#ff9a74] hover:bg-[#ff8657]/25 hover:text-[#ffb294] disabled:opacity-60"
+      onClick={async () => {
+        if (isLockedRef.current || isInstalled) return;
+        isLockedRef.current = true;
+        setIsInstalling(true);
+        try {
+          await onInstall(plugin);
+        } finally {
+          isLockedRef.current = false;
+          setIsInstalling(false);
+        }
+      }}
+      disabled={isInstalling || isInstalled}
+      aria-label={
+        isInstalled ? `Installed ${plugin.title}` : `Install ${plugin.title}`
+      }
+    >
+      {isInstalling ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <Download className="h-4 w-4" />
+      )}
+    </Button>
+  );
+});
+
 function PluginsPageSkeleton() {
   return (
     <div className="min-h-screen bg-white">
@@ -743,8 +766,8 @@ function PluginsPageSkeleton() {
         <div className="space-y-6">
           <Skeleton className="h-8 w-40" />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="flex gap-4">
+            {SKELETON_CARD_KEYS.map((key) => (
+              <div key={key} className="flex gap-4">
                 <Skeleton className="size-16 rounded-[20%]" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-3/4" />

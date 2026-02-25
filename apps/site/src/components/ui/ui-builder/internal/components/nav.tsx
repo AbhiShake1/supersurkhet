@@ -1,47 +1,25 @@
 'use client';
 
-import { forwardRef, useCallback, useMemo, useState } from 'react';
 import {
+  CheckIcon,
   Eye,
   FileUp,
-  Redo,
-  Undo,
-  CheckIcon,
-  X,
-  PlusIcon,
-  Monitor,
-  Tablet,
-  Smartphone,
   Maximize,
+  Monitor,
   MoreVertical,
   PanelLeft,
   PanelRight,
+  PlusIcon,
+  Redo,
+  Smartphone,
+  Tablet,
+  Undo,
+  X,
 } from 'lucide-react';
+import { forwardRef, useCallback, useMemo, useState } from 'react';
+import { useStore } from 'zustand';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogHeader,
-  DialogOverlay,
-  DialogPortal,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
-import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -52,28 +30,50 @@ import {
   CommandSeparator,
   CommandShortcut,
 } from '@/components/ui/command';
-import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import { CodePanel } from '@/components/ui/ui-builder/components/code-panel';
 import {
-  type EditorStore,
-  useEditorStore,
-} from '@/lib/ui-builder/store/editor-store';
-import type {
-  ComponentRegistry,
-  ComponentLayer,
-} from '@/components/ui/ui-builder/types';
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogHeader,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { CodePanel } from '@/components/ui/ui-builder/components/code-panel';
+import LayerRenderer from '@/components/ui/ui-builder/layer-renderer';
+import type {
+  ComponentLayer,
+  ComponentRegistry,
+} from '@/components/ui/ui-builder/types';
 import {
   type KeyCombination,
   useKeyboardShortcuts,
 } from '@/hooks/use-keyboard-shortcuts';
-import { useStore } from 'zustand';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
+import {
+  type EditorStore,
+  useEditorStore,
+} from '@/lib/ui-builder/store/editor-store';
+import { useLayerStore } from '@/lib/ui-builder/store/layer-store';
+import { cn } from '@/lib/utils';
 
 const Z_INDEX = 40;
 
@@ -427,45 +427,65 @@ const ResponsiveDropdown: React.FC<ResponsiveDropdownProps> = ({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" style={style}>
-        <DropdownMenuItem
-          className="gap-2"
-          onClick={onUndo}
-          disabled={!canUndo}
-        >
-          <Undo className="w-4 h-4" />
-          Undo
-          <span className="ml-auto text-xs text-muted-foreground">⌘Z</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="gap-2"
-          onClick={onRedo}
-          disabled={!canRedo}
-        >
-          <Redo className="w-4 h-4" />
-          Redo
-          <span className="ml-auto text-xs text-muted-foreground">⌘+⇧+Z</span>
-        </DropdownMenuItem>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={onUndo}
+              disabled={!canUndo}
+            >
+              <Undo className="w-4 h-4" />
+              Undo
+            </DropdownMenuItem>
+          </TooltipTrigger>
+          <TooltipContent>⌘Z</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={onRedo}
+              disabled={!canRedo}
+            >
+              <Redo className="w-4 h-4" />
+              Redo
+            </DropdownMenuItem>
+          </TooltipTrigger>
+          <TooltipContent>⌘+⇧+Z</TooltipContent>
+        </Tooltip>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="gap-2" onClick={onOpenPreview}>
-          <Eye className="w-4 h-4" />
-          Preview
-          <span className="ml-auto text-xs text-muted-foreground">⌘+⇧+P</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem className="gap-2" onClick={onOpenExport}>
-          <FileUp className="w-4 h-4" />
-          Export
-          <span className="ml-auto text-xs text-muted-foreground">⌘+⇧+E</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="gap-2"
-          onClick={() =>
-            window.open(`${window.location.pathname}/editor`, '_blank')
-          }
-        >
-          <Maximize className="w-4 h-4" />
-          Open Editor
-          <span className="ml-auto text-xs text-muted-foreground">⌘+⇧+D</span>
-        </DropdownMenuItem>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuItem className="gap-2" onClick={onOpenPreview}>
+              <Eye className="w-4 h-4" />
+              Preview
+            </DropdownMenuItem>
+          </TooltipTrigger>
+          <TooltipContent>⌘+⇧+P</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuItem className="gap-2" onClick={onOpenExport}>
+              <FileUp className="w-4 h-4" />
+              Export
+            </DropdownMenuItem>
+          </TooltipTrigger>
+          <TooltipContent>⌘+⇧+E</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuItem
+              className="gap-2"
+              onClick={() =>
+                window.open(`${window.location.pathname}/editor`, '_blank')
+              }
+            >
+              <Maximize className="w-4 h-4" />
+              Open Editor
+            </DropdownMenuItem>
+          </TooltipTrigger>
+          <TooltipContent>⌘+⇧+D</TooltipContent>
+        </Tooltip>
       </DropdownMenuContent>
     </DropdownMenu>
   );

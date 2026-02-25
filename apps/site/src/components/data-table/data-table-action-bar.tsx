@@ -1,4 +1,10 @@
 import { Button } from '@/components/ui/button';
+import {
+  ShortcutKbd,
+  useRegisterShortcut,
+  useShortcutAction,
+  type ShortcutDefinition,
+} from '@/components/ui/keyboard-shortcuts';
 import { Separator } from '@/components/ui/separator';
 import {
   Tooltip,
@@ -18,6 +24,22 @@ interface DataTableActionBarProps<TData>
   visible?: boolean;
   container?: Element | DocumentFragment | null;
 }
+
+const DATA_TABLE_ACTION_SHORTCUTS = {
+  clearSelection: {
+    id: 'dataTable.clearSelection',
+    label: 'Clear selection',
+    description: 'Clear all selected rows in the active table.',
+    scope: 'DataTable Actions',
+    defaultBinding: {
+      key: 'Escape',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+} as const satisfies Record<string, ShortcutDefinition>;
 
 function DataTableActionBar<TData>({
   table,
@@ -80,17 +102,21 @@ interface DataTableActionBarActionProps
   extends React.ComponentProps<typeof Button> {
   tooltip?: string;
   isPending?: boolean;
+  shortcut?: ShortcutDefinition;
 }
 
 function DataTableActionBarAction({
   size = 'sm',
   tooltip,
   isPending,
+  shortcut,
   disabled,
   className,
   children,
   ...props
 }: DataTableActionBarActionProps) {
+  useRegisterShortcut(shortcut);
+
   const trigger = (
     <Button
       variant="secondary"
@@ -114,9 +140,10 @@ function DataTableActionBarAction({
       <TooltipTrigger asChild>{trigger}</TooltipTrigger>
       <TooltipContent
         sideOffset={6}
-        className="border bg-accent font-semibold text-foreground dark:bg-zinc-900 [&>span]:hidden"
+        className="flex items-center gap-2 border bg-accent font-semibold text-foreground dark:bg-zinc-900 [&>span]:hidden"
       >
         <p>{tooltip}</p>
+        {shortcut ? <ShortcutKbd actionId={shortcut.id} interactive={false} /> : null}
       </TooltipContent>
     </Tooltip>
   );
@@ -132,6 +159,16 @@ function DataTableActionBarSelection<TData>({
   const onClearSelection = () => {
     table.toggleAllRowsSelected(false);
   };
+
+  useShortcutAction(
+    DATA_TABLE_ACTION_SHORTCUTS.clearSelection,
+    () => {
+      onClearSelection();
+    },
+    {
+      guard: () => table.getFilteredSelectedRowModel().rows.length > 0,
+    },
+  );
 
   return (
     <div className="flex h-7 items-center rounded-md border pr-1 pl-2.5">
@@ -158,11 +195,10 @@ function DataTableActionBarSelection<TData>({
           className="flex items-center gap-2 border bg-accent px-2 py-1 font-semibold text-foreground dark:bg-zinc-900 [&>span]:hidden"
         >
           <p>Clear selection</p>
-          <kbd className="select-none rounded border bg-background px-1.5 py-px font-mono font-normal text-[0.7rem] text-foreground shadow-xs disabled:opacity-50">
-            <abbr title="Escape" className="no-underline">
-              Esc
-            </abbr>
-          </kbd>
+          <ShortcutKbd
+            actionId={DATA_TABLE_ACTION_SHORTCUTS.clearSelection.id}
+            interactive={false}
+          />
         </TooltipContent>
       </Tooltip>
     </div>

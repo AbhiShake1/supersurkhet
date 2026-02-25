@@ -1,3 +1,4 @@
+import { useSearch } from '@tanstack/react-router';
 import type { Column, ColumnMeta, Table } from '@tanstack/react-table';
 import {
   CalendarIcon,
@@ -9,8 +10,6 @@ import {
 } from 'lucide-react';
 import { parseAsStringEnum, useQueryState } from 'nuqs';
 import * as React from 'react';
-
-import { useSearch } from '@tanstack/react-router';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -36,6 +35,12 @@ import {
 } from '@/components/ui/faceted';
 import { Input } from '@/components/ui/input';
 import {
+  type ShortcutDefinition,
+  ShortcutKbd,
+  useRegisterShortcut,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -54,6 +59,11 @@ import {
   SortableItemHandle,
   SortableOverlay,
 } from '@/components/ui/sortable';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { dataTableConfig } from '@/config/data-table';
 
 import { getDefaultFilterOperator, getFilterOperators } from '@/lib/data-table';
@@ -74,6 +84,112 @@ const DEBOUNCE_MS = 300;
 const THROTTLE_MS = 50;
 const OPEN_MENU_SHORTCUT = 'f';
 const REMOVE_FILTER_SHORTCUTS = ['backspace', 'delete'];
+const DATA_TABLE_FILTER_SHORTCUTS = {
+  openFilters: {
+    id: 'dataTable.openFilters',
+    label: 'Open filters',
+    description: 'Open the filter list popover.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: OPEN_MENU_SHORTCUT,
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  addFilter: {
+    id: 'dataTable.addFilter',
+    label: 'Add filter',
+    description: 'Add a new filter row.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'a',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  resetFilters: {
+    id: 'dataTable.resetFilters',
+    label: 'Reset filters',
+    description: 'Clear all active filters.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'Backspace',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  filterField: {
+    id: 'dataTable.filterFieldSelector',
+    label: 'Open filter field selector',
+    description: 'Open the field selector for a filter row.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'ArrowDown',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  removeFilter: {
+    id: 'dataTable.removeFilter',
+    label: 'Remove filter',
+    description: 'Remove the focused filter row.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'Delete',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  reorderFilter: {
+    id: 'dataTable.reorderFilter',
+    label: 'Reorder filter',
+    description: 'Move a filter row.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'r',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  filterFacetedValue: {
+    id: 'dataTable.openFilterFacetedValue',
+    label: 'Open faceted filter options',
+    description: 'Open selectable options for faceted filters.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'o',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  filterDateValue: {
+    id: 'dataTable.openFilterDateValue',
+    label: 'Open date filter picker',
+    description: 'Open the date or date-range picker for a filter.',
+    scope: 'DataTable Filters',
+    defaultBinding: {
+      key: 'd',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+} as const satisfies Record<string, ShortcutDefinition>;
 
 interface DataTableFilterListProps<TData>
   extends React.ComponentProps<typeof PopoverContent> {
@@ -189,6 +305,23 @@ export function DataTableFilterList<TData>({
     void setJoinOperator('and');
   };
 
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.addFilter);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.resetFilters);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.filterField);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.removeFilter);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.reorderFilter);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.filterFacetedValue);
+  useRegisterShortcut(DATA_TABLE_FILTER_SHORTCUTS.filterDateValue);
+  useShortcutAction(
+    DATA_TABLE_FILTER_SHORTCUTS.openFilters,
+    () => {
+      setOpen(true);
+    },
+    {
+      guard: (event) => !event.shiftKey,
+    },
+  );
+
   React.useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
       if (
@@ -196,16 +329,6 @@ export function DataTableFilterList<TData>({
         event.target instanceof HTMLTextAreaElement
       ) {
         return;
-      }
-
-      if (
-        event.key.toLowerCase() === OPEN_MENU_SHORTCUT &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.shiftKey
-      ) {
-        event.preventDefault();
-        setOpen(true);
       }
 
       if (
@@ -240,25 +363,36 @@ export function DataTableFilterList<TData>({
       getItemValue={(item) => item.filterId}
     >
       <Popover open={open} onOpenChange={setOpen} modal>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            size="sm"
-            onKeyDown={onTriggerKeyDown}
-            className="gap-2"
-          >
-            <ListFilter className="size-4" />
-            Filter
-            {filters.length > 0 && (
-              <Badge
-                variant="secondary"
-                className="h-[18.24px] rounded-[3.2px] px-[5.12px] font-mono font-normal text-[10.4px]"
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                onKeyDown={onTriggerKeyDown}
+                className="gap-2"
               >
-                {filters.length}
-              </Badge>
-            )}
-          </Button>
-        </PopoverTrigger>
+                <ListFilter className="size-4" />
+                Filter
+                {filters.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="h-[18.24px] rounded-[3.2px] px-[5.12px] font-mono font-normal text-[10.4px]"
+                  >
+                    {filters.length}
+                  </Badge>
+                )}
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Open filters</span>
+            <ShortcutKbd
+              actionId={DATA_TABLE_FILTER_SHORTCUTS.openFilters.id}
+              interactive={false}
+            />
+          </TooltipContent>
+        </Tooltip>
         <PopoverContent
           aria-describedby={descriptionId}
           aria-labelledby={labelId}
@@ -294,6 +428,7 @@ export function DataTableFilterList<TData>({
                     filter={filter}
                     index={index}
                     filterItemId={`${id}-filter-${filter.filterId}`}
+                    shortcuts={DATA_TABLE_FILTER_SHORTCUTS}
                     joinOperator={joinOperator}
                     setJoinOperator={setJoinOperator}
                     columns={columns}
@@ -305,23 +440,45 @@ export function DataTableFilterList<TData>({
             </SortableContent>
           ) : null}
           <div className="flex w-full items-center gap-2">
-            <Button
-              size="sm"
-              className="rounded"
-              ref={addButtonRef}
-              onClick={onFilterAdd}
-            >
-              Add filter
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  className="rounded gap-2"
+                  ref={addButtonRef}
+                  onClick={onFilterAdd}
+                >
+                  Add filter
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="flex items-center gap-2">
+                <span>Add filter</span>
+                <ShortcutKbd
+                  actionId={DATA_TABLE_FILTER_SHORTCUTS.addFilter.id}
+                  interactive={false}
+                />
+              </TooltipContent>
+            </Tooltip>
             {filters.length > 0 ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded"
-                onClick={onFiltersReset}
-              >
-                Reset filters
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded gap-2"
+                    onClick={onFiltersReset}
+                  >
+                    Reset filters
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>Reset filters</span>
+                  <ShortcutKbd
+                    actionId={DATA_TABLE_FILTER_SHORTCUTS.resetFilters.id}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
             ) : null}
           </div>
         </PopoverContent>
@@ -344,6 +501,7 @@ interface DataTableFilterItemProps<TData> {
   filter: ExtendedColumnFilter<TData>;
   index: number;
   filterItemId: string;
+  shortcuts: typeof DATA_TABLE_FILTER_SHORTCUTS;
   joinOperator: JoinOperator;
   setJoinOperator: (value: JoinOperator) => void;
   columns: Column<TData>[];
@@ -358,6 +516,7 @@ function DataTableFilterItem<TData>({
   filter,
   index,
   filterItemId,
+  shortcuts,
   joinOperator,
   setJoinOperator,
   columns,
@@ -441,21 +600,32 @@ function DataTableFilterItem<TData>({
           )}
         </div>
         <Popover open={showFieldSelector} onOpenChange={setShowFieldSelector}>
-          <PopoverTrigger asChild>
-            <Button
-              role="combobox"
-              aria-controls={fieldListboxId}
-              variant="outline"
-              size="sm"
-              className="w-32 justify-between rounded font-normal"
-            >
-              <span className="truncate">
-                {columns.find((column) => column.id === filter.id)?.columnDef
-                  .meta?.label ?? 'Select field'}
-              </span>
-              <ChevronsUpDown className="opacity-50 w-4 h-4" />
-            </Button>
-          </PopoverTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  role="combobox"
+                  aria-controls={fieldListboxId}
+                  variant="outline"
+                  size="sm"
+                  className="w-32 justify-between gap-1 rounded font-normal"
+                >
+                  <span className="truncate">
+                    {columns.find((column) => column.id === filter.id)
+                      ?.columnDef.meta?.label ?? 'Select field'}
+                  </span>
+                  <ChevronsUpDown className="opacity-50 w-4 h-4" />
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Filter field</span>
+              <ShortcutKbd
+                actionId={shortcuts.filterField.id}
+                interactive={false}
+              />
+            </TooltipContent>
+          </Tooltip>
           <PopoverContent
             id={fieldListboxId}
             align="start"
@@ -546,22 +716,51 @@ function DataTableFilterItem<TData>({
             onFilterUpdate,
             showValueSelector,
             setShowValueSelector,
+            shortcuts,
           })}
         </div>
-        <Button
-          aria-controls={filterItemId}
-          variant="outline"
-          size="icon"
-          className="size-8 rounded"
-          onClick={() => onFilterRemove(filter.filterId)}
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
-        <SortableItemHandle asChild>
-          <Button variant="outline" size="icon" className="size-8 rounded">
-            <GripVertical className="w-4 h-4" />
-          </Button>
-        </SortableItemHandle>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-controls={filterItemId}
+              aria-label="Remove filter"
+              variant="outline"
+              size="icon"
+              className="size-8 rounded"
+              onClick={() => onFilterRemove(filter.filterId)}
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Remove filter</span>
+            <ShortcutKbd
+              actionId={shortcuts.removeFilter.id}
+              interactive={false}
+            />
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <SortableItemHandle asChild>
+            <TooltipTrigger asChild>
+              <Button
+                aria-label="Reorder filter"
+                variant="outline"
+                size="icon"
+                className="size-8 rounded"
+              >
+                <GripVertical className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+          </SortableItemHandle>
+          <TooltipContent className="flex items-center gap-2">
+            <span>Reorder filter</span>
+            <ShortcutKbd
+              actionId={shortcuts.reorderFilter.id}
+              interactive={false}
+            />
+          </TooltipContent>
+        </Tooltip>
       </div>
     </SortableItem>
   );
@@ -575,6 +774,7 @@ function onFilterInputRender<TData>({
   onFilterUpdate,
   showValueSelector,
   setShowValueSelector,
+  shortcuts,
 }: {
   filter: ExtendedColumnFilter<TData>;
   inputId: string;
@@ -586,6 +786,7 @@ function onFilterInputRender<TData>({
   ) => void;
   showValueSelector: boolean;
   setShowValueSelector: (value: boolean) => void;
+  shortcuts: typeof DATA_TABLE_FILTER_SHORTCUTS;
 }) {
   if (filter.operator === 'isEmpty' || filter.operator === 'isNotEmpty') {
     return (
@@ -699,24 +900,35 @@ function onFilterInputRender<TData>({
           }}
           multiple={multiple}
         >
-          <FacetedTrigger asChild>
-            <Button
-              id={inputId}
-              aria-controls={inputListboxId}
-              aria-label={`${columnMeta?.label} filter value${multiple ? 's' : ''}`}
-              variant="outline"
-              size="sm"
-              className="w-full rounded font-normal"
-            >
-              <FacetedBadgeList
-                options={columnMeta?.options}
-                placeholder={
-                  columnMeta?.placeholder ??
-                  `Select option${multiple ? 's' : ''}...`
-                }
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <FacetedTrigger asChild>
+                <Button
+                  id={inputId}
+                  aria-controls={inputListboxId}
+                  aria-label={`${columnMeta?.label} filter value${multiple ? 's' : ''}`}
+                  variant="outline"
+                  size="sm"
+                  className="w-full rounded gap-2 font-normal"
+                >
+                  <FacetedBadgeList
+                    options={columnMeta?.options}
+                    placeholder={
+                      columnMeta?.placeholder ??
+                      `Select option${multiple ? 's' : ''}...`
+                    }
+                  />
+                </Button>
+              </FacetedTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Filter value</span>
+              <ShortcutKbd
+                actionId={shortcuts.filterFacetedValue.id}
+                interactive={false}
               />
-            </Button>
-          </FacetedTrigger>
+            </TooltipContent>
+          </Tooltip>
           <FacetedContent
             id={inputListboxId}
             className="w-[200px] origin-[var(--radix-popover-content-transform-origin)]"
@@ -765,22 +977,33 @@ function onFilterInputRender<TData>({
 
       return (
         <Popover open={showValueSelector} onOpenChange={setShowValueSelector}>
-          <PopoverTrigger asChild>
-            <Button
-              id={inputId}
-              aria-controls={inputListboxId}
-              aria-label={`${columnMeta?.label} date filter`}
-              variant="outline"
-              size="sm"
-              className={cn(
-                'w-full justify-start rounded text-left font-normal',
-                !filter.value && 'text-muted-foreground',
-              )}
-            >
-              <CalendarIcon className="w-4 h-4" />
-              <span className="truncate">{displayValue}</span>
-            </Button>
-          </PopoverTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <PopoverTrigger asChild>
+                <Button
+                  id={inputId}
+                  aria-controls={inputListboxId}
+                  aria-label={`${columnMeta?.label} date filter`}
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'w-full justify-start rounded gap-2 text-left font-normal',
+                    !filter.value && 'text-muted-foreground',
+                  )}
+                >
+                  <CalendarIcon className="w-4 h-4" />
+                  <span className="truncate">{displayValue}</span>
+                </Button>
+              </PopoverTrigger>
+            </TooltipTrigger>
+            <TooltipContent className="flex items-center gap-2">
+              <span>Date filter value</span>
+              <ShortcutKbd
+                actionId={shortcuts.filterDateValue.id}
+                interactive={false}
+              />
+            </TooltipContent>
+          </Tooltip>
           <PopoverContent
             id={inputListboxId}
             align="start"

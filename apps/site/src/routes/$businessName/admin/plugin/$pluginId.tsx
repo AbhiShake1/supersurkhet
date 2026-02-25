@@ -45,25 +45,18 @@ function decodeURIComponentOrNull(value: string): string | null {
 function PluginDetailsPage() {
   const { businessName, pluginId: encodedPluginId } = Route.useParams();
   const pluginId = decodeURIComponentOrNull(encodedPluginId) ?? '';
-  const {
-    isAuthenticated,
-    isLoading: isUserLoading,
-    user,
-    anonymousUserId,
-  } = useAuth();
+  const { isAuthenticated, isLoading: isUserLoading, user } = useAuth();
   const { promptLogin, closeLoginPrompt } = useLoginPrompt();
   const { fire } = useConfetti();
   const userSoul = user?._?.soul;
-  const actorUserId = user?._?.soul ?? user?.pub ?? anonymousUserId ?? 'anon';
+  const actorUserId = user?._?.soul ?? user?.pub ?? '';
   const actorUserLabel =
     user?.name?.trim() ||
     user?.email?.trim() ||
     (typeof user?.alias === 'string' ? user.alias.trim() : '') ||
     'Anonymous user';
-
   const [installing, setInstalling] = useState(false);
   const [uninstalling, setUninstalling] = useState(false);
-  const [savingReview, setSavingReview] = useState(false);
 
   const { data: businesses = [], isLoading: isBusinessLoading } =
     api.business.useGet({
@@ -76,7 +69,8 @@ function PluginDetailsPage() {
     user?.role === 'admin' ||
     business?.created_by === userSoul ||
     isBusinessMember;
-  const businessId = business?.id ?? businessName;
+  const businessNamespace =
+    business?.basePath?.trim() || business?.id?.trim() || businessName.trim();
   const actorRole =
     business?.members?.[actorUserId]?.role === 'owner'
       ? 'owner'
@@ -91,19 +85,20 @@ function PluginDetailsPage() {
   }, [isAuthenticated, isUserLoading, promptLogin, closeLoginPrompt]);
 
   const { data: installRows = [] } = api.businessPluginInstall.useGet({
-    keys: [businessId],
+    keys: [businessNamespace],
   });
+  const { data: allInstallRows = [] } = api.businessPluginInstall.useGet();
   const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const { data: reviewRows = [], refetch: refetchReviews } =
     api.pluginUserReview.useGet({
-      keys: [businessId],
+      keys: [businessNamespace],
     });
   const createReviewMutation = api.pluginUserReview.useCreate({
-    keys: [businessId],
+    keys: [businessNamespace],
   });
 
   const installs = installRows as BusinessPluginInstallDoc[];
-  const allInstalls = installs;
+  const allInstalls = allInstallRows as BusinessPluginInstallDoc[];
   const releases = useMemo(
     () => mergeMarketplaceReleasesWithSeed(releaseRows as PluginReleaseDoc[]),
     [releaseRows],
@@ -188,13 +183,17 @@ function PluginDetailsPage() {
 
   async function handleInstall() {
     if (!plugin) return false;
+    if (!actorUserId) {
+      toast.error('Could not determine your user identity');
+      return false;
+    }
     try {
       setInstalling(true);
       await installPluginRelease({
         data: {
           actorUserId,
           actorRole,
-          businessId,
+          businessId: businessNamespace,
           pluginId: plugin.pluginId,
           version: plugin.latestRelease.version,
           explicitOwnerAction: true,
@@ -214,13 +213,17 @@ function PluginDetailsPage() {
 
   async function handleUninstall() {
     if (!plugin) return;
+    if (!actorUserId) {
+      toast.error('Could not determine your user identity');
+      return;
+    }
     try {
       setUninstalling(true);
       await uninstallPluginRelease({
         data: {
           actorUserId,
           actorRole,
-          businessId,
+          businessId: businessNamespace,
           pluginId: plugin.pluginId,
         },
       });
@@ -235,16 +238,19 @@ function PluginDetailsPage() {
 
   async function handleSaveReview(rating: number, comment: string) {
     if (!plugin) return;
+    if (!actorUserId) {
+      toast.error('Could not determine your user identity');
+      return;
+    }
     const now = new Date().toISOString();
     const reviewId = `${encodeURIComponent(plugin.pluginId)}::${encodeURIComponent(actorUserId)}`;
 
     try {
-      setSavingReview(true);
       const normalizedComment = comment.trim();
       await createReviewMutation.mutateAsync({
         id: reviewId,
         pluginId: plugin.pluginId,
-        businessId,
+        businessId: businessNamespace,
         userId: actorUserId,
         userLabel: actorUserLabel,
         rating,
@@ -259,8 +265,6 @@ function PluginDetailsPage() {
     } catch (error) {
       console.error(error);
       toast.error('Failed to save review');
-    } finally {
-      setSavingReview(false);
     }
   }
 
@@ -282,7 +286,9 @@ function PluginDetailsPage() {
       plugin={plugin}
       details={details}
       businessName={businessName}
-      businessId={businessId}
+      businessId={businessNamespace}
+      actorUserId={actorUserId}
+      actorUserLabel={actorUserLabel}
       onInstall={handleInstall}
       onUninstall={handleUninstall}
       onSaveReview={handleSaveReview}
@@ -291,7 +297,7 @@ function PluginDetailsPage() {
       reviewGroups={reviewGroups}
       isInstalling={installing}
       isUninstalling={uninstalling}
-      isSavingReview={savingReview}
+      isSavingReview={createReviewMutation.isPending}
     />
   );
 }

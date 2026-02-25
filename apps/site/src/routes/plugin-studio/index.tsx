@@ -222,7 +222,7 @@ function PluginStudioProjectsRoute() {
     () => buildActorUserIdAliases(user),
     [user],
   );
-  const actorUserId = actorUserIdAliases[0] ?? 'anon';
+  const actorUserId = actorUserIdAliases[0] ?? '';
   const actorUserIdSet = useMemo(
     () => new Set(actorUserIdAliases),
     [actorUserIdAliases],
@@ -390,6 +390,10 @@ function PluginStudioProjectsRoute() {
   };
 
   const handleCreateProject = async () => {
+    if (!actorUserId) {
+      toast.error('Could not determine your user identity');
+      return;
+    }
     const normalizedName = projectName.trim();
     if (!normalizedName) {
       toast.error('Project name is required.');

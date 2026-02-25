@@ -2015,6 +2015,134 @@ declare global {
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };
+     readonly pluginUserReviewReply: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     reviewId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     businessId: import("zod").ZodOptional<import("zod").ZodString>;
+     parentReplyId: import("zod").ZodOptional<import("zod").ZodString>;
+     userId: import("zod").ZodString;
+     userLabel: import("zod").ZodString;
+     comment: import("zod").ZodString;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     id: string;
+     userId: string;
+     pluginId: string;
+     createdAt: string;
+     updatedAt: string;
+     userLabel: string;
+     comment: string;
+     reviewId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     businessId?: string | undefined;
+     parentReplyId?: string | undefined;
+    }, {
+     id: string;
+     userId: string;
+     pluginId: string;
+     createdAt: string;
+     updatedAt: string;
+     userLabel: string;
+     comment: string;
+     reviewId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     businessId?: string | undefined;
+     parentReplyId?: string | undefined;
+    }>;
+     readonly title: "Plugin Review Replies";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
+     readonly pluginUserReviewVote: {
+     readonly schema: import("zod").ZodObject<{
+     id: import("zod").ZodString;
+     reviewId: import("zod").ZodString;
+     pluginId: import("zod").ZodString;
+     businessId: import("zod").ZodOptional<import("zod").ZodString>;
+     targetType: import("zod").ZodEnum<["review", "reply"]>;
+     targetId: import("zod").ZodString;
+     userId: import("zod").ZodString;
+     value: import("zod").ZodEnum<["up", "down"]>;
+     createdAt: import("zod").ZodString;
+     updatedAt: import("zod").ZodString;
+    } & {
+     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
+     created_by: import("zod").ZodOptional<import("zod").ZodString>;
+     _: import("zod").ZodOptional<import("zod").ZodObject<{
+     soul: import("zod").ZodOptional<import("zod").ZodString>;
+     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }, {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    }>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     value: "up" | "down";
+     id: string;
+     userId: string;
+     pluginId: string;
+     createdAt: string;
+     updatedAt: string;
+     reviewId: string;
+     targetType: "review" | "reply";
+     targetId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     businessId?: string | undefined;
+    }, {
+     value: "up" | "down";
+     id: string;
+     userId: string;
+     pluginId: string;
+     createdAt: string;
+     updatedAt: string;
+     reviewId: string;
+     targetType: "review" | "reply";
+     targetId: string;
+     timestamp?: number | undefined;
+     created_by?: string | undefined;
+     _?: {
+     soul?: string | undefined;
+     ">"?: Record<string, string | number> | undefined;
+    } | undefined;
+     businessId?: string | undefined;
+    }>;
+     readonly title: "Plugin Review Votes";
+     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
+     readonly group: "Plugin Platform";
+    };
      readonly pluginActionCapabilityEnvelope: {
      readonly schema: import("zod").ZodObject<{
      id: import("zod").ZodString;

@@ -22,7 +22,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  type ShortcutDefinition,
+  ShortcutKbd,
+  useRegisterShortcut,
+} from '@/components/ui/keyboard-shortcuts';
 import { SortableItemHandle } from '@/components/ui/sortable';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface DataTableColumnHeaderProps<TData, TValue>
@@ -35,6 +45,22 @@ interface DataTableColumnHeaderProps<TData, TValue>
   showReorderHandle?: boolean;
 }
 
+const DATA_TABLE_COLUMN_SHORTCUTS = {
+  reorderColumn: {
+    id: 'dataTable.reorderColumn',
+    label: 'Reorder column',
+    description: 'Drag and drop a table column to reorder it.',
+    scope: 'DataTable Columns',
+    defaultBinding: {
+      key: 'r',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+} as const satisfies Record<string, ShortcutDefinition>;
+
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
@@ -45,6 +71,12 @@ export function DataTableColumnHeader<TData, TValue>({
   showReorderHandle = false,
   ...props
 }: DataTableColumnHeaderProps<TData, TValue>) {
+  useRegisterShortcut(
+    onMoveColumn && showReorderHandle
+      ? DATA_TABLE_COLUMN_SHORTCUTS.reorderColumn
+      : undefined,
+  );
+
   if (
     !column.getCanSort() &&
     !column.getCanHide() &&
@@ -69,15 +101,28 @@ export function DataTableColumnHeader<TData, TValue>({
     return (
       <div className={cn('flex min-w-0 items-center gap-1', className)}>
         {showReorderHandle ? (
-          <SortableItemHandle asChild>
-            <button
-              type="button"
-              className="inline-flex h-8 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
-              aria-label={`Reorder column ${String(column.id ?? title)}`}
-            >
-              <GripVertical className="size-4" />
-            </button>
-          </SortableItemHandle>
+          <div className="inline-flex items-center gap-1">
+            <Tooltip>
+              <SortableItemHandle asChild>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex h-8 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-foreground"
+                    aria-label={`Reorder column ${String(column.id ?? title)}`}
+                  >
+                    <GripVertical className="size-4" />
+                  </button>
+                </TooltipTrigger>
+              </SortableItemHandle>
+              <TooltipContent className="flex items-center gap-2">
+                <span>Reorder column</span>
+                <ShortcutKbd
+                  actionId={DATA_TABLE_COLUMN_SHORTCUTS.reorderColumn.id}
+                  interactive={false}
+                />
+              </TooltipContent>
+            </Tooltip>
+          </div>
         ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger

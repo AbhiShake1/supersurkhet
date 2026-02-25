@@ -15,14 +15,16 @@ import {
   Trash2,
 } from 'lucide-react';
 import {
+  memo,
   type ReactNode,
   type SVGProps,
+  useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from 'react';
 import { toast } from 'sonner';
-import { useAuth } from '@/components/auth-provider';
 import { PluginPreviewDialog } from '@/components/plugin-preview-dialog';
 import {
   AlertDialog,
@@ -37,11 +39,16 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { api } from '@/lib/api';
 import type {
   PluginMarketItem,
   PluginUserReview,
   PluginUserReviewGroup,
 } from '@/lib/plugins/admin-plugin-market';
+import type {
+  PluginUserReviewReplyDoc,
+  PluginUserReviewVoteDoc,
+} from '@/lib/plugins/types';
 import { cn } from '@/lib/utils';
 
 export interface PluginDetailView {
@@ -65,12 +72,14 @@ export interface PluginDetailsViewProps {
   details: PluginDetailView;
   businessName: string;
   businessId?: string;
+  actorUserId?: string;
+  actorUserLabel?: string;
   onInstall: () => Promise<boolean | undefined>;
   onUninstall: () => Promise<void>;
   onSaveReview: (rating: number, comment: string) => Promise<void>;
   onBack: () => void;
-  similarPlugins: PluginMarketItem[];
-  reviewGroups: PluginUserReviewGroup[];
+  similarPlugins?: PluginMarketItem[];
+  reviewGroups?: PluginUserReviewGroup[];
   isInstalling?: boolean;
   isUninstalling?: boolean;
   isSavingReview?: boolean;
@@ -81,6 +90,8 @@ export function PluginDetailsView({
   details,
   businessName,
   businessId,
+  actorUserId,
+  actorUserLabel,
   onInstall,
   onUninstall,
   onSaveReview,
@@ -91,50 +102,17 @@ export function PluginDetailsView({
   isUninstalling,
   isSavingReview,
 }: PluginDetailsViewProps) {
-  const [reviewRating, setReviewRating] = useState(0);
-  const [reviewComment, setReviewComment] = useState('');
   const [isHeroOutOfView, setIsHeroOutOfView] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [showOtherReviews, setShowOtherReviews] = useState(false);
   const previewStripRef = useRef<HTMLDivElement | null>(null);
   const heroSectionRef = useRef<HTMLElement | null>(null);
-  const reviewDraftSourceKeyRef = useRef<string>('');
-  const reviewDraftBaseRef = useRef<{ rating: number; comment: string }>({
-    rating: 0,
-    comment: '',
-  });
 
   const persistedReviewRating = details.userReview
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details.userReview?.comment ?? '';
-
-  const isReviewDirty =
-    reviewRating !== reviewDraftBaseRef.current.rating ||
-    reviewComment !== reviewDraftBaseRef.current.comment;
-
-  useEffect(() => {
-    const persistedReviewSourceKey =
-      details.userReview?.id ?? `draft::${plugin.pluginId}`;
-    const sourceChanged =
-      reviewDraftSourceKeyRef.current !== persistedReviewSourceKey;
-
-    if (!sourceChanged && isReviewDirty) return;
-
-    reviewDraftSourceKeyRef.current = persistedReviewSourceKey;
-    reviewDraftBaseRef.current = {
-      rating: persistedReviewRating,
-      comment: persistedReviewComment,
-    };
-    setReviewRating(persistedReviewRating);
-    setReviewComment(persistedReviewComment);
-  }, [
-    plugin.pluginId,
-    details.userReview,
-    persistedReviewRating,
-    persistedReviewComment,
-    isReviewDirty,
-  ]);
+  const reviewComposerKey = `${plugin.pluginId}::${details.userReview?.updatedAt ?? details.userReview?.createdAt ?? 'new'}::${persistedReviewRating}`;
 
   useEffect(() => {
     const heroNode = heroSectionRef.current;
@@ -190,8 +168,152 @@ export function PluginDetailsView({
       })),
     );
   const visibleOtherReviews = otherReviews.slice(0, 10);
+  const reviewIdSet = useMemo(
+    () =>
+      new Set(
+        reviewGroups.flatMap((group) =>
+          group.reviews.map((review) => review.id),
+        ),
+      ),
+    [reviewGroups],
+  );
+  const scopedBusinessId = businessId?.trim() || '';
+  const queryOptions = scopedBusinessId
+    ? { keys: [scopedBusinessId] }
+    : undefined;
+  const canPersistReviewFeedback =
+    Boolean(actorUserId?.trim()) && scopedBusinessId.length > 0;
+  const { data: replyRowsRaw = [], refetch: refetchReplyRows } =
+    api.pluginUserReviewReply.useGet(queryOptions);
+  const { data: voteRowsRaw = [], refetch: refetchVoteRows } =
+    api.pluginUserReviewVote.useGet(queryOptions);
+  const createReplyMutation = api.pluginUserReviewReply.useCreate(queryOptions);
+  const createVoteMutation = api.pluginUserReviewVote.useCreate(queryOptions);
+  const reviewReplies = useMemo(
+    () =>
+      (replyRowsRaw as PluginUserReviewReplyDoc[]).filter(
+        (reply) =>
+          reply.pluginId === plugin.pluginId && reviewIdSet.has(reply.reviewId),
+      ),
+    [replyRowsRaw, plugin.pluginId, reviewIdSet],
+  );
+  const reviewVotes = useMemo(
+    () =>
+      (voteRowsRaw as PluginUserReviewVoteDoc[]).filter(
+        (vote) =>
+          vote.pluginId === plugin.pluginId && reviewIdSet.has(vote.reviewId),
+      ),
+    [voteRowsRaw, plugin.pluginId, reviewIdSet],
+  );
+  const repliesByReviewId = useMemo(() => {
+    const grouped = new Map<string, PluginReviewReplyNode[]>();
+    const byReviewId = new Map<string, PluginUserReviewReplyDoc[]>();
+    for (const reply of reviewReplies) {
+      const current = byReviewId.get(reply.reviewId);
+      if (current) current.push(reply);
+      else byReviewId.set(reply.reviewId, [reply]);
+    }
+    for (const [reviewId, replies] of byReviewId) {
+      grouped.set(reviewId, buildReplyTree(replies));
+    }
+    return grouped;
+  }, [reviewReplies]);
+  const voteSummaryByTargetId = useMemo(
+    () => summarizeVotes(reviewVotes, actorUserId),
+    [reviewVotes, actorUserId],
+  );
+  const actorLabel = actorUserLabel?.trim() || 'Anonymous user';
 
   const heroMediaSrc = details.previewScreenshots[0] ?? plugin.iconUrl ?? null;
+
+  const handleSubmitReply = useCallback(
+    async (
+      reviewId: string,
+      parentReplyId: string | null,
+      commentInput: string,
+    ) => {
+      if (!canPersistReviewFeedback) {
+        toast.error('Log in to reply');
+        return;
+      }
+      const comment = commentInput.trim();
+      if (!comment) return;
+      const now = new Date().toISOString();
+      const suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+      const replyId = `${encodeURIComponent(reviewId)}::${encodeURIComponent(actorUserId)}::${suffix}`;
+      try {
+        await createReplyMutation.mutateAsync({
+          id: replyId,
+          reviewId,
+          pluginId: plugin.pluginId,
+          businessId,
+          parentReplyId: parentReplyId ?? undefined,
+          userId: actorUserId,
+          userLabel: actorLabel,
+          comment,
+          createdAt: now,
+          updatedAt: now,
+        });
+        await refetchReplyRows();
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to save reply');
+      }
+    },
+    [
+      actorLabel,
+      actorUserId,
+      businessId,
+      canPersistReviewFeedback,
+      createReplyMutation,
+      plugin.pluginId,
+      refetchReplyRows,
+    ],
+  );
+
+  const handleSubmitVote = useCallback(
+    async (
+      reviewId: string,
+      targetType: 'review' | 'reply',
+      targetId: string,
+      value: 'up' | 'down',
+    ) => {
+      if (!canPersistReviewFeedback) {
+        toast.error('Log in to vote');
+        return;
+      }
+      const now = new Date().toISOString();
+      const voteId = `${targetType}::${encodeURIComponent(targetId)}::${encodeURIComponent(actorUserId)}`;
+      const existingVote = reviewVotes.find((vote) => vote.id === voteId);
+      try {
+        await createVoteMutation.mutateAsync({
+          id: voteId,
+          reviewId,
+          pluginId: plugin.pluginId,
+          businessId,
+          targetType,
+          targetId,
+          userId: actorUserId,
+          value,
+          createdAt: existingVote?.createdAt ?? now,
+          updatedAt: now,
+        });
+        await refetchVoteRows();
+      } catch (error) {
+        console.error(error);
+        toast.error('Failed to save vote');
+      }
+    },
+    [
+      actorUserId,
+      businessId,
+      canPersistReviewFeedback,
+      createVoteMutation,
+      plugin.pluginId,
+      refetchVoteRows,
+      reviewVotes,
+    ],
+  );
 
   function scrollPreviewStrip(direction: 'left' | 'right') {
     const node = previewStripRef.current;
@@ -588,58 +710,12 @@ export function PluginDetailsView({
 
               {/* Review Input */}
               <div className="rounded-2xl border border-gray-200 p-6 transition-shadow hover:shadow-md">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-base font-medium text-[#202124]">
-                    Your review
-                  </h3>
-                  <Button
-                    size="sm"
-                    onClick={() => onSaveReview(reviewRating, reviewComment)}
-                    loading={isSavingReview}
-                    disabled={
-                      isSavingReview || reviewRating <= 0 || !isReviewDirty
-                    }
-                    className="h-9 rounded-full bg-[#01875f] transition-all hover:bg-[#01704f] hover:shadow-sm disabled:opacity-50"
-                  >
-                    Save review
-                  </Button>
-                </div>
-                <div className="mb-4 flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => setReviewRating(star)}
-                      className="group relative p-1 transition-all hover:scale-125 focus:outline-none focus:ring-2 focus:ring-[#01875f]/20 rounded-lg"
-                      aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
-                    >
-                      <svg
-                        aria-hidden="true"
-                        focusable="false"
-                        className={cn(
-                          'size-7 transition-all duration-200',
-                          star <= reviewRating
-                            ? 'fill-[#01875f] text-[#01875f] drop-shadow-sm'
-                            : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300',
-                        )}
-                        viewBox="0 0 24 24"
-                        stroke="none"
-                      >
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                      </svg>
-                    </button>
-                  ))}
-                  <span className="ml-3 text-sm font-medium text-gray-500 transition-colors">
-                    {reviewRating > 0
-                      ? `${reviewRating}/5 stars`
-                      : 'Select rating'}
-                  </span>
-                </div>
-                <Textarea
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  placeholder="Tell us what you think about this plugin..."
-                  className="min-h-[100px] resize-none border-gray-200 transition-colors focus-visible:ring-[#01875f] focus-visible:ring-2"
+                <ReviewComposer
+                  key={reviewComposerKey}
+                  initialRating={persistedReviewRating}
+                  initialComment={persistedReviewComment}
+                  isSavingReview={isSavingReview}
+                  onSaveReview={onSaveReview}
                 />
               </div>
 
@@ -659,10 +735,15 @@ export function PluginDetailsView({
                         </h4>
                         <div className="space-y-6">
                           {myReviews.map(({ review, userLabel }) => (
-                            <ReviewItem
+                            <ReviewItemMemo
                               key={review.id}
                               review={review}
                               userLabel={userLabel}
+                              replies={repliesByReviewId.get(review.id) ?? []}
+                              voteSummaryByTargetId={voteSummaryByTargetId}
+                              actorUserId={actorUserId}
+                              onSubmitReply={handleSubmitReply}
+                              onSubmitVote={handleSubmitVote}
                             />
                           ))}
                         </div>
@@ -696,9 +777,18 @@ export function PluginDetailsView({
                                     key={review.id}
                                     className={cn(index > 0 && 'pt-8')}
                                   >
-                                    <ReviewItem
+                                    <ReviewItemMemo
                                       review={review}
                                       userLabel={userLabel}
+                                      replies={
+                                        repliesByReviewId.get(review.id) ?? []
+                                      }
+                                      voteSummaryByTargetId={
+                                        voteSummaryByTargetId
+                                      }
+                                      actorUserId={actorUserId}
+                                      onSubmitReply={handleSubmitReply}
+                                      onSubmitVote={handleSubmitVote}
                                     />
                                   </div>
                                 ),
@@ -837,6 +927,93 @@ function HeroMetric({ value, label }: { value: ReactNode; label: string }) {
   );
 }
 
+function ReviewComposer({
+  initialRating,
+  initialComment,
+  isSavingReview,
+  onSaveReview,
+}: {
+  initialRating: number;
+  initialComment: string;
+  isSavingReview?: boolean;
+  onSaveReview: (rating: number, comment: string) => Promise<void>;
+}) {
+  const [reviewRating, setReviewRating] = useState(initialRating);
+  const [reviewComment, setReviewComment] = useState(initialComment);
+
+  return (
+    <form
+      className="space-y-4"
+      onSubmit={async (event) => {
+        event.preventDefault();
+        if (
+          !Number.isFinite(reviewRating) ||
+          reviewRating < 1 ||
+          reviewRating > 5
+        ) {
+          toast.error('Select a rating before saving');
+          return;
+        }
+        await onSaveReview(reviewRating, reviewComment);
+      }}
+    >
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-base font-medium text-[#202124]">Your review</h3>
+        <Button
+          type="submit"
+          size="sm"
+          loading={isSavingReview}
+          disabled={isSavingReview}
+          className="h-9 rounded-full bg-[#01875f] transition-all hover:bg-[#01704f] hover:shadow-sm disabled:opacity-50"
+        >
+          Save review
+        </Button>
+      </div>
+      <div className="mb-4 flex items-center gap-1">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <label
+            key={star}
+            className="group relative cursor-pointer p-1 transition-all hover:scale-125"
+          >
+            <input
+              type="radio"
+              name="reviewRating"
+              value={star}
+              checked={reviewRating === star}
+              onChange={() => setReviewRating(star)}
+              className="sr-only"
+            />
+            <svg
+              aria-hidden="true"
+              focusable="false"
+              className={cn(
+                'size-7 transition-all duration-200',
+                star <= reviewRating
+                  ? 'fill-[#01875f] text-[#01875f] drop-shadow-sm'
+                  : 'fill-gray-200 text-gray-300 group-hover:fill-gray-300',
+              )}
+              viewBox="0 0 24 24"
+              stroke="none"
+            >
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </label>
+        ))}
+        <span className="ml-3 text-sm font-medium text-gray-500 transition-colors">
+          {reviewRating > 0 ? `${reviewRating}/5 stars` : 'Select rating'}
+        </span>
+      </div>
+      <Textarea
+        name="reviewComment"
+        value={reviewComment}
+        onChange={(event) => setReviewComment(event.target.value)}
+        placeholder="Tell us what you think about this plugin..."
+        className="min-h-[100px] resize-none border-gray-200 transition-colors focus-visible:ring-[#01875f] focus-visible:ring-2"
+      />
+    </form>
+  );
+}
+
 function Stars({
   rating,
   tone = 'amber',
@@ -892,102 +1069,207 @@ function ChevronDown(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-// Local type for UI mock replies
-type Reply = {
-  id: string;
-  authorName: string;
-  comment: string;
-  createdAt: string;
-  replies: Reply[];
+type PluginReviewReplyNode = PluginUserReviewReplyDoc & {
+  replies: PluginReviewReplyNode[];
 };
 
-// Global mock state for replies per review ID
-// In a real app, this would come from the API/DB.
-const MOCK_REPLIES: Record<string, Reply[]> = {};
+type VoteSummary = {
+  upCount: number;
+  downCount: number;
+  userVote: 'up' | 'down' | null;
+};
+
+function buildReplyTree(
+  replies: PluginUserReviewReplyDoc[],
+): PluginReviewReplyNode[] {
+  const ordered = [...replies].sort((a, b) =>
+    a.createdAt.localeCompare(b.createdAt),
+  );
+  const nodeById = new Map<string, PluginReviewReplyNode>();
+  for (const reply of ordered) {
+    nodeById.set(reply.id, { ...reply, replies: [] });
+  }
+  const roots: PluginReviewReplyNode[] = [];
+  for (const node of nodeById.values()) {
+    if (node.parentReplyId) {
+      const parent = nodeById.get(node.parentReplyId);
+      if (parent) {
+        parent.replies.push(node);
+        continue;
+      }
+    }
+    roots.push(node);
+  }
+  return roots;
+}
+
+function summarizeVotes(
+  votes: PluginUserReviewVoteDoc[],
+  actorUserId?: string,
+): Map<string, VoteSummary> {
+  const map = new Map<string, VoteSummary>();
+  for (const vote of votes) {
+    const current = map.get(vote.targetId) ?? {
+      upCount: 0,
+      downCount: 0,
+      userVote: null,
+    };
+    if (vote.value === 'up') current.upCount += 1;
+    else current.downCount += 1;
+    if (actorUserId && vote.userId === actorUserId) {
+      current.userVote = vote.value;
+    }
+    map.set(vote.targetId, current);
+  }
+  return map;
+}
 
 function ReplyItem({
+  reviewId,
   reply,
-  onReply,
+  voteSummaryByTargetId,
+  actorUserId,
+  onSubmitReply,
+  onSubmitVote,
   depth = 0,
 }: {
-  reply: Reply;
-  onReply: (parentId: string, text: string) => void;
+  reviewId: string;
+  reply: PluginReviewReplyNode;
+  voteSummaryByTargetId: Map<string, VoteSummary>;
+  actorUserId?: string;
+  onSubmitReply: (
+    reviewId: string,
+    parentReplyId: string | null,
+    comment: string,
+  ) => Promise<void>;
+  onSubmitVote: (
+    reviewId: string,
+    targetType: 'review' | 'reply',
+    targetId: string,
+    value: 'up' | 'down',
+  ) => Promise<void>;
   depth?: number;
 }) {
-  const [isReplying, setIsReplying] = useState(false);
-  const [replyText, setReplyText] = useState('');
-
-  const handleSubmit = () => {
-    if (!replyText.trim()) return;
-    onReply(reply.id, replyText);
-    setIsReplying(false);
-    setReplyText('');
+  const voteSummary = voteSummaryByTargetId.get(reply.id) ?? {
+    upCount: 0,
+    downCount: 0,
+    userVote: null,
   };
+  const score = voteSummary.upCount - voteSummary.downCount;
 
   return (
     <div className="space-y-1">
       <div className="flex items-center gap-2">
         <span className="text-xs font-medium text-[#202124]">
-          {reply.authorName}
+          {reply.userLabel}
         </span>
         <span className="text-[10px] text-gray-500">
           {new Date(reply.createdAt).toLocaleDateString()}
         </span>
       </div>
-      <p className="text-sm text-[#5f6368] border-l-2 border-emerald-500/20 pl-3 py-0.5 bg-emerald-50/30 rounded-r-[4px] rounded-br-[4px]">
+      <p className="rounded-r-[4px] rounded-br-[4px] border-l-2 border-emerald-500/20 bg-emerald-50/30 pl-3 py-0.5 text-sm text-[#5f6368]">
         {reply.comment}
       </p>
 
-      {/* Maximum nesting depth of 4 to prevent UI overflow */}
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            'size-7 rounded-md transition-colors hover:bg-orange-50 hover:text-orange-500 text-gray-400',
+            voteSummary.userVote === 'up' && 'bg-orange-50 text-orange-500',
+          )}
+          title="Upvote"
+          disabled={!actorUserId}
+          onClick={() => onSubmitVote(reviewId, 'reply', reply.id, 'up')}
+        >
+          <ArrowBigUp className="size-[18px]" />
+          <span className="sr-only">Upvote</span>
+        </Button>
+        <span className="px-1 text-xs font-medium text-gray-600">{score}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            'size-7 rounded-md transition-colors hover:bg-[#7193ff]/10 hover:text-[#7193ff] text-gray-400',
+            voteSummary.userVote === 'down' && 'bg-[#7193ff]/10 text-[#7193ff]',
+          )}
+          title="Downvote"
+          disabled={!actorUserId}
+          onClick={() => onSubmitVote(reviewId, 'reply', reply.id, 'down')}
+        >
+          <ArrowBigDown className="size-[18px]" />
+          <span className="sr-only">Downvote</span>
+        </Button>
+      </div>
+
       {depth < 4 && (
-        <div className="flex justify-start">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 mt-1 text-[10px] text-[#01875f] hover:bg-emerald-50"
-            onClick={() => setIsReplying(!isReplying)}
+        <details className="mt-1">
+          <summary
+            className={cn(
+              'inline-flex cursor-pointer list-none items-center rounded px-2 py-1 text-[10px] text-[#01875f] hover:bg-emerald-50',
+              !actorUserId && 'pointer-events-none opacity-50',
+            )}
           >
             Reply
-          </Button>
-        </div>
+          </summary>
+          <form
+            className="mt-2 mb-3 space-y-2 rounded-lg bg-gray-50 p-3"
+            onSubmit={async (event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              const replyText = String(formData.get('replyText') ?? '');
+              if (!replyText.trim()) return;
+              await onSubmitReply(reviewId, reply.id, replyText);
+              event.currentTarget.reset();
+              const detailsNode = event.currentTarget.closest('details');
+              if (detailsNode) {
+                detailsNode.open = false;
+              }
+            }}
+          >
+            <Textarea
+              name="replyText"
+              placeholder="Write a reply..."
+              className="min-h-[50px] resize-none bg-white text-xs"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={(event) => {
+                  const detailsNode = event.currentTarget.closest('details');
+                  if (detailsNode) detailsNode.open = false;
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                size="sm"
+                className="h-6 bg-[#01875f] px-2 text-xs text-white hover:bg-[#01875f]/90"
+                disabled={!actorUserId}
+              >
+                Submit
+              </Button>
+            </div>
+          </form>
+        </details>
       )}
 
-      {isReplying && (
-        <div className="mt-2 mb-3 space-y-2 rounded-lg bg-gray-50 p-3">
-          <Textarea
-            placeholder="Write a reply..."
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            className="min-h-[50px] text-xs resize-none bg-white"
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 text-xs px-2"
-              onClick={() => setIsReplying(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={!replyText.trim()}
-              className="h-6 text-xs px-2 bg-[#01875f] hover:bg-[#01875f]/90 text-white"
-            >
-              Submit
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {reply.replies && reply.replies.length > 0 && (
-        <div className="mt-2 space-y-3 pl-4 border-l-2 border-gray-100">
+      {reply.replies.length > 0 && (
+        <div className="mt-2 space-y-3 border-l-2 border-gray-100 pl-4">
           {reply.replies.map((childReply) => (
-            <ReplyItem
+            <ReplyItemMemo
               key={childReply.id}
+              reviewId={reviewId}
               reply={childReply}
-              onReply={onReply}
+              voteSummaryByTargetId={voteSummaryByTargetId}
+              actorUserId={actorUserId}
+              onSubmitReply={onSubmitReply}
+              onSubmitVote={onSubmitVote}
               depth={depth + 1}
             />
           ))}
@@ -1000,76 +1282,35 @@ function ReplyItem({
 function ReviewItem({
   review,
   userLabel,
+  replies,
+  voteSummaryByTargetId,
+  actorUserId,
+  onSubmitReply,
+  onSubmitVote,
 }: {
   review: PluginUserReview;
   userLabel: string;
+  replies: PluginReviewReplyNode[];
+  voteSummaryByTargetId: Map<string, VoteSummary>;
+  actorUserId?: string;
+  onSubmitReply: (
+    reviewId: string,
+    parentReplyId: string | null,
+    comment: string,
+  ) => Promise<void>;
+  onSubmitVote: (
+    reviewId: string,
+    targetType: 'review' | 'reply',
+    targetId: string,
+    value: 'up' | 'down',
+  ) => Promise<void>;
 }) {
-  const { user } = useAuth();
-  const [isReplying, setIsReplying] = useState(false);
-  const [replyText, setReplyText] = useState('');
-
-  // Force re-render when adding mock replies
-  const [replies, setReplies] = useState<Reply[]>(
-    MOCK_REPLIES[review.id] || [],
-  );
-
-  const recursivelyAddReply = (
-    replyList: Reply[],
-    parentId: string,
-    newReply: Reply,
-  ): Reply[] => {
-    return replyList.map((rep) => {
-      if (rep.id === parentId) {
-        return { ...rep, replies: [...(rep.replies || []), newReply] };
-      }
-      if (rep.replies && rep.replies.length > 0) {
-        return {
-          ...rep,
-          replies: recursivelyAddReply(rep.replies, parentId, newReply),
-        };
-      }
-      return rep;
-    });
+  const voteSummary = voteSummaryByTargetId.get(review.id) ?? {
+    upCount: 0,
+    downCount: 0,
+    userVote: null,
   };
-
-  const handleReviewReplySubmit = () => {
-    if (!replyText.trim()) return;
-    const newReply: Reply = {
-      id: Date.now().toString(),
-      authorName: user?.name || 'Current User',
-      comment: replyText.trim(),
-      createdAt: new Date().toISOString(),
-      replies: [],
-    };
-
-    const updatedReplies = [...(MOCK_REPLIES[review.id] || []), newReply];
-    MOCK_REPLIES[review.id] = updatedReplies;
-    setReplies(updatedReplies);
-    setReplyText('');
-    setIsReplying(false);
-    toast.success('Reply submitted');
-  };
-
-  const handleNestedReplySubmit = (parentId: string, text: string) => {
-    const newReply: Reply = {
-      id: Date.now().toString(),
-      authorName: user?.name || 'Current User',
-      comment: text.trim(),
-      createdAt: new Date().toISOString(),
-      replies: [],
-    };
-
-    const currentReplies = MOCK_REPLIES[review.id] || [];
-    const updatedReplies = recursivelyAddReply(
-      currentReplies,
-      parentId,
-      newReply,
-    );
-
-    MOCK_REPLIES[review.id] = updatedReplies;
-    setReplies(updatedReplies);
-    toast.success('Reply submitted');
-  };
+  const score = voteSummary.upCount - voteSummary.downCount;
 
   return (
     <article className="space-y-3">
@@ -1105,69 +1346,100 @@ function ReviewItem({
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 rounded-md transition-colors hover:bg-orange-50 hover:text-orange-500 text-gray-400"
+            className={cn(
+              'size-7 rounded-md transition-colors hover:bg-orange-50 hover:text-orange-500 text-gray-400',
+              voteSummary.userVote === 'up' && 'bg-orange-50 text-orange-500',
+            )}
             title="Upvote"
+            disabled={!actorUserId}
+            onClick={() => onSubmitVote(review.id, 'review', review.id, 'up')}
           >
             <ArrowBigUp className="size-[18px]" />
             <span className="sr-only">Upvote</span>
           </Button>
-          <span className="text-xs font-medium text-gray-600 px-1">24</span>
+          <span className="px-1 text-xs font-medium text-gray-600">
+            {score}
+          </span>
           <Button
             variant="ghost"
             size="icon"
-            className="size-7 rounded-md transition-colors hover:bg-[#7193ff]/10 hover:text-[#7193ff] text-gray-400"
+            className={cn(
+              'size-7 rounded-md transition-colors hover:bg-[#7193ff]/10 hover:text-[#7193ff] text-gray-400',
+              voteSummary.userVote === 'down' &&
+                'bg-[#7193ff]/10 text-[#7193ff]',
+            )}
             title="Downvote"
+            disabled={!actorUserId}
+            onClick={() => onSubmitVote(review.id, 'review', review.id, 'down')}
           >
             <ArrowBigDown className="size-[18px]" />
             <span className="sr-only">Downvote</span>
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-3 ml-2 text-[12px] font-semibold text-gray-500 hover:bg-gray-100 hover:text-gray-800 rounded-full transition-colors"
-            onClick={() => setIsReplying(!isReplying)}
-          >
-            Reply
-          </Button>
+          <details className="ml-2">
+            <summary
+              className={cn(
+                'inline-flex list-none cursor-pointer items-center rounded-full px-3 py-1.5 text-[12px] font-semibold text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-800',
+                !actorUserId && 'pointer-events-none opacity-50',
+              )}
+            >
+              Reply
+            </summary>
+            <form
+              className="mt-2 space-y-2 rounded-lg bg-gray-50 p-3"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                const formData = new FormData(event.currentTarget);
+                const replyText = String(formData.get('replyText') ?? '');
+                if (!replyText.trim()) return;
+                await onSubmitReply(review.id, null, replyText);
+                event.currentTarget.reset();
+                const detailsNode = event.currentTarget.closest('details');
+                if (detailsNode) {
+                  detailsNode.open = false;
+                }
+              }}
+            >
+              <Textarea
+                name="replyText"
+                placeholder="Write a reply..."
+                className="min-h-[60px] resize-none bg-white text-sm"
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={(event) => {
+                    const detailsNode = event.currentTarget.closest('details');
+                    if (detailsNode) detailsNode.open = false;
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  size="sm"
+                  className="bg-[#01875f] text-white hover:bg-[#01875f]/90"
+                  disabled={!actorUserId}
+                >
+                  Submit
+                </Button>
+              </div>
+            </form>
+          </details>
         </div>
 
-        {/* Top-level Reply Area */}
-        {isReplying && (
-          <div className="mt-2 space-y-2 rounded-lg bg-gray-50 p-3">
-            <Textarea
-              placeholder="Write a reply..."
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              className="min-h-[60px] text-sm resize-none bg-white"
-            />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsReplying(false)}
-              >
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleReviewReplySubmit}
-                disabled={!replyText.trim()}
-                className="bg-[#01875f] hover:bg-[#01875f]/90 text-white"
-              >
-                Submit
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Threaded Replies */}
         {replies.length > 0 && (
           <div className="mt-4 space-y-3 pl-4 border-l-2 border-gray-100">
             {replies.map((reply) => (
-              <ReplyItem
+              <ReplyItemMemo
                 key={reply.id}
+                reviewId={review.id}
                 reply={reply}
-                onReply={handleNestedReplySubmit}
+                voteSummaryByTargetId={voteSummaryByTargetId}
+                actorUserId={actorUserId}
+                onSubmitReply={onSubmitReply}
+                onSubmitVote={onSubmitVote}
               />
             ))}
           </div>
@@ -1176,3 +1448,6 @@ function ReviewItem({
     </article>
   );
 }
+
+const ReplyItemMemo = memo(ReplyItem);
+const ReviewItemMemo = memo(ReviewItem);

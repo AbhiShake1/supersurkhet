@@ -17,8 +17,8 @@ export const useGet = createGunHook((messenger) => {
     key:
       | T
       | (UseGetBuilder<T> & {
-          key: T;
-        }),
+        key: T;
+      }),
     ...restKeys: string[]
   ): UseQueryResult<NestedSchemaType<T>[] | undefined, Error> => {
     const queryClient = useQueryClient();

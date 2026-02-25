@@ -31,6 +31,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import {
+  ShortcutKbd,
+  useShortcutAction,
+} from '@/components/ui/keyboard-shortcuts';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -200,6 +204,34 @@ const DEFAULT_SYSTEM_TABS: SystemTabState = {
   },
 };
 const DEFAULT_SYSTEM_TAB_ORDER: SystemTabKey[] = ['dashboard', 'qr', 'website'];
+const COLUMN_SHEET_SHORTCUTS = {
+  cancel: {
+    id: 'pluginStudio.columnSheetCancel',
+    label: 'Cancel column sheet',
+    description: 'Close the add/edit column sheet without saving.',
+    scope: 'Plugin Studio',
+    defaultBinding: {
+      key: 'Escape',
+      ctrl: false,
+      meta: false,
+      alt: false,
+      shift: false,
+    },
+  },
+  save: {
+    id: 'pluginStudio.columnSheetSave',
+    label: 'Save column',
+    description: 'Save the current add/edit column changes.',
+    scope: 'Plugin Studio',
+    defaultBinding: {
+      key: 'Enter',
+      ctrl: false,
+      meta: true,
+      alt: false,
+      shift: false,
+    },
+  },
+} as const;
 
 const DRAFT_GROUP_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_group__/';
 const DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX = '__plugin_studio_system__/';
@@ -259,6 +291,16 @@ function isDuplicatePersistenceError(error: unknown) {
     message.includes('already exists') ||
     message.includes('unique constraint') ||
     message.includes('conflict')
+  );
+}
+
+function isMissingPersistenceError(error: unknown) {
+  const message = toErrorMessage(error).toLowerCase();
+  return (
+    message.includes('not found') ||
+    message.includes('missing') ||
+    message.includes('does not exist') ||
+    message.includes('no record')
   );
 }
 
@@ -689,7 +731,7 @@ function toDraftRoutesFromAdminTabs(
   id: string;
   schema: string;
   title: string;
-  group?: string;
+  group: string | null;
   order: number;
   routeSegment: string;
   routePath: string;
@@ -701,7 +743,7 @@ function toDraftRoutesFromAdminTabs(
       id: `${tab.schema}:${index}`,
       schema: tab.schema,
       title: tab.title ?? tab.schema,
-      group: tab.group?.trim() || undefined,
+      group: tab.group?.trim() || null,
       order: index,
       routeSegment,
       routePath: `/plugin-studio/${routeSegment}`,
@@ -715,7 +757,7 @@ function toAdminTabsFromDraftRoutes(
     | Array<{
       schema: string;
       title: string;
-      group?: string;
+      group?: string | null;
       order: number;
       iconName?: string;
     }>
@@ -2034,7 +2076,7 @@ function PluginStudioPresenter({
   const { fire: fireConfetti } = useConfetti();
   const params = Route.useParams();
   const actorUserIdAliases = useMemo(() => buildActorUserIdAliases(user), [user]);
-  const actorUserId = actorUserIdAliases[0] ?? 'anon';
+  const actorUserId = actorUserIdAliases[0] ?? '';
   const actorUserIdSet = useMemo(
     () => new Set(actorUserIdAliases),
     [actorUserIdAliases],
@@ -2079,7 +2121,7 @@ function PluginStudioPresenter({
   });
   const [columnSheetMode, setColumnSheetMode] =
     useState<ColumnSheetMode>('add');
-  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
+  const [editingColumnKey, setEditingColumnKey] = useState<string | null>(null);
   const [isDeleteColumnDialogOpen, setIsDeleteColumnDialogOpen] =
     useState(false);
   const [pendingDeleteColumnKey, setPendingDeleteColumnKey] = useState<
@@ -2138,6 +2180,8 @@ function PluginStudioPresenter({
   const lastRequestedDraftSnapshotRef = useRef<string | null>(null);
   const lastAutosaveErrorAtRef = useRef<number>(0);
   const lastPersistenceErrorAtRef = useRef<number>(0);
+  const isSidebarTabPersistInFlightRef = useRef(false);
+  const pendingSidebarTabPersistRef = useRef<readonly AdminTabDoc[] | null>(null);
   const [hydratedDraftKey, setHydratedDraftKey] = useState<string | null>(
     null,
   );
@@ -2358,7 +2402,7 @@ function PluginStudioPresenter({
       routes?: Array<{
         schema: string;
         title: string;
-        group?: string;
+        group?: string | null;
         order: number;
         iconName?: string;
       }>;
@@ -3179,9 +3223,11 @@ function PluginStudioPresenter({
             slug: `plugin-studio/${pluginId}/${schemaDoc.schemaId}`,
             treatSlugAsAbsolute: true,
             editable: true,
-            onAddColumn: openAddColumnSheet,
-            onEditColumn: openEditColumnSheet,
-            onDeleteColumn: requestDeleteColumn,
+            onAddColumn: () => openAddColumnSheet(schemaDoc.schemaId),
+            onEditColumn: (columnKey: string) =>
+              openEditColumnSheet(columnKey, schemaDoc.schemaId),
+            onDeleteColumn: (columnKey: string) =>
+              requestDeleteColumn(columnKey, schemaDoc.schemaId),
             onReorderColumns: (
               sourceColumnKey: string,
               targetColumnKey: string,
@@ -3202,6 +3248,9 @@ function PluginStudioPresenter({
     parsed?.adminTabs,
     parsed?.schemaDocs,
     pluginId,
+    openAddColumnSheet,
+    openEditColumnSheet,
+    requestDeleteColumn,
   ]);
   useEffect(() => {
     const nextOptions = blocklyComparableFields.length
@@ -3769,50 +3818,65 @@ function PluginStudioPresenter({
   }
 
   function persistSidebarAdminTabs(nextAdminTabs: readonly AdminTabDoc[]) {
-    const rowId = canonicalRoutesTabsConfigId;
-    const payload = {
-      id: rowId,
-      draftId: draftId,
-      revisionId: 'live',
-      pluginId,
-      businessSlug: 'draft',
-      routes: toDraftRoutesFromAdminTabs(nextAdminTabs),
-      savedByUserId: actorUserId,
-      savedAt: new Date().toISOString(),
-    };
+    pendingSidebarTabPersistRef.current = nextAdminTabs;
+    if (isSidebarTabPersistInFlightRef.current) return;
+    isSidebarTabPersistInFlightRef.current = true;
 
     void (async () => {
-      if (activeRoutesTabsConfigRow?.id === canonicalRoutesTabsConfigId) {
-        await updateRoutesTabsConfigMutation.mutateAsync(payload);
-      } else {
+      while (pendingSidebarTabPersistRef.current) {
+        const nextTabs = pendingSidebarTabPersistRef.current;
+        pendingSidebarTabPersistRef.current = null;
+        const payload = {
+          id: canonicalRoutesTabsConfigId,
+          draftId: draftId,
+          revisionId: 'live',
+          pluginId,
+          businessSlug: 'draft',
+          routes: toDraftRoutesFromAdminTabs(nextTabs),
+          savedByUserId: actorUserId,
+          savedAt: new Date().toISOString(),
+        };
+
         try {
-          await createRoutesTabsConfigMutation.mutateAsync(payload);
+          await updateRoutesTabsConfigMutation.mutateAsync(payload);
         } catch (error) {
-          if (!isDuplicatePersistenceError(error)) {
+          if (!isMissingPersistenceError(error)) {
             throw error;
           }
-          await updateRoutesTabsConfigMutation.mutateAsync(payload);
+          try {
+            await createRoutesTabsConfigMutation.mutateAsync(payload);
+          } catch (createError) {
+            if (!isDuplicatePersistenceError(createError)) {
+              throw createError;
+            }
+            await updateRoutesTabsConfigMutation.mutateAsync(payload);
+          }
         }
-      }
 
-      // Cleanup legacy row key shape (`draftId@live`) after canonical write (`draftId`).
-      if (
-        activeRoutesTabsConfigRow?.id &&
-        activeRoutesTabsConfigRow.id !== canonicalRoutesTabsConfigId
-      ) {
-        try {
-          await deleteRoutesTabsConfigMutation.mutateAsync(
-            activeRoutesTabsConfigRow.id,
-          );
-        } catch (_error) {
-          // Best-effort cleanup only; canonical write has already succeeded.
+        // Cleanup legacy row key shape (`draftId@live`) after canonical write (`draftId`).
+        if (
+          activeRoutesTabsConfigRow?.id &&
+          activeRoutesTabsConfigRow.id !== canonicalRoutesTabsConfigId
+        ) {
+          try {
+            await deleteRoutesTabsConfigMutation.mutateAsync(
+              activeRoutesTabsConfigRow.id,
+            );
+          } catch (_error) {
+            // Best-effort cleanup only; canonical write has already succeeded.
+          }
         }
       }
 
       await refetchRoutesTabsConfig();
-    })().catch((error) =>
-      reportPersistenceError('Sidebar tab persistence', error),
-    );
+    })()
+      .catch((error) => reportPersistenceError('Sidebar tab persistence', error))
+      .finally(() => {
+        isSidebarTabPersistInFlightRef.current = false;
+        if (pendingSidebarTabPersistRef.current) {
+          persistSidebarAdminTabs(pendingSidebarTabPersistRef.current);
+        }
+      });
   }
 
   function updateSchemaDoc(
@@ -4018,32 +4082,57 @@ function PluginStudioPresenter({
     });
   }
 
-  function openAddColumnSheet() {
+  function getTargetSchemaDoc(schemaId?: string) {
+    const normalizedSchemaId = schemaId?.trim();
+    if (normalizedSchemaId) {
+      return availableSchemaDocs.find(
+        (schemaDoc) => schemaDoc.schemaId === normalizedSchemaId,
+      );
+    }
+    return activeSchemaDocForEditor;
+  }
+
+  function openAddColumnSheet(schemaId?: string) {
+    const targetSchemaDoc = getTargetSchemaDoc(schemaId);
+    if (!targetSchemaDoc) {
+      return;
+    }
+    if (activeSchemaId !== targetSchemaDoc.schemaId) {
+      setActiveSchemaId(targetSchemaDoc.schemaId);
+    }
     setColumnSheetMode('add');
-    setEditingColumnId(null);
-    setAddColumnDraft(createAddColumnDraft(schemaBuilder.fields.length));
+    setEditingColumnKey(null);
+    setAddColumnDraft(createAddColumnDraft(targetSchemaDoc.fields.length));
     setIsAddColumnSheetOpen(true);
   }
 
-  function openEditColumnSheet(columnKey: string) {
+  function openEditColumnSheet(columnKey: string, schemaId?: string) {
+    const targetSchemaDoc = getTargetSchemaDoc(schemaId);
+    if (!targetSchemaDoc) {
+      toast.error('Table was not found.');
+      return;
+    }
     const normalizedColumnKey = columnKey.trim();
     if (!normalizedColumnKey) return;
-    const targetField = schemaBuilder.fields.find(
+    const targetField = targetSchemaDoc.fields.find(
       (field) => field.key.trim() === normalizedColumnKey,
     );
     if (!targetField) {
       toast.error(`Column ${normalizedColumnKey} was not found.`);
       return;
     }
+    if (activeSchemaId !== targetSchemaDoc.schemaId) {
+      setActiveSchemaId(targetSchemaDoc.schemaId);
+    }
     setColumnSheetMode('edit');
-    setEditingColumnId(targetField.id);
-    setAddColumnDraft(toAddColumnDraftFromField(targetField));
+    setEditingColumnKey(normalizedColumnKey);
+    setAddColumnDraft(toAddColumnDraftFromField(toBuilderField(targetField)));
     setIsAddColumnSheetOpen(true);
   }
 
   function resetColumnSheetState() {
     setColumnSheetMode('add');
-    setEditingColumnId(null);
+    setEditingColumnKey(null);
   }
 
   function closeColumnSheet() {
@@ -4057,6 +4146,18 @@ function PluginStudioPresenter({
       resetColumnSheetState();
     }
   }
+
+  const isColumnSheetShortcutTarget = useCallback((event: KeyboardEvent) => {
+    const target = event.target as Node | null;
+    const active = document.activeElement as Node | null;
+    const sheetContent = document.querySelector(
+      '[data-plugin-studio-column-sheet-content="true"]',
+    );
+    if (!sheetContent) return false;
+    if (target && sheetContent.contains(target)) return true;
+    if (active && sheetContent.contains(active)) return true;
+    return false;
+  }, []);
 
   function handleReorderColumns(
     schemaId: string,
@@ -4091,20 +4192,28 @@ function PluginStudioPresenter({
     });
   }
 
-  function requestDeleteColumn(columnKey: string) {
+  function requestDeleteColumn(columnKey: string, schemaId?: string) {
+    const targetSchemaDoc = getTargetSchemaDoc(schemaId);
+    if (!targetSchemaDoc) {
+      toast.error('Table was not found.');
+      return;
+    }
     const normalizedColumnKey = columnKey.trim();
     if (!normalizedColumnKey) return;
-    if (schemaBuilder.fields.length <= 1) {
+    if (targetSchemaDoc.fields.length <= 1) {
       toast.error('At least one column is required.');
       return;
     }
     if (
-      !schemaBuilder.fields.some(
+      !targetSchemaDoc.fields.some(
         (field) => field.key.trim() === normalizedColumnKey,
       )
     ) {
       toast.error(`Column ${normalizedColumnKey} was not found.`);
       return;
+    }
+    if (activeSchemaId !== targetSchemaDoc.schemaId) {
+      setActiveSchemaId(targetSchemaDoc.schemaId);
     }
     setPendingDeleteColumnKey(normalizedColumnKey);
     setIsDeleteColumnDialogOpen(true);
@@ -4167,8 +4276,10 @@ function PluginStudioPresenter({
       return;
     }
     const editingField =
-      columnSheetMode === 'edit' && editingColumnId
-        ? schemaBuilder.fields.find((field) => field.id === editingColumnId)
+      columnSheetMode === 'edit' && editingColumnKey
+        ? schemaBuilder.fields.find(
+          (field) => field.key.trim() === editingColumnKey,
+        )
         : undefined;
     const conflictingField = schemaBuilder.fields.find(
       (field) =>
@@ -4261,6 +4372,29 @@ function PluginStudioPresenter({
     }));
     closeColumnSheet();
   }
+
+  useShortcutAction(
+    COLUMN_SHEET_SHORTCUTS.cancel,
+    () => {
+      closeColumnSheet();
+    },
+    {
+      enabled: isAddColumnSheetOpen,
+      allowInEditableContext: true,
+      guard: isColumnSheetShortcutTarget,
+    },
+  );
+  useShortcutAction(
+    COLUMN_SHEET_SHORTCUTS.save,
+    () => {
+      submitAddColumnFromSheet();
+    },
+    {
+      enabled: isAddColumnSheetOpen,
+      allowInEditableContext: true,
+      guard: isColumnSheetShortcutTarget,
+    },
+  );
 
   function handleAddGroup(
     nextGroupName?: string,
@@ -4987,6 +5121,7 @@ function PluginStudioPresenter({
           <SheetContent
             side="right"
             className="w-full overflow-y-auto sm:max-w-lg"
+            data-plugin-studio-column-sheet-content="true"
           >
             <SheetHeader>
               <SheetTitle>
@@ -5167,16 +5302,38 @@ function PluginStudioPresenter({
               </div>
             </div>
             <SheetFooter className="mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={closeColumnSheet}
-              >
-                Cancel
-              </Button>
-              <Button type="button" onClick={submitAddColumnFromSheet}>
-                {columnSheetMode === 'edit' ? 'Save Column' : 'Add Column'}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={closeColumnSheet}
+                  >
+                    Cancel
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>Cancel</span>
+                  <ShortcutKbd
+                    actionId={COLUMN_SHEET_SHORTCUTS.cancel.id}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button type="button" onClick={submitAddColumnFromSheet}>
+                    {columnSheetMode === 'edit' ? 'Save Column' : 'Add Column'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent className="flex items-center gap-2">
+                  <span>{columnSheetMode === 'edit' ? 'Save column' : 'Add column'}</span>
+                  <ShortcutKbd
+                    actionId={COLUMN_SHEET_SHORTCUTS.save.id}
+                    interactive={false}
+                  />
+                </TooltipContent>
+              </Tooltip>
             </SheetFooter>
           </SheetContent>
         </Sheet>
@@ -7669,7 +7826,7 @@ function PluginStudioSkeleton() {
   const editorSkeletonIds = ['editor-a', 'editor-b', 'editor-c'];
 
   return (
-    <div className="w-full py-6">
+    <div className="min-h-screen w-full bg-background text-foreground py-6">
       <div className="mx-auto w-full max-w-7xl px-4 space-y-6">
       <section className="rounded-2xl border border-border/70 bg-gradient-to-br from-primary/10 via-background to-accent/15 p-5 md:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">

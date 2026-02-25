@@ -35,9 +35,11 @@ import {
   getAppTheme,
   getAppDarkMode,
   getAppThemeData,
+  resolveDarkModePreference,
 } from '@/contexts/theme-context';
 import { ThemeProvider as ThemeModeProvider } from '@/contexts/theme-context';
 import { defaultPresets } from '@/lib/theme';
+import { buildCriticalThemeCss } from '@/lib/theme/critical-theme-css';
 import { migrateMarketplaceSeedReleases } from '@/server-functions/plugins';
 import { getUser, removeUser } from '@/server-functions/user';
 import type { IGunUserInstance } from 'gun/types';
@@ -298,27 +300,16 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     const savedThemeName = await getAppTheme();
     const savedDarkMode = await getAppDarkMode();
     const _savedTheme = await getAppThemeData();
-    const savedTheme = _savedTheme ?? defaultPresets.tangerine.styles;
+    const savedPresetTheme =
+      savedThemeName && savedThemeName in defaultPresets
+        ? defaultPresets[savedThemeName as keyof typeof defaultPresets].styles
+        : null;
+    const savedTheme =
+      _savedTheme ?? savedPresetTheme ?? defaultPresets.tangerine.styles;
+    const isDarkMode = resolveDarkModePreference(savedDarkMode);
 
     // Generate critical CSS for the current theme to prevent FOUC
-    let criticalThemeCSS = '';
-    if (savedTheme) {
-      const themeToUse =
-        savedDarkMode === 'true' ? savedTheme.dark : savedTheme.light;
-      const themeNotToUse =
-        savedDarkMode === 'true' ? savedTheme.light : savedTheme.dark;
-      if (themeToUse) {
-        const variables = Object.entries({ ...themeNotToUse, ...themeToUse })
-          .filter(([_, value]) => value !== undefined)
-          .map(([key, value]) => `--${key}: ${value}`)
-          .join('; ');
-
-        criticalThemeCSS =
-          savedDarkMode === 'true'
-            ? `:root { ${variables}; } .dark { ${variables}; }`
-            : `:root { ${variables}; }`;
-      }
-    }
+    const criticalThemeCSS = buildCriticalThemeCss(savedTheme, isDarkMode);
 
     return {
       savedThemeName,
@@ -340,30 +331,26 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
   errorComponent: () => <ErrorComponent />,
   pendingComponent: () => <UserLoading />,
   shellComponent: () => {
-    const loaderData = Route.useLoaderData();
     return (
       <RootDocument>
-        <style>{loaderData.criticalThemeCSS}</style>
         <Toaster richColors />
         <Outlet />
         <VibeKanbanWebCompanion />
-        {
-          //<TanStackDevtools
-          //   config={{
-          //     position: 'bottom-right',
-          //     openHotkey: ['Shift', 'd'],
-          //     triggerHidden: true,
-          //     hideUntilHover: true,
-          //   }}
-          //   plugins={[
-          //     {
-          //       name: 'Tanstack Router',
-          //       render: <TanStackRouterDevtoolsPanel />,
-          //     },
-          //     TanStackQueryDevtools,
-          //   ]}
-          // />
-        }
+        <TanStackDevtools
+          config={{
+            position: 'bottom-right',
+            openHotkey: ['Shift', 'd'],
+            triggerHidden: true,
+            hideUntilHover: true,
+          }}
+          plugins={[
+            {
+              name: 'Tanstack Router',
+              render: <TanStackRouterDevtoolsPanel />,
+            },
+            TanStackQueryDevtools,
+          ]}
+        />
       </RootDocument>
     );
   },
@@ -503,22 +490,16 @@ function RootDocument({ children }: { children: React.ReactNode }) {
   // };
 
   const loaderData = Route.useLoaderData();
+  const isDarkMode = resolveDarkModePreference(loaderData.savedDarkMode);
 
   return (
-    <html
-      lang="en"
-      className={
-        loaderData.savedDarkMode === undefined ||
-          loaderData.savedDarkMode === 'true'
-          ? 'dark'
-          : ''
-      }
-    >
+    <html lang="en" className={isDarkMode ? 'dark' : ''}>
       <head>
         <HeadContent />
+        <style>{loaderData.criticalThemeCSS}</style>
       </head>
       <body>
-        <div data-vaul-drawer-wrapper="">
+        <div data-vaul-drawer-wrapper="" className="min-h-screen w-full">
           <NuqsAdapter>
             <I18nProvider>
               <ThemeModeProvider

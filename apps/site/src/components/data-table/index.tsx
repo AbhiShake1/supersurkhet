@@ -23,6 +23,8 @@ interface DataTableProps<TData> extends React.ComponentProps<'div'> {
   actionBar?: React.ReactNode;
   onReorderColumns?: (sourceColumnKey: string, targetColumnKey: string) => void;
   reorderableColumnIds?: readonly string[];
+  activeRowId?: string | null;
+  onActiveRowChange?: (rowId: string) => void;
 }
 
 export function DataTable<TData>({
@@ -30,6 +32,8 @@ export function DataTable<TData>({
   actionBar,
   onReorderColumns,
   reorderableColumnIds = [],
+  activeRowId = null,
+  onActiveRowChange,
   children,
   className,
   ...props
@@ -140,6 +144,13 @@ export function DataTable<TData>({
                   key={row.id}
                   data-row-id={row.id}
                   data-state={row.getIsSelected() && 'selected'}
+                  tabIndex={activeRowId === row.id ? 0 : -1}
+                  className={cn(
+                    'outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-inset',
+                    activeRowId === row.id ? 'bg-muted/40' : '',
+                  )}
+                  onFocus={() => onActiveRowChange?.(row.id)}
+                  onClick={() => onActiveRowChange?.(row.id)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell

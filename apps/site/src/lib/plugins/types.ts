@@ -82,6 +82,32 @@ export type PluginUserReviewDoc = {
   updatedAt: string;
 };
 
+export type PluginUserReviewReplyDoc = {
+  id: string;
+  reviewId: string;
+  pluginId: string;
+  businessId?: string;
+  parentReplyId?: string;
+  userId: string;
+  userLabel: string;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PluginUserReviewVoteDoc = {
+  id: string;
+  reviewId: string;
+  pluginId: string;
+  businessId?: string;
+  targetType: 'review' | 'reply';
+  targetId: string;
+  userId: string;
+  value: 'up' | 'down';
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type RuntimeActionHandler = (
   input: unknown,
   ctx: PluginExecutionContext,
