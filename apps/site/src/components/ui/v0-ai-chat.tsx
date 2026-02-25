@@ -8,6 +8,8 @@ import {
     Bot,
     User,
     Check,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 
 interface Message {
@@ -482,12 +484,13 @@ export function VercelV0Chat({
                                         onClick={wizard.onBack}
                                         disabled={!wizard.canGoBack}
                                         className={cn(
-                                            "rounded-md border px-2.5 py-1 text-xs",
+                                            "flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs",
                                             wizard.canGoBack
                                                 ? "border-white/20 text-zinc-300 hover:bg-white/5"
                                                 : "cursor-not-allowed border-white/10 text-zinc-600"
                                         )}
                                     >
+                                        <ChevronLeft className="h-3 w-3" />
                                         {wizard.backLabel ?? "Back"}
                                     </button>
                                 ) : null}
@@ -497,13 +500,14 @@ export function VercelV0Chat({
                                         onClick={handleWizardForward}
                                         disabled={!wizard.canGoForward}
                                         className={cn(
-                                            "ml-auto rounded-md border px-2.5 py-1 text-xs",
+                                            "ml-auto flex items-center gap-1 rounded-md border px-2.5 py-1 text-xs",
                                             wizard.canGoForward
                                                 ? "border-primary/40 bg-primary/20 text-zinc-100 hover:bg-primary/30"
                                                 : "cursor-not-allowed border-white/10 text-zinc-600"
                                         )}
                                     >
                                         {wizard.forwardLabel ?? "Forward"}
+                                        <ChevronRight className="h-3 w-3" />
                                     </button>
                                 ) : null}
                             </div>
