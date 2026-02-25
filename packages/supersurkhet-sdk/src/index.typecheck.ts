@@ -3,63 +3,20 @@ import {
   defineZodSchemaDoc,
   generateSchemaTypes,
   type InferSchemaType,
-  type ZodLikeObjectSchema,
+  z,
 } from './index';
-
-const userZodLikeSchema: ZodLikeObjectSchema & {
-  _output: {
-    name: string;
-    age: number;
-    role: 'admin' | 'staff';
-    tags?: string[];
-  };
-} = {
-  _output: undefined as unknown as {
-    name: string;
-    age: number;
-    role: "admin" | "staff";
-    tags?: string[];
-  },
-  _def: {
-    typeName: 'ZodObject',
-    shape: {
-      name: { _def: { typeName: 'ZodString' }, isOptional: () => false },
-      age: {
-        _def: {
-          typeName: 'ZodNumber',
-          checks: [
-            { kind: 'int' },
-            { kind: 'min', value: 0 },
-          ],
-        },
-        isOptional: () => false,
-      },
-      role: {
-        _def: {
-          typeName: 'ZodEnum',
-          values: new Set(['admin', 'staff']),
-        },
-        isOptional: () => false,
-      },
-      tags: {
-        _def: {
-          typeName: 'ZodOptional',
-          innerType: {
-            _def: {
-              typeName: 'ZodArray',
-            },
-            element: { _def: { typeName: 'ZodString' }, isOptional: () => false },
-          },
-        },
-        isOptional: () => true,
-      },
-    },
-  },
-};
 
 const userSchema = defineZodSchemaDoc({
   schemaId: 'user',
-  schema: userZodLikeSchema,
+  schema: ({ z }) =>
+    z
+      .object({
+        name: z.string(),
+        age: z.number().int().min(0),
+        role: z.enum(['admin', 'staff']),
+        tags: z.array(z.string()).optional(),
+      })
+      .withDerivation('isAdult', z.boolean()),
 });
 
 const store = createSchemaSyncStore({ initialSchemas: [userSchema] });
@@ -79,7 +36,12 @@ if (!generated.includes('"user"')) {
 
 type UserType = InferSchemaType<{
   schemaId: 'user';
-  schema: typeof userZodLikeSchema;
+  schema: () => z.ZodObject<{
+    name: z.ZodString;
+    age: z.ZodNumber;
+    role: z.ZodEnum<['admin', 'staff']>;
+    tags: z.ZodOptional<z.ZodArray<z.ZodString>>;
+  }>;
 }>;
 
 const validUser: UserType = {
