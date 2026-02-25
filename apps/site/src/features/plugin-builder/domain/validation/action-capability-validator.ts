@@ -18,6 +18,7 @@ export type ValidateWorkflowActionCapabilitiesInput = {
   capabilityEnvelope: readonly string[];
   runtimeTarget: 'sandbox-worker' | 'core';
   deniedActionIds?: readonly string[];
+  workflowPathPrefixById?: Readonly<Record<string, string[]>>;
 };
 
 export type ValidateWorkflowActionCapabilitiesResult = {
@@ -26,8 +27,8 @@ export type ValidateWorkflowActionCapabilitiesResult = {
 
 const DEFAULT_RUNTIME_TARGET: 'sandbox-worker' = 'sandbox-worker';
 
-function actionPath(workflowId: string, nodeId: string): string[] {
-  return ['workflows', workflowId, 'nodes', nodeId, 'actionId'];
+function actionPath(workflowPrefix: string[], nodeId: string): string[] {
+  return [...workflowPrefix, 'nodes', nodeId, 'actionId'];
 }
 
 export function validateWorkflowActionCapabilities({
@@ -36,6 +37,7 @@ export function validateWorkflowActionCapabilities({
   capabilityEnvelope,
   runtimeTarget,
   deniedActionIds,
+  workflowPathPrefixById,
 }: ValidateWorkflowActionCapabilitiesInput): ValidateWorkflowActionCapabilitiesResult {
   const diagnostics: ActionCapabilityValidationDiagnostic[] = [];
   const actionManifestById = new Map(
@@ -50,7 +52,13 @@ export function validateWorkflowActionCapabilities({
       if (nodeKind !== 'action' || !node.actionId) {
         continue;
       }
-      const path = actionPath(workflow.workflowId, node.nodeId);
+      const path = actionPath(
+        workflowPathPrefixById?.[workflow.workflowId] ?? [
+          'workflows',
+          workflow.workflowId,
+        ],
+        node.nodeId,
+      );
       const action = actionManifestById.get(node.actionId);
 
       if (!action) {

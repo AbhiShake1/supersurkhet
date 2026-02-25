@@ -13,6 +13,7 @@ type V3GateInput = {
   actionManifest: readonly ActionManifestDoc[];
   schemaDocs: readonly SchemaDoc[];
   workflows: readonly WorkflowDoc[];
+  workflowPathPrefixById?: Readonly<Record<string, string[]>>;
 };
 
 export function evaluateV3PublishGates(input: V3GateInput): V3GateDiagnostic[] {
@@ -57,12 +58,14 @@ export function evaluateV3PublishGates(input: V3GateInput): V3GateDiagnostic[] {
       code: 'missing-workflows',
       severity: 'warning',
       message: 'No workflows are defined for this release',
-      path: ['workflows'],
+      path: ['schemaDocs'],
     });
   }
 
   for (const [workflowIndex, workflow] of input.workflows.entries()) {
-    const workflowPath = ['workflows', workflow.workflowId || String(workflowIndex)];
+    const workflowPath =
+      input.workflowPathPrefixById?.[workflow.workflowId] ??
+      ['workflows', workflow.workflowId || String(workflowIndex)];
     if (workflow.pluginContractVersion !== '3') {
       diagnostics.push({
         code: 'missing-contract-version-v3',

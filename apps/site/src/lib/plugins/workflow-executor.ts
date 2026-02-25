@@ -9,8 +9,10 @@ import type {
   PluginDraftRevisionDoc,
   PluginReleaseDoc,
   WorkflowDoc,
+  WorkflowDbAdapter,
   WorkflowNodeDoc,
 } from '@/lib/plugins/types';
+import { CORE_DB_ACTION_IDS, flattenSchemaWorkflows } from 'supersurkhet-sdk';
 
 export class HashVerificationError extends Error {
   constructor(install: BusinessPluginInstallDoc, release: PluginReleaseDoc) {
@@ -242,6 +244,8 @@ async function executeWorkflowGraph({
   workflow,
   actionHandlers,
   actionManifestById,
+  pluginId,
+  db,
   businessId,
   table,
   hook,
@@ -258,6 +262,8 @@ async function executeWorkflowGraph({
       capabilities?: string[];
     }
   >;
+  pluginId: string;
+  db?: WorkflowDbAdapter;
   businessId: string;
   table: string;
   hook: ExecuteLifecycleHookInput['hook'];
@@ -334,48 +340,68 @@ async function executeWorkflowGraph({
         if (idempotencyKey && idempotencyOutputs.has(idempotencyKey)) {
           output = idempotencyOutputs.get(idempotencyKey);
         } else {
-          const handler = actionHandlers[node.actionId];
-          if (!handler) {
-            throw new Error(`No action handler registered for "${node.actionId}"`);
-          }
-
-          const requiredCapabilities =
-            actionManifestById[node.actionId]?.capabilities ?? [];
-
-          output = await executeNodeWithPolicy({
-            node,
-            run: async () =>
-              runSandboxedAction({
-                actionId: node.actionId,
-                handler,
-                input: resolveNodeInput(node, expressionContext, payload),
-                context: {
+          const resolvedInput = resolveNodeInput(node, expressionContext, payload);
+          if (isCoreDbActionId(node.actionId)) {
+            output = await executeNodeWithPolicy({
+              node,
+              run: () =>
+                executeBuiltinDbAction({
+                  actionId: node.actionId,
+                  input: resolvedInput,
+                  db,
                   businessId,
-                  table,
-                  hook,
-                  payload,
-                  capabilities: requiredCapabilities,
-                  event: {
+                  pluginId,
+                  schemaId: workflow.table,
+                }),
+            });
+          } else {
+            const handler = actionHandlers[node.actionId];
+            if (!handler) {
+              throw new Error(`No action handler registered for "${node.actionId}"`);
+            }
+
+            const requiredCapabilities =
+              actionManifestById[node.actionId]?.capabilities ?? [];
+
+            output = await executeNodeWithPolicy({
+              node,
+              run: async () =>
+                runSandboxedAction({
+                  actionId: node.actionId,
+                  handler,
+                  input: resolvedInput,
+                  context: {
                     businessId,
                     table,
                     hook,
-                    requestId: envelope.requestId,
-                    rowId: envelope.rowId,
+                    payload,
+                    formValues: payload,
+                    db,
+                    capabilities: requiredCapabilities,
+                    event: {
+                      businessId,
+                      pluginId,
+                      workflowId: workflow.workflowId,
+                      table,
+                      hook,
+                      requestId: envelope.requestId,
+                      rowId: envelope.rowId,
+                    },
+                    record: {
+                      before: envelope.before,
+                      after: envelope.after,
+                      patch: envelope.patch,
+                      rowId: envelope.rowId,
+                    },
+                    workflow: {
+                      nodeOutputs: actionOutputsByNodeId,
+                      attempt: 1,
+                    },
                   },
-                  record: {
-                    before: envelope.before,
-                    after: envelope.after,
-                    patch: envelope.patch,
-                    rowId: envelope.rowId,
-                  },
-                  workflow: {
-                    nodeOutputs: actionOutputsByNodeId,
-                    attempt: 1,
-                  },
-                },
-                requiredCapabilities,
-              }),
-          });
+                  requiredCapabilities,
+                }),
+            });
+          }
 
           if (idempotencyKey) {
             idempotencyOutputs.set(idempotencyKey, output);
@@ -424,6 +450,7 @@ export async function executeLifecycleHook({
   table,
   hook,
   payload,
+  db,
   envelope: envelopeInput,
   teamId,
   actionHandlers,
@@ -446,8 +473,9 @@ export async function executeLifecycleHook({
 
   for (const { install, release } of resolvedReleases) {
     verifyInstallHashes(install, release);
+    const releaseWorkflows = flattenSchemaWorkflows(release.schemaDocs ?? []);
     const matchingWorkflows =
-      release.workflows?.filter((workflow) =>
+      releaseWorkflows.filter((workflow) =>
         matchesWorkflowTrigger({
           workflow,
           table,
@@ -462,6 +490,8 @@ export async function executeLifecycleHook({
       await executeWorkflowGraph({
         workflow,
         actionHandlers,
+        pluginId: release.pluginId,
+        db,
         businessId,
         table,
         hook,
@@ -478,8 +508,9 @@ export async function executeLifecycleHook({
 
   for (const { install, revision } of resolvedDraftInstalls) {
     verifyDraftInstallHashes(install, revision);
+    const revisionWorkflows = flattenSchemaWorkflows(revision.schemaDocs ?? []);
     const matchingWorkflows =
-      revision.workflows?.filter((workflow) =>
+      revisionWorkflows.filter((workflow) =>
         matchesWorkflowTrigger({
           workflow,
           table,
@@ -494,6 +525,8 @@ export async function executeLifecycleHook({
       await executeWorkflowGraph({
         workflow,
         actionHandlers,
+        pluginId: revision.pluginId,
+        db,
         businessId,
         table,
         hook,
@@ -527,4 +560,54 @@ export function createLifecycleEnvelope(input: {
     envelope: input,
     actionHandlers: {},
   });
+}
+
+function isCoreDbActionId(actionId: string): actionId is (typeof CORE_DB_ACTION_IDS)[keyof typeof CORE_DB_ACTION_IDS] {
+  return Object.values(CORE_DB_ACTION_IDS).includes(
+    actionId as (typeof CORE_DB_ACTION_IDS)[keyof typeof CORE_DB_ACTION_IDS],
+  );
+}
+
+async function executeBuiltinDbAction({
+  actionId,
+  input,
+  db,
+  businessId,
+  pluginId,
+  schemaId,
+}: {
+  actionId: (typeof CORE_DB_ACTION_IDS)[keyof typeof CORE_DB_ACTION_IDS];
+  input: unknown;
+  db?: WorkflowDbAdapter;
+  businessId: string;
+  pluginId: string;
+  schemaId: string;
+}) {
+  if (!db) {
+    throw new Error(`DB adapter is required for workflow action "${actionId}"`);
+  }
+  const payload =
+    input && typeof input === 'object' && !Array.isArray(input)
+      ? (input as Record<string, unknown>)
+      : {};
+  const common = {
+    businessId,
+    pluginId,
+    schemaId,
+  };
+
+  switch (actionId) {
+    case CORE_DB_ACTION_IDS.findMany:
+      return db.findMany({ ...common, ...(payload as Parameters<WorkflowDbAdapter['findMany']>[0]) });
+    case CORE_DB_ACTION_IDS.findOne:
+      return db.findOne({ ...common, ...(payload as Parameters<WorkflowDbAdapter['findOne']>[0]) });
+    case CORE_DB_ACTION_IDS.create:
+      return db.create({ ...common, ...(payload as Parameters<WorkflowDbAdapter['create']>[0]) });
+    case CORE_DB_ACTION_IDS.update:
+      return db.update({ ...common, ...(payload as Parameters<WorkflowDbAdapter['update']>[0]) });
+    case CORE_DB_ACTION_IDS.delete:
+      return db.delete({ ...common, ...(payload as Parameters<WorkflowDbAdapter['delete']>[0]) });
+    default:
+      return null;
+  }
 }

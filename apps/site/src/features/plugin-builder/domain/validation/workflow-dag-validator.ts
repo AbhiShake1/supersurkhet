@@ -37,9 +37,17 @@ type BuiltGraph = {
 
 export function validateWorkflowDags(
   workflows: readonly WorkflowDoc[],
+  options?: {
+    workflowPathPrefixById?: Readonly<Record<string, string[]>>;
+  },
 ): WorkflowDagValidationResult {
   const diagnostics = workflows.flatMap(
-    (workflow) => validateWorkflowDag(workflow).diagnostics,
+    (workflow) =>
+      validateWorkflowDag(workflow, {
+        pathPrefix:
+          options?.workflowPathPrefixById?.[workflow.workflowId] ??
+          ['workflows', workflow.workflowId || '(unknown-workflow)'],
+      }).diagnostics,
   );
 
   return {
@@ -50,11 +58,14 @@ export function validateWorkflowDags(
 
 export function validateWorkflowDag(
   workflow: WorkflowDoc,
+  options?: {
+    pathPrefix?: string[];
+  },
 ): WorkflowDagValidationResult {
   const diagnostics: WorkflowDagValidatorDiagnostic[] = [];
-  const workflowKey = workflow.workflowId || '(unknown-workflow)';
-
-  const pathOf = (...suffix: string[]) => ['workflows', workflowKey, ...suffix];
+  const pathPrefix =
+    options?.pathPrefix ?? ['workflows', workflow.workflowId || '(unknown-workflow)'];
+  const pathOf = (...suffix: string[]) => [...pathPrefix, ...suffix];
 
   const graph = buildGraph(workflow, diagnostics, pathOf);
 
