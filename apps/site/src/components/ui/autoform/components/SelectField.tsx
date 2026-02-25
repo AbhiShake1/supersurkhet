@@ -5,6 +5,7 @@ import type React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Combobox } from '../../combobox';
 import { useAutoFormDefaultValues } from '../AutoForm';
+import { runFieldOnValueChange } from '../on-value-change';
 import { type AutoFormFieldProps } from '../react';
 import type { FieldConfigCustomData, SourceConfig } from '../utils';
 
@@ -29,21 +30,24 @@ const useMultiSourceOptions = (sources: SourceConfig[], useGet: UseGet) => {
     // Transform raw data into [value, label] format based on source config
     // NOTE: This includes ALL products, even those with zero stock, 
     // to ensure they can be selected during import operations
-    const formattedOptions = data.map((item) => {
-      const soul = item?._?.soul ?? '';
+    const formattedOptions = data.map((rawItem) => {
+      const item = (rawItem ?? {}) as Record<string, unknown>;
+      const soul =
+        ((item._ as { soul?: string } | undefined)?.soul as string | undefined) ??
+        '';
       let label = '';
 
       if ('displayKeys' in source) {
         // Handle display keys, ensuring that even zero values are displayed
         label = source.displayKeys
-          .map((k: string) => {
-            const value = item[k];
+          .map((k) => {
+            const value = item[k as string];
             // Convert undefined/null values to empty string, but keep zero values
             return value === null || value === undefined ? '' : String(value);
           })
           .join(source.separator ?? ' - ') + (source.suffix ?? '');
       } else {
-        label = item[source.displayKey] || '';
+        label = String(item[source.displayKey as string] ?? '');
       }
 
       return [soul, label] as [string, string];
@@ -62,7 +66,8 @@ const _SelectField: React.FC<
   AutoFormFieldProps & {
     useGet: UseGet;
   }
-> = ({ field, inputProps, error, id, value, path, useGet }) => {
+> = ({ field, inputProps, error, value, path, useGet }) => {
+  const business = useBusinessSafe();
   const { key, ...props } = inputProps;
   const customData = field.fieldConfig?.customData as FieldConfigCustomData;
   const defaultValues = useAutoFormDefaultValues()
@@ -100,7 +105,13 @@ const _SelectField: React.FC<
       }))}
       value={currentValue}
       onValueChange={(value) => {
-        field.fieldConfig?.customData?.onValueChange?.(value, path, form);
+        runFieldOnValueChange({
+          customData,
+          value,
+          path,
+          form,
+          businessBasePath: business?.business?.basePath,
+        });
         const syntheticEvent = {
           target: {
             value,

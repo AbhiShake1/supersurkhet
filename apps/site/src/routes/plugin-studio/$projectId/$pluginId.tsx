@@ -22,6 +22,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Combobox } from '@/components/ui/combobox';
 import {
   Dialog,
   DialogContent,
@@ -890,7 +891,17 @@ const BUILDER_FIELD_TYPES = [
 ] as const;
 const BUILDER_LEAF_FIELD_TYPES = BUILDER_FIELD_TYPES.filter(
   (fieldType) => fieldType !== 'array' && fieldType !== 'object',
-) as BuilderLeafFieldType[];
+) as Exclude<(typeof BUILDER_FIELD_TYPES)[number], 'array' | 'object'>[];
+const BUILDER_FIELD_TYPE_OPTIONS = BUILDER_FIELD_TYPES.map((fieldType) => ({
+  value: fieldType,
+  label: fieldType,
+}));
+const BUILDER_LEAF_FIELD_TYPE_OPTIONS = BUILDER_LEAF_FIELD_TYPES.map(
+  (fieldType) => ({
+    value: fieldType,
+    label: fieldType,
+  }),
+);
 
 const CHOICE_FIELD_TYPES = new Set<BuilderFieldType>(['select', 'enum']);
 const NUMERIC_FIELD_TYPES = new Set<BuilderFieldType>([
@@ -914,11 +925,8 @@ function generateBuilderId() {
   return `id_${Math.random().toString(36).slice(2, 10)}`;
 }
 
-function parseCommaSeparatedValues(value: string | undefined) {
-  return (value ?? '')
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter(Boolean);
+function normalizeStringArray(value: readonly string[] | undefined) {
+  return (value ?? []).map((entry) => entry.trim()).filter(Boolean);
 }
 
 function isChoiceFieldType(fieldType: BuilderFieldType | undefined) {
@@ -927,6 +935,30 @@ function isChoiceFieldType(fieldType: BuilderFieldType | undefined) {
 
 function isNumericFieldType(fieldType: BuilderFieldType | undefined) {
   return fieldType ? NUMERIC_FIELD_TYPES.has(fieldType) : false;
+}
+
+function resolveFieldTypeSelection(
+  selectedType: BuilderFieldType,
+  currentFieldType: BuilderLeafFieldType,
+) {
+  if (selectedType === 'array' || selectedType === 'object') {
+    return {
+      type: selectedType,
+      fieldType: currentFieldType,
+    };
+  }
+
+  if (selectedType === 'enum') {
+    return {
+      type: selectedType,
+      fieldType: 'select' as BuilderLeafFieldType,
+    };
+  }
+
+  return {
+    type: selectedType,
+    fieldType: normalizeBuilderLeafFieldType(selectedType),
+  };
 }
 
 function getAllowedOperators(
@@ -1105,6 +1137,101 @@ function readJsonBooleanEntry(value: string | undefined, key: string): boolean {
   return entry === true || entry === 'true';
 }
 
+function readJsonStringArrayEntry(
+  value: string | undefined,
+  key: string,
+): string[] {
+  const record = parseJsonRecord(value);
+  const entry = record[key];
+  if (!Array.isArray(entry)) return [];
+  return entry
+    .map((item) => (typeof item === 'string' ? item.trim() : ''))
+    .filter(Boolean);
+}
+
+function setJsonStringArrayEntry(
+  value: string | undefined,
+  key: string,
+  nextValues: readonly string[],
+): string {
+  const next = parseJsonRecord(value);
+  const normalizedValues = normalizeStringArray([...nextValues]);
+  if (normalizedValues.length === 0) {
+    delete next[key];
+  } else {
+    next[key] = normalizedValues;
+  }
+  return stringifyJsonInput(next);
+}
+
+function readJsonEntryText(value: string | undefined, key: string): string {
+  const record = parseJsonRecord(value);
+  const entry = record[key];
+  return entry === undefined ? '' : stringifyJsonEntryValue(entry);
+}
+
+function setJsonEntryValue(
+  value: string | undefined,
+  key: string,
+  nextValue: string | undefined,
+): string {
+  const next = parseJsonRecord(value);
+  const normalized = nextValue?.trim() ?? '';
+  if (!normalized) {
+    delete next[key];
+  } else {
+    next[key] = parseJsonEntryValue(nextValue ?? '');
+  }
+  return stringifyJsonInput(next);
+}
+
+type OptionPair = {
+  value: string;
+  label: string;
+};
+
+function readJsonOptionPairsEntry(
+  value: string | undefined,
+  key: string,
+): OptionPair[] {
+  const record = parseJsonRecord(value);
+  const entry = record[key];
+  if (!Array.isArray(entry)) return [];
+
+  const pairs: OptionPair[] = [];
+  for (const item of entry) {
+    if (!Array.isArray(item) || item.length < 2) continue;
+    const [rawValue, rawLabel] = item;
+    pairs.push({
+      value: String(rawValue ?? ''),
+      label: String(rawLabel ?? ''),
+    });
+  }
+  return pairs;
+}
+
+function setJsonOptionPairsEntry(
+  value: string | undefined,
+  key: string,
+  nextPairs: readonly OptionPair[],
+): string {
+  const next = parseJsonRecord(value);
+  const normalizedPairs = nextPairs
+    .map((pair) => ({
+      value: pair.value.trim(),
+      label: pair.label.trim(),
+    }))
+    .filter((pair) => pair.value.length > 0);
+
+  if (normalizedPairs.length === 0) {
+    delete next[key];
+  } else {
+    next[key] = normalizedPairs.map((pair) => [pair.value, pair.label] as const);
+  }
+
+  return stringifyJsonInput(next);
+}
+
 function stringifyJsonEntryValue(value: unknown): string {
   if (typeof value === 'string') return value;
   if (typeof value === 'number' || typeof value === 'boolean') {
@@ -1225,6 +1352,18 @@ const BUILDER_FIELD_CONFIG_RESERVED_KEYS = new Set<string>([
   'customData',
 ]);
 
+const BUILDER_CUSTOM_DATA_RESERVED_KEYS = new Set<string>([
+  'displayKey',
+  'source',
+  'sources',
+  'options',
+  'disableWhenValueIn',
+  'tabs',
+  'onlyAllow',
+  'configDisabled',
+  'onValueChange',
+]);
+
 function toExpressionLiteral(value: string | undefined): ExpressionDoc {
   if (!value) return '';
   const trimmed = value.trim();
@@ -1324,18 +1463,18 @@ type BuilderField = {
   label: string;
   description: string;
   type: BuilderFieldType;
-  fieldType?: (typeof AUTOFORM_FIELD_TYPES)[number];
+  fieldType?: BuilderLeafFieldType;
   required: boolean;
   min?: string;
   max?: string;
   defaultValue?: string;
-  enumValuesText?: string;
+  enumValues?: string[];
   fieldConfigJson?: string;
   behaviorJson?: string;
   inputPropsJson?: string;
   customDataJson?: string;
   arrayItemType?: BuilderLeafFieldType;
-  arrayItemEnumValuesText?: string;
+  arrayItemEnumValues?: string[];
   objectFields?: BuilderObjectField[];
   fieldRefinements?: BuilderFieldRefinement[];
   useInt?: boolean;
@@ -1391,12 +1530,9 @@ type BlocklyRuntime = {
 };
 
 type BuilderFieldType =
-  | (typeof AUTOFORM_FIELD_TYPES)[number]
-  | 'enum'
-  | 'array'
-  | 'object';
+  (typeof BUILDER_FIELD_TYPES)[number];
 
-type BuilderLeafFieldType = Exclude<BuilderFieldType, 'array' | 'object'>;
+type BuilderLeafFieldType = (typeof BUILDER_LEAF_FIELD_TYPES)[number];
 
 type BuilderObjectField = {
   id: string;
@@ -1405,7 +1541,7 @@ type BuilderObjectField = {
   description: string;
   type: BuilderLeafFieldType;
   required: boolean;
-  enumValuesText?: string;
+  enumValues?: string[];
 };
 
 type BuilderFieldRefinement = {
@@ -1421,16 +1557,99 @@ type AddColumnDraft = {
   key: string;
   label: string;
   description: string;
+  inputClassName: string;
   type: BuilderFieldType;
   fieldType: BuilderLeafFieldType;
   required: boolean;
   defaultValue: string;
-  enumValuesText: string;
+  enumValues: string[];
   min: string;
   max: string;
 };
 
 type ColumnSheetMode = 'add' | 'edit';
+
+type StringListEditorProps = {
+  values: readonly string[];
+  onChange: (nextValues: string[]) => void;
+  addLabel: string;
+  emptyLabel: string;
+  itemPlaceholder: string;
+};
+
+function StringListEditor({
+  values,
+  onChange,
+  addLabel,
+  emptyLabel,
+  itemPlaceholder,
+}: StringListEditorProps) {
+  const rowIdsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    const rowIds = rowIdsRef.current;
+    if (values.length > rowIds.length) {
+      for (let index = rowIds.length; index < values.length; index += 1) {
+        rowIds.push(generateBuilderId());
+      }
+    } else if (values.length < rowIds.length) {
+      rowIds.splice(values.length);
+    }
+  }, [values.length]);
+
+  return (
+    <div className="space-y-2 rounded-md border p-2">
+      <div className="flex items-center justify-between">
+        <div className="text-xs text-muted-foreground">{emptyLabel}</div>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => onChange([...(values ?? []), ''])}
+        >
+          <Plus className="mr-2 size-4" />
+          {addLabel}
+        </Button>
+      </div>
+      {(values ?? []).length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          No values yet. Add at least one value.
+        </p>
+      ) : null}
+      {values.map((value, index) => {
+        const rowId =
+          rowIdsRef.current[index] ??
+          (() => {
+            const nextId = generateBuilderId();
+            rowIdsRef.current[index] = nextId;
+            return nextId;
+          })();
+
+        return (
+          <div key={rowId} className="grid gap-2 md:grid-cols-[1fr_auto]">
+          <Input
+            value={value}
+            onChange={(event) => {
+              const nextValues = [...values];
+              nextValues[index] = event.target.value;
+              onChange(nextValues);
+            }}
+            placeholder={itemPlaceholder}
+          />
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            onClick={() => onChange(values.filter((_, itemIndex) => itemIndex !== index))}
+          >
+            <Trash2 className="size-4 text-destructive" />
+          </Button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 function createAddColumnDraft(fieldCount: number): AddColumnDraft {
   const nextIndex = fieldCount + 1;
@@ -1438,11 +1657,12 @@ function createAddColumnDraft(fieldCount: number): AddColumnDraft {
     key: `field_${nextIndex}`,
     label: `Field ${nextIndex}`,
     description: '',
+    inputClassName: '',
     type: 'string',
     fieldType: 'string',
     required: false,
     defaultValue: '',
-    enumValuesText: '',
+    enumValues: [],
     min: '',
     max: '',
   };
@@ -1453,13 +1673,14 @@ function toAddColumnDraftFromField(field: BuilderField): AddColumnDraft {
     key: field.key,
     label: field.label,
     description: field.description,
+    inputClassName: readJsonStringEntry(field.inputPropsJson, 'className'),
     type: field.type,
     fieldType: normalizeBuilderLeafFieldType(
       typeof field.fieldType === 'string' ? field.fieldType : field.type,
     ),
     required: field.required,
     defaultValue: field.defaultValue ?? '',
-    enumValuesText: field.enumValuesText ?? '',
+    enumValues: normalizeStringArray(field.enumValues),
     min: field.min ?? '',
     max: field.max ?? '',
   };
@@ -1472,7 +1693,7 @@ function toObjectFieldDoc(field: BuilderObjectField): SchemaFieldDoc {
     description: field.description || undefined,
     optional: !field.required,
     enumValues: isChoiceFieldType(field.type)
-      ? parseCommaSeparatedValues(field.enumValuesText)
+      ? normalizeStringArray(field.enumValues)
       : undefined,
     behavior: {
       fieldConfig: {
@@ -1572,14 +1793,14 @@ function toSchemaFieldDoc(
     optional: !field.required,
     defaultValue: parseDefaultValue(field.defaultValue, field.type),
     enumValues: isChoiceFieldType(field.type)
-      ? parseCommaSeparatedValues(field.enumValuesText)
+      ? normalizeStringArray(field.enumValues)
       : undefined,
     itemType:
       field.type === 'array'
         ? {
           type: field.arrayItemType ?? 'string',
           enumValues: isChoiceFieldType(field.arrayItemType)
-            ? parseCommaSeparatedValues(field.arrayItemEnumValuesText)
+            ? normalizeStringArray(field.arrayItemEnumValues)
             : undefined,
           behavior: {
             fieldConfig: {
@@ -1613,7 +1834,7 @@ function hasFieldValidationErrors(field: BuilderField) {
   if (!field.key.trim()) return true;
   if (
     isChoiceFieldType(field.type) &&
-    parseCommaSeparatedValues(field.enumValuesText).length === 0
+    normalizeStringArray(field.enumValues).length === 0
   ) {
     return true;
   }
@@ -1621,7 +1842,7 @@ function hasFieldValidationErrors(field: BuilderField) {
   if (
     field.type === 'array' &&
     isChoiceFieldType(field.arrayItemType) &&
-    parseCommaSeparatedValues(field.arrayItemEnumValuesText).length === 0
+    normalizeStringArray(field.arrayItemEnumValues).length === 0
   ) {
     return true;
   }
@@ -1632,7 +1853,7 @@ function hasFieldValidationErrors(field: BuilderField) {
         (nestedField) =>
           !nestedField.key.trim() ||
           (isChoiceFieldType(nestedField.type) &&
-            parseCommaSeparatedValues(nestedField.enumValuesText).length === 0),
+            normalizeStringArray(nestedField.enumValues).length === 0),
       ))
   ) {
     return true;
@@ -1788,6 +2009,9 @@ function normalizeBuilderFieldType(
 function normalizeBuilderLeafFieldType(
   fieldType: string | undefined,
 ): BuilderLeafFieldType {
+  if (fieldType === 'enum') {
+    return 'select';
+  }
   if (fieldType && isBuilderLeafFieldType(fieldType)) {
     return fieldType;
   }
@@ -1839,7 +2063,7 @@ function toBuilderObjectField(field: SchemaFieldDoc): BuilderObjectField {
       field.behavior?.fieldConfig?.description ?? field.description ?? '',
     type: normalizeBuilderLeafFieldType(field.type),
     required: !field.optional,
-    enumValuesText: (field.enumValues ?? []).join(','),
+    enumValues: normalizeStringArray(field.enumValues),
   };
 }
 
@@ -1877,7 +2101,7 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
       field.rules?.some((rule) => rule.kind === 'nonnegative'),
     ),
     defaultValue: toDefaultValueText(field.defaultValue),
-    enumValuesText: (field.enumValues ?? []).join(','),
+    enumValues: normalizeStringArray(field.enumValues),
     fieldConfigJson: stringifyJsonInput(extra),
     behaviorJson: stringifyJsonInput(extraBehavior),
     inputPropsJson: stringifyJsonInput(inputProps),
@@ -1886,9 +2110,9 @@ function toBuilderField(field: SchemaFieldDoc): BuilderField {
       normalizedType === 'array'
         ? normalizeBuilderLeafFieldType(field.itemType?.type)
         : undefined,
-    arrayItemEnumValuesText:
+    arrayItemEnumValues:
       normalizedType === 'array'
-        ? (field.itemType?.enumValues ?? []).join(',')
+        ? normalizeStringArray(field.itemType?.enumValues)
         : undefined,
     objectFields:
       normalizedType === 'object'
@@ -2077,11 +2301,12 @@ function PluginStudioPresenter({
     key: '',
     label: '',
     description: '',
+    inputClassName: '',
     type: 'string',
     fieldType: 'string',
     required: false,
     defaultValue: '',
-    enumValuesText: '',
+    enumValues: [],
     min: '',
     max: '',
   });
@@ -2119,6 +2344,7 @@ function PluginStudioPresenter({
   const addColumnKeyId = `${addColumnFieldIdBase}-key`;
   const addColumnLabelId = `${addColumnFieldIdBase}-label`;
   const addColumnDescriptionId = `${addColumnFieldIdBase}-description`;
+  const addColumnClassNameId = `${addColumnFieldIdBase}-className`;
   const addColumnDefaultId = `${addColumnFieldIdBase}-default`;
   const addColumnEnumId = `${addColumnFieldIdBase}-enum`;
   const addColumnMinId = `${addColumnFieldIdBase}-min`;
@@ -4234,10 +4460,14 @@ function PluginStudioPresenter({
                 fieldType: addColumnDraft.fieldType,
                 required: addColumnDraft.required,
                 defaultValue: addColumnDraft.defaultValue.trim() || undefined,
-                enumValuesText:
-                  addColumnDraft.enumValuesText.trim() || undefined,
+                enumValues: normalizeStringArray(addColumnDraft.enumValues),
                 min: addColumnDraft.min.trim() || undefined,
                 max: addColumnDraft.max.trim() || undefined,
+                inputPropsJson: setJsonStringEntry(
+                  field.inputPropsJson,
+                  'className',
+                  addColumnDraft.inputClassName,
+                ),
               }
               : field,
           ),
@@ -4275,10 +4505,14 @@ function PluginStudioPresenter({
       fieldType: addColumnDraft.fieldType,
       required: addColumnDraft.required,
       defaultValue: addColumnDraft.defaultValue.trim() || undefined,
-      enumValuesText: addColumnDraft.enumValuesText.trim() || undefined,
+      enumValues: normalizeStringArray(addColumnDraft.enumValues),
       min: addColumnDraft.min.trim() || undefined,
       max: addColumnDraft.max.trim() || undefined,
-      inputPropsJson: '{}',
+      inputPropsJson: setJsonStringEntry(
+        '{}',
+        'className',
+        addColumnDraft.inputClassName,
+      ),
       customDataJson: '{}',
       fieldConfigJson: '{}',
       behaviorJson: '{}',
@@ -5108,59 +5342,41 @@ function PluginStudioPresenter({
                   }
                 />
               </div>
-              <div className="grid gap-2 sm:grid-cols-2">
-                <div className="space-y-1">
-                  <Label>Data type</Label>
-                  <Select
-                    value={addColumnDraft.type}
-                    onValueChange={(value) =>
+              <div className="space-y-1">
+                <Label htmlFor={addColumnClassNameId}>Field className</Label>
+                <div id={addColumnClassNameId}>
+                  <ClassNameFieldControl
+                    value={addColumnDraft.inputClassName}
+                    onChange={(value) =>
                       setAddColumnDraft((current) => ({
                         ...current,
-                        type: value as BuilderFieldType,
+                        inputClassName: value,
                       }))
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Data type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BUILDER_FIELD_TYPES.map((fieldType) => (
-                        <SelectItem
-                          key={`sheet-type-${fieldType}`}
-                          value={fieldType}
-                        >
-                          {fieldType}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  />
                 </div>
-                <div className="space-y-1">
-                  <Label>UI field type</Label>
-                  <Select
-                    value={addColumnDraft.fieldType}
-                    onValueChange={(value) =>
-                      setAddColumnDraft((current) => ({
+              </div>
+              <div className="space-y-1">
+                <Label>Field type</Label>
+                <Combobox
+                  options={BUILDER_FIELD_TYPE_OPTIONS}
+                  value={addColumnDraft.type}
+                  onValueChange={(value) => {
+                    if (!isBuilderFieldType(value)) return;
+                    setAddColumnDraft((current) => {
+                      const nextSelection = resolveFieldTypeSelection(
+                        value,
+                        current.fieldType,
+                      );
+                      return {
                         ...current,
-                        fieldType: value as BuilderLeafFieldType,
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="UI field type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BUILDER_LEAF_FIELD_TYPES.map((fieldType) => (
-                        <SelectItem
-                          key={`sheet-ui-${fieldType}`}
-                          value={fieldType}
-                        >
-                          {fieldType}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                        type: nextSelection.type,
+                        fieldType: nextSelection.fieldType,
+                      };
+                    });
+                  }}
+                  placeholder="Search field type"
+                />
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <div className="space-y-1">
@@ -5178,17 +5394,20 @@ function PluginStudioPresenter({
                 </div>
                 <div className="space-y-1">
                   <Label htmlFor={addColumnEnumId}>Enum values</Label>
-                  <Input
-                    id={addColumnEnumId}
-                    value={addColumnDraft.enumValuesText}
-                    onChange={(event) =>
-                      setAddColumnDraft((current) => ({
-                        ...current,
-                        enumValuesText: event.target.value,
-                      }))
-                    }
-                    placeholder="comma,separated"
-                  />
+                  <div id={addColumnEnumId}>
+                    <StringListEditor
+                      values={addColumnDraft.enumValues}
+                      onChange={(nextValues) =>
+                        setAddColumnDraft((current) => ({
+                          ...current,
+                          enumValues: nextValues,
+                        }))
+                      }
+                      addLabel="Add Value"
+                      emptyLabel="Enum values"
+                      itemPlaceholder="Enum value"
+                    />
+                  </div>
                 </div>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
@@ -5483,6 +5702,49 @@ function PluginStudioPresenter({
                   );
                   const customDataEntries = listJsonEntries(
                     field.customDataJson,
+                    {
+                      excludeKeys: BUILDER_CUSTOM_DATA_RESERVED_KEYS,
+                    },
+                  );
+                  const customDataDisableWhenValueIn = readJsonStringArrayEntry(
+                    field.customDataJson,
+                    'disableWhenValueIn',
+                  );
+                  const customDataOnlyAllow = readJsonStringArrayEntry(
+                    field.customDataJson,
+                    'onlyAllow',
+                  );
+                  const customDataDisplayKey = readJsonStringEntry(
+                    field.customDataJson,
+                    'displayKey',
+                  );
+                  const customDataSource = readJsonEntryText(
+                    field.customDataJson,
+                    'source',
+                  );
+                  const customDataSources = readJsonEntryText(
+                    field.customDataJson,
+                    'sources',
+                  );
+                  const customDataOptions = readJsonEntryText(
+                    field.customDataJson,
+                    'options',
+                  );
+                  const customDataOptionPairs = readJsonOptionPairsEntry(
+                    field.customDataJson,
+                    'options',
+                  );
+                  const customDataTabs = readJsonEntryText(
+                    field.customDataJson,
+                    'tabs',
+                  );
+                  const customDataOnValueChange = readJsonEntryText(
+                    field.customDataJson,
+                    'onValueChange',
+                  );
+                  const customDataConfigDisabled = readJsonBooleanEntry(
+                    field.customDataJson,
+                    'configDisabled',
                   );
                   const fieldConfigExtraEntries = listJsonEntries(
                     field.fieldConfigJson,
@@ -5586,86 +5848,40 @@ function PluginStudioPresenter({
                           <Label htmlFor={`schema-field-type-${field.id}`}>
                             Field type
                           </Label>
-                          <Select
-                            value={field.type}
-                            onValueChange={(value) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        type: value as BuilderFieldType,
-                                        fieldType:
-                                          AUTOFORM_FIELD_TYPES.includes(
-                                            value as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                          )
-                                            ? (value as (typeof AUTOFORM_FIELD_TYPES)[number])
-                                            : candidate.fieldType,
+                          <div id={`schema-field-type-${field.id}`}>
+                            <Combobox
+                              options={BUILDER_FIELD_TYPE_OPTIONS}
+                              value={field.type}
+                              onValueChange={(value) => {
+                                if (!isBuilderFieldType(value)) return;
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) => {
+                                      if (candidateIndex !== fieldIndex) {
+                                        return candidate;
                                       }
-                                      : candidate,
-                                ),
-                              }))
-                            }
-                          >
-                            <SelectTrigger id={`schema-field-type-${field.id}`}>
-                              <SelectValue placeholder="Field type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {BUILDER_FIELD_TYPES.map((fieldType) => (
-                                <SelectItem
-                                  key={`dialog-${field.id}-${fieldType}`}
-                                  value={fieldType}
-                                >
-                                  {fieldType}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                                      const nextSelection =
+                                        resolveFieldTypeSelection(
+                                          value,
+                                          candidate.fieldType ?? 'string',
+                                        );
+                                      return {
+                                        ...candidate,
+                                        type: nextSelection.type,
+                                        fieldType: nextSelection.fieldType,
+                                      };
+                                    },
+                                  ),
+                                }));
+                              }}
+                              placeholder="Search field type"
+                            />
+                          </div>
                         </div>
                       </div>
 
-                      <div className="grid gap-2 md:grid-cols-4">
-                        <div className="space-y-1">
-                          <Label htmlFor={`schema-field-ui-type-${field.id}`}>
-                            UI component type
-                          </Label>
-                          <Select
-                            value={field.fieldType ?? 'string'}
-                            onValueChange={(value) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        fieldType:
-                                          value as (typeof AUTOFORM_FIELD_TYPES)[number],
-                                      }
-                                      : candidate,
-                                ),
-                              }))
-                            }
-                          >
-                            <SelectTrigger
-                              id={`schema-field-ui-type-${field.id}`}
-                            >
-                              <SelectValue placeholder="UI component type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {AUTOFORM_FIELD_TYPES.map((fieldType) => (
-                                <SelectItem
-                                  key={`ui-${field.id}-${fieldType}`}
-                                  value={fieldType}
-                                >
-                                  {fieldType}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <div className="grid gap-2 md:grid-cols-3">
                         <div className="space-y-1">
                           <Label htmlFor={`schema-field-default-${field.id}`}>
                             Default value
@@ -5760,25 +5976,28 @@ function PluginStudioPresenter({
                           >
                             Enum values
                           </Label>
-                          <Input
-                            id={`schema-field-enum-values-${field.id}`}
-                            value={field.enumValuesText ?? ''}
-                            onChange={(event) =>
-                              setSchemaBuilder((current) => ({
-                                ...current,
-                                fields: current.fields.map(
-                                  (candidate, candidateIndex) =>
-                                    candidateIndex === fieldIndex
-                                      ? {
-                                        ...candidate,
-                                        enumValuesText: event.target.value,
-                                      }
-                                      : candidate,
-                                ),
-                              }))
-                            }
-                            placeholder="Enum values (comma-separated)"
-                          />
+                          <div id={`schema-field-enum-values-${field.id}`}>
+                            <StringListEditor
+                              values={field.enumValues ?? []}
+                              onChange={(nextValues) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          enumValues: nextValues,
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              addLabel="Add Value"
+                              emptyLabel="Enum values"
+                              itemPlaceholder="Enum value"
+                            />
+                          </div>
                         </div>
                       ) : null}
 
@@ -5790,40 +6009,28 @@ function PluginStudioPresenter({
                             >
                               Array item type
                             </Label>
-                            <Select
-                              value={field.arrayItemType ?? 'string'}
-                              onValueChange={(value) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map(
-                                    (candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          arrayItemType:
-                                            value as BuilderLeafFieldType,
-                                        }
-                                        : candidate,
-                                  ),
-                                }))
-                              }
-                            >
-                              <SelectTrigger
-                                id={`schema-field-array-item-type-${field.id}`}
-                              >
-                                <SelectValue placeholder="Array item type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {BUILDER_LEAF_FIELD_TYPES.map((fieldType) => (
-                                  <SelectItem
-                                    key={`array-${field.id}-${fieldType}`}
-                                    value={fieldType}
-                                  >
-                                    {fieldType}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                            <div id={`schema-field-array-item-type-${field.id}`}>
+                              <Combobox
+                                options={BUILDER_LEAF_FIELD_TYPE_OPTIONS}
+                                value={field.arrayItemType ?? 'string'}
+                                onValueChange={(value) => {
+                                  if (!isBuilderLeafFieldType(value)) return;
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            arrayItemType: value,
+                                          }
+                                          : candidate,
+                                    ),
+                                  }));
+                                }}
+                                placeholder="Search array item type"
+                              />
+                            </div>
                           </div>
                           <div className="space-y-1">
                             <Label
@@ -5831,27 +6038,35 @@ function PluginStudioPresenter({
                             >
                               Array enum values
                             </Label>
-                            <Input
+                            <div
                               id={`schema-field-array-enum-values-${field.id}`}
-                              value={field.arrayItemEnumValuesText ?? ''}
-                              onChange={(event) =>
-                                setSchemaBuilder((current) => ({
-                                  ...current,
-                                  fields: current.fields.map(
-                                    (candidate, candidateIndex) =>
-                                      candidateIndex === fieldIndex
-                                        ? {
-                                          ...candidate,
-                                          arrayItemEnumValuesText:
-                                            event.target.value,
-                                        }
-                                        : candidate,
-                                  ),
-                                }))
+                              className={
+                                !isChoiceFieldType(field.arrayItemType)
+                                  ? 'pointer-events-none opacity-60'
+                                  : undefined
                               }
-                              placeholder="Array enum values (if needed)"
-                              disabled={!isChoiceFieldType(field.arrayItemType)}
-                            />
+                            >
+                              <StringListEditor
+                                values={field.arrayItemEnumValues ?? []}
+                                onChange={(nextValues) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            arrayItemEnumValues: nextValues,
+                                          }
+                                          : candidate,
+                                    ),
+                                  }))
+                                }
+                                addLabel="Add Value"
+                                emptyLabel="Array enum values"
+                                itemPlaceholder="Array enum value"
+                              />
+                            </div>
                           </div>
                         </div>
                       ) : null}
@@ -6188,6 +6403,458 @@ function PluginStudioPresenter({
                             </div>
                           ),
                         )}
+                      </div>
+
+                      <div className="space-y-2 rounded-md border p-2">
+                        <div className="text-xs font-medium">
+                          Common Custom Data Controls
+                        </div>
+                        <div className="grid gap-2 md:grid-cols-2">
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor={`schema-field-custom-display-key-${field.id}`}
+                            >
+                              displayKey
+                            </Label>
+                            <Input
+                              id={`schema-field-custom-display-key-${field.id}`}
+                              value={customDataDisplayKey}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          customDataJson: setJsonStringEntry(
+                                            candidate.customDataJson,
+                                            'displayKey',
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder="Display key"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor={`schema-field-custom-source-${field.id}`}
+                            >
+                              source (JSON)
+                            </Label>
+                            <Textarea
+                              id={`schema-field-custom-source-${field.id}`}
+                              rows={3}
+                              value={customDataSource}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          customDataJson: setJsonEntryValue(
+                                            candidate.customDataJson,
+                                            'source',
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder='{"table":"product","displayKey":"title"}'
+                            />
+                          </div>
+                          <div className="space-y-1 md:col-span-2">
+                            <Label
+                              htmlFor={`schema-field-custom-sources-${field.id}`}
+                            >
+                              sources (JSON)
+                            </Label>
+                            <Textarea
+                              id={`schema-field-custom-sources-${field.id}`}
+                              rows={3}
+                              value={customDataSources}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          customDataJson: setJsonEntryValue(
+                                            candidate.customDataJson,
+                                            'sources',
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder='[{"table":"product","displayKey":"title"}]'
+                            />
+                          </div>
+                          <div className="space-y-1 md:col-span-2">
+                            <Label
+                              htmlFor={`schema-field-custom-options-${field.id}`}
+                            >
+                              options
+                            </Label>
+                            <div
+                              id={`schema-field-custom-options-${field.id}`}
+                              className="space-y-2 rounded-md border p-2"
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="text-xs text-muted-foreground">
+                                  Value/label pairs used by select-like fields.
+                                </div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    setSchemaBuilder((current) => ({
+                                      ...current,
+                                      fields: current.fields.map(
+                                        (candidate, candidateIndex) =>
+                                          candidateIndex === fieldIndex
+                                            ? {
+                                              ...candidate,
+                                              customDataJson:
+                                                setJsonOptionPairsEntry(
+                                                  candidate.customDataJson,
+                                                  'options',
+                                                  [
+                                                    ...readJsonOptionPairsEntry(
+                                                      candidate.customDataJson,
+                                                      'options',
+                                                    ),
+                                                    { value: '', label: '' },
+                                                  ],
+                                                ),
+                                            }
+                                            : candidate,
+                                      ),
+                                    }))
+                                  }
+                                >
+                                  <Plus className="mr-2 size-4" />
+                                  Add Option
+                                </Button>
+                              </div>
+                              {customDataOptionPairs.length === 0 ? (
+                                <p className="text-xs text-muted-foreground">
+                                  No options yet.
+                                </p>
+                              ) : null}
+                              {customDataOptionPairs.map((pair, optionIndex) => (
+                                <div
+                                  key={`${field.id}-option-pair-${optionIndex}`}
+                                  className="grid gap-2 md:grid-cols-[1fr_1fr_auto]"
+                                >
+                                  <Input
+                                    value={pair.value}
+                                    onChange={(event) =>
+                                      setSchemaBuilder((current) => ({
+                                        ...current,
+                                        fields: current.fields.map(
+                                          (candidate, candidateIndex) =>
+                                            candidateIndex === fieldIndex
+                                              ? {
+                                                ...candidate,
+                                                customDataJson:
+                                                  setJsonOptionPairsEntry(
+                                                    candidate.customDataJson,
+                                                    'options',
+                                                    readJsonOptionPairsEntry(
+                                                      candidate.customDataJson,
+                                                      'options',
+                                                    ).map(
+                                                      (entry, entryIndex) =>
+                                                        entryIndex ===
+                                                          optionIndex
+                                                          ? {
+                                                            ...entry,
+                                                            value:
+                                                              event.target
+                                                                .value,
+                                                          }
+                                                          : entry,
+                                                    ),
+                                                  ),
+                                              }
+                                              : candidate,
+                                        ),
+                                      }))
+                                    }
+                                    placeholder="Option value"
+                                  />
+                                  <Input
+                                    value={pair.label}
+                                    onChange={(event) =>
+                                      setSchemaBuilder((current) => ({
+                                        ...current,
+                                        fields: current.fields.map(
+                                          (candidate, candidateIndex) =>
+                                            candidateIndex === fieldIndex
+                                              ? {
+                                                ...candidate,
+                                                customDataJson:
+                                                  setJsonOptionPairsEntry(
+                                                    candidate.customDataJson,
+                                                    'options',
+                                                    readJsonOptionPairsEntry(
+                                                      candidate.customDataJson,
+                                                      'options',
+                                                    ).map(
+                                                      (entry, entryIndex) =>
+                                                        entryIndex ===
+                                                          optionIndex
+                                                          ? {
+                                                            ...entry,
+                                                            label:
+                                                              event.target
+                                                                .value,
+                                                          }
+                                                          : entry,
+                                                    ),
+                                                  ),
+                                              }
+                                              : candidate,
+                                        ),
+                                      }))
+                                    }
+                                    placeholder="Option label"
+                                  />
+                                  <Button
+                                    type="button"
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() =>
+                                      setSchemaBuilder((current) => ({
+                                        ...current,
+                                        fields: current.fields.map(
+                                          (candidate, candidateIndex) =>
+                                            candidateIndex === fieldIndex
+                                              ? {
+                                                ...candidate,
+                                                customDataJson:
+                                                  setJsonOptionPairsEntry(
+                                                    candidate.customDataJson,
+                                                    'options',
+                                                    readJsonOptionPairsEntry(
+                                                      candidate.customDataJson,
+                                                      'options',
+                                                    ).filter(
+                                                      (_, entryIndex) =>
+                                                        entryIndex !==
+                                                        optionIndex,
+                                                    ),
+                                                  ),
+                                              }
+                                              : candidate,
+                                        ),
+                                      }))
+                                    }
+                                  >
+                                    <Trash2 className="size-4 text-destructive" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Textarea
+                                rows={2}
+                                value={customDataOptions}
+                                onChange={(event) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            customDataJson: setJsonEntryValue(
+                                              candidate.customDataJson,
+                                              'options',
+                                              event.target.value,
+                                            ),
+                                          }
+                                          : candidate,
+                                    ),
+                                  }))
+                                }
+                                placeholder='Raw override: [["draft","Draft"],["published","Published"]]'
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1 md:col-span-2">
+                            <Label htmlFor={`schema-field-custom-tabs-${field.id}`}>
+                              tabs (JSON)
+                            </Label>
+                            <Textarea
+                              id={`schema-field-custom-tabs-${field.id}`}
+                              rows={2}
+                              value={customDataTabs}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          customDataJson: setJsonEntryValue(
+                                            candidate.customDataJson,
+                                            'tabs',
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder='[{"id":"overview","label":"Overview"}]'
+                            />
+                          </div>
+                          <div className="space-y-1 md:col-span-2">
+                            <Label
+                              htmlFor={`schema-field-custom-on-value-change-${field.id}`}
+                            >
+                              onValueChange plan (JSON)
+                            </Label>
+                            <Textarea
+                              id={`schema-field-custom-on-value-change-${field.id}`}
+                              rows={4}
+                              value={customDataOnValueChange}
+                              onChange={(event) =>
+                                setSchemaBuilder((current) => ({
+                                  ...current,
+                                  fields: current.fields.map(
+                                    (candidate, candidateIndex) =>
+                                      candidateIndex === fieldIndex
+                                        ? {
+                                          ...candidate,
+                                          customDataJson: setJsonEntryValue(
+                                            candidate.customDataJson,
+                                            'onValueChange',
+                                            event.target.value,
+                                          ),
+                                        }
+                                        : candidate,
+                                  ),
+                                }))
+                              }
+                              placeholder='{"actions":[{"type":"form.setValue","field":"status","value":{"kind":"ref","source":"payload","path":[]}}]}'
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor={`schema-field-custom-disable-values-${field.id}`}
+                            >
+                              disableWhenValueIn
+                            </Label>
+                            <div
+                              id={`schema-field-custom-disable-values-${field.id}`}
+                            >
+                              <StringListEditor
+                                values={customDataDisableWhenValueIn}
+                                onChange={(nextValues) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            customDataJson:
+                                              setJsonStringArrayEntry(
+                                                candidate.customDataJson,
+                                                'disableWhenValueIn',
+                                                nextValues,
+                                              ),
+                                          }
+                                          : candidate,
+                                    ),
+                                  }))
+                                }
+                                addLabel="Add Value"
+                                emptyLabel="Disable values"
+                                itemPlaceholder="Value"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <Label
+                              htmlFor={`schema-field-custom-only-allow-${field.id}`}
+                            >
+                              onlyAllow
+                            </Label>
+                            <div
+                              id={`schema-field-custom-only-allow-${field.id}`}
+                            >
+                              <StringListEditor
+                                values={customDataOnlyAllow}
+                                onChange={(nextValues) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            customDataJson:
+                                              setJsonStringArrayEntry(
+                                                candidate.customDataJson,
+                                                'onlyAllow',
+                                                nextValues,
+                                              ),
+                                          }
+                                          : candidate,
+                                    ),
+                                  }))
+                                }
+                                addLabel="Add Value"
+                                emptyLabel="Allowed values"
+                                itemPlaceholder="Value"
+                              />
+                            </div>
+                          </div>
+                          <div className="space-y-1 md:col-span-2">
+                            <Label className="flex items-center gap-2 text-sm font-normal">
+                              <Checkbox
+                                checked={customDataConfigDisabled}
+                                onCheckedChange={(checked) =>
+                                  setSchemaBuilder((current) => ({
+                                    ...current,
+                                    fields: current.fields.map(
+                                      (candidate, candidateIndex) =>
+                                        candidateIndex === fieldIndex
+                                          ? {
+                                            ...candidate,
+                                            customDataJson: setJsonBooleanEntry(
+                                              candidate.customDataJson,
+                                              'configDisabled',
+                                              checked === true
+                                                ? true
+                                                : undefined,
+                                            ),
+                                          }
+                                          : candidate,
+                                    ),
+                                  }))
+                                }
+                              />
+                              configDisabled
+                            </Label>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-2 rounded-md border p-2">

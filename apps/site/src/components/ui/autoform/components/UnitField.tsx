@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
+import { useBusinessSafe } from '@/contexts/business-context';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -9,6 +10,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { runFieldOnValueChange } from '../on-value-change';
 import type { AutoFormFieldProps } from '../react';
 
 export interface UnitFieldProps extends AutoFormFieldProps {
@@ -47,7 +49,8 @@ export function UnitField({
   const fieldName = path.join('.');
   const pathKey = path.join('.');
   const form = useFormContext();
-  const onDerivedValueChange = field.fieldConfig?.customData?.onValueChange;
+  const business = useBusinessSafe();
+  const customData = field.fieldConfig?.customData;
 
   const ALL_UNITS = onlyAllow ?? [...REGULAR_UNITS, ...SPECIAL_UNITS];
 
@@ -74,7 +77,13 @@ export function UnitField({
     const currentValue = form.getValues(fieldName);
     if (currentValue === nextValue) return;
 
-    onDerivedValueChange?.(nextValue, pathKey.split('.'), form);
+    runFieldOnValueChange({
+      customData,
+      value: nextValue,
+      path: pathKey.split('.'),
+      form,
+      businessBasePath: business?.business?.basePath,
+    });
     // Update the form field with the new value only when it changed.
     form.setValue(fieldName, nextValue, {
       shouldDirty: true,
@@ -86,7 +95,8 @@ export function UnitField({
     piecesPerUnit,
     fieldName,
     form,
-    onDerivedValueChange,
+    business?.business?.basePath,
+    customData,
     pathKey,
   ]);
 
@@ -104,7 +114,14 @@ export function UnitField({
   };
 
   if (ALL_UNITS.length === 1)
-    return <Input value={ALL_UNITS[0]} className="border-none" disabled />;
+    return (
+      <Input
+        value={ALL_UNITS[0]}
+        className="border-none"
+        placeholder="Unit"
+        disabled
+      />
+    );
 
   return (
     <div className={cn('space-y-2', className)}>
@@ -118,7 +135,7 @@ export function UnitField({
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
-              {ALL_UNITS.map((unit) => (
+              {ALL_UNITS.map((unit: string) => (
                 <SelectItem key={unit} value={unit}>
                   {unit.charAt(0).toUpperCase() + unit.slice(1)}
                 </SelectItem>

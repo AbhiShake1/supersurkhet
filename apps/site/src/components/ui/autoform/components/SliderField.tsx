@@ -1,8 +1,10 @@
 import type React from 'react';
 import { useFormContext } from 'react-hook-form';
+import { useBusinessSafe } from '@/contexts/business-context';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { runFieldOnValueChange } from '../on-value-change';
 import type { AutoFormFieldProps } from '../react';
 
 export interface SliderFieldProps extends AutoFormFieldProps {
@@ -39,6 +41,7 @@ export function SliderField({
   const parsedValue = Number(currentValue);
   const numValue = Number.isFinite(parsedValue) ? parsedValue : min;
   const form = useFormContext();
+  const business = useBusinessSafe();
 
   const commitValue = (nextValue: number) => {
     const clampedValue = Math.min(Math.max(nextValue, min), max);
@@ -47,9 +50,15 @@ export function SliderField({
         name: name ?? path.join('.'),
         value: clampedValue,
       },
-    } as React.ChangeEvent<HTMLInputElement>;
+    } as unknown as React.ChangeEvent<HTMLInputElement>;
     onChange(syntheticEvent);
-    field.fieldConfig?.customData?.onValueChange?.(clampedValue, path, form);
+    runFieldOnValueChange({
+      customData: field.fieldConfig?.customData,
+      value: clampedValue,
+      path,
+      form,
+      businessBasePath: business?.business?.basePath,
+    });
   };
 
   const handleSliderChange = (newValue: number[]) => {
@@ -86,6 +95,7 @@ export function SliderField({
               step={step}
               value={numValue}
               onChange={handleInputChange}
+              placeholder={String(min)}
               className="w-20"
             />
             <span className="text-sm text-muted-foreground">

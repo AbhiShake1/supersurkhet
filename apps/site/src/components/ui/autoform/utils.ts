@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { PossibleTabConfig } from '@/components/auto-admin';
 import type { NestedSchemaType, SchemaKeys } from '@/lib/gun/index';
+import type { ExpressionDoc, JsonValue } from '@/lib/plugins/types';
 import type { FieldTypes } from './AutoForm';
 import type { FieldWrapperProps } from './react';
 import { fieldConfig as zodFieldConfig } from './zod';
@@ -74,7 +75,50 @@ type FieldConfigCustomDataBase = {
   disableWhenValueIn?: string[];
   displayKey?: string;
 } & {
-  onValueChange?: (value: string, path: string[], form: UseFormReturn) => any;
+  onValueChange?:
+    | ((value: string, path: string[], form: UseFormReturn) => any)
+    | {
+        actions: Array<
+          | {
+              type: 'form.setValue';
+              field: string | ExpressionDoc;
+              value: JsonValue | ExpressionDoc;
+              shouldDirty?: boolean;
+              shouldTouch?: boolean;
+              shouldValidate?: boolean;
+            }
+          | {
+              type: 'db.get';
+              table: string;
+              keys?: string[] | ExpressionDoc;
+              options?: Record<string, JsonValue | ExpressionDoc>;
+              assignResultToField?: string | ExpressionDoc;
+            }
+          | {
+              type: 'db.create';
+              table: string;
+              keys?: string[] | ExpressionDoc;
+              data: Record<string, JsonValue | ExpressionDoc>;
+              assignResultToField?: string | ExpressionDoc;
+            }
+          | {
+              type: 'db.update';
+              table: string;
+              keys?: string[] | ExpressionDoc;
+              id: string | JsonValue | ExpressionDoc;
+              data: Record<string, JsonValue | ExpressionDoc>;
+              assignResultToField?: string | ExpressionDoc;
+            }
+          | {
+              type: 'db.remove';
+              table: string;
+              keys?: string[] | ExpressionDoc;
+              id: string | JsonValue | ExpressionDoc;
+              assignResultToField?: string | ExpressionDoc;
+            }
+        >;
+        stopOnError?: boolean;
+      };
   // onValueChange?: LogicExprWithContext<{
   //   value: string;
   //   path: string[];

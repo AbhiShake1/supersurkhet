@@ -13,15 +13,20 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
 
 export type ShortcutActionId = string;
 
-export type ShortcutBinding = {
+export type ShortcutStroke = {
   key: string;
   ctrl: boolean;
   meta: boolean;
   alt: boolean;
   shift: boolean;
+};
+
+export type ShortcutBinding = ShortcutStroke & {
+  sequence?: ShortcutStroke[];
 };
 
 export type ShortcutScope = string;
@@ -35,6 +40,10 @@ export type ShortcutDefinition = {
 };
 
 const STORAGE_KEY = 'auto-admin-shortcuts-v3';
+const SEQUENCE_TIMEOUT_STORAGE_KEY = 'auto-admin-shortcuts-sequence-timeout-v1';
+const MIN_SEQUENCE_TIMEOUT_MS = 150;
+const MAX_SEQUENCE_TIMEOUT_MS = 1500;
+const DEFAULT_SEQUENCE_TIMEOUT_MS = 500;
 
 type ShortcutContextValue = {
   bindings: Record<ShortcutActionId, ShortcutBinding>;
@@ -54,7 +63,19 @@ type ShortcutContextValue = {
   };
   resetBinding: (actionId: ShortcutActionId) => void;
   resetAllBindings: () => void;
+  sequenceTimeoutMs: number;
+  setSequenceTimeoutMs: (nextTimeoutMs: number) => void;
   registerShortcut: (definition: ShortcutDefinition) => void;
+  registerActionHandler: (
+    actionId: ShortcutActionId,
+    listener: {
+      definition: ShortcutDefinition;
+      allowInEditableContext: () => boolean;
+      enabled: () => boolean;
+      guard?: (event: KeyboardEvent) => boolean;
+      handler: (event: KeyboardEvent) => void;
+    },
+  ) => () => void;
 };
 
 const ShortcutContext = React.createContext<ShortcutContextValue | null>(null);
@@ -80,19 +101,91 @@ function normalizeKey(raw: string): string {
   return raw.length === 1 ? raw.toLowerCase() : raw;
 }
 
+function normalizeStroke(stroke: ShortcutStroke): ShortcutStroke {
+  return {
+    key: normalizeKey(stroke.key),
+    ctrl: Boolean(stroke.ctrl),
+    meta: Boolean(stroke.meta),
+    alt: Boolean(stroke.alt),
+    shift: Boolean(stroke.shift),
+  };
+}
+
+function getBindingSequence(binding: ShortcutBinding): ShortcutStroke[] {
+  const sequence = binding.sequence?.length
+    ? binding.sequence
+    : [
+        {
+          key: binding.key,
+          ctrl: binding.ctrl,
+          meta: binding.meta,
+          alt: binding.alt,
+          shift: binding.shift,
+        },
+      ];
+  return sequence
+    .map((stroke) => normalizeStroke(stroke))
+    .filter(
+      (stroke) =>
+        stroke.key.trim().length > 0 ||
+        stroke.ctrl ||
+        stroke.meta ||
+        stroke.alt ||
+        stroke.shift,
+    );
+}
+
+function buildBindingFromSequence(sequence: ShortcutStroke[]): ShortcutBinding {
+  const normalizedSequence = sequence.map((stroke) => normalizeStroke(stroke));
+  const firstStroke = normalizedSequence[0] ?? {
+    key: '',
+    ctrl: false,
+    meta: false,
+    alt: false,
+    shift: false,
+  };
+  if (normalizedSequence.length <= 1) {
+    return firstStroke;
+  }
+  return {
+    ...firstStroke,
+    sequence: normalizedSequence,
+  };
+}
+
 function isBindingMatch(
   event: KeyboardEvent,
   binding: ShortcutBinding,
 ): boolean {
+  const sequence = getBindingSequence(binding);
+  if (sequence.length !== 1) return false;
+  const stroke = sequence[0];
   const normalizedEventKey = normalizeKey(event.key);
-  const normalizedBindingKey = normalizeKey(binding.key);
   return (
-    normalizedEventKey === normalizedBindingKey &&
-    event.ctrlKey === binding.ctrl &&
-    event.metaKey === binding.meta &&
-    event.altKey === binding.alt &&
-    event.shiftKey === binding.shift
+    normalizedEventKey === stroke.key &&
+    event.ctrlKey === stroke.ctrl &&
+    event.metaKey === stroke.meta &&
+    event.altKey === stroke.alt &&
+    event.shiftKey === stroke.shift
   );
+}
+
+function isStrokeMatch(left: ShortcutStroke, right: ShortcutStroke): boolean {
+  return (
+    left.key === right.key &&
+    left.ctrl === right.ctrl &&
+    left.meta === right.meta &&
+    left.alt === right.alt &&
+    left.shift === right.shift
+  );
+}
+
+function isSequencePrefixMatch(
+  sequence: ShortcutStroke[],
+  prefix: ShortcutStroke[],
+): boolean {
+  if (prefix.length > sequence.length) return false;
+  return prefix.every((stroke, index) => isStrokeMatch(stroke, sequence[index]));
 }
 
 function isModifierOnlyKey(key: string): boolean {
@@ -102,40 +195,54 @@ function isModifierOnlyKey(key: string): boolean {
 }
 
 function isSameBinding(left: ShortcutBinding, right: ShortcutBinding): boolean {
-  return (
-    normalizeKey(left.key) === normalizeKey(right.key) &&
-    left.ctrl === right.ctrl &&
-    left.meta === right.meta &&
-    left.alt === right.alt &&
-    left.shift === right.shift
-  );
+  const leftSequence = getBindingSequence(left);
+  const rightSequence = getBindingSequence(right);
+  if (leftSequence.length !== rightSequence.length) return false;
+  return leftSequence.every((stroke, index) => {
+    const other = rightSequence[index];
+    return (
+      stroke.key === other.key &&
+      stroke.ctrl === other.ctrl &&
+      stroke.meta === other.meta &&
+      stroke.alt === other.alt &&
+      stroke.shift === other.shift
+    );
+  });
 }
 
-function isEmptyBinding(binding: ShortcutBinding): boolean {
-  return (
-    binding.key.trim().length === 0 &&
-    !binding.ctrl &&
-    !binding.meta &&
-    !binding.alt &&
-    !binding.shift
-  );
+function displayStroke(stroke: ShortcutStroke): string[] {
+  if (
+    stroke.key.trim().length === 0 &&
+    !stroke.ctrl &&
+    !stroke.meta &&
+    !stroke.alt &&
+    !stroke.shift
+  ) {
+    return [];
+  }
+  const keys: string[] = [];
+  if (stroke.meta) keys.push(getMetaKeyLabel());
+  if (stroke.ctrl) keys.push('Ctrl');
+  if (stroke.alt) keys.push('Alt');
+  if (stroke.shift) keys.push('Shift');
+  if (stroke.key === ' ') {
+    keys.push('Space');
+  } else if (stroke.key.length === 1) {
+    keys.push(stroke.key.toUpperCase());
+  } else {
+    keys.push(stroke.key);
+  }
+  return keys;
+}
+
+function displayBindingSteps(binding: ShortcutBinding): string[][] {
+  const sequence = getBindingSequence(binding);
+  if (!sequence.length) return [];
+  return sequence.map((stroke) => displayStroke(stroke));
 }
 
 function displayBinding(binding: ShortcutBinding): string[] {
-  if (isEmptyBinding(binding)) return [];
-  const keys: string[] = [];
-  if (binding.meta) keys.push(getMetaKeyLabel());
-  if (binding.ctrl) keys.push('Ctrl');
-  if (binding.alt) keys.push('Alt');
-  if (binding.shift) keys.push('Shift');
-  if (binding.key === ' ') {
-    keys.push('Space');
-  } else if (binding.key.length === 1) {
-    keys.push(binding.key.toUpperCase());
-  } else {
-    keys.push(binding.key);
-  }
-  return keys;
+  return displayBindingSteps(binding).map((step) => step.join(' + '));
 }
 
 function getMetaKeyLabel(): string {
@@ -153,7 +260,12 @@ function loadStoredBindings(): Record<ShortcutActionId, ShortcutBinding> {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return {};
-    return JSON.parse(raw) as Record<ShortcutActionId, ShortcutBinding>;
+    const parsed = JSON.parse(raw) as Record<ShortcutActionId, ShortcutBinding>;
+    const normalizedEntries = Object.entries(parsed).map(([actionId, binding]) => [
+      actionId,
+      buildBindingFromSequence(getBindingSequence(binding)),
+    ]);
+    return Object.fromEntries(normalizedEntries);
   } catch {
     return {};
   }
@@ -162,6 +274,30 @@ function loadStoredBindings(): Record<ShortcutActionId, ShortcutBinding> {
 function persistBindings(bindings: Record<ShortcutActionId, ShortcutBinding>) {
   if (typeof window === 'undefined') return;
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(bindings));
+}
+
+function normalizeSequenceTimeoutMs(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_SEQUENCE_TIMEOUT_MS;
+  return Math.min(
+    MAX_SEQUENCE_TIMEOUT_MS,
+    Math.max(MIN_SEQUENCE_TIMEOUT_MS, Math.round(value)),
+  );
+}
+
+function loadStoredSequenceTimeoutMs(): number {
+  if (typeof window === 'undefined') return DEFAULT_SEQUENCE_TIMEOUT_MS;
+  try {
+    const raw = window.localStorage.getItem(SEQUENCE_TIMEOUT_STORAGE_KEY);
+    if (!raw) return DEFAULT_SEQUENCE_TIMEOUT_MS;
+    return normalizeSequenceTimeoutMs(Number.parseInt(raw, 10));
+  } catch {
+    return DEFAULT_SEQUENCE_TIMEOUT_MS;
+  }
+}
+
+function persistSequenceTimeoutMs(value: number) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(SEQUENCE_TIMEOUT_STORAGE_KEY, String(value));
 }
 
 function getShortcutSignature(definition: ShortcutDefinition): string {
@@ -195,6 +331,16 @@ function toUserFacingShortcutScope(scope: string | undefined): string {
   return normalized;
 }
 
+type RegisteredShortcutActionListener = {
+  id: number;
+  actionId: ShortcutActionId;
+  definition: ShortcutDefinition;
+  allowInEditableContext: () => boolean;
+  enabled: () => boolean;
+  guard?: (event: KeyboardEvent) => boolean;
+  handler: (event: KeyboardEvent) => void;
+};
+
 export function KeyboardShortcutsProvider({
   children,
 }: {
@@ -206,10 +352,38 @@ export function KeyboardShortcutsProvider({
   const [registry, setRegistry] = React.useState<
     Record<ShortcutActionId, ShortcutDefinition>
   >({});
+  const [sequenceTimeoutMs, setSequenceTimeoutMsState] = React.useState<number>(
+    () => loadStoredSequenceTimeoutMs(),
+  );
   const [dialogState, setDialogState] = React.useState<{
     open: boolean;
     selectedActionId?: ShortcutActionId;
   }>({ open: false });
+  const dialogOpenRef = React.useRef(dialogState.open);
+  const listenersRef = React.useRef<RegisteredShortcutActionListener[]>([]);
+  const listenerIdRef = React.useRef(0);
+  const bindingsRef = React.useRef(bindings);
+  const registryRef = React.useRef(registry);
+  const sequenceTimeoutRef = React.useRef(sequenceTimeoutMs);
+  const pendingSequenceRef = React.useRef<{
+    strokes: ShortcutStroke[];
+    exactMatches: RegisteredShortcutActionListener[];
+    timeoutId: ReturnType<typeof window.setTimeout> | null;
+  } | null>(null);
+
+  React.useEffect(() => {
+    bindingsRef.current = bindings;
+  }, [bindings]);
+
+  React.useEffect(() => {
+    registryRef.current = registry;
+  }, [registry]);
+
+  React.useEffect(() => {
+    sequenceTimeoutRef.current = sequenceTimeoutMs;
+  }, [sequenceTimeoutMs]);
+
+  dialogOpenRef.current = dialogState.open;
 
   const updateBindings = React.useCallback(
     (
@@ -235,11 +409,7 @@ export function KeyboardShortcutsProvider({
           existing.label === definition.label &&
           existing.description === definition.description &&
           existing.scope === definition.scope &&
-          existing.defaultBinding.key === definition.defaultBinding.key &&
-          existing.defaultBinding.ctrl === definition.defaultBinding.ctrl &&
-          existing.defaultBinding.meta === definition.defaultBinding.meta &&
-          existing.defaultBinding.alt === definition.defaultBinding.alt &&
-          existing.defaultBinding.shift === definition.defaultBinding.shift
+          isSameBinding(existing.defaultBinding, definition.defaultBinding)
         ) {
           return current;
         }
@@ -254,12 +424,13 @@ export function KeyboardShortcutsProvider({
 
   const setBinding = React.useCallback(
     (actionId: ShortcutActionId, binding: ShortcutBinding) => {
+      const normalizedBinding = buildBindingFromSequence(getBindingSequence(binding));
       let replacedActionId: ShortcutActionId | undefined;
       let updated = false;
       updateBindings((current) => {
         const currentForAction =
           current[actionId] ?? registry[actionId]?.defaultBinding;
-        if (currentForAction && isSameBinding(currentForAction, binding)) {
+        if (currentForAction && isSameBinding(currentForAction, normalizedBinding)) {
           return current;
         }
 
@@ -270,12 +441,12 @@ export function KeyboardShortcutsProvider({
           if (registeredActionId === actionId) continue;
           const effective =
             current[registeredActionId] ?? definition.defaultBinding;
-          if (isSameBinding(effective, binding)) {
+          if (isSameBinding(effective, normalizedBinding)) {
             next[registeredActionId] = definition.defaultBinding;
             replacedActionId = registeredActionId;
           }
         }
-        next[actionId] = binding;
+        next[actionId] = normalizedBinding;
         updated = true;
         return next;
       });
@@ -306,6 +477,12 @@ export function KeyboardShortcutsProvider({
     });
   }, [registry, updateBindings]);
 
+  const setSequenceTimeoutMs = React.useCallback((nextTimeoutMs: number) => {
+    const normalizedTimeoutMs = normalizeSequenceTimeoutMs(nextTimeoutMs);
+    setSequenceTimeoutMsState(normalizedTimeoutMs);
+    persistSequenceTimeoutMs(normalizedTimeoutMs);
+  }, []);
+
   const openDialog = React.useCallback((actionId?: ShortcutActionId) => {
     setDialogState({ open: true, selectedActionId: actionId });
   }, []);
@@ -313,6 +490,162 @@ export function KeyboardShortcutsProvider({
   const closeDialog = React.useCallback(() => {
     setDialogState({ open: false, selectedActionId: undefined });
   }, []);
+
+  const clearPendingSequence = React.useCallback(() => {
+    if (!pendingSequenceRef.current) return;
+    if (pendingSequenceRef.current.timeoutId !== null) {
+      window.clearTimeout(pendingSequenceRef.current.timeoutId);
+    }
+    pendingSequenceRef.current = null;
+  }, []);
+
+  const runActionListener = React.useCallback(
+    (
+      listener: RegisteredShortcutActionListener,
+      event: KeyboardEvent,
+      editableContext: boolean,
+    ) => {
+      if (!listener.enabled()) return false;
+      if (editableContext && !listener.allowInEditableContext()) return false;
+      if (listener.guard && !listener.guard(event)) return false;
+      listener.handler(event);
+      return true;
+    },
+    [],
+  );
+
+  const schedulePendingSequence = React.useCallback(
+    (
+      pendingStrokes: ShortcutStroke[],
+      exactMatches: RegisteredShortcutActionListener[],
+      event: KeyboardEvent,
+    ) => {
+      clearPendingSequence();
+      const timeoutId = window.setTimeout(() => {
+        const pending = pendingSequenceRef.current;
+        if (!pending) return;
+        if (!isSequencePrefixMatch(pending.strokes, pendingStrokes)) return;
+        const editableContext = isEditableContext(event);
+        for (const listener of pending.exactMatches) {
+          if (runActionListener(listener, event, editableContext)) {
+            break;
+          }
+        }
+        clearPendingSequence();
+      }, sequenceTimeoutRef.current);
+      pendingSequenceRef.current = {
+        strokes: pendingStrokes,
+        exactMatches,
+        timeoutId,
+      };
+    },
+    [clearPendingSequence, runActionListener],
+  );
+
+  React.useLayoutEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.isComposing) return;
+      if (dialogOpenRef.current) {
+        clearPendingSequence();
+        return;
+      }
+      if (isModifierOnlyKey(event.key)) return;
+
+      const editableContext = isEditableContext(event);
+      const inputStroke = createBindingFromKeyboardEvent(event);
+      const pendingSequence = pendingSequenceRef.current?.strokes ?? [];
+
+      const collectMatches = (candidateSequence: ShortcutStroke[]) => {
+        const exactMatches: RegisteredShortcutActionListener[] = [];
+        let hasLongerPrefix = false;
+
+        for (const listener of listenersRef.current) {
+          if (!listener.enabled()) continue;
+          if (editableContext && !listener.allowInEditableContext()) continue;
+          if (listener.guard && !listener.guard(event)) continue;
+
+          const definition = registryRef.current[listener.actionId] ?? listener.definition;
+          const binding =
+            bindingsRef.current[listener.actionId] ?? definition.defaultBinding;
+          const sequence = getBindingSequence(binding);
+          if (!isSequencePrefixMatch(sequence, candidateSequence)) continue;
+          if (sequence.length === candidateSequence.length) {
+            exactMatches.push(listener);
+          } else {
+            hasLongerPrefix = true;
+          }
+        }
+        return { exactMatches, hasLongerPrefix };
+      };
+
+      const extendedSequence = [...pendingSequence, inputStroke];
+      let candidateSequence = extendedSequence;
+      let matches = collectMatches(candidateSequence);
+
+      if (!matches.exactMatches.length && !matches.hasLongerPrefix) {
+        candidateSequence = [inputStroke];
+        matches = collectMatches(candidateSequence);
+      }
+
+      if (!matches.exactMatches.length && !matches.hasLongerPrefix) {
+        clearPendingSequence();
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      if (matches.hasLongerPrefix) {
+        schedulePendingSequence(candidateSequence, matches.exactMatches, event);
+        return;
+      }
+
+      clearPendingSequence();
+      for (const listener of matches.exactMatches) {
+        if (runActionListener(listener, event, editableContext)) {
+          break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      clearPendingSequence();
+    };
+  }, [clearPendingSequence, runActionListener, schedulePendingSequence]);
+
+  const registerActionHandler = React.useCallback(
+    (
+      actionId: ShortcutActionId,
+      listener: {
+        definition: ShortcutDefinition;
+        allowInEditableContext: () => boolean;
+        enabled: () => boolean;
+        guard?: (event: KeyboardEvent) => boolean;
+        handler: (event: KeyboardEvent) => void;
+      },
+    ) => {
+      const registeredListener: RegisteredShortcutActionListener = {
+        id: listenerIdRef.current++,
+        actionId,
+        definition: listener.definition,
+        allowInEditableContext: listener.allowInEditableContext,
+        enabled: listener.enabled,
+        guard: listener.guard,
+        handler: listener.handler,
+      };
+      listenersRef.current = [...listenersRef.current, registeredListener];
+
+      return () => {
+        listenersRef.current = listenersRef.current.filter(
+          (currentListener) => currentListener.id !== registeredListener.id,
+        );
+      };
+    },
+    [],
+  );
 
   const value = React.useMemo<ShortcutContextValue>(
     () => ({
@@ -324,17 +657,23 @@ export function KeyboardShortcutsProvider({
       setBinding,
       resetBinding,
       resetAllBindings,
+      sequenceTimeoutMs,
+      setSequenceTimeoutMs,
       registerShortcut,
+      registerActionHandler,
     }),
     [
       bindings,
       closeDialog,
       dialogState,
       openDialog,
+      registerActionHandler,
       registerShortcut,
       registry,
       resetAllBindings,
       resetBinding,
+      sequenceTimeoutMs,
+      setSequenceTimeoutMs,
       setBinding,
     ],
   );
@@ -404,17 +743,29 @@ export function useShortcutBinding(
 
 function triggerBinding(binding: ShortcutBinding) {
   if (typeof window === 'undefined') return;
-  const dispatch = () => {
+  const sequence = getBindingSequence(binding);
+  if (!sequence.length) return;
+  const dispatch = (stroke: ShortcutStroke) => {
     const event = new KeyboardEvent('keydown', {
-      key: binding.key,
-      ctrlKey: binding.ctrl,
-      metaKey: binding.meta,
-      altKey: binding.alt,
-      shiftKey: binding.shift,
+      key: stroke.key,
+      ctrlKey: stroke.ctrl,
+      metaKey: stroke.meta,
+      altKey: stroke.alt,
+      shiftKey: stroke.shift,
       bubbles: true,
       cancelable: true,
     });
     window.dispatchEvent(event);
+  };
+
+  const dispatchSequence = () => {
+    for (const [index, stroke] of sequence.entries()) {
+      if (index === 0) {
+        dispatch(stroke);
+      } else {
+        window.setTimeout(() => dispatch(stroke), index * 16);
+      }
+    }
   };
 
   const active = document.activeElement as HTMLElement | null;
@@ -426,10 +777,10 @@ function triggerBinding(binding: ShortcutBinding) {
       active instanceof HTMLSelectElement)
   ) {
     active.blur();
-    window.requestAnimationFrame(dispatch);
+    window.requestAnimationFrame(dispatchSequence);
     return;
   }
-  dispatch();
+  dispatchSequence();
 }
 
 export function useShortcutRegistry() {
@@ -449,7 +800,7 @@ export function useShortcutRegistry() {
             description: sanitizeInternalShortcutText(definition.description),
             scope: toUserFacingShortcutScope(definition.scope),
             binding,
-            bindingLabel: displayBinding(binding).join(' + '),
+            bindingLabel: displayBinding(binding).join(' then '),
           };
         })
         .sort((left, right) => {
@@ -497,12 +848,32 @@ export function useShortcutAction(
   const enabled = options?.enabled ?? true;
   const guard = options?.guard;
   const allowInEditableContext = options?.allowInEditableContext ?? false;
+  const context = React.useContext(ShortcutContext);
   const binding = useShortcutBinding(definition.id, definition.defaultBinding);
+  const enabledRef = React.useRef(enabled);
+  const guardRef = React.useRef(guard);
+  const allowInEditableContextRef = React.useRef(allowInEditableContext);
+  const handlerRef = React.useRef(handler);
+
+  enabledRef.current = enabled;
+  guardRef.current = guard;
+  allowInEditableContextRef.current = allowInEditableContext;
+  handlerRef.current = handler;
 
   useRegisterShortcut(definition);
 
   React.useLayoutEffect(() => {
     if (!enabled) return;
+    if (context) {
+      return context.registerActionHandler(definition.id, {
+        definition,
+        allowInEditableContext: () => allowInEditableContextRef.current,
+        enabled: () => enabledRef.current,
+        guard: (event) => guardRef.current?.(event) ?? true,
+        handler: (event) => handlerRef.current(event),
+      });
+    }
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.isComposing) return;
       if (!isBindingMatch(event, binding)) return;
@@ -515,7 +886,7 @@ export function useShortcutAction(
     };
     window.addEventListener('keydown', onKeyDown, true);
     return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [allowInEditableContext, binding, enabled, guard, handler]);
+  }, [allowInEditableContext, binding, context, definition, enabled, guard, handler]);
 }
 
 const OPEN_SIDEBAR_LEGEND_SHORTCUT: ShortcutDefinition = {
@@ -546,6 +917,28 @@ const SAVE_SHORTCUT_EDITOR_SHORTCUT: ShortcutDefinition = {
 
 type ShortcutKbdInteraction = 'trigger-parent' | 'open-settings';
 
+function ShortcutStepCaps({ parts }: { parts: string[] }) {
+  const partCounts = new Map<string, number>();
+  return (
+    <span className="inline-flex items-center gap-1">
+      {parts.map((part) => {
+        const partCount = (partCounts.get(part) ?? 0) + 1;
+        partCounts.set(part, partCount);
+        return (
+          <React.Fragment key={`${part}-${partCount}`}>
+            {partCount > 1 ? (
+              <span className="text-muted-foreground/80">+</span>
+            ) : null}
+            <span className="rounded border border-border/70 bg-muted/80 px-1.5 py-0.5 text-[11px] font-medium leading-none shadow-none">
+              {part}
+            </span>
+          </React.Fragment>
+        );
+      })}
+    </span>
+  );
+}
+
 function ShortcutKeyGroup({
   actionId,
   binding,
@@ -553,21 +946,29 @@ function ShortcutKeyGroup({
   actionId: ShortcutActionId;
   binding: ShortcutBinding;
 }) {
-  const parts = displayBinding(binding);
+  const steps = displayBindingSteps(binding);
+  const stepCounts = new Map<string, number>();
   return (
     <ButtonGroup className="pointer-events-none">
       <ButtonGroupText
-        className="h-6 gap-1 rounded-md border-border/60 bg-muted/80 px-2 text-xs font-medium shadow-none"
+        className="h-7 gap-1 rounded-md border-border/60 bg-muted/70 px-2 text-xs font-medium shadow-none"
         aria-hidden="true"
       >
-        {parts.map((part, index) => (
-          <React.Fragment key={`${actionId}-${part}`}>
-            {index > 0 ? (
-              <span className="px-0.5 text-muted-foreground/80">+</span>
-            ) : null}
-            <span className="leading-none">{part}</span>
-          </React.Fragment>
-        ))}
+        {steps.map((step) => {
+          const signature = step.join('+');
+          const stepCount = (stepCounts.get(signature) ?? 0) + 1;
+          stepCounts.set(signature, stepCount);
+          return (
+            <React.Fragment key={`${actionId}-${signature}-${stepCount}`}>
+              {stepCount > 1 ? (
+                <span className="px-1 text-[11px] text-muted-foreground/80">
+                  then
+                </span>
+              ) : null}
+              <ShortcutStepCaps parts={step} />
+            </React.Fragment>
+          );
+        })}
       </ButtonGroupText>
     </ButtonGroup>
   );
@@ -690,9 +1091,15 @@ function ShortcutRecorder({
     replacedActionId?: ShortcutActionId;
   };
 }) {
+  const context = React.useContext(ShortcutContext);
+  const sequenceTimeoutMs = context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
   const [recording, setRecording] = React.useState(false);
   const [previewBinding, setPreviewBinding] = React.useState(binding);
   const [status, setStatus] = React.useState<string | null>(null);
+  const pendingSequenceRef = React.useRef<ShortcutStroke[]>([]);
+  const finalizeTimeoutRef = React.useRef<ReturnType<typeof window.setTimeout> | null>(
+    null,
+  );
 
   React.useEffect(() => {
     if (!recording) {
@@ -702,29 +1109,17 @@ function ShortcutRecorder({
 
   React.useEffect(() => {
     if (!recording) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-
-      const normalized = normalizeKey(event.key);
-      if (normalized === 'Escape' && !event.ctrlKey && !event.metaKey) {
-        setRecording(false);
-        setStatus(null);
-        setPreviewBinding(binding);
-        return;
+    const clearFinalizeTimeout = () => {
+      if (finalizeTimeoutRef.current !== null) {
+        window.clearTimeout(finalizeTimeoutRef.current);
       }
+      finalizeTimeoutRef.current = null;
+    };
 
-      const nextBinding: ShortcutBinding = {
-        key: normalized,
-        ctrl: event.ctrlKey,
-        meta: event.metaKey,
-        alt: event.altKey,
-        shift: event.shiftKey,
-      };
-      setPreviewBinding(nextBinding);
-
-      if (isModifierOnlyKey(event.key)) return;
-
+    const finalizeRecording = () => {
+      const sequence = pendingSequenceRef.current;
+      if (!sequence.length) return;
+      const nextBinding = buildBindingFromSequence(sequence);
       const result = onChange(nextBinding);
       if (!result.updated) {
         setStatus('Shortcut unchanged');
@@ -734,11 +1129,56 @@ function ShortcutRecorder({
         setStatus('Shortcut updated');
       }
       setRecording(false);
+      clearFinalizeTimeout();
+      pendingSequenceRef.current = [];
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      const normalized = normalizeKey(event.key);
+      if (normalized === 'Escape' && !event.ctrlKey && !event.metaKey) {
+        setRecording(false);
+        setStatus(null);
+        setPreviewBinding(binding);
+        clearFinalizeTimeout();
+        pendingSequenceRef.current = [];
+        return;
+      }
+
+      const nextStroke: ShortcutStroke = {
+        key: normalized,
+        ctrl: event.ctrlKey,
+        meta: event.metaKey,
+        alt: event.altKey,
+        shift: event.shiftKey,
+      };
+      if (isModifierOnlyKey(event.key)) return;
+
+      pendingSequenceRef.current = [...pendingSequenceRef.current, nextStroke];
+      setPreviewBinding(buildBindingFromSequence(pendingSequenceRef.current));
+
+      clearFinalizeTimeout();
+      finalizeTimeoutRef.current = window.setTimeout(
+        finalizeRecording,
+        sequenceTimeoutMs,
+      );
+    };
+
+    const onKeyUp = (event: KeyboardEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
     };
 
     window.addEventListener('keydown', onKeyDown, true);
-    return () => window.removeEventListener('keydown', onKeyDown, true);
-  }, [binding, onChange, recording]);
+    window.addEventListener('keyup', onKeyUp, true);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('keyup', onKeyUp, true);
+      clearFinalizeTimeout();
+    };
+  }, [binding, onChange, recording, sequenceTimeoutMs]);
 
   return (
     <div className="space-y-1">
@@ -748,6 +1188,8 @@ function ShortcutRecorder({
           event.preventDefault();
           event.stopPropagation();
           setStatus(null);
+          pendingSequenceRef.current = [];
+          setPreviewBinding(binding);
           setRecording(true);
         }}
         className={`w-full rounded-md border px-2 py-1.5 text-left transition-colors ${
@@ -769,7 +1211,8 @@ function ShortcutRecorder({
       </button>
       {recording ? (
         <p className="text-[11px] text-muted-foreground">
-          Press modifiers + key. Press Escape to cancel.
+          Press keys in order. Pause for {sequenceTimeoutMs}ms to finish. Press
+          Escape to cancel.
         </p>
       ) : null}
       {!recording && status ? (
@@ -779,19 +1222,38 @@ function ShortcutRecorder({
   );
 }
 
-function findShortcutConflict(
+type ShortcutConflictDetails = {
+  exactConflict?: ShortcutDefinition;
+  prefixConflicts: ShortcutDefinition[];
+};
+
+function findShortcutConflictDetails(
   actionId: ShortcutActionId,
   binding: ShortcutBinding,
   registry: Record<ShortcutActionId, ShortcutDefinition>,
   bindings: Record<ShortcutActionId, ShortcutBinding>,
-): ShortcutDefinition | undefined {
+): ShortcutConflictDetails {
+  const targetSequence = getBindingSequence(binding);
+  let exactConflict: ShortcutDefinition | undefined;
+  const prefixConflicts: ShortcutDefinition[] = [];
+
   for (const definition of Object.values(registry)) {
     if (definition.id === actionId) continue;
     const existingBinding =
       bindings[definition.id] ?? definition.defaultBinding;
-    if (isSameBinding(existingBinding, binding)) return definition;
+    const existingSequence = getBindingSequence(existingBinding);
+    if (isSameBinding(existingBinding, binding)) {
+      exactConflict = definition;
+      continue;
+    }
+    const sharesPrefix =
+      isSequencePrefixMatch(targetSequence, existingSequence) ||
+      isSequencePrefixMatch(existingSequence, targetSequence);
+    if (sharesPrefix) {
+      prefixConflicts.push(definition);
+    }
   }
-  return undefined;
+  return { exactConflict, prefixConflicts };
 }
 
 function keyToLabel(key: string): string {
@@ -800,7 +1262,7 @@ function keyToLabel(key: string): string {
   return key;
 }
 
-function createBindingFromKeyboardEvent(event: KeyboardEvent): ShortcutBinding {
+function createBindingFromKeyboardEvent(event: KeyboardEvent): ShortcutStroke {
   return {
     key: normalizeKey(event.key),
     ctrl: event.ctrlKey,
@@ -811,15 +1273,17 @@ function createBindingFromKeyboardEvent(event: KeyboardEvent): ShortcutBinding {
 }
 
 function createPreviewKeysFromBinding(binding: ShortcutBinding): string[] {
-  const parts: string[] = [];
-  if (binding.meta) parts.push(getMetaKeyLabel());
-  if (binding.ctrl) parts.push('Ctrl');
-  if (binding.alt) parts.push('Alt');
-  if (binding.shift) parts.push('Shift');
-  if (!isModifierOnlyKey(binding.key)) {
-    parts.push(keyToLabel(binding.key));
-  }
-  return parts;
+  return getBindingSequence(binding).map((stroke) => {
+    const parts: string[] = [];
+    if (stroke.meta) parts.push(getMetaKeyLabel());
+    if (stroke.ctrl) parts.push('Ctrl');
+    if (stroke.alt) parts.push('Alt');
+    if (stroke.shift) parts.push('Shift');
+    if (!isModifierOnlyKey(stroke.key)) {
+      parts.push(keyToLabel(stroke.key));
+    }
+    return parts.join(' + ');
+  });
 }
 
 function ShortcutKeyPreview({ keys }: { keys: string[] }) {
@@ -834,17 +1298,26 @@ function ShortcutKeyPreview({ keys }: { keys: string[] }) {
   return (
     <ButtonGroup className="pointer-events-none">
       <ButtonGroupText
-        className="h-7 gap-1 rounded-md border-border/60 bg-muted/80 px-2 text-xs font-medium shadow-none"
+        className="h-7 gap-1 rounded-md border-border/60 bg-muted/70 px-2 text-xs font-medium shadow-none"
         aria-hidden="true"
       >
-        {keys.map((key, index) => (
-          <React.Fragment key={key}>
-            {index > 0 ? (
-              <span className="px-0.5 text-muted-foreground/80">+</span>
-            ) : null}
-            <span className="leading-none">{key}</span>
-          </React.Fragment>
-        ))}
+        {(() => {
+          const keyCounts = new Map<string, number>();
+          return keys.map((key) => {
+            const keyCount = (keyCounts.get(key) ?? 0) + 1;
+            keyCounts.set(key, keyCount);
+            return (
+              <React.Fragment key={`${key}-${keyCount}`}>
+                {keyCount > 1 ? (
+                  <span className="px-1 text-[11px] text-muted-foreground/80">
+                    then
+                  </span>
+                ) : null}
+                <ShortcutStepCaps parts={key.split(' + ')} />
+              </React.Fragment>
+            );
+          });
+        })()}
       </ButtonGroupText>
     </ButtonGroup>
   );
@@ -873,23 +1346,37 @@ function SingleShortcutEditor({
   resetBinding: (actionId: ShortcutActionId) => void;
   closeDialog: () => void;
 }) {
+  const context = React.useContext(ShortcutContext);
+  const sequenceTimeoutMs = context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
   const captureRef = React.useRef<HTMLButtonElement | null>(null);
+  const pendingSequenceRef = React.useRef<ShortcutStroke[]>([]);
+  const finalizeTimeoutRef = React.useRef<ReturnType<typeof window.setTimeout> | null>(
+    null,
+  );
   const [isListening, setIsListening] = React.useState(true);
   const [candidate, setCandidate] = React.useState<ShortcutBinding | null>(
     null,
   );
   const [previewKeys, setPreviewKeys] = React.useState<string[]>([]);
 
-  const conflictAction = React.useMemo(
+  const conflictDetails = React.useMemo(
     () =>
       candidate
-        ? findShortcutConflict(action.id, candidate, registry, bindings)
-        : undefined,
+        ? findShortcutConflictDetails(action.id, candidate, registry, bindings)
+        : { exactConflict: undefined, prefixConflicts: [] },
     [action.id, bindings, candidate, registry],
   );
-  const conflictActionLabel = conflictAction
-    ? sanitizeInternalShortcutText(conflictAction.label) || conflictAction.label
+  const exactConflictLabel = conflictDetails.exactConflict
+    ? sanitizeInternalShortcutText(conflictDetails.exactConflict.label) ||
+      conflictDetails.exactConflict.label
     : undefined;
+  const prefixConflictLabels = conflictDetails.prefixConflicts
+    .map(
+      (conflict) =>
+        sanitizeInternalShortcutText(conflict.label) || conflict.label,
+    )
+    .slice(0, 2);
+  const hasPrefixConflict = conflictDetails.prefixConflicts.length > 0;
   const displayKeys =
     previewKeys.length > 0
       ? previewKeys
@@ -897,7 +1384,7 @@ function SingleShortcutEditor({
         ? createPreviewKeysFromBinding(candidate)
         : [];
   const hasChange = candidate ? !isSameBinding(candidate, binding) : false;
-  const canSave = Boolean(candidate) && hasChange && !conflictAction;
+  const canSave = Boolean(candidate) && hasChange && !conflictDetails.exactConflict;
 
   const saveCandidate = React.useCallback(() => {
     if (!candidate || !canSave) return;
@@ -920,14 +1407,58 @@ function SingleShortcutEditor({
 
   React.useEffect(() => {
     if (!isListening) return;
+    const clearFinalizeTimeout = () => {
+      if (finalizeTimeoutRef.current !== null) {
+        window.clearTimeout(finalizeTimeoutRef.current);
+      }
+      finalizeTimeoutRef.current = null;
+    };
+
+    const finalizeSequenceCandidate = () => {
+      clearFinalizeTimeout();
+      if (!pendingSequenceRef.current.length) return;
+      const nextBinding = buildBindingFromSequence(pendingSequenceRef.current);
+      setCandidate(nextBinding);
+      setPreviewKeys(createPreviewKeysFromBinding(nextBinding));
+    };
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.isComposing) return;
       event.preventDefault();
       event.stopPropagation();
-      const nextBinding = createBindingFromKeyboardEvent(event);
-      setPreviewKeys(createPreviewKeysFromBinding(nextBinding));
-      if (isModifierOnlyKey(event.key)) return;
-      setCandidate(nextBinding);
+      const normalized = normalizeKey(event.key);
+      if (normalized === 'Escape' && !event.ctrlKey && !event.metaKey) {
+        clearFinalizeTimeout();
+        pendingSequenceRef.current = [];
+        setPreviewKeys([]);
+        setCandidate(null);
+        return;
+      }
+
+      const nextStroke = createBindingFromKeyboardEvent(event);
+      if (isModifierOnlyKey(event.key)) {
+        setPreviewKeys(
+          createPreviewKeysFromBinding({
+            key: '',
+            meta: event.metaKey,
+            ctrl: event.ctrlKey,
+            alt: event.altKey,
+            shift: event.shiftKey,
+          }),
+        );
+        return;
+      }
+
+      pendingSequenceRef.current = [...pendingSequenceRef.current, nextStroke];
+      const previewBinding = buildBindingFromSequence(pendingSequenceRef.current);
+      setPreviewKeys(createPreviewKeysFromBinding(previewBinding));
+      setCandidate(previewBinding);
+
+      clearFinalizeTimeout();
+      finalizeTimeoutRef.current = window.setTimeout(
+        finalizeSequenceCandidate,
+        sequenceTimeoutMs,
+      );
     };
     const onKeyUp = (event: KeyboardEvent) => {
       if (event.isComposing) return;
@@ -943,17 +1474,18 @@ function SingleShortcutEditor({
             shift: event.shiftKey,
           }),
         );
-        return;
+      } else if (!pendingSequenceRef.current.length) {
+        setPreviewKeys([]);
       }
-      setPreviewKeys([]);
     };
     window.addEventListener('keydown', onKeyDown, true);
     window.addEventListener('keyup', onKeyUp, true);
     return () => {
       window.removeEventListener('keydown', onKeyDown, true);
       window.removeEventListener('keyup', onKeyUp, true);
+      clearFinalizeTimeout();
     };
-  }, [isListening]);
+  }, [isListening, sequenceTimeoutMs]);
 
   React.useEffect(() => {
     captureRef.current?.focus();
@@ -984,6 +1516,9 @@ function SingleShortcutEditor({
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
+          pendingSequenceRef.current = [];
+          setCandidate(null);
+          setPreviewKeys([]);
           setIsListening(true);
         }}
         onBlur={() => setIsListening(false)}
@@ -992,7 +1527,7 @@ function SingleShortcutEditor({
           <div className="space-y-1">
             <p className="text-sm font-medium">New shortcut</p>
             <p className="text-xs text-muted-foreground">
-              Press keys now. This field captures shortcuts directly.
+              Press keys in order. Pause for {sequenceTimeoutMs}ms to finish.
             </p>
           </div>
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -1008,9 +1543,14 @@ function SingleShortcutEditor({
           <p className="text-muted-foreground">
             Capture a key combination to continue.
           </p>
-        ) : conflictAction ? (
+        ) : conflictDetails.exactConflict ? (
           <p className="text-destructive">
-            Already in use by {conflictActionLabel}. Choose another shortcut.
+            Already in use by {exactConflictLabel}. Choose another shortcut.
+          </p>
+        ) : hasPrefixConflict ? (
+          <p className="text-amber-600">
+            Shares a prefix with {prefixConflictLabels.join(' and ')}. The shorter
+            shortcut waits for timeout before firing.
           </p>
         ) : hasChange ? (
           <p className="text-emerald-600">Shortcut is available.</p>
@@ -1042,6 +1582,14 @@ function SingleShortcutEditor({
 
 function KeyboardShortcutSettingsDialog() {
   const context = React.useContext(ShortcutContext);
+  const sequenceTimeoutMs = context?.sequenceTimeoutMs ?? DEFAULT_SEQUENCE_TIMEOUT_MS;
+  const [sequenceTimeoutInputValue, setSequenceTimeoutInputValue] =
+    React.useState<string>(() => String(sequenceTimeoutMs));
+
+  React.useEffect(() => {
+    setSequenceTimeoutInputValue(String(sequenceTimeoutMs));
+  }, [sequenceTimeoutMs]);
+
   const actionsByScope = React.useMemo(() => {
     const map = new Map<string, ShortcutDefinition[]>();
     for (const definition of Object.values(context?.registry ?? {})) {
@@ -1072,6 +1620,7 @@ function KeyboardShortcutSettingsDialog() {
     setBinding,
     resetBinding,
     resetAllBindings,
+    setSequenceTimeoutMs,
   } = context;
   const selectedAction = dialogState.selectedActionId
     ? context.registry[dialogState.selectedActionId]
@@ -1099,15 +1648,48 @@ function KeyboardShortcutSettingsDialog() {
           </DialogTitle>
           <DialogDescription>
             {isSingleActionMode
-              ? 'Press a new key combination to update this shortcut.'
-              : 'Click a shortcut and press a new key combination. Preferences are saved in local storage.'}
+              ? 'Press one or more keys in sequence to update this shortcut.'
+              : 'Click a shortcut and press keys in order. Preferences are saved in local storage.'}
           </DialogDescription>
         </DialogHeader>
         {!isSingleActionMode ? (
-          <div className="flex items-center justify-end">
-            <Button type="button" variant="ghost" onClick={resetAllBindings}>
-              Reset all
-            </Button>
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">
+                  Sequence timeout (ms)
+                </span>
+                <Input
+                  type="number"
+                  min={MIN_SEQUENCE_TIMEOUT_MS}
+                  max={MAX_SEQUENCE_TIMEOUT_MS}
+                  step={25}
+                  className="h-8 w-24"
+                  value={sequenceTimeoutInputValue}
+                  onChange={(event) => {
+                    const nextValue = event.currentTarget.value;
+                    setSequenceTimeoutInputValue(nextValue);
+                    const parsedValue = Number.parseInt(nextValue, 10);
+                    if (Number.isFinite(parsedValue)) {
+                      setSequenceTimeoutMs(parsedValue);
+                    }
+                  }}
+                  onBlur={() => {
+                    const parsedValue = Number.parseInt(
+                      sequenceTimeoutInputValue,
+                      10,
+                    );
+                    setSequenceTimeoutMs(parsedValue);
+                  }}
+                />
+              </div>
+              <Button type="button" variant="ghost" onClick={resetAllBindings}>
+                Reset all
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Shorter shortcuts that share a prefix wait this long before firing.
+            </p>
           </div>
         ) : null}
         <div className="grid max-h-[60vh] gap-5 overflow-y-auto pr-1">

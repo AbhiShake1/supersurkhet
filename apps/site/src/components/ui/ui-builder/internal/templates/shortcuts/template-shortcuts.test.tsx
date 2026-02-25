@@ -112,6 +112,10 @@ function flush() {
   return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function findButtonByText(text: string) {
   return [...container.querySelectorAll('button')].find((button) =>
     button.textContent?.includes(text),
@@ -255,6 +259,15 @@ describe('template shortcuts governance', () => {
     const saveButtonWhenConflict = findButtonByText('Save');
     expect(saveButtonWhenConflict?.getAttribute('disabled')).not.toBeNull();
 
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Escape',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await flush();
+
     const availableEvent = new KeyboardEvent('keydown', {
       key: '9',
       metaKey: true,
@@ -284,6 +297,82 @@ describe('template shortcuts governance', () => {
     expect(onOpenSheet).toHaveBeenCalledTimes(1);
 
     dispatchShortcut(TEMPLATE_SHORTCUTS.openSheet);
+    expect(onOpenSheet).toHaveBeenCalledTimes(1);
+  });
+
+  it('captures multi-step shortcuts in single-action editor and warns on prefix overlap', async () => {
+    const onOpenSheet = vi.fn();
+    const onPreviewInstall = vi.fn();
+    const onSwitchMarketplace = vi.fn();
+
+    root.render(
+      <KeyboardShortcutsBoundary>
+        <ShortcutHarness
+          allowPreview
+          onOpenSheet={onOpenSheet}
+          onPreviewInstall={onPreviewInstall}
+          onSwitchMarketplace={onSwitchMarketplace}
+        />
+      </KeyboardShortcutsBoundary>,
+    );
+    await flush();
+
+    const shortcutSettingsButton = [...container.querySelectorAll('button')].find(
+      (button) =>
+        button.getAttribute('aria-label') ===
+        `Configure shortcut for ${TEMPLATE_SHORTCUTS.openSheet.id}`,
+    );
+    shortcutSettingsButton?.click();
+    await flush();
+
+    const prefixBinding = TEMPLATE_SHORTCUTS.switchMarketplaceTab.defaultBinding;
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: prefixBinding.key,
+        ctrlKey: prefixBinding.ctrl,
+        metaKey: prefixBinding.meta,
+        altKey: prefixBinding.alt,
+        shiftKey: prefixBinding.shift,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await sleep(60);
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'x',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await flush();
+
+    expect(container.textContent).toContain('Shares a prefix with');
+
+    const saveButton = findButtonByText('Save');
+    saveButton?.click();
+    await flush();
+
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: prefixBinding.key,
+        ctrlKey: prefixBinding.ctrl,
+        metaKey: prefixBinding.meta,
+        altKey: prefixBinding.alt,
+        shiftKey: prefixBinding.shift,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await sleep(100);
+    window.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'x',
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+
     expect(onOpenSheet).toHaveBeenCalledTimes(1);
   });
 

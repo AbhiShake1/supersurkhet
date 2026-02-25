@@ -1,4 +1,6 @@
 import { Input } from '@/components/ui/input';
+import { useBusinessSafe } from '@/contexts/business-context';
+import { runFieldOnValueChange } from '../on-value-change';
 import type { AutoFormFieldProps } from '../react';
 import type React from 'react';
 import { useFormContext } from 'react-hook-form';
@@ -13,6 +15,7 @@ export const NumberField: React.FC<AutoFormFieldProps> = ({
   // biome-ignore lint/correctness/noUnusedVariables: lint debt cleanup
   const { key, ...props } = inputProps;
   const form = useFormContext();
+  const business = useBusinessSafe();
 
   return (
     <Input
@@ -23,11 +26,13 @@ export const NumberField: React.FC<AutoFormFieldProps> = ({
       {...props}
       onChange={(e) => {
         props.onChange(e);
-        field.fieldConfig?.customData?.onValueChange?.(
-          e.target.value,
+        runFieldOnValueChange({
+          customData: field.fieldConfig?.customData,
+          value: e.target.value,
           path,
           form,
-        );
+          businessBasePath: business?.business?.basePath,
+        });
       }}
     />
   );
