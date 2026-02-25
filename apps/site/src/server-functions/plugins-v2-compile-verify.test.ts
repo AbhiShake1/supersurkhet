@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ActionManifestDoc, SchemaDoc, WorkflowDoc } from '@/lib/plugins/types';
+import type { ActionManifestDoc, SchemaDoc } from '@/lib/plugins/types';
 import { runPluginsV2CompileVerifyPipeline } from './plugins-v2-compile-verify';
 
 describe('plugins v2 compile verify pipeline', () => {
@@ -37,16 +37,14 @@ describe('plugins v2 compile verify pipeline', () => {
             },
           },
         ],
-      },
-    ];
-
-    const workflows: WorkflowDoc[] = [
-      {
-        workflowId: 'wf-product-before-create',
-        table: 'product',
-        hook: 'beforeCreate',
-        nodes: [{ nodeId: 'start', type: 'action', actionId: 'inventory.sync' }],
-        edges: [],
+        workflows: [
+          {
+            workflowId: 'wf-product-before-create',
+            hook: 'beforeCreate',
+            nodes: [{ nodeId: 'start', type: 'action', actionId: 'inventory.sync' }],
+            edges: [],
+          },
+        ],
       },
     ];
 
@@ -63,7 +61,6 @@ describe('plugins v2 compile verify pipeline', () => {
       version: '1.0.0',
       docs: { title: 'Inventory' },
       schemaDocs,
-      workflows,
       adminTabs: [{ schema: 'product', title: 'Inventory' }],
       actionManifest,
       capabilityEnvelope: ['inventory:write'],
@@ -87,7 +84,6 @@ describe('plugins v2 compile verify pipeline', () => {
     expect(result.hashPreview.artifactHash).toMatch(/^[a-f0-9]{64}$/);
     expect(result.hashPreview.artifactPayload).toEqual({
       schemaDocs,
-      workflows,
       adminTabs: [{ schema: 'product', title: 'Inventory' }],
     });
   });
@@ -126,16 +122,14 @@ describe('plugins v2 compile verify pipeline', () => {
             },
           },
         ],
-      },
-    ];
-
-    const workflows: WorkflowDoc[] = [
-      {
-        workflowId: 'wf-bad',
-        table: 'product',
-        hook: 'beforeCreate',
-        nodes: [{ nodeId: 'n1', type: 'action', actionId: 'unknown.action' }],
-        edges: [{ from: 'n1', to: 'n2' }],
+        workflows: [
+          {
+            workflowId: 'wf-bad',
+            hook: 'beforeCreate',
+            nodes: [{ nodeId: 'n1', type: 'action', actionId: 'unknown.action' }],
+            edges: [{ from: 'n1', to: 'n2' }],
+          },
+        ],
       },
     ];
 
@@ -143,7 +137,6 @@ describe('plugins v2 compile verify pipeline', () => {
       pluginId: 'plugin.inventory',
       version: '1.0.0',
       schemaDocs,
-      workflows,
       actionManifest: [],
       capabilityEnvelope: [],
       runtimeTarget: 'sandbox-worker',

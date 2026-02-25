@@ -87,7 +87,7 @@ describe('marketplace seed catalog', () => {
     expect(merged.length).toBeGreaterThan(MARKETPLACE_SEED_RELEASES.length);
   });
 
-  it('backfills schema/workflow docs from static seed when live row is missing them', () => {
+  it('backfills schema docs (including nested workflows) from static seed when live row is missing them', () => {
     const liveSeedWithoutDocs = {
       id: 'supersurkhet.plugin.restaurant-admin@1.1.0',
       pluginId: 'supersurkhet.plugin.restaurant-admin',
@@ -111,7 +111,11 @@ describe('marketplace seed catalog', () => {
 
     expect(restaurantRelease?.docs.title).toBe('Restaurant Admin Core (Live)');
     expect(restaurantRelease?.schemaDocs?.length).toBeGreaterThan(0);
-    expect(restaurantRelease?.workflows?.length).toBeGreaterThan(0);
+    expect(
+      (restaurantRelease?.schemaDocs ?? []).some(
+        (schemaDoc) => (schemaDoc.workflows?.length ?? 0) > 0,
+      ),
+    ).toBe(true);
   });
 
   it('dedupes by pluginId@version even when live rows have different ids', () => {

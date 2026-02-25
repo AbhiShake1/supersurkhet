@@ -15,6 +15,48 @@ describe('plugin v2 schema contracts', () => {
       schemaDocs: [
         {
           schemaId: 'inventoryItem',
+          workflows: [
+            {
+              workflowId: 'before-create',
+              hook: 'beforeCreate',
+              nodes: [
+                {
+                  nodeId: 'node-1',
+                  type: 'action',
+                  actionId: 'reprice',
+                  input: {
+                    expression: {
+                      kind: 'object',
+                      value: {
+                        price: {
+                          kind: 'ref',
+                          source: 'payload',
+                          path: ['price'],
+                        },
+                      },
+                    },
+                  },
+                  runIf: {
+                    kind: 'op',
+                    op: 'gt',
+                    args: [{ kind: 'ref', source: 'payload', path: ['qty'] }, 0],
+                  },
+                },
+              ],
+              edges: [
+                {
+                  from: 'node-1',
+                  to: 'node-1',
+                  condition: {
+                    kind: 'op',
+                    op: 'eq',
+                    args: [{ kind: 'ref', source: 'context', path: ['env'] }, 'prod'],
+                  },
+                  conditionToken: 'isProd',
+                },
+              ],
+            },
+          ],
           fields: [
             {
               key: 'price',
@@ -85,55 +127,12 @@ describe('plugin v2 schema contracts', () => {
           ],
         },
       ],
-      workflows: [
-        {
-          workflowId: 'before-create',
-          table: 'inventory',
-          hook: 'beforeCreate',
-          nodes: [
-            {
-              nodeId: 'node-1',
-              type: 'action',
-              actionId: 'reprice',
-              input: {
-                expression: {
-                  kind: 'object',
-                  value: {
-                    price: {
-                      kind: 'ref',
-                      source: 'payload',
-                      path: ['price'],
-                    },
-                  },
-                },
-              },
-              runIf: {
-                kind: 'op',
-                op: 'gt',
-                args: [{ kind: 'ref', source: 'payload', path: ['qty'] }, 0],
-              },
-            },
-          ],
-          edges: [
-            {
-              from: 'node-1',
-              to: 'node-1',
-              condition: {
-                kind: 'op',
-                op: 'eq',
-                args: [{ kind: 'ref', source: 'context', path: ['env'] }, 'prod'],
-              },
-              conditionToken: 'isProd',
-            },
-          ],
-        },
-      ],
     });
 
     expect(parsed.schemaDocs?.[0]?.fields[0]?.behavior?.derivations?.[0]?.target).toBe('value');
     expect(parsed.schemaDocs?.[0]?.refinements?.[0]?.message).toContain('SKU');
-    expect(parsed.workflows?.[0]?.nodes[0]?.runIf).toBeTruthy();
-    expect(parsed.workflows?.[0]?.edges[0]?.condition).toBeTruthy();
+    expect(parsed.schemaDocs?.[0]?.workflows?.[0]?.nodes[0]?.runIf).toBeTruthy();
+    expect(parsed.schemaDocs?.[0]?.workflows?.[0]?.edges[0]?.condition).toBeTruthy();
   });
 
   it('rejects invalid derivation targets and invalid expression operators', () => {

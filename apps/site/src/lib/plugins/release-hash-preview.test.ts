@@ -21,6 +21,20 @@ describe('release hash preview', () => {
         {
           schemaId: 'inventory.item',
           title: 'Inventory Item',
+          workflows: [
+            {
+              workflowId: 'afterCreate',
+              hook: 'afterCreate',
+              nodes: [
+                {
+                  nodeId: 'n1',
+                  type: 'action',
+                  actionId: 'inventory.sync',
+                },
+              ],
+              edges: [],
+            },
+          ],
           fields: [
             {
               key: 'name',
@@ -37,21 +51,6 @@ describe('release hash preview', () => {
               type: 'number',
             },
           ],
-        },
-      ],
-      workflows: [
-        {
-          workflowId: 'inventory.afterCreate',
-          table: 'inventory.item',
-          hook: 'afterCreate',
-          nodes: [
-            {
-              nodeId: 'n1',
-              type: 'action',
-              actionId: 'inventory.sync',
-            },
-          ],
-          edges: [],
         },
       ],
       adminTabs: [
@@ -82,6 +81,20 @@ describe('release hash preview', () => {
         {
           title: 'Inventory Item',
           schemaId: 'inventory.item',
+          workflows: [
+            {
+              hook: 'afterCreate',
+              workflowId: 'afterCreate',
+              nodes: [
+                {
+                  actionId: 'inventory.sync',
+                  type: 'action',
+                  nodeId: 'n1',
+                },
+              ],
+              edges: [],
+            },
+          ],
           fields: [
             {
               type: 'string',
@@ -98,21 +111,6 @@ describe('release hash preview', () => {
               key: 'quantity',
             },
           ],
-        },
-      ],
-      workflows: [
-        {
-          table: 'inventory.item',
-          workflowId: 'inventory.afterCreate',
-          hook: 'afterCreate',
-          nodes: [
-            {
-              actionId: 'inventory.sync',
-              type: 'action',
-              nodeId: 'n1',
-            },
-          ],
-          edges: [],
         },
       ],
       adminTabs: [
@@ -146,6 +144,7 @@ describe('release hash preview', () => {
       schemaDocs: [
         {
           schemaId: 'inventory.item',
+          workflows: [],
           fields: [
             {
               key: 'name',
@@ -154,7 +153,6 @@ describe('release hash preview', () => {
           ],
         },
       ],
-      workflows: [],
       adminTabs: [],
     });
 
@@ -172,6 +170,7 @@ describe('release hash preview', () => {
       schemaDocs: [
         {
           schemaId: 'inventory.item',
+          workflows: [],
           fields: [
             {
               key: 'name',
@@ -180,7 +179,6 @@ describe('release hash preview', () => {
           ],
         },
       ],
-      workflows: [],
       adminTabs: [],
     });
 

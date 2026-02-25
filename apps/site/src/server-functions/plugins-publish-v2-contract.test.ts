@@ -47,34 +47,33 @@ describe('plugins publish v2 input contracts', () => {
       schemaDocs: [
         {
           schemaId: 'inventoryItem',
+          workflows: [
+            {
+              workflowId: 'inventoryBeforeCreate',
+              hook: 'beforeCreate',
+              nodes: [
+                {
+                  nodeId: 'node-1',
+                  type: 'action',
+                  actionId: 'inventory.sync',
+                  input: {
+                    expression: {
+                      kind: 'ref',
+                      source: 'payload',
+                      path: ['sku'],
+                    },
+                  },
+                },
+              ],
+              edges: [],
+            },
+          ],
           fields: [
             {
               key: 'sku',
               type: 'string',
             },
           ],
-        },
-      ],
-      workflows: [
-        {
-          workflowId: 'inventoryBeforeCreate',
-          table: 'inventory',
-          hook: 'beforeCreate',
-          nodes: [
-            {
-              nodeId: 'node-1',
-              type: 'action',
-              actionId: 'inventory.sync',
-              input: {
-                expression: {
-                  kind: 'ref',
-                  source: 'payload',
-                  path: ['sku'],
-                },
-              },
-            },
-          ],
-          edges: [],
         },
       ],
       adminTabs: [

@@ -29,12 +29,6 @@ describe('resolveLifecycleBusinessId', () => {
     ).toBeUndefined();
     expect(
       resolveLifecycleBusinessId({
-        table: 'pluginWorkflowDoc',
-        restKeys: ['draft.example'],
-      }),
-    ).toBeUndefined();
-    expect(
-      resolveLifecycleBusinessId({
         table: 'pluginActionManifestDoc',
         restKeys: ['draft.example'],
       }),

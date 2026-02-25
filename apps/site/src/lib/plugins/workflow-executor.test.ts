@@ -11,6 +11,7 @@ import {
 } from '@/lib/plugins/workflow-executor';
 
 function baseRelease(workflow: WorkflowDoc): PluginReleaseDoc {
+  const schemaId = workflow.table;
   return {
     id: 'acme.workflow@1.0.0',
     pluginId: 'acme.workflow',
@@ -29,7 +30,29 @@ function baseRelease(workflow: WorkflowDoc): PluginReleaseDoc {
         actionId: 'core.noop',
       },
     ],
-    workflows: [workflow],
+    schemaDocs: [
+      {
+        schemaId,
+        fields: [],
+        workflows: [
+          {
+            pluginContractVersion: workflow.pluginContractVersion,
+            workflowId: workflow.workflowId,
+            title: workflow.title,
+            hook: workflow.hook,
+            trigger: workflow.trigger
+              ? {
+                  event: workflow.trigger.event,
+                  filters: workflow.trigger.filters,
+                  fieldChange: workflow.trigger.fieldChange,
+                }
+              : undefined,
+            nodes: workflow.nodes,
+            edges: workflow.edges,
+          },
+        ],
+      },
+    ],
     publishedAt: '2026-01-01T00:00:00.000Z',
   };
 }
@@ -172,19 +195,24 @@ describe('workflow executor', () => {
           artifactHash: 'draft-artifact-hash',
           createdAt: '2026-01-01T00:00:00.000Z',
           createdByUserId: 'owner-1',
-          workflows: [
+          schemaDocs: [
             {
-              workflowId: 'draft-wf-1',
-              table: 'product',
-              hook: 'beforeCreate',
-              nodes: [
+              schemaId: 'product',
+              fields: [],
+              workflows: [
                 {
-                  nodeId: 'draft-node-1',
-                  type: 'action',
-                  actionId: 'draft.first',
+                  workflowId: 'draft-wf-1',
+                  hook: 'beforeCreate',
+                  nodes: [
+                    {
+                      nodeId: 'draft-node-1',
+                      type: 'action',
+                      actionId: 'draft.first',
+                    },
+                  ],
+                  edges: [],
                 },
               ],
-              edges: [],
             },
           ],
         },

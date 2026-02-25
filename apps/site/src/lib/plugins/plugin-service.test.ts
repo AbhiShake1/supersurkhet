@@ -93,7 +93,6 @@ describe('plugin platform service', () => {
       draftId: draft.draftId,
       revision: {
         schemaDocs: [],
-        workflows: [],
       },
     });
 

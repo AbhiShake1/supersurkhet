@@ -5,6 +5,7 @@ import type {
   BusinessPluginInstallDoc,
   PluginDraftRevisionDoc,
   PluginReleaseDoc,
+  SchemaDoc,
 } from '@/lib/plugins/types';
 import { executeLifecycleHook } from '@/lib/plugins/workflow-executor';
 import { runPluginsV2CompileVerifyPipeline } from '@/server-functions/plugins-v2-compile-verify';
@@ -112,20 +113,23 @@ describe('plugin builder v2 lifecycle verification suite', () => {
             { key: 'quantity', type: 'number' as const },
           ],
         },
-      ],
-      workflows: [
         {
-          workflowId: 'inventory.beforeCreate',
-          table: 'inventory',
-          hook: 'beforeCreate' as const,
-          nodes: [
+          schemaId: 'inventory',
+          fields: [],
+          workflows: [
             {
-              nodeId: 'draft-node-1',
-              type: 'action' as const,
-              actionId: 'draft.audit',
+              workflowId: 'inventory.beforeCreate',
+              hook: 'beforeCreate' as const,
+              nodes: [
+                {
+                  nodeId: 'draft-node-1',
+                  type: 'action' as const,
+                  actionId: 'draft.audit',
+                },
+              ],
+              edges: [],
             },
           ],
-          edges: [],
         },
       ],
       adminTabs: [{ schema: 'inventoryItem', title: 'Inventory' }],
@@ -135,7 +139,6 @@ describe('plugin builder v2 lifecycle verification suite', () => {
       draftId: draft.draftId,
       pluginId: draft.pluginId,
       schemaDocs: baseDraftSnapshot.schemaDocs,
-      workflows: baseDraftSnapshot.workflows,
       adminTabs: baseDraftSnapshot.adminTabs,
     });
     const draftInstall = createDraftInstall({
@@ -173,20 +176,24 @@ describe('plugin builder v2 lifecycle verification suite', () => {
           runtime: 'sandbox-worker',
         },
       ],
-      schemaDocs: baseDraftSnapshot.schemaDocs,
-      workflows: [
+      schemaDocs: [
+        baseDraftSnapshot.schemaDocs[0] as SchemaDoc,
         {
-          workflowId: 'inventory.release.beforeCreate',
-          table: 'inventory',
-          hook: 'beforeCreate',
-          nodes: [
+          ...(baseDraftSnapshot.schemaDocs[1] as SchemaDoc),
+          workflows: [
             {
-              nodeId: 'release-node-1',
-              type: 'action',
-              actionId: 'inventory.audit',
+              workflowId: 'inventory.release.beforeCreate',
+              hook: 'beforeCreate',
+              nodes: [
+                {
+                  nodeId: 'release-node-1',
+                  type: 'action',
+                  actionId: 'inventory.audit',
+                },
+              ],
+              edges: [],
             },
           ],
-          edges: [],
         },
       ],
       adminTabs: baseDraftSnapshot.adminTabs,
@@ -206,20 +213,24 @@ describe('plugin builder v2 lifecycle verification suite', () => {
           runtime: 'sandbox-worker',
         },
       ],
-      schemaDocs: baseDraftSnapshot.schemaDocs,
-      workflows: [
+      schemaDocs: [
+        baseDraftSnapshot.schemaDocs[0] as SchemaDoc,
         {
-          workflowId: 'inventory.release.beforeCreate',
-          table: 'inventory',
-          hook: 'beforeCreate',
-          nodes: [
+          ...(baseDraftSnapshot.schemaDocs[1] as SchemaDoc),
+          workflows: [
             {
-              nodeId: 'release-node-1',
-              type: 'action',
-              actionId: 'inventory.audit',
+              workflowId: 'inventory.release.beforeCreate',
+              hook: 'beforeCreate',
+              nodes: [
+                {
+                  nodeId: 'release-node-1',
+                  type: 'action',
+                  actionId: 'inventory.audit',
+                },
+              ],
+              edges: [],
             },
           ],
-          edges: [],
         },
       ],
       adminTabs: baseDraftSnapshot.adminTabs,
@@ -330,19 +341,24 @@ describe('plugin builder v2 lifecycle verification suite', () => {
           runtime: 'sandbox-worker',
         },
       ],
-      workflows: [
+      schemaDocs: [
         {
-          workflowId: 'inventory.release.beforeCreate',
-          table: 'inventory',
-          hook: 'beforeCreate',
-          nodes: [
+          schemaId: 'inventory',
+          fields: [],
+          workflows: [
             {
-              nodeId: 'release-node-1',
-              type: 'action',
-              actionId: 'inventory.audit',
+              workflowId: 'inventory.release.beforeCreate',
+              hook: 'beforeCreate',
+              nodes: [
+                {
+                  nodeId: 'release-node-1',
+                  type: 'action',
+                  actionId: 'inventory.audit',
+                },
+              ],
+              edges: [],
             },
           ],
-          edges: [],
         },
       ],
       capabilityEnvelope: [],

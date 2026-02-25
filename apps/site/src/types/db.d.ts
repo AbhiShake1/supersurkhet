@@ -416,32 +416,8 @@ declare global {
      when?: unknown;
     }>, "many">>;
      tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     schemaId: string;
-     fields: unknown[];
-     description?: string | undefined;
-     title?: string | undefined;
-     refinements?: {
-     message: string;
-     code?: "custom" | undefined;
-     path?: string[] | undefined;
-     when?: unknown;
-    }[] | undefined;
-     tokens?: Record<string, unknown> | undefined;
-    }, {
-     schemaId: string;
-     fields: unknown[];
-     description?: string | undefined;
-     title?: string | undefined;
-     refinements?: {
-     message: string;
-     code?: "custom" | undefined;
-     path?: string[] | undefined;
-     when?: unknown;
-    }[] | undefined;
-     tokens?: Record<string, unknown> | undefined;
-    }>, "many">>;
-     workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+    } & {
+     workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<Omit<{
      pluginContractVersion: import("zod").ZodOptional<import("zod").ZodLiteral<"3">>;
      workflowId: import("zod").ZodString;
      title: import("zod").ZodOptional<import("zod").ZodString>;
@@ -537,9 +513,22 @@ declare global {
      conditionToken?: string | undefined;
      on?: "success" | "failure" | "always" | undefined;
     }>, "many">;
+    }, "table" | "trigger"> & {
+     trigger: import("zod").ZodOptional<import("zod").ZodObject<{
+     event: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     filters: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     fieldChange: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }, {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }>>;
     }, "strip", import("zod").ZodTypeAny, {
      workflowId: string;
-     table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
      nodeId: string;
@@ -566,14 +555,12 @@ declare global {
      title?: string | undefined;
      pluginContractVersion?: "3" | undefined;
      trigger?: {
-     table: string;
      event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      filters?: unknown;
      fieldChange?: Record<string, unknown> | undefined;
     } | undefined;
     }, {
      workflowId: string;
-     table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
      nodeId: string;
@@ -600,11 +587,101 @@ declare global {
      title?: string | undefined;
      pluginContractVersion?: "3" | undefined;
      trigger?: {
-     table: string;
      event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      filters?: unknown;
      fieldChange?: Record<string, unknown> | undefined;
     } | undefined;
+    }>, "many">>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }, {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
     }>, "many">>;
      adminTabs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
      schema: import("zod").ZodString;
@@ -675,10 +752,8 @@ declare global {
      when?: unknown;
     }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
-    }[] | undefined;
      workflows?: {
      workflowId: string;
-     table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
      nodeId: string;
@@ -705,11 +780,11 @@ declare global {
      title?: string | undefined;
      pluginContractVersion?: "3" | undefined;
      trigger?: {
-     table: string;
      event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      filters?: unknown;
      fieldChange?: Record<string, unknown> | undefined;
     } | undefined;
+    }[] | undefined;
     }[] | undefined;
      adminTabs?: {
      schema: string;
@@ -757,10 +832,8 @@ declare global {
      when?: unknown;
     }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
-    }[] | undefined;
      workflows?: {
      workflowId: string;
-     table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
      nodeId: string;
@@ -787,11 +860,11 @@ declare global {
      title?: string | undefined;
      pluginContractVersion?: "3" | undefined;
      trigger?: {
-     table: string;
      event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      filters?: unknown;
      fieldChange?: Record<string, unknown> | undefined;
     } | undefined;
+    }[] | undefined;
     }[] | undefined;
      adminTabs?: {
      schema: string;
@@ -1269,32 +1342,8 @@ declare global {
      when?: unknown;
     }>, "many">>;
      tokens: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     schemaId: string;
-     fields: unknown[];
-     description?: string | undefined;
-     title?: string | undefined;
-     refinements?: {
-     message: string;
-     code?: "custom" | undefined;
-     path?: string[] | undefined;
-     when?: unknown;
-    }[] | undefined;
-     tokens?: Record<string, unknown> | undefined;
-    }, {
-     schemaId: string;
-     fields: unknown[];
-     description?: string | undefined;
-     title?: string | undefined;
-     refinements?: {
-     message: string;
-     code?: "custom" | undefined;
-     path?: string[] | undefined;
-     when?: unknown;
-    }[] | undefined;
-     tokens?: Record<string, unknown> | undefined;
-    }>, "many">>;
-     workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
+    } & {
+     workflows: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<Omit<{
      pluginContractVersion: import("zod").ZodOptional<import("zod").ZodLiteral<"3">>;
      workflowId: import("zod").ZodString;
      title: import("zod").ZodOptional<import("zod").ZodString>;
@@ -1390,9 +1439,22 @@ declare global {
      conditionToken?: string | undefined;
      on?: "success" | "failure" | "always" | undefined;
     }>, "many">;
+    }, "table" | "trigger"> & {
+     trigger: import("zod").ZodOptional<import("zod").ZodObject<{
+     event: import("zod").ZodEnum<["beforeCreate", "afterCreate", "beforeUpdate", "afterUpdate", "beforeDelete", "afterDelete"]>;
+     filters: import("zod").ZodOptional<import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>;
+     fieldChange: import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>>>;
+    }, "strip", import("zod").ZodTypeAny, {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }, {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    }>>;
     }, "strip", import("zod").ZodTypeAny, {
      workflowId: string;
-     table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
      nodeId: string;
@@ -1419,14 +1481,12 @@ declare global {
      title?: string | undefined;
      pluginContractVersion?: "3" | undefined;
      trigger?: {
-     table: string;
      event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      filters?: unknown;
      fieldChange?: Record<string, unknown> | undefined;
     } | undefined;
     }, {
      workflowId: string;
-     table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
      nodeId: string;
@@ -1453,11 +1513,101 @@ declare global {
      title?: string | undefined;
      pluginContractVersion?: "3" | undefined;
      trigger?: {
-     table: string;
      event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      filters?: unknown;
      fieldChange?: Record<string, unknown> | undefined;
     } | undefined;
+    }>, "many">>;
+    }, "strip", import("zod").ZodTypeAny, {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
+    }, {
+     schemaId: string;
+     fields: unknown[];
+     description?: string | undefined;
+     title?: string | undefined;
+     refinements?: {
+     message: string;
+     code?: "custom" | undefined;
+     path?: string[] | undefined;
+     when?: unknown;
+    }[] | undefined;
+     tokens?: Record<string, unknown> | undefined;
+     workflows?: {
+     workflowId: string;
+     hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     nodes: {
+     nodeId: string;
+     type?: "action" | undefined;
+     actionId?: string | undefined;
+     kind?: "action" | "branch" | "delay" | "humanGate" | undefined;
+     input?: unknown;
+     runIf?: unknown;
+     retryPolicy?: {
+     maxAttempts: number;
+     backoffMs?: number | undefined;
+    } | undefined;
+     timeoutMs?: number | undefined;
+     idempotencyKeyExpr?: unknown;
+     delayMs?: number | undefined;
+    }[];
+     edges: {
+     from: string;
+     to: string;
+     condition?: unknown;
+     conditionToken?: string | undefined;
+     on?: "success" | "failure" | "always" | undefined;
+    }[];
+     title?: string | undefined;
+     pluginContractVersion?: "3" | undefined;
+     trigger?: {
+     event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
+     filters?: unknown;
+     fieldChange?: Record<string, unknown> | undefined;
+    } | undefined;
+    }[] | undefined;
     }>, "many">>;
      adminTabs: import("zod").ZodOptional<import("zod").ZodArray<import("zod").ZodObject<{
      schema: import("zod").ZodString;
@@ -1517,10 +1667,8 @@ declare global {
      when?: unknown;
     }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
-    }[] | undefined;
      workflows?: {
      workflowId: string;
-     table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
      nodeId: string;
@@ -1547,11 +1695,11 @@ declare global {
      title?: string | undefined;
      pluginContractVersion?: "3" | undefined;
      trigger?: {
-     table: string;
      event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      filters?: unknown;
      fieldChange?: Record<string, unknown> | undefined;
     } | undefined;
+    }[] | undefined;
     }[] | undefined;
      adminTabs?: {
      schema: string;
@@ -1586,10 +1734,8 @@ declare global {
      when?: unknown;
     }[] | undefined;
      tokens?: Record<string, unknown> | undefined;
-    }[] | undefined;
      workflows?: {
      workflowId: string;
-     table: string;
      hook: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      nodes: {
      nodeId: string;
@@ -1616,11 +1762,11 @@ declare global {
      title?: string | undefined;
      pluginContractVersion?: "3" | undefined;
      trigger?: {
-     table: string;
      event: "beforeCreate" | "afterCreate" | "beforeUpdate" | "afterUpdate" | "beforeDelete" | "afterDelete";
      filters?: unknown;
      fieldChange?: Record<string, unknown> | undefined;
     } | undefined;
+    }[] | undefined;
     }[] | undefined;
      adminTabs?: {
      schema: string;
@@ -2347,52 +2493,6 @@ declare global {
     } | undefined;
     }>;
      readonly title: "Plugin Schema Docs";
-     readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
-     readonly group: "Plugin Platform";
-    };
-     readonly pluginWorkflowDoc: {
-     readonly schema: import("zod").ZodObject<{
-     pluginId: import("zod").ZodString;
-     version: import("zod").ZodString;
-     workflowId: import("zod").ZodString;
-     doc: import("zod").ZodType<unknown, import("zod").ZodTypeDef, unknown>;
-    } & {
-     timestamp: import("zod").ZodOptional<import("zod").ZodEffects<import("zod").ZodNumber, number, number>>;
-     created_by: import("zod").ZodOptional<import("zod").ZodString>;
-     _: import("zod").ZodOptional<import("zod").ZodObject<{
-     soul: import("zod").ZodOptional<import("zod").ZodString>;
-     ">": import("zod").ZodOptional<import("zod").ZodRecord<import("zod").ZodString, import("zod").ZodUnion<[import("zod").ZodString, import("zod").ZodNumber]>>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }, {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    }>>;
-    }, "strip", import("zod").ZodTypeAny, {
-     version: string;
-     pluginId: string;
-     workflowId: string;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     doc?: unknown;
-    }, {
-     version: string;
-     pluginId: string;
-     workflowId: string;
-     timestamp?: number | undefined;
-     created_by?: string | undefined;
-     _?: {
-     soul?: string | undefined;
-     ">"?: Record<string, string | number> | undefined;
-    } | undefined;
-     doc?: unknown;
-    }>;
-     readonly title: "Plugin Workflow Docs";
      readonly icon: React.ForwardRefExoticComponent<Omit<import("lucide-react").LucideProps, "ref"> & React.RefAttributes<SVGSVGElement>>;
      readonly group: "Plugin Platform";
     };

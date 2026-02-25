@@ -110,7 +110,7 @@ describe('plugin runtime registry', () => {
           artifactHash: 'draft-artifact-hash',
           createdAt: '2026-01-01T00:00:00.000Z',
           createdByUserId: 'owner-1',
-          workflows: [],
+          schemaDocs: [],
         } satisfies PluginDraftRevisionDoc,
       ],
       draftInstalls: [
