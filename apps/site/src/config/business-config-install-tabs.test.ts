@@ -1,6 +1,10 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AutoAdminRootFocusedConfigPatch } from '@/config/business-config';
-import { resolveInstallDrivenTabs } from '@/config/business-config-resolver';
+import {
+  resolveInstallDrivenSubdomains,
+  resolveInstallDrivenSubdomainUiLayers,
+  resolveInstallDrivenTabs,
+} from '@/config/business-config-resolver';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
@@ -123,6 +127,44 @@ describe('business config install-driven tab resolver', () => {
     });
 
     expect(tabs).toEqual([]);
+  });
+
+  it('resolves install-driven subdomains with defaults', () => {
+    const subdomains = resolveInstallDrivenSubdomains({
+      businessId: 'business-1',
+      installs: [install()],
+      releases: [
+        release({
+          adminTabs: [
+            { schema: '__plugin_studio_subdomain__/orders' },
+            { schema: '__plugin_studio_subdomain__/support' },
+          ],
+        }),
+      ],
+    });
+
+    expect(subdomains).toEqual(
+      expect.arrayContaining(['index', 'admin', 'orders', 'support']),
+    );
+  });
+
+  it('injects admin fallback layers when subdomain UI layers are missing', () => {
+    const layers = resolveInstallDrivenSubdomainUiLayers({
+      businessId: 'business-1',
+      subdomain: 'admin',
+      installs: [install()],
+      releases: [
+        release({
+          adminTabs: [{ schema: '__plugin_studio_subdomain__/admin' }],
+        }),
+      ],
+    });
+
+    expect(Array.isArray(layers)).toBe(true);
+    expect(
+      JSON.stringify(layers).includes('AutoAdmin') ||
+        JSON.stringify(layers).includes('auto-admin'),
+    ).toBe(true);
   });
 });
 

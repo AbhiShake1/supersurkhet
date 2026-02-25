@@ -1,9 +1,16 @@
 import { Link } from '@tanstack/react-router';
 import { Search, Shield, XCircle } from 'lucide-react';
 import { useState } from 'react';
+import { resolveInstallDrivenSubdomains } from '@/config/business-config-resolver';
 import { api } from '@/lib/api';
+import { mergeMarketplaceReleasesWithSeed } from '@/lib/plugins/marketplace-seed';
+import type {
+  BusinessPluginInstallDoc,
+  PluginReleaseDoc,
+} from '@/lib/plugins/types';
 import type { Business } from '@/lib/schema';
 import { BusinessAccessGate } from './permission-gate/business-access-gate';
+import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import {
   Card,
@@ -21,7 +28,13 @@ export interface BusinessListProps
 
 export function BusinessList(props: BusinessListProps) {
   const { data: allBusinesses = [], isLoading } = api.business.useGet();
+  const { data: installRows = [] } = api.businessPluginInstall.useGet();
+  const { data: releaseRows = [] } = api.pluginRelease.useGet();
   const [searchTerm, setSearchTerm] = useState('');
+  const installs = installRows as BusinessPluginInstallDoc[];
+  const releases = mergeMarketplaceReleasesWithSeed(
+    releaseRows as PluginReleaseDoc[],
+  );
 
   const filteredBusinesses = allBusinesses.filter((business: Business) => {
     const lowerCaseSearchTerm = searchTerm?.toLowerCase();
@@ -85,16 +98,84 @@ export function BusinessList(props: BusinessListProps) {
                       </Button>
                       <BusinessAccessGate business={business}>
                         <Button asChild className="w-full">
-                          <Link
-                            className="gap-2 flex"
-                            to="/$businessName/admin"
-                            params={{ businessName: business.basePath ?? '' }}
+                          <a
+                            className="flex gap-2"
+                            href={`/${encodeURIComponent(business.basePath ?? '')}/admin`}
                           >
                             <Shield className="h-4 w-4" />
                             Go to Admin
-                          </Link>
+                          </a>
                         </Button>
                       </BusinessAccessGate>
+                      <div className="pt-2">
+                        <p className="mb-2 text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                          Subdomains
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {resolveInstallDrivenSubdomains({
+                            businessId:
+                              business.basePath ??
+                              business.id ??
+                              business._?.soul ??
+                              '',
+                            installs,
+                            releases,
+                          }).map((subdomain) =>
+                            subdomain === 'index' ? (
+                              <Button
+                                key={`${business._?.soul ?? business.basePath}-index`}
+                                variant="outline"
+                                size="sm"
+                                asChild
+                              >
+                                <Link
+                                  to="/$businessName"
+                                  params={{
+                                    businessName: business.basePath ?? '',
+                                  }}
+                                >
+                                  Root
+                                </Link>
+                              </Button>
+                            ) : subdomain === 'admin' ? (
+                              <BusinessAccessGate
+                                key={`${business._?.soul ?? business.basePath}-admin`}
+                                business={business}
+                              >
+                                <Button variant="outline" size="sm" asChild>
+                                  <a
+                                    href={`/${encodeURIComponent(
+                                      business.basePath ?? '',
+                                    )}/admin`}
+                                  >
+                                    Admin
+                                  </a>
+                                </Button>
+                              </BusinessAccessGate>
+                            ) : (
+                              <Button
+                                key={`${business._?.soul ?? business.basePath}-${subdomain}`}
+                                variant="outline"
+                                size="sm"
+                                asChild
+                              >
+                                <Link
+                                  to="/$businessName/$subdomain"
+                                  params={{
+                                    businessName: business.basePath ?? '',
+                                    subdomain,
+                                  }}
+                                >
+                                  {subdomain}
+                                </Link>
+                              </Button>
+                            ),
+                          )}
+                        </div>
+                        <Badge variant="secondary" className="mt-2 text-[10px]">
+                          Desktop domains enabled
+                        </Badge>
+                      </div>
                     </CardContent>
                   </Card>
                 ),

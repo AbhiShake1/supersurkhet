@@ -3,6 +3,7 @@ import {
   dedupeAdminTabs,
   resolveAdminTabInput,
 } from '@/lib/auto-runtime/tab-runtime';
+import { resolveReleaseSubdomainSurface } from '@/lib/plugins/subdomain-surface';
 import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
@@ -76,4 +77,104 @@ export function resolveInstallDrivenTabs({
   }
 
   return [];
+}
+
+export function resolveInstallDrivenSubdomainUiLayers({
+  businessId,
+  subdomain,
+  installs,
+  releases,
+}: {
+  businessId: string;
+  subdomain: string;
+  installs: BusinessPluginInstallDoc[];
+  releases: PluginReleaseDoc[];
+}): unknown[] | null {
+  const normalizedSubdomain =
+    subdomain
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'index';
+  const releaseByKey = new Map<string, PluginReleaseDoc>(
+    releases.map((release) => [
+      toReleaseKey(release.pluginId, release.version),
+      release,
+    ]),
+  );
+
+  const activeInstalls = installs.filter(
+    (install) =>
+      install.businessId === businessId && install.status === 'active',
+  );
+
+  for (let i = activeInstalls.length - 1; i >= 0; i -= 1) {
+    const install = activeInstalls[i];
+    if (!install) continue;
+    const release = releaseByKey.get(
+      toReleaseKey(install.pluginId, install.version),
+    );
+    if (!release) continue;
+    if (
+      release.artifactHash !== install.artifactHash ||
+      release.manifestHash !== install.manifestHash
+    ) {
+      continue;
+    }
+
+    const surface = resolveReleaseSubdomainSurface(release, {
+      ensureDefaultSubdomains: true,
+      includeAdminFallbackLayers: true,
+    });
+    const parsedLayers = surface.uiLayersBySubdomain[normalizedSubdomain];
+    if (Array.isArray(parsedLayers) && parsedLayers.length > 0) {
+      return parsedLayers;
+    }
+  }
+
+  return null;
+}
+
+export function resolveInstallDrivenSubdomains({
+  businessId,
+  installs,
+  releases,
+}: {
+  businessId: string;
+  installs: BusinessPluginInstallDoc[];
+  releases: PluginReleaseDoc[];
+}): string[] {
+  const releaseByKey = new Map<string, PluginReleaseDoc>(
+    releases.map((release) => [
+      toReleaseKey(release.pluginId, release.version),
+      release,
+    ]),
+  );
+  const subdomains = new Set<string>(['index', 'admin']);
+
+  for (const install of installs) {
+    if (install.businessId !== businessId || install.status !== 'active') {
+      continue;
+    }
+    const release = releaseByKey.get(
+      toReleaseKey(install.pluginId, install.version),
+    );
+    if (!release) continue;
+    if (
+      release.artifactHash !== install.artifactHash ||
+      release.manifestHash !== install.manifestHash
+    ) {
+      continue;
+    }
+    const surface = resolveReleaseSubdomainSurface(release, {
+      ensureDefaultSubdomains: true,
+      includeAdminFallbackLayers: false,
+    });
+    for (const subdomain of surface.subdomains) {
+      subdomains.add(subdomain);
+    }
+  }
+
+  return [...subdomains];
 }

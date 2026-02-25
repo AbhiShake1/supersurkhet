@@ -6,7 +6,11 @@ import type {
   BusinessPluginInstallDoc,
   PluginReleaseDoc,
 } from '@/lib/plugins/types';
-import { resolveInstallDrivenTabs } from './business-config-resolver';
+import {
+  resolveInstallDrivenSubdomains,
+  resolveInstallDrivenSubdomainUiLayers,
+  resolveInstallDrivenTabs,
+} from './business-config-resolver';
 
 type AnyAutoTableTab = {
   schema: SchemaKeys;
@@ -157,6 +161,27 @@ type UseBusinessConfigState = {
   isLoading: boolean;
 };
 
+type UseBusinessSubdomainLayersInput = {
+  slug: string;
+  subdomain: string;
+  businessId?: string;
+};
+
+type UseBusinessSubdomainLayersState = {
+  layers: unknown[] | null;
+  isLoading: boolean;
+};
+
+type UseBusinessSubdomainsInput = {
+  slug: string;
+  businessId?: string;
+};
+
+type UseBusinessSubdomainsState = {
+  subdomains: string[];
+  isLoading: boolean;
+};
+
 export function useBusinessConfigState({
   slug,
   businessId,
@@ -196,4 +221,68 @@ export function useBusinessConfig(
   input: UseBusinessConfigInput,
 ): AnyAutoTableTab[] {
   return useBusinessConfigState(input).tabs;
+}
+
+export function useBusinessSubdomainLayersState({
+  slug,
+  subdomain,
+  businessId,
+}: UseBusinessSubdomainLayersInput): UseBusinessSubdomainLayersState {
+  const scopedBusinessId = businessId ?? slug;
+  const installRowsQuery = api.businessPluginInstall.useGet({
+    keys: [scopedBusinessId],
+  });
+  const releaseRowsQuery = api.pluginRelease.useGet();
+  const installs = (installRowsQuery.data ?? []) as BusinessPluginInstallDoc[];
+  const releases = useMemo(
+    () =>
+      mergeMarketplaceReleasesWithSeed(
+        (releaseRowsQuery.data ?? []) as PluginReleaseDoc[],
+      ),
+    [releaseRowsQuery.data],
+  );
+  const layers = resolveInstallDrivenSubdomainUiLayers({
+    businessId: scopedBusinessId,
+    subdomain,
+    installs,
+    releases,
+  });
+  const isInitialLoadPending =
+    !installRowsQuery.isFetched || !releaseRowsQuery.isFetched;
+
+  return {
+    layers,
+    isLoading: isInitialLoadPending,
+  };
+}
+
+export function useBusinessSubdomainsState({
+  slug,
+  businessId,
+}: UseBusinessSubdomainsInput): UseBusinessSubdomainsState {
+  const scopedBusinessId = businessId ?? slug;
+  const installRowsQuery = api.businessPluginInstall.useGet({
+    keys: [scopedBusinessId],
+  });
+  const releaseRowsQuery = api.pluginRelease.useGet();
+  const installs = (installRowsQuery.data ?? []) as BusinessPluginInstallDoc[];
+  const releases = useMemo(
+    () =>
+      mergeMarketplaceReleasesWithSeed(
+        (releaseRowsQuery.data ?? []) as PluginReleaseDoc[],
+      ),
+    [releaseRowsQuery.data],
+  );
+  const subdomains = resolveInstallDrivenSubdomains({
+    businessId: scopedBusinessId,
+    installs,
+    releases,
+  });
+  const isInitialLoadPending =
+    !installRowsQuery.isFetched || !releaseRowsQuery.isFetched;
+
+  return {
+    subdomains,
+    isLoading: isInitialLoadPending,
+  };
 }

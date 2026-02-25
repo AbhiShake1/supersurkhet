@@ -64,6 +64,8 @@ export interface PluginDetailView {
     schema: string;
     title: string;
     group?: string;
+    subdomain?: string;
+    screenshotUrls?: string[];
   }[];
 }
 
@@ -104,6 +106,9 @@ export function PluginDetailsView({
 }: PluginDetailsViewProps) {
   const [isHeroOutOfView, setIsHeroOutOfView] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewSubdomain, setPreviewSubdomain] = useState<string | undefined>(
+    undefined,
+  );
   const [showOtherReviews, setShowOtherReviews] = useState(false);
   const previewStripRef = useRef<HTMLDivElement | null>(null);
   const subdomainStripRef = useRef<HTMLDivElement | null>(null);
@@ -113,7 +118,7 @@ export function PluginDetailsView({
     ? Math.max(1, Math.min(5, Math.round(details.userReview.rating)))
     : 0;
   const persistedReviewComment = details.userReview?.comment ?? '';
-  const reviewComposerKey = `${plugin.pluginId}::${details.userReview?.updatedAt ?? details.userReview?.createdAt ?? 'new'}::${persistedReviewRating}`;
+  const reviewComposerKey = `${plugin.pluginId}::${details.userReview?.createdAt ?? 'new'}::${persistedReviewRating}`;
 
   useEffect(() => {
     const heroNode = heroSectionRef.current;
@@ -183,7 +188,8 @@ export function PluginDetailsView({
     ? { keys: [scopedBusinessId] }
     : undefined;
   const canPersistReviewFeedback =
-    Boolean(actorUserId?.trim()) && scopedBusinessId.length > 0;
+    Boolean((actorUserId ?? '').trim()) && scopedBusinessId.length > 0;
+  const normalizedActorUserId = (actorUserId ?? '').trim();
   const { data: replyRowsRaw = [], refetch: refetchReplyRows } =
     api.pluginUserReviewReply.useGet(queryOptions);
   const { data: voteRowsRaw = [], refetch: refetchVoteRows } =
@@ -241,7 +247,9 @@ export function PluginDetailsView({
       if (!comment) return;
       const now = new Date().toISOString();
       const suffix = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
-      const replyId = `${encodeURIComponent(reviewId)}::${encodeURIComponent(actorUserId)}::${suffix}`;
+      const replyId = `${encodeURIComponent(reviewId)}::${encodeURIComponent(
+        normalizedActorUserId,
+      )}::${suffix}`;
       try {
         await createReplyMutation.mutateAsync({
           id: replyId,
@@ -249,7 +257,7 @@ export function PluginDetailsView({
           pluginId: plugin.pluginId,
           businessId,
           parentReplyId: parentReplyId ?? undefined,
-          userId: actorUserId,
+          userId: normalizedActorUserId,
           userLabel: actorLabel,
           comment,
           createdAt: now,
@@ -263,10 +271,10 @@ export function PluginDetailsView({
     },
     [
       actorLabel,
-      actorUserId,
       businessId,
       canPersistReviewFeedback,
       createReplyMutation,
+      normalizedActorUserId,
       plugin.pluginId,
       refetchReplyRows,
     ],
@@ -284,7 +292,9 @@ export function PluginDetailsView({
         return;
       }
       const now = new Date().toISOString();
-      const voteId = `${targetType}::${encodeURIComponent(targetId)}::${encodeURIComponent(actorUserId)}`;
+      const voteId = `${targetType}::${encodeURIComponent(
+        targetId,
+      )}::${encodeURIComponent(normalizedActorUserId)}`;
       const existingVote = reviewVotes.find((vote) => vote.id === voteId);
       try {
         await createVoteMutation.mutateAsync({
@@ -294,7 +304,7 @@ export function PluginDetailsView({
           businessId,
           targetType,
           targetId,
-          userId: actorUserId,
+          userId: normalizedActorUserId,
           value,
           createdAt: existingVote?.createdAt ?? now,
           updatedAt: now,
@@ -306,10 +316,10 @@ export function PluginDetailsView({
       }
     },
     [
-      actorUserId,
       businessId,
       canPersistReviewFeedback,
       createVoteMutation,
+      normalizedActorUserId,
       plugin.pluginId,
       refetchVoteRows,
       reviewVotes,
@@ -336,7 +346,10 @@ export function PluginDetailsView({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setIsPreviewOpen(true)}
+          onClick={() => {
+            setPreviewSubdomain(undefined);
+            setIsPreviewOpen(true);
+          }}
           className={chipClassName}
         >
           Try dashboard preview <ExternalLink className="ml-2 size-3.5" />
@@ -349,7 +362,10 @@ export function PluginDetailsView({
         key={tab.schema}
         variant="outline"
         size="sm"
-        onClick={() => setIsPreviewOpen(true)}
+        onClick={() => {
+          setPreviewSubdomain(tab.subdomain);
+          setIsPreviewOpen(true);
+        }}
         className={chipClassName}
       >
         Try {tab.title ?? tab.schema}
@@ -533,7 +549,10 @@ export function PluginDetailsView({
             <div className="flex flex-wrap items-center gap-2.5">
               <Button
                 variant="outline"
-                onClick={() => setIsPreviewOpen(true)}
+                onClick={() => {
+                  setPreviewSubdomain(undefined);
+                  setIsPreviewOpen(true);
+                }}
                 className="h-9 rounded-full border-white/35 bg-white/[0.06] px-4 text-sm font-medium text-white hover:bg-white/[0.14]"
               >
                 <Play className="mr-2 size-3.5 fill-current" />
@@ -558,7 +577,10 @@ export function PluginDetailsView({
             <div className="flex flex-wrap items-center gap-2.5">
               <Button
                 variant="outline"
-                onClick={() => setIsPreviewOpen(true)}
+                onClick={() => {
+                  setPreviewSubdomain(undefined);
+                  setIsPreviewOpen(true);
+                }}
                 className="h-9 rounded-full border-white/35 bg-white/[0.06] px-4 text-sm font-medium text-white hover:bg-white/[0.14]"
               >
                 <Play className="mr-2 size-3.5 fill-current" />
@@ -652,9 +674,21 @@ export function PluginDetailsView({
                       <button
                         type="button"
                         key={tab.schema}
-                        onClick={() => setIsPreviewOpen(true)}
+                        onClick={() => {
+                          setPreviewSubdomain(tab.subdomain);
+                          setIsPreviewOpen(true);
+                        }}
                         className="w-[230px] shrink-0 rounded-2xl border border-gray-200 bg-white p-4 text-left transition-all hover:border-[#01875f]/50 hover:shadow-sm"
                       >
+                        {tab.screenshotUrls?.[0] ? (
+                          <div className="mb-3 h-24 overflow-hidden rounded-lg border border-gray-100 bg-black">
+                            <img
+                              src={tab.screenshotUrls[0]}
+                              alt={`${tab.title} preview`}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        ) : null}
                         <p className="text-xs uppercase tracking-[0.08em] text-[#5f6368]">
                           {tab.group ?? 'Subdomain'}
                         </p>
@@ -976,6 +1010,7 @@ export function PluginDetailsView({
           businessSlug={businessName}
           businessId={businessId}
           isInstalled={plugin.isInstalled}
+          initialSubdomain={previewSubdomain}
           onInstall={onInstall}
         />
       </div>

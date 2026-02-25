@@ -312,6 +312,77 @@ describe('admin plugin market helpers', () => {
       'Admin',
       'Orders Dashboard',
     ]);
+    expect(details.previewTabs.map((tab) => tab.subdomain)).toEqual([
+      'index',
+      'admin',
+      'orders-dashboard',
+    ]);
+  });
+
+  it('collects preview screenshots from subdomain UI layers', () => {
+    const catalog = [
+      entry({
+        pluginId: 'acme.visual-plugin',
+        latestRelease: {
+          id: 'acme.visual-plugin@1.0.0',
+          pluginId: 'acme.visual-plugin',
+          version: '1.0.0',
+          docs: {
+            title: 'Visual plugin',
+            description: 'Image-heavy release',
+          },
+          actionManifest: [{ actionId: 'visual.run', capabilities: [] }],
+          adminTabs: [
+            { schema: '__plugin_studio_subdomain__/index' },
+            {
+              schema: '__plugin_studio_subdomain_ui__/index',
+              title: JSON.stringify([
+                {
+                  id: 'index-root',
+                  type: 'img',
+                  name: 'img',
+                  props: { src: 'https://cdn.example.com/index-preview.png' },
+                  children: [],
+                },
+              ]),
+            },
+            { schema: '__plugin_studio_subdomain__/admin' },
+            {
+              schema: '__plugin_studio_subdomain_ui__/admin',
+              title: JSON.stringify([
+                {
+                  id: 'admin-root',
+                  type: 'Card',
+                  name: 'Card',
+                  props: {
+                    imageUrl: 'https://cdn.example.com/admin-preview.png',
+                  },
+                  children: [],
+                },
+              ]),
+            },
+          ],
+          manifestHash: 'm',
+          artifactHash: 'a',
+          author: { userId: 'u1' },
+          visibility: 'public',
+          publishedAt: '2026-02-15T00:00:00.000Z',
+        },
+      }),
+    ];
+
+    const groups = buildMarketplaceGroups(catalog);
+    const plugin = groups.all[0];
+    expect(plugin).toBeDefined();
+    if (!plugin) {
+      throw new Error('Expected plugin for screenshot collection');
+    }
+    const details = buildPluginDetailView(plugin);
+
+    expect(details.previewScreenshots).toEqual([
+      'https://cdn.example.com/index-preview.png',
+      'https://cdn.example.com/admin-preview.png',
+    ]);
   });
 
   it('groups reviews by user and prioritizes the current user at the top', () => {

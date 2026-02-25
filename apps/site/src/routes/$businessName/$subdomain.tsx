@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { AutoAdminResolved } from '@/components/auto-admin/auto-admin-resolved';
+import { Spinner } from '@/components/ui/spinner';
 import { CustomUiRendererPage } from '@/components/ui-builder';
+import { useBusinessSubdomainLayersState } from '@/config/business-config';
 
 export const Route = createFileRoute('/$businessName/$subdomain')({
   component: BusinessSubdomainRoute,
@@ -8,10 +9,17 @@ export const Route = createFileRoute('/$businessName/$subdomain')({
 
 function BusinessSubdomainRoute() {
   const { businessName, subdomain } = Route.useParams();
+  const { layers, isLoading } = useBusinessSubdomainLayersState({
+    slug: businessName,
+    subdomain,
+  });
+  if (isLoading) return <Spinner />;
 
-  if (subdomain.toLowerCase() === 'admin') {
-    return <AutoAdminResolved />;
-  }
-
-  return <CustomUiRendererPage slug={businessName} pageName={subdomain} />;
+  return (
+    <CustomUiRendererPage
+      slug={businessName}
+      pageName={subdomain}
+      layersOverride={layers ?? undefined}
+    />
+  );
 }

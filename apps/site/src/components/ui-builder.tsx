@@ -236,9 +236,11 @@ export function CustomUiBuilderPage({ slug }: { slug: string }) {
 export function CustomUiRendererPage({
   slug,
   pageName,
+  layersOverride,
 }: {
   slug: string;
   pageName?: string;
+  layersOverride?: unknown[];
 }) {
   'use memo';
   const search = useSearch({ from: '__root__' });
@@ -269,9 +271,11 @@ export function CustomUiRendererPage({
   }, [hasCredential, isAuthenticated]);
 
   function getPage() {
-    const layers = business?.uiBuilder?.layers
-      ? JSON.parse(business?.uiBuilder?.layers)
-      : undefined;
+    const layers =
+      layersOverride ??
+      (business?.uiBuilder?.layers
+        ? JSON.parse(business?.uiBuilder?.layers)
+        : undefined);
     const fallback = layers?.[0];
     if (!page) return fallback;
     const isNumber = Number.isInteger(Number(page));
@@ -287,7 +291,8 @@ export function CustomUiRendererPage({
 
   if (isLoading || _isLoading) return <Spinner />;
 
-  if (!business?.uiBuilder?.layers) return <NotFound />;
+  if (!layersOverride && !business?.uiBuilder?.layers) return <NotFound />;
+  if (layersOverride && layersOverride.length === 0) return <NotFound />;
 
   return (
     <ContextDataStore contextData={contextData}>

@@ -1,12 +1,13 @@
-import { CustomUiRendererPage } from '@/components/ui-builder';
-import { NotFound } from '@/components/ui/not-found';
-import { BusinessProvider } from '@/contexts/business-context';
-import { api } from '@/lib/api';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Loader2, MapPin, Shield } from 'lucide-react';
+import { BusinessLocationMap } from '@/components/business-location-map';
 import { BusinessAccessGate } from '@/components/permission-gate/business-access-gate';
 import { Button } from '@/components/ui/button';
-import { BusinessLocationMap } from '@/components/business-location-map';
+import { NotFound } from '@/components/ui/not-found';
+import { CustomUiRendererPage } from '@/components/ui-builder';
+import { useBusinessSubdomainsState } from '@/config/business-config';
+import { BusinessProvider } from '@/contexts/business-context';
+import { api } from '@/lib/api';
 
 export const Route = createFileRoute('/$businessName/')({
   component: () => {
@@ -16,14 +17,20 @@ export const Route = createFileRoute('/$businessName/')({
       keys: [businessName],
       single: true,
     });
+    const rawBusiness = allBusinesses?.[0];
+    const businessNamespace =
+      rawBusiness?.basePath?.trim() ||
+      rawBusiness?.id?.trim() ||
+      businessName.trim();
+    const { subdomains } = useBusinessSubdomainsState({
+      slug: businessName,
+      businessId: businessNamespace,
+    });
 
     if (isLoading || allBusinesses.length === 0) {
       return (
         <div className="items-center justify-center w-screen h-screen flex">
-          <Loader2
-            className="animate-spin size-8"
-            aria-label="Loading..."
-          />
+          <Loader2 className="animate-spin size-8" aria-label="Loading..." />
         </div>
       );
     }
@@ -78,20 +85,55 @@ export const Route = createFileRoute('/$businessName/')({
           {getChild()}
         </div>
 
-        <BusinessAccessGate business={business}>
-          <div className="fixed bottom-4 right-4 z-50">
-            <Button asChild size="lg" className="rounded-full shadow-lg">
-              <Link
-                className="gap-2 flex"
-                to="/$businessName/admin"
-                params={{ businessName: business.basePath ?? '' }}
-              >
-                <Shield className="h-4 w-4" />
-                Go to Admin
-              </Link>
-            </Button>
-          </div>
-        </BusinessAccessGate>
+        <div className="fixed bottom-4 right-4 z-50 flex max-w-[90vw] flex-wrap justify-end gap-2">
+          <Button asChild size="sm" variant="outline" className="shadow-lg">
+            <Link
+              to="/$businessName"
+              params={{ businessName: business.basePath ?? '' }}
+            >
+              Root
+            </Link>
+          </Button>
+          {subdomains
+            .filter((subdomain) => subdomain !== 'index')
+            .map((subdomain) =>
+              subdomain === 'admin' ? (
+                <BusinessAccessGate
+                  key="business-subdomain-admin"
+                  business={business}
+                >
+                  <Button asChild size="sm" className="shadow-lg">
+                    <Link
+                      className="flex gap-2"
+                      to="/$businessName/admin"
+                      params={{ businessName: business.basePath ?? '' }}
+                    >
+                      <Shield className="h-4 w-4" />
+                      Admin
+                    </Link>
+                  </Button>
+                </BusinessAccessGate>
+              ) : (
+                <Button
+                  key={`business-subdomain-${subdomain}`}
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="shadow-lg"
+                >
+                  <Link
+                    to="/$businessName/$subdomain"
+                    params={{
+                      businessName: business.basePath ?? '',
+                      subdomain,
+                    }}
+                  >
+                    {subdomain}
+                  </Link>
+                </Button>
+              ),
+            )}
+        </div>
       </BusinessProvider>
     );
   },

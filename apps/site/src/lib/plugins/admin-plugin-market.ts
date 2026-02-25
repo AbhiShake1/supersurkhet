@@ -1,7 +1,6 @@
 import type { PluginCatalogEntry } from '@/lib/plugins/admin-plugin-catalog';
+import { resolveReleaseSubdomainSurface } from '@/lib/plugins/subdomain-surface';
 import type { BusinessPluginInstallDoc } from '@/lib/plugins/types';
-
-const SUBDOMAIN_SENTINEL_PREFIX = '__plugin_studio_subdomain__/';
 
 export type PluginUserReview = {
   id: string;
@@ -254,39 +253,18 @@ export function buildPluginDetailView(
   const userReview = reviews.find(
     (review) => review.pluginId === plugin.pluginId && review.userId === userId,
   );
-  const subdomainPreviewTabs = (plugin.latestRelease.adminTabs ?? [])
-    .flatMap((tab) => {
-      const schema = tab.schema?.trim() ?? '';
-      if (!schema.startsWith(SUBDOMAIN_SENTINEL_PREFIX)) return [];
-      const rawSubdomain = schema
-        .slice(SUBDOMAIN_SENTINEL_PREFIX.length)
-        .trim();
-      if (!rawSubdomain) return [];
-      const subdomain = rawSubdomain
-        .toLowerCase()
-        .replace(/[^a-z0-9-]+/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '');
-      if (!subdomain) return [];
-      const label = subdomain
-        .split('-')
-        .map((part) =>
-          part.length > 0 ? `${part[0].toUpperCase()}${part.slice(1)}` : part,
-        )
-        .join(' ');
-      return [
-        {
-          schema,
-          title: label,
-          group: 'Subdomain',
-        },
-      ];
-    })
-    .filter(
-      (entry, index, list) =>
-        list.findIndex((candidate) => candidate.schema === entry.schema) ===
-        index,
-    );
+  const surface = resolveReleaseSubdomainSurface(plugin.latestRelease, {
+    ensureDefaultSubdomains: true,
+    includeAdminFallbackLayers: true,
+  });
+
+  const subdomainPreviewTabs = surface.surfaces.map((entry) => ({
+    schema: `__plugin_studio_subdomain__/${entry.subdomain}`,
+    title: entry.label,
+    group: 'Subdomain',
+    subdomain: entry.subdomain,
+    screenshotUrls: entry.imageUrls,
+  }));
 
   const previewTabs =
     subdomainPreviewTabs.length > 0
@@ -295,13 +273,18 @@ export function buildPluginDetailView(
           schema: tab.schema,
           title: tab.title ?? tab.schema,
           group: tab.group,
+          subdomain: undefined,
+          screenshotUrls: [],
         })) ?? []);
+  const previewScreenshots = Array.from(
+    new Set(surface.surfaces.flatMap((entry) => entry.imageUrls)),
+  );
 
   return {
     plugin,
     reviewStats: stats,
     userReview,
-    previewScreenshots: plugin.screenshotUrls,
+    previewScreenshots,
     previewTabs,
   };
 }
