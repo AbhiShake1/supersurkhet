@@ -40,6 +40,7 @@ interface VercelV0ChatProps {
             recommended?: boolean;
             showCheckmark?: boolean;
             authIntegrated?: boolean;
+            disabled?: boolean;
         }>;
         onSelectOption?: (id: string) => void;
         input?: {
@@ -175,7 +176,15 @@ export function VercelV0Chat({
         setWizardSearch("");
     }, [wizard?.stageKey]);
 
-    const handleWizardOptionSelect = (option: { id: string; label: string; showCheckmark?: boolean }) => {
+    const handleWizardOptionSelect = (option: {
+        id: string;
+        label: string;
+        showCheckmark?: boolean;
+        disabled?: boolean;
+    }) => {
+        if (option.disabled) {
+            return;
+        }
         if (option.showCheckmark) {
             setMessages((prev) => [
                 ...prev,
@@ -394,8 +403,12 @@ export function VercelV0Chat({
                                                         key={`option-${option.id}`}
                                                         type="button"
                                                         onClick={() => handleWizardOptionSelect(option)}
+                                                        disabled={option.disabled}
                                                         className={cn(
                                                             "flex min-h-11 w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors",
+                                                            option.disabled
+                                                                ? "cursor-not-allowed border-white/10 bg-white/5 text-zinc-500 opacity-60"
+                                                                : "",
                                                             option.selected
                                                                 ? "border-primary/60 bg-primary/20 text-zinc-100"
                                                                 : option.recommended

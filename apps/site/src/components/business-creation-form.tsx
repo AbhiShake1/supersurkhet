@@ -1446,14 +1446,31 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
     }
   }
 
-  const canAssistantGoForward =
-    isAskingForAnother
-      ? true
-      : (assistantStage === 'provider' && assistantPickedProvider) ||
-      // (assistantStage === 'model' && assistantPickedModel) ||
-      (assistantStage === 'auth' && assistantPickedAuth) ||
-      (assistantStage === 'oauth-method' && assistantPickedOauthMethod) ||
-      (assistantStage === 'credential' && assistantSecretInput.trim().length > 0);
+  const canAssistantGoForward = useMemo(() => {
+    // When asking for another integration, forward is disabled (user should select Yes/No from options)
+    if (isAskingForAnother) {
+      return false;
+    }
+    
+    // Forward enabled based on current stage
+    if (assistantStage === 'provider') {
+      return assistantPickedProvider;
+    }
+    // if (assistantStage === 'model') {
+    //   return assistantPickedModel;
+    // }
+    if (assistantStage === 'auth') {
+      return assistantPickedAuth;
+    }
+    if (assistantStage === 'oauth-method') {
+      return assistantPickedOauthMethod;
+    }
+    if (assistantStage === 'credential') {
+      return assistantSecretInput.trim().length > 0;
+    }
+    
+    return false;
+  }, [isAskingForAnother, assistantStage, assistantPickedProvider, assistantPickedAuth, assistantPickedOauthMethod, assistantSecretInput]);
 
   function handleSaveCurrentIntegration() {
     const currentIntegration = {
@@ -1552,6 +1569,7 @@ function BusinessOnboardingAssistantForm({ form: _form }: StepTwoFormProps) {
                   recommended: option.providerId === recommendedProviderId,
                   showCheckmark: selectedProviderIds.has(option.providerId as BusinessOnboardingProviderId),
                   authIntegrated: providersWithAuthIntegrated.has(option.providerId as BusinessOnboardingProviderId),
+                  disabled: providersWithAuthIntegrated.has(option.providerId as BusinessOnboardingProviderId),
                 }))
                 // : assistantStage === 'model'
                 //   ? modelOptionsForWizard.map((option) => ({
