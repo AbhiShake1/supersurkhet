@@ -19,9 +19,5 @@ test.describe("Business Admin", () => {
       page.getByText(/Visual Flow Builder/i),
     ).toBeVisible();
 
-    await page.goto(`/${slug}/admin?tab=Website%20UI`);
-    await expect(
-      page.getByRole("heading", { name: /Website UI/i }),
-    ).toBeVisible();
   });
 });

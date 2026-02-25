@@ -8,7 +8,6 @@ import {
   GripVertical,
   type LucideIcon,
   QrCodeIcon,
-  Sigma,
 } from 'lucide-react';
 import {
   type ReactNode,
@@ -55,7 +54,6 @@ import Card from '../ui/minimal-card';
 import { NotFound } from '../ui/not-found';
 import { Skeleton } from '../ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { CustomUiBuilderPage } from '../ui-builder';
 import { AutoAdminGlobalCommand } from './global-command';
 
 const AUTO_ADMIN_SHORTCUTS = {
@@ -109,7 +107,7 @@ export interface AutoAdminProps {
   groups?: string[];
 }
 
-export type AutoAdminSystemTabKey = 'dashboard' | 'qr' | 'website';
+export type AutoAdminSystemTabKey = 'dashboard' | 'qr';
 
 export type AutoAdminSystemTabState = {
   title: string;
@@ -128,10 +126,6 @@ const DEFAULT_SYSTEM_TABS: AutoAdminSystemTabs = {
   },
   qr: {
     title: 'QR Management',
-    group: 'System Configuration',
-  },
-  website: {
-    title: 'Website UI',
     group: 'System Configuration',
   },
 };
@@ -352,7 +346,6 @@ export function AutoAdmin({
   }, [resolvedSystemTabs]);
   const dashboardTab = resolvedSystemTabs.dashboard;
   const qrTab = resolvedSystemTabs.qr;
-  const websiteTab = resolvedSystemTabs.website;
 
   const updateSystemTab = useCallback(
     (key: AutoAdminSystemTabKey, patch: Partial<AutoAdminSystemTabState>) => {
@@ -412,19 +405,9 @@ export function AutoAdmin({
       icon: resolveIconByName(qrTab.iconName) ?? QrCodeIcon,
       children: <QRCodePage slug={basePath} />,
     }) as PossibleTabConfig;
-    const websiteTabConfig = resolveAdminTabInput({
-      tabId: 'website',
-      title: websiteTab.title,
-      group: websiteTab.group,
-      iconName: websiteTab.iconName,
-      icon: resolveIconByName(websiteTab.iconName) ?? Sigma,
-      children: <CustomUiBuilderPage slug={basePath} />,
-    }) as PossibleTabConfig;
-
     const systemTabsByToken: Record<string, PossibleTabConfig> = {
       'system:dashboard': dashboardTabConfig,
       'system:qr': qrTabConfig,
-      'system:website': websiteTabConfig,
     };
     const runtimeTabsByToken = new Map<string, PossibleTabConfig>();
     for (const tab of runtimeTabs) {
@@ -461,7 +444,6 @@ export function AutoAdmin({
       dashboardTabConfig,
       ...runtimeTabs,
       qrTabConfig,
-      websiteTabConfig,
     ];
     for (const candidate of defaultOrder) {
       const token =
@@ -469,20 +451,18 @@ export function AutoAdmin({
           ? 'system:dashboard'
           : candidate === qrTabConfig
             ? 'system:qr'
-            : candidate === websiteTabConfig
-              ? 'system:website'
-              : (() => {
-                  const runtimeTabId =
-                    'tabId' in candidate &&
-                    typeof candidate.tabId === 'string' &&
-                    candidate.tabId.trim().length > 0
-                      ? candidate.tabId.trim()
-                      : 'schema' in candidate &&
-                          typeof candidate.schema === 'string'
-                        ? candidate.schema
-                        : candidate.title;
-                  return `schema:${runtimeTabId}`;
-                })();
+            : (() => {
+                const runtimeTabId =
+                  'tabId' in candidate &&
+                  typeof candidate.tabId === 'string' &&
+                  candidate.tabId.trim().length > 0
+                    ? candidate.tabId.trim()
+                    : 'schema' in candidate &&
+                        typeof candidate.schema === 'string'
+                      ? candidate.schema
+                      : candidate.title;
+                return `schema:${runtimeTabId}`;
+              })();
       if (
         token.startsWith('system:')
           ? usedSystemTokens.has(token)
@@ -508,9 +488,6 @@ export function AutoAdmin({
     qrTab.group,
     qrTab.iconName,
     qrTab.title,
-    websiteTab.group,
-    websiteTab.iconName,
-    websiteTab.title,
     business,
     basePath,
     tabs,
@@ -518,10 +495,10 @@ export function AutoAdmin({
 
   const systemGroups = useMemo(() => {
     if (!includeSystemTabs) return [];
-    return [dashboardTab.group, qrTab.group, websiteTab.group].filter(
+    return [dashboardTab.group, qrTab.group].filter(
       (groupName): groupName is string => Boolean(groupName),
     );
-  }, [includeSystemTabs, dashboardTab.group, qrTab.group, websiteTab.group]);
+  }, [includeSystemTabs, dashboardTab.group, qrTab.group]);
   const mergedGroups = useMemo(() => {
     const next = new Set<string>(groups ?? []);
     for (const groupName of systemGroups) next.add(groupName);

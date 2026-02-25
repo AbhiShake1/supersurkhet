@@ -199,7 +199,7 @@ const DEFAULT_WORKFLOW_DOC = {
   edges: [],
 } satisfies WorkflowDoc;
 
-type SystemTabKey = 'dashboard' | 'qr' | 'website';
+type SystemTabKey = 'dashboard' | 'qr';
 
 type SystemTabState = Record<
   SystemTabKey,
@@ -218,12 +218,8 @@ const DEFAULT_SYSTEM_TABS: SystemTabState = {
     title: 'QR Management',
     group: 'System Configuration',
   },
-  website: {
-    title: 'Website UI',
-    group: 'System Configuration',
-  },
 };
-const DEFAULT_SYSTEM_TAB_ORDER: SystemTabKey[] = ['dashboard', 'qr', 'website'];
+const DEFAULT_SYSTEM_TAB_ORDER: SystemTabKey[] = ['dashboard', 'qr'];
 const COLUMN_SHEET_SHORTCUTS = {
   cancel: {
     id: 'pluginStudio.columnSheetCancel',
@@ -537,7 +533,7 @@ function computeOrderedGroupNames({
     discoveredBySchemaOrder.push(normalized);
   }
   const discoveredBySystemOrder: string[] = [];
-  for (const key of ['dashboard', 'qr', 'website'] as const) {
+  for (const key of ['dashboard', 'qr'] as const) {
     const normalized = systemTabs[key].group?.trim();
     if (!normalized || discoveredBySystemOrder.includes(normalized)) continue;
     discoveredBySystemOrder.push(normalized);
@@ -552,7 +548,7 @@ function computeOrderedGroupNames({
     const normalized = groupName.trim();
     if (normalized) pool.add(normalized);
   }
-  for (const key of ['dashboard', 'qr', 'website'] as const) {
+  for (const key of ['dashboard', 'qr'] as const) {
     const normalized = systemTabs[key].group?.trim();
     if (normalized) pool.add(normalized);
   }
@@ -619,7 +615,7 @@ function toSubdomainSentinelSchemaId(subdomain: string): string {
 function parseSystemSentinelSchemaId(schemaId: unknown): SystemTabKey | null {
   if (!isSystemSentinelSchemaId(schemaId)) return null;
   const key = schemaId.slice(DRAFT_SYSTEM_SENTINEL_SCHEMA_PREFIX.length);
-  if (key === 'dashboard' || key === 'qr' || key === 'website') {
+  if (key === 'dashboard' || key === 'qr') {
     return key;
   }
   return null;
@@ -637,7 +633,7 @@ function parseSystemTabOrderToken(token: string): SystemTabKey | null {
   const normalized = token.trim();
   if (!normalized.startsWith('system:')) return null;
   const key = normalized.slice('system:'.length);
-  if (key === 'dashboard' || key === 'qr' || key === 'website') return key;
+  if (key === 'dashboard' || key === 'qr') return key;
   return null;
 }
 
@@ -5934,8 +5930,6 @@ function PluginStudioPresenter({
                               ? 'border-primary/50 bg-gradient-to-br from-primary/10 via-accent/20 to-background shadow-sm'
                               : 'border-border/70 bg-card hover:border-primary/40 hover:bg-accent/20 hover:shadow-sm'
                           }`}
-                          onClick={() => openSubdomainBuilder(normalizedSubdomain)}
-                          onFocus={() => selectSubdomain(normalizedSubdomain)}
                           onKeyDown={(event) => {
                             if (event.key === 'ArrowRight') {
                               event.preventDefault();
@@ -5945,12 +5939,8 @@ function PluginStudioPresenter({
                               event.preventDefault();
                               moveSubdomainSelection(-1);
                             }
-                            if (event.key === 'Enter' || event.key === ' ') {
-                              event.preventDefault();
-                              openSubdomainBuilder(normalizedSubdomain);
-                            }
                           }}
-                          aria-label={`Open ${displayTitle} builder`}
+                          aria-label={`Select ${displayTitle} card`}
                           aria-current={isSelected ? 'true' : undefined}
                         >
                           <div className="mb-3 flex items-center justify-between">
@@ -6006,8 +5996,15 @@ function PluginStudioPresenter({
                             <div className="flex items-center">
                               <div className="mr-1 hidden items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex">
                                 <SortableItemHandle
+                                  data-subdomain-reorder-handle="true"
                                   aria-label={`Reorder ${displayTitle}`}
                                   className="inline-flex size-7 items-center justify-center rounded-md border border-border/70 bg-background/90 p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                  onPointerDownCapture={(event) => {
+                                    event.stopPropagation();
+                                  }}
+                                  onClickCapture={(event) => {
+                                    event.stopPropagation();
+                                  }}
                                   onClick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
@@ -6042,7 +6039,24 @@ function PluginStudioPresenter({
                               </Button>
                             </div>
                           </div>
-                          <div className="relative h-[calc(100%-2.25rem)] overflow-hidden rounded-xl border border-border/70 bg-background">
+                          <div
+                            role="button"
+                            tabIndex={0}
+                            className="relative h-[calc(100%-2.25rem)] overflow-hidden rounded-xl border border-border/70 bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70"
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              openSubdomainBuilder(normalizedSubdomain);
+                            }}
+                            onKeyDown={(event) => {
+                              if (event.key === 'Enter' || event.key === ' ') {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                openSubdomainBuilder(normalizedSubdomain);
+                              }
+                            }}
+                            aria-label={`Open ${displayTitle} builder`}
+                          >
                             {previewPage ? (
                               <div className="pointer-events-none absolute left-0 top-0 h-[500%] w-[500%] origin-top-left scale-[0.2]">
                                 <ContextDataStore
@@ -6257,7 +6271,7 @@ function PluginStudioPresenter({
                               to: '.',
                               search: (current) => ({
                                 ...(current as Record<string, unknown>),
-                                tab: systemTabs.website.title,
+                                tab: systemTabs.dashboard.title,
                               }),
                             })
                           }
