@@ -54,6 +54,12 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Sortable,
+  SortableContent,
+  SortableItem,
+  SortableItemHandle,
+} from '@/components/ui/sortable';
 import { Textarea } from '@/components/ui/textarea';
 import {
   Tooltip,
@@ -108,9 +114,9 @@ import deepEqual from 'fast-deep-equal';
 import * as LucideIcons from 'lucide-react';
 import {
   ArrowLeft,
-  ArrowRight,
   BadgePlus,
   CloudUpload,
+  GripVertical,
   Pencil,
   Plus,
   Trash2,
@@ -4752,6 +4758,12 @@ function PluginStudioPresenter({
     }
   }
 
+  function handleSubdomainOrderChange(nextSubdomains: SubdomainPipelineState) {
+    updateSidebarAdminTabs((state) => {
+      state.subdomains = [...nextSubdomains];
+    });
+  }
+
   useShortcutAction(
     SUBDOMAIN_STUDIO_SHORTCUTS.prevCard,
     () => moveSubdomainSelection(-1),
@@ -5890,8 +5902,14 @@ function PluginStudioPresenter({
                 </Button>
                 </div>
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {subdomains.map((entry, cardIndex) => {
+                <Sortable
+                  value={subdomains}
+                  onValueChange={handleSubdomainOrderChange}
+                  getItemValue={(entry) => normalizeSubdomainName(entry.subdomain)}
+                  orientation="mixed"
+                >
+                  <SortableContent className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {subdomains.map((entry) => {
                     const normalizedSubdomain = normalizeSubdomainName(entry.subdomain);
                     const previewLayers = getSubdomainLayers(entry);
                     const previewPage = previewLayers[0];
@@ -5904,12 +5922,11 @@ function PluginStudioPresenter({
                     const isDefaultSubdomain =
                       normalizedSubdomain === 'index' || normalizedSubdomain === 'admin';
                     const isSelected = normalizedSubdomain === selectedSubdomain;
-                    const canMoveLeft = cardIndex > 0;
-                    const canMoveRight = cardIndex < subdomains.length - 1;
                     const isEditingTitle =
                       editingSubdomainTitle?.originalSubdomain === entry.subdomain;
                     return (
-                      <div key={normalizedSubdomain} className="space-y-2">
+                      <SortableItem key={normalizedSubdomain} value={normalizedSubdomain} asChild>
+                        <div className="space-y-2">
                         <button
                           type="button"
                           className={`group block h-72 w-full rounded-2xl border p-4 text-left transition duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 ${
@@ -5988,36 +6005,19 @@ function PluginStudioPresenter({
                             </div>
                             <div className="flex items-center">
                               <div className="mr-1 hidden items-center gap-1 group-hover:inline-flex group-focus-within:inline-flex">
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="outline"
-                                  className="size-7"
-                                  disabled={!canMoveLeft}
+                                <SortableItemHandle
+                                  aria-label={`Reorder ${displayTitle}`}
+                                  className="inline-flex size-7 items-center justify-center rounded-md border border-border/70 bg-background/90 p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                                   onClick={(event) => {
                                     event.preventDefault();
                                     event.stopPropagation();
-                                    reorderSubdomainByOffset(-1, normalizedSubdomain);
                                   }}
-                                  aria-label={`Move ${displayTitle} left`}
-                                >
-                                  <ArrowLeft className="size-3.5" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  size="icon"
-                                  variant="outline"
-                                  className="size-7"
-                                  disabled={!canMoveRight}
-                                  onClick={(event) => {
-                                    event.preventDefault();
+                                  onKeyDown={(event) => {
                                     event.stopPropagation();
-                                    reorderSubdomainByOffset(1, normalizedSubdomain);
                                   }}
-                                  aria-label={`Move ${displayTitle} right`}
                                 >
-                                  <ArrowRight className="size-3.5" />
-                                </Button>
+                                  <GripVertical className="size-3.5" />
+                                </SortableItemHandle>
                               </div>
                               <Badge
                                 variant="secondary"
@@ -6065,10 +6065,12 @@ function PluginStudioPresenter({
                             )}
                           </div>
                         </button>
-                      </div>
+                        </div>
+                      </SortableItem>
                     );
                   })}
-                </div>
+                  </SortableContent>
+                </Sortable>
               </>
             )}
               <AlertDialog

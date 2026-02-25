@@ -1,18 +1,18 @@
+import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
 import { z } from 'zod';
+import {
+  collectDesiredBusinessSubdomainHosts,
+  reconcileBusinessSubdomainDnsRecords,
+} from '@/lib/domains/cloudflare-business-subdomains';
 import { create as ssrCreate } from '@/lib/gun/ssr/create';
 import { SSRGetTimeoutError, get as ssrGet } from '@/lib/gun/ssr/get';
 import { update as ssrUpdate } from '@/lib/gun/ssr/update';
+import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
 import {
   MARKETPLACE_SEED_RELEASES,
   mergeMarketplaceReleasesWithSeed,
   toMarketplaceSeedReleaseDocs,
 } from '@/lib/plugins/marketplace-seed';
-import {
-  evaluateV3InstallGates,
-  evaluateV3PublishGates,
-  hasBlockingV3Gates,
-} from '@/lib/plugins/v3-gates';
-import { toDraftRevisionRowId } from '@/lib/plugins/draft-revision-row-id';
 import {
   createInMemoryPluginPlatformStore,
   createPluginPlatformService,
@@ -38,9 +38,13 @@ import type {
   WorkflowEdgeDoc,
   WorkflowNodeDoc,
 } from '@/lib/plugins/types';
+import {
+  evaluateV3InstallGates,
+  evaluateV3PublishGates,
+  hasBlockingV3Gates,
+} from '@/lib/plugins/v3-gates';
 import { uiBuilderLayerSchema } from '@/lib/schemas/ui-builder-schema';
 import { mergeUiTemplateLayers } from '@/lib/ui-builder/template-merge';
-import { flattenSchemaWorkflows } from '@supersurkhet/sdk';
 import { runPluginsV2CompileVerifyPipeline } from './plugins-v2-compile-verify';
 
 const jsonPrimitiveSchema = z.union([
@@ -753,6 +757,50 @@ async function getBusinessUiBuilderLayers(businessId: string) {
   };
 }
 
+async function syncBusinessSubdomainDns(businessId: string): Promise<void> {
+  try {
+    const [installRows, releaseRows, { business }] = await Promise.all([
+      readRowsWithTimeoutFallback(() =>
+        ssrGet('businessPluginInstall', businessId),
+      ) as Promise<BusinessPluginInstallDoc[]>,
+      readRowsWithTimeoutFallback(() =>
+        ssrGet('pluginRelease'),
+      ) as Promise<PluginReleaseDoc[]>,
+      getBusinessUiBuilderLayers(businessId),
+    ]);
+    const businessSlug =
+      business.basePath?.trim() || business.id?.trim() || businessId.trim();
+
+    const configBaseDomain = process.env.CLOUDFLARE_BASE_DOMAIN?.trim();
+    if (!configBaseDomain) {
+      return;
+    }
+
+    const desiredHosts = collectDesiredBusinessSubdomainHosts({
+      businessSlug,
+      installs: installRows,
+      releases: releaseRows,
+      baseDomain: configBaseDomain,
+    });
+
+    const syncResult = await reconcileBusinessSubdomainDnsRecords({
+      businessSlug,
+      desiredHosts,
+    });
+    if (syncResult.status === 'failed') {
+      console.error(
+        `[cloudflare-dns] reconciliation failed for business "${businessId}"`,
+        syncResult.reason,
+      );
+    }
+  } catch (error) {
+    console.error(
+      `[cloudflare-dns] reconciliation threw for business "${businessId}"`,
+      error,
+    );
+  }
+}
+
 function buildUiTemplatePluginPlan({
   bundles,
   installs,
@@ -1227,6 +1275,8 @@ export async function installUiTemplateRelease({
     row: installSummary as unknown as Record<string, unknown>,
   });
 
+  await syncBusinessSubdomainDns(parsedInput.businessId);
+
   return {
     templateId: release.templateId,
     version: release.version,
@@ -1472,6 +1522,8 @@ export async function installPluginRelease({ data }: { data: unknown }) {
     row: install,
   });
 
+  await syncBusinessSubdomainDns(parsedInput.businessId);
+
   return install;
 }
 
@@ -1577,6 +1629,8 @@ export async function syncBusinessPluginInstalls({ data }: { data: unknown }) {
       ),
     );
   }
+
+  await syncBusinessSubdomainDns(parsedInput.businessId);
 
   return {
     businessId: parsedInput.businessId,
@@ -1851,6 +1905,8 @@ export async function uninstallPluginRelease({
   // Remove the install record from the database
   const { remove } = await import('@/lib/gun/ssr/delete');
   await remove('businessPluginInstall', data.businessId)(install.id);
+
+  await syncBusinessSubdomainDns(data.businessId);
 
   return install;
 }
